@@ -6,12 +6,12 @@ meta.__index.mapTag = function(self, tagName)
             tag = tag:gsub("alpha", "color")
         end
         if tag:find("color") then
-            return alpha and {self.styleref[tag]:sub(3,4)} or {self.styleref[tag]:sub(5,10)}
-        else return  {self.styleref[tag]} end
+            return alpha and {self.styleRef[tag]:sub(3,4)} or {self.styleRef[tag]:sub(5,10)}
+        else return  {self.styleRef[tag]} end
     end
 
     if not  self.tagMap then
-        self:extraMetrics(self.styleref)
+        self:extraMetrics(self.styleRef)
         self.tagMap = {
             scaleX= {friendlyName="\\fscx", type="ASSNumber", pattern="\\fscx([%d%.]+)", format="\\fscx%.3N", default=getStyleRef("scale_x")},
             scaleY = {friendlyName="\\fscy", type="ASSNumber", pattern="\\fscy([%d%.]+)", format="\\fscy%.3N", default=getStyleRef("scale_y")},
@@ -51,7 +51,7 @@ meta.__index.mapTag = function(self, tagName)
             kSweep = {friendlyName="\\kf", type="ASSDuration", props={scale=10}, pattern="\\kf([%d]+)", format="\\kf%d", default=0},
             kSweepAlt = {friendlyName="\\K", type="ASSDuration", props={scale=10}, pattern="\\K([%d]+)", format="\\K%d", default=0},
             kBord = {friendlyName="\\ko", type="ASSDuration", props={scale=10}, pattern="\\ko([%d]+)", format="\\ko%d", default=0},
-            position = {friendlyName="\\pos", type="ASSPosition", pattern="\\pos%(([%-%d%.]+,[%-%d%.]+)%)", format="\\pos(%.2N,%.2N)", default={self:getDefaultPosition(self.styleref)}},
+            position = {friendlyName="\\pos", type="ASSPosition", pattern="\\pos%(([%-%d%.]+,[%-%d%.]+)%)", format="\\pos(%.2N,%.2N)", default={self:getDefaultPosition()}},
             moveSmpl = {friendlyName=nil, type="ASSMove", props={simple=true}, format="\\move(%.2N,%.2N,%.2N,%.2N)", default={self.xPosition, self.yPosition, self.xPosition, self.yPosition}}, -- only for output formatting
             move = {friendlyName="\\move", type="ASSMove", pattern="\\move%(([%-%d%.,]+)%)", format="\\move(%.2N,%.2N,%.2N,%.2N,%.2N,%.2N)", default={self.xPosition, self.yPosition, self.xPosition, self.yPosition}},
             org = {friendlyName="\\org", type="ASSPosition", pattern="\\org([%-%d%.]+,[%-%d%.]+)", format="\\org(%.2N,%.2N)", default={self.xPosition, self.yPosition}},
