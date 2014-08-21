@@ -438,3 +438,25 @@ function ASSWeight:setWeight(weightClass)
 end
 
 ASSWrapStyle = createASSClass("ASSWrapStyle", ASSIndexed, {"value"}, {"number"}, {range={0,3}, default=0})
+
+ASSReset = createASSClass("ASSReset", ASSBase, {"style"}, {"string"})
+function ASSReset:new(style, tagProps)
+    self:readProps(tagProps)
+    if type(style) == "table" then
+        self.style = self:getArgs(style,"",true)
+    else 
+        self.style = style or ""
+    end
+    return self
+end
+
+ASSReset.add, ASSReset.mul, ASSReset.pow = nil, nil, nil
+
+function ASSReset:getTag(coerce)
+    local style = self.style or ""
+    if coerce and type(style)~= "string" then
+        style = ""
+    else self:typeCheck(style) end
+
+    return style
+end
