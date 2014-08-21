@@ -1,3 +1,5 @@
+re = require("aegisub.re")
+
 function createASSClass(typeName,baseClass,order,types,tagProps)
   local cls, baseClass = {}, baseClass or {}
   for key, val in pairs(baseClass) do
@@ -439,24 +441,39 @@ end
 
 ASSWrapStyle = createASSClass("ASSWrapStyle", ASSIndexed, {"value"}, {"number"}, {range={0,3}, default=0})
 
-ASSReset = createASSClass("ASSReset", ASSBase, {"style"}, {"string"})
-function ASSReset:new(style, tagProps)
+ASSString = createASSClass("ASSString", ASSBase, {"value"}, {"string"})
+function ASSString:new(val, tagProps)
     self:readProps(tagProps)
-    if type(style) == "table" then
-        self.style = self:getArgs(style,"",true)
+    if type(val) == "table" then
+        self.value = self:getArgs(val,"",true)
     else 
-        self.style = style or ""
+        self.value = val or ""
     end
     return self
 end
 
-ASSReset.add, ASSReset.mul, ASSReset.pow = nil, nil, nil
+function ASSString:getTag(coerce)
+    local val = self.value or ""
+    if coerce and type(val)~= "string" then
+        val = ""
+    else self:typeCheck(val) end
 
-function ASSReset:getTag(coerce)
-    local style = self.style or ""
-    if coerce and type(style)~= "string" then
-        style = ""
-    else self:typeCheck(style) end
+    return val
+end
 
-    return style
+function ASSString:append(str)
+    return self:commonOp("append", function(val,str)
+        return val..str
+    end, "", str)
+end
+
+function ASSString:prepend(str)
+    return self:commonOp("prepend", function(val,str)
+        return str..val
+    end, "", str)
+end
+
+function ASSString:replace(target,rep,useLuaPatterns)
+    self.value = useLuaPatterns and self.value:gsub(target, rep) or re.sub(self.value,target,rep)
+    return self.value
 end

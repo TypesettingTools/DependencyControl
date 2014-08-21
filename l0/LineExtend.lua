@@ -25,7 +25,7 @@ meta.__index.mapTag = function(self, tagName)
             shadow = {friendlyName="\\shad", type="ASSNumber", pattern="\\shad([%-%d%.]+)", format="\\shad%.2N", default=getStyleRef("shadow")}, 
             shadowX = {friendlyName="\\xshad", type="ASSNumber", pattern="\\xshad([%-%d%.]+)", format="\\xshad%.2N", default=getStyleRef("shadow")}, 
             shadowY = {friendlyName="\\yshad", type="ASSNumber", pattern="\\yshad([%-%d%.]+)", format="\\yshad%.2N", default=getStyleRef("shadow")}, 
-            reset = {friendlyName="\\r", type="ASSReset", pattern="\\r([^\\}]*)", format="\\r%s", default=""}, 
+            reset = {friendlyName="\\r", type="ASSString", pattern="\\r([^\\}]*)", format="\\r%s", default=""}, 
             alpha = {friendlyName="\\alpha", type="ASSHex", pattern="\\alpha&H(%x%x)&", format="\\alpha&H%02X&", default=0}, 
             alpha1 = {friendlyName="\\1a", type="ASSHex", pattern="\\1a&H(%x%x)&", format="\\alpha&H%02X&", default=getStyleRef("alpha1")}, 
             alpha2 = {friendlyName="\\2a", type="ASSHex", pattern="\\2a&H(%x%x)&", format="\\alpha&H%02X&", default=getStyleRef("alpha2")}, 
