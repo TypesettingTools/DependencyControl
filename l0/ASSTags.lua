@@ -477,3 +477,5 @@ function ASSString:replace(target,rep,useLuaPatterns)
     self.value = useLuaPatterns and self.value:gsub(target, rep) or re.sub(self.value,target,rep)
     return self.value
 end
+
+ASSString.add, ASSString.mul, ASSString.pow = ASSString.append, nil, nil
