@@ -30,6 +30,14 @@ string.patternEscape = function(str)
     return str:gsub("([%%%(%)%[%]%.%*%-%+%?%$%^])","%%%1")
 end
 
+function string:split(sep)
+    local sep, fields = sep or "", {}
+    self:gsub(string.format("([^%s]+)", sep), function(field) 
+        fields[#fields+1] = field
+    end)
+    return fields
+end
+
 string.toNumbers = function(base, ...)
     numbers={}
     for _,string in ipairs(table.pack(...)) do
@@ -69,12 +77,13 @@ table.find = function(tbl,findVal)
     return nil
 end
 
-table.join = function(tbl1,tbl2)
-    local tbl = {}
-    for _,val in ipairs(tbl1) do table.insert(tbl,val) end
-    for _,val in ipairs(tbl2) do table.insert(tbl,val) end
-    return tbl
-end
+table.join = function(...)
+    local outTbl = {}
+    for _,table_ in ipairs({...}) do
+        for _,val in ipairs(table_) do outTbl[#outTbl+1]=val end
+    end
+    return outTbl
+end 
 
 table.keys = function(tbl)
     local keys={}
