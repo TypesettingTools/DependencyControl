@@ -119,6 +119,16 @@ util.RGB_to_HSV = function(r,g,b)
     end
 end
 
+util.getScriptInfo = function(sub)
+    local infoBlockFound, scriptInfo = false, {}
+    for i=1,#sub do
+        if sub[i].class=="info" then
+            infoBlockFound = true
+            scriptInfo[sub[i].key] = sub[i].value
+        elseif infoBlockFound then break end
+    end
+    return scriptInfo
+end
 
 returnAll = function(...) -- blame lua
     local arr={}
@@ -129,3 +139,4 @@ returnAll = function(...) -- blame lua
     end
     return unpack(arr)
 end
+
