@@ -14,11 +14,12 @@ function createASSClass(typeName,baseClass,order,types,tagProps)
        types = types
   }
   cls.__defProps = table.merge(cls.__defProps or {},tagProps or {})
+  cls.baseClass=baseClass
 
   setmetatable(cls, {
     __call = function (cls, ...)
         local self = setmetatable({__tag = util.copy(cls.__defProps)}, cls)
-        self:new(...)
+        self = self:new(...)
         return self
     end})
   return cls
@@ -88,7 +89,6 @@ function ASSBase:getArgs(args, default, coerce, ...)
             }
             table.insert(outArgs, args[j]~= nil and map[valTypes[i]]() or nil)
         else table.insert(outArgs, args[j]) end
-
         j=j+1
     end
     --self:typeCheck(unpack(outArgs))
@@ -479,3 +479,163 @@ function ASSString:replace(target,rep,useLuaPatterns)
 end
 
 ASSString.add, ASSString.mul, ASSString.pow = ASSString.append, nil, nil
+
+ASSClip = createASSClass("ASSClip", ASSBase, {}, {})
+function ASSClip:new(arg1,arg2,arg3,arg4,tagProps)
+    if type(arg1) == "table" then
+        tagProps = arg2
+        arg1,arg2,arg3,arg4 = unpack(arg1)
+        if arg2 then
+            arg1,arg2,arg3,arg4 = string.toNumbers(10,arg1,arg2,arg3,arg4)
+        end
+    end
+    tagProps = tagProps or {}
+    if type(arg1)=="number" then
+        return ASSClipRect(arg1,arg2,arg3,arg4,tagProps)
+    elseif type(arg1)=="string" then
+        return ASSClipVect({arg1},tagProps)
+    else error("Invalid argumets to ASSClip") end
+end
+
+ASSClipRect = createASSClass("ASSClipRect", ASSBase, {"topLeft", "bottomRight"}, {ASSPosition, ASSPosition})
+
+function ASSClipRect:new(left,top,right,bottom,tagProps)
+    if type(left) == "table" then
+        tagProps = top
+        left,top,right,bottom = self:getArgs(left, nil, true)
+    end
+    self:readProps(tagProps)
+    self.topLeft = ASSPosition(left,top)
+    self.bottomRight = ASSPosition(right,bottom)
+    self:setInverse(self.__tag.inverse or false)
+    return self
+end
+
+function ASSClipRect:getTag(coerce)
+    self:setInverse(self.__tag.inverse or false)
+    return returnAll({self.topLeft:getTag(coerce)}, {self.bottomRight:getTag(coerce)})
+end
+
+function ASSClipRect:setInverse(state)
+    state = type(state)==nil and true or false
+    self.__tag.inverse = state
+    self.__tag.name = state and "iclipRect" or "clipRect"
+    return state
+end
+
+function ASSClipRect:toggleInverse()
+    return self:setInverse(not self.__tag.inverse)
+end
+
+ASSClipVect = createASSClass("ASSClipVect", ASSBase, {"commands"}, {"table"})
+
+function ASSClipVect:new(...)
+    --- two ways to create: [1] from string in a table [2] from list of ASSDraw objects
+    local args, tagProps = {...}, {}
+    self.commands = {}
+    if #args==2 and type(args[1])=="table" and not args[1].instanceOf then
+        local cmdTypes = {
+            m = ASSDrawMove,
+            n = ASSDrawMoveNc,
+            l = ASSDrawLine,
+            b = ASSDrawBezier
+        }
+        local cmdParts, cmdType, prmCnt, i = args[1][1]:split(" "), "", 0, 1
+        while i<=#cmdParts do
+            if cmdTypes[cmdParts[i]] then
+                cmdType = cmdParts[i]
+                prmCnt, i = #cmdTypes[cmdType].__meta__.order, i+1
+            else 
+                self.commands[#self.commands+1] = cmdTypes[cmdType](table.sliceArray(cmdParts,i,i+prmCnt-1))
+                i=i+prmCnt
+            end
+        end
+        tagProps = args[2]
+    elseif type(args[1])=="table" then
+        tagProps = args[#args].instanceOf and {} or table.remove(args)
+        for i,arg in ipairs(args) do
+            assert(arg.baseClass==ASSDrawBase, string.format("Error: argument %d to %s is not a drawing object.", i, self.typeName))
+        end
+        self.commands = args
+    end
+    self:readProps(tagProps)
+    self:setInverse(self.__tag.inverse or false)
+    return self
+end
+
+function ASSClipVect:getTag(coerce)
+    self:setInverse(self.__tag.inverse or false)
+    local cmdStr, lastCmdType
+    for i,cmd in ipairs(self.commands) do
+        if lastCmdType~=cmd.__tag.name then
+            lastCmdType = cmd.__tag.name
+            cmdStr =  i==1 and lastCmdType or cmdStr .. " " .. lastCmdType
+        end
+        cmdStr = cmdStr .. " " .. table.concat({cmd:getTag(coerce)}," ")
+    end
+    return cmdStr
+end
+
+--TODO: unify setInverse and toggleInverse for VectClip and RectClip by using multiple inheritance
+function ASSClipVect:setInverse(state)
+    state = type(state)==nil and true or state
+    self.__tag.inverse = state
+    self.__tag.name = state and "iclipVect" or "clipVect"
+    return state
+end
+
+function ASSClipVect:toggleInverse()
+    return self:setInverse(not self.__tag.inverse)
+end
+
+function ASSClipVect:commonOp(method, callback, default, x, y) -- drawing commands only have x and y in common
+    local res = {}
+    for _,command in ipairs(self.commands) do
+        local subCnt = #command.__meta__.order
+        res=table.join(res,{command[method](command,x,y)})
+    end
+    return unpack(res)
+end
+
+ASSClipVect.set, ASSClipVect.mod, ASSClipVect.get = nil, nil, nil  -- TODO: check if these can be remapped/implemented in a way that makes sense, maybe work on strings
+
+ASSDrawBase = createASSClass("ASSDrawBase", ASSBase, {}, {})
+function ASSDrawBase:new(...)
+    local args = {...}
+    if type(args[1]) == "table" then
+        args = {self:getArgs(args[1], nil, true)}
+    end
+    for i,arg in ipairs(args) do
+        self[self.__meta__.order[i]] = self.__meta__.types[i](arg) 
+    end
+    return self
+end
+
+function ASSDrawBase:getTag(coerce)
+    local params={}
+    for _,param in ipairs(self.__meta__.order) do
+        params[#params+1] = self[param]:getTag(coerce)
+    end
+    return unpack(params)
+end
+
+ASSDrawMove = createASSClass("ASSDrawMove", ASSDrawBase, {"x","y"}, {ASSNumber, ASSNumber}, {name="m"})
+ASSDrawMoveNc = createASSClass("ASSDrawMoveNc", ASSDrawBase, {"x","y"}, {ASSNumber, ASSNumber}, {name="n"})
+ASSDrawLine = createASSClass("ASSDrawLine", ASSDrawBase, {"x","y"}, {ASSNumber, ASSNumber}, {name="l"})
+ASSDrawBezier = createASSClass("ASSDrawBezier", ASSDrawBase, {"x1","y1","x2","y2","x3","y3"}, {ASSNumber, ASSNumber, ASSNumber, ASSNumber, ASSNumber, ASSNumber}, {name="b"})
+--- TODO: b-spline support
+
+function ASSDrawBezier:commonOp(method, callback, default, ...)
+    local args, j, res = {...}, 1, {}
+    if #args<=2 then -- special case to allow common operation on all x an y values of a vector drawing
+        args[1], args[2] = args[1] or 0, args[2] or 0
+        args = table.join(args,args,args)
+    end
+    args = {self:getArgs(args, default, false)}
+    for _,valName in ipairs(self.__meta__.order) do
+        local subCnt = #self[valName].__meta__.order
+        res=table.join(res,{self[valName][method](self[valName],unpack(table.sliceArray(args,j,j+subCnt-1)))})
+        j=j+subCnt
+    end
+    return unpack(res)
+end

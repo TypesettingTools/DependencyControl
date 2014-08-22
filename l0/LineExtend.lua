@@ -11,6 +11,8 @@ meta.__index.mapTag = function(self, tagName)
     end
 
     if not  self.tagMap then
+        local sI = util.getScriptInfo(self.parentCollection.sub)
+        local resX, resY = sI.PlayResX, sI.PlayResY
         self:extraMetrics(self.styleRef)
         self.tagMap = {
             scaleX= {friendlyName="\\fscx", type="ASSNumber", pattern="\\fscx([%d%.]+)", format="\\fscx%.3N", default=getStyleRef("scale_x")},
@@ -32,12 +34,16 @@ meta.__index.mapTag = function(self, tagName)
             alpha3 = {friendlyName="\\3a", type="ASSHex", pattern="\\3a&H(%x%x)&", format="\\alpha&H%02X&", default=getStyleRef("alpha3")}, 
             alpha4 = {friendlyName="\\4a", type="ASSHex", pattern="\\4a&H(%x%x)&", format="\\alpha&H%02X&", default=getStyleRef("alpha4")}, 
             color = {friendlyName="\\c", type="ASSColor", pattern="\\c&H(%x+)&", format="\\c&H%02X%02X%02X&", default=getStyleRef("color1")}, 
-            color1 = {friendlyName="\\1c", type="ASSColor", pattern="\\1c&H(%x+)&", format="\\1c&H%02X%02X%02X&", default=getStyleRef("color1")}, 
+            color1 = {friendlyName="\\1c", type="ASSColor", pattern="\\1c&H(%x+)&", format="\\1c&H%02X%02X%02X&", default=getStyleRef("color1")},
             color2 = {friendlyName="\\2c", type="ASSColor", pattern="\\2c&H(%x+)&", format="\\2c&H%02X%02X%02X&", default=getStyleRef("color2")}, 
-            color3 = {friendlyName="\\3c", type="ASSColor", pattern="\\3c&H(%x+)&", format="\\3c&H%02X%02X%02X&", default=getStyleRef("color3")}, 
-            color4 = {friendlyName="\\4c", type="ASSColor", pattern="\\4c&H(%x+)&", format="\\4c&H%02X%02X%02X&", default=getStyleRef("color4")}, 
-            clip = {friendlyName="\\clip", type="ASSClip", pattern="\\clip%((.-)%)"}, 
-            iclip = {friendlyName="\\iclip", type="ASSClip", pattern="\\iclip%((.-)%)"}, 
+            color3 = {friendlyName="\\3c", type="ASSColor", pattern="\\3c&H(%x+)&", format="\\3c&H%02X%02X%02X&", default=getStyleRef("color3")},
+            color4 = {friendlyName="\\4c", type="ASSColor", pattern="\\4c&H(%x+)&", format="\\4c&H%02X%02X%02X&", default=getStyleRef("color4")},
+            clip = {friendlyName="\\clip", type="ASSClip", pattern="\\clip%((.-)%)", format="\\clip(%s)", default={0,0,resX,resY}},  -- matches all clips, not used for formatting
+            iclip = {friendlyName="\\iclip", type="ASSClip", props={inverse=true}, pattern="\\iclip%((.-)%)", format="\\clip(%s)", default={0,0,0,0}}, -- matches all iclips, not used for formatting
+            clipVect = {friendlyName="\\clip (Vect)", type="ASSClipVect", pattern="\\clip%(([mnlbspc] .-)%)", format="\\clip(%s)", default={string.format("m 0 0 l %s 0 %s %s 0 %s 0 0",resX,resX,resY,resY)}}, 
+            iclipVect = {friendlyName="\\iclip (Vect)", type="ASSClipVect", props={inverse=true}, pattern="\\iclip%(([mnlbspc] .-)%)", format="\\iclip(%s)", default={"m 0 0 l 0 0 0 0 0 0 0 0"}},
+            clipRect = {friendlyName="\\clip (Rect)", type="ASSClipRect", pattern="\\clip%(([%-%d%.]+,[%-%d%.]+,[%-%d%.]+,[%-%d%.]+)%)", format="\\clip(%.2N,%.2N,%.2N,%.2N)", default={0,0,resX,sI.resY}}, 
+            iclipRect = {friendlyName="\\iclip (Rect)", type="ASSClipRect", props={inverse=true}, pattern="\\iclip%(([%-%d%.]+,[%-%d%.]+,[%-%d%.]+,[%-%d%.]+)%)", format="\\iclip(%.2N,%.2N,%.2N,%.2N)", default={0,0,0,0}},
             be = {friendlyName="\\be", type="ASSNumber", props={positive=true}, pattern="\\be([%d%.]+)", format="\\be%.2N", default=0}, 
             blur = {friendlyName="\\blur", type="ASSNumber", props={positive=true}, pattern="\\blur([%d%.]+)", format="\\blur%.2N", default=0}, 
             fax = {friendlyName="\\fax", type="ASSNumber", pattern="\\fax([%-%d%.]+)", format="\\fax%.2N", default=0}, 
