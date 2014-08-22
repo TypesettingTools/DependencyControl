@@ -126,10 +126,10 @@ meta.__index.getTags = function(self,tagName,asStrings)
     return tags
 end
 
-meta.__index.modTag = function(self, tagName, callback)
+meta.__index.modTag = function(self, tagName, callback, noDefault)
     local tags, orgStrings = self:getTags(tagName), self:getTags(tagName, true)
 
-    if #orgStrings==0 then
+    if #orgStrings==0 and not noDefault then
         local newTag = self:addTag(tagName,nil)
         tags, orgStrings = {newTag}, {self:getTagString(nil,newTag)}
     end
