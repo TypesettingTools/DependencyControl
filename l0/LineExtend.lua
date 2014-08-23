@@ -10,7 +10,7 @@ meta.__index.mapTag = function(self, tagName)
         else return  {self.styleRef[tag]} end
     end
 
-    if not  self.tagMap then
+    if not self.tagMap then
         self:extraMetrics(self.styleRef)
         self.tagMap = {
             scaleX= {friendlyName="\\fscx", type="ASSNumber", pattern="\\fscx([%d%.]+)", format="\\fscx%.3N", default=getStyleRef("scale_x")},
@@ -31,11 +31,11 @@ meta.__index.mapTag = function(self, tagName)
             alpha2 = {friendlyName="\\2a", type="ASSHex", pattern="\\2a&H(%x%x)&", format="\\alpha&H%02X&", default=getStyleRef("alpha2")}, 
             alpha3 = {friendlyName="\\3a", type="ASSHex", pattern="\\3a&H(%x%x)&", format="\\alpha&H%02X&", default=getStyleRef("alpha3")}, 
             alpha4 = {friendlyName="\\4a", type="ASSHex", pattern="\\4a&H(%x%x)&", format="\\alpha&H%02X&", default=getStyleRef("alpha4")}, 
-            color = {friendlyName="\\c", type="ASSColor", pattern="\\c&H(%x+)&", format="\\c&H%02X%02X%02X&", default=getStyleRef("color1")}, 
-            color1 = {friendlyName="\\1c", type="ASSColor", pattern="\\1c&H(%x+)&", format="\\1c&H%02X%02X%02X&", default=getStyleRef("color1")}, 
-            color2 = {friendlyName="\\2c", type="ASSColor", pattern="\\2c&H(%x+)&", format="\\2c&H%02X%02X%02X&", default=getStyleRef("color2")}, 
-            color3 = {friendlyName="\\3c", type="ASSColor", pattern="\\3c&H(%x+)&", format="\\3c&H%02X%02X%02X&", default=getStyleRef("color3")}, 
-            color4 = {friendlyName="\\4c", type="ASSColor", pattern="\\4c&H(%x+)&", format="\\4c&H%02X%02X%02X&", default=getStyleRef("color4")}, 
+            color = {friendlyName="\\c", type="ASSColor", pattern="\\c&H(%x%x%x%x%x%x)&", format="\\c&H%02X%02X%02X&", default=getStyleRef("color1")},
+            color1 = {friendlyName="\\1c", type="ASSColor", pattern="\\1c&H(%x%x%x%x%x%x)&", format="\\1c&H%02X%02X%02X&", default=getStyleRef("color1")},
+            color2 = {friendlyName="\\2c", type="ASSColor", pattern="\\2c&H(%x%x%x%x%x%x)&", format="\\2c&H%02X%02X%02X&", default=getStyleRef("color2")},
+            color3 = {friendlyName="\\3c", type="ASSColor", pattern="\\3c&H(%x%x%x%x%x%x)&", format="\\3c&H%02X%02X%02X&", default=getStyleRef("color3")},
+            color4 = {friendlyName="\\4c", type="ASSColor", pattern="\\4c&H(%x%x%x%x%x%x)&", format="\\4c&H%02X%02X%02X&", default=getStyleRef("color4")},
             clip = {friendlyName="\\clip", type="ASSClip", pattern="\\clip%((.-)%)"}, 
             iclip = {friendlyName="\\iclip", type="ASSClip", pattern="\\iclip%((.-)%)"}, 
             be = {friendlyName="\\be", type="ASSNumber", props={positive=true}, pattern="\\be([%d%.]+)", format="\\be%.2N", default=0}, 
@@ -45,8 +45,9 @@ meta.__index.mapTag = function(self, tagName)
             bold = {friendlyName="\\b", type="ASSWeight", pattern="\\b(%d+)", format="\\b%d", default=getStyleRef("bold")}, 
             italic = {friendlyName="\\i", type="ASSToggle", pattern="\\i([10])", format="\\i%d", default=getStyleRef("italic")}, 
             underline = {friendlyName="\\u", type="ASSToggle", pattern="\\u([10])", format="\\u%d", default=getStyleRef("underline")},
+            strikeout = {friendlyName="\\s", type="ASSToggle", pattern="\\s([10])", format="\\s%d", default=getStyleRef("strikeout")},
             spacing = {friendlyName="\\fsp", type="ASSNumber", pattern="\\fsp([%-%d%.]+)", format="\\fsp%.2N", default=getStyleRef("spacing")},
-            fontsize = {friendlyName="\\fs", type="ASSNumber", props={positive=true}, pattern="\\fs([%d%.]+)", format="\\fsp%.2N", default=getStyleRef("fontsize")},
+            fontsize = {friendlyName="\\fs", type="ASSNumber", props={positive=true}, pattern="\\fs([%d%.]+)", format="\\fs%.2N", default=getStyleRef("fontsize")},
             fontname = {friendlyName="\\fn", type="ASSString", pattern="\\fn([^\\}]*)", format="\\fn%s", default=getStyleRef("fontname")},
             kFill = {friendlyName="\\k", type="ASSDuration", props={scale=10}, pattern="\\k([%d]+)", format="\\k%d", default=0},
             kSweep = {friendlyName="\\kf", type="ASSDuration", props={scale=10}, pattern="\\kf([%d]+)", format="\\kf%d", default=0},
@@ -55,7 +56,7 @@ meta.__index.mapTag = function(self, tagName)
             position = {friendlyName="\\pos", type="ASSPosition", pattern="\\pos%(([%-%d%.]+,[%-%d%.]+)%)", format="\\pos(%.2N,%.2N)", default={self:getDefaultPosition()}},
             moveSmpl = {friendlyName=nil, type="ASSMove", props={simple=true}, format="\\move(%.2N,%.2N,%.2N,%.2N)", default={self.xPosition, self.yPosition, self.xPosition, self.yPosition}}, -- only for output formatting
             move = {friendlyName="\\move", type="ASSMove", pattern="\\move%(([%-%d%.,]+)%)", format="\\move(%.2N,%.2N,%.2N,%.2N,%.2N,%.2N)", default={self.xPosition, self.yPosition, self.xPosition, self.yPosition}},
-            org = {friendlyName="\\org", type="ASSPosition", pattern="\\org([%-%d%.]+,[%-%d%.]+)", format="\\org(%.2N,%.2N)", default={self.xPosition, self.yPosition}},
+            org = {friendlyName="\\org", type="ASSPosition", pattern="\\org%(([%-%d%.]+,[%-%d%.]+)%)", format="\\org(%.2N,%.2N)", default={self.xPosition, self.yPosition}},
             wrap = {friendlyName="\\q", type="ASSWrapStyle", pattern="\\q(%d)", format="\\q%d", default=0},
             fadeSmpl = {friendlyName="\\fad", type="ASSFade", props={simple=true}, pattern="\\fad%((%d+,%d+)%)", format="\\fad(%d,%d)", default={0,0}},
             fade = {friendlyName="\\fade", type="ASSFade", pattern="\\fade?%((.-)%)", format="\\fade(%d,%d,%d,%d,%d,%d,%d)", default={255,0,255,0,0,0,0}},
