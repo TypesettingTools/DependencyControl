@@ -1,3 +1,9 @@
+local util = require("aegisub.util")
+local l0Common = require("l0.Common")
+local re = require("aegisub.re")
+local Line = require("a-mo.Line")
+local ASSTags = require("l0.ASSTags")
+
 local meta = getmetatable(Line)
 meta.__index.mapTag = function(self, tagName)
     local function getStyleRef(tag)

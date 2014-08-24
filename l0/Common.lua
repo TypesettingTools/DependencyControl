@@ -1,3 +1,5 @@
+local util = require("aegisub.util")
+
 math.isInt = function(num)
     return type(num) == "number" and math.floor(num) == val
 end
