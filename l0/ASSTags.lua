@@ -1,4 +1,4 @@
-re = require("aegisub.re")
+local re = require("aegisub.re")
 
 function createASSClass(typeName,baseClass,order,types,tagProps)
   local cls, baseClass = {}, baseClass or {}
