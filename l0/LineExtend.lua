@@ -73,6 +73,7 @@ meta.__index.mapTag = function(self, tagName)
             fadeSmpl = {friendlyName="\\fad", type="ASSFade", props={simple=true}, pattern="\\fad%((%d+,%d+)%)", format="\\fad(%d,%d)", default={0,0}},
             fade = {friendlyName="\\fade", type="ASSFade", pattern="\\fade?%((.-)%)", format="\\fade(%d,%d,%d,%d,%d,%d,%d)", default={255,0,255,0,0,0,0}},
             transform = {friendlyName="\\t", type="ASSTransform", pattern="\\t%((.-)%)"},
+            _remove = {format="", default={}}
         }
     end
 
@@ -148,4 +149,11 @@ meta.__index.modTag = function(self, tagName, callback, noDefault)
     return #tags>0
 end
 
+meta.__index.removeTag = function(self,tagName)
+    local tags = self:getTags(tagName,true)
+    for _,tag in ipairs(tags) do
+        self.text = self.text:gsub(string.patternEscape(tag),"")
+    end
+    return #tags or false
+end
 setmetatable(Line, meta)
