@@ -1,6 +1,7 @@
 local re = require("aegisub.re")
 local util = require("aegisub.util")
 local l0Common = require("l0.Common")
+local YUtils = require("YUtils")
 
 function createASSClass(typeName,baseClass,order,types,tagProps)
   local cls, baseClass = {}, baseClass or {}
@@ -97,6 +98,19 @@ function ASSBase:getArgs(args, default, coerce, ...)
     return unpack(outArgs)
 end
 
+function ASSBase:copy()
+    local newObj={}
+    setmetatable(newObj,getmetatable(self))
+    for key,val in pairs(self) do
+        if type(val)=="table" and val.instanceOf then
+            newObj[key] = val:copy()
+        elseif key=="__tag" or (self.__meta__.order[key] and type(val)=="table") then
+            newObj[key] = util.deep_copy(val)
+        else newObj[key]=val end
+    end
+    return newObj
+end
+
 function ASSBase:typeCheck(...)
     local valTypes, j, args = self.__meta__.types, 1, {...}
     --assert(#valNames >= #args, string.format("Error: too many arguments. Expected %d, got %d.\n",#valNames,#args))
@@ -148,6 +162,10 @@ end
 
 function ASSBase:add(...)
     return self:commonOp("add", function(a,b) return a+b end, 0, ...)
+end
+
+function ASSBase:sub(...)
+    return self:commonOp("sub", function(a,b) return a-b end, 0, ...)
 end
 
 function ASSBase:mul(...)
@@ -535,7 +553,7 @@ function ASSClipVect:new(...)
     --- two ways to create: [1] from string in a table [2] from list of ASSDraw objects
     local args, tagProps = {...}, {}
     self.commands = {}
-    if #args==2 and type(args[1])=="table" and not args[1].instanceOf then
+    if #args<=2 and type(args[1])=="table" and not args[1].instanceOf then
         local cmdTypes = {
             m = ASSDrawMove,
             n = ASSDrawMoveNc,
@@ -548,7 +566,7 @@ function ASSClipVect:new(...)
                 cmdType = cmdParts[i]
                 prmCnt, i = #cmdTypes[cmdType].__meta__.order, i+1
             else 
-                self.commands[#self.commands+1] = cmdTypes[cmdType](table.sliceArray(cmdParts,i,i+prmCnt-1))
+                self.commands[#self.commands+1] = cmdTypes[cmdType](table.sliceArray(cmdParts,i,i+prmCnt-1),self)
                 i=i+prmCnt
             end
         end
@@ -573,7 +591,7 @@ function ASSClipVect:getTag(coerce)
             lastCmdType = cmd.__tag.name
             cmdStr =  i==1 and lastCmdType or cmdStr .. " " .. lastCmdType
         end
-        cmdStr = cmdStr .. " " .. table.concat({cmd:getTag(coerce)}," ")
+        cmdStr = cmdStr .. " " .. table.concat({cmd:get(coerce)}," ")
     end
     return cmdStr
 end
@@ -599,26 +617,113 @@ function ASSClipVect:commonOp(method, callback, default, x, y) -- drawing comman
     return unpack(res)
 end
 
+function ASSClipVect:flatten()
+    local flatStr = YUtils.shape.flatten(self:getTag())
+    local flattened = ASSClipVect({flatStr},self.__tag)
+    self.commands = flattened.commands
+    return flatStr
+end
+
+function ASSClipVect:getLength()
+    local totalLen,lens = 0, {}
+    for i=1,#self.commands do
+        local len = self.commands[i]:getLength(self.commands[i-1])
+        lens[i], totalLen = len, totalLen+len
+    end
+    return totalLen,lens
+end
+
+function ASSClipVect:getCommandAtLength(len, noUpdate)
+    if not (noUpdate and self.length) then self:getLength() end
+    local currTotalLen, nextTotalLen = 0
+    for _,cmd in ipairs(self.commands) do
+        nextTotalLen = currTotalLen + cmd.length
+        if nextTotalLen-len > -0.001 and cmd.length>0 and not (cmd.instanceOf[ASSDrawMove] or cmd.instanceOf[ASSDrawMoveNc]) then
+            return cmd, math.max(len-currTotalLen,0)
+        else currTotalLen = nextTotalLen end
+    end
+    error(string.format("Error: length requested (%02f) is exceeding the total length of the shape (%02f)",len,currTotalLen))
+end
+
+function ASSClipVect:getPositionAtLength(len, noUpdate)
+    if not (noUpdate and self.length) then self:getLength() end
+    local cmd, remLen  = self:getCommandAtLength(len, true)
+    return cmd:getPositionAtLength(remLen,true)
+end
+
+function ASSClipVect:getAngleAtLength(len, noUpdate)
+    if not (noUpdate and self.length) then self:getLength() end
+    local cmd, remLen = self:getCommandAtLength(len, true)
+    if cmd.instanceOf[ASSDrawBezier] then
+        cmd = cmd.flattened:getCommandAtLength(remLen, true)
+    end
+    return cmd:getAngle(nil,true)
+end
+
 ASSClipVect.set, ASSClipVect.mod, ASSClipVect.get = nil, nil, nil  -- TODO: check if these can be remapped/implemented in a way that makes sense, maybe work on strings
 
 ASSDrawBase = createASSClass("ASSDrawBase", ASSBase, {}, {})
 function ASSDrawBase:new(...)
     local args = {...}
     if type(args[1]) == "table" then
+        self.parentCollection = args[2]
         args = {self:getArgs(args[1], nil, true)}
     end
     for i,arg in ipairs(args) do
-        self[self.__meta__.order[i]] = self.__meta__.types[i](arg) 
+        if i>#self.__meta__.order then
+            self.parentCollection = arg
+        else
+            self[self.__meta__.order[i]] = self.__meta__.types[i](arg) 
+        end
     end
     return self
 end
 
 function ASSDrawBase:getTag(coerce)
-    local params={}
+    local cmdStr = self.__tag.name
     for _,param in ipairs(self.__meta__.order) do
-        params[#params+1] = self[param]:getTag(coerce)
+        cmdStr = cmdStr .. " " .. tostring(self[param]:getTag(coerce))
     end
-    return unpack(params)
+    return cmdStr
+end
+
+function ASSDrawBase:getLength(prevCmd) 
+    -- get end coordinates (cursor) of previous command
+    local x0, y0 = 0, 0
+    if prevCmd and prevCmd.__tag.name == "b" then
+        x0, y0 = prevCmd.x3:get(), prevCmd.y3:get()
+    elseif prevCmd then x0, y0 = prevCmd.x:get(), prevCmd.y:get() end
+
+    -- save cursor for further processing
+    self.cursor = ASSPosition(x0,y0)
+
+    local name, len = self.__tag.name, 0
+    if name == "b" then
+        local shapeSection = ASSClipVect(ASSDrawMove(self.cursor:get()),self)
+        self.flattened = ASSClipVect({YUtils.shape.flatten(shapeSection:getTag())}) --save flattened shape for further processing
+        len = self.flattened:getLength()
+    elseif name =="m" or name == "n" then len=0
+    elseif name =="l" then
+        len = YUtils.math.distance(self.x:get()-x0, self.y:get()-y0)
+    end
+    -- save length for further processing
+    self.length = len
+    return len
+end
+
+function ASSDrawBase:getPositionAtLength(len,noUpdate)
+    if not (self.length and self.cursor and noUpdate) then self.parentCollection:getLength() end
+    local name, pos = self.__tag.name
+    if name == "b" then
+        local x1,y1,x2,y2,x3,y3 = self:get()
+        local px, py = YUtils.math.bezier(math.min(len/self.length,1), {{self.cursor:get()},{x1,y1},{x2,y2},{x3,y3}})
+        pos = ASSPosition(px, py)
+    elseif name == "l" then
+        pos = ASSPosition(self:copy():ScaleToLength(len,true))  
+    elseif name == "m" then
+        pos = ASSPosition(self:get())
+    end
+    return pos
 end
 
 ASSDrawMove = createASSClass("ASSDrawMove", ASSDrawBase, {"x","y"}, {ASSNumber, ASSNumber}, {name="m"})
@@ -626,6 +731,32 @@ ASSDrawMoveNc = createASSClass("ASSDrawMoveNc", ASSDrawBase, {"x","y"}, {ASSNumb
 ASSDrawLine = createASSClass("ASSDrawLine", ASSDrawBase, {"x","y"}, {ASSNumber, ASSNumber}, {name="l"})
 ASSDrawBezier = createASSClass("ASSDrawBezier", ASSDrawBase, {"x1","y1","x2","y2","x3","y3"}, {ASSNumber, ASSNumber, ASSNumber, ASSNumber, ASSNumber, ASSNumber}, {name="b"})
 --- TODO: b-spline support
+
+function ASSDrawLine:ScaleToLength(len,noUpdate)
+    if not (self.length and self.cursor and noUpdate) then self.parentCollection:getLength() end
+    local scaled = self.cursor:copy()
+    scaled:add(YUtils.math.stretch(returnAll(
+        {ASSPosition(self:get()):sub(self.cursor)},
+        {0, len})
+    ))
+    self:set(scaled:get())
+    return self:get()
+end
+
+function ASSDrawLine:getAngle(ref, noUpdate)
+    if not (ref or (self.cursor and noUpdate)) then self.parentCollection:getLength() end
+    ref = ref or self.cursor:copy()
+    assert(type(ref)=="table", "Error: argument ref to getAngle() must be of type table, got " .. type(ref) .. ".\n")
+    if ref.instanceOf[ASSDrawBezier] then
+        ref = ASSPosition(ref.x3, ref.y3)
+    elseif not ref.instanceOf then
+        ref = ASSPosition(ref[1], ref[2])
+    elseif not ref.instanceOf[ASSPosition] and ref.baseClass~=ASSDrawBase then
+        error("Error: argument ref to getAngle() must either be an ASSDraw object, an ASSPosition or a table containing coordinates x and y.\n")
+    end
+    local dx,dy = ASSPosition(self:get()):sub(ref)
+    return (360 - math.deg(math.atan2(dy,dx))) %360
+end
 
 function ASSDrawBezier:commonOp(method, callback, default, ...)
     local args, j, res = {...}, 1, {}
