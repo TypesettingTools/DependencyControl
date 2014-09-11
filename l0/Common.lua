@@ -100,6 +100,14 @@ table.merge = function(...)
     return tbl
 end
 
+table.reverseArray = function(tbl)
+    local length, rTbl = #tbl, {}
+    for i,val in ipairs(tbl) do
+        rTbl[length-i+1] = val
+    end
+    return rTbl
+end
+
 table.sliceArray = function(tbl, istart, iend)
     local arr={}
     for i = istart, iend do arr[1+i-istart] = tbl[i] end
@@ -133,9 +141,14 @@ end
 returnAll = function(...) -- blame lua
     local arr, arrN = {}, 0
     for _, arg in ipairs({...}) do
-        for _, val in ipairs(arg) do
+        if type(arg)=="table" then
+            for _, val in ipairs(arg) do
+                arrN = arrN + 1
+                arr[arrN] = val
+            end
+        else 
             arrN = arrN + 1
-            arr[arrN] = val
+            arr[arrN] = arg
         end
     end
     return unpack(arr)
