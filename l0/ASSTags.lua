@@ -247,23 +247,6 @@ function ASSLineContents:deduplicateTags() -- STUB! TODO: actually make it dedup
 end
 
 function ASSLineContents:splitAtTags()
-    local tagSections, splitLines = ASSLineContents(self.line,{}), {}
-    self:callback(function(section,sections,i)
-        if section.instanceOf[ASSLineTextSection] then
-            table.insert(tagSections.sections,section)
-            tagSections:deduplicateTags()
-            local splitLine = Line(self.line,nil,{text=tagSections:getString()})
-            splitLine:deduplicateTags()
-            table.insert(splitLines,splitLine)
-            table.remove(tagSections.sections)
-        elseif section.instanceOf[ASSLineTagSection] then
-            table.insert(tagSections.sections, section)
-        end
-    end)
-    return splitLines
-end
-
-function ASSLineContents:splitAtTags()
     local splitLines = {}
     self:callback(function(section,sections,i)
         local splitLine = Line(self.line)
