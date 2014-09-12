@@ -156,4 +156,10 @@ meta.__index.removeTag = function(self,tagName)
     end
     return #tags or false
 end
+
+meta.__index.parseASS = function(self)
+    self.ASS = ASSLineContents(self)
+    return self.ASS
+end
+
 setmetatable(Line, meta)
