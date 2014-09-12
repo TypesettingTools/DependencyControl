@@ -72,6 +72,12 @@ table.find = function(tbl,findVal)
     end
 end
 
+table._insert = table.insert
+table.insert = function(tbl,...)
+    table._insert(tbl,...)
+    return tbl
+end
+
 table.join = function(...)
     local arr, arrN = {}, 0
     for _, arg in ipairs({...}) do
@@ -106,6 +112,14 @@ table.reverseArray = function(tbl)
         rTbl[length-i+1] = val
     end
     return rTbl
+end
+
+table.trimArray = function(tbl)
+    local trimmed = {}
+    for _,val in pairs(tbl) do
+        if val~=nil then table.insert(trimmed,val) end
+    end
+    return trimmed
 end
 
 table.sliceArray = function(tbl, istart, iend)
