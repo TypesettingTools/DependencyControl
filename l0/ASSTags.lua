@@ -2,6 +2,8 @@ local re = require("aegisub.re")
 local util = require("aegisub.util")
 local l0Common = require("l0.Common")
 local YUtils = require("YUtils")
+local Line = require("a-mo.Line")
+local Log = require("a-mo.Log")
 
 function createASSClass(typeName,baseClass,order,types,tagProps)
   local cls, baseClass = {}, baseClass or {}
@@ -27,6 +29,8 @@ function createASSClass(typeName,baseClass,order,types,tagProps)
     end})
   return cls
 end
+
+--------------------- Base Class ---------------------
 
 ASSBase = createASSClass("ASSBase")
 function ASSBase:checkType(type_, ...) --TODO: get rid of
@@ -60,7 +64,7 @@ end
 
 function ASSBase:getArgs(args, default, coerce, ...)
     assert(type(args)=="table", "Error: first argument to getArgs must be a table of packed arguments, got " .. type(args) ..".\n")
-    -- check if first arg is a compatible ASSTag and dump into args 
+    -- check if first arg is a compatible ASSClass and dump into args 
     if #args == 1 and type(args[1]) == "table" and args[1].typeName then
         local res, selfClasses = false, {}
         for key,val in pairs(self.instanceOf) do
@@ -129,6 +133,7 @@ function ASSBase:typeCheck(...)
                    string.format("Error: bad type for argument %d (%s). Expected %s, got %s.\n", i,valName,type(self[valName]),type(args[i]))) 
         end
     end
+    return unpack(args)
 end
 
 function ASSBase:get()
@@ -143,7 +148,156 @@ function ASSBase:get()
     return unpack(vals)
 end
 
-function ASSBase:commonOp(method, callback, default, ...)
+
+--------------------- Container Classes ---------------------
+
+ASSLineContents = createASSClass("ASSLineContents", ASSBase, {"sections", "line"}, {"table","table"})
+function ASSLineContents:new(line,sections)
+    line, sections = self:getArgs({line,sections})
+    assert(line and line.text, string.format("Error: argument 1 to %s() must be a Line or %s object, got %s.\n", self.typeName, self.typeName, type(line)))
+    if not sections then
+        sections = {}
+        local i, ovrStart, ovrEnd = 1
+        while i<#line.text do
+            ovrStart, ovrEnd = line.text:find("{.-}",i)
+            if ovrStart then
+                if ovrStart>i then table.insert(sections, ASSLineTextSection(line.text:sub(i,ovrStart-1))) end
+                table.insert(sections, ASSLineTagSection(line.text:sub(ovrStart+1,ovrEnd-1)))
+                i = ovrEnd +1
+            else
+                table.insert(sections,ASSLineTextSection(line.text:sub(i)))
+                break
+            end
+        end
+    end
+    self.sections, self.line = self:typeCheck(sections, line)
+    return self
+end
+
+function ASSLineContents:getString(coerce, noTags, noText)
+    local str = ""
+    for i,section in ipairs(self.sections) do
+        if section.instanceOf[ASSLineTextSection] and not noText then
+            str = str .. section:getString()
+        elseif section.instanceOf[ASSLineTagSection] and not noTags then
+            str =  string.format("%s{%s}",str,section:getString())
+        else 
+            eval(coerce, string.format("Error: %s section #%d is not a %d or %d.\n", self.typeName, i, ASSLineTextSection.typeName, ASSLineTagSection.typeName)) 
+        end
+    end
+    return str
+end
+
+function ASSLineContents:get(noTags, noText, start, end_, relative)
+    local start, end_, result, j = start or 1, end_ or #self.sections, {}, 1
+    self:callback(function(section,sections,i)
+        if relative and j>=start and j<=end_ then
+            table.insert(result,section:copy())
+        elseif i>=start and i<=end_ then
+            table.insert(result, section:copy())
+        end
+        j=j+1
+    end, noTags, noText)
+    return result
+end
+
+function ASSLineContents:callback(callback, noTags, noText)
+    for i,section in ipairs(self.sections) do
+        if (section.instanceOf[ASSLineTagSection] and not noTags) or (section.instanceOf[ASSLineTextSection] and not noText) then
+            local result = callback(section,self.sections,i)
+            if result==false then
+                self.sections[i] = nil
+            elseif type(result)~="nil" and result~=true then
+                self.sections[i] = result
+            end
+        end
+    end
+    self.sections = table.trimArray(self.sections)
+end
+
+function ASSLineContents:stripTags()
+    self:callback(function(section,sections,i)
+        return false
+    end, false, true)
+end
+
+function ASSLineContents:stripText()
+    self:callback(function(section,sections,i)
+        return false
+    end, true, false)
+end
+
+function ASSLineContents:commit(line)
+    line = line or self.line
+    line.text = self:getString()
+    return line.text
+end
+
+function ASSLineContents:deduplicateTags() -- STUB! TODO: actually make it deduplicate tags and not just merge sections
+    local lastTagSection, numMerged = 1, 0
+    self:callback(function(section,sections,i)
+        if i==lastTagSection+numMerged+1 then
+            sections[lastTagSection].value = sections[lastTagSection].value .. section.value -- FIXFORTAGCHANGES
+            numMerged = numMerged+1
+            return false
+        else 
+            lastTagSection, numMerged = i, 0 
+        end
+    end, false, true)
+end
+
+function ASSLineContents:splitAtTags()
+    local tagSections, splitLines = ASSLineContents(self.line,{}), {}
+    self:callback(function(section,sections,i)
+        if section.instanceOf[ASSLineTextSection] then
+            table.insert(tagSections.sections,section)
+            tagSections:deduplicateTags()
+            local splitLine = Line(self.line,nil,{text=tagSections:getString()})
+            splitLine:deduplicateTags()
+            table.insert(splitLines,splitLine)
+            table.remove(tagSections.sections)
+        elseif section.instanceOf[ASSLineTagSection] then
+            table.insert(tagSections.sections, section)
+        end
+    end)
+    return splitLines
+end
+
+function ASSLineContents:splitAtTags()
+    local splitLines = {}
+    self:callback(function(section,sections,i)
+        local splitLine = Line(self.line)
+        splitLine.ASS = ASSLineContents(splitLine, table.insert(self:get(false,true,0,i),section))
+        splitLine.ASS:deduplicateTags()
+        splitLine.ASS:commit()
+        table.insert(splitLines,splitLine)
+    end,true)
+    return splitLines
+end
+
+ASSLineTextSection = createASSClass("ASSLineTextSection", ASSBase, {"value"}, {"string"})
+function ASSLineTextSection:new(value)
+    self.value = self:typeCheck(self:getArgs({value},"",true))
+    return self
+end
+
+function ASSLineTextSection:getString(coerce)
+    if coerce then return tostring(self.value)
+    else return self:typeCheck(self.value) end
+end
+
+ASSLineTagSection = createASSClass("ASSLineTagSection", ASSBase, {"value"}, {"string"})   -- ATTENTION: this is a dummy and will be replaced soon
+function ASSLineTagSection:new(value)
+    self.value = self:typeCheck(self:getArgs({value},"",true))
+    return self
+end
+
+ASSLineTagSection.getString = ASSLineTagSection.get
+--------------------- Override Tag Classes ---------------------
+
+ASSTagBase = createASSClass("ASSTagBase",ASSBase)
+
+function ASSTagBase:commonOp(method, callback, default, ...)
     local args = {self:getArgs({...}, default, false)}
     local j, res = 1, {}
     for _,valName in ipairs(self.__meta__.order) do
@@ -160,38 +314,38 @@ function ASSBase:commonOp(method, callback, default, ...)
     return unpack(res)
 end
 
-function ASSBase:add(...)
+function ASSTagBase:add(...)
     return self:commonOp("add", function(a,b) return a+b end, 0, ...)
 end
 
-function ASSBase:sub(...)
+function ASSTagBase:sub(...)
     return self:commonOp("sub", function(a,b) return a-b end, 0, ...)
 end
 
-function ASSBase:mul(...)
+function ASSTagBase:mul(...)
     return self:commonOp("mul", function(a,b) return a*b end, 1, ...)
 end
 
-function ASSBase:pow(...)
+function ASSTagBase:pow(...)
     return self:commonOp("pow", function(a,b) return a^b end, 1, ...)
 end
 
-function ASSBase:set(...)
+function ASSTagBase:set(...)
     return self:commonOp("set", function(a,b) return b end, nil, ...)
 end
 
-function ASSBase:mod(callback, ...)
+function ASSTagBase:mod(callback, ...)
     return self:set(callback(self:get(...)))
 end
 
-function ASSBase:readProps(tagProps)
+function ASSTagBase:readProps(tagProps)
     for key, val in pairs(tagProps or {}) do
         self.__tag[key] = val
     end
 end
 
 
-ASSNumber = createASSClass("ASSNumber", ASSBase, {"value"}, {"number"}, {base=10, precision=3, scale=1})
+ASSNumber = createASSClass("ASSNumber", ASSTagBase, {"value"}, {"number"}, {base=10, precision=3, scale=1})
 
 function ASSNumber:new(val, tagProps)
     self:readProps(tagProps)
@@ -219,7 +373,7 @@ function ASSNumber:getTag(coerce, precision)
 end
 
 
-ASSPosition = createASSClass("ASSPosition", ASSBase, {"x","y"}, {"number", "number"})
+ASSPosition = createASSClass("ASSPosition", ASSTagBase, {"x","y"}, {"number", "number"})
 function ASSPosition:new(valx, valy, tagProps)
     if type(valx) == "table" then
         tagProps = valy
@@ -267,7 +421,7 @@ end
 ASSDuration = createASSClass("ASSDuration", ASSTime, {"value"}, {"number"}, {positive=true})
 ASSHex = createASSClass("ASSHex", ASSNumber, {"value"}, {"number"}, {range={0,255}, base=16, precision=0})
 
-ASSColor = createASSClass("ASSColor", ASSBase, {"r","g","b"}, {ASSHex,ASSHex,ASSHex})   
+ASSColor = createASSClass("ASSColor", ASSTagBase, {"r","g","b"}, {ASSHex,ASSHex,ASSHex})   
 function ASSColor:new(r,g,b, tagProps)
     if type(r) == "table" then
         tagProps = g
@@ -288,7 +442,7 @@ function ASSColor:getTag(coerce)
     return self.b:getTag(coerce), self.g:getTag(coerce), self.r:getTag(coerce)
 end
 
-ASSFade = createASSClass("ASSFade", ASSBase,
+ASSFade = createASSClass("ASSFade", ASSTagBase,
     {"startDuration", "endDuration", "startTime", "endTime", "startAlpha", "midAlpha", "endAlpha"},
     {ASSDuration,ASSDuration,ASSTime,ASSTime,ASSHex,ASSHex,ASSHex}
 )
@@ -329,7 +483,7 @@ function ASSFade:getTag(coerce)
     end
 end
 
-ASSMove = createASSClass("ASSMove", ASSBase,
+ASSMove = createASSClass("ASSMove", ASSTagBase,
     {"startPos", "endPos", "startTime", "endTime"},
     {ASSPosition,ASSPosition,ASSTime,ASSTime}
 )
@@ -366,7 +520,7 @@ function ASSMove:getTag(coerce)
     end
 end
 
-ASSToggle = createASSClass("ASSToggle", ASSBase, {"value"}, {"boolean"})
+ASSToggle = createASSClass("ASSToggle", ASSTagBase, {"value"}, {"boolean"})
 function ASSToggle:new(val, tagProps)
     self:readProps(tagProps)
     if type(val) == "table" then
@@ -421,7 +575,7 @@ function ASSAlign:right()
     else return false end
 end
 
-ASSWeight = createASSClass("ASSWeight", ASSBase, {"weightClass","bold"}, {ASSNumber,ASSToggle})
+ASSWeight = createASSClass("ASSWeight", ASSTagBase, {"weightClass","bold"}, {ASSNumber,ASSToggle})
 function ASSWeight:new(val, tagProps)
     if type(val) == "table" then
         local val = self:getArgs(val,0,true)
@@ -461,7 +615,7 @@ end
 
 ASSWrapStyle = createASSClass("ASSWrapStyle", ASSIndexed, {"value"}, {"number"}, {range={0,3}, default=0})
 
-ASSString = createASSClass("ASSString", ASSBase, {"value"}, {"string"})
+ASSString = createASSClass("ASSString", ASSTagBase, {"value"}, {"string"})
 function ASSString:new(val, tagProps)
     self:readProps(tagProps)
     if type(val) == "table" then
@@ -500,7 +654,7 @@ end
 
 ASSString.add, ASSString.mul, ASSString.pow = ASSString.append, nil, nil
 
-ASSClip = createASSClass("ASSClip", ASSBase, {}, {})
+ASSClip = createASSClass("ASSClip", ASSTagBase, {}, {})
 function ASSClip:new(arg1,arg2,arg3,arg4,tagProps)
     if type(arg1) == "table" then
         tagProps = arg2
@@ -517,7 +671,7 @@ function ASSClip:new(arg1,arg2,arg3,arg4,tagProps)
     else error("Invalid argumets to ASSClip") end
 end
 
-ASSClipRect = createASSClass("ASSClipRect", ASSBase, {"topLeft", "bottomRight"}, {ASSPosition, ASSPosition})
+ASSClipRect = createASSClass("ASSClipRect", ASSTagBase, {"topLeft", "bottomRight"}, {ASSPosition, ASSPosition})
 
 function ASSClipRect:new(left,top,right,bottom,tagProps)
     if type(left) == "table" then
@@ -547,7 +701,7 @@ function ASSClipRect:toggleInverse()
     return self:setInverse(not self.__tag.inverse)
 end
 
-ASSClipVect = createASSClass("ASSClipVect", ASSBase, {"commands"}, {"table"})
+ASSClipVect = createASSClass("ASSClipVect", ASSTagBase, {"commands"}, {"table"})
 
 function ASSClipVect:new(...)
     --- two ways to create: [1] from string in a table [2] from list of ASSDraw objects
@@ -662,7 +816,10 @@ end
 
 ASSClipVect.set, ASSClipVect.mod, ASSClipVect.get = nil, nil, nil  -- TODO: check if these can be remapped/implemented in a way that makes sense, maybe work on strings
 
-ASSDrawBase = createASSClass("ASSDrawBase", ASSBase, {}, {})
+
+--------------------- Drawing Command Classes ---------------------
+
+ASSDrawBase = createASSClass("ASSDrawBase", ASSTagBase, {}, {})
 function ASSDrawBase:new(...)
     local args = {...}
     if type(args[1]) == "table" then
