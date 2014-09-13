@@ -103,13 +103,13 @@ function ASSBase:getArgs(args, default, coerce, ...)
 end
 
 function ASSBase:copy()
-    local newObj={}
-    setmetatable(newObj,getmetatable(self))
+    local newObj, meta = {}, getmetatable(self)
+    setmetatable(newObj, meta)
     for key,val in pairs(self) do
         if type(val)=="table" and val.instanceOf then
             newObj[key] = val:copy()
-        elseif key=="__tag" or (self.__meta__.order[key] and type(val)=="table") then
-            newObj[key] = util.deep_copy(val)
+        elseif key=="__tag" or (meta and table.find(self.__meta__.order,key) and type(val)=="table") then
+            newObj[key]=ASSBase.copy(val)
         else newObj[key]=val end
     end
     return newObj
@@ -151,9 +151,9 @@ end
 
 --------------------- Container Classes ---------------------
 
-ASSLineContents = createASSClass("ASSLineContents", ASSBase, {"sections", "line"}, {"table","table"})
+ASSLineContents = createASSClass("ASSLineContents", ASSBase, {"sections"}, {"table"})
 function ASSLineContents:new(line,sections)
-    line, sections = self:getArgs({line,sections})
+    sections = self:getArgs({sections})
     assert(line and line.text, string.format("Error: argument 1 to %s() must be a Line or %s object, got %s.\n", self.typeName, self.typeName, type(line)))
     if not sections then
         sections = {}
@@ -170,7 +170,7 @@ function ASSLineContents:new(line,sections)
             end
         end
     end
-    self.sections, self.line = self:typeCheck(sections, line)
+    self.line, self.sections = line, self:typeCheck(sections)
     return self
 end
 
@@ -219,12 +219,14 @@ function ASSLineContents:stripTags()
     self:callback(function(section,sections,i)
         return false
     end, false, true)
+    return self
 end
 
 function ASSLineContents:stripText()
     self:callback(function(section,sections,i)
         return false
     end, true, false)
+    return self
 end
 
 function ASSLineContents:commit(line)
@@ -254,6 +256,51 @@ function ASSLineContents:splitAtTags()
         splitLine.ASS:deduplicateTags()
         splitLine.ASS:commit()
         table.insert(splitLines,splitLine)
+    end,true)
+    return splitLines
+end
+
+function ASSLineContents:splitAtIntervals(callback)
+    if type(callback)=="number" then
+        local step=callback
+        callback = function(idx,len)
+            return idx+step
+        end
+    else assert(type(callback)=="function", "Error: first argument to splitAtIntervals must be either a number or a callback function.\n") end
+    
+    local len, idx, sectEndIdx, nextIdx, lastI = self:copy():stripTags():getString(), 1, 0, 0
+    local splitLines = {}
+
+    self:callback(function(section,sections,i)
+        local sectStartIdx, text, off = sectEndIdx+1, section.value, sectEndIdx
+        sectEndIdx = sectStartIdx+#section.value-1
+
+        -- process unfinished line carried over from previous section
+        if nextIdx > idx then
+            -- carried over part may span over more than this entire section
+            local skip = nextIdx>sectEndIdx+1
+            idx = skip and sectEndIdx+1 or nextIdx 
+            local addTextSection = skip and section:copy() or ASSLineTextSection(text:sub(1,nextIdx-off-1))
+            local addSections, lastContents = table.insert(self:get(false,true,lastI+1,i), addTextSection), splitLines[#splitLines].ASS
+            lastContents.sections = table.join(lastContents.sections, addSections)
+            lastContents:commit()
+        end
+            
+        while idx <= sectEndIdx do
+            nextIdx = math.ceil(callback(idx,len))
+            assert(nextIdx>idx, "Error: callback function for splitAtIntervals must always return an index greater than the last index.")
+            -- create a new line
+            local splitLine = Line(self.line)
+            splitLine.ASS = ASSLineContents(splitLine, self:get(false,true,0,i))
+            table.insert(splitLine.ASS.sections, ASSLineTextSection(text:sub(idx-off,nextIdx-off-1)))
+            splitLine.ASS:deduplicateTags()
+            splitLine.ASS:commit()
+            table.insert(splitLines,splitLine)        
+
+            -- check if this section is long enough to fill the new line
+            idx = sectEndIdx>=nextIdx-1 and nextIdx or sectEndIdx+1
+        end
+        lastI = i
     end,true)
     return splitLines
 end
