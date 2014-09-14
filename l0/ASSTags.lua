@@ -180,21 +180,21 @@ function ASSLineContents:new(line,sections)
     return self
 end
 
-function ASSLineSection:updateRefs(prevCnt)
+function ASSLineContents:updateRefs(prevCnt)
     if prevCnt~=#self.sections then
         for i,section in ipairs(self.sections) do
             section.prevSection = self.sections[i-1]
         end
         return true
-    else return false
+    else return false end
 end
 
-function ASSLineContents:getString(coerce, noTags, noText)
+function ASSLineContents:getString(coerce, noTags, noText, noCmts)
     local str = ""
     for i,section in ipairs(self.sections) do
         if section.instanceOf[ASSLineTextSection] and not noText then
             str = str .. section:getString()
-        elseif section.instanceOf[ASSLineTagSection] and not noTags then
+        elseif (section.instanceOf[ASSLineTagSection] and not noTags) or (section.instanceOf[ASSLineCommentSection] and not noCmts) then
             str =  string.format("%s{%s}",str,section:getString())
         else 
             eval(coerce, string.format("Error: %s section #%d is not a %d or %d.\n", self.typeName, i, ASSLineTextSection.typeName, ASSLineTagSection.typeName)) 
@@ -203,7 +203,7 @@ function ASSLineContents:getString(coerce, noTags, noText)
     return str
 end
 
-function ASSLineContents:get(noTags, noText, start, end_, relative)
+function ASSLineContents:get(noTags, noText, noCmts, start, end_, relative)
     local start, end_, result, j = start or 1, end_ or #self.sections, {}, 1
     self:callback(function(section,sections,i)
         if relative and j>=start and j<=end_ then
@@ -212,14 +212,15 @@ function ASSLineContents:get(noTags, noText, start, end_, relative)
             table.insert(result, section:copy())
         end
         j=j+1
-    end, noTags, noText)
+    end, noTags, noText, noCmts)
     return result
 end
 
-function ASSLineContents:callback(callback, noTags, noText)
+function ASSLineContents:callback(callback, noTags, noText, noCmts)
     local hasRun, prevCnt = false, #self.sections
     for i,section in ipairs(self.sections) do
-        if (section.instanceOf[ASSLineTagSection] and not noTags) or (section.instanceOf[ASSLineTextSection] and not noText) then
+        if (section.instanceOf[ASSLineTagSection] and not noTags) or (section.instanceOf[ASSLineTextSection] and not noText)
+           or (section.instanceOf[ASSLineCommentSection] and not noCmts) then
             local result, hasRun = callback(section,self.sections,i), true
             if result==false then
                 self.sections[i]:remove()
@@ -287,18 +288,18 @@ function ASSLineContents:deduplicateTags() -- STUB! TODO: actually make it dedup
         else 
             lastTagSection, numMerged = i, 0 
         end
-    end, false, true)
+    end, false, true, true)
 end
 
 function ASSLineContents:splitAtTags()
     local splitLines = {}
     self:callback(function(section,sections,i)
         local splitLine = Line(self.line)
-        splitLine.ASS = ASSLineContents(splitLine, table.insert(self:get(false,true,0,i),section))
+        splitLine.ASS = ASSLineContents(splitLine, table.insert(self:get(false,true,true,0,i),section))
         splitLine.ASS:deduplicateTags()
         splitLine.ASS:commit()
         table.insert(splitLines,splitLine)
-    end,true)
+    end, true, false, true)
     return splitLines
 end
 
@@ -323,7 +324,7 @@ function ASSLineContents:splitAtIntervals(callback)
             local skip = nextIdx>sectEndIdx+1
             idx = skip and sectEndIdx+1 or nextIdx 
             local addTextSection = skip and section:copy() or ASSLineTextSection(text:sub(1,nextIdx-off-1))
-            local addSections, lastContents = table.insert(self:get(false,true,lastI+1,i), addTextSection), splitLines[#splitLines].ASS
+            local addSections, lastContents = table.insert(self:get(false,true,true,lastI+1,i), addTextSection), splitLines[#splitLines].ASS
             lastContents.sections = table.join(lastContents.sections, addSections)
             lastContents:commit()
         end
@@ -333,7 +334,7 @@ function ASSLineContents:splitAtIntervals(callback)
             assert(nextIdx>idx, "Error: callback function for splitAtIntervals must always return an index greater than the last index.")
             -- create a new line
             local splitLine = Line(self.line)
-            splitLine.ASS = ASSLineContents(splitLine, self:get(false,true,0,i))
+            splitLine.ASS = ASSLineContents(splitLine, self:get(false,true,true,0,i))
             splitLine.ASS:insertSections(ASSLineTextSection(text:sub(idx-off,nextIdx-off-1)))
             splitLine.ASS:deduplicateTags()
             splitLine.ASS:commit()
@@ -343,7 +344,7 @@ function ASSLineContents:splitAtIntervals(callback)
             idx = sectEndIdx>=nextIdx-1 and nextIdx or sectEndIdx+1
         end
         lastI = i
-    end,true)
+    end, true, false, true)
     return splitLines
 end
 
