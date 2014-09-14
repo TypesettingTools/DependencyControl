@@ -148,6 +148,11 @@ function ASSBase:get()
     return unpack(vals)
 end
 
+function ASSBase:remove(returnCopy)
+    local copy = returnCopy and ASSBase:copy() or true
+    self = nil
+    return copy
+end
 
 --------------------- Container Classes ---------------------
 
@@ -202,17 +207,19 @@ function ASSLineContents:get(noTags, noText, start, end_, relative)
 end
 
 function ASSLineContents:callback(callback, noTags, noText)
+    local hasRun = false
     for i,section in ipairs(self.sections) do
         if (section.instanceOf[ASSLineTagSection] and not noTags) or (section.instanceOf[ASSLineTextSection] and not noText) then
-            local result = callback(section,self.sections,i)
+            local result, hasRun = callback(section,self.sections,i), true
             if result==false then
-                self.sections[i] = nil
+                self.sections[i]:remove()
             elseif type(result)~="nil" and result~=true then
                 self.sections[i] = result
             end
         end
     end
     self.sections = table.trimArray(self.sections)
+    return hasRun
 end
 
 function ASSLineContents:stripTags()
@@ -305,6 +312,66 @@ function ASSLineContents:splitAtIntervals(callback)
     return splitLines
 end
 
+function ASSLineContents:getStyleDefaults()
+    local function styleRef(tag)
+        if tag:find("alpha") then 
+            local alpha = true
+            tag = tag:gsub("alpha", "color")
+        end
+        if tag:find("color") then
+            return alpha and {self.line.styleRef[tag]:sub(3,4)} or {self.line.styleRef[tag]:sub(5,10)}
+        else return  {self.line.styleRef[tag]} end
+    end
+
+    local scriptInfo = util.getScriptInfo(self.line.parentCollection.sub)
+    local resX, resY = scriptInfo.PlayResX, scriptInfo.PlayResY
+    self.line:extraMetrics()
+
+    local styleDefaults = {
+        scaleX = ASS.tagMap.scaleX.type(styleRef("scale_x")),
+        scaleY = ASS.tagMap.scaleY.type(styleRef("scale_y")),
+        align = ASS.tagMap.align.type(styleRef("align")),
+        angleZ = ASS.tagMap.angleZ.type(styleRef("angle")),
+        outline = ASS.tagMap.outline.type(styleRef("outline")),
+        outlineX = ASS.tagMap.outlineX.type(styleRef("outline")),
+        outlineY = ASS.tagMap.outlineY.type(styleRef("outline")),
+        shadow = ASS.tagMap.shadow.type(styleRef("shadow")),
+        shadowX = ASS.tagMap.shadowX.type(styleRef("shadow")),
+        shadowY = ASS.tagMap.shadowY.type(styleRef("shadow")),
+        alpha1 = ASS.tagMap.alpha1.type(styleRef("alpha1")),
+        alpha2 = ASS.tagMap.alpha2.type(styleRef("alpha2")),
+        alpha3 = ASS.tagMap.alpha3.type(styleRef("alpha3")),
+        alpha4 = ASS.tagMap.alpha4.type(styleRef("alpha4")),
+        alpha4 = ASS.tagMap.alpha4.type(styleRef("alpha4")),
+        color1 = ASS.tagMap.color1.type(styleRef("color1")),
+        color2 = ASS.tagMap.color2.type(styleRef("color2")),
+        color3 = ASS.tagMap.color3.type(styleRef("color3")),
+        color4 = ASS.tagMap.color4.type(styleRef("color4")),
+        clip = ASS.tagMap.clip.type({0,0,resX,resY}),
+        clipVect = ASS.tagMap.clipVect.type({string.format("m 0 0 l %s 0 %s %s 0 %s 0 0",resX,resX,resY,resY)}),
+        iclipVect = ASS.tagMap.iclipVect.type({"m 0 0 l 0 0 0 0 0 0 0 0"}),
+        clipRect = ASS.tagMap.clipRect.type({0,0,resX,resY}),
+        iclipRect = ASS.tagMap.iclipRect.type({0,0,0,0}),
+        bold = ASS.tagMap.bold.type(styleRef("bold")),
+        italic = ASS.tagMap.italic.type(styleRef("italic")),
+        underline = ASS.tagMap.underline.type(styleRef("underline")),
+        strikeout = ASS.tagMap.strikeout.type(styleRef("strikeout")),
+        spacing = ASS.tagMap.spacing.type(styleRef("spacing")),
+        fontSize = ASS.tagMap.fontSize.type(styleRef("fontsize")),
+        fontName = ASS.tagMap.fontName.type(styleRef("fontname")),
+        position = ASS.tagMap.position.type({self.line:getDefaultPosition()}),
+        moveSmpl = ASS.tagMap.moveSmpl.type({self.line.xPosition, self.line.yPosition, self.line.xPosition, self.line.yPosition}),
+        move = ASS.tagMap.move.type({self.line.xPosition, self.line.yPosition, self.line.xPosition, self.line.yPosition}),
+        org = ASS.tagMap.org.type({self.line.xPosition, self.line.yPosition}),
+    }
+
+    for key,val in pairs(ASS.tagMap) do
+        if val.default then styleDefaults[key]=val.default end
+    end
+
+    return styleDefaults
+end
+
 ASSLineTextSection = createASSClass("ASSLineTextSection", ASSBase, {"value"}, {"string"})
 function ASSLineTextSection:new(value)
     self.value = self:typeCheck(self:getArgs({value},"",true))
@@ -316,13 +383,57 @@ function ASSLineTextSection:getString(coerce)
     else return self:typeCheck(self.value) end
 end
 
-ASSLineTagSection = createASSClass("ASSLineTagSection", ASSBase, {"value"}, {"string"})   -- ATTENTION: this is a dummy and will be replaced soon
-function ASSLineTagSection:new(value)
-    self.value = self:typeCheck(self:getArgs({value},"",true))
+ASSLineCommentSection = createASSClass("ASSLineCommentSection", ASSLineTextSection, {"value"}, {"string"})
+
+ASSLineTagSection = createASSClass("ASSLineTagSection", ASSBase, {"tags"}, {"table"})   -- ATTENTION: this is a dummy and will be replaced soon
+function ASSLineTagSection:new(tags)
+    tags = self:getArgs({tags})
+    if type(tags)=="string" then
+        self.tags = {}
+        for tag in re.gfind(tags, "\\\\[^\\\\\\(]+(?:\\([^\\)]+\\))?") do
+            table.insert(self.tags, ASS:getTagFromString(tag))
+        end
+        if #self.tags==0 and #tags>0 then    -- no tags found but string not empty -> must be a comment section
+            return ASSLineCommentSection(tags)
+        end
+    elseif tags==nil then self.tags={}
+    else self.tags = self:typeCheck(tags) end
     return self
 end
 
-ASSLineTagSection.getString = ASSLineTagSection.get
+function ASSLineTagSection:callback(callback, tagTypes)
+    local tagSet = {}
+    if type(tagTypes)=="string" then tagTypes={tagTypes} end
+    if tagTypes then
+        assert(type(tagTypes)=="table", "Error: argument 2 to callback must be either a table of strings or a single string, got " .. type(tagTypes))
+        for _,tagType in pairs(tagTypes) do
+            tagSet[ASS.getInternalTagName()] = true
+        end
+    end
+
+    local hasRun = false
+    for i,tag in ipairs(self.tags) do
+        if (not tagTypes or tagSet[tag.__tag.name]) then
+            local result, hasRun = callback(tag,self.tags,i), true
+            if result==false then
+                self.tags[i]:remove()
+            elseif type(result)~="nil" and result~=true then
+                self.tags[i] = result
+            end
+        end
+    end
+    self.tags = table.trimArray(self.tags)
+    return hasRun
+end
+
+function ASSLineTagSection:getString(coerce)
+    local tagString = ""
+    self:callback(function(tag)
+        tagString = tagString .. tag:getTagString(coerce)
+    end)
+    return tagString
+end
+
 --------------------- Override Tag Classes ---------------------
 
 ASSTagBase = createASSClass("ASSTagBase",ASSBase)
@@ -374,6 +485,9 @@ function ASSTagBase:readProps(tagProps)
     end
 end
 
+function ASSTagBase:getTagString(coerce)
+    return ASS:formatTag(self, self:getTagParams(coerce))
+end
 
 ASSNumber = createASSClass("ASSNumber", ASSTagBase, {"value"}, {"number"}, {base=10, precision=3, scale=1})
 
@@ -386,7 +500,7 @@ function ASSNumber:new(val, tagProps)
     return self
 end
 
-function ASSNumber:getTag(coerce, precision)
+function ASSNumber:getTagParams(coerce, precision)
     self:readProps(tagProps)
     precision = precision or self.__tag.precision
     local val = self.value
@@ -416,7 +530,7 @@ function ASSPosition:new(valx, valy, tagProps)
 end
 
 
-function ASSPosition:getTag(coerce, precision)
+function ASSPosition:getTagParams(coerce, precision)
     local x,y = self.x, self.y
     if coerce then
         x,y = self:CoerceNumber(x,0), self:CoerceNumber(y,0)
@@ -426,14 +540,14 @@ function ASSPosition:getTag(coerce, precision)
     precision = precision or 3
     local x = math.round(x,precision)
     local y = math.round(y,precision)
-    return x,y
+    return x, y
 end
 -- TODO: ASSPosition:move(ASSPosition) -> return \move tag
 
 ASSTime = createASSClass("ASSTime", ASSNumber, {"value"}, {"number"}, {precision=0})
 -- TODO: implement adding by framecount
 
-function ASSTime:getTag(coerce, precision)
+function ASSTime:getTagParams(coerce, precision)
     precision = precision or 0
     local val = self.value
     if coerce then
@@ -455,7 +569,7 @@ ASSColor = createASSClass("ASSColor", ASSTagBase, {"r","g","b"}, {ASSHex,ASSHex,
 function ASSColor:new(r,g,b, tagProps)
     if type(r) == "table" then
         tagProps = g
-        r,g,b = self:getArgs({r[1]:match("(%x%x)(%x%x)(%x%x)")},0,true)
+        r,g,b = self:getArgs({r[1],r[2],r[3]},0,true)
     end 
     self:readProps(tagProps)
     self.r, self.g, self.b = ASSHex(r), ASSHex(g), ASSHex(b)
@@ -468,8 +582,8 @@ function ASSColor:addHSV(h,s,v)
     return self:set(r,g,b)
 end
 
-function ASSColor:getTag(coerce)
-    return self.b:getTag(coerce), self.g:getTag(coerce), self.r:getTag(coerce)
+function ASSColor:getTagParams(coerce)
+    return self.b:getTagParams(coerce), self.g:getTagParams(coerce), self.r:getTagParams(coerce)
 end
 
 ASSFade = createASSClass("ASSFade", ASSTagBase,
@@ -498,18 +612,19 @@ function ASSFade:new(startDuration,endDuration,startTime,endTime,startAlpha,midA
     return self
 end
 
-function ASSFade:getTag(coerce)
+function ASSFade:getTagParams(coerce)
     if self.__tag.simple then
-        return self.startDuration:getTag(coerce), self.endDuration:getTag(coerce)
+        return self.startDuration:getTagParams(coerce), self.endDuration:getTagParams(coerce)
     else
-        local t1, t4 = self.startTime:getTag(coerce), self.endTime:getTag(coerce)
-        local t2 = t1 + self.startDuration:getTag(coerce)
-        local t3 = t4 - self.endDuration:getTag(coerce)
+        local t1, t4 = self.startTime:getTagParams(coerce), self.endTime:getTagParams(coerce)
+        local t2 = t1 + self.startDuration:getTagParams(coerce)
+        local t3 = t4 - self.endDuration:getTagParams(coerce)
         if not coerce then
              self:checkPositive(t2,t3)
              assert(t1<=t2 and t2<=t3 and t3<=t4, string.format("Error: fade times must evaluate to t1<=t2<=t3<=t4, got %d<=%d<=%d<=%d", t1,t2,t3,t4))
         end
-        return self.startAlpha, self.midAlpha, self.endAlpha, math.min(t1,t2), util.clamp(t2,t1,t3), math.clamp(t3,t2,t4), math.max(t4,t3) 
+        return self.startAlpha, self.midAlpha, self.endAlpha, 
+               math.min(t1,t2), util.clamp(t2,t1,t3), math.clamp(t3,t2,t4), math.max(t4,t3)
     end
 end
 
@@ -537,16 +652,16 @@ function ASSMove:new(startPosX,startPosY,endPosX,endPosY,startTime,endTime,tagPr
     return self
 end
 
-function ASSMove:getTag(coerce)
+function ASSMove:getTagParams(coerce)
     if self.__tag.simple or self.__tag.name=="moveSmpl" then
-        return returnAll({self.startPos:getTag(coerce)}, {self.endPos:getTag(coerce)})
+        return returnAll({self.startPos:getTagParams(coerce)}, {self.endPos:getTagParams(coerce)})
     else
         if not coerce then
              assert(startTime<=endTime, string.format("Error: move times must evaluate to t1<=t2, got %d<=%d.\n", startTime,endTime))
         end
-        local t1,t2 = self.startTime:getTag(coerce), self.endTime:getTag(coerce)
-        return returnAll({self.startPos:getTag(coerce)}, {self.endPos:getTag(coerce)},
-               {math.min(t1,t2)}, {math.max(t2,t1)}) 
+        local t1,t2 = self.startTime:getTagParams(coerce), self.endTime:getTagParams(coerce)
+        return returnAll({self.startPos:getTagParams(coerce)}, {self.endPos:getTagParams(coerce)},
+                         {math.min(t1,t2)}, {math.max(t2,t1)})
     end
 end
 
@@ -568,7 +683,7 @@ function ASSToggle:toggle(state)
     return self.value
 end
 
-function ASSToggle:getTag(coerce)
+function ASSToggle:getTagParams(coerce)
     if not coerce then self:typeCheck(self.value) end
     return self.value and 1 or 0
 end
@@ -621,11 +736,14 @@ function ASSWeight:new(val, tagProps)
     return self
 end
 
-function ASSWeight:getTag(coerce)
+function ASSWeight:getTagParams(coerce)
     if self.weightClass.value >0 then
-        return self.weightClass:getTag(coerce)
+        return self.weightClass:getTagParams(coerce)
     else
-        return self.bold:getTag(coerce)
+    aegisub.log("Public announcement: ------------\n")
+    aegisub.log(self.__tag.name .."\n")
+    aegisub.log("Public announcement: ------------\n")
+        return self.bold:getTagParams(coerce)
     end
 end
 
@@ -656,7 +774,7 @@ function ASSString:new(val, tagProps)
     return self
 end
 
-function ASSString:getTag(coerce)
+function ASSString:getTagParams(coerce)
     local val = self.value or ""
     if coerce and type(val)~= "string" then
         val = ""
@@ -715,9 +833,9 @@ function ASSClipRect:new(left,top,right,bottom,tagProps)
     return self
 end
 
-function ASSClipRect:getTag(coerce)
+function ASSClipRect:getTagParams(coerce)
     self:setInverse(self.__tag.inverse or false)
-    return returnAll({self.topLeft:getTag(coerce)}, {self.bottomRight:getTag(coerce)})
+    return returnAll({self.topLeft:getTagParams(coerce)}, {self.bottomRight:getTagParams(coerce)})
 end
 
 function ASSClipRect:setInverse(state)
@@ -767,7 +885,7 @@ function ASSClipVect:new(...)
     return self
 end
 
-function ASSClipVect:getTag(coerce)
+function ASSClipVect:getTagParams(coerce)
     self:setInverse(self.__tag.inverse or false)
     local cmdStr, lastCmdType
     for i,cmd in ipairs(self.commands) do
@@ -802,7 +920,7 @@ function ASSClipVect:commonOp(method, callback, default, x, y) -- drawing comman
 end
 
 function ASSClipVect:flatten()
-    local flatStr = YUtils.shape.flatten(self:getTag())
+    local flatStr = YUtils.shape.flatten(self:getTagParams())
     local flattened = ASSClipVect({flatStr},self.__tag)
     self.commands = flattened.commands
     return flatStr
@@ -866,10 +984,10 @@ function ASSDrawBase:new(...)
     return self
 end
 
-function ASSDrawBase:getTag(coerce)
+function ASSDrawBase:getTagParams(coerce)
     local cmdStr = self.__tag.name
     for _,param in ipairs(self.__meta__.order) do
-        cmdStr = cmdStr .. " " .. tostring(self[param]:getTag(coerce))
+        cmdStr = cmdStr .. " " .. tostring(self[param]:getTagParams(coerce))
     end
     return cmdStr
 end
@@ -887,7 +1005,7 @@ function ASSDrawBase:getLength(prevCmd)
     local name, len = self.__tag.name, 0
     if name == "b" then
         local shapeSection = ASSClipVect(ASSDrawMove(self.cursor:get()),self)
-        self.flattened = ASSClipVect({YUtils.shape.flatten(shapeSection:getTag())}) --save flattened shape for further processing
+        self.flattened = ASSClipVect({YUtils.shape.flatten(shapeSection:getTagParams())}) --save flattened shape for further processing
         len = self.flattened:getLength()
     elseif name =="m" or name == "n" then len=0
     elseif name =="l" then
@@ -959,3 +1077,98 @@ function ASSDrawBezier:commonOp(method, callback, default, ...)
     end
     return unpack(res)
 end
+
+----------- Tag Mapping -------------
+
+ASSFoundation = createASSClass("ASSFoundation")
+function ASSFoundation:new()
+    self.tagMap = {
+        scaleX= {friendlyName="\\fscx", type=ASSNumber, pattern="\\fscx([%d%.]+)", format="\\fscx%.3N"},
+        scaleY = {friendlyName="\\fscy", type=ASSNumber, pattern="\\fscy([%d%.]+)", format="\\fscy%.3N"},
+        align = {friendlyName="\\an", type=ASSAlign, pattern="\\an([1-9])", format="\\an%d"},
+        angleZ = {friendlyName="\\frz", type=ASSNumber, pattern="\\frz?([%-%d%.]+)", format="\\frz%.3N"}, 
+        angleY = {friendlyName="\\fry", type=ASSNumber, pattern="\\fry([%-%d%.]+)", format="\\frz%.3N", default=0},
+        angleX = {friendlyName="\\frx", type=ASSNumber, pattern="\\frx([%-%d%.]+)", format="\\frz%.3N", default=0}, 
+        outline = {friendlyName="\\bord", type=ASSNumber, props={positive=true}, pattern="\\bord([%d%.]+)", format="\\bord%.2N"}, 
+        outlineX = {friendlyName="\\xbord", type=ASSNumber, props={positive=true}, pattern="\\xbord([%d%.]+)", format="\\xbord%.2N"}, 
+        outlineY = {friendlyName="\\ybord", type=ASSNumber,props={positive=true}, pattern="\\ybord([%d%.]+)", format="\\ybord%.2N"}, 
+        shadow = {friendlyName="\\shad", type=ASSNumber, pattern="\\shad([%-%d%.]+)", format="\\shad%.2N"}, 
+        shadowX = {friendlyName="\\xshad", type=ASSNumber, pattern="\\xshad([%-%d%.]+)", format="\\xshad%.2N"}, 
+        shadowY = {friendlyName="\\yshad", type=ASSNumber, pattern="\\yshad([%-%d%.]+)", format="\\yshad%.2N"}, 
+        reset = {friendlyName="\\r", type=ASSString, pattern="\\r([^\\}]*)", format="\\r%s", default=""}, 
+        alpha = {friendlyName="\\alpha", type=ASSHex, pattern="\\alpha&H(%x%x)&", format="\\alpha&H%02X&", default=0}, 
+        alpha1 = {friendlyName="\\1a", type=ASSHex, pattern="\\1a&H(%x%x)&", format="\\alpha&H%02X&"}, 
+        alpha2 = {friendlyName="\\2a", type=ASSHex, pattern="\\2a&H(%x%x)&", format="\\alpha&H%02X&"}, 
+        alpha3 = {friendlyName="\\3a", type=ASSHex, pattern="\\3a&H(%x%x)&", format="\\alpha&H%02X&"}, 
+        alpha4 = {friendlyName="\\4a", type=ASSHex, pattern="\\4a&H(%x%x)&", format="\\alpha&H%02X&"}, 
+        color = {friendlyName="\\c", type=ASSColor, pattern="\\c&H(%x%x)(%x%x)(%x%x)&", format="\\c&H%02X%02X%02X&"},
+        color1 = {friendlyName="\\1c", type=ASSColor, pattern="\\1c&H(%x%x)(%x%x)(%x%x)&", format="\\1c&H%02X%02X%02X&"},
+        color2 = {friendlyName="\\2c", type=ASSColor, pattern="\\2c&H(%x%x)(%x%x)(%x%x)&", format="\\2c&H%02X%02X%02X&"},
+        color3 = {friendlyName="\\3c", type=ASSColor, pattern="\\3c&H(%x%x)(%x%x)(%x%x)&", format="\\3c&H%02X%02X%02X&"},
+        color4 = {friendlyName="\\4c", type=ASSColor, pattern="\\4c&H(%x%x)(%x%x%)(x%x)&", format="\\4c&H%02X%02X%02X&"},
+        clipVect = {friendlyName="\\clip (Vect)", type=ASSClipVect, pattern="\\clip%(([mnlbspc] .-)%)", format="\\clip(%s)"}, 
+        iclipVect = {friendlyName="\\iclip (Vect)", type=ASSClipVect, props={inverse=true}, pattern="\\iclip%(([mnlbspc] .-)%)", format="\\iclip(%s)", default={"m 0 0 l 0 0 0 0 0 0 0 0"}},
+        clipRect = {friendlyName="\\clip (Rect)", type=ASSClipRect, pattern="\\clip%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+)%)", format="\\clip(%.2N,%.2N,%.2N,%.2N)"}, 
+        iclipRect = {friendlyName="\\iclip (Rect)", type=ASSClipRect, props={inverse=true}, pattern="\\iclip%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+)%)", format="\\iclip(%.2N,%.2N,%.2N,%.2N)", default={0,0,0,0}},
+        be = {friendlyName="\\be", type=ASSNumber, props={positive=true}, pattern="\\be([%d%.]+)", format="\\be%.2N", default=0}, 
+        blur = {friendlyName="\\blur", type=ASSNumber, props={positive=true}, pattern="\\blur([%d%.]+)", format="\\blur%.2N", default=0}, 
+        fax = {friendlyName="\\fax", type=ASSNumber, pattern="\\fax([%-%d%.]+)", format="\\fax%.2N", default=0}, 
+        fay = {friendlyName="\\fay", type=ASSNumber, pattern="\\fay([%-%d%.]+)", format="\\fay%.2N", default=0}, 
+        bold = {friendlyName="\\b", type=ASSWeight, pattern="\\b(%d+)", format="\\b%d"}, 
+        italic = {friendlyName="\\i", type=ASSToggle, pattern="\\i([10])", format="\\i%d"}, 
+        underline = {friendlyName="\\u", type=ASSToggle, pattern="\\u([10])", format="\\u%d"},
+        strikeout = {friendlyName="\\s", type=ASSToggle, pattern="\\s([10])", format="\\s%d"},
+        spacing = {friendlyName="\\fsp", type=ASSNumber, pattern="\\fsp([%-%d%.]+)", format="\\fsp%.2N"},
+        fontsize = {friendlyName="\\fs", type=ASSNumber, props={positive=true}, pattern="\\fs([%d%.]+)", format="\\fs%.2N"},
+        fontname = {friendlyName="\\fn", type=ASSString, pattern="\\fn([^\\}]*)", format="\\fn%s"},
+        kFill = {friendlyName="\\k", type=ASSDuration, props={scale=10}, pattern="\\k([%d]+)", format="\\k%d", default=0},
+        kSweep = {friendlyName="\\kf", type=ASSDuration, props={scale=10}, pattern="\\kf([%d]+)", format="\\kf%d", default=0},
+        kSweepAlt = {friendlyName="\\K", type=ASSDuration, props={scale=10}, pattern="\\K([%d]+)", format="\\K%d", default=0},
+        kBord = {friendlyName="\\ko", type=ASSDuration, props={scale=10}, pattern="\\ko([%d]+)", format="\\ko%d", default=0},
+        position = {friendlyName="\\pos", type=ASSPosition, pattern="\\pos%(([%-%d%.]+),([%-%d%.]+)%)", format="\\pos(%.2N,%.2N)"},
+        moveSmpl = {friendlyName=nil, type=ASSMove, props={simple=true}, pattern="\\move%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+)%)", format="\\move(%.2N,%.2N,%.2N,%.2N)"},
+        move = {friendlyName="\\move", type=ASSMove, pattern="\\move%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),(%d+),(%d+)%)", format="\\move(%.2N,%.2N,%.2N,%.2N,%.2N,%.2N)"},
+        org = {friendlyName="\\org", type=ASSPosition, pattern="\\org%(([%-%d%.]+),([%-%d%.]+)%)", format="\\org(%.2N,%.2N)"},
+        wrap = {friendlyName="\\q", type=ASSWrapStyle, pattern="\\q(%d)", format="\\q%d", default=0},
+        fadeSmpl = {friendlyName="\\fad", type=ASSFade, props={simple=true}, pattern="\\fad%((%d+),(%d+)%)", format="\\fad(%d,%d)", default={0,0}},
+        fade = {friendlyName="\\fade", type=ASSFade, pattern="\\fade?%((.-)%)", format="\\fade(%d),(%d),(%d),(%d),(%d),(%d),(%d)", default={255,0,255,0,0,0,0}},
+        transform = {friendlyName="\\t", type=ASSTransform, pattern="\\t%((.-)%)"},
+    }
+    return self
+end
+
+function ASSFoundation:getInternalTagName(name)
+    if self.tagMap[name] then return name
+    else
+        for key,val in pairs(self.tagMap) do
+            if val.friendlyName==name then return key end
+        end
+    end
+    return false
+end
+
+function ASSFoundation:mapTag(name)
+    assert(type(name)=="string", "Error: argument 1 to mapTag() must be a string, got a " .. type(name))
+    name = self:getInternalTagName(name)
+    return self.tagMap[assert(name,"Error: can't find tag " .. name)]
+end
+
+function ASSFoundation:getTagFromString(str)
+    for name,tag in pairs(self.tagMap) do
+        if tag.pattern then
+            local prms={str:match(tag.pattern)}
+            if #prms>0 then
+                return tag.type(prms,table.merge(tag.props or {},{name=name}))
+            end
+        end
+    end
+    return false
+end
+
+function ASSFoundation:formatTag(tagRef, ...)
+    return self:mapTag(tagRef.__tag.name).format:formatFancy(...)
+end
+
+ASS = ASSFoundation()
+
+
