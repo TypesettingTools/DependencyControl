@@ -176,7 +176,17 @@ function ASSLineContents:new(line,sections)
         end
     end
     self.line, self.sections = line, self:typeCheck(sections)
+    self:updateRefs()
     return self
+end
+
+function ASSLineSection:updateRefs(prevCnt)
+    if prevCnt~=#self.sections then
+        for i,section in ipairs(self.sections) do
+            section.prevSection = self.sections[i-1]
+        end
+        return true
+    else return false
 end
 
 function ASSLineContents:getString(coerce, noTags, noText)
@@ -207,7 +217,7 @@ function ASSLineContents:get(noTags, noText, start, end_, relative)
 end
 
 function ASSLineContents:callback(callback, noTags, noText)
-    local hasRun = false
+    local hasRun, prevCnt = false, #self.sections
     for i,section in ipairs(self.sections) do
         if (section.instanceOf[ASSLineTagSection] and not noTags) or (section.instanceOf[ASSLineTextSection] and not noText) then
             local result, hasRun = callback(section,self.sections,i), true
@@ -219,7 +229,32 @@ function ASSLineContents:callback(callback, noTags, noText)
         end
     end
     self.sections = table.trimArray(self.sections)
+    self:updateRefs(prevCnt)
     return hasRun
+end
+
+function ASSLineContents:insertSections(sections,index)
+    index = index or #self.sections+1
+    sections = type(section)~="table" and sections or {sections}
+
+    for _,section in ipairs(sections) do
+        assert(type(section)=="table" and 
+              (section.instanceOf[ASSLineTextSection] or section.instanceOf[ASSLineTagSection] or section.instanceOf[ASSLineCommentSection]),
+              string.format("Error: can only insert sections of type %s, %s or %s, got %s.\n", 
+              ASSLineTextSection.typeName, ASSLineTagSection.typeName, ASSLineCommentSection.typeName, type(sections))
+        )
+        table.insert(self.sections, index, section)
+    end
+    self:updateRefs()
+end
+
+function ASSLineContents:removeSections(start, end_)
+    start = start or #self.sections
+    end_ = end_ or start
+    for i=start,end_ do
+        table.remove(self.sections,i)
+    end
+    self:updateRefs()
 end
 
 function ASSLineContents:stripTags()
@@ -299,7 +334,7 @@ function ASSLineContents:splitAtIntervals(callback)
             -- create a new line
             local splitLine = Line(self.line)
             splitLine.ASS = ASSLineContents(splitLine, self:get(false,true,0,i))
-            table.insert(splitLine.ASS.sections, ASSLineTextSection(text:sub(idx-off,nextIdx-off-1)))
+            splitLine.ASS:insertSections(ASSLineTextSection(text:sub(idx-off,nextIdx-off-1)))
             splitLine.ASS:deduplicateTags()
             splitLine.ASS:commit()
             table.insert(splitLines,splitLine)        
@@ -740,9 +775,6 @@ function ASSWeight:getTagParams(coerce)
     if self.weightClass.value >0 then
         return self.weightClass:getTagParams(coerce)
     else
-    aegisub.log("Public announcement: ------------\n")
-    aegisub.log(self.__tag.name .."\n")
-    aegisub.log("Public announcement: ------------\n")
         return self.bold:getTagParams(coerce)
     end
 end
