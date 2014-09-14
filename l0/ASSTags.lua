@@ -106,11 +106,13 @@ function ASSBase:copy()
     local newObj, meta = {}, getmetatable(self)
     setmetatable(newObj, meta)
     for key,val in pairs(self) do
-        if type(val)=="table" and val.instanceOf then
-            newObj[key] = val:copy()
-        elseif key=="__tag" or (meta and table.find(self.__meta__.order,key) and type(val)=="table") then
-            newObj[key]=ASSBase.copy(val)
-        else newObj[key]=val end
+        if key=="__tag" or not meta or (meta and table.find(self.__meta__.order,key)) then   -- only deep copy registered members of the object
+            if type(val)=="table" and val.instanceOf then
+                newObj[key] = val:copy()
+            elseif type(val)=="table" then
+                newObj[key]=ASSBase.copy(val)
+            else newObj[key]=val end
+        end
     end
     return newObj
 end
@@ -148,11 +150,14 @@ function ASSBase:get()
     return unpack(vals)
 end
 
+--- TODO: implement working alternative 
+--[[
 function ASSBase:remove(returnCopy)
     local copy = returnCopy and ASSBase:copy() or true
     self = nil
     return copy
 end
+]]--
 
 --------------------- Container Classes ---------------------
 
@@ -184,6 +189,7 @@ function ASSLineContents:updateRefs(prevCnt)
     if prevCnt~=#self.sections then
         for i,section in ipairs(self.sections) do
             section.prevSection = self.sections[i-1]
+            section.parent = self
         end
         return true
     else return false end
@@ -223,9 +229,10 @@ function ASSLineContents:callback(callback, noTags, noText, noCmts)
            or (section.instanceOf[ASSLineCommentSection] and not noCmts) then
             local result, hasRun = callback(section,self.sections,i), true
             if result==false then
-                self.sections[i]:remove()
+                self.sections[i]=nil
             elseif type(result)~="nil" and result~=true then
                 self.sections[i] = result
+                prevCnt=-1
             end
         end
     end
@@ -236,7 +243,7 @@ end
 
 function ASSLineContents:insertSections(sections,index)
     index = index or #self.sections+1
-    sections = type(section)~="table" and sections or {sections}
+    sections = type(section)=="table" and sections or {sections}
 
     for _,section in ipairs(sections) do
         assert(type(section)=="table" and 
@@ -278,17 +285,22 @@ function ASSLineContents:commit(line)
     return line.text
 end
 
-function ASSLineContents:deduplicateTags() -- STUB! TODO: actually make it deduplicate tags and not just merge sections
-    local lastTagSection, numMerged = 1, 0
-    self:callback(function(section,sections,i)
-        if i==lastTagSection+numMerged+1 then
-            sections[lastTagSection].value = sections[lastTagSection].value .. section.value -- FIXFORTAGCHANGES
-            numMerged = numMerged+1
-            return false
-        else 
-            lastTagSection, numMerged = i, 0 
-        end
-    end, false, true, true)
+function ASSLineContents:deduplicateTags(mergeSect, dedupSection, dedupGlobal, removeDef) -- STUB! TODO: actually make it deduplicate tags and not just merge sections
+    mergeSect, dedupSection, dedupGlobal = default(mergeSect,true), default(dedupSection,true), default(dedupGlobal,true)
+    -- Merge consecutive sections
+    if mergeSect then
+        local lastTagSection, numMerged = -1, 0
+        self:callback(function(section,sections,i)
+            if i==lastTagSection+numMerged+1 then
+                sections[lastTagSection].tags = table.join(sections[lastTagSection].tags, section.tags)
+                numMerged = numMerged+1
+                return false
+            else 
+                lastTagSection, numMerged = i, 0 
+            end
+        end, false, true, true)
+    end
+
 end
 
 function ASSLineContents:splitAtTags()
@@ -311,7 +323,7 @@ function ASSLineContents:splitAtIntervals(callback)
         end
     else assert(type(callback)=="function", "Error: first argument to splitAtIntervals must be either a number or a callback function.\n") end
     
-    local len, idx, sectEndIdx, nextIdx, lastI = self:copy():stripTags():getString(), 1, 0, 0
+    local len, idx, sectEndIdx, nextIdx, lastI = #self:copy():stripTags():getString(), 1, 0, 0
     local splitLines = {}
 
     self:callback(function(section,sections,i)
@@ -348,7 +360,7 @@ function ASSLineContents:splitAtIntervals(callback)
     return splitLines
 end
 
-function ASSLineContents:getStyleDefaults()
+function ASSLineContents:getStyleDefaultTags()
     local function styleRef(tag)
         if tag:find("alpha") then 
             local alpha = true
@@ -419,9 +431,18 @@ function ASSLineTextSection:getString(coerce)
     else return self:typeCheck(self.value) end
 end
 
+function ASSLineTextSection:getEffectiveTags(includeDefault,includePrevious)
+    includePrevious = type(includePrevious)=="nil" and true or includePrevious
+    local prevTags = self.prevSection and self.prevSection:getEffectiveTags() or {}
+    local tags = (includeDefault and self.parent:getStyleDefaultTags()) or 
+                      (excludePrevious and prevTags) or 
+                      table.merge(self.parent:getStyleDefaultTags(), prevTags)
+    return tags
+end
+
 ASSLineCommentSection = createASSClass("ASSLineCommentSection", ASSLineTextSection, {"value"}, {"string"})
 
-ASSLineTagSection = createASSClass("ASSLineTagSection", ASSBase, {"tags"}, {"table"})   -- ATTENTION: this is a dummy and will be replaced soon
+ASSLineTagSection = createASSClass("ASSLineTagSection", ASSBase, {"tags"}, {"table"})
 function ASSLineTagSection:new(tags)
     tags = self:getArgs({tags})
     if type(tags)=="string" then
@@ -452,7 +473,7 @@ function ASSLineTagSection:callback(callback, tagTypes)
         if (not tagTypes or tagSet[tag.__tag.name]) then
             local result, hasRun = callback(tag,self.tags,i), true
             if result==false then
-                self.tags[i]:remove()
+                self.tags[i]=nil
             elseif type(result)~="nil" and result~=true then
                 self.tags[i] = result
             end
@@ -469,6 +490,19 @@ function ASSLineTagSection:getString(coerce)
     end)
     return tagString
 end
+
+function ASSLineTagSection:getEffectiveTags(includeDefault,excludePrevious)   -- TODO: properly handle transforms
+    local prevTags = self.prevSection and self.prevSection:getEffectiveTags() or {}
+    local tags = (includeDefault and self.parent:getStyleDefaultTags()) or 
+                      (excludePrevious and prevTags) or 
+                      table.merge(self.parent:getStyleDefaultTags(), prevTags)
+    
+    self:callback(function(tag)
+        tags[tag.__tag.name] = tag
+    end)
+    return tags
+end
+
 
 --------------------- Override Tag Classes ---------------------
 
@@ -1004,12 +1038,12 @@ ASSDrawBase = createASSClass("ASSDrawBase", ASSTagBase, {}, {})
 function ASSDrawBase:new(...)
     local args = {...}
     if type(args[1]) == "table" then
-        self.parentCollection = args[2]
+        self.parent = args[2]
         args = {self:getArgs(args[1], nil, true)}
     end
     for i,arg in ipairs(args) do
         if i>#self.__meta__.order then
-            self.parentCollection = arg
+            self.parent = arg
         else
             self[self.__meta__.order[i]] = self.__meta__.types[i](arg) 
         end
@@ -1050,7 +1084,7 @@ function ASSDrawBase:getLength(prevCmd)
 end
 
 function ASSDrawBase:getPositionAtLength(len,noUpdate)
-    if not (self.length and self.cursor and noUpdate) then self.parentCollection:getLength() end
+    if not (self.length and self.cursor and noUpdate) then self.parent:getLength() end
     local name, pos = self.__tag.name
     if name == "b" then
         local x1,y1,x2,y2,x3,y3 = self:get()
@@ -1071,7 +1105,7 @@ ASSDrawBezier = createASSClass("ASSDrawBezier", ASSDrawBase, {"x1","y1","x2","y2
 --- TODO: b-spline support
 
 function ASSDrawLine:ScaleToLength(len,noUpdate)
-    if not (self.length and self.cursor and noUpdate) then self.parentCollection:getLength() end
+    if not (self.length and self.cursor and noUpdate) then self.parent:getLength() end
     local scaled = self.cursor:copy()
     scaled:add(YUtils.math.stretch(returnAll(
         {ASSPosition(self:get()):sub(self.cursor)},
@@ -1082,7 +1116,7 @@ function ASSDrawLine:ScaleToLength(len,noUpdate)
 end
 
 function ASSDrawLine:getAngle(ref, noUpdate)
-    if not (ref or (self.cursor and noUpdate)) then self.parentCollection:getLength() end
+    if not (ref or (self.cursor and noUpdate)) then self.parent:getLength() end
     ref = ref or self.cursor:copy()
     assert(type(ref)=="table", "Error: argument ref to getAngle() must be of type table, got " .. type(ref) .. ".\n")
     if ref.instanceOf[ASSDrawBezier] then
