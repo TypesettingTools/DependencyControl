@@ -168,3 +168,6 @@ returnAll = function(...) -- blame lua
     return unpack(arr)
 end
 
+function default(var, val)
+    return type(var)=="nil" and val or var
+end
