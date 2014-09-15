@@ -82,7 +82,7 @@ function ASSBase:getArgs(args, default, coerce, ...)
         -- write defaults
         args[j] = type(args[j])=="nil" and default or args[j]
 
-        if type(valTypes[i])=="table" and valTypes[i].instanceOf then
+        if ASS.instanceOf(valTypes[i]) then
             local subCnt = #valTypes[i].__meta__.order
             outArgs = table.join(outArgs, {valTypes[i]:getArgs(table.sliceArray(args,j,j+subCnt-1), default, coerce)})
             j=j+subCnt-1
@@ -110,7 +110,7 @@ function ASSBase:copy()
     setmetatable(newObj, meta)
     for key,val in pairs(self) do
         if key=="__tag" or not meta or (meta and table.find(self.__meta__.order,key)) then   -- only deep copy registered members of the object
-            if type(val)=="table" and val.instanceOf then
+            if ASS.instanceOf(val) then
                 newObj[key] = val:copy()
             elseif type(val)=="table" then
                 newObj[key]=ASSBase.copy(val)
@@ -124,8 +124,8 @@ function ASSBase:typeCheck(...)
     local valTypes, j, args = self.__meta__.types, 1, {...}
     --assert(#valNames >= #args, string.format("Error: too many arguments. Expected %d, got %d.\n",#valNames,#args))
     for i,valName in ipairs(self.__meta__.order) do
-        if type(valTypes[i])=="table" and valTypes[i].instanceOf then
-            if type(args[j])=="table" and args[j].instanceOf then
+        if ASS.instanceOf(valTypes[i]) then
+            if ASS.instanceOf(args[j]) then
                 self[valName]:typeCheck(args[j])
                 j=j+1
             else
@@ -144,7 +144,7 @@ end
 function ASSBase:get()
     local vals = {}
     for _,valName in ipairs(self.__meta__.order) do
-        if type(self[valName])=="table" and self[valName].instanceOf then
+        if ASS.instanceOf(self[valName]) then
             for _,cval in pairs({self[valName]:get()}) do vals[#vals+1]=cval end
         else 
             vals[#vals+1] = self[valName]
@@ -201,9 +201,9 @@ end
 function ASSLineContents:getString(coerce, noTags, noText, noCmts)
     local str = ""
     for i,section in ipairs(self.sections) do
-        if section.instanceOf[ASSLineTextSection] and not noText then
+        if ASS.instanceOf(section, ASSLineTextSection) and not noText then
             str = str .. section:getString()
-        elseif (section.instanceOf[ASSLineTagSection] and not noTags) or (section.instanceOf[ASSLineCommentSection] and not noCmts) then
+        elseif ASS.instanceOf(section, {not noTags and ASSLineTagSection, not noCmts and ASSLineCommentSection}) then
             str =  string.format("%s{%s}",str,section:getString())
         else 
             eval(coerce, string.format("Error: %s section #%d is not a %d or %d.\n", self.typeName, i, ASSLineTextSection.typeName, ASSLineTagSection.typeName)) 
@@ -216,7 +216,7 @@ function ASSLineContents:get(noTags, noText, noCmts, start, end_, relative)
     local start, end_, result, j = start or 1, end_ or #self.sections, {}, 1
     self:callback(function(section,sections,i)
         if relative and j>=start and j<=end_ then
-            table.insert(result,section:copy())
+            table.insert(result, section:copy())
         elseif i>=start and i<=end_ then
             table.insert(result, section:copy())
         end
@@ -246,15 +246,15 @@ end
 
 function ASSLineContents:insertSections(sections,index)
     index = index or #self.sections+1
-    sections = type(section)=="table" and sections or {sections}
-
-    for _,section in ipairs(sections) do
-        assert(type(section)=="table" and 
-              (section.instanceOf[ASSLineTextSection] or section.instanceOf[ASSLineTagSection] or section.instanceOf[ASSLineCommentSection]),
+    if type(sections)~="table" or sections.instanceOf then
+        sections = {sections}
+    end
+    for i,section in ipairs(sections) do
+        assert(ASS.instanceOf(section,{ASSLineTextSection, ASSLineTagSection, ASSLineCommentSection}),
               string.format("Error: can only insert sections of type %s, %s or %s, got %s.\n", 
               ASSLineTextSection.typeName, ASSLineTagSection.typeName, ASSLineCommentSection.typeName, type(sections))
         )
-        table.insert(self.sections, index, section)
+        table.insert(self.sections, index+i-1, section)
     end
     self:updateRefs()
 end
@@ -288,7 +288,7 @@ function ASSLineContents:commit(line)
     return line.text
 end
 
-function ASSLineContents:deduplicateTags(mergeSect, dedupSection, dedupGlobal, removeDef)
+function ASSLineContents:deduplicateTags(mergeSect, dedupSection, dedupGlobal, removeDef)   -- TODO: make it work properly for transforms
     mergeSect, dedupSection, dedupGlobal = default(mergeSect,true), default(dedupSection,true), default(dedupGlobal,true)
     -- Merge consecutive sections
     if mergeSect then
@@ -304,10 +304,30 @@ function ASSLineContents:deduplicateTags(mergeSect, dedupSection, dedupGlobal, r
         end, false, true, true)
     end
 
-    --- Deduplicate tags
+    --- Deduplicate tags inside section
     if dedupSection then
         self:callback(function(section,sections,i)
             local tagList = section:getEffectiveTags(false,false)
+            return ASSLineTagSection(table.values(tagList))
+        end, false, true, true)
+    end
+
+    --- Deduplicate tags globally
+    if dedupGlobal then
+        self:callback(function(section,sections,i)
+            local tagList = section:getEffectiveTags(false,false)
+            local tagListPrev = section.prevSection and section.prevSection:getEffectiveTags() or {}
+            tagList = table.diff(tagListPrev, tagList)
+            return ASSLineTagSection(table.values(tagList))
+        end, false, true, true)
+    end
+
+    -- Remove tags that match the style default (and don't have any effect)
+    if removeDef or true then
+        self:callback(function(section,sections,i)
+            local tagList = section:getEffectiveTags(false,false)
+            local tagListPrev = section.prevSection and section.prevSection:getEffectiveTags() or tagList
+            tagList = table.diff(self:getStyleDefaultTags(),table.intersect(tagList, tagListPrev))
             return ASSLineTagSection(table.values(tagList))
         end, false, true, true)
     end
@@ -347,8 +367,7 @@ function ASSLineContents:splitAtIntervals(callback)
             idx = skip and sectEndIdx+1 or nextIdx 
             local addTextSection = skip and section:copy() or ASSLineTextSection(text:sub(1,nextIdx-off-1))
             local addSections, lastContents = table.insert(self:get(false,true,true,lastI+1,i), addTextSection), splitLines[#splitLines].ASS
-            lastContents.sections = table.join(lastContents.sections, addSections)
-            lastContents:commit()
+            lastContents:insertSections(addSections)
         end
             
         while idx <= sectEndIdx do
@@ -358,15 +377,18 @@ function ASSLineContents:splitAtIntervals(callback)
             local splitLine = Line(self.line, self.line.parentCollection)
             splitLine.ASS = ASSLineContents(splitLine, self:get(false,true,true,0,i))
             splitLine.ASS:insertSections(ASSLineTextSection(text:sub(idx-off,nextIdx-off-1)))
-            splitLine.ASS:deduplicateTags()
-            splitLine.ASS:commit()
             table.insert(splitLines,splitLine)        
-
             -- check if this section is long enough to fill the new line
             idx = sectEndIdx>=nextIdx-1 and nextIdx or sectEndIdx+1
         end
         lastI = i
     end, true, false, true)
+    
+    for _,line in ipairs(splitLines) do
+        line.ASS:deduplicateTags()
+        line.ASS:commit()
+    end
+
     return splitLines
 end
 
@@ -440,10 +462,8 @@ end
 
 function ASSLineTextSection:getEffectiveTags(includeDefault,includePrevious)
     includePrevious = default(includePrevious, true)
-    local prevTags = self.prevSection and self.prevSection:getEffectiveTags() or {}
-    local tags = (includeDefault and self.parent:getStyleDefaultTags()) or 
-                      (excludePrevious and prevTags) or 
-                      table.merge(self.parent:getStyleDefaultTags(), prevTags)
+    tags = table.merge(includeDefault and self.parent:getStyleDefaultTags() or {},
+                       includePrevious and self.prevSection and self.prevSection:getEffectiveTags(false,true) or {})
     return tags
 end
 
@@ -499,11 +519,9 @@ function ASSLineTagSection:getString(coerce)
 end
 
 function ASSLineTagSection:getEffectiveTags(includeDefault,excludePrevious)   -- TODO: properly handle transforms
-    local prevTags = self.prevSection and self.prevSection:getEffectiveTags() or {}
-    local tags = (includeDefault and self.parent:getStyleDefaultTags()) or 
-                      (excludePrevious and prevTags) or 
-                      table.merge(self.parent:getStyleDefaultTags(), prevTags)
-    
+    tags = table.merge(includeDefault and self.parent:getStyleDefaultTags() or {},
+                       includePrevious and self.prevSection and self.prevSection:getEffectiveTags(false,true) or {})
+
     self:callback(function(tag)
         tags[tag.__tag.name] = tag
     end)
@@ -519,7 +537,7 @@ function ASSTagBase:commonOp(method, callback, default, ...)
     local args = {self:getArgs({...}, default, false)}
     local j, res = 1, {}
     for _,valName in ipairs(self.__meta__.order) do
-        if type(self[valName])=="table" and self[valName].instanceOf then
+        if ASS.instanceOf(self[valName]) then
             local subCnt = #self[valName].__meta__.order
             res=table.join(res,{self[valName][method](self[valName],unpack(table.sliceArray(args,j,j+subCnt-1)))})
             j=j+subCnt
@@ -1260,6 +1278,26 @@ end
 function ASSFoundation:formatTag(tagRef, ...)
     return self:mapTag(tagRef.__tag.name).format:formatFancy(...)
 end
+
+function ASSFoundation.instanceOf(val,classes)
+    local isASSObj = type(val)=="table" and val.instanceOf
+
+    if not isASSObj then
+        return false
+    elseif type(classes)=="nil" then
+        return isASSObj
+    elseif type(classes)~="table" or classes.instanceOf then
+        classes = {classes}
+    end
+
+    for _,class in ipairs(classes) do 
+        if val.instanceOf[class] then
+            return true
+        end
+    end
+    return false
+end
+
 
 ASS = ASSFoundation()
 
