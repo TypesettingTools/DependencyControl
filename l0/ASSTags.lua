@@ -288,7 +288,7 @@ function ASSLineContents:commit(line)
     return line.text
 end
 
-function ASSLineContents:deduplicateTags(mergeSect, dedupSection, dedupGlobal, removeDef)   -- TODO: make it work properly for transforms
+function ASSLineContents:cleanTags(mergeSect, dedupSection, dedupGlobal, removeDef)   -- TODO: optimize it, make it work properly for transforms
     mergeSect, dedupSection, dedupGlobal = default(mergeSect,true), default(dedupSection,true), default(dedupGlobal,true)
     -- Merge consecutive sections
     if mergeSect then
@@ -308,17 +308,18 @@ function ASSLineContents:deduplicateTags(mergeSect, dedupSection, dedupGlobal, r
     if dedupSection then
         self:callback(function(section,sections,i)
             local tagList = section:getEffectiveTags(false,false)
-            return ASSLineTagSection(table.values(tagList))
+            return ASSLineTagSection(tagList)
         end, false, true, true)
     end
 
     --- Deduplicate tags globally
-    if dedupGlobal then
+    if dedupGlobal and true then
         self:callback(function(section,sections,i)
             local tagList = section:getEffectiveTags(false,false)
-            local tagListPrev = section.prevSection and section.prevSection:getEffectiveTags() or {}
-            tagList = table.diff(tagListPrev, tagList)
-            return ASSLineTagSection(table.values(tagList))
+            local tagListPrev = section.prevSection and section.prevSection:getEffectiveTags()
+            if tagListPrev then
+                return ASSLineTagSection(tagList:diff(tagListPrev))
+            end
         end, false, true, true)
     end
 
@@ -326,9 +327,16 @@ function ASSLineContents:deduplicateTags(mergeSect, dedupSection, dedupGlobal, r
     if removeDef or true then
         self:callback(function(section,sections,i)
             local tagList = section:getEffectiveTags(false,false)
-            local tagListPrev = section.prevSection and section.prevSection:getEffectiveTags() or tagList
-            tagList = table.diff(self:getStyleDefaultTags(),table.intersect(tagList, tagListPrev))
-            return ASSLineTagSection(table.values(tagList))
+            local startStates = section.prevSection and section.prevSection:getEffectiveTags(true)
+                                                    or self:getStyleDefaultTags()
+            return ASSLineTagSection(tagList:diff(startStates))                  
+        end, false, true, true)
+    end
+
+    -- Remove empty sections
+    if removeDef or true then
+        self:callback(function(section,sections,i)
+            return #section.tags>0
         end, false, true, true)
     end
 end
@@ -338,7 +346,7 @@ function ASSLineContents:splitAtTags()
     self:callback(function(section,sections,i)
         local splitLine = Line(self.line, self.line.parentCollection)
         splitLine.ASS = ASSLineContents(splitLine, table.insert(self:get(false,true,true,0,i),section))
-        splitLine.ASS:deduplicateTags()
+        splitLine.ASS:cleanTags()
         splitLine.ASS:commit()
         table.insert(splitLines,splitLine)
     end, true, false, true)
@@ -385,7 +393,7 @@ function ASSLineContents:splitAtIntervals(callback)
     end, true, false, true)
     
     for _,line in ipairs(splitLines) do
-        line.ASS:deduplicateTags()
+        line.ASS:cleanTags()
         line.ASS:commit()
     end
 
@@ -446,7 +454,7 @@ function ASSLineContents:getStyleDefaultTags()    -- TODO: cache
         if tag.default then styleDefaults[name] = tag.type(tag.default, tag.props) end
     end
 
-    return styleDefaults
+    return ASSTagList(styleDefaults)
 end
 
 ASSLineTextSection = createASSClass("ASSLineTextSection", ASSBase, {"value"}, {"string"})
@@ -462,17 +470,27 @@ end
 
 function ASSLineTextSection:getEffectiveTags(includeDefault,includePrevious)
     includePrevious = default(includePrevious, true)
-    tags = table.merge(includeDefault and self.parent:getStyleDefaultTags() or {},
-                       includePrevious and self.prevSection and self.prevSection:getEffectiveTags(false,true) or {})
-    return tags
+    -- previous and default tag lists
+    local effTags
+    if includeDefault then
+        aegisub.log("including default\n")
+        effTags = self.parent:getStyleDefaultTags()
+    end
+    if includePrevious and self.prevSection then
+        aegisub.log("including previous\n")
+        local prevTagList = self.prevSection:getEffectiveTags()
+        effTags = includeDefault and effTags:merge(prevTagList) or prevTagList
+    end
+    return effTags or ASSTagList()
 end
 
 ASSLineCommentSection = createASSClass("ASSLineCommentSection", ASSLineTextSection, {"value"}, {"string"})
 
 ASSLineTagSection = createASSClass("ASSLineTagSection", ASSBase, {"tags"}, {"table"})
 function ASSLineTagSection:new(tags)
-    tags = self:getArgs({tags})
-    if type(tags)=="string" then
+    if ASS.instanceOf(tags,ASSTagList) then
+        self.tags = table.values(tags:copy().tags)
+    elseif type(tags)=="string" then
         self.tags = {}
         for tag in re.gfind(tags, "\\\\[^\\\\\\(]+(?:\\([^\\)]+\\))?") do
             table.insert(self.tags, ASS:getTagFromString(tag))
@@ -481,7 +499,7 @@ function ASSLineTagSection:new(tags)
             return ASSLineCommentSection(tags)
         end
     elseif tags==nil then self.tags={}
-    else self.tags = self:typeCheck(tags) end
+    else self.tags = self:typeCheck(self:getArgs({tags})) end
     return self
 end
 
@@ -518,20 +536,87 @@ function ASSLineTagSection:getString(coerce)
     return tagString
 end
 
-function ASSLineTagSection:getEffectiveTags(includeDefault,excludePrevious)   -- TODO: properly handle transforms
-    tags = table.merge(includeDefault and self.parent:getStyleDefaultTags() or {},
-                       includePrevious and self.prevSection and self.prevSection:getEffectiveTags(false,true) or {})
-
-    self:callback(function(tag)
-        tags[tag.__tag.name] = tag
-    end)
-    return tags
+function ASSLineTagSection:getEffectiveTags(includeDefault,includePrevious)   -- TODO: properly handle transforms
+    includePrevious = default(includePrevious, true)
+    -- previous and default tag lists
+    local effTags
+    if includeDefault then
+        effTags = self.parent:getStyleDefaultTags()
+    end
+    if includePrevious and self.prevSection then
+        local prevTagList = self.prevSection:getEffectiveTags()
+        effTags = includeDefault and effTags:merge(prevTagList) or prevTagList
+    end
+    -- tag list of this section
+    local tagList = ASSTagList(self)
+    return effTags and effTags:merge(tagList) or tagList
 end
 
 
+ASSTagList = createASSClass("ASSTagList", ASSBase, {"tags"}, {"table"})
+
+function ASSTagList:new(tags)
+    if ASS.instanceOf(tags, ASSLineTagSection) then
+        self.tags = {}
+        tags:callback(function(tag)
+            self.tags[tag.__tag.name] = tag
+        end)
+    elseif tags==nil then
+        self.tags = {}
+    else self.tags = self:typeCheck(tags) end
+    return self
+end
+
+function ASSTagList:get()
+    local flatTagList = {}
+    for name,tag in pairs(self.tags) do
+        flatTagList[name] = tag:get()
+    end
+    return flatTagList
+end
+
+function ASSTagList:merge(self, ...)
+    local tbls, merged = {...}, self:copy()
+    for i=1,#tbls do
+        assert(ASS.instanceOf(tbls[i],ASSTagList), 
+               string.format("Error: can only merge %s objects, got a %s for argument #%d.", ASSTagList.typeName, type(tbls[i]), i)
+        )
+        merged = table.merge(merged, tbls[i]:copy())
+    end
+    return merged
+end
+
+function ASSTagList.intersect(self, ...)
+    local tbls = {...}
+    local intersection = self:copy()
+
+    for i=1,#tbls do
+        assert(ASS.instanceOf(tbls[i],ASSTagList), 
+               string.format("Error: can only intersect %s objects, got a %s for argument #%d.", ASSTagList.typeName, type(tbls[i]), i)
+        )
+        for name,tag in pairs(intersection.tags) do 
+            intersection.tags[name] = tag:equal(tbls[i].tags[name]) and tag or nil
+        end
+    end
+    return intersection
+end
+
+function ASSTagList:diff(other)
+    assert(ASS.instanceOf(other,ASSTagList),
+           string.format("Error: can only diff %s objects, got a %s.", ASSTagList.typeName, type(other))
+    )
+
+    local diff={}
+    for name,tag in pairs(self.tags) do
+        if not tag:equal(other.tags[name]) then
+            diff[name] = tag:copy()
+        end
+    end
+    return ASSTagList(diff)
+end
 --------------------- Override Tag Classes ---------------------
 
-ASSTagBase = createASSClass("ASSTagBase",ASSBase)
+ASSTagBase = createASSClass("ASSTagBase", ASSBase)
 
 function ASSTagBase:commonOp(method, callback, default, ...)
     local args = {self:getArgs({...}, default, false)}
@@ -582,6 +667,21 @@ end
 
 function ASSTagBase:getTagString(coerce)
     return ASS:formatTag(self, self:getTagParams(coerce))
+end
+
+function ASSTagBase:equal(ASSTag)  -- checks equalness only of the relevant properties
+    if ASS.instanceOf(ASSTag)~=ASS.instanceOf(self) or self.__tag.name~=ASSTag.__tag.name then
+        return false
+    end
+
+    local vals1, vals2 = {self:get()}, {ASSTag:get()}
+    if #vals1~=#vals2 then return false end
+    for i,val in ipairs(vals1) do
+        if type(val)=="table" and #table.intersect(val,vals2[i])~=#val then
+            return false
+        elseif val~=vals2[i] then return false end
+    end
+    return true
 end
 
 ASSNumber = createASSClass("ASSNumber", ASSTagBase, {"value"}, {"number"}, {base=10, precision=3, scale=1})
@@ -1054,7 +1154,14 @@ function ASSClipVect:getAngleAtLength(len, noUpdate)
     return cmd:getAngle(nil,true)
 end
 
-ASSClipVect.set, ASSClipVect.mod, ASSClipVect.get = nil, nil, nil  -- TODO: check if these can be remapped/implemented in a way that makes sense, maybe work on strings
+function ASSClipVect:get()
+    local commands = {}
+    for i,cmd in ipairs(self.commands) do
+        commands = table.join(table.insert(commands,cmd.__tag.name),{cmd:get()})
+    end
+    return commands
+end
+ASSClipVect.set, ASSClipVect.mod = nil, nil  -- TODO: check if these can be remapped/implemented in a way that makes sense, maybe work on strings
 
 
 --------------------- Drawing Command Classes ---------------------
@@ -1285,7 +1392,7 @@ function ASSFoundation.instanceOf(val,classes)
     if not isASSObj then
         return false
     elseif type(classes)=="nil" then
-        return isASSObj
+        return isASSObj and table.keys(isASSObj)[1]
     elseif type(classes)~="table" or classes.instanceOf then
         classes = {classes}
     end
