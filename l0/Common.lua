@@ -46,6 +46,47 @@ string.toNumbers = function(base, ...)
     return unpack(numbers)
 end
 
+-- difference, union and intersection for hashtables (comparison is done on key-val pair)
+table.diff = function(left, right, preferLeft)
+    local diff={}
+    if preferLeft then
+        left, right = right, left
+    end
+    
+    for key,val in pairs(right) do
+        if val ~= left[key] then
+            diff[key] = val
+        end
+    end
+    return diff
+end
+
+table.union = function(left, right, preferLeft)
+    if preferLeft then
+        left, right = right, left
+    end
+    -- write entries that differ between left<->right from right
+    local union = table.diff(left, right)
+
+    -- write left entries missing from right into diff
+    for key,val in pairs(left) do
+        if not union[key] then
+            union[key] = val
+        end
+    end
+end
+
+table.intersect = function(...)
+    local tbls = {...}
+    local intersection = tbls[1]
+    for i=2,#tbls do
+        for key,val in pairs(intersection) do
+            intersection[key] = val==tbls[i][key] and val or nil
+        end
+    end
+    return intersection
+end
+
 table.length = function(tbl) -- currently unused
     local n = 0
     for _, _ in pairs(tbl) do n = n + 1 end
