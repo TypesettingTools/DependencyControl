@@ -91,7 +91,7 @@ function ASSBase:getArgs(args, default, coerce, ...)
             local tagProps = self.__tag or self.__defProps
             local map = {
                 number = function()
-                    if type(args[j]=="boolean") then return args[j] and 1 or 0
+                    if type(args[j])=="boolean" then return args[j] and 1 or 0
                     else return tonumber(args[j],tagProps.base or 10)*(tagProps.scale or 1) end
                 end,
                 string = function() return tostring(args[j]) end,
@@ -1205,7 +1205,7 @@ function ASSFoundation:new()
         org = {friendlyName="\\org", type=ASSPosition, pattern="\\org%(([%-%d%.]+),([%-%d%.]+)%)", format="\\org(%.2N,%.2N)"},
         wrap = {friendlyName="\\q", type=ASSWrapStyle, pattern="\\q(%d)", format="\\q%d", default=0},
         fadeSmpl = {friendlyName="\\fad", type=ASSFade, props={simple=true}, pattern="\\fad%((%d+),(%d+)%)", format="\\fad(%d,%d)", default={0,0}},
-        fade = {friendlyName="\\fade", type=ASSFade, pattern="\\fade?%((.-)%)", format="\\fade(%d),(%d),(%d),(%d),(%d),(%d),(%d)", default={255,0,255,0,0,0,0}},
+        fade = {friendlyName="\\fade", type=ASSFade, pattern="\\fade?%((.-)%)", format="\\fade(%d,%d,%d,%d,%d,%d,%d)", default={255,0,255,0,0,0,0}},
         transform = {friendlyName="\\t", type=ASSTransform, pattern="\\t%((.-)%)"},
     }
 
