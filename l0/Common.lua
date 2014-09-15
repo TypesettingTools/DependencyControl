@@ -128,6 +128,15 @@ table.sliceArray = function(tbl, istart, iend)
     return arr
 end
 
+table.values = function(tbl)
+    local vals, valsN = {}, 0
+    for _,val in pairs(tbl) do
+        valsN = valsN + 1
+        vals[valsN] = val
+    end
+    return vals
+end
+
 util.RGB_to_HSV = function(r,g,b)
     r,g,b = util.clamp(r,0,255), util.clamp(g,0,255), util.clamp(b,0,255)
     local v = math.max(r, g, b)
