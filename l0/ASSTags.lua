@@ -441,6 +441,18 @@ function ASSLineContents:getStyleDefaultTags()    -- TODO: cache
     return ASSTagList(styleDefaults)
 end
 
+function ASSLineContents:getTextExtents(coerce)   -- TODO: account for linebreaks
+    local width, other = 0, {0,0,0}
+    self:callback(function(section)
+        local extents = {section:getTextExtents(coerce)}
+        width = width + table.remove(extents,1)
+        table.process(other, extents, function(val1,val2)
+            return math.max(val1,val2)
+        end)
+    end, true, false, true)
+    return width, unpack(other)
+end
+
 ASSLineTextSection = createASSClass("ASSLineTextSection", ASSBase, {"value"}, {"string"})
 function ASSLineTextSection:new(value)
     self.value = self:typeCheck(self:getArgs({value},"",true))
@@ -468,6 +480,10 @@ end
 
 function ASSLineTextSection:getStyleTable(name, coerce)
     return self:getEffectiveTags():getStyleTable(self.parent.line.styleRef, name, coerce)
+end
+
+function ASSLineTextSection:getTextExtents(coerce)
+    return aegisub.text_extents(self:getStyleTable(nil,coerce),self.value)
 end
 
 ASSLineCommentSection = createASSClass("ASSLineCommentSection", ASSLineTextSection, {"value"}, {"string"})
@@ -621,7 +637,7 @@ function ASSTagList:getStyleTable(styleRef, name, coerce)
         if self.tags[name] then
             local vals = {self.tags[name]:getTagParams(coerce)}
             if bool then
-                return val[1]>0
+                return vals[1]>0
             else return unpack(vals) end
         end
     end
