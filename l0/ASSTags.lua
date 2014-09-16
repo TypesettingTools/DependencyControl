@@ -399,16 +399,16 @@ function ASSLineContents:getStyleDefaultTags()    -- TODO: cache
     self.line:extraMetrics()
 
     local styleDefaults = {
-        scaleX = ASS:__createTag("scaleX",styleRef("scale_x")),
-        scaleY = ASS:__createTag("scaleY", styleRef("scale_y")),
+        scale_x = ASS:__createTag("scale_x",styleRef("scale_x")),
+        scale_y = ASS:__createTag("scale_y", styleRef("scale_y")),
         align = ASS:__createTag("align", styleRef("align")),
-        angleZ = ASS:__createTag("angleZ", styleRef("angle")),
+        angle = ASS:__createTag("angle", styleRef("angle")),
         outline = ASS:__createTag("outline", styleRef("outline")),
-        outlineX = ASS:__createTag("outlineX", styleRef("outline")),
-        outlineY = ASS:__createTag("outlineY", styleRef("outline")),
+        outline_x = ASS:__createTag("outline_x", styleRef("outline")),
+        outline_y = ASS:__createTag("outline_y", styleRef("outline")),
         shadow = ASS:__createTag("shadow", styleRef("shadow")),
-        shadowX = ASS:__createTag("shadowX", styleRef("shadow")),
-        shadowY = ASS:__createTag("shadowY", styleRef("shadow")),
+        shadow_x = ASS:__createTag("shadow_x", styleRef("shadow")),
+        shadow_y = ASS:__createTag("shadow_y", styleRef("shadow")),
         alpha1 = ASS:__createTag("alpha1", styleRef("alpha1")),
         alpha2 = ASS:__createTag("alpha2", styleRef("alpha2")),
         alpha3 = ASS:__createTag("alpha3", styleRef("alpha3")),
@@ -417,19 +417,19 @@ function ASSLineContents:getStyleDefaultTags()    -- TODO: cache
         color2 = ASS:__createTag("color2", styleRef("color2")),
         color3 = ASS:__createTag("color3", styleRef("color3")),
         color4 = ASS:__createTag("color4", styleRef("color4")),
-        clipVect = ASS:__createTag("clipVect", {string.format("m 0 0 l %s 0 %s %s 0 %s 0 0",resX,resX,resY,resY)}),
-        iclipVect = ASS:__createTag("iclipVect", {"m 0 0 l 0 0 0 0 0 0 0 0"}),
-        clipRect = ASS:__createTag("clipRect", {0,0,resX,resY}),
-        iclipRect = ASS:__createTag("iclipRect", {0,0,0,0}),
+        clip_vect = ASS:__createTag("clip_vect", {string.format("m 0 0 l %s 0 %s %s 0 %s 0 0",resX,resX,resY,resY)}),
+        iclip_vect = ASS:__createTag("iclip_vect", {"m 0 0 l 0 0 0 0 0 0 0 0"}),
+        clip_rect = ASS:__createTag("clip_rect", {0,0,resX,resY}),
+        iclip_rect = ASS:__createTag("iclip_rect", {0,0,0,0}),
         bold = ASS:__createTag("bold", styleRef("bold")),
         italic = ASS:__createTag("italic", styleRef("italic")),
         underline = ASS:__createTag("underline", styleRef("underline")),
         strikeout = ASS:__createTag("strikeout", styleRef("strikeout")),
         spacing = ASS:__createTag("spacing", styleRef("spacing")),
-        fontSize = ASS:__createTag("fontSize", styleRef("fontsize")),
-        fontName = ASS:__createTag("fontName", styleRef("fontname")),
+        fontsize = ASS:__createTag("fontsize", styleRef("fontsize")),
+        fontname = ASS:__createTag("fontname", styleRef("fontname")),
         position = ASS:__createTag("position", {self.line:getDefaultPosition()}),
-        moveSmpl = ASS:__createTag("moveSmpl", {self.line.xPosition, self.line.yPosition, self.line.xPosition, self.line.yPosition}),
+        move_simple = ASS:__createTag("move_simple", {self.line.xPosition, self.line.yPosition, self.line.xPosition, self.line.yPosition}),
         move = ASS:__createTag("move", {self.line.xPosition, self.line.yPosition, self.line.xPosition, self.line.yPosition}),
         org = ASS:__createTag("org", {self.line.xPosition, self.line.yPosition}),
     }
@@ -464,6 +464,10 @@ function ASSLineTextSection:getEffectiveTags(includeDefault,includePrevious)
         effTags = includeDefault and effTags:merge(prevTagList) or prevTagList
     end
     return effTags or ASSTagList()
+end
+
+function ASSLineTextSection:getStyleTable(name, coerce)
+    return self:getEffectiveTags():getStyleTable(self.parent.line.styleRef, name, coerce)
 end
 
 ASSLineCommentSection = createASSClass("ASSLineCommentSection", ASSLineTextSection, {"value"}, {"string"})
@@ -534,6 +538,7 @@ function ASSLineTagSection:getEffectiveTags(includeDefault,includePrevious)   --
     return effTags and effTags:merge(tagList) or tagList
 end
 
+ASSLineTagSection.getStyleTable = ASSLineTextSection.getStyleTable
 
 ASSTagList = createASSClass("ASSTagList", ASSBase, {"tags"}, {"table"})
 
@@ -599,6 +604,48 @@ function ASSTagList:diff(other)
         end
     end
     return ASSTagList(diff)
+end
+
+function ASSTagList:getStyleTable(styleRef, name, coerce)
+    assert(type(styleRef)=="table" and styleRef.class=="style", 
+           "Error: argument 1 to getStyleTable() must be a style table, got a " .. tostring(type(styleRef))
+    )
+    local function color(num)
+        local a, c = "alpha"..tostring(num), "color"..tostring(num)
+        local alpha, color = tag(a), {tag(c)}
+        local str = (alpha and string.format("&H%02X", alpha) or styleRef[c]:sub(1,4)) ..
+                    (#color==3 and string.format("%02X%02X%02X&", unpack(color)) or styleRef[c]:sub(5))
+        return str 
+    end
+    function tag(name,bool)
+        if self.tags[name] then
+            local vals = {self.tags[name]:getTagParams(coerce)}
+            if bool then
+                return val[1]>0
+            else return unpack(vals) end
+        end
+    end
+
+    local sTbl = {
+        name = name or styleRef.name,
+        id = util.uuid(),
+
+        align=tag("align"), angle=tag("angle"), bold=tag("bold",true),
+        color1=color(1), color2=color(2), color3=color(3), color4=color(4),
+        encoding=tag("encoding"), fontname=tag("fontname"), fontsize=tag("fontsize"),
+        italic=tag("italic",true), outline=tag("outline"), underline=tag("underline",true), 
+        scale_x=tag("scale_x"), scale_y=tag("scale_y"), shadow=tag("shadow"),
+        spacing=tag("spacing"), strikeout=tag("strikeout",true)
+    }
+    sTbl = table.merge(styleRef,sTbl)
+
+    sTbl.raw = string.formatFancy("Style: %s,%s,%N,%s,%s,%s,%s,%B,%B,%B,%B,%N,%N,%N,%N,%d,%N,%N,%d,%d,%d,%d,%d",
+               sTbl.name, sTbl.fontname, sTbl.fontsize, sTbl.color1, sTbl.color2, sTbl.color3, sTbl.color4,
+               sTbl.bold, sTbl.italic, sTbl.underline, sTbl.strikeout, sTbl.scale_x, sTbl.scale_y,
+               sTbl.spacing, sTbl.angle, sTbl.borderstyle, sTbl.outline, sTbl.shadow, sTbl.align, 
+               sTbl.margin_l, sTbl.margin_r, sTbl.margin_t, sTbl.encoding
+    )
+    return sTbl
 end
 --------------------- Override Tag Classes ---------------------
 
@@ -823,7 +870,7 @@ function ASSMove:new(startPosX,startPosY,endPosX,endPosY,startTime,endTime,tagPr
     
     if startTime==nil or endTime==nil or (startTime==0 and endTime==0) then
         self.__tag.simple = true
-        self.__tag.name = "moveSmpl"
+        self.__tag.name = "move_simple"
     else self.__tag.simple = false end
 
     self.startPos = ASSPosition(startPosX,startPosY)
@@ -834,7 +881,7 @@ function ASSMove:new(startPosX,startPosY,endPosX,endPosY,startTime,endTime,tagPr
 end
 
 function ASSMove:getTagParams(coerce)
-    if self.__tag.simple or self.__tag.name=="moveSmpl" then
+    if self.__tag.simple or self.__tag.name=="move_simple" then
         return returnAll({self.startPos:getTagParams(coerce)}, {self.endPos:getTagParams(coerce)})
     else
         if not coerce then
@@ -1019,7 +1066,7 @@ end
 function ASSClipRect:setInverse(state)
     state = type(state)==nil and true or false
     self.__tag.inverse = state
-    self.__tag.name = state and "iclipRect" or "clipRect"
+    self.__tag.name = state and "iclip_rect" or "clip_rect"
     return state
 end
 
@@ -1080,7 +1127,7 @@ end
 function ASSClipVect:setInverse(state)
     state = type(state)==nil and true or state
     self.__tag.inverse = state
-    self.__tag.name = state and "iclipVect" or "clipVect"
+    self.__tag.name = state and "iclip_vect" or "clip_vect"
     return state
 end
 
@@ -1268,54 +1315,53 @@ end
 ASSFoundation = createASSClass("ASSFoundation")
 function ASSFoundation:new()
     local tagMap = {
-        scaleX= {friendlyName="\\fscx", type=ASSNumber, pattern="\\fscx([%d%.]+)", format="\\fscx%.3N"},
-        scaleY = {friendlyName="\\fscy", type=ASSNumber, pattern="\\fscy([%d%.]+)", format="\\fscy%.3N"},
+        scale_x= {friendlyName="\\fscx", type=ASSNumber, pattern="\\fscx([%d%.]+)", format="\\fscx%.3N"},
+        scale_y = {friendlyName="\\fscy", type=ASSNumber, pattern="\\fscy([%d%.]+)", format="\\fscy%.3N"},
         align = {friendlyName="\\an", type=ASSAlign, pattern="\\an([1-9])", format="\\an%d"},
-        angleZ = {friendlyName="\\frz", type=ASSNumber, pattern="\\frz?([%-%d%.]+)", format="\\frz%.3N"}, 
-        angleY = {friendlyName="\\fry", type=ASSNumber, pattern="\\fry([%-%d%.]+)", format="\\frz%.3N", default=0},
-        angleX = {friendlyName="\\frx", type=ASSNumber, pattern="\\frx([%-%d%.]+)", format="\\frz%.3N", default=0}, 
+        angle = {friendlyName="\\frz", type=ASSNumber, pattern="\\frz?([%-%d%.]+)", format="\\frz%.3N"}, 
+        angle_y = {friendlyName="\\fry", type=ASSNumber, pattern="\\fry([%-%d%.]+)", format="\\frz%.3N", default=0},
+        angle_x = {friendlyName="\\frx", type=ASSNumber, pattern="\\frx([%-%d%.]+)", format="\\frz%.3N", default=0}, 
         outline = {friendlyName="\\bord", type=ASSNumber, props={positive=true}, pattern="\\bord([%d%.]+)", format="\\bord%.2N"}, 
-        outlineX = {friendlyName="\\xbord", type=ASSNumber, props={positive=true}, pattern="\\xbord([%d%.]+)", format="\\xbord%.2N"}, 
-        outlineY = {friendlyName="\\ybord", type=ASSNumber,props={positive=true}, pattern="\\ybord([%d%.]+)", format="\\ybord%.2N"}, 
+        outline_x = {friendlyName="\\xbord", type=ASSNumber, props={positive=true}, pattern="\\xbord([%d%.]+)", format="\\xbord%.2N"}, 
+        outline_y = {friendlyName="\\ybord", type=ASSNumber,props={positive=true}, pattern="\\ybord([%d%.]+)", format="\\ybord%.2N"}, 
         shadow = {friendlyName="\\shad", type=ASSNumber, pattern="\\shad([%-%d%.]+)", format="\\shad%.2N"}, 
-        shadowX = {friendlyName="\\xshad", type=ASSNumber, pattern="\\xshad([%-%d%.]+)", format="\\xshad%.2N"}, 
-        shadowY = {friendlyName="\\yshad", type=ASSNumber, pattern="\\yshad([%-%d%.]+)", format="\\yshad%.2N"}, 
+        shadow_x = {friendlyName="\\xshad", type=ASSNumber, pattern="\\xshad([%-%d%.]+)", format="\\xshad%.2N"}, 
+        shadow_y = {friendlyName="\\yshad", type=ASSNumber, pattern="\\yshad([%-%d%.]+)", format="\\yshad%.2N"}, 
         reset = {friendlyName="\\r", type=ASSString, pattern="\\r([^\\}]*)", format="\\r%s", default=""}, 
         alpha = {friendlyName="\\alpha", type=ASSHex, pattern="\\alpha&H(%x%x)&", format="\\alpha&H%02X&", default=0}, 
         alpha1 = {friendlyName="\\1a", type=ASSHex, pattern="\\1a&H(%x%x)&", format="\\alpha&H%02X&"}, 
         alpha2 = {friendlyName="\\2a", type=ASSHex, pattern="\\2a&H(%x%x)&", format="\\alpha&H%02X&"}, 
         alpha3 = {friendlyName="\\3a", type=ASSHex, pattern="\\3a&H(%x%x)&", format="\\alpha&H%02X&"}, 
         alpha4 = {friendlyName="\\4a", type=ASSHex, pattern="\\4a&H(%x%x)&", format="\\alpha&H%02X&"}, 
-        color = {friendlyName="\\c", type=ASSColor, pattern="\\c&H(%x%x)(%x%x)(%x%x)&", format="\\c&H%02X%02X%02X&"},
-        color1 = {friendlyName="\\1c", type=ASSColor, pattern="\\1c&H(%x%x)(%x%x)(%x%x)&", format="\\1c&H%02X%02X%02X&"},
+        color1 = {friendlyName="\\1c", type=ASSColor, pattern="\\1?c&H(%x%x)(%x%x)(%x%x)&", format="\\1c&H%02X%02X%02X&"},
         color2 = {friendlyName="\\2c", type=ASSColor, pattern="\\2c&H(%x%x)(%x%x)(%x%x)&", format="\\2c&H%02X%02X%02X&"},
         color3 = {friendlyName="\\3c", type=ASSColor, pattern="\\3c&H(%x%x)(%x%x)(%x%x)&", format="\\3c&H%02X%02X%02X&"},
         color4 = {friendlyName="\\4c", type=ASSColor, pattern="\\4c&H(%x%x)(%x%x)(%x%x)&", format="\\4c&H%02X%02X%02X&"},
-        clipVect = {friendlyName="\\clip (Vect)", type=ASSClipVect, pattern="\\clip%(([mnlbspc] .-)%)", format="\\clip(%s)"}, 
-        iclipVect = {friendlyName="\\iclip (Vect)", type=ASSClipVect, props={inverse=true}, pattern="\\iclip%(([mnlbspc] .-)%)", format="\\iclip(%s)", default={"m 0 0 l 0 0 0 0 0 0 0 0"}},
-        clipRect = {friendlyName="\\clip (Rect)", type=ASSClipRect, pattern="\\clip%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+)%)", format="\\clip(%.2N,%.2N,%.2N,%.2N)"}, 
-        iclipRect = {friendlyName="\\iclip (Rect)", type=ASSClipRect, props={inverse=true}, pattern="\\iclip%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+)%)", format="\\iclip(%.2N,%.2N,%.2N,%.2N)", default={0,0,0,0}},
-        be = {friendlyName="\\be", type=ASSNumber, props={positive=true}, pattern="\\be([%d%.]+)", format="\\be%.2N", default=0}, 
+        clip_vect = {friendlyName="\\clip (Vect)", type=ASSClipVect, pattern="\\clip%(([mnlbspc] .-)%)", format="\\clip(%s)"}, 
+        iclip_vect = {friendlyName="\\iclip (Vect)", type=ASSClipVect, props={inverse=true}, pattern="\\iclip%(([mnlbspc] .-)%)", format="\\iclip(%s)", default={"m 0 0 l 0 0 0 0 0 0 0 0"}},
+        clip_rect = {friendlyName="\\clip (Rect)", type=ASSClipRect, pattern="\\clip%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+)%)", format="\\clip(%.2N,%.2N,%.2N,%.2N)"}, 
+        iclip_rect = {friendlyName="\\iclip (Rect)", type=ASSClipRect, props={inverse=true}, pattern="\\iclip%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+)%)", format="\\iclip(%.2N,%.2N,%.2N,%.2N)", default={0,0,0,0}},
+        blur_edges = {friendlyName="\\be", type=ASSNumber, props={positive=true}, pattern="\\be([%d%.]+)", format="\\be%.2N", default=0}, 
         blur = {friendlyName="\\blur", type=ASSNumber, props={positive=true}, pattern="\\blur([%d%.]+)", format="\\blur%.2N", default=0}, 
-        fax = {friendlyName="\\fax", type=ASSNumber, pattern="\\fax([%-%d%.]+)", format="\\fax%.2N", default=0}, 
-        fay = {friendlyName="\\fay", type=ASSNumber, pattern="\\fay([%-%d%.]+)", format="\\fay%.2N", default=0}, 
+        shear_x = {friendlyName="\\fax", type=ASSNumber, pattern="\\fax([%-%d%.]+)", format="\\fax%.2N", default=0}, 
+        shear_y = {friendlyName="\\fay", type=ASSNumber, pattern="\\fay([%-%d%.]+)", format="\\fay%.2N", default=0}, 
         bold = {friendlyName="\\b", type=ASSWeight, pattern="\\b(%d+)", format="\\b%d"}, 
         italic = {friendlyName="\\i", type=ASSToggle, pattern="\\i([10])", format="\\i%d"}, 
         underline = {friendlyName="\\u", type=ASSToggle, pattern="\\u([10])", format="\\u%d"},
         strikeout = {friendlyName="\\s", type=ASSToggle, pattern="\\s([10])", format="\\s%d"},
         spacing = {friendlyName="\\fsp", type=ASSNumber, pattern="\\fsp([%-%d%.]+)", format="\\fsp%.2N"},
-        fontSize = {friendlyName="\\fs", type=ASSNumber, props={positive=true}, pattern="\\fs([%d%.]+)", format="\\fs%.2N"},
-        fontName = {friendlyName="\\fn", type=ASSString, pattern="\\fn([^\\}]*)", format="\\fn%s"},
-        kFill = {friendlyName="\\k", type=ASSDuration, props={scale=10}, pattern="\\k([%d]+)", format="\\k%d", default=0},
-        kSweep = {friendlyName="\\kf", type=ASSDuration, props={scale=10}, pattern="\\kf([%d]+)", format="\\kf%d", default=0},
-        kSweepAlt = {friendlyName="\\K", type=ASSDuration, props={scale=10}, pattern="\\K([%d]+)", format="\\K%d", default=0},
-        kBord = {friendlyName="\\ko", type=ASSDuration, props={scale=10}, pattern="\\ko([%d]+)", format="\\ko%d", default=0},
+        fontsize = {friendlyName="\\fs", type=ASSNumber, props={positive=true}, pattern="\\fs([%d%.]+)", format="\\fs%.2N"},
+        fontname = {friendlyName="\\fn", type=ASSString, pattern="\\fn([^\\}]*)", format="\\fn%s"},
+        k_fill = {friendlyName="\\k", type=ASSDuration, props={scale=10}, pattern="\\k([%d]+)", format="\\k%d", default=0},
+        k_sweep = {friendlyName="\\kf", type=ASSDuration, props={scale=10}, pattern="\\kf([%d]+)", format="\\kf%d", default=0},
+        k_sweep_alt = {friendlyName="\\K", type=ASSDuration, props={scale=10}, pattern="\\K([%d]+)", format="\\K%d", default=0},
+        k_bord = {friendlyName="\\ko", type=ASSDuration, props={scale=10}, pattern="\\ko([%d]+)", format="\\ko%d", default=0},
         position = {friendlyName="\\pos", type=ASSPosition, pattern="\\pos%(([%-%d%.]+),([%-%d%.]+)%)", format="\\pos(%.2N,%.2N)"},
-        moveSmpl = {friendlyName=nil, type=ASSMove, props={simple=true}, pattern="\\move%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+)%)", format="\\move(%.2N,%.2N,%.2N,%.2N)"},
+        move_simple = {friendlyName=nil, type=ASSMove, props={simple=true}, pattern="\\move%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+)%)", format="\\move(%.2N,%.2N,%.2N,%.2N)"},
         move = {friendlyName="\\move", type=ASSMove, pattern="\\move%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),(%d+),(%d+)%)", format="\\move(%.2N,%.2N,%.2N,%.2N,%.2N,%.2N)"},
         org = {friendlyName="\\org", type=ASSPosition, pattern="\\org%(([%-%d%.]+),([%-%d%.]+)%)", format="\\org(%.2N,%.2N)"},
         wrap = {friendlyName="\\q", type=ASSWrapStyle, pattern="\\q(%d)", format="\\q%d", default=0},
-        fadeSmpl = {friendlyName="\\fad", type=ASSFade, props={simple=true}, pattern="\\fad%((%d+),(%d+)%)", format="\\fad(%d,%d)", default={0,0}},
+        fade_simple = {friendlyName="\\fad", type=ASSFade, props={simple=true}, pattern="\\fad%((%d+),(%d+)%)", format="\\fad(%d,%d)", default={0,0}},
         fade = {friendlyName="\\fade", type=ASSFade, pattern="\\fade?%((.-)%)", format="\\fade(%d,%d,%d,%d,%d,%d,%d)", default={255,0,255,0,0,0,0}},
         transform = {friendlyName="\\t", type=ASSTransform, pattern="\\t%((.-)%)"},
     }
