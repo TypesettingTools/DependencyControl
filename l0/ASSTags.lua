@@ -222,10 +222,10 @@ end
 
 function ASSLineContents:callback(callback, noTags, noText, noCmts, start, end_, relative)
     start, end_ = default(start,1), default(end_,#self.sections)
-    local hasRun, prevCnt, j = false, #self.sections, 1
+    local prevCnt, j = #self.sections, 1
     for i,section in ipairs(self.sections) do
         if ASS.instanceOf(section, {not noText and ASSLineTextSection, not noTags and ASSLineTagSection, not noCmts and ASSLineCommentSection}) and
-        (relative and j>=start and j>=end_ or i>=start and i<=end_) then
+        (relative and j>=start and j<=end_ or i>=start and i<=end_) then
             local result, hasRun = callback(section,self.sections,i), true
             if result==false then
                 self.sections[i]=nil
@@ -238,7 +238,7 @@ function ASSLineContents:callback(callback, noTags, noText, noCmts, start, end_,
     end
     self.sections = table.trimArray(self.sections)
     self:updateRefs(prevCnt)
-    return hasRun
+    return j>1 and j-1 or false
 end
 
 function ASSLineContents:insertSections(sections,index)
@@ -263,6 +263,17 @@ function ASSLineContents:removeSections(start, end_)
         table.remove(self.sections,i)
     end
     self:updateRefs()
+end
+
+function ASSLineContents:modTags(callback, tagTypes, start, end_, relative)
+    local j = 0
+    self:callback(function(section)
+        if not relative or end_>j then
+            j = j + (section:modTags(callback, tagTypes, relative and math.max(start-j,1), relative and end_-j) or 0)
+        end
+    end, true, false, true, not relative and start, not relative and end_)
+
+    return j>0 and j or false
 end
 
 function ASSLineContents:stripTags()
@@ -513,9 +524,9 @@ function ASSLineTagSection:callback(callback, tagTypes, start, end_, relative)
         end
     end
 
-    local hasRun, j = false, 0
+    local j = 1
     for i,tag in ipairs(self.tags) do
-        if (not tagTypes or tagSet[tag.__tag.name]) and (relative and j>=start and j>=end_ or i>=start and i<=end_) then
+        if (not tagTypes or tagSet[tag.__tag.name]) and (relative and j>=start and j<=end_ or i>=start and i<=end_) then
             local result, hasRun = callback(tag,self.tags,i), true
             if result==false then
                 self.tags[i]=nil
@@ -526,7 +537,7 @@ function ASSLineTagSection:callback(callback, tagTypes, start, end_, relative)
         end
     end
     self.tags = table.trimArray(self.tags)
-    return hasRun
+    return j>1 and j-1 or false
 end
 ASSLineTagSection.modTags = ASSLineTagSection.callback
 
