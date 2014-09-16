@@ -288,8 +288,8 @@ function ASSLineContents:commit(line)
     return line.text
 end
 
-function ASSLineContents:cleanTags(mergeSect, dedupSection, dedupGlobal, removeDef)   -- TODO: optimize it, make it work properly for transforms
-    mergeSect, dedupSection, dedupGlobal = default(mergeSect,true), default(dedupSection,true), default(dedupGlobal,true)
+function ASSLineContents:cleanTags(level, mergeSect)   -- TODO: optimize it, make it work properly for transforms
+    mergeSect, level = default(mergeSect,true), default(level,2)
     -- Merge consecutive sections
     if mergeSect then
         local lastTagSection, numMerged = -1, 0
@@ -304,56 +304,40 @@ function ASSLineContents:cleanTags(mergeSect, dedupSection, dedupGlobal, removeD
         end, false, true, true)
     end
 
-    --- Deduplicate tags inside section
-    if dedupSection then
+    -- 1: dedup tags locally, 2: dedup tags globally
+    -- 3: remove tags matching style default and not changing state, end: remove empty sections
+    if level>=1 then
         self:callback(function(section,sections,i)
             local tagList = section:getEffectiveTags(false,false)
-            return ASSLineTagSection(tagList)
-        end, false, true, true)
-    end
-
-    --- Deduplicate tags globally
-    if dedupGlobal and true then
-        self:callback(function(section,sections,i)
-            local tagList = section:getEffectiveTags(false,false)
-            local tagListPrev = section.prevSection and section.prevSection:getEffectiveTags()
-            if tagListPrev then
-                return ASSLineTagSection(tagList:diff(tagListPrev))
+            if level>=2 then
+                local tagListPrev = section.prevSection and section.prevSection:getEffectiveTags()
+                if tagListPrev then tagList:diff(tagListPrev) end
             end
-        end, false, true, true)
-    end
-
-    -- Remove tags that match the style default (and don't have any effect)
-    if removeDef or true then
-        self:callback(function(section,sections,i)
-            local tagList = section:getEffectiveTags(false,false)
-            local startStates = section.prevSection and section.prevSection:getEffectiveTags(true)
-                                                    or self:getStyleDefaultTags()
-            return ASSLineTagSection(tagList:diff(startStates))                  
-        end, false, true, true)
-    end
-
-    -- Remove empty sections
-    if removeDef or true then
-        self:callback(function(section,sections,i)
-            return #section.tags>0
+            if level>=3 then
+                local startStates = section.prevSection and section.prevSection:getEffectiveTags(true)
+                                        or self:getStyleDefaultTags()
+                tagList:diff(startStates)
+            end
+            return table.length(tagList.tags)>0 and ASSLineTagSection(tagList) or false
         end, false, true, true)
     end
 end
 
-function ASSLineContents:splitAtTags()
+function ASSLineContents:splitAtTags(cleanLevel)
+    cleanLevel = default(cleanLevel,3)
     local splitLines = {}
     self:callback(function(section,sections,i)
         local splitLine = Line(self.line, self.line.parentCollection)
         splitLine.ASS = ASSLineContents(splitLine, table.insert(self:get(false,true,true,0,i),section))
-        splitLine.ASS:cleanTags()
+        splitLine.ASS:cleanTags(cleanLevel)
         splitLine.ASS:commit()
         table.insert(splitLines,splitLine)
     end, true, false, true)
     return splitLines
 end
 
-function ASSLineContents:splitAtIntervals(callback)
+function ASSLineContents:splitAtIntervals(callback, cleanLevel)
+    cleanLevel = default(cleanLevel,3)
     if type(callback)=="number" then
         local step=callback
         callback = function(idx,len)
@@ -393,7 +377,7 @@ function ASSLineContents:splitAtIntervals(callback)
     end, true, false, true)
     
     for _,line in ipairs(splitLines) do
-        line.ASS:cleanTags()
+        line.ASS:cleanTags(cleanLevel)
         line.ASS:commit()
     end
 
