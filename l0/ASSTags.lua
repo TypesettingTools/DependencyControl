@@ -528,6 +528,7 @@ function ASSLineTagSection:callback(callback, tagTypes, start, end_, relative)
     self.tags = table.trimArray(self.tags)
     return hasRun
 end
+ASSLineTagSection.modTags = ASSLineTagSection.callback
 
 function ASSLineTagSection:getString(coerce)
     local tagString = ""
