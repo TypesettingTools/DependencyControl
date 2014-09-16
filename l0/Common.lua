@@ -19,9 +19,15 @@ end
 
 string.formatFancy = function(fmtStr,...)
     local i, args = 0, {...}
-    local outStr=fmtStr:gsub("(%%[%+%- 0]*%d*.?%d*[hlLzjtI]*)([aAcedEfFgGcnNopiuAsuxX])", function(opts,type_)
+    local outStr=fmtStr:gsub("(%%[%+%- 0]*%d*.?%d*[hlLzjtI]*)([aABcedEfFgGcnNopiuAsuxX])", function(opts,type_)
         i=i+1
-        return type_=="N" and tonumber(string.format(opts.."f", args[i])) or string.format(opts..type_, args[i])
+        if type_=="N" then
+            return tonumber(string.format(opts.."f", args[i])) 
+        elseif type_=="B" then
+            return args[i] and 1 or 0
+        else
+            return string.format(opts..type_, args[i])
+        end
     end)
     return outStr
 end
@@ -189,6 +195,16 @@ util.RGB_to_HSV = function(r,g,b)
         local h = 60*c/delta
         return h>0 and h or h+360, s, v
     end
+end
+
+util.uuid = function()
+    -- https://gist.github.com/jrus/3197011
+    math.randomseed(os.time())
+    local template ='xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
+    return string.gsub(template, '[xy]', function (c)
+        local v = (c == 'x') and math.random(0, 0xf) or math.random(8, 0xb)
+        return string.format('%x', v)
+    end)
 end
 
 util.getScriptInfo = function(sub)
