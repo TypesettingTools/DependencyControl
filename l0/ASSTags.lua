@@ -213,23 +213,19 @@ function ASSLineContents:getString(coerce, noTags, noText, noCmts)
 end
 
 function ASSLineContents:get(noTags, noText, noCmts, start, end_, relative)
-    local start, end_, result, j = start or 1, end_ or #self.sections, {}, 1
+    local result, j = {}, 1
     self:callback(function(section,sections,i)
-        if relative and j>=start and j<=end_ then
-            table.insert(result, section:copy())
-        elseif i>=start and i<=end_ then
-            table.insert(result, section:copy())
-        end
-        j=j+1
-    end, noTags, noText, noCmts)
+        table.insert(result, section:copy())
+    end, noTags, noText, noCmts, start, end_, relative)
     return result
 end
 
-function ASSLineContents:callback(callback, noTags, noText, noCmts)
-    local hasRun, prevCnt = false, #self.sections
+function ASSLineContents:callback(callback, noTags, noText, noCmts, start, end_, relative)
+    start, end_ = default(start,1), default(end_,#self.sections)
+    local hasRun, prevCnt, j = false, #self.sections, 1
     for i,section in ipairs(self.sections) do
-        if (section.instanceOf[ASSLineTagSection] and not noTags) or (section.instanceOf[ASSLineTextSection] and not noText)
-           or (section.instanceOf[ASSLineCommentSection] and not noCmts) then
+        if ASS.instanceOf(section, {not noText and ASSLineTextSection, not noTags and ASSLineTagSection, not noCmts and ASSLineCommentSection}) and
+        (relative and j>=start and j>=end_ or i>=start and i<=end_) then
             local result, hasRun = callback(section,self.sections,i), true
             if result==false then
                 self.sections[i]=nil
@@ -237,6 +233,7 @@ function ASSLineContents:callback(callback, noTags, noText, noCmts)
                 self.sections[i] = result
                 prevCnt=-1
             end
+            j=j+1
         end
     end
     self.sections = table.trimArray(self.sections)
@@ -505,7 +502,8 @@ function ASSLineTagSection:new(tags)
     return self
 end
 
-function ASSLineTagSection:callback(callback, tagTypes)
+function ASSLineTagSection:callback(callback, tagTypes, start, end_, relative)
+    start, end_ = default(start,1), default(end_,#self.tags)
     local tagSet = {}
     if type(tagTypes)=="string" then tagTypes={tagTypes} end
     if tagTypes then
@@ -515,15 +513,16 @@ function ASSLineTagSection:callback(callback, tagTypes)
         end
     end
 
-    local hasRun = false
+    local hasRun, j = false, 0
     for i,tag in ipairs(self.tags) do
-        if (not tagTypes or tagSet[tag.__tag.name]) then
+        if (not tagTypes or tagSet[tag.__tag.name]) and (relative and j>=start and j>=end_ or i>=start and i<=end_) then
             local result, hasRun = callback(tag,self.tags,i), true
             if result==false then
                 self.tags[i]=nil
             elseif type(result)~="nil" and result~=true then
                 self.tags[i] = result
             end
+            j=j+1
         end
     end
     self.tags = table.trimArray(self.tags)
