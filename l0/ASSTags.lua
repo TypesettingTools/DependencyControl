@@ -473,11 +473,9 @@ function ASSLineTextSection:getEffectiveTags(includeDefault,includePrevious)
     -- previous and default tag lists
     local effTags
     if includeDefault then
-        aegisub.log("including default\n")
         effTags = self.parent:getStyleDefaultTags()
     end
     if includePrevious and self.prevSection then
-        aegisub.log("including previous\n")
         local prevTagList = self.prevSection:getEffectiveTags()
         effTags = includeDefault and effTags:merge(prevTagList) or prevTagList
     end
@@ -575,18 +573,19 @@ function ASSTagList:get()
     return flatTagList
 end
 
-function ASSTagList:merge(self, ...)
-    local tbls, merged = {...}, self:copy()
+function ASSTagList:merge(...)
+    local tbls, merged = {...}, ASSTagList()
     for i=1,#tbls do
         assert(ASS.instanceOf(tbls[i],ASSTagList), 
                string.format("Error: can only merge %s objects, got a %s for argument #%d.", ASSTagList.typeName, type(tbls[i]), i)
         )
-        merged = table.merge(merged, tbls[i]:copy())
+        merged.tags = table.merge(merged.tags, tbls[i]:copy().tags)
     end
-    return merged
+    self.tags = table.merge(self.tags, merged.tags)
+    return ASSTagList(table.merge(self:copy().tags, merged.tags))
 end
 
-function ASSTagList.intersect(self, ...)
+function ASSTagList:intersect(...)
     local tbls = {...}
     local intersection = self:copy()
 
@@ -594,8 +593,10 @@ function ASSTagList.intersect(self, ...)
         assert(ASS.instanceOf(tbls[i],ASSTagList), 
                string.format("Error: can only intersect %s objects, got a %s for argument #%d.", ASSTagList.typeName, type(tbls[i]), i)
         )
-        for name,tag in pairs(intersection.tags) do 
-            intersection.tags[name] = tag:equal(tbls[i].tags[name]) and tag or nil
+        for name,tag in pairs(intersection.tags) do
+            local isEqual = tag:equal(tbls[i].tags[name])
+            intersection.tags[name] =  isEqual and tag or nil
+            self.tags[name] = isEqual and atag or nil                  -- modify self but return copy
         end
     end
     return intersection
@@ -610,6 +611,7 @@ function ASSTagList:diff(other)
     for name,tag in pairs(self.tags) do
         if not tag:equal(other.tags[name]) then
             diff[name] = tag:copy()
+        else self.tags[name] = nil
         end
     end
     return ASSTagList(diff)
@@ -1407,5 +1409,3 @@ end
 
 
 ASS = ASSFoundation()
-
-
