@@ -224,17 +224,18 @@ function ASSLineContents:get(noTags, noText, noCmts, start, end_, relative)
     return result
 end
 
-function ASSLineContents:callback(callback, noTags, noText, noCmts, start, end_, relative)
-    start, end_ = default(start,1), default(end_,#self.sections)
-    local prevCnt, j = #self.sections, 1
-    for i,section in ipairs(self.sections) do
-        if ASS.instanceOf(section, {not noText and ASSLineTextSection, not noTags and ASSLineTagSection, not noCmts and ASSLineCommentSection}) and
+function ASSLineContents:callback(callback, noTags, noText, noCmts, start, end_, relative, reverse)
+    local prevCnt, j, sects = #self.sections, 1, self.sections
+    start, end_ = default(start,1), default(end_,prevCnt)
+
+    for i=reverse and prevCnt or 1, reverse and 1 or prevCnt, reverse and -1 or 1 do
+        if ASS.instanceOf(sects[i], {not noText and ASSLineTextSection, not noTags and ASSLineTagSection, not noCmts and ASSLineCommentSection}) and
         (relative and j>=start and j<=end_ or i>=start and i<=end_) then
-            local result, hasRun = callback(section,self.sections,i), true
+            local result, hasRun = callback(sects[i],self.sections,i), true
             if result==false then
-                self.sections[i]=nil
+                sects[i]=nil
             elseif type(result)~="nil" and result~=true then
-                self.sections[i] = result
+                sects[i] = result
                 prevCnt=-1
             end
             j=j+1
@@ -278,6 +279,45 @@ function ASSLineContents:modTags(callback, tagTypes, start, end_, relative)
     end, true, false, true, not relative and start, not relative and end_)
 
     return j>0 and j or false
+end
+
+function ASSLineContents:getTags(tagTypes, start, end_, relative)
+    local tags={}
+    self:callback(function(section)
+        table.joinArray(tags, section:getTags(tagTypes))
+    end, true, false, true, start, end_, relative)
+    return tags
+end
+
+function ASSLineContents:removeTags(...)
+    local removed, args = {}, {...}
+    self:callback(function(section)
+        removed = table.joinArray(removed, section:removeTags(unpack(args)))
+    end, true, false, true)
+    return removed
+end
+
+function ASSLineContents:insertTags(tags, index, relative)
+    assert(math.isInt(index) and index~=0,
+           string.format("Error: argument 2 to insertTags() must be an integer != 0, got '%s' of type %s", tostring(index), type(index))
+    )
+    local reverse = index<0
+    relative, index = default(relative,reverse), math.abs(index or 1)
+
+    local j = 1
+    if not relative then
+        local section = self.sections[index]
+        assert(ASS.instanceOf(section, ASSLineTagSection), string.format("Error: can't insert tag in section #%d of type %s.", 
+               index, section and section.typeName or "<no section>")
+        )
+        return section:insertTags(tags)
+    else
+        local inserted
+        self:callback(function(section)
+            inserted = section:insertTags(tags)
+        end, true, false, true, index, index, true, reverse)
+        return inserted
+    end
 end
 
 function ASSLineContents:stripTags()
