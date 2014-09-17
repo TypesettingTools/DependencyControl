@@ -671,7 +671,6 @@ function ASSLineTagSection:insertTags(tags, index)
 end
 
 function ASSLineTagSection:insertDefaultTags(tagTypes, index)
-    if type(tagTypes)~="table" then tagTypes={tagTypes} end
     local defaultTags = self.parent:getStyleDefaultTags():getTags(tagTypes)
     return self:insertTags(defaultTags, index)
 end
