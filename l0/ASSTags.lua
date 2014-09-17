@@ -580,6 +580,7 @@ function ASSLineTagSection:insertTags(tags, index)
         tags = {tags}
     end
 
+    local inserted = {}
     for i,tag in ipairs(tags) do
         local cls = ASS.instanceOf(tag)
         if not cls then
@@ -595,8 +596,10 @@ function ASSLineTagSection:insertTags(tags, index)
             )
         end
 
-        table.insert(self.tags, index+i-1, tag)
+        table.insert(self.tags, index+i-1, tag:copy())
+        inserted[i] = self.tags[index+i+1] 
     end
+    return #inserted>1 and inserted or inserted[1]
 end
 
 function ASSLineTagSection:getString(coerce)
