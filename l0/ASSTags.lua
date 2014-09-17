@@ -574,6 +574,31 @@ function ASSLineTagSection:removeTags(...)
     return removed
 end
 
+function ASSLineTagSection:insertTags(tags, index)
+    index = Default(index,#self.tags)
+    if type(tags)~="table" or ASS.instanceOf(tags) then
+        tags = {tags}
+    end
+
+    for i,tag in ipairs(tags) do
+        local cls = ASS.instanceOf(tag)
+        if not cls then
+            error(string.format("Error: argument %d to insertTags() must be a tag object, got a %s", i, type(tag)))
+        end
+
+        local tagData = ASS.tagMap[tag.__tag.name]
+        if not tagData then
+            error(string.format("Error: can't insert tag #%d of type %s: no with name '%s'.", i, tag.typeName, tag.__tag.name))
+        elseif cls ~= tagData.type then
+            error(string.format("Error: can't insert tag #%d with name '%s': expected type was %s, got %s.", 
+                                i, tag.__tag.name, tagData.type.typeName, tag.typeName)
+            )
+        end
+
+        table.insert(self.tags, index+i-1, tag)
+    end
+end
+
 function ASSLineTagSection:getString(coerce)
     local tagString = ""
     self:callback(function(tag)
