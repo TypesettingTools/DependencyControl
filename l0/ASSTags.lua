@@ -512,10 +512,18 @@ function ASSLineTagSection:new(tags)
     if ASS.instanceOf(tags,ASSTagList) then
         self.tags = table.values(tags:copy().tags)
     elseif type(tags)=="string" then
-        self.tags = {}
-        for tag in re.gfind(tags, "\\\\[^\\\\\\(]+(?:\\([^\\)]+\\))?") do
-            table.insert(self.tags, ASS:getTagFromString(tag))
+        self.tags, j = {}, 1
+        local tagMatch = re.compile("\\\\[^\\\\\\(]+(?:\\([^\\)]+\\))?")
+        for tag in tagMatch:gfind(tags) do
+            self.tags[j], j = ASS:getTagFromString(tag), j+1
         end
+        -- comments inside tag sections are read into ASSUnknowns and dumped at the end of the tag list, don't care
+        for str in tagMatch:gsplit(tags,true) do
+            if str ~= "" then
+                self.tags[j], j = ASS:createTag("unknown",str), j+1
+            end
+        end
+
         if #self.tags==0 and #tags>0 then    -- no tags found but string not empty -> must be a comment section
             return ASSLineCommentSection(tags)
         end
