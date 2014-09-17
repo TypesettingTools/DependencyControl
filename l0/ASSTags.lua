@@ -320,6 +320,11 @@ function ASSLineContents:insertTags(tags, index, relative)
     end
 end
 
+function ASSLineContents:insertDefaultTags(tagTypes, index, relative)
+    local defaultTags = self:getStyleDefaultTags():getTags(tagTypes)
+    return self:insertTags(defaultTags, index, relative)
+end
+
 function ASSLineContents:stripTags()
     self:callback(function(section,sections,i)
         return false
