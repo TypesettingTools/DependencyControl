@@ -602,6 +602,12 @@ function ASSLineTagSection:insertTags(tags, index)
     return #inserted>1 and inserted or inserted[1]
 end
 
+function ASSLineTagSection:insertDefaultTags(tagTypes, index)
+    if type(tagTypes)~="table" then tagTypes={tagTypes} end
+    local defaultTags = self.parent:getStyleDefaultTags():getTags(tagTypes)
+    return self:insertTags(defaultTags, index)
+end
+
 function ASSLineTagSection:getString(coerce)
     local tagString = ""
     self:callback(function(tag)
@@ -734,6 +740,12 @@ function ASSTagList:getStyleTable(styleRef, name, coerce)
                sTbl.margin_l, sTbl.margin_r, sTbl.margin_t, sTbl.encoding
     )
     return sTbl
+end
+
+function ASSTagList:getTags(tagTypes)
+    if type(tagTypes)~="table" then tagTypes={tagTypes} end
+    local tags = #tagTypes>0 and table.select(self.tags,tagTypes) or self.tags
+    return table.values(tags)
 end
 --------------------- Override Tag Classes ---------------------
 
