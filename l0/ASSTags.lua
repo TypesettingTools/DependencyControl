@@ -572,9 +572,9 @@ function ASSLineTagSection:new(tags)
     return self
 end
 
-function ASSLineTagSection:callback(callback, tagTypes, start, end_, relative)
-    start, end_ = default(start,1), default(end_,#self.tags)
-    local tagSet = {}
+function ASSLineTagSection:callback(callback, tagTypes, start, end_, relative, reverse)
+    local tagSet, prevCnt = {}, #self.tags
+    start, end_ = default(start,1), default(end_,prevCnt)
     if type(tagTypes)=="string" then tagTypes={tagTypes} end
     if tagTypes then
         assert(type(tagTypes)=="table", "Error: argument 2 to callback must be either a table of strings or a single string, got " .. type(tagTypes))
@@ -583,19 +583,19 @@ function ASSLineTagSection:callback(callback, tagTypes, start, end_, relative)
         end
     end
 
-    local j = 1
-    for i,tag in ipairs(self.tags) do
-        if (not tagTypes or tagSet[tag.__tag.name]) and (relative and j>=start and j<=end_ or i>=start and i<=end_) then
-            local result, hasRun = callback(tag,self.tags,i), true
+    local j, tags = 1, self.tags
+    for i=reverse and prevCnt or 1, reverse and 1 or prevCnt, reverse and -1 or 1 do
+        if (not tagTypes or tagSet[tags[i].__tag.name]) and (relative and j>=start and j<=end_ or i>=start and i<=end_) then
+            local result, hasRun = callback(tags[i],self.tags,i), true
             if result==false then
-                self.tags[i]=nil
+                tags[i]=nil
             elseif type(result)~="nil" and result~=true then
-                self.tags[i] = result
+                tags[i] = result
             end
             j=j+1
         end
     end
-    self.tags = table.trimArray(self.tags)
+    self.tags = table.trimArray(tags)
     return j>1 and j-1 or false
 end
 ASSLineTagSection.modTags = ASSLineTagSection.callback
