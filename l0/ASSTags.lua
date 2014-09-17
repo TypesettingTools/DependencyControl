@@ -219,7 +219,7 @@ end
 function ASSLineContents:get(noTags, noText, noCmts, start, end_, relative)
     local result, j = {}, 1
     self:callback(function(section,sections,i)
-        table.insert(result, section:copy())
+        result[j], j = section:copy(), j+1
     end, noTags, noText, noCmts, start, end_, relative)
     return result
 end
