@@ -541,6 +541,39 @@ function ASSLineTagSection:callback(callback, tagTypes, start, end_, relative)
 end
 ASSLineTagSection.modTags = ASSLineTagSection.callback
 
+function ASSLineTagSection:getTags(tagTypes, start, end_, relative)
+    local tags = {}
+    self:callback(function(tag)
+        tags[#tags+1] = tag
+    end, tagTypes, start, end_, relative)
+    return tags
+end
+
+function ASSLineTagSection:removeTags(...)
+    local tags, tagTypes, tagObjects, removed, cnt = {...}, {}, {}, {}
+    
+    for i=1,#tags do 
+        if ASS.instanceOf(tags[i]) then
+            tagObjects[tags[i]] = true
+        elseif type(tags[i]=="string") then
+            tagTypes[ASS.mapTag(tags[i])] = true
+        else error(string.format("Error: argument %d to removeTags() must be either a tag name or a tag object, got a %s.", i, type(tags[i]))) end
+    end
+
+    if #tags==0 then 
+        cnt = #self.tags
+        self.tags = {}
+    else
+        cnt = self:callback(function(tag)
+            if tagTypes[tag.__tag.name] or tagObjects[tag] then
+                removed[#removed+1] = tag
+                return false
+            end
+        end)
+    end
+    return removed
+end
+
 function ASSLineTagSection:getString(coerce)
     local tagString = ""
     self:callback(function(tag)
