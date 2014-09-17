@@ -279,14 +279,21 @@ end
 function ASSLineContents:stripTags()
     self:callback(function(section,sections,i)
         return false
-    end, false, true)
+    end, false, true, true)
     return self
 end
 
 function ASSLineContents:stripText()
     self:callback(function(section,sections,i)
         return false
-    end, true, false)
+    end, true, false, true)
+    return self
+end
+
+function ASSLineContents:stripComments()
+    self:callback(function(section,sections,i)
+        return false
+    end, true, true, false)
     return self
 end
 
