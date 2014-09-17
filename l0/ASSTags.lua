@@ -170,17 +170,21 @@ function ASSLineContents:new(line,sections)
     assert(line and line.text, string.format("Error: argument 1 to %s() must be a Line or %s object, got %s.\n", self.typeName, self.typeName, type(line)))
     if not sections then
         sections = {}
-        local i, ovrStart, ovrEnd = 1
+        local i, j, ovrStart, ovrEnd = 1, 1
         while i<#line.text do
             ovrStart, ovrEnd = line.text:find("{.-}",i)
             if ovrStart then
-                if ovrStart>i then table.insert(sections, ASSLineTextSection(line.text:sub(i,ovrStart-1))) end
-                table.insert(sections, ASSLineTagSection(line.text:sub(ovrStart+1,ovrEnd-1)))
+                if ovrStart>i then
+                    sections[j] = ASSLineTextSection(line.text:sub(i,ovrStart-1))
+                    j=j+1 
+                end
+                sections[j] = ASSLineTagSection(line.text:sub(ovrStart+1,ovrEnd-1))
                 i = ovrEnd +1
             else
-                table.insert(sections,ASSLineTextSection(line.text:sub(i)))
+                sections[j] = ASSLineTextSection(line.text:sub(i))
                 break
             end
+        j=j+1
         end
     end
     self.line, self.sections = line, self:typeCheck(sections)
