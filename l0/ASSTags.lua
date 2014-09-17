@@ -270,21 +270,21 @@ function ASSLineContents:removeSections(start, end_)
     self:updateRefs()
 end
 
-function ASSLineContents:modTags(callback, tagTypes, start, end_, relative)
+function ASSLineContents:modTags(callback, tagNames, start, end_, relative)
     local j = 0
     self:callback(function(section)
         if not relative or end_>j then
-            j = j + (section:modTags(callback, tagTypes, relative and math.max(start-j,1), relative and end_-j) or 0)
+            j = j + (section:modTags(callback, tagNames, relative and math.max(start-j,1), relative and end_-j) or 0)
         end
     end, true, false, true, not relative and start, not relative and end_)
 
     return j>0 and j or false
 end
 
-function ASSLineContents:getTags(tagTypes, start, end_, relative)
+function ASSLineContents:getTags(tagNames, start, end_, relative)
     local tags={}
     self:callback(function(section)
-        table.joinArray(tags, section:getTags(tagTypes))
+        table.joinArray(tags, section:getTags(tagNames))
     end, true, false, true, start, end_, relative)
     return tags
 end
@@ -320,8 +320,8 @@ function ASSLineContents:insertTags(tags, index, relative)
     end
 end
 
-function ASSLineContents:insertDefaultTags(tagTypes, index, relative)
-    local defaultTags = self:getStyleDefaultTags():getTags(tagTypes)
+function ASSLineContents:insertDefaultTags(tagNames, index, relative)
+    local defaultTags = self:getStyleDefaultTags():getTags(tagNames)
     return self:insertTags(defaultTags, index, relative)
 end
 
@@ -463,39 +463,39 @@ function ASSLineContents:getStyleDefaultTags()    -- TODO: cache
     self.line:extraMetrics()
 
     local styleDefaults = {
-        scale_x = ASS:__createTag("scale_x",styleRef("scale_x")),
-        scale_y = ASS:__createTag("scale_y", styleRef("scale_y")),
-        align = ASS:__createTag("align", styleRef("align")),
-        angle = ASS:__createTag("angle", styleRef("angle")),
-        outline = ASS:__createTag("outline", styleRef("outline")),
-        outline_x = ASS:__createTag("outline_x", styleRef("outline")),
-        outline_y = ASS:__createTag("outline_y", styleRef("outline")),
-        shadow = ASS:__createTag("shadow", styleRef("shadow")),
-        shadow_x = ASS:__createTag("shadow_x", styleRef("shadow")),
-        shadow_y = ASS:__createTag("shadow_y", styleRef("shadow")),
-        alpha1 = ASS:__createTag("alpha1", styleRef("alpha1")),
-        alpha2 = ASS:__createTag("alpha2", styleRef("alpha2")),
-        alpha3 = ASS:__createTag("alpha3", styleRef("alpha3")),
-        alpha4 = ASS:__createTag("alpha4", styleRef("alpha4")),
-        color1 = ASS:__createTag("color1", styleRef("color1")),
-        color2 = ASS:__createTag("color2", styleRef("color2")),
-        color3 = ASS:__createTag("color3", styleRef("color3")),
-        color4 = ASS:__createTag("color4", styleRef("color4")),
-        clip_vect = ASS:__createTag("clip_vect", {string.format("m 0 0 l %s 0 %s %s 0 %s 0 0",resX,resX,resY,resY)}),
-        iclip_vect = ASS:__createTag("iclip_vect", {"m 0 0 l 0 0 0 0 0 0 0 0"}),
-        clip_rect = ASS:__createTag("clip_rect", {0,0,resX,resY}),
-        iclip_rect = ASS:__createTag("iclip_rect", {0,0,0,0}),
-        bold = ASS:__createTag("bold", styleRef("bold")),
-        italic = ASS:__createTag("italic", styleRef("italic")),
-        underline = ASS:__createTag("underline", styleRef("underline")),
-        strikeout = ASS:__createTag("strikeout", styleRef("strikeout")),
-        spacing = ASS:__createTag("spacing", styleRef("spacing")),
-        fontsize = ASS:__createTag("fontsize", styleRef("fontsize")),
-        fontname = ASS:__createTag("fontname", styleRef("fontname")),
-        position = ASS:__createTag("position", {self.line:getDefaultPosition()}),
-        move_simple = ASS:__createTag("move_simple", {self.line.xPosition, self.line.yPosition, self.line.xPosition, self.line.yPosition}),
-        move = ASS:__createTag("move", {self.line.xPosition, self.line.yPosition, self.line.xPosition, self.line.yPosition}),
-        org = ASS:__createTag("org", {self.line.xPosition, self.line.yPosition}),
+        scale_x = ASS:createTag("scale_x",styleRef("scale_x")),
+        scale_y = ASS:createTag("scale_y", styleRef("scale_y")),
+        align = ASS:createTag("align", styleRef("align")),
+        angle = ASS:createTag("angle", styleRef("angle")),
+        outline = ASS:createTag("outline", styleRef("outline")),
+        outline_x = ASS:createTag("outline_x", styleRef("outline")),
+        outline_y = ASS:createTag("outline_y", styleRef("outline")),
+        shadow = ASS:createTag("shadow", styleRef("shadow")),
+        shadow_x = ASS:createTag("shadow_x", styleRef("shadow")),
+        shadow_y = ASS:createTag("shadow_y", styleRef("shadow")),
+        alpha1 = ASS:createTag("alpha1", styleRef("alpha1")),
+        alpha2 = ASS:createTag("alpha2", styleRef("alpha2")),
+        alpha3 = ASS:createTag("alpha3", styleRef("alpha3")),
+        alpha4 = ASS:createTag("alpha4", styleRef("alpha4")),
+        color1 = ASS:createTag("color1", styleRef("color1")),
+        color2 = ASS:createTag("color2", styleRef("color2")),
+        color3 = ASS:createTag("color3", styleRef("color3")),
+        color4 = ASS:createTag("color4", styleRef("color4")),
+        clip_vect = ASS:createTag("clip_vect", {string.format("m 0 0 l %s 0 %s %s 0 %s 0 0",resX,resX,resY,resY)}),
+        iclip_vect = ASS:createTag("iclip_vect", {"m 0 0 l 0 0 0 0 0 0 0 0"}),
+        clip_rect = ASS:createTag("clip_rect", {0,0,resX,resY}),
+        iclip_rect = ASS:createTag("iclip_rect", {0,0,0,0}),
+        bold = ASS:createTag("bold", styleRef("bold")),
+        italic = ASS:createTag("italic", styleRef("italic")),
+        underline = ASS:createTag("underline", styleRef("underline")),
+        strikeout = ASS:createTag("strikeout", styleRef("strikeout")),
+        spacing = ASS:createTag("spacing", styleRef("spacing")),
+        fontsize = ASS:createTag("fontsize", styleRef("fontsize")),
+        fontname = ASS:createTag("fontname", styleRef("fontname")),
+        position = ASS:createTag("position", {self.line:getDefaultPosition()}),
+        move_simple = ASS:createTag("move_simple", {self.line.xPosition, self.line.yPosition, self.line.xPosition, self.line.yPosition}),
+        move = ASS:createTag("move", {self.line.xPosition, self.line.yPosition, self.line.xPosition, self.line.yPosition}),
+        org = ASS:createTag("org", {self.line.xPosition, self.line.yPosition}),
     }
 
     for name,tag in pairs(ASS.tagMap) do
@@ -577,20 +577,20 @@ function ASSLineTagSection:new(tags)
     return self
 end
 
-function ASSLineTagSection:callback(callback, tagTypes, start, end_, relative, reverse)
+function ASSLineTagSection:callback(callback, tagNames, start, end_, relative, reverse)
     local tagSet, prevCnt = {}, #self.tags
     start, end_ = default(start,1), default(end_,prevCnt)
-    if type(tagTypes)=="string" then tagTypes={tagTypes} end
-    if tagTypes then
-        assert(type(tagTypes)=="table", "Error: argument 2 to callback must be either a table of strings or a single string, got " .. type(tagTypes))
-        for _,tagType in pairs(tagTypes) do
-            tagSet[ASS.getInternalTagName()] = true
+    if type(tagNames)=="string" then tagNames={tagNames} end
+    if tagNames then
+        assert(type(tagNames)=="table", "Error: argument 2 to callback must be either a table of strings or a single string, got " .. type(tagNames))
+        for i=1,#tagNames do
+            tagSet[tagNames[i].__tag.name] = true
         end
     end
 
     local j, tags = 1, self.tags
     for i=reverse and prevCnt or 1, reverse and 1 or prevCnt, reverse and -1 or 1 do
-        if (not tagTypes or tagSet[tags[i].__tag.name]) and (relative and j>=start and j<=end_ or i>=start and i<=end_) then
+        if (not tagNames or tagSet[tags[i].__tag.name]) and (relative and j>=start and j<=end_ or i>=start and i<=end_) then
             local result, hasRun = callback(tags[i],self.tags,i), true
             if result==false then
                 tags[i]=nil
@@ -605,22 +605,22 @@ function ASSLineTagSection:callback(callback, tagTypes, start, end_, relative, r
 end
 ASSLineTagSection.modTags = ASSLineTagSection.callback
 
-function ASSLineTagSection:getTags(tagTypes, start, end_, relative)
+function ASSLineTagSection:getTags(tagNames, start, end_, relative)
     local tags = {}
     self:callback(function(tag)
         tags[#tags+1] = tag
-    end, tagTypes, start, end_, relative)
+    end, tagNames, start, end_, relative)
     return tags
 end
 
 function ASSLineTagSection:removeTags(...)
-    local tags, tagTypes, tagObjects, removed, cnt = {...}, {}, {}, {}
+    local tags, tagNames, tagObjects, removed, cnt = {...}, {}, {}, {}
     
     for i=1,#tags do 
         if ASS.instanceOf(tags[i]) then
             tagObjects[tags[i]] = true
         elseif type(tags[i]=="string") then
-            tagTypes[ASS.mapTag(tags[i])] = true
+            tagNames[ASS.mapTag(tags[i])] = true
         else error(string.format("Error: argument %d to removeTags() must be either a tag name or a tag object, got a %s.", i, type(tags[i]))) end
     end
 
@@ -629,7 +629,7 @@ function ASSLineTagSection:removeTags(...)
         self.tags = {}
     else
         cnt = self:callback(function(tag)
-            if tagTypes[tag.__tag.name] or tagObjects[tag] then
+            if tagNames[tag.__tag.name] or tagObjects[tag] then
                 removed[#removed+1] = tag
                 return false
             end
@@ -670,8 +670,8 @@ function ASSLineTagSection:insertTags(tags, index)
     return #inserted>1 and inserted or inserted[1]
 end
 
-function ASSLineTagSection:insertDefaultTags(tagTypes, index)
-    local defaultTags = self.parent:getStyleDefaultTags():getTags(tagTypes)
+function ASSLineTagSection:insertDefaultTags(tagNames, index)
+    local defaultTags = self.parent:getStyleDefaultTags():getTags(tagNames)
     return self:insertTags(defaultTags, index)
 end
 
@@ -809,9 +809,14 @@ function ASSTagList:getStyleTable(styleRef, name, coerce)
     return sTbl
 end
 
-function ASSTagList:getTags(tagTypes)
-    if type(tagTypes)~="table" then tagTypes={tagTypes} end
-    local tags = #tagTypes>0 and table.select(self.tags,tagTypes) or self.tags
+function ASSTagList:getTags(tagNames)
+    if type(tagNames)=="string" then tagNames={tagNames} end
+    assert(not tagNames or type(tagNames)=="table", "Error: argument 1 to getTags() must be either a single or a table of tag names, got a " .. type(tagNames))
+    if tagNames and #tagNames==0 then
+        return {}
+    end
+
+    local tags = tagNames and table.select(self.tags,tagNames) or self.tags
     return table.values(tags)
 end
 --------------------- Override Tag Classes ---------------------
@@ -1513,14 +1518,15 @@ function ASSFoundation:new()
         alpha2 = {friendlyName="\\2a", type=ASSHex, pattern="\\2a&H(%x%x)&", format="\\alpha&H%02X&"}, 
         alpha3 = {friendlyName="\\3a", type=ASSHex, pattern="\\3a&H(%x%x)&", format="\\alpha&H%02X&"}, 
         alpha4 = {friendlyName="\\4a", type=ASSHex, pattern="\\4a&H(%x%x)&", format="\\alpha&H%02X&"}, 
+        color = {friendlyName="\\c", type=ASSColor, props={name="color1"}},
         color1 = {friendlyName="\\1c", type=ASSColor, pattern="\\1?c&H(%x%x)(%x%x)(%x%x)&", format="\\1c&H%02X%02X%02X&"},
         color2 = {friendlyName="\\2c", type=ASSColor, pattern="\\2c&H(%x%x)(%x%x)(%x%x)&", format="\\2c&H%02X%02X%02X&"},
         color3 = {friendlyName="\\3c", type=ASSColor, pattern="\\3c&H(%x%x)(%x%x)(%x%x)&", format="\\3c&H%02X%02X%02X&"},
         color4 = {friendlyName="\\4c", type=ASSColor, pattern="\\4c&H(%x%x)(%x%x)(%x%x)&", format="\\4c&H%02X%02X%02X&"},
-        clip_vect = {friendlyName="\\clip (Vect)", type=ASSClipVect, pattern="\\clip%(([mnlbspc] .-)%)", format="\\clip(%s)"}, 
-        iclip_vect = {friendlyName="\\iclip (Vect)", type=ASSClipVect, props={inverse=true}, pattern="\\iclip%(([mnlbspc] .-)%)", format="\\iclip(%s)", default={"m 0 0 l 0 0 0 0 0 0 0 0"}},
-        clip_rect = {friendlyName="\\clip (Rect)", type=ASSClipRect, pattern="\\clip%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+)%)", format="\\clip(%.2N,%.2N,%.2N,%.2N)"}, 
-        iclip_rect = {friendlyName="\\iclip (Rect)", type=ASSClipRect, props={inverse=true}, pattern="\\iclip%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+)%)", format="\\iclip(%.2N,%.2N,%.2N,%.2N)", default={0,0,0,0}},
+        clip_vect = {friendlyName="\\clip", type=ASSClipVect, pattern="\\clip%(([mnlbspc] .-)%)", format="\\clip(%s)"}, 
+        iclip_vect = {friendlyName="\\iclip", type=ASSClipVect, props={inverse=true}, pattern="\\iclip%(([mnlbspc] .-)%)", format="\\iclip(%s)", default={"m 0 0 l 0 0 0 0 0 0 0 0"}},
+        clip_rect = {friendlyName="\\clip", type=ASSClipRect, pattern="\\clip%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+)%)", format="\\clip(%.2N,%.2N,%.2N,%.2N)"}, 
+        iclip_rect = {friendlyName="\\iclip", type=ASSClipRect, props={inverse=true}, pattern="\\iclip%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+)%)", format="\\iclip(%.2N,%.2N,%.2N,%.2N)", default={0,0,0,0}},
         blur_edges = {friendlyName="\\be", type=ASSNumber, props={positive=true}, pattern="\\be([%d%.]+)", format="\\be%.2N", default=0}, 
         blur = {friendlyName="\\blur", type=ASSNumber, props={positive=true}, pattern="\\blur([%d%.]+)", format="\\blur%.2N", default=0}, 
         shear_x = {friendlyName="\\fax", type=ASSNumber, pattern="\\fax([%-%d%.]+)", format="\\fax%.2N", default=0}, 
@@ -1537,7 +1543,7 @@ function ASSFoundation:new()
         k_sweep_alt = {friendlyName="\\K", type=ASSDuration, props={scale=10}, pattern="\\K([%d]+)", format="\\K%d", default=0},
         k_bord = {friendlyName="\\ko", type=ASSDuration, props={scale=10}, pattern="\\ko([%d]+)", format="\\ko%d", default=0},
         position = {friendlyName="\\pos", type=ASSPosition, pattern="\\pos%(([%-%d%.]+),([%-%d%.]+)%)", format="\\pos(%.2N,%.2N)"},
-        move_simple = {friendlyName=nil, type=ASSMove, props={simple=true}, pattern="\\move%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+)%)", format="\\move(%.2N,%.2N,%.2N,%.2N)"},
+        move_simple = {friendlyName="\\move", type=ASSMove, props={simple=true}, pattern="\\move%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+)%)", format="\\move(%.2N,%.2N,%.2N,%.2N)"},
         move = {friendlyName="\\move", type=ASSMove, pattern="\\move%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),(%d+),(%d+)%)", format="\\move(%.2N,%.2N,%.2N,%.2N,%.2N,%.2N)"},
         org = {friendlyName="\\org", type=ASSPosition, pattern="\\org%(([%-%d%.]+),([%-%d%.]+)%)", format="\\org(%.2N,%.2N)"},
         wrap = {friendlyName="\\q", type=ASSWrapStyle, pattern="\\q(%d)", format="\\q%d", default=0},
@@ -1550,36 +1556,31 @@ function ASSFoundation:new()
     -- insert tag name into props
     for name,tag in pairs(tagMap) do
         tag.props = tag.props or {}
-        tag.props.name = name
+        tag.props.name = tag.props.name or name
     end
 
     self.tagMap = tagMap
     return self
 end
 
-function ASSFoundation:getInternalTagName(name)
-    if self.tagMap[name] then return name
+function ASSFoundation:getTagNames(friendlyName)
+    if self.tagMap[friendlyName] then return name
     else
+        local tagNames = {}
         for key,val in pairs(self.tagMap) do
-            if val.friendlyName==name then return key end
+            tagNames[#tagNames+1] = val.friendlyName==name and key
         end
     end
-    return false
+    return tagNames
 end
 
 function ASSFoundation:mapTag(name)
     assert(type(name)=="string", "Error: argument 1 to mapTag() must be a string, got a " .. type(name))
-    name = self:getInternalTagName(name)
     return self.tagMap[assert(name,"Error: can't find tag " .. name)], name
 end
 
 function ASSFoundation:createTag(name, ...)
     local tag = self:mapTag(name)
-    return tag.type(returnAll({...},{tag.props}))
-end
-
-function ASSFoundation:__createTag(name, ...)     -- faster version for internal use
-    local tag = self.tagMap[name]
     return tag.type(returnAll({...},{tag.props}))
 end
 
