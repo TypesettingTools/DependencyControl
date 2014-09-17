@@ -1307,6 +1307,19 @@ function ASSClipVect:get()
 end
 ASSClipVect.set, ASSClipVect.mod = nil, nil  -- TODO: check if these can be remapped/implemented in a way that makes sense, maybe work on strings
 
+ASSUnknown = createASSClass("ASSUnknown", ASSTagBase, {"value"}, {"string"})
+function ASSUnknown:new(string, tagProps)
+    self:readProps(tagProps)
+    assert(type(string)=="string", string.format("Error: Objects of class %s must be created from a string, got %s", self.typeName, type(string)))
+    self.value = string
+    return self
+end
+
+function ASSUnknown:getTagParams(coerce)
+    return coerce and tostring(self.value) or self:typeCheck(self.value)
+end
+
+ASSUnknown.add, ASSUnknown.sub, ASSUnknown.mul, ASSUnknown.pow = nil, nil, nil, nil
 
 --------------------- Drawing Command Classes ---------------------
 
@@ -1475,6 +1488,7 @@ function ASSFoundation:new()
         fade_simple = {friendlyName="\\fad", type=ASSFade, props={simple=true}, pattern="\\fad%((%d+),(%d+)%)", format="\\fad(%d,%d)", default={0,0}},
         fade = {friendlyName="\\fade", type=ASSFade, pattern="\\fade?%((.-)%)", format="\\fade(%d,%d,%d,%d,%d,%d,%d)", default={255,0,255,0,0,0,0}},
         transform = {friendlyName="\\t", type=ASSTransform, pattern="\\t%((.-)%)"},
+        unknown = {type=ASSUnknown, format="%s"}
     }
 
     -- insert tag name into props
@@ -1522,7 +1536,7 @@ function ASSFoundation:getTagFromString(str)
             end
         end
     end
-    return false
+    return ASSUnknown(str,self.tagMap["unknown"].props)
 end
 
 function ASSFoundation:formatTag(tagRef, ...)
