@@ -1618,5 +1618,10 @@ function ASSFoundation.instanceOf(val,classes)
     return false
 end
 
+function ASSFoundation.parse(line)
+    line.ASS = ASSLineContents(line)
+    return line.ASS
+end
+
 
 ASS = ASSFoundation()
