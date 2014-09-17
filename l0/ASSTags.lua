@@ -634,12 +634,15 @@ function ASSLineTagSection:removeTags(...)
 end
 
 function ASSLineTagSection:insertTags(tags, index)
-    index = Default(index,#self.tags)
+    local prevCnt, inserted = #self.tags, {}
+    index = Default(index,prevCnt)
+    assert(math.isInt(index) and index~=0,
+           string.format("Error: argument 2 to insertTags() must be an integer != 0, got '%s' of type %s", tostring(index), type(index))
+    )
     if type(tags)~="table" or ASS.instanceOf(tags) then
         tags = {tags}
     end
 
-    local inserted = {}
     for i,tag in ipairs(tags) do
         local cls = ASS.instanceOf(tag)
         if not cls then
@@ -655,8 +658,9 @@ function ASSLineTagSection:insertTags(tags, index)
             )
         end
 
-        table.insert(self.tags, index+i-1, tag:copy())
-        inserted[i] = self.tags[index+i+1] 
+        local insertIdx = index<0 and prevCnt+index+i or index+i-1
+        table.insert(self.tags, insertIdx, tag:copy())
+        inserted[i] = self.tags[insertIdx] 
     end
     return #inserted>1 and inserted or inserted[1]
 end
