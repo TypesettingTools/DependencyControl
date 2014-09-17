@@ -298,7 +298,7 @@ function ASSLineContents:removeTags(...)
 end
 
 function ASSLineContents:insertTags(tags, index, relative)
-    assert(math.isInt(index) and index~=0,
+    assert(index==nil or math.isInt(index) and index~=0,
            string.format("Error: argument 2 to insertTags() must be an integer != 0, got '%s' of type %s", tostring(index), type(index))
     )
     local reverse = index<0
