@@ -291,11 +291,11 @@ function ASSLineContents:getTags(tagNames, start, end_, relative)
     return tags
 end
 
-function ASSLineContents:removeTags(...)
-    local removed, args = {}, {...}
+function ASSLineContents:removeTags(tags, start, end_, relative)
+    local removed = {}
     self:callback(function(section)
-        removed = table.join(removed, section:removeTags(unpack(args)))
-    end, false, true, true)
+        removed = table.join(removed, section:removeTags(tags))
+    end, false, true, true, start, end_, relative)
     return removed
 end
 
@@ -619,28 +619,37 @@ function ASSLineTagSection:getTags(tagNames, start, end_, relative)
     return tags
 end
 
-function ASSLineTagSection:removeTags(...)
-    local tags, tagNames, tagObjects, removed, cnt = {...}, {}, {}, {}
+function ASSLineTagSection:removeTags(tags, start, end_, relative)
+    if type(tags)=="number" and relative==nil then    -- called without tags parameter -> delete all tags in range
+        tags, start, end_, relative = nil, tags, start, end_
+    else 
+        tags = type(tags)=="table" and tags or {tags}
+    end
+    local tagNames, tagObjects, removed, cnt = {}, {}, {}
     
-    for i=1,#tags do 
-        if ASS.instanceOf(tags[i]) then
-            tagObjects[tags[i]] = true
-        elseif type(tags[i]=="string") then
-            tagNames[ASS:mapTag(tags[i]).props.name] = true
-        else error(string.format("Error: argument %d to removeTags() must be either a tag name or a tag object, got a %s.", i, type(tags[i]))) end
+    if not (tags or start or end_) then  --remove all tags if called without parameters 
+        removed, self.tags = self.tags, {}
+        return removed
     end
 
-    if #tags==0 then 
-        cnt = #self.tags
-        self.tags = {}
-    else
-        cnt = self:callback(function(tag)
-            if tagNames[tag.__tag.name] or tagObjects[tag] then
-                removed[#removed+1] = tag
-                return false
-            end
-        end)
+    if tags and #tags>0 then
+        -- build sets
+        for i=1,#tags do 
+            if ASS.instanceOf(tags[i]) then
+                tagObjects[tags[i]] = true
+            elseif type(tags[i]=="string") then
+                tagNames[ASS:mapTag(tags[i]).props.name] = true
+            else error(string.format("Error: argument %d to removeTags() must be either a tag name or a tag object, got a %s.", i, type(tags[i]))) end
+        end
     end
+    -- remove matching tags
+    self:callback(function(tag)
+        if tagNames[tag.__tag.name] or tagObjects[tag] or not tags then
+            removed[#removed+1] = tag
+            return false
+        end
+    end, start, end_, relative)
+
     return removed
 end
 
