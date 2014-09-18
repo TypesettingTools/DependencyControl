@@ -227,25 +227,27 @@ function ASSLineContents:get(noTags, noText, noCmts, start, end_, relative)
 end
 
 function ASSLineContents:callback(callback, noTags, noText, noCmts, start, end_, relative, reverse)
-    local prevCnt, j, sects = #self.sections, 1, self.sections
+    local prevCnt, j, numRun, sects = #self.sections, 0, 0, self.sections
     start, end_ = default(start,1), default(end_,prevCnt)
 
     for i=reverse and prevCnt or 1, reverse and 1 or prevCnt, reverse and -1 or 1 do
-        if ASS.instanceOf(sects[i], {not noText and ASSLineTextSection, not noTags and ASSLineTagSection, not noCmts and ASSLineCommentSection}) and
-        (relative and j>=start and j<=end_ or i>=start and i<=end_) then
-            local result, hasRun = callback(sects[i],self.sections,i), true
-            if result==false then
-                sects[i]=nil
-            elseif type(result)~="nil" and result~=true then
-                sects[i] = result
-                prevCnt=-1
-            end
+        if ASS.instanceOf(sects[i], {not noText and ASSLineTextSection, not noTags and ASSLineTagSection, not noCmts and ASSLineCommentSection}) then
             j=j+1
+            if (relative and j>=start and j<=end_) or (i>=start and i<=end_) then
+                numRun = numRun+1
+                local result, hasRun = callback(sects[i],self.sections,i,j), true
+                if result==false then
+                    sects[i]=nil
+                elseif type(result)~="nil" and result~=true then
+                    sects[i] = result
+                    prevCnt=-1
+                end
+            end
         end
     end
     self.sections = table.trimArray(self.sections)
     self:updateRefs(prevCnt)
-    return j>1 and j-1 or false
+    return numRun>0 and numRun or false
 end
 
 function ASSLineContents:insertSections(sections,index)
@@ -273,29 +275,32 @@ function ASSLineContents:removeSections(start, end_)
 end
 
 function ASSLineContents:modTags(callback, tagNames, start, end_, relative)
-    local j = 0
+    local modCnt = 0
     self:callback(function(section)
-        if not relative or end_>j then
-            j = j + (section:modTags(callback, tagNames, relative and math.max(start-j,1), relative and end_-j) or 0)
+        if not relative or end_>modCnt then
+            local sectModCnt = section:modTags(callback, tagNames, relative and math.max(start-modCnt,1), relative and end_-modCnt, true)
+            modCnt = modCnt + (sectModCnt or 0)
         end
-    end, false, true, true, not relative and start, not relative and end_)
+    end, false, true, true, not relative and start or nil, not relative and end_ or nil, true)
 
-    return j>0 and j or false
+    return modCnt>0 and modCnt or false
 end
 
 function ASSLineContents:getTags(tagNames, start, end_, relative)
     local tags={}
     self:callback(function(section)
         tags = table.join(tags, section:getTags(tagNames))
-    end, false, true, true, start, end_, relative)
-    return tags
+    end, false, true, true, not relative and start or nil, not relative and end_ or nil, true)
+
+    return relative and table.sliceArray(tags,start,end_) or tags
 end
 
 function ASSLineContents:removeTags(tags, start, end_, relative)
-    local removed = {}
-    self:callback(function(section)
-        removed = table.join(removed, section:removeTags(tags))
-    end, false, true, true, start, end_, relative)
+    local removed, rmCnt  = {}, 0
+    self:callback(function(section, sections, i, j)
+        local sectRemoved = section:removeTags(tags, relative and math.max(start-rmCnt,1) or nil, relative and end_-rmCnt or nil, true)
+        removed, rmCnt = table.join(removed,sectRemoved), rmCnt+#sectRemoved
+    end, false, true, true, not relative and start or nil, not relative and end_ or nil, true)
     return removed
 end
 
@@ -591,20 +596,23 @@ function ASSLineTagSection:callback(callback, tagNames, start, end_, relative, r
         end
     end
 
-    local j, tags = 1, self.tags
+    local j, numRun, tags = 0, 0, self.tags
     for i=reverse and prevCnt or 1, reverse and 1 or prevCnt, reverse and -1 or 1 do
-        if (not tagNames or tagSet[tags[i].__tag.name]) and (relative and j>=start and j<=end_ or i>=start and i<=end_) then
-            local result, hasRun = callback(tags[i],self.tags,i), true
-            if result==false then
-                tags[i]=nil
-            elseif type(result)~="nil" and result~=true then
-                tags[i] = result
-            end
+        if not tagNames or tagSet[tags[i].__tag.name] then
             j=j+1
+            if (relative and j>=start and j<=end_) or (i>=start and i<=end_) then
+                local result = callback(tags[i],self.tags,i,j)
+                numRun=numRun+1
+                if result==false then
+                    tags[i]=nil
+                elseif type(result)~="nil" and result~=true then
+                    tags[i] = result
+                end
+            end
         end
     end
     self.tags = table.trimArray(tags)
-    return j>1 and j-1 or false
+    return numRun>0 and numRun or false
 end
 
 function ASSLineTagSection:modTags(tagNames, callback, start, end_, relative, reverse)
@@ -648,7 +656,7 @@ function ASSLineTagSection:removeTags(tags, start, end_, relative)
             removed[#removed+1] = tag
             return false
         end
-    end, start, end_, relative)
+    end, nil, start, end_, relative)
 
     return removed
 end
