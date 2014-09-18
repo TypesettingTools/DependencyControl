@@ -226,16 +226,27 @@ function ASSLineContents:get(noTags, noText, noCmts, start, end_, relative)
     return result
 end
 
-function ASSLineContents:callback(callback, noTags, noText, noCmts, start, end_, relative, reverse)
-    local prevCnt, j, numRun, sects = #self.sections, 0, 0, self.sections
+function ASSLineContents:callback(callback, noTags, noText, noCmts, start, end_, relative)
+    local prevCnt = #self.sections
     start, end_ = default(start,1), default(end_,prevCnt)
+
+    assert(math.isInt(start) and math.isInt(end_), 
+           string.format("Error: arguments 'start' and 'end' to callback() must be integers, got %s and %s.", type(start), type(end_)))
+    assert((start>0)==(end_>0) and start~=0 and end_~=0, 
+           string.format("Error: arguments 'start' and 'end' to callback() must be either both >0 or both <0, got %d and %d.", start, end_))
+    assert(start <= end_, string.format("Error: condition 'start' <= 'end' not met, got %d <= %d", start, end_))
+
+    local j, numRun, sects, reverse = 0, 0, self.sections, relative and start<0
+    if start<0 then
+        start, end_ = relative and math.abs(end_) or prevCnt+start+1, relative and math.abs(start) or prevCnt+end_+1
+    end
 
     for i=reverse and prevCnt or 1, reverse and 1 or prevCnt, reverse and -1 or 1 do
         if ASS.instanceOf(sects[i], {not noText and ASSLineTextSection, not noTags and ASSLineTagSection, not noCmts and ASSLineCommentSection}) then
             j=j+1
             if (relative and j>=start and j<=end_) or (i>=start and i<=end_) then
                 numRun = numRun+1
-                local result, hasRun = callback(sects[i],self.sections,i,j), true
+                local result = callback(sects[i],self.sections,i,j)
                 if result==false then
                     sects[i]=nil
                 elseif type(result)~="nil" and result~=true then
@@ -304,16 +315,14 @@ function ASSLineContents:removeTags(tags, start, end_, relative)
     return removed
 end
 
-function ASSLineContents:insertTags(tags, index, relative)
+function ASSLineContents:insertTags(tags, index, direct)
     assert(index==nil or math.isInt(index) and index~=0,
-           string.format("Error: argument 2 to insertTags() must be an integer != 0, got '%s' of type %s", tostring(index), type(index))
+           string.format("Error: argument #2 (index) to insertTags() must be an integer != 0, got '%s' of type %s", tostring(index), type(index))
     )
-    local reverse = index and index<0
-    relative, index = default(relative,reverse), math.abs(index or 1)
+    index = default(index, 1)
 
-    local j = 1
-    if not relative then
-        local section = self.sections[index]
+    if direct then
+        local section = self.sections[index>0 and index or #self.sections-index+1]
         assert(ASS.instanceOf(section, ASSLineTagSection), string.format("Error: can't insert tag in section #%d of type %s.", 
                index, section and section.typeName or "<no section>")
         )
@@ -322,14 +331,14 @@ function ASSLineContents:insertTags(tags, index, relative)
         local inserted
         self:callback(function(section)
             inserted = section:insertTags(tags)
-        end, false, true, true, index, index, true, reverse)
+        end, false, true, true, index, index, true)
         return inserted
     end
 end
 
-function ASSLineContents:insertDefaultTags(tagNames, index, relative)
+function ASSLineContents:insertDefaultTags(tagNames, index, direct)
     local defaultTags = self:getStyleDefaultTags():getTags(tagNames)
-    return self:insertTags(defaultTags, index, relative)
+    return self:insertTags(defaultTags, index, direct)
 end
 
 function ASSLineContents:stripTags()
@@ -438,7 +447,7 @@ function ASSLineContents:splitAtIntervals(callback, cleanLevel)
             assert(nextIdx>idx, "Error: callback function for splitAtIntervals must always return an index greater than the last index.")
             -- create a new line
             local splitLine = Line(self.line, self.line.parentCollection)
-            splitLine.ASS = ASSLineContents(splitLine, self:get(false,true,true,0,i))
+            splitLine.ASS = ASSLineContents(splitLine, self:get(false,true,true,1,i))
             splitLine.ASS:insertSections(ASSLineTextSection(text:sub(idx-off,nextIdx-off-1)))
             table.insert(splitLines,splitLine)        
             -- check if this section is long enough to fill the new line
@@ -585,9 +594,16 @@ function ASSLineTagSection:new(tags)
     return self
 end
 
-function ASSLineTagSection:callback(callback, tagNames, start, end_, relative, reverse)
+function ASSLineTagSection:callback(callback, tagNames, start, end_, relative)
     local tagSet, prevCnt = {}, #self.tags
     start, end_ = default(start,1), default(end_,prevCnt)
+
+    assert(math.isInt(start) and math.isInt(end_), 
+           string.format("Error: arguments 'start' and 'end' to callback() must be integers, got %s and %s.", type(start), type(end_)))
+    assert((start>0)==(end_>0) and start~=0 and end_~=0, 
+           string.format("Error: arguments 'start' and 'end' to callback() must be either both >0 or both <0, got %d and %d.", start, end_))
+    assert(start <= end_, string.format("Error: condition 'start' <= 'end' not met, got %d <= %d", start, end_))
+
     if type(tagNames)=="string" then tagNames={tagNames} end
     if tagNames then
         assert(type(tagNames)=="table", "Error: argument 2 to callback must be either a table of strings or a single string, got " .. type(tagNames))
@@ -596,15 +612,19 @@ function ASSLineTagSection:callback(callback, tagNames, start, end_, relative, r
         end
     end
 
-    local j, numRun, tags = 0, 0, self.tags
+    local j, numRun, tags, reverse = 0, 0, self.tags, relative and start<0
+    if start<0 then
+        start, end_ = relative and math.abs(end_) or prevCnt+start+1, relative and math.abs(start) or prevCnt+end_+1
+    end
+
     for i=reverse and prevCnt or 1, reverse and 1 or prevCnt, reverse and -1 or 1 do
         if not tagNames or tagSet[tags[i].__tag.name] then
             j=j+1
             if (relative and j>=start and j<=end_) or (i>=start and i<=end_) then
                 local result = callback(tags[i],self.tags,i,j)
-                numRun=numRun+1
+                numRun = numRun+1
                 if result==false then
-                    tags[i]=nil
+                    tags[i] = nil
                 elseif type(result)~="nil" and result~=true then
                     tags[i] = result
                 end
@@ -615,8 +635,8 @@ function ASSLineTagSection:callback(callback, tagNames, start, end_, relative, r
     return numRun>0 and numRun or false
 end
 
-function ASSLineTagSection:modTags(tagNames, callback, start, end_, relative, reverse)
-    return self:callback(callback, tagNames, start, end_, relative, reverse)
+function ASSLineTagSection:modTags(tagNames, callback, start, end_, relative)
+    return self:callback(callback, tagNames, start, end_, relative)
 end
 
 function ASSLineTagSection:getTags(tagNames, start, end_, relative)
