@@ -294,7 +294,7 @@ end
 function ASSLineContents:removeTags(...)
     local removed, args = {}, {...}
     self:callback(function(section)
-        removed = table.joinArray(removed, section:removeTags(unpack(args)))
+        removed = table.join(removed, section:removeTags(unpack(args)))
     end, false, true, true)
     return removed
 end
@@ -626,7 +626,7 @@ function ASSLineTagSection:removeTags(...)
         if ASS.instanceOf(tags[i]) then
             tagObjects[tags[i]] = true
         elseif type(tags[i]=="string") then
-            tagNames[ASS.mapTag(tags[i])] = true
+            tagNames[ASS:mapTag(tags[i]).props.name] = true
         else error(string.format("Error: argument %d to removeTags() must be either a tag name or a tag object, got a %s.", i, type(tags[i]))) end
     end
 
