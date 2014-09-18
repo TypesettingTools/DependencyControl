@@ -559,18 +559,17 @@ function ASSLineTagSection:new(tags)
     if ASS.instanceOf(tags,ASSTagList) then
         self.tags = table.values(tags:copy().tags)
     elseif type(tags)=="string" then
-        self.tags, j = {}, 1
-        local tagMatch = re.compile("\\\\[^\\\\\\(]+(?:\\([^\\)]+\\))?")
-        for tag in tagMatch:gfind(tags) do
-            self.tags[j], j = ASS:getTagFromString(tag), j+1
-        end
-        -- comments inside tag sections are read into ASSUnknowns and dumped at the end of the tag list, don't care
-        for str in tagMatch:gsplit(tags,true) do
-            if str ~= "" and #str~=#tags then
-                self.tags[j], j = ASS:createTag("unknown",str), j+1
+        self.tags, i = {}, 1
+        local tagMatch = re.compile("\\\\[^\\\\\\(]+(?:\\([^\\)]+\\)[^\\\\]*)?")
+        for match in tagMatch:gfind(tags) do
+            local tag, start, end_ = ASS:getTagFromString(match)
+            self.tags[i], i = tag, i+1
+            if end_ < #match then   -- comments inside tag sections are read into ASSUnknowns
+                local afterStr = match:sub(end_+1)
+                self.tags[i], i = ASS:createTag(afterStr:sub(1,1)=="\\" and "unknown" or "junk", afterStr), i+1
             end
         end
-
+        
         if #self.tags==0 and #tags>0 then    -- no tags found but string not empty -> must be a comment section
             return ASSLineCommentSection(tags)
         end
@@ -1555,7 +1554,8 @@ function ASSFoundation:new()
         fade_simple = {overrideName="\\fad", type=ASSFade, props={simple=true}, pattern="\\fad%((%d+),(%d+)%)", format="\\fad(%d,%d)", default={0,0}},
         fade = {overrideName="\\fade", type=ASSFade, pattern="\\fade?%((.-)%)", format="\\fade(%d,%d,%d,%d,%d,%d,%d)", default={255,0,255,0,0,0,0}},
         transform = {overrideName="\\t", type=ASSTransform, pattern="\\t%((.-)%)"},
-        unknown = {type=ASSUnknown, format="%s", friendlyName="Unknown Tag/Inline Comment"}
+        unknown = {type=ASSUnknown, format="%s", friendlyName="Unknown Tag"},
+        junk = {type=ASSUnknown, format="%s", friendlyName="Junk"}
     }
 
     local toFriendlyName, toTagName, i = {}, {}
@@ -1600,13 +1600,14 @@ end
 function ASSFoundation:getTagFromString(str)
     for _,tag in pairs(self.tagMap) do
         if tag.pattern then
-            local prms={str:match(tag.pattern)}
-            if #prms>0 then
-                return tag.type(prms,tag.props)
+            local res = {str:find(tag.pattern)}
+            if #res>0 then
+                local start, end_ = table.remove(res,1), table.remove(res,1)
+                return tag.type(res,tag.props), start, end_
             end
         end
     end
-    return ASSUnknown(str,self.tagMap["unknown"].props)
+    return ASSUnknown(str,self.tagMap["unknown"].props), 1, #str
 end
 
 function ASSFoundation:formatTag(tagRef, ...)
