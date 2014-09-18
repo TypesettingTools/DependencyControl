@@ -153,6 +153,22 @@ table.merge = function(...)
     return tbl
 end
 
+table.pluck = function(tbl, prop)
+    local plucked = {}
+    for i=1,#tbl do
+        plucked[i] = tbl[prop]
+    end
+    return plucked
+end
+
+table.process = function(tbl1,tbl2,callback)
+    local tblProc = {}
+    for key,val in pairs(tbl1) do
+        tbl1[key] = callback(val,tbl2[key],key,tbl1,tbl2)
+    end
+    return tblProc
+end
+
 table.reverseArray = function(tbl)
     local length, rTbl = #tbl, {}
     for i,val in ipairs(tbl) do
@@ -167,6 +183,14 @@ table.trimArray = function(tbl)
         if val~=nil then table.insert(trimmed,val) end
     end
     return trimmed
+end
+
+table.select = function(tbl,keys)
+    local selected = {}
+    for i=1,#keys do
+        selected[keys[i]] = tbl[keys[i]]
+    end
+    return selected
 end
 
 table.sliceArray = function(tbl, istart, iend)
