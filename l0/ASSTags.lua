@@ -1375,10 +1375,9 @@ end
 ASSClipVect.set, ASSClipVect.mod = nil, nil  -- TODO: check if these can be remapped/implemented in a way that makes sense, maybe work on strings
 
 ASSUnknown = createASSClass("ASSUnknown", ASSTagBase, {"value"}, {"string"})
-function ASSUnknown:new(string, tagProps)
+function ASSUnknown:new(value, tagProps)
     self:readProps(tagProps)
-    assert(type(string)=="string", string.format("Error: Objects of class %s must be created from a string, got %s", self.typeName, type(string)))
-    self.value = string
+    self.value = type(value) == "table" and self:getArgs(value,"",true) or self:typeCheck(value)
     return self
 end
 
@@ -1387,6 +1386,8 @@ function ASSUnknown:getTagParams(coerce)
 end
 
 ASSUnknown.add, ASSUnknown.sub, ASSUnknown.mul, ASSUnknown.pow = nil, nil, nil, nil
+
+ASSTransform = createASSClass("ASSTransform", ASSUnknown, {"value"}, {"string"})   -- TODO: implement transforms
 
 --------------------- Drawing Command Classes ---------------------
 
@@ -1555,7 +1556,7 @@ function ASSFoundation:new()
         wrapstyle = {overrideName="\\q", type=ASSWrapStyle, pattern="\\q(%d)", format="\\q%d", default=0},
         fade_simple = {overrideName="\\fad", type=ASSFade, props={simple=true}, pattern="\\fad%((%d+),(%d+)%)", format="\\fad(%d,%d)", default={0,0}},
         fade = {overrideName="\\fade", type=ASSFade, pattern="\\fade?%((.-)%)", format="\\fade(%d,%d,%d,%d,%d,%d,%d)", default={255,0,255,0,0,0,0}},
-        transform = {overrideName="\\t", type=ASSTransform, pattern="\\t%((.-)%)"},
+        transform = {overrideName="\\t", type=ASSTransform, pattern="\\t%((.-)%)", format="\\t(%s)"},
         unknown = {type=ASSUnknown, format="%s", friendlyName="Unknown Tag"},
         junk = {type=ASSUnknown, format="%s", friendlyName="Junk"}
     }
