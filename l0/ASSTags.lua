@@ -210,7 +210,9 @@ function ASSLineContents:getString(coerce, noTags, noText, noCmts)
         elseif ASS.instanceOf(section, {not noTags and ASSLineTagSection, not noCmts and ASSLineCommentSection}) then
             str =  string.format("%s{%s}",str,section:getString())
         else 
-            eval(coerce, string.format("Error: %s section #%d is not a %d or %d.\n", self.typeName, i, ASSLineTextSection.typeName, ASSLineTagSection.typeName)) 
+            eval(coerce, string.format("Error: %s section #%d is not a %d, %d or %d.\n", 
+                 self.typeName, i, ASSLineTextSection.typeName, ASSLineTagSection.typeName, ASSLineCommentSection.typeName)
+            ) 
         end
     end
     return str
@@ -564,7 +566,7 @@ function ASSLineTagSection:new(tags)
         end
         -- comments inside tag sections are read into ASSUnknowns and dumped at the end of the tag list, don't care
         for str in tagMatch:gsplit(tags,true) do
-            if str ~= "" then
+            if str ~= "" and #str~=#tags then
                 self.tags[j], j = ASS:createTag("unknown",str), j+1
             end
         end
@@ -1553,7 +1555,7 @@ function ASSFoundation:new()
         fade_simple = {overrideName="\\fad", type=ASSFade, props={simple=true}, pattern="\\fad%((%d+),(%d+)%)", format="\\fad(%d,%d)", default={0,0}},
         fade = {overrideName="\\fade", type=ASSFade, pattern="\\fade?%((.-)%)", format="\\fade(%d,%d,%d,%d,%d,%d,%d)", default={255,0,255,0,0,0,0}},
         transform = {overrideName="\\t", type=ASSTransform, pattern="\\t%((.-)%)"},
-        unknown = {type=ASSUnknown, format="%s"}
+        unknown = {type=ASSUnknown, format="%s", friendlyName="Unknown Tag/Inline Comment"}
     }
 
     local toFriendlyName, toTagName, i = {}, {}
