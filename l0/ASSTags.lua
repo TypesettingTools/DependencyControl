@@ -276,7 +276,7 @@ function ASSLineContents:modTags(callback, tagNames, start, end_, relative)
         if not relative or end_>j then
             j = j + (section:modTags(callback, tagNames, relative and math.max(start-j,1), relative and end_-j) or 0)
         end
-    end, true, false, true, not relative and start, not relative and end_)
+    end, false, true, true, not relative and start, not relative and end_)
 
     return j>0 and j or false
 end
@@ -284,8 +284,8 @@ end
 function ASSLineContents:getTags(tagNames, start, end_, relative)
     local tags={}
     self:callback(function(section)
-        table.joinArray(tags, section:getTags(tagNames))
-    end, true, false, true, start, end_, relative)
+        table.join(tags, section:getTags(tagNames))
+    end, false, true, true, start, end_, relative)
     return tags
 end
 
@@ -293,7 +293,7 @@ function ASSLineContents:removeTags(...)
     local removed, args = {}, {...}
     self:callback(function(section)
         removed = table.joinArray(removed, section:removeTags(unpack(args)))
-    end, true, false, true)
+    end, false, true, true)
     return removed
 end
 
@@ -315,7 +315,7 @@ function ASSLineContents:insertTags(tags, index, relative)
         local inserted
         self:callback(function(section)
             inserted = section:insertTags(tags)
-        end, true, false, true, index, index, true, reverse)
+        end, false, true, true, index, index, true, reverse)
         return inserted
     end
 end
@@ -495,7 +495,7 @@ function ASSLineContents:getStyleDefaultTags()    -- TODO: cache
         position = ASS:createTag("position", {self.line:getDefaultPosition()}),
         move_simple = ASS:createTag("move_simple", {self.line.xPosition, self.line.yPosition, self.line.xPosition, self.line.yPosition}),
         move = ASS:createTag("move", {self.line.xPosition, self.line.yPosition, self.line.xPosition, self.line.yPosition}),
-        org = ASS:createTag("org", {self.line.xPosition, self.line.yPosition}),
+        origin = ASS:createTag("origin", {self.line.xPosition, self.line.yPosition}),
     }
 
     for name,tag in pairs(ASS.tagMap) do
@@ -584,7 +584,7 @@ function ASSLineTagSection:callback(callback, tagNames, start, end_, relative, r
     if tagNames then
         assert(type(tagNames)=="table", "Error: argument 2 to callback must be either a table of strings or a single string, got " .. type(tagNames))
         for i=1,#tagNames do
-            tagSet[tagNames[i].__tag.name] = true
+            tagSet[tagNames[i]] = true
         end
     end
 
@@ -1500,56 +1500,56 @@ end
 ASSFoundation = createASSClass("ASSFoundation")
 function ASSFoundation:new()
     local tagMap = {
-        scale_x= {friendlyName="\\fscx", type=ASSNumber, pattern="\\fscx([%d%.]+)", format="\\fscx%.3N"},
-        scale_y = {friendlyName="\\fscy", type=ASSNumber, pattern="\\fscy([%d%.]+)", format="\\fscy%.3N"},
-        align = {friendlyName="\\an", type=ASSAlign, pattern="\\an([1-9])", format="\\an%d"},
-        angle = {friendlyName="\\frz", type=ASSNumber, pattern="\\frz?([%-%d%.]+)", format="\\frz%.3N"}, 
-        angle_y = {friendlyName="\\fry", type=ASSNumber, pattern="\\fry([%-%d%.]+)", format="\\frz%.3N", default=0},
-        angle_x = {friendlyName="\\frx", type=ASSNumber, pattern="\\frx([%-%d%.]+)", format="\\frz%.3N", default=0}, 
-        outline = {friendlyName="\\bord", type=ASSNumber, props={positive=true}, pattern="\\bord([%d%.]+)", format="\\bord%.2N"}, 
-        outline_x = {friendlyName="\\xbord", type=ASSNumber, props={positive=true}, pattern="\\xbord([%d%.]+)", format="\\xbord%.2N"}, 
-        outline_y = {friendlyName="\\ybord", type=ASSNumber,props={positive=true}, pattern="\\ybord([%d%.]+)", format="\\ybord%.2N"}, 
-        shadow = {friendlyName="\\shad", type=ASSNumber, pattern="\\shad([%-%d%.]+)", format="\\shad%.2N"}, 
-        shadow_x = {friendlyName="\\xshad", type=ASSNumber, pattern="\\xshad([%-%d%.]+)", format="\\xshad%.2N"}, 
-        shadow_y = {friendlyName="\\yshad", type=ASSNumber, pattern="\\yshad([%-%d%.]+)", format="\\yshad%.2N"}, 
-        reset = {friendlyName="\\r", type=ASSString, pattern="\\r([^\\}]*)", format="\\r%s", default=""}, 
-        alpha = {friendlyName="\\alpha", type=ASSHex, pattern="\\alpha&H(%x%x)&", format="\\alpha&H%02X&", default=0}, 
-        alpha1 = {friendlyName="\\1a", type=ASSHex, pattern="\\1a&H(%x%x)&", format="\\alpha&H%02X&"}, 
-        alpha2 = {friendlyName="\\2a", type=ASSHex, pattern="\\2a&H(%x%x)&", format="\\alpha&H%02X&"}, 
-        alpha3 = {friendlyName="\\3a", type=ASSHex, pattern="\\3a&H(%x%x)&", format="\\alpha&H%02X&"}, 
-        alpha4 = {friendlyName="\\4a", type=ASSHex, pattern="\\4a&H(%x%x)&", format="\\alpha&H%02X&"}, 
-        color = {friendlyName="\\c", type=ASSColor, props={name="color1"}},
-        color1 = {friendlyName="\\1c", type=ASSColor, pattern="\\1?c&H(%x%x)(%x%x)(%x%x)&", format="\\1c&H%02X%02X%02X&"},
-        color2 = {friendlyName="\\2c", type=ASSColor, pattern="\\2c&H(%x%x)(%x%x)(%x%x)&", format="\\2c&H%02X%02X%02X&"},
-        color3 = {friendlyName="\\3c", type=ASSColor, pattern="\\3c&H(%x%x)(%x%x)(%x%x)&", format="\\3c&H%02X%02X%02X&"},
-        color4 = {friendlyName="\\4c", type=ASSColor, pattern="\\4c&H(%x%x)(%x%x)(%x%x)&", format="\\4c&H%02X%02X%02X&"},
-        clip_vect = {friendlyName="\\clip", type=ASSClipVect, pattern="\\clip%(([mnlbspc] .-)%)", format="\\clip(%s)"}, 
-        iclip_vect = {friendlyName="\\iclip", type=ASSClipVect, props={inverse=true}, pattern="\\iclip%(([mnlbspc] .-)%)", format="\\iclip(%s)", default={"m 0 0 l 0 0 0 0 0 0 0 0"}},
-        clip_rect = {friendlyName="\\clip", type=ASSClipRect, pattern="\\clip%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+)%)", format="\\clip(%.2N,%.2N,%.2N,%.2N)"}, 
-        iclip_rect = {friendlyName="\\iclip", type=ASSClipRect, props={inverse=true}, pattern="\\iclip%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+)%)", format="\\iclip(%.2N,%.2N,%.2N,%.2N)", default={0,0,0,0}},
-        blur_edges = {friendlyName="\\be", type=ASSNumber, props={positive=true}, pattern="\\be([%d%.]+)", format="\\be%.2N", default=0}, 
-        blur = {friendlyName="\\blur", type=ASSNumber, props={positive=true}, pattern="\\blur([%d%.]+)", format="\\blur%.2N", default=0}, 
-        shear_x = {friendlyName="\\fax", type=ASSNumber, pattern="\\fax([%-%d%.]+)", format="\\fax%.2N", default=0}, 
-        shear_y = {friendlyName="\\fay", type=ASSNumber, pattern="\\fay([%-%d%.]+)", format="\\fay%.2N", default=0}, 
-        bold = {friendlyName="\\b", type=ASSWeight, pattern="\\b(%d+)", format="\\b%d"}, 
-        italic = {friendlyName="\\i", type=ASSToggle, pattern="\\i([10])", format="\\i%d"}, 
-        underline = {friendlyName="\\u", type=ASSToggle, pattern="\\u([10])", format="\\u%d"},
-        strikeout = {friendlyName="\\s", type=ASSToggle, pattern="\\s([10])", format="\\s%d"},
-        spacing = {friendlyName="\\fsp", type=ASSNumber, pattern="\\fsp([%-%d%.]+)", format="\\fsp%.2N"},
-        fontsize = {friendlyName="\\fs", type=ASSNumber, props={positive=true}, pattern="\\fs([%d%.]+)", format="\\fs%.2N"},
-        fontname = {friendlyName="\\fn", type=ASSString, pattern="\\fn([^\\}]*)", format="\\fn%s"},
-        k_fill = {friendlyName="\\k", type=ASSDuration, props={scale=10}, pattern="\\k([%d]+)", format="\\k%d", default=0},
-        k_sweep = {friendlyName="\\kf", type=ASSDuration, props={scale=10}, pattern="\\kf([%d]+)", format="\\kf%d", default=0},
-        k_sweep_alt = {friendlyName="\\K", type=ASSDuration, props={scale=10}, pattern="\\K([%d]+)", format="\\K%d", default=0},
-        k_bord = {friendlyName="\\ko", type=ASSDuration, props={scale=10}, pattern="\\ko([%d]+)", format="\\ko%d", default=0},
-        position = {friendlyName="\\pos", type=ASSPosition, pattern="\\pos%(([%-%d%.]+),([%-%d%.]+)%)", format="\\pos(%.2N,%.2N)"},
-        move_simple = {friendlyName="\\move", type=ASSMove, props={simple=true}, pattern="\\move%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+)%)", format="\\move(%.2N,%.2N,%.2N,%.2N)"},
-        move = {friendlyName="\\move", type=ASSMove, pattern="\\move%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),(%d+),(%d+)%)", format="\\move(%.2N,%.2N,%.2N,%.2N,%.2N,%.2N)"},
-        org = {friendlyName="\\org", type=ASSPosition, pattern="\\org%(([%-%d%.]+),([%-%d%.]+)%)", format="\\org(%.2N,%.2N)"},
-        wrap = {friendlyName="\\q", type=ASSWrapStyle, pattern="\\q(%d)", format="\\q%d", default=0},
-        fade_simple = {friendlyName="\\fad", type=ASSFade, props={simple=true}, pattern="\\fad%((%d+),(%d+)%)", format="\\fad(%d,%d)", default={0,0}},
-        fade = {friendlyName="\\fade", type=ASSFade, pattern="\\fade?%((.-)%)", format="\\fade(%d,%d,%d,%d,%d,%d,%d)", default={255,0,255,0,0,0,0}},
-        transform = {friendlyName="\\t", type=ASSTransform, pattern="\\t%((.-)%)"},
+        scale_x= {overrideName="\\fscx", type=ASSNumber, pattern="\\fscx([%d%.]+)", format="\\fscx%.3N"},
+        scale_y = {overrideName="\\fscy", type=ASSNumber, pattern="\\fscy([%d%.]+)", format="\\fscy%.3N"},
+        align = {overrideName="\\an", type=ASSAlign, pattern="\\an([1-9])", format="\\an%d"},
+        angle = {overrideName="\\frz", type=ASSNumber, pattern="\\frz?([%-%d%.]+)", format="\\frz%.3N"}, 
+        angle_y = {overrideName="\\fry", type=ASSNumber, pattern="\\fry([%-%d%.]+)", format="\\frz%.3N", default=0},
+        angle_x = {overrideName="\\frx", type=ASSNumber, pattern="\\frx([%-%d%.]+)", format="\\frz%.3N", default=0}, 
+        outline = {overrideName="\\bord", type=ASSNumber, props={positive=true}, pattern="\\bord([%d%.]+)", format="\\bord%.2N"}, 
+        outline_x = {overrideName="\\xbord", type=ASSNumber, props={positive=true}, pattern="\\xbord([%d%.]+)", format="\\xbord%.2N"}, 
+        outline_y = {overrideName="\\ybord", type=ASSNumber,props={positive=true}, pattern="\\ybord([%d%.]+)", format="\\ybord%.2N"}, 
+        shadow = {overrideName="\\shad", type=ASSNumber, pattern="\\shad([%-%d%.]+)", format="\\shad%.2N"}, 
+        shadow_x = {overrideName="\\xshad", type=ASSNumber, pattern="\\xshad([%-%d%.]+)", format="\\xshad%.2N"}, 
+        shadow_y = {overrideName="\\yshad", type=ASSNumber, pattern="\\yshad([%-%d%.]+)", format="\\yshad%.2N"}, 
+        reset = {overrideName="\\r", type=ASSString, pattern="\\r([^\\}]*)", format="\\r%s", default=""}, 
+        alpha = {overrideName="\\alpha", type=ASSHex, pattern="\\alpha&H(%x%x)&", format="\\alpha&H%02X&", default=0}, 
+        alpha1 = {overrideName="\\1a", type=ASSHex, pattern="\\1a&H(%x%x)&", format="\\alpha&H%02X&"}, 
+        alpha2 = {overrideName="\\2a", type=ASSHex, pattern="\\2a&H(%x%x)&", format="\\alpha&H%02X&"}, 
+        alpha3 = {overrideName="\\3a", type=ASSHex, pattern="\\3a&H(%x%x)&", format="\\alpha&H%02X&"}, 
+        alpha4 = {overrideName="\\4a", type=ASSHex, pattern="\\4a&H(%x%x)&", format="\\alpha&H%02X&"}, 
+        color = {overrideName="\\c", type=ASSColor, props={name="color1"}},
+        color1 = {overrideName="\\1c", friendlyName="\\1c & \\c", type=ASSColor, pattern="\\1?c&H(%x%x)(%x%x)(%x%x)&", format="\\1c&H%02X%02X%02X&"},
+        color2 = {overrideName="\\2c", type=ASSColor, pattern="\\2c&H(%x%x)(%x%x)(%x%x)&", format="\\2c&H%02X%02X%02X&"},
+        color3 = {overrideName="\\3c", type=ASSColor, pattern="\\3c&H(%x%x)(%x%x)(%x%x)&", format="\\3c&H%02X%02X%02X&"},
+        color4 = {overrideName="\\4c", type=ASSColor, pattern="\\4c&H(%x%x)(%x%x)(%x%x)&", format="\\4c&H%02X%02X%02X&"},
+        clip_vect = {overrideName="\\clip", friendlyName="\\clip (Vector)", type=ASSClipVect, pattern="\\clip%(([mnlbspc] .-)%)", format="\\clip(%s)"}, 
+        iclip_vect = {overrideName="\\iclip", friendlyName="\\iclip (Vector)", type=ASSClipVect, props={inverse=true}, pattern="\\iclip%(([mnlbspc] .-)%)", format="\\iclip(%s)", default={"m 0 0 l 0 0 0 0 0 0 0 0"}},
+        clip_rect = {overrideName="\\clip", friendlyName="\\clip (Rectangle)", type=ASSClipRect, pattern="\\clip%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+)%)", format="\\clip(%.2N,%.2N,%.2N,%.2N)"}, 
+        iclip_rect = {overrideName="\\iclip", friendlyName="\\iclip (Rectangle)", type=ASSClipRect, props={inverse=true}, pattern="\\iclip%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+)%)", format="\\iclip(%.2N,%.2N,%.2N,%.2N)", default={0,0,0,0}},
+        blur_edges = {overrideName="\\be", type=ASSNumber, props={positive=true}, pattern="\\be([%d%.]+)", format="\\be%.2N", default=0}, 
+        blur = {overrideName="\\blur", type=ASSNumber, props={positive=true}, pattern="\\blur([%d%.]+)", format="\\blur%.2N", default=0}, 
+        shear_x = {overrideName="\\fax", type=ASSNumber, pattern="\\fax([%-%d%.]+)", format="\\fax%.2N", default=0}, 
+        shear_y = {overrideName="\\fay", type=ASSNumber, pattern="\\fay([%-%d%.]+)", format="\\fay%.2N", default=0}, 
+        bold = {overrideName="\\b", type=ASSWeight, pattern="\\b(%d+)", format="\\b%d"}, 
+        italic = {overrideName="\\i", type=ASSToggle, pattern="\\i([10])", format="\\i%d"}, 
+        underline = {overrideName="\\u", type=ASSToggle, pattern="\\u([10])", format="\\u%d"},
+        strikeout = {overrideName="\\s", type=ASSToggle, pattern="\\s([10])", format="\\s%d"},
+        spacing = {overrideName="\\fsp", type=ASSNumber, pattern="\\fsp([%-%d%.]+)", format="\\fsp%.2N"},
+        fontsize = {overrideName="\\fs", type=ASSNumber, props={positive=true}, pattern="\\fs([%d%.]+)", format="\\fs%.2N"},
+        fontname = {overrideName="\\fn", type=ASSString, pattern="\\fn([^\\}]*)", format="\\fn%s"},
+        k_fill = {overrideName="\\k", type=ASSDuration, props={scale=10}, pattern="\\k([%d]+)", format="\\k%d", default=0},
+        k_sweep = {overrideName="\\kf", type=ASSDuration, props={scale=10}, pattern="\\kf([%d]+)", format="\\kf%d", default=0},
+        k_sweep_alt = {overrideName="\\K", type=ASSDuration, props={scale=10}, pattern="\\K([%d]+)", format="\\K%d", default=0},
+        k_bord = {overrideName="\\ko", type=ASSDuration, props={scale=10}, pattern="\\ko([%d]+)", format="\\ko%d", default=0},
+        position = {overrideName="\\pos", type=ASSPosition, pattern="\\pos%(([%-%d%.]+),([%-%d%.]+)%)", format="\\pos(%.2N,%.2N)"},
+        move_simple = {overrideName="\\move", friendlyName="\\move (Simple)", type=ASSMove, props={simple=true}, pattern="\\move%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+)%)", format="\\move(%.2N,%.2N,%.2N,%.2N)"},
+        move = {overrideName="\\move", type=ASSMove, friendlyName="\\move (w/ Time)", pattern="\\move%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),(%d+),(%d+)%)", format="\\move(%.2N,%.2N,%.2N,%.2N,%.2N,%.2N)"},
+        origin = {overrideName="\\org", type=ASSPosition, pattern="\\org%(([%-%d%.]+),([%-%d%.]+)%)", format="\\org(%.2N,%.2N)"},
+        wrapstyle = {overrideName="\\q", type=ASSWrapStyle, pattern="\\q(%d)", format="\\q%d", default=0},
+        fade_simple = {overrideName="\\fad", type=ASSFade, props={simple=true}, pattern="\\fad%((%d+),(%d+)%)", format="\\fad(%d,%d)", default={0,0}},
+        fade = {overrideName="\\fade", type=ASSFade, pattern="\\fade?%((.-)%)", format="\\fade(%d,%d,%d,%d,%d,%d,%d)", default={255,0,255,0,0,0,0}},
+        transform = {overrideName="\\t", type=ASSTransform, pattern="\\t%((.-)%)"},
         unknown = {type=ASSUnknown, format="%s"}
     }
 
@@ -1563,12 +1563,12 @@ function ASSFoundation:new()
     return self
 end
 
-function ASSFoundation:getTagNames(friendlyName)
-    if self.tagMap[friendlyName] then return name
+function ASSFoundation:getTagNames(overrideName)
+    if self.tagMap[overrideName] then return name
     else
         local tagNames = {}
         for key,val in pairs(self.tagMap) do
-            tagNames[#tagNames+1] = val.friendlyName==name and key
+            tagNames[#tagNames+1] = val.overrideName==name and key
         end
     end
     return tagNames
@@ -1576,7 +1576,7 @@ end
 
 function ASSFoundation:mapTag(name)
     assert(type(name)=="string", "Error: argument 1 to mapTag() must be a string, got a " .. type(name))
-    return self.tagMap[assert(name,"Error: can't find tag " .. name)], name
+    return assert(self.tagMap[name],"Error: can't find tag " .. name)
 end
 
 function ASSFoundation:createTag(name, ...)
