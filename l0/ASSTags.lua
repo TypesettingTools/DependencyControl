@@ -1556,13 +1556,21 @@ function ASSFoundation:new()
         unknown = {type=ASSUnknown, format="%s"}
     }
 
-    -- insert tag name into props
+    local toFriendlyName, toTagName, i = {}, {}
+
     for name,tag in pairs(tagMap) do
+        -- insert tag name into props
         tag.props = tag.props or {}
         tag.props.name = tag.props.name or name
+        -- fill in missing friendly names
+        tag.friendlyName = tag.friendlyName or tag.overrideName
+        -- populate friendly name <-> tag name conversion tables
+        if tag.friendlyName then
+            toFriendlyName[name], toTagName[tag.friendlyName] = tag.friendlyName, name 
+        end
     end
 
-    self.tagMap = tagMap
+    self.tagMap, self.toFriendlyName, self.toTagName = tagMap, toFriendlyName, toTagName
     return self
 end
 
