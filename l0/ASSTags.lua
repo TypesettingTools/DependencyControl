@@ -315,7 +315,7 @@ function ASSLineContents:removeTags(tags, start, end_, relative)
     return removed
 end
 
-function ASSLineContents:insertTags(tags, index, direct)
+function ASSLineContents:insertTags(tags, index, sectionPosition, direct)
     assert(index==nil or math.isInt(index) and index~=0,
            string.format("Error: argument #2 (index) to insertTags() must be an integer != 0, got '%s' of type %s", tostring(index), type(index))
     )
@@ -326,19 +326,19 @@ function ASSLineContents:insertTags(tags, index, direct)
         assert(ASS.instanceOf(section, ASSLineTagSection), string.format("Error: can't insert tag in section #%d of type %s.", 
                index, section and section.typeName or "<no section>")
         )
-        return section:insertTags(tags)
+        return section:insertTags(tags, sectionPosition)
     else
         local inserted
         self:callback(function(section)
-            inserted = section:insertTags(tags)
+            inserted = section:insertTags(tags, sectionPosition)
         end, false, true, true, index, index, true)
         return inserted
     end
 end
 
-function ASSLineContents:insertDefaultTags(tagNames, index, direct)
+function ASSLineContents:insertDefaultTags(tagNames, index, sectionPosition, direct)
     local defaultTags = self:getStyleDefaultTags():getTags(tagNames)
-    return self:insertTags(defaultTags, index, direct)
+    return self:insertTags(defaultTags, index, sectionPosition, direct)
 end
 
 function ASSLineContents:stripTags()
