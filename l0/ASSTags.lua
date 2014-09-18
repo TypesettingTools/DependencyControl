@@ -603,7 +603,10 @@ function ASSLineTagSection:callback(callback, tagNames, start, end_, relative, r
     self.tags = table.trimArray(tags)
     return j>1 and j-1 or false
 end
-ASSLineTagSection.modTags = ASSLineTagSection.callback
+
+function ASSLineTagSection:modTags(tagNames, callback, start, end_, relative, reverse)
+    return self:callback(callback, tagNames, start, end_, relative, reverse)
+end
 
 function ASSLineTagSection:getTags(tagNames, start, end_, relative)
     local tags = {}
