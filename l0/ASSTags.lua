@@ -284,7 +284,7 @@ end
 function ASSLineContents:getTags(tagNames, start, end_, relative)
     local tags={}
     self:callback(function(section)
-        table.join(tags, section:getTags(tagNames))
+        tags = table.join(tags, section:getTags(tagNames))
     end, false, true, true, start, end_, relative)
     return tags
 end
@@ -301,7 +301,7 @@ function ASSLineContents:insertTags(tags, index, relative)
     assert(index==nil or math.isInt(index) and index~=0,
            string.format("Error: argument 2 to insertTags() must be an integer != 0, got '%s' of type %s", tostring(index), type(index))
     )
-    local reverse = index<0
+    local reverse = index and index<0
     relative, index = default(relative,reverse), math.abs(index or 1)
 
     local j = 1
@@ -643,7 +643,7 @@ end
 
 function ASSLineTagSection:insertTags(tags, index)
     local prevCnt, inserted = #self.tags, {}
-    index = Default(index,prevCnt)
+    index = default(index,prevCnt)
     assert(math.isInt(index) and index~=0,
            string.format("Error: argument 2 to insertTags() must be an integer != 0, got '%s' of type %s", tostring(index), type(index))
     )
@@ -1152,7 +1152,7 @@ function ASSWeight:setBold(state)
     self.weightClass.value = 0
 end
 
-function ASSWeight:toggleBold()
+function ASSWeight:toggle()
     self.bold:toggle()
 end
 
