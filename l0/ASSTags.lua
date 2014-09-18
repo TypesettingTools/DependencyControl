@@ -555,12 +555,14 @@ end
 ASSLineCommentSection = createASSClass("ASSLineCommentSection", ASSLineTextSection, {"value"}, {"string"})
 
 ASSLineTagSection = createASSClass("ASSLineTagSection", ASSBase, {"tags"}, {"table"})
+ASSLineTagSection.tagMatch = re.compile("\\\\[^\\\\\\(]+(?:\\([^\\)]+\\)[^\\\\]*)?")
+
 function ASSLineTagSection:new(tags)
     if ASS.instanceOf(tags,ASSTagList) then
         self.tags = table.values(tags:copy().tags)
     elseif type(tags)=="string" then
         self.tags, i = {}, 1
-        local tagMatch = re.compile("\\\\[^\\\\\\(]+(?:\\([^\\)]+\\)[^\\\\]*)?")
+        local tagMatch = self.tagMatch
         for match in tagMatch:gfind(tags) do
             local tag, start, end_ = ASS:getTagFromString(match)
             self.tags[i], i = tag, i+1
