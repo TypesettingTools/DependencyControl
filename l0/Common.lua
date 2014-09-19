@@ -194,9 +194,18 @@ table.select = function(tbl,keys)
 end
 
 table.sliceArray = function(tbl, istart, iend)
+    istart, iend = istart or 1, iend or #tbl
     local arr={}
-    for i = istart, iend do arr[1+i-istart] = tbl[i] end
+    for i = istart, iend do 
+        arr[1+i-istart] = tbl[i] 
+    end
     return arr
+end
+
+table._sort = table.sort
+table.sort = function(tbl,...)
+    table._sort(tbl,...)
+    return tbl
 end
 
 table.values = function(tbl)
