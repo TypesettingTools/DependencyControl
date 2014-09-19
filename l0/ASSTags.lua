@@ -392,7 +392,7 @@ function ASSLineContents:commit(line)
 end
 
 function ASSLineContents:cleanTags(level, mergeSect)   -- TODO: optimize it, make it work properly for transforms
-    mergeSect, level = default(mergeSect,true), default(level,2)
+    mergeSect, level = default(mergeSect,true), default(level,3)
     -- Merge consecutive sections
     if mergeSect then
         local lastTagSection, numMerged = -1, 0
@@ -407,16 +407,18 @@ function ASSLineContents:cleanTags(level, mergeSect)   -- TODO: optimize it, mak
         end, false, true, true)
     end
 
-    -- 1: dedup tags locally, 2: dedup tags globally
-    -- 3: remove tags matching style default and not changing state, end: remove empty sections
+    -- 1: remove empty sections, 2: dedup tags locally, 3: dedup tags globally
+    -- 4: remove tags matching style default and not changing state, end: remove empty sections
     if level>=1 then
         self:callback(function(section,sections,i)
+            if level<2 then return #section.tags>0 end
+
             local tagList = section:getEffectiveTags(false,false)
-            if level>=2 then
+            if level>=3 then
                 local tagListPrev = section.prevSection and section.prevSection:getEffectiveTags()
                 if tagListPrev then tagList:diff(tagListPrev) end
             end
-            if level>=3 then
+            if level>=4 then
                 local startStates = section.prevSection and section.prevSection:getEffectiveTags(true)
                                         or self:getStyleDefaultTags()
                 tagList:diff(startStates)
@@ -683,7 +685,7 @@ function ASSLineTagSection:removeTags(tags, start, end_, relative)
 
     start, end_ = default(start,1), default(end_, start and start<0 and -1 or #self.tags)
     -- wrap single tags and tag objects
-    if type(tags)~="table" or ASS.instanceOf(tags) then 
+    if tags~=nil and (type(tags)~="table" or ASS.instanceOf(tags)) then 
         tags = {tags}
     end
 
