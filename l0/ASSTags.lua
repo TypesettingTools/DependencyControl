@@ -655,19 +655,22 @@ end
 function ASSLineTagSection:removeTags(tags, start, end_, relative)
     if type(tags)=="number" and relative==nil then    -- called without tags parameter -> delete all tags in range
         tags, start, end_, relative = nil, tags, start, end_
-    else 
-        tags = type(tags)=="table" and tags or {tags}
     end
-    start, end_ = default(start,1), default(end_, #self.tags)
-    local tagNames, tagObjects, removed, cnt = {}, {}, {}
-    
-    if not (tags or start or end_) then  --remove all tags if called without parameters 
+    -- remove all tags if called without parameters 
+    if not (tags or start or end_) then  
         removed, self.tags = self.tags, {}
         return removed, #removed
     end
 
+    start, end_ = default(start,1), default(end_, #self.tags)
+    -- wrap single tags and tag objects
+    if type(tags)~="table" or ASS.instanceOf(tags) then 
+        tags = {tags}
+    end
+
+    local tagNames, tagObjects, removed, inverse = {}, {}, {}, start<0
+    -- build sets
     if tags and #tags>0 then
-        -- build sets
         for i=1,#tags do 
             if ASS.instanceOf(tags[i]) then
                 tagObjects[tags[i]] = true
@@ -675,6 +678,10 @@ function ASSLineTagSection:removeTags(tags, start, end_, relative)
                 tagNames[ASS:mapTag(tags[i]).props.name] = true
             else error(string.format("Error: argument %d to removeTags() must be either a tag name or a tag object, got a %s.", i, type(tags[i]))) end
         end
+    end
+
+    if inverse and relative then
+        start, end_ = math.abs(end_), math.abs(start)
     end
     -- remove matching tags
     local matched = 0
@@ -686,7 +693,7 @@ function ASSLineTagSection:removeTags(tags, start, end_, relative)
                 return false
             end
         end
-    end, nil, not relative and start or nil, not relative and end_ or nil, false)
+    end, nil, not relative and start or nil, not relative and end_ or nil, false, inverse)
 
     return removed, matched
 end
