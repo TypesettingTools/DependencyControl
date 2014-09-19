@@ -558,6 +558,27 @@ function ASSLineContents:getTextExtents(coerce)   -- TODO: account for linebreak
     return width, unpack(other)
 end
 
+function ASSLineContents:getMetrics(coerce)
+    local metr, bound = {ascent=0, descent=0, internal_leading=0, external_leading=0, height=0, width=0}, {}
+    self:callback(function(section, sections, i, j)
+        local sectMetr = section:getMetrics(coerce)
+        if j==1 then
+            bound[1], bound[2] = sectMetr.bounding[1], sectMetr.bounding[2]
+            bound[3], bound[4] = bound[1], bound[2]
+        end
+        bound[3], bound[4] = bound[3] + sectMetr.box_width, bound[4] + sectMetr.box_height
+        metr.width = metr.width + sectMetr.width
+        
+        metr.ascent, metr.descent, metr.internal_leading, metr.external_leading, metr.height =
+            math.max(sectMetr.ascent, metr.ascent), math.max(sectMetr.descent, metr.descent), 
+            math.max(sectMetr.internal_leading, metr.internal_leading), math.max(sectMetr.external_leading, metr.external_leading),
+            math.max(sectMetr.height, metr.height)
+    end, true, false, true)
+    metr.box_width, metr.box_height = bound[3]-bound[1], bound[4]-bound[2]
+    metr.bounding = bound
+    return metr
+end
+
 ASSLineTextSection = createASSClass("ASSLineTextSection", ASSBase, {"value"}, {"string"})
 function ASSLineTextSection:new(value)
     self.value = self:typeCheck(self:getArgs({value},"",true))
@@ -589,6 +610,20 @@ end
 
 function ASSLineTextSection:getTextExtents(coerce)
     return aegisub.text_extents(self:getStyleTable(nil,coerce),self.value)
+end
+
+function ASSLineTextSection:getMetrics(coerce)
+    local tags = self:getEffectiveTags(true,true).tags
+    local font = YUtils.decode.create_font(tags.fontname:getTagParams(coerce), tags.bold:getTagParams(coerce)>0,
+                 tags.italic:getTagParams(coerce)>0, tags.underline:getTagParams(coerce)>0, tags.strikeout:getTagParams(coerce)>0,
+                 tags.fontsize:getTagParams(coerce), tags.scale_x:getTagParams(coerce)/100, tags.scale_y:getTagParams(coerce)/100,
+                 tags.spacing:getTagParams(coerce)
+    )
+
+    local metrics = table.merge(font:metrics(),font.text_extents(self.value))
+    metrics.bounding = {YUtils.shape.bounding(font.text_to_shape(self.value))}
+    metrics.box_width, metrics.box_height = metrics.bounding[3]-metrics.bounding[1], metrics.bounding[4]-metrics.bounding[2]
+    return metrics
 end
 
 ASSLineCommentSection = createASSClass("ASSLineCommentSection", ASSLineTextSection, {"value"}, {"string"})
