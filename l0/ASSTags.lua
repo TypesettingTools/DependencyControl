@@ -171,7 +171,7 @@ function ASSLineContents:new(line,sections)
     if not sections then
         sections = {}
         local i, j, ovrStart, ovrEnd = 1, 1
-        while i<#line.text do
+        while i<=#line.text do
             ovrStart, ovrEnd = line.text:find("{.-}",i)
             if ovrStart then
                 if ovrStart>i then
@@ -184,7 +184,7 @@ function ASSLineContents:new(line,sections)
                 sections[j] = ASSLineTextSection(line.text:sub(i))
                 break
             end
-        j=j+1
+            j=j+1
         end
     end
     self.line, self.sections = line, self:typeCheck(sections)
