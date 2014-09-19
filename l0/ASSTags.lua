@@ -619,7 +619,7 @@ end
 
 function ASSLineTagSection:callback(callback, tagNames, start, end_, relative, reverse)
     local tagSet, prevCnt = {}, #self.tags
-    start, end_ = default(start,1), default(end_,prevCnt)
+    start, end_ = default(start,1), default(end_,math.max(prevCnt,1))
     reverse = relative and start<0 or reverse
 
     assert(math.isInt(start) and math.isInt(end_), 
