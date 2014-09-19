@@ -245,7 +245,7 @@ function ASSLineContents:callback(callback, noTags, noText, noCmts, start, end_,
     for i=reverse and prevCnt or 1, reverse and 1 or prevCnt, reverse and -1 or 1 do
         if ASS.instanceOf(sects[i], {not noText and ASSLineTextSection, not noTags and ASSLineTagSection, not noCmts and ASSLineCommentSection}) then
             j=j+1
-            if (relative and j>=start and j<=end_) or (i>=start and i<=end_) then
+            if (relative and j>=start and j<=end_) or (not relative and i>=start and i<=end_) then
                 numRun = numRun+1
                 local result = callback(sects[i],self.sections,i,j)
                 if result==false then
@@ -287,18 +287,23 @@ function ASSLineContents:removeSections(start, end_)
 end
 
 function ASSLineContents:modTags(tagNames, callback, start, end_, relative)
-    local modCnt = 0
+    start, end_ = default(start,1), default(end_, start and start<0 and -1 or self:getTagCount())
+    -- TODO: validation for start and end_
+    local modCnt, reverse = 0, start<0
+
     self:callback(function(section)
-        if not relative or end_>modCnt then
-            local sectModCnt = section:modTags(callback, tagNames, relative and math.max(start-modCnt,1), relative and end_-modCnt, true)
+        if (reverse and modCnt<-start) or (modCnt<end_) then
+            local sectStart = reverse and start+modCnt or math.max(start-modCnt,1)
+            local sectEnd = reverse and math.min(end_+modCnt,-1) or end_-modCnt
+            local sectModCnt = section:modTags(tagNames, callback, relative and sectStart or nil, relative and sectEnd or nil, true)
             modCnt = modCnt + (sectModCnt or 0)
         end
-    end, false, true, true, not relative and start or nil, not relative and end_ or nil, true)
+    end, false, true, true, not relative and start or nil, not relative and end_ or nil, true, reverse)
 
     return modCnt>0 and modCnt or false
 end
 
-function ASSLineContents:getTags(tagNames, start, end_, relative)
+function ASSLineContents:getTags(tagNames, start, end_, relative)   -- TODO: handle negative indexes
     local tags={}
     self:callback(function(section)
         tags = table.join(tags, section:getTags(tagNames))
@@ -309,6 +314,7 @@ end
 
 function ASSLineContents:removeTags(tags, start, end_, relative)
     start, end_ = default(start,1), default(end_, start and start<0 and -1 or self:getTagCount())
+    -- TODO: validation for start and end_
     local removed, matchCnt, reverse  = {}, 0, start<0
 
     self:callback(function(section)
@@ -637,7 +643,7 @@ function ASSLineTagSection:callback(callback, tagNames, start, end_, relative, r
     for i=reverse and prevCnt or 1, reverse and 1 or prevCnt, reverse and -1 or 1 do
         if not tagNames or tagSet[tags[i].__tag.name] then
             j=j+1
-            if (relative and j>=start and j<=end_) or (i>=start and i<=end_) then
+            if (relative and j>=start and j<=end_) or (not relative and i>=start and i<=end_) then
                 local result = callback(tags[i],self.tags,i,j)
                 numRun = numRun+1
                 if result==false then
