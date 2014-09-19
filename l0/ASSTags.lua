@@ -226,9 +226,10 @@ function ASSLineContents:get(noTags, noText, noCmts, start, end_, relative)
     return result
 end
 
-function ASSLineContents:callback(callback, noTags, noText, noCmts, start, end_, relative)
+function ASSLineContents:callback(callback, noTags, noText, noCmts, start, end_, relative, reverse)
     local prevCnt = #self.sections
     start, end_ = default(start,1), default(end_,prevCnt)
+    reverse = default(reverse,relative and start<0)
 
     assert(math.isInt(start) and math.isInt(end_), 
            string.format("Error: arguments 'start' and 'end' to callback() must be integers, got %s and %s.", type(start), type(end_)))
@@ -236,7 +237,7 @@ function ASSLineContents:callback(callback, noTags, noText, noCmts, start, end_,
            string.format("Error: arguments 'start' and 'end' to callback() must be either both >0 or both <0, got %d and %d.", start, end_))
     assert(start <= end_, string.format("Error: condition 'start' <= 'end' not met, got %d <= %d", start, end_))
 
-    local j, numRun, sects, reverse = 0, 0, self.sections, relative and start<0
+    local j, numRun, sects = 0, 0, self.sections
     if start<0 then
         start, end_ = relative and math.abs(end_) or prevCnt+start+1, relative and math.abs(start) or prevCnt+end_+1
     end
@@ -277,7 +278,7 @@ function ASSLineContents:insertSections(sections,index)
 end
 
 function ASSLineContents:removeSections(start, end_)
-    start = start or #self.sections
+    start = start or #self.sections     -- removes the last section by default
     end_ = end_ or start
     for i=start,end_ do
         table.remove(self.sections,i)
@@ -285,7 +286,7 @@ function ASSLineContents:removeSections(start, end_)
     self:updateRefs()
 end
 
-function ASSLineContents:modTags(callback, tagNames, start, end_, relative)
+function ASSLineContents:modTags(tagNames, callback, start, end_, relative)
     local modCnt = 0
     self:callback(function(section)
         if not relative or end_>modCnt then
@@ -307,11 +308,15 @@ function ASSLineContents:getTags(tagNames, start, end_, relative)
 end
 
 function ASSLineContents:removeTags(tags, start, end_, relative)
-    local removed, rmCnt  = {}, 0
-    self:callback(function(section, sections, i, j)
-        local sectRemoved = section:removeTags(tags, relative and math.max(start-rmCnt,1) or nil, relative and end_-rmCnt or nil, true)
-        removed, rmCnt = table.join(removed,sectRemoved), rmCnt+#sectRemoved
+    local removed, matchCnt  = {}, 0
+
+    self:callback(function(section)
+        if matchCnt<end_ then
+            local sectRemoved, matched = section:removeTags(tags, relative and math.max(start-matchCnt,1) or nil, relative and end_-matchCnt or nil, true)
+            removed, matchCnt = table.join(removed,sectRemoved), matchCnt+matched
+        end
     end, false, true, true, not relative and start or nil, not relative and end_ or nil, true)
+
     return removed
 end
 
@@ -653,11 +658,12 @@ function ASSLineTagSection:removeTags(tags, start, end_, relative)
     else 
         tags = type(tags)=="table" and tags or {tags}
     end
+    start, end_ = default(start,1), default(end_, #self.tags)
     local tagNames, tagObjects, removed, cnt = {}, {}, {}
     
     if not (tags or start or end_) then  --remove all tags if called without parameters 
         removed, self.tags = self.tags, {}
-        return removed
+        return removed, #removed
     end
 
     if tags and #tags>0 then
@@ -671,14 +677,18 @@ function ASSLineTagSection:removeTags(tags, start, end_, relative)
         end
     end
     -- remove matching tags
+    local matched = 0
     self:callback(function(tag)
         if tagNames[tag.__tag.name] or tagObjects[tag] or not tags then
-            removed[#removed+1] = tag
-            return false
+            matched = matched + 1
+            if not relative or (matched>=start and matched<=end_) then
+                removed[#removed+1] = tag
+                return false
+            end
         end
-    end, nil, start, end_, relative)
+    end, nil, not relative and start or nil, not relative and end_ or nil, false)
 
-    return removed
+    return removed, matched
 end
 
 function ASSLineTagSection:insertTags(tags, index)
