@@ -303,13 +303,14 @@ function ASSLineContents:modTags(tagNames, callback, start, end_, relative)
     return modCnt>0 and modCnt or false
 end
 
-function ASSLineContents:getTags(tagNames, start, end_, relative)   -- TODO: handle negative indexes
-    local tags={}
-    self:callback(function(section)
-        tags = table.join(tags, section:getTags(tagNames))
-    end, false, true, true, not relative and start or nil, not relative and end_ or nil, true)
+function ASSLineContents:getTags(tagNames, start, end_, relative)
+    local tags, i = {}, 1
 
-    return relative and table.sliceArray(tags,start,end_) or tags
+    self:modTags(tagNames, function(tag)
+        tags[i], i = tag, i+1
+    end, start, end_, relative)
+
+    return tags
 end
 
 function ASSLineContents:removeTags(tags, start, end_, relative)
