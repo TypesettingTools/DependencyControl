@@ -229,7 +229,7 @@ end
 function ASSLineContents:callback(callback, noTags, noText, noCmts, start, end_, relative, reverse)
     local prevCnt = #self.sections
     start, end_ = default(start,1), default(end_,prevCnt)
-    reverse = default(reverse,relative and start<0)
+    reverse = relative and start<0 or reverse
 
     assert(math.isInt(start) and math.isInt(end_), 
            string.format("Error: arguments 'start' and 'end' to callback() must be integers, got %s and %s.", type(start), type(end_)))
@@ -308,14 +308,17 @@ function ASSLineContents:getTags(tagNames, start, end_, relative)
 end
 
 function ASSLineContents:removeTags(tags, start, end_, relative)
-    local removed, matchCnt  = {}, 0
+    start, end_ = default(start,1), default(end_, start and start<0 and -1 or self:getTagCount())
+    local removed, matchCnt, reverse  = {}, 0, start<0
 
     self:callback(function(section)
-        if matchCnt<end_ then
-            local sectRemoved, matched = section:removeTags(tags, relative and math.max(start-matchCnt,1) or nil, relative and end_-matchCnt or nil, true)
+        if (reverse and matchCnt<-start) or (matchCnt<end_) then
+            local sectStart = reverse and start+matchCnt or math.max(start-matchCnt,1)
+            local sectEnd = reverse and math.min(end_+matchCnt,-1) or end_-matchCnt
+            local sectRemoved, matched = section:removeTags(tags, relative and sectStart or nil, relative and sectEnd or nil, true)
             removed, matchCnt = table.join(removed,sectRemoved), matchCnt+matched
         end
-    end, false, true, true, not relative and start or nil, not relative and end_ or nil, true)
+    end, false, true, true, not relative and start or nil, not relative and end_ or nil, true, reverse)
 
     return removed
 end
@@ -344,6 +347,14 @@ end
 function ASSLineContents:insertDefaultTags(tagNames, index, sectionPosition, direct)
     local defaultTags = self:getStyleDefaultTags():getTags(tagNames)
     return self:insertTags(defaultTags, index, sectionPosition, direct)
+end
+
+function ASSLineContents:getTagCount()
+    local cnt, sects = 0, self.sections
+    for i=1,#sects do
+        cnt = cnt + (sects[i].tags and #sects[i].tags or 0)
+    end
+    return cnt
 end
 
 function ASSLineContents:stripTags()
@@ -599,9 +610,10 @@ function ASSLineTagSection:new(tags)
     return self
 end
 
-function ASSLineTagSection:callback(callback, tagNames, start, end_, relative)
+function ASSLineTagSection:callback(callback, tagNames, start, end_, relative, reverse)
     local tagSet, prevCnt = {}, #self.tags
     start, end_ = default(start,1), default(end_,prevCnt)
+    reverse = relative and start<0 or reverse
 
     assert(math.isInt(start) and math.isInt(end_), 
            string.format("Error: arguments 'start' and 'end' to callback() must be integers, got %s and %s.", type(start), type(end_)))
@@ -617,7 +629,7 @@ function ASSLineTagSection:callback(callback, tagNames, start, end_, relative)
         end
     end
 
-    local j, numRun, tags, reverse = 0, 0, self.tags, relative and start<0
+    local j, numRun, tags = 0, 0, self.tags
     if start<0 then
         start, end_ = relative and math.abs(end_) or prevCnt+start+1, relative and math.abs(start) or prevCnt+end_+1
     end
@@ -662,13 +674,13 @@ function ASSLineTagSection:removeTags(tags, start, end_, relative)
         return removed, #removed
     end
 
-    start, end_ = default(start,1), default(end_, #self.tags)
+    start, end_ = default(start,1), default(end_, start and start<0 and -1 or #self.tags)
     -- wrap single tags and tag objects
     if type(tags)~="table" or ASS.instanceOf(tags) then 
         tags = {tags}
     end
 
-    local tagNames, tagObjects, removed, inverse = {}, {}, {}, start<0
+    local tagNames, tagObjects, removed, reverse = {}, {}, {}, start<0
     -- build sets
     if tags and #tags>0 then
         for i=1,#tags do 
@@ -680,7 +692,7 @@ function ASSLineTagSection:removeTags(tags, start, end_, relative)
         end
     end
 
-    if inverse and relative then
+    if reverse and relative then
         start, end_ = math.abs(end_), math.abs(start)
     end
     -- remove matching tags
@@ -693,7 +705,7 @@ function ASSLineTagSection:removeTags(tags, start, end_, relative)
                 return false
             end
         end
-    end, nil, not relative and start or nil, not relative and end_ or nil, false, inverse)
+    end, nil, not relative and start or nil, not relative and end_ or nil, false, reverse)
 
     return removed, matched
 end
