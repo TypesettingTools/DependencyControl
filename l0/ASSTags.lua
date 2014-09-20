@@ -558,10 +558,18 @@ function ASSLineContents:getTextExtents(coerce)   -- TODO: account for linebreak
     return width, unpack(other)
 end
 
-function ASSLineContents:getMetrics(coerce)
+function ASSLineContents:getMetrics(coerce, angle)
     local metr, bound = {ascent=0, descent=0, internal_leading=0, external_leading=0, height=0, width=0}, {0,0,0,0}
+    -- Limitation: different angles across sections will probably remain unsupported for a while, 
+    --             so only use a specified angle or the one from the first section
+    -- TODO: actually implement angle support for lines with more than one text section (requires shifting and merging of shapes)
+    local textCnt = self:getSectionCount(ASSLineTextSection)
+    assert(not angle or angle==0 or textCnt<=1, 
+           "Error: getting metrics at an angle is currently unsupported for lines with more than 1 text section.")
+    angle = default(self.sections[1] and self.sections[1]:getEffectiveTags(true).tags.angle:getTagParams(coerce) or 0)
+
     self:callback(function(section, sections, i, j)
-        local sectMetr = section:getMetrics(coerce)
+        local sectMetr = section:getMetrics(textCnt>1 and 0 or nil,coerce)
         if j==1 then
             bound[1], bound[2] = sectMetr.bounding[1], sectMetr.bounding[2]
         end
@@ -577,6 +585,25 @@ function ASSLineContents:getMetrics(coerce)
     metr.box_width, metr.box_height = bound[3]-bound[1], bound[4]-bound[2]
     metr.bounding = bound
     return metr
+end
+
+function ASSLineContents:getSectionCount(class)
+    if class then
+        local cnt = 0
+        self:callback(function(section, _, _, j)
+            cnt = j
+        end, class~=ASSLineTagSection, class~=ASSLineTextSection, class~=ASSLineCommentSection, nil, nil, true)
+        return cnt
+    else
+        local tagCnt, textCnt, cmtCnt = 0, 0, 0
+        self:callback(function(section)
+            if section.instanceOf[ASSLineTagSection] then tagCnt=tagCnt+1
+            elseif section.instanceOf[ASSLineTextSectionL] then textCnt=textCnt+1
+            elseif section.instanceOf[ASSLineCommentSection] then cmtCnt=cmtCnt+1
+            end
+        end)
+        return #self.sections, tagCnt, textCnt, cmtCnt
+    end
 end
 
 ASSLineTextSection = createASSClass("ASSLineTextSection", ASSBase, {"value"}, {"string"})
@@ -612,16 +639,30 @@ function ASSLineTextSection:getTextExtents(coerce)
     return aegisub.text_extents(self:getStyleTable(nil,coerce),self.value)
 end
 
-function ASSLineTextSection:getMetrics(coerce)
+function ASSLineTextSection:getMetrics(angle, coerce)
     local tags = self:getEffectiveTags(true,true).tags
+    angle = default(angle,tags.angle:getTagParams(coerce))
+
+    if ASS.instanceOf(angle,ASSNumber) then
+        angle = angle:getTagParams(coerce)
+    else assert(type(angle)=="number", 
+         string.format("Error: argument #1 (angle) to getMetrics() must be either a number or a %s object, got a %s",
+         ASSNumber.typeName, ASS.instanceOf(angle) and ASS.instanceOf(angle).typeName or type(angle)))
+    end 
+
     local font = YUtils.decode.create_font(tags.fontname:getTagParams(coerce), tags.bold:getTagParams(coerce)>0,
                  tags.italic:getTagParams(coerce)>0, tags.underline:getTagParams(coerce)>0, tags.strikeout:getTagParams(coerce)>0,
                  tags.fontsize:getTagParams(coerce), tags.scale_x:getTagParams(coerce)/100, tags.scale_y:getTagParams(coerce)/100,
                  tags.spacing:getTagParams(coerce)
     )
 
-    local metrics = table.merge(font:metrics(),font.text_extents(self.value))
-    metrics.bounding = {YUtils.shape.bounding(font.text_to_shape(self.value))}
+    local metrics, shape = table.merge(font:metrics(),font.text_extents(self.value)), font.text_to_shape(self.value)     
+    -- rotate shape
+    if angle%180~=0 then
+        shape = ASSClipVect({shape}):rotate(angle):getTagParams()
+    end
+    -- get bounding box and calculate its length and height 
+    metrics.bounding = {YUtils.shape.bounding(shape)}
     metrics.box_width, metrics.box_height = metrics.bounding[3]-metrics.bounding[1], metrics.bounding[4]-metrics.bounding[2]
     return metrics
 end
@@ -1373,11 +1414,14 @@ function ASSClipVect:new(...)
             m = ASSDrawMove,
             n = ASSDrawMoveNc,
             l = ASSDrawLine,
-            b = ASSDrawBezier
+            b = ASSDrawBezier,
+            c = ASSDrawClose
         }
         local cmdParts, cmdType, prmCnt, i = args[1][1]:split(" "), "", 0, 1
         while i<=#cmdParts do
-            if cmdTypes[cmdParts[i]] then
+            if cmdTypes[cmdParts[i]]==ASSDrawClose then
+                self.commands[#self.commands+1], i = ASSDrawClose({},self), i+1
+            elseif cmdTypes[cmdParts[i]] then
                 cmdType = cmdParts[i]
                 prmCnt, i = #cmdTypes[cmdType].__meta__.order, i+1
             else 
@@ -1400,15 +1444,18 @@ end
 
 function ASSClipVect:getTagParams(coerce)
     self:setInverse(self.__tag.inverse or false)
-    local cmdStr, lastCmdType
-    for i,cmd in ipairs(self.commands) do
-        if lastCmdType~=cmd.__tag.name then
-            lastCmdType = cmd.__tag.name
-            cmdStr =  i==1 and lastCmdType or cmdStr .. " " .. lastCmdType
+    local cmds, cmdStr, j, lastCmdType = self.commands, {}, 1
+    for i=1,#cmds do
+        if lastCmdType~=cmds[i].__tag.name then
+            lastCmdType = cmds[i].__tag.name
+            cmdStr[j], j = lastCmdType, j+1
         end
-        cmdStr = cmdStr .. " " .. table.concat({cmd:get(coerce)}," ")
+        local params = table.concat({cmds[i]:get(coerce)}," ")
+        if params~="" then 
+            cmdStr[j], j = params, j+1
+        end
     end
-    return cmdStr
+    return table.concat(cmdStr, " ")
 end
 
 --TODO: unify setInverse and toggleInverse for VectClip and RectClip by using multiple inheritance
@@ -1475,6 +1522,27 @@ function ASSClipVect:getAngleAtLength(len, noUpdate)
     return cmd:getAngle(nil,true)
 end
 
+function ASSClipVect:rotate(angle)
+    angle = default(angle,0)
+    if ASS.instanceOf(angle,ASSNumber) then
+        angle = angle:getTagParams(coerce)
+    else assert(type(angle)=="number", 
+         string.format("Error: argument #1 (angle) to rotate() must be either a number or a %s object, got a %s",
+         ASSNumber.typeName, ASS.instanceOf(angle) and ASS.instanceOf(angle).typeName or type(angle)))
+    end 
+
+    if angle%180~=0 then
+        local shape = self:getTagParams()
+        local bound = {YUtils.shape.bounding(shape)}
+        local rotMatrix = YUtils.math.create_matrix().
+                          translate((bound[3]-bound[1])/2,(bound[4]-bound[2])/2,0).rotate("z",angle).
+                          translate(-bound[3]+bound[1]/2,(-bound[4]+bound[2])/2,0)
+        shape = YUtils.shape.transform(shape,rotMatrix)
+        self.commands = ASSClipVect({shape}).commands
+    end
+    return self
+end
+
 function ASSClipVect:get()
     local commands = {}
     for i,cmd in ipairs(self.commands) do
@@ -1519,11 +1587,11 @@ function ASSDrawBase:new(...)
 end
 
 function ASSDrawBase:getTagParams(coerce)
-    local cmdStr = self.__tag.name
-    for _,param in ipairs(self.__meta__.order) do
-        cmdStr = cmdStr .. " " .. tostring(self[param]:getTagParams(coerce))
+    local params, parts = self.__meta__.order, {}
+    for i=1,#params do
+        parts[i] = tostring(self[params[i]]:getTagParams(coerce))
     end
-    return cmdStr
+    return self.__tag.name .. " " .. table.concat(parts)
 end
 
 function ASSDrawBase:getLength(prevCmd) 
@@ -1569,6 +1637,7 @@ ASSDrawMove = createASSClass("ASSDrawMove", ASSDrawBase, {"x","y"}, {ASSNumber, 
 ASSDrawMoveNc = createASSClass("ASSDrawMoveNc", ASSDrawBase, {"x","y"}, {ASSNumber, ASSNumber}, {name="n"})
 ASSDrawLine = createASSClass("ASSDrawLine", ASSDrawBase, {"x","y"}, {ASSNumber, ASSNumber}, {name="l"})
 ASSDrawBezier = createASSClass("ASSDrawBezier", ASSDrawBase, {"x1","y1","x2","y2","x3","y3"}, {ASSNumber, ASSNumber, ASSNumber, ASSNumber, ASSNumber, ASSNumber}, {name="b"})
+ASSDrawClose = createASSClass("ASSDrawClose", ASSDrawBase, {}, {}, {name="c"})
 --- TODO: b-spline support
 
 function ASSDrawLine:ScaleToLength(len,noUpdate)
