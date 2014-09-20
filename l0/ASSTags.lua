@@ -559,14 +559,14 @@ function ASSLineContents:getTextExtents(coerce)   -- TODO: account for linebreak
 end
 
 function ASSLineContents:getMetrics(coerce)
-    local metr, bound = {ascent=0, descent=0, internal_leading=0, external_leading=0, height=0, width=0}, {}
+    local metr, bound = {ascent=0, descent=0, internal_leading=0, external_leading=0, height=0, width=0}, {0,0,0,0}
     self:callback(function(section, sections, i, j)
         local sectMetr = section:getMetrics(coerce)
         if j==1 then
             bound[1], bound[2] = sectMetr.bounding[1], sectMetr.bounding[2]
-            bound[3], bound[4] = bound[1], bound[2]
         end
-        bound[3], bound[4] = bound[3] + sectMetr.box_width, bound[4] + sectMetr.box_height
+        bound[2], bound[3], bound[4] = math.min(bound[2],sectMetr.bounding[2]), bound[3] + sectMetr.box_width, 
+            math.max(bound[4],sectMetr.bounding[4])
         metr.width = metr.width + sectMetr.width
         
         metr.ascent, metr.descent, metr.internal_leading, metr.external_leading, metr.height =
