@@ -356,6 +356,15 @@ function ASSLineContents:insertDefaultTags(tagNames, index, sectionPosition, dir
     return self:insertTags(defaultTags, index, sectionPosition, direct)
 end
 
+function ASSLineContents:getEffectiveTags(index,includeDefault,includePrevious)
+    index = default(index,1)
+    assert(math.isInt(index) and index~=0,
+           string.format("Error: argument #1 (index) to getEffectiveTags() must be an integer != 0, got '%s' of type %s", tostring(index), type(index))
+    )
+    if index<0 then index = index+#self.sections+1 end
+    return self.sections[index]:getEffectiveTags(includeDefault,includePrevious)
+end
+
 function ASSLineContents:getTagCount()
     local cnt, sects = 0, self.sections
     for i=1,#sects do
@@ -428,7 +437,7 @@ function ASSLineContents:cleanTags(level, mergeSect)   -- TODO: optimize it, mak
     end
 end
 
-function ASSLineContents:splitAtTags(cleanLevel)
+function ASSLineContents:splitAtTags(cleanLevel, reposition, writeOrigin)
     cleanLevel = default(cleanLevel,3)
     local splitLines = {}
     self:callback(function(section,sections,i)
@@ -438,10 +447,11 @@ function ASSLineContents:splitAtTags(cleanLevel)
         splitLine.ASS:commit()
         table.insert(splitLines,splitLine)
     end, true, false, true)
+    if reposition then self:repositionSplitLines(splitLines, writeOrigin) end
     return splitLines
 end
 
-function ASSLineContents:splitAtIntervals(callback, cleanLevel)
+function ASSLineContents:splitAtIntervals(callback, cleanLevel, reposition, writeOrigin)
     cleanLevel = default(cleanLevel,3)
     if type(callback)=="number" then
         local step=callback
@@ -486,6 +496,46 @@ function ASSLineContents:splitAtIntervals(callback, cleanLevel)
         line.ASS:commit()
     end
 
+    if reposition then self:repositionSplitLines(splitLines, writeOrigin) end
+    return splitLines
+end
+
+function ASSLineContents:repositionSplitLines(splitLines, writeOrigin)
+    writeOrigin = default(writeOrigin,true)
+    local lineWidth = self:getTextExtents()
+    local getAlignOffset = {
+        [0] = function(wSec,wLine) return wSec-wLine end,    -- right
+        [1] = function() return 0 end,                       -- left
+        [2] = function(wSec,wLine) return wSec/2-wLine/2 end -- center
+    }
+    local xOff = 0
+    local origin = writeOrigin and self:getEffectiveTags(-1,true,true).tags["origin"]
+
+
+    for i=1,#splitLines do
+        local data = splitLines[i].ASS
+        -- get tag state at last line section, if you use more than one \pos, \org or \an in a single line,
+        -- you deserve things breaking around you
+        local effTags = data:getEffectiveTags(-1,true,true)
+        local sectWidth = data:getTextExtents()
+
+        -- kill all old position tags because we only ever need one
+        data:removeTags("position")
+        -- calculate new position
+        local alignOffset = getAlignOffset[effTags.tags["align"]:get()%3](sectWidth,lineWidth)
+        effTags.tags["position"]:add(alignOffset+xOff,0)
+        -- write new position tag to first tag section
+        data:insertTags(effTags.tags["position"],1,1)
+
+        -- if desired, write a new origin to the line if the style or the override tags contain any angle
+        if writeOrigin and (#data:getTags({"angle","angle_x","angle_y"})>0 or effTags.tags["angle"]:get()~=0) then
+            data:removeTags("origin")
+            data:insertTags(origin,1,1)
+        end
+
+        xOff = xOff + sectWidth
+        data:commit()
+    end
     return splitLines
 end
 
@@ -1479,8 +1529,8 @@ function ASSClipVect:commonOp(method, callback, default, x, y) -- drawing comman
     return unpack(res)
 end
 
-function ASSClipVect:flatten()
-    local flatStr = YUtils.shape.flatten(self:getTagParams())
+function ASSClipVect:flatten(coerce)
+    local flatStr = YUtils.shape.flatten(self:getTagParams(coerce))
     local flattened = ASSClipVect({flatStr},self.__tag)
     self.commands = flattened.commands
     return flatStr
