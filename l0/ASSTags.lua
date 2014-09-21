@@ -1192,7 +1192,6 @@ function ASSColor:new(r,g,b, tagProps)
     if type(r) == "table" then
         tagProps = g
         r,g,b = self:getArgs({r[3],r[2],r[1]},0,true)
-        Log.dump{r,g,b}
     end 
     self:readProps(tagProps)
     self.r, self.g, self.b = ASSHex(r), ASSHex(g), ASSHex(b)
@@ -1804,7 +1803,7 @@ function ASSFoundation:new()
         origin = {overrideName="\\org", type=ASSPosition, pattern="\\org%(([%-%d%.]+),([%-%d%.]+)%)", format="\\org(%.2N,%.2N)"},
         wrapstyle = {overrideName="\\q", type=ASSWrapStyle, pattern="\\q(%d)", format="\\q%d", default=0},
         fade_simple = {overrideName="\\fad", type=ASSFade, props={simple=true}, pattern="\\fad%((%d+),(%d+)%)", format="\\fad(%d,%d)", default={0,0}},
-        fade = {overrideName="\\fade", type=ASSFade, pattern="\\fade?%((.-)%)", format="\\fade(%d,%d,%d,%d,%d,%d,%d)", default={255,0,255,0,0,0,0}},
+        fade = {overrideName="\\fade", type=ASSFade, pattern="\\fade%((.-)%)", format="\\fade(%d,%d,%d,%d,%d,%d,%d)", default={255,0,255,0,0,0,0}},
         transform = {overrideName="\\t", type=ASSTransform, pattern="\\t%((.-)%)", format="\\t(%s)"},
         unknown = {type=ASSUnknown, format="%s", friendlyName="Unknown Tag"},
         junk = {type=ASSUnknown, format="%s", friendlyName="Junk"}
