@@ -80,7 +80,7 @@ function ASSBase:getArgs(args, default, coerce, ...)
     local valTypes, j, outArgs = self.__meta__.types, 1, {}
     for i,valName in ipairs(self.__meta__.order) do
         -- write defaults
-        args[j] = type(args[j])=="nil" and default or args[j]
+        if args[j]==nil then args[j]=default end
 
         if ASS.instanceOf(valTypes[i]) then
             local subCnt = #valTypes[i].__meta__.order
@@ -95,10 +95,12 @@ function ASSBase:getArgs(args, default, coerce, ...)
                     else return tonumber(args[j],tagProps.base or 10)*(tagProps.scale or 1) end
                 end,
                 string = function() return tostring(args[j]) end,
-                boolean = function() return not (args[j] == 0 or not args[j]) end
+                boolean = function() return args[j]~=0 and args[j]~=false end
             }
-            table.insert(outArgs, args[j]~= nil and map[valTypes[i]]() or nil)
-        else table.insert(outArgs, args[j]) end
+            if args[j] ~= nil then                  -- TODO: check if gaps in arrays break with unpack
+                outArgs[i] = map[valTypes[i]]()
+            end
+        else outArgs[i]=args[j] end
         j=j+1
     end
     --self:typeCheck(unpack(outArgs))
@@ -142,12 +144,14 @@ function ASSBase:typeCheck(...)
 end
 
 function ASSBase:get()
-    local vals = {}
-    for _,valName in ipairs(self.__meta__.order) do
-        if ASS.instanceOf(self[valName]) then
-            for _,cval in pairs({self[valName]:get()}) do vals[#vals+1]=cval end
+    local vals, names, valCnt = {}, self.__meta__.order, 1
+    for i=1,#names do
+        if ASS.instanceOf(self[names[i]]) then
+            for j,subVal in pairs({self[names[i]]:get()}) do 
+                vals[j+valCnt-1], valCnt = subVal, valCnt+1
+            end
         else 
-            vals[#vals+1] = self[valName]
+            vals[valCnt], valCnt = self[names[i]], valCnt+1
         end
     end
     return unpack(vals)
@@ -1276,7 +1280,7 @@ ASSToggle = createASSClass("ASSToggle", ASSTagBase, {"value"}, {"boolean"})
 function ASSToggle:new(val, tagProps)
     self:readProps(tagProps)
     if type(val) == "table" then
-        self.value = self:getArgs(val,false,true)
+        self.value = self:getArgs(val,false,true)        
     else 
         self.value = val or false 
     end
@@ -1554,18 +1558,22 @@ function ASSClipVect:getCommandAtLength(len, noUpdate)
             return cmd, math.max(len-currTotalLen,0)
         else currTotalLen = nextTotalLen end
     end
-    error(string.format("Error: length requested (%02f) is exceeding the total length of the shape (%02f)",len,currTotalLen))
+    return false
+    -- error(string.format("Error: length requested (%02f) is exceeding the total length of the shape (%02f)",len,currTotalLen))
 end
 
 function ASSClipVect:getPositionAtLength(len, noUpdate)
     if not (noUpdate and self.length) then self:getLength() end
     local cmd, remLen  = self:getCommandAtLength(len, true)
+    if not cmd then return false end
     return cmd:getPositionAtLength(remLen,true)
 end
 
 function ASSClipVect:getAngleAtLength(len, noUpdate)
     if not (noUpdate and self.length) then self:getLength() end
     local cmd, remLen = self:getCommandAtLength(len, true)
+    if not cmd then return false end
+
     if cmd.instanceOf[ASSDrawBezier] then
         cmd = cmd.flattened:getCommandAtLength(remLen, true)
     end
