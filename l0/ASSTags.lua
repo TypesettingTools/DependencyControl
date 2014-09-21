@@ -627,7 +627,7 @@ function ASSLineContents:getMetrics(coerce, angle)
         if j==1 then
             bound[1], bound[2] = sectMetr.bounding[1], sectMetr.bounding[2]
         end
-        bound[2], bound[3], bound[4] = math.min(bound[2],sectMetr.bounding[2]), bound[3] + sectMetr.box_width, 
+        bound[2], bound[3], bound[4] = math.min(bound[2],sectMetr.bounding[2]), bound[1] + sectMetr.box_width, 
             math.max(bound[4],sectMetr.bounding[4])
         metr.width = metr.width + sectMetr.width
         
@@ -635,6 +635,8 @@ function ASSLineContents:getMetrics(coerce, angle)
             math.max(sectMetr.ascent, metr.ascent), math.max(sectMetr.descent, metr.descent), 
             math.max(sectMetr.internal_leading, metr.internal_leading), math.max(sectMetr.external_leading, metr.external_leading),
             math.max(sectMetr.height, metr.height)
+
+        metr.shape = sectMetr.shape
     end, true, false, true)
     metr.box_width, metr.box_height = bound[3]-bound[1], bound[4]-bound[2]
     metr.bounding = bound
@@ -716,7 +718,7 @@ function ASSLineTextSection:getMetrics(angle, coerce)
         shape = ASSClipVect({shape}):rotate(angle):getTagParams()
     end
     -- get bounding box and calculate its length and height 
-    metrics.bounding = {YUtils.shape.bounding(shape)}
+    metrics.bounding, metrics.shape = {YUtils.shape.bounding(shape)}, shape
     metrics.box_width, metrics.box_height = metrics.bounding[3]-metrics.bounding[1], metrics.bounding[4]-metrics.bounding[2]
     return metrics
 end
