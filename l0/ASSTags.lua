@@ -117,7 +117,7 @@ function ASSBase:copy()
             elseif type(val)=="table" then
                 newObj[key]=ASSBase.copy(val)
             else newObj[key]=val end
-        end
+        else newObj[key]=val end
     end
     return newObj
 end
@@ -279,6 +279,7 @@ function ASSLineContents:insertSections(sections,index)
         table.insert(self.sections, index+i-1, section)
     end
     self:updateRefs()
+    return sections
 end
 
 function ASSLineContents:removeSections(start, end_)
@@ -318,15 +319,20 @@ function ASSLineContents:getTags(tagNames, start, end_, relative)
 end
 
 function ASSLineContents:removeTags(tags, start, end_, relative)
-    start, end_ = default(start,1), default(end_, start and start<0 and -1 or self:getTagCount())
+    start = default(start,1)
+    if relative then 
+        end_ = default(end_, start<0 and -1 or self:getTagCount())
+    end
     -- TODO: validation for start and end_
     local removed, matchCnt, reverse  = {}, 0, start<0
 
     self:callback(function(section)
-        if (reverse and matchCnt<-start) or (matchCnt<end_) then
+        if not relative then
+            removed = table.join(removed,(section:removeTags(tags)))  -- exra parentheses because we only want the first return value
+        elseif (reverse and matchCnt<-start) or (matchCnt<end_) then
             local sectStart = reverse and start+matchCnt or math.max(start-matchCnt,1)
             local sectEnd = reverse and math.min(end_+matchCnt,-1) or end_-matchCnt
-            local sectRemoved, matched = section:removeTags(tags, relative and sectStart or nil, relative and sectEnd or nil, true)
+            local sectRemoved, matched = section:removeTags(tags, sectStart, sectEnd, true)
             removed, matchCnt = table.join(removed,sectRemoved), matchCnt+matched
         end
     end, false, true, true, not relative and start or nil, not relative and end_ or nil, true, reverse)
@@ -348,9 +354,12 @@ function ASSLineContents:insertTags(tags, index, sectionPosition, direct)
         return section:insertTags(tags, sectionPosition)
     else
         local inserted
-        self:callback(function(section)
+        local sectFound = self:callback(function(section)
             inserted = section:insertTags(tags, sectionPosition)
         end, false, true, true, index, index, true)
+        if not sectFound and index==1 then
+            inserted = self:insertSections(ASSLineTagSection(),1)[1]:insertTags(tags)
+        end
         return inserted
     end
 end
@@ -620,10 +629,10 @@ function ASSLineContents:getMetrics(coerce, angle)
     local textCnt = self:getSectionCount(ASSLineTextSection)
     assert(not angle or angle==0 or textCnt<=1, 
            "Error: getting metrics at an angle is currently unsupported for lines with more than 1 text section.")
-    angle = default(self.sections[1] and self.sections[1]:getEffectiveTags(true).tags.angle:getTagParams(coerce) or 0)
+    angle = default(angle, self.sections[1] and self.sections[1]:getEffectiveTags(true).tags.angle:getTagParams(coerce) or 0)
 
     self:callback(function(section, sections, i, j)
-        local sectMetr = section:getMetrics(textCnt>1 and 0 or nil,coerce)
+        local sectMetr = section:getMetrics(textCnt>1 and 0 or angle,coerce)
         if j==1 then
             bound[1], bound[2] = sectMetr.bounding[1], sectMetr.bounding[2]
         end
@@ -1182,7 +1191,8 @@ ASSColor = createASSClass("ASSColor", ASSTagBase, {"r","g","b"}, {ASSHex,ASSHex,
 function ASSColor:new(r,g,b, tagProps)
     if type(r) == "table" then
         tagProps = g
-        r,g,b = self:getArgs({r[1],r[2],r[3]},0,true)
+        r,g,b = self:getArgs({r[3],r[2],r[1]},0,true)
+        Log.dump{r,g,b}
     end 
     self:readProps(tagProps)
     self.r, self.g, self.b = ASSHex(r), ASSHex(g), ASSHex(b)
