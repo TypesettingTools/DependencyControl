@@ -136,6 +136,17 @@ table.join = function(...)
     return arr
 end
 
+table.joinInto = function(arr, ...)
+    local arrN, args = #arr, {...}
+    for i=1,#args do
+        for j=1,#args[i] do
+            arrN = arrN + 1
+            arr[arrN] = args[i][j]
+        end
+    end
+    return arr
+end
+
 table.keys = function(tbl)
     local keys, keysN = {}, 0
     for key,_ in pairs(tbl) do
