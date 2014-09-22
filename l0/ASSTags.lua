@@ -62,23 +62,23 @@ function ASSBase:CoerceNumber(num, default)
     return num 
 end
 
-function ASSBase:getArgs(args, default, coerce, ...)
+function ASSBase:getArgs(args, default, coerce, extraValidClasses)
     assert(type(args)=="table", "Error: first argument to getArgs must be a table of packed arguments, got " .. type(args) ..".\n")
     -- check if first arg is a compatible ASSClass and dump into args 
     if #args == 1 and type(args[1]) == "table" and args[1].typeName then
-        local res, selfClasses = false, {}
-        for key,val in pairs(self.instanceOf) do
-            if val then table.insert(selfClasses,key) end
+        local res, selfClasses = false, table.keys(self.instanceOf)
+        if extraValidClasses then
+            table.joinInto(selfClasses, extraValidClasses)
         end
-        for _,class in ipairs(table.join(table.pack(...),selfClasses)) do
-            res = args[1].instanceOf[class] and true or res
+        for i=1,#selfClasses do
+            res = args[1].instanceOf[selfClasses[i]] and true or res
         end
         assert(res, string.format("%s does not accept instances of class %s as argument.\n", self.typeName, args[1].typeName))
-        args=table.pack(args[1]:get())
+        args = {args[1]:get()}
     end
 
     local valTypes, j, outArgs = self.__meta__.types, 1, {}
-    for i,valName in ipairs(self.__meta__.order) do
+    for i=1,#self.__meta__.order do
         -- write defaults
         if args[j]==nil then args[j]=default end
 
@@ -504,9 +504,9 @@ function ASSLineContents:splitAtIntervals(callback, cleanLevel, reposition, writ
         lastI = i
     end, true, false, true)
     
-    for _,line in ipairs(splitLines) do
-        line.ASS:cleanTags(cleanLevel)
-        line.ASS:commit()
+    for i=1,#splitLines do
+        splitLines[i].ASS:cleanTags(cleanLevel)
+        splitLines[i].ASS:commit()
     end
 
     if reposition then self:repositionSplitLines(splitLines, writeOrigin) end
@@ -1047,16 +1047,16 @@ ASSTagBase = createASSClass("ASSTagBase", ASSBase)
 
 function ASSTagBase:commonOp(method, callback, default, ...)
     local args = {self:getArgs({...}, default, false)}
-    local j, res = 1, {}
-    for _,valName in ipairs(self.__meta__.order) do
-        if ASS.instanceOf(self[valName]) then
-            local subCnt = #self[valName].__meta__.order
-            res=table.join(res,{self[valName][method](self[valName],unpack(table.sliceArray(args,j,j+subCnt-1)))})
+    local j, res, valNames = 1, {}, self.__meta__.order
+    for i=1,#valNames do
+        if ASS.instanceOf(self[valNames[i]]) then
+            local subCnt = #self[valNames[i]].__meta__.order
+            local subArgs = unpack(table.sliceArray(args,j,j+subCnt-1))
+            res=table.join(res,{self[valNames[i]][method](self[valNames[i]],subArgs)})
             j=j+subCnt
         else 
-            self[valName]=callback(self[valName],args[j])
-            j=j+1
-            table.insert(res,self[valName])
+            self[valNames[i]]=callback(self[valNames[i]],args[j])
+            res[j], j = self[valNames[i]], j+1
         end
     end
     return unpack(res)
@@ -1502,8 +1502,8 @@ function ASSClipVect:new(...)
         tagProps = args[2]
     elseif type(args[1])=="table" then
         tagProps = args[#args].instanceOf and {} or table.remove(args)
-        for i,arg in ipairs(args) do
-            assert(arg.baseClass==ASSDrawBase, string.format("Error: argument %d to %s is not a drawing object.", i, self.typeName))
+        for i=1,#args do
+            assert(args[i].baseClass==ASSDrawBase, string.format("Error: argument %d to %s is not a drawing object.", i, self.typeName))
         end
         self.commands = args
     end
@@ -1542,9 +1542,9 @@ end
 
 function ASSClipVect:commonOp(method, callback, default, x, y) -- drawing commands only have x and y in common
     local res = {}
-    for _,command in ipairs(self.commands) do
-        local subCnt = #command.__meta__.order
-        res=table.join(res,{command[method](command,x,y)})
+    for i=1,#self.commands do
+        local subCnt = #self.commands[i].__meta__.order
+        res = table.join(res,{self.commands[i][method](self.commands[i],x,y)})
     end
     return unpack(res)
 end
@@ -1567,11 +1567,11 @@ end
 
 function ASSClipVect:getCommandAtLength(len, noUpdate)
     if not (noUpdate and self.length) then self:getLength() end
-    local currTotalLen, nextTotalLen = 0
-    for _,cmd in ipairs(self.commands) do
-        nextTotalLen = currTotalLen + cmd.length
-        if nextTotalLen-len > -0.001 and cmd.length>0 and not (cmd.instanceOf[ASSDrawMove] or cmd.instanceOf[ASSDrawMoveNc]) then
-            return cmd, math.max(len-currTotalLen,0)
+    local cmds, currTotalLen, nextTotalLen = self.commands,  0
+    for i=1,#cmds do
+        nextTotalLen = currTotalLen + cmds[i].length
+        if nextTotalLen-len > -0.001 and cmds[i].length>0 and not (cmds[i].instanceOf[ASSDrawMove] or cmds[i].instanceOf[ASSDrawMoveNc]) then
+            return cmds[i], math.max(len-currTotalLen,0)
         else currTotalLen = nextTotalLen end
     end
     return false
@@ -1619,8 +1619,8 @@ end
 
 function ASSClipVect:get()
     local commands = {}
-    for i,cmd in ipairs(self.commands) do
-        commands = table.join(table.insert(commands,cmd.__tag.name),{cmd:get()})
+    for i=1,#self.commands do
+        commands = table.join(table.insert(commands,self.commands[i].__tag.name),{self.commands[i]:get()})
     end
     return commands
 end
@@ -1650,11 +1650,11 @@ function ASSDrawBase:new(...)
         self.parent = args[2]
         args = {self:getArgs(args[1], nil, true)}
     end
-    for i,arg in ipairs(args) do
+    for i=1,#args do
         if i>#self.__meta__.order then
-            self.parent = arg
+            self.parent = args[i]
         else
-            self[self.__meta__.order[i]] = self.__meta__.types[i](arg) 
+            self[self.__meta__.order[i]] = self.__meta__.types[i](args[i]) 
         end
     end
     return self
@@ -1741,15 +1741,16 @@ function ASSDrawLine:getAngle(ref, noUpdate)
 end
 
 function ASSDrawBezier:commonOp(method, callback, default, ...)
-    local args, j, res = {...}, 1, {}
+    local args, j, res, valNames = {...}, 1, {}, self.__meta__.order
     if #args<=2 then -- special case to allow common operation on all x an y values of a vector drawing
         args[1], args[2] = args[1] or 0, args[2] or 0
         args = table.join(args,args,args)
     end
     args = {self:getArgs(args, default, false)}
-    for _,valName in ipairs(self.__meta__.order) do
-        local subCnt = #self[valName].__meta__.order
-        res=table.join(res,{self[valName][method](self[valName],unpack(table.sliceArray(args,j,j+subCnt-1)))})
+    for i=1,#valNames do
+        local subCnt = #self[valNames[i]].__meta__.order
+        local subArgs = table.sliceArray(args,j,j+subCnt-1)
+        table.joinInto(res, {self[valNames[i]][method](self[valNames[i]],unpack(subArgs))})
         j=j+subCnt
     end
     return unpack(res)
@@ -1881,8 +1882,8 @@ function ASSFoundation.instanceOf(val,classes)
         classes = {classes}
     end
 
-    for _,class in ipairs(classes) do 
-        if val.instanceOf[class] then
+    for i=1,#classes do 
+        if val.instanceOf[classes[i]] then
             return true
         end
     end
