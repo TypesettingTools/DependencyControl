@@ -634,10 +634,10 @@ function ASSLineContents:getMetrics(coerce, angle)
     self:callback(function(section, sections, i, j)
         local sectMetr = section:getMetrics(textCnt>1 and 0 or angle,coerce)
         if j==1 then
-            bound[1], bound[2] = sectMetr.bounding[1], sectMetr.bounding[2]
+            bound[1], bound[2] = sectMetr.bounding[1] or 0, sectMetr.bounding[2] or 0
         end
-        bound[2], bound[3], bound[4] = math.min(bound[2],sectMetr.bounding[2]), bound[1] + sectMetr.box_width, 
-            math.max(bound[4],sectMetr.bounding[4])
+        bound[2], bound[3], bound[4] = math.min(bound[2],sectMetr.bounding[2] or 0), bound[1] + sectMetr.box_width, 
+            math.max(bound[4],sectMetr.bounding[4] or 0)
         metr.width = metr.width + sectMetr.width
         
         metr.ascent, metr.descent, metr.internal_leading, metr.external_leading, metr.height =
@@ -728,7 +728,7 @@ function ASSLineTextSection:getMetrics(angle, coerce)
     end
     -- get bounding box and calculate its length and height 
     metrics.bounding, metrics.shape = {YUtils.shape.bounding(shape)}, shape
-    metrics.box_width, metrics.box_height = metrics.bounding[3]-metrics.bounding[1], metrics.bounding[4]-metrics.bounding[2]
+    metrics.box_width, metrics.box_height = (metrics.bounding[3] or 0)-(metrics.bounding[1] or 0), (metrics.bounding[4] or 0)-(metrics.bounding[2] or 0)
     return metrics
 end
 
@@ -1340,6 +1340,11 @@ end
 function ASSAlign:right()
     if self.value%3~=0 then return self:add(1)
     else return false end
+end
+
+function ASSAlign:centerV()
+    if self.value<=3 then self:up()
+    elseif self.value>=7 then self:down() end
 end
 
 ASSWeight = createASSClass("ASSWeight", ASSTagBase, {"weightClass","bold"}, {ASSNumber,ASSToggle})
