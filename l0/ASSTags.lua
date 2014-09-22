@@ -1578,11 +1578,11 @@ function ASSClipVect:getCommandAtLength(len, noUpdate)
     -- error(string.format("Error: length requested (%02f) is exceeding the total length of the shape (%02f)",len,currTotalLen))
 end
 
-function ASSClipVect:getPositionAtLength(len, noUpdate)
+function ASSClipVect:getPositionAtLength(len, noUpdate, useCurveTime)
     if not (noUpdate and self.length) then self:getLength() end
     local cmd, remLen  = self:getCommandAtLength(len, true)
     if not cmd then return false end
-    return cmd:getPositionAtLength(remLen,true)
+    return cmd:getPositionAtLength(remLen, true, useCurveTime)
 end
 
 function ASSClipVect:getAngleAtLength(len, noUpdate)
@@ -1692,18 +1692,21 @@ function ASSDrawBase:getLength(prevCmd)
     return len
 end
 
-function ASSDrawBase:getPositionAtLength(len,noUpdate)
+function ASSDrawBase:getPositionAtLength(len, noUpdate, useCurveTime)
     if not (self.length and self.cursor and noUpdate) then self.parent:getLength() end
     local name, pos = self.__tag.name
-    if name == "b" then
-        local x1,y1,x2,y2,x3,y3 = self:get()
+    if name == "b" and useCurveTime then
         local px, py = YUtils.math.bezier(math.min(len/self.length,1), {{self.cursor:get()},{x1,y1},{x2,y2},{x3,y3}})
         pos = ASSPosition(px, py)
+    elseif name == "b" then
+        local x1,y1,x2,y2,x3,y3 = self:get()
+        pos = self:getFlattened(true):getPositionAtLength(len, true)   -- we already know this data is up-to-date because self.parent:getLength() was run
     elseif name == "l" then
-        pos = ASSPosition(self:copy():ScaleToLength(len,true))  
+        pos = ASSPosition(self:copy():ScaleToLength(len,true))
     elseif name == "m" then
         pos = ASSPosition(self:get())
     end
+    pos.__tag.name = "position"
     return pos
 end
 
@@ -1754,6 +1757,17 @@ function ASSDrawBezier:commonOp(method, callback, default, ...)
         j=j+subCnt
     end
     return unpack(res)
+end
+
+function ASSDrawBezier:getFlattened(noUpdate)
+    if not (noUpdate and self.flattened) then
+        if not (noUpdate and self.cursor) then
+            self.parent:getLength()
+        end
+        local shapeSection = ASSClipVect(ASSDrawMove(self.cursor:get()),self)
+        self.flattened = ASSClipVect({YUtils.shape.flatten(shapeSection:getTagParams())})
+    end
+    return self.flattened
 end
 
 ----------- Tag Mapping -------------
