@@ -123,12 +123,12 @@ function ASSBase:copy()
 end
 
 function ASSBase:typeCheck(...)
-    local valTypes, j, args = self.__meta__.types, 1, {...}
-    --assert(#valNames >= #args, string.format("Error: too many arguments. Expected %d, got %d.\n",#valNames,#args))
-    for i,valName in ipairs(self.__meta__.order) do
+    local valTypes, valNames, j, args = self.__meta__.types, self.__meta__.order, 1, {...}
+    -- assert(#valNames >= #args, string.format("Error: too many arguments. Expected %d, got %d.\n",#valNames,#args))
+    for i=1,#valNames do
         if ASS.instanceOf(valTypes[i]) then
             if ASS.instanceOf(args[j]) then
-                self[valName]:typeCheck(args[j])
+                self[valNames[i]]:typeCheck(args[j])
                 j=j+1
             else
                 local subCnt = #valTypes[i].__meta__.order
@@ -137,7 +137,7 @@ function ASSBase:typeCheck(...)
             end
         else    
             assert(type(args[i])==valTypes[i] or type(args[i])=="nil" or valTypes[i]=="nil",
-                   string.format("Error: bad type for argument %d (%s). Expected %s, got %s.\n", i,valName,type(self[valName]),type(args[i]))) 
+                   string.format("Error: bad type for argument %d (%s). Expected %s, got %s.\n", i,valNames[i],type(self[valNames[i]]),type(args[i]))) 
         end
     end
     return unpack(args)
@@ -198,28 +198,28 @@ end
 
 function ASSLineContents:updateRefs(prevCnt)
     if prevCnt~=#self.sections then
-        for i,section in ipairs(self.sections) do
-            section.prevSection = self.sections[i-1]
-            section.parent = self
+        for i=1,#self.sections do
+            self.sections[i].prevSection = self.sections[i-1]
+            self.sections[i].parent = self
         end
         return true
     else return false end
 end
 
 function ASSLineContents:getString(coerce, noTags, noText, noCmts)
-    local str = ""
-    for i,section in ipairs(self.sections) do
-        if ASS.instanceOf(section, ASSLineTextSection) and not noText then
-            str = str .. section:getString()
-        elseif ASS.instanceOf(section, {not noTags and ASSLineTagSection, not noCmts and ASSLineCommentSection}) then
-            str =  string.format("%s{%s}",str,section:getString())
+    local str, sections = {}, self.sections
+    for i=1,#sections do
+        if ASS.instanceOf(sections[i], ASSLineTextSection) and not noText then
+            str[i] = sections[i]:getString()
+        elseif ASS.instanceOf(sections[i], {not noTags and ASSLineTagSection, not noCmts and ASSLineCommentSection}) then
+            str[i] =  "{" .. sections[i]:getString() .. "}"
         else 
             eval(coerce, string.format("Error: %s section #%d is not a %d, %d or %d.\n", 
                  self.typeName, i, ASSLineTextSection.typeName, ASSLineTagSection.typeName, ASSLineCommentSection.typeName)
             ) 
         end
     end
-    return str
+    return table.concat(str)
 end
 
 function ASSLineContents:get(noTags, noText, noCmts, start, end_, relative)
@@ -271,12 +271,12 @@ function ASSLineContents:insertSections(sections,index)
     if type(sections)~="table" or sections.instanceOf then
         sections = {sections}
     end
-    for i,section in ipairs(sections) do
-        assert(ASS.instanceOf(section,{ASSLineTextSection, ASSLineTagSection, ASSLineCommentSection}),
+    for i=1,#sections do
+        assert(ASS.instanceOf(sections[i],{ASSLineTextSection, ASSLineTagSection, ASSLineCommentSection}),
               string.format("Error: can only insert sections of type %s, %s or %s, got %s.\n", 
-              ASSLineTextSection.typeName, ASSLineTagSection.typeName, ASSLineCommentSection.typeName, type(sections))
+              ASSLineTextSection.typeName, ASSLineTagSection.typeName, ASSLineCommentSection.typeName, type(sections[i]))
         )
-        table.insert(self.sections, index+i-1, section)
+        table.insert(self.sections, index+i-1, sections[i])
     end
     self:updateRefs()
     return sections
@@ -870,23 +870,23 @@ function ASSLineTagSection:insertTags(tags, index)
         tags = {tags}
     end
 
-    for i,tag in ipairs(tags) do
-        local cls = ASS.instanceOf(tag)
+    for i=1,#tags do
+        local cls = ASS.instanceOf(tags[i])
         if not cls then
-            error(string.format("Error: argument %d to insertTags() must be a tag object, got a %s", i, type(tag)))
+            error(string.format("Error: argument %d to insertTags() must be a tag object, got a %s", i, type(tags[i])))
         end
 
-        local tagData = ASS.tagMap[tag.__tag.name]
+        local tagData = ASS.tagMap[tags[i].__tag.name]
         if not tagData then
-            error(string.format("Error: can't insert tag #%d of type %s: no with name '%s'.", i, tag.typeName, tag.__tag.name))
+            error(string.format("Error: can't insert tag #%d of type %s: no with name '%s'.", i, tags[i].typeName, tags[i].__tag.name))
         elseif cls ~= tagData.type then
             error(string.format("Error: can't insert tag #%d with name '%s': expected type was %s, got %s.", 
-                                i, tag.__tag.name, tagData.type.typeName, tag.typeName)
+                                i, tags[i].__tag.name, tagData.type.typeName, tags[i].typeName)
             )
         end
 
         local insertIdx = index<0 and prevCnt+index+i or index+i-1
-        table.insert(self.tags, insertIdx, tag:copy())
+        table.insert(self.tags, insertIdx, tags[i]:copy())
         inserted[i] = self.tags[insertIdx] 
     end
     return #inserted>1 and inserted or inserted[1]
@@ -1103,10 +1103,10 @@ function ASSTagBase:equal(ASSTag)  -- checks equalness only of the relevant prop
 
     local vals1, vals2 = {self:get()}, {ASSTag:get()}
     if #vals1~=#vals2 then return false end
-    for i,val in ipairs(vals1) do
-        if type(val)=="table" and #table.intersect(val,vals2[i])~=#val then
+    for i=1,#vals1 do
+        if type(vals1[i])=="table" and #table.intersect(vals1[i],vals2[i])~=#vals1[i] then
             return false
-        elseif val~=vals2[i] then return false end
+        elseif vals1[i]~=vals2[i] then return false end
     end
     return true
 end
