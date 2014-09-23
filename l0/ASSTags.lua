@@ -442,12 +442,14 @@ function ASSLineContents:cleanTags(level, mergeSect)   -- TODO: optimize it, mak
             end
             if level>=4 then
                 local startStates = section.prevSection and section.prevSection:getEffectiveTags(true)
-                                        or self:getStyleDefaultTags()
+                                    or self:getStyleDefaultTags()
                 tagList:diff(startStates)
             end
             return table.length(tagList.tags)>0 and ASSLineTagSection(tagList) or false
         end, false, true, true)
     end
+
+    return self
 end
 
 function ASSLineContents:splitAtTags(cleanLevel, reposition, writeOrigin)
@@ -671,6 +673,17 @@ function ASSLineContents:getSectionCount(class)
     end
 end
 
+function ASSLineContents:reverse()
+    local reversed, textCnt = {}, self:getSectionCount(ASSLineTextSection)
+    self:callback(function(section,_,_,j)
+        reversed[j*2-1] = ASSLineTagSection(section:getEffectiveTags(true,true))
+        reversed[j*2] = section:reverse()
+    end, true, false, true, nil, nil, nil, true)
+    self.sections = reversed
+    self:updateRefs()
+    return self:cleanTags(4)
+end
+
 ASSLineTextSection = createASSClass("ASSLineTextSection", ASSBase, {"value"}, {"string"})
 function ASSLineTextSection:new(value)
     self.value = self:typeCheck(self:getArgs({value},"",true))
@@ -730,6 +743,11 @@ function ASSLineTextSection:getMetrics(angle, coerce)
     metrics.bounding, metrics.shape = {YUtils.shape.bounding(shape)}, shape
     metrics.box_width, metrics.box_height = (metrics.bounding[3] or 0)-(metrics.bounding[1] or 0), (metrics.bounding[4] or 0)-(metrics.bounding[2] or 0)
     return metrics
+end
+
+function ASSLineTextSection:reverse()
+    self.value = self.value:reverse()
+    return self
 end
 
 ASSLineCommentSection = createASSClass("ASSLineCommentSection", ASSLineTextSection, {"value"}, {"string"})
@@ -1106,7 +1124,7 @@ function ASSTagBase:equal(ASSTag)  -- checks equalness only of the relevant prop
     for i=1,#vals1 do
         if type(vals1[i])=="table" and #table.intersect(vals1[i],vals2[i])~=#vals1[i] then
             return false
-        elseif vals1[i]~=vals2[i] then return false end
+        elseif type(vals1[i])~="table" and vals1[i]~=vals2[i] then return false end
     end
     return true
 end
