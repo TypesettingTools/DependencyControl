@@ -862,7 +862,7 @@ end
 
 function ASSLineTagSection:insertTags(tags, index)
     local prevCnt, inserted = #self.tags, {}
-    index = default(index,prevCnt or 1)
+    index = default(index,math.max(prevCnt,1))
     assert(math.isInt(index) and index~=0,
            string.format("Error: argument 2 to insertTags() must be an integer != 0, got '%s' of type %s", tostring(index), type(index))
     )
