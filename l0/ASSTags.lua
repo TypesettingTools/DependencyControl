@@ -453,12 +453,12 @@ end
 function ASSLineContents:splitAtTags(cleanLevel, reposition, writeOrigin)
     cleanLevel = default(cleanLevel,3)
     local splitLines = {}
-    self:callback(function(section,sections,i)
+    self:callback(function(section,_,i,j)
         local splitLine = Line(self.line, self.line.parentCollection)
         splitLine.ASS = ASSLineContents(splitLine, table.insert(self:get(false,true,true,0,i),section))
         splitLine.ASS:cleanTags(cleanLevel)
         splitLine.ASS:commit()
-        table.insert(splitLines,splitLine)
+        splitLines[j] = splitLine
     end, true, false, true)
     if reposition then self:repositionSplitLines(splitLines, writeOrigin) end
     return splitLines
@@ -474,9 +474,9 @@ function ASSLineContents:splitAtIntervals(callback, cleanLevel, reposition, writ
     else assert(type(callback)=="function", "Error: first argument to splitAtIntervals must be either a number or a callback function.\n") end
     
     local len, idx, sectEndIdx, nextIdx, lastI = #self:copy():stripTags():getString(), 1, 0, 0
-    local splitLines = {}
+    local splitLines, splitCnt = {}, 1
 
-    self:callback(function(section,sections,i)
+    self:callback(function(section,_,i)
         local sectStartIdx, text, off = sectEndIdx+1, section.value, sectEndIdx
         sectEndIdx = sectStartIdx+#section.value-1
 
@@ -497,7 +497,7 @@ function ASSLineContents:splitAtIntervals(callback, cleanLevel, reposition, writ
             local splitLine = Line(self.line, self.line.parentCollection)
             splitLine.ASS = ASSLineContents(splitLine, self:get(false,true,true,1,i))
             splitLine.ASS:insertSections(ASSLineTextSection(text:sub(idx-off,nextIdx-off-1)))
-            table.insert(splitLines,splitLine)        
+            splitLines[splitCnt], splitCnt = splitLine, splitCnt+1      
             -- check if this section is long enough to fill the new line
             idx = sectEndIdx>=nextIdx-1 and nextIdx or sectEndIdx+1
         end
@@ -862,7 +862,7 @@ end
 
 function ASSLineTagSection:insertTags(tags, index)
     local prevCnt, inserted = #self.tags, {}
-    index = default(index,prevCnt)
+    index = default(index,prevCnt or 1)
     assert(math.isInt(index) and index~=0,
            string.format("Error: argument 2 to insertTags() must be an integer != 0, got '%s' of type %s", tostring(index), type(index))
     )
@@ -1618,9 +1618,12 @@ function ASSClipVect:rotate(angle)
 end
 
 function ASSClipVect:get()
-    local commands = {}
+    local commands, j = {}, 1
     for i=1,#self.commands do
-        commands = table.join(table.insert(commands,self.commands[i].__tag.name),{self.commands[i]:get()})
+        commands[j] = self.commands[i].__tag.name
+        local params = {self.commands[i]:get()}
+        table.joinInto(commands, params)
+        j=j+#params+1
     end
     return commands
 end
