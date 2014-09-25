@@ -292,7 +292,7 @@ function ASSLineContents:removeSections(start, end_)
 end
 
 function ASSLineContents:modTags(tagNames, callback, start, end_, relative)
-    start, end_ = default(start,1), default(end_, start and start<0 and -1 or self:getTagCount())
+    start, end_ = default(start,1), default(end_, start and start<0 and -1 or math.max(self:getTagCount(),1))
     -- TODO: validation for start and end_
     local modCnt, reverse = 0, start<0
 
