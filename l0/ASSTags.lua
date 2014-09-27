@@ -293,7 +293,8 @@ function ASSLineContents:removeSections(start, end_)
 end
 
 function ASSLineContents:modTags(tagNames, callback, start, end_, relative)
-    start, end_ = default(start,1), default(end_, start and start<0 and -1 or math.max(self:getTagCount(),1))
+    start = default(start,1)
+    end_ = default(end_, start<0 and -1 or math.max(self:getTagCount(),1))
     -- TODO: validation for start and end_
     local modCnt, reverse = 0, start<0
 
@@ -1894,7 +1895,7 @@ end
 function ASSFoundation:getTagFromString(str)
     for _,tag in pairs(self.tagMap) do
         if tag.pattern then
-            local res = {str:find(tag.pattern)}
+            local res = {str:find("^"..tag.pattern)}
             if #res>0 then
                 local start, end_ = table.remove(res,1), table.remove(res,1)
                 return tag.type(res,tag.props), start, end_
