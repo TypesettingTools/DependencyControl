@@ -232,7 +232,8 @@ end
 
 function ASSLineContents:callback(callback, noTags, noText, noCmts, start, end_, relative, reverse)
     local prevCnt = #self.sections
-    start, end_ = default(start,1), default(end_, start>=1 and math.max(prevCnt,1) or -1)
+    start = default(start,1)
+    end_ = default(end_, start>=1 and math.max(prevCnt,1) or -1)
     reverse = relative and start<0 or reverse
 
     assert(math.isInt(start) and math.isInt(end_), 
@@ -780,7 +781,8 @@ end
 
 function ASSLineTagSection:callback(callback, tagNames, start, end_, relative, reverse)
     local tagSet, prevCnt = {}, #self.tags
-    start, end_ = default(start,1), default(end_,math.max(prevCnt,1))
+    start = default(start,1)
+    end_ = default(end_, start>=1 and math.max(prevCnt,1) or -1)
     reverse = relative and start<0 or reverse
 
     assert(math.isInt(start) and math.isInt(end_), 
