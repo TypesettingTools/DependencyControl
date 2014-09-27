@@ -1902,7 +1902,8 @@ function ASSFoundation:getTagFromString(str)
             end
         end
     end
-    return ASSUnknown(str,self.tagMap["unknown"].props), 1, #str
+    local tagType = self.tagMap[str:sub(1,1)=="\\" and "unknown" or "junk"]
+    return ASSUnknown(str,tagType.props), 1, #str
 end
 
 function ASSFoundation:formatTag(tagRef, ...)
