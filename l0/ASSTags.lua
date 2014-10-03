@@ -1302,10 +1302,10 @@ function ASSMove:getTagParams(coerce)
     if self.__tag.simple or self.__tag.name=="move_simple" then
         return returnAll({self.startPos:getTagParams(coerce)}, {self.endPos:getTagParams(coerce)})
     else
-        if not coerce then
-             assert(startTime<=endTime, string.format("Error: move times must evaluate to t1<=t2, got %d<=%d.\n", startTime,endTime))
-        end
         local t1,t2 = self.startTime:getTagParams(coerce), self.endTime:getTagParams(coerce)
+        if not coerce then
+             assert(t1<=t2, string.format("Error: move times must evaluate to t1<=t2, got %d<=%d.\n", t1,t2))
+        end
         return returnAll({self.startPos:getTagParams(coerce)}, {self.endPos:getTagParams(coerce)},
                          {math.min(t1,t2)}, {math.max(t2,t1)})
     end
