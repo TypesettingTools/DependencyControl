@@ -34,23 +34,26 @@ end
 
 ASSBase = createASSClass("ASSBase")
 function ASSBase:checkType(type_, ...) --TODO: get rid of
-    for _,val in ipairs({...}) do
-        result = (type_=="integer" and math.isInt(val)) or type(val)==type_
-        assert(result, string.format("Error: %s must be a %s, got %s.\n",self.typeName,type_,type(val)))
+    local vals = table.pack(...)
+    for i=1,vals.n do
+        result = (type_=="integer" and math.isInt(vals[i])) or type(vals[i])==type_
+        assert(result, string.format("Error: %s must be a %s, got %s.\n",self.typeName,type_,type(vals[i])))
     end
 end
 
 function ASSBase:checkPositive(...)
-    self:checkType("number",...)
-    for _,val in ipairs({...}) do
-        assert(val >= 0, string.format("Error: %s tagProps do not permit numbers < 0, got %d.\n", self.typeName,val))
+    self:checkType("number", ...)
+    local vals = table.pack(...)
+    for i=1,vals.n do
+        assert(vals[i] >= 0, string.format("Error: %s tagProps do not permit numbers < 0, got %d.\n", self.typeName,vals[i]))
     end
 end
 
 function ASSBase:checkRange(min,max,...)
     self:checkType("number",...)
-    for _,val in ipairs({...}) do
-        assert(val >= min and val <= max, string.format("Error: %s must be in range %d-%d, got %d.\n",self.typeName,min,max,val))
+    local vals = table.pack(...)
+    for i=1,vals.n do
+        assert(vals[i] >= min and vals[i] <= max, string.format("Error: %s must be in range %d-%d, got %d.\n",self.typeName,min,max,vals[i]))
     end
 end
 
@@ -1889,7 +1892,7 @@ end
 
 function ASSFoundation:createTag(name, ...)
     local tag = self:mapTag(name)
-    return tag.type(returnAll({...},{tag.props}))
+    return tag.type(returnAll({...},{tag.props}))  -- TODO: fix for nil arguments
 end
 
 function ASSFoundation:getTagFromString(str)
