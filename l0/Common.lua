@@ -237,7 +237,7 @@ util.RGB_to_HSV = function(r,g,b)
     else         
         local s,c = delta/v, (r==v and g-b) or (g==v and b-r+2) or (r-g+4)
         local h = 60*c/delta
-        return h>0 and h or h+360, s, v
+        return h>0 and h or h+360, s, v/255
     end
 end
 
