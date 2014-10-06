@@ -127,21 +127,20 @@ end
 
 function ASSBase:typeCheck(...)
     local valTypes, valNames, j, args = self.__meta__.types, self.__meta__.order, 1, {...}
-    -- assert(#valNames >= #args, string.format("Error: too many arguments. Expected %d, got %d.\n",#valNames,#args))
     for i=1,#valNames do
         if ASS.instanceOf(valTypes[i]) then
-            if ASS.instanceOf(args[j]) then
+            if ASS.instanceOf(args[j]) then   -- argument and expected type are both ASSObjects, defer type checking to object
                 self[valNames[i]]:typeCheck(args[j])
-                j=j+1
-            else
+            else  -- collect expected number of arguments for target ASSObject
                 local subCnt = #valTypes[i].__meta__.order
                 valTypes[i]:typeCheck(unpack(table.sliceArray(args,j,j+subCnt-1)))
-                j=j+subCnt
+                j=j+subCnt-1
             end
         else    
-            assert(type(args[i])==valTypes[i] or type(args[i])=="nil" or valTypes[i]=="nil",
-                   string.format("Error: bad type for argument %d (%s). Expected %s, got %s.\n", i,valNames[i],type(self[valNames[i]]),type(args[i]))) 
+            assert(type(args[j])==valTypes[i] or args[j]==nil or valTypes[i]=="nil",
+                   string.format("Error: bad type for argument #%d (%s). Expected %s, got %s.", i, valNames[i], valTypes[i], type(args[j]))) 
         end
+        j=j+1
     end
     return unpack(args)
 end
