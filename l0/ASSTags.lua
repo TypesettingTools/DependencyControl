@@ -1373,9 +1373,9 @@ end
 ASSWeight = createASSClass("ASSWeight", ASSTagBase, {"weightClass","bold"}, {ASSNumber,ASSToggle})
 function ASSWeight:new(val, tagProps)
     if type(val) == "table" then
-        local val = self:getArgs(val,0,true)
+        val = self:getArgs(val,0,true)
         self.bold = (val==1 and true) or (val==0 and false)
-        self.weightClass = val>1 and true or 0
+        self.weightClass = val>1 and val or 0
     elseif type(val) == "boolean" then
         self.bold, self.weightClass = val, 0
     else self.weightClass = val
