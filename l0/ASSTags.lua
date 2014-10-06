@@ -98,7 +98,7 @@ function ASSBase:getArgs(args, default, coerce, extraValidClasses)
                     else return tonumber(args[j],tagProps.base or 10)*(tagProps.scale or 1) end
                 end,
                 string = function() return tostring(args[j]) end,
-                boolean = function() return args[j]~=0 and args[j]~=false end
+                boolean = function() return args[j]~=0 and args[j]~="0" and args[j]~=false end
             }
             if args[j] ~= nil then                  -- TODO: check if gaps in arrays break with unpack
                 outArgs[i] = map[valTypes[i]]()
@@ -1315,7 +1315,7 @@ ASSToggle = createASSClass("ASSToggle", ASSTagBase, {"value"}, {"boolean"})
 function ASSToggle:new(val, tagProps)
     self:readProps(tagProps)
     if type(val) == "table" then
-        self.value = self:getArgs(val,false,true)        
+        self.value = self:getArgs(val,false,true)
     else 
         self.value = val or false 
     end
