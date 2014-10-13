@@ -50,7 +50,7 @@ string.sub = function(s, i, j)   -- supports unicode
     local charNum, charStart, uniChars = 1, 1, {}
     while charStart <= #s do
         local charEnd = charStart + unicode.charwidth(s:_sub(charStart,charStart)) - 1
-        uniChars[charNum] = s:_sub(charNum, charEnd)
+        uniChars[charNum] = s:_sub(charStart, charEnd)
         charStart, charNum = charEnd+1, charNum+1
     end
     local charCnt = #uniChars
