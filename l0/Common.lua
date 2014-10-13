@@ -45,30 +45,6 @@ function string:split(sep)
     return fields
 end
 
-string.reverse = function(s)    -- supports unicode
-    return table.concat(table.reverseArray(s:toCharTable()))
-end
-
-string._sub = string.sub
-string.sub = function(s, i, j)   -- supports unicode
-    local uniChars = string.toCharTable(s)
-    local charCnt = #uniChars
-
-    i = (not i and 1) or (i<0 and math.max(charCnt+i+1,1)) or util.clamp(i,1,charCnt)
-    j = (not j and charCnt) or (j<0 and math.max(charCnt+j+1,1)) or util.clamp(j,1,charCnt)
-    return table.concat(uniChars, "", i, j)
-end
-
-string.toCharTable = function(s)
-    local charNum, charStart, uniChars = 1, 1, {}
-    while charStart <= #s do
-        local charEnd = charStart + unicode.charwidth(s:_sub(charStart,charStart)) - 1
-        uniChars[charNum] = s:_sub(charStart, charEnd)
-        charStart, charNum = charEnd+1, charNum+1
-    end
-    return uniChars
-end
-
 string.toNumbers = function(base, ...)
     local numbers, args = {}, {...}
     for i=1, #args do
@@ -251,6 +227,29 @@ table.values = function(tbl)
         vals[valsN] = val
     end
     return vals
+end
+
+unicode.reverse = function(s)
+    return table.concat(table.reverseArray(unicode.toCharTable(s)))
+end
+
+unicode.sub = function(s, i, j)
+    local uniChars = unicode.toCharTable(s)
+    local charCnt = #uniChars
+
+    i = (not i and 1) or (i<0 and math.max(charCnt+i+1,1)) or util.clamp(i,1,charCnt)
+    j = (not j and charCnt) or (j<0 and math.max(charCnt+j+1,1)) or util.clamp(j,1,charCnt)
+    return table.concat(uniChars, "", i, j)
+end
+
+unicode.toCharTable = function(s)
+    local charNum, charStart, uniChars = 1, 1, {}
+    while charStart <= #s do
+        local charEnd = charStart + unicode.charwidth(s:sub(charStart,charStart)) - 1
+        uniChars[charNum] = s:sub(charStart, charEnd)
+        charStart, charNum = charEnd+1, charNum+1
+    end
+    return uniChars
 end
 
 util.RGB_to_HSV = function(r,g,b)
