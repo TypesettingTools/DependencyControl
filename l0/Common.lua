@@ -1,4 +1,5 @@
 local util = require("aegisub.util")
+local unicode = require("aegisub.unicode")
 
 math.isInt = function(num)
     return type(num) == "number" and math.floor(num) == num
@@ -42,6 +43,21 @@ function string:split(sep)
         fields[#fields+1] = field
     end)
     return fields
+end
+
+string._sub = string.sub
+string.sub = function(s, i, j)   -- supports unicode
+    local charNum, charStart, uniChars = 1, 1, {}
+    while charStart <= #s do
+        local charEnd = charStart + unicode.charwidth(s:_sub(charStart,charStart)) - 1
+        uniChars[charNum] = s:_sub(charNum, charEnd)
+        charStart, charNum = charEnd+1, charNum+1
+    end
+    local charCnt = #uniChars
+
+    i = (not i and 1) or (i<0 and math.max(charCnt+i+1,1)) or util.clamp(i,1,charCnt)
+    j = (not j and charCnt) or (j<0 and math.max(charCnt+j+1,1)) or util.clamp(j,1,charCnt)
+    return table.concat(uniChars, "", i, j)
 end
 
 string.toNumbers = function(base, ...)
