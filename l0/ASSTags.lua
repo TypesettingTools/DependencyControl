@@ -1,4 +1,5 @@
 local re = require("aegisub.re")
+local unicode = require("aegisub.unicode")
 local util = require("aegisub.util")
 local l0Common = require("l0.Common")
 local YUtils = require("YUtils")
@@ -479,12 +480,12 @@ function ASSLineContents:splitAtIntervals(callback, cleanLevel, reposition, writ
         end
     else assert(type(callback)=="function", "Error: first argument to splitAtIntervals must be either a number or a callback function.\n") end
     
-    local len, idx, sectEndIdx, nextIdx, lastI = #self:copy():stripTags():getString(), 1, 0, 0
+    local len, idx, sectEndIdx, nextIdx, lastI = unicode.len(self:copy():stripTags():getString()), 1, 0, 0
     local splitLines, splitCnt = {}, 1
 
     self:callback(function(section,_,i)
         local sectStartIdx, text, off = sectEndIdx+1, section.value, sectEndIdx
-        sectEndIdx = sectStartIdx+#section.value-1
+        sectEndIdx = sectStartIdx + unicode.len(section.value)-1
 
         -- process unfinished line carried over from previous section
         if nextIdx > idx then
@@ -502,7 +503,7 @@ function ASSLineContents:splitAtIntervals(callback, cleanLevel, reposition, writ
             -- create a new line
             local splitLine = Line(self.line, self.line.parentCollection)
             splitLine.ASS = ASSLineContents(splitLine, self:get(false,true,true,1,i))
-            splitLine.ASS:insertSections(ASSLineTextSection(text:sub(idx-off,nextIdx-off-1)))
+            splitLine.ASS:insertSections(ASSLineTextSection(unicode.sub(text,idx-off,nextIdx-off-1)))
             splitLines[splitCnt], splitCnt = splitLine, splitCnt+1      
             -- check if this section is long enough to fill the new line
             idx = sectEndIdx>=nextIdx-1 and nextIdx or sectEndIdx+1
@@ -750,7 +751,7 @@ function ASSLineTextSection:getMetrics(angle, coerce)
 end
 
 function ASSLineTextSection:reverse()
-    self.value = self.value:reverse()
+    self.value = unicode.reverse(self.value)
     return self
 end
 
