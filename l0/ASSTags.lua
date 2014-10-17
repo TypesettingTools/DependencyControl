@@ -436,20 +436,17 @@ function ASSLineContents:cleanTags(level, mergeSect)   -- TODO: optimize it, mak
 
     -- 1: remove empty sections, 2: dedup tags locally, 3: dedup tags globally
     -- 4: remove tags matching style default and not changing state, end: remove empty sections
+    local tagListPrev, tagListDef = ASSTagList(), self:getStyleDefaultTags()
+
     if level>=1 then
         self:callback(function(section,sections,i)
             if level<2 then return #section.tags>0 end
 
             local tagList = section:getEffectiveTags(false,false)
-            if level>=3 then
-                local tagListPrev = section.prevSection and section.prevSection:getEffectiveTags()
-                if tagListPrev then tagList:diff(tagListPrev) end
-            end
-            if level>=4 then
-                local startStates = section.prevSection and section.prevSection:getEffectiveTags(true)
-                                    or self:getStyleDefaultTags()
-                tagList:diff(startStates)
-            end
+            if level>=3 then tagList:diff(tagListPrev) end
+            if level>=4 then tagList:diff(tagListDef:merge(tagListPrev)) end
+            tagListPrev:merge(tagList)
+            
             return table.length(tagList.tags)>0 and ASSLineTagSection(tagList) or false
         end, false, true, true)
     end
@@ -461,7 +458,7 @@ function ASSLineContents:splitAtTags(cleanLevel, reposition, writeOrigin)
     cleanLevel = default(cleanLevel,3)
     local splitLines = {}
     self:callback(function(section,_,i,j)
-        local splitLine = Line(self.line, self.line.parentCollection)
+        local splitLine = Line(self.line, self.line.parentCollection, {ASS={}})
         splitLine.ASS = ASSLineContents(splitLine, table.insert(self:get(false,true,true,0,i),section))
         splitLine.ASS:cleanTags(cleanLevel)
         splitLine.ASS:commit()
