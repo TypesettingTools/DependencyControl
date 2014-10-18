@@ -436,8 +436,7 @@ function ASSLineContents:cleanTags(level, mergeSect)   -- TODO: optimize it, mak
 
     -- 1: remove empty sections, 2: dedup tags locally, 3: dedup tags globally
     -- 4: remove tags matching style default and not changing state, end: remove empty sections
-    local tagListPrev, tagListDef = ASSTagList(), self:getStyleDefaultTags()
-
+    local tagListPrev, tagListDef = ASSTagList(nil, self), self:getStyleDefaultTags()
     if level>=1 then
         self:callback(function(section,sections,i)
             if level<2 then return #section.tags>0 end
@@ -447,10 +446,9 @@ function ASSLineContents:cleanTags(level, mergeSect)   -- TODO: optimize it, mak
             if level>=4 then tagList:diff(tagListDef:merge(tagListPrev)) end
             tagListPrev:merge(tagList)
             
-            return table.length(tagList.tags)>0 and ASSLineTagSection(tagList) or false
+            return not tagList:isEmpty() and ASSLineTagSection(tagList) or false
         end, false, true, true)
     end
-
     return self
 end
 
@@ -556,9 +554,22 @@ function ASSLineContents:repositionSplitLines(splitLines, writeOrigin)
     return splitLines
 end
 
-function ASSLineContents:getStyleDefaultTags()    -- TODO: cache
+function ASSLineContents:getStyleDefaultTags(style)    -- TODO: cache
+    local line = self.line
+
+    if ASS.instanceOf(style, ASSString) then
+        style = style:get()
+    end
+    if style==nil or style=="" then
+        style = line.styleRef
+    elseif type(style)=="string" then
+        style = line.parentCollection.styles[style] or style
+        assert(type(style)=="table", "Error: couldn't find style with name: " .. style .. ".")
+    else assert(type(style)=="table" and style.class=="style", 
+                "Error: invalid argument #1 (style): expected a style name or a styleRef, got a " .. type(style) .. ".")
+    end
+
     local function styleRef(tag)
-        local style = self.line.styleRef
         if tag:find("alpha") then 
             return {style[tag:gsub("alpha", "color")]:sub(3,4)}
         elseif tag:find("color") then
@@ -610,7 +621,7 @@ function ASSLineContents:getStyleDefaultTags()    -- TODO: cache
         if tag.default then styleDefaults[name] = tag.type(tag.default, tag.props) end
     end
 
-    return ASSTagList(styleDefaults)
+    return ASSTagList(styleDefaults, self)
 end
 
 function ASSLineContents:getTextExtents(coerce)   -- TODO: account for linebreaks
@@ -708,7 +719,7 @@ function ASSLineTextSection:getEffectiveTags(includeDefault,includePrevious)
         local prevTagList = self.prevSection:getEffectiveTags()
         effTags = includeDefault and effTags:merge(prevTagList) or prevTagList
     end
-    return effTags or ASSTagList()
+    return effTags or ASSTagList(nil, self.parent)
 end
 
 function ASSLineTextSection:getStyleTable(name, coerce)
@@ -759,7 +770,11 @@ ASSLineTagSection.tagMatch = re.compile("\\\\[^\\\\\\(]+(?:\\([^\\)]+\\)[^\\\\]*
 
 function ASSLineTagSection:new(tags)
     if ASS.instanceOf(tags,ASSTagList) then
-        self.tags = table.values(tags:copy().tags)
+        tags = tags:copy()
+        self.tags = table.values(tags.tags)
+        if tags.reset then
+            table.insert(self.tags, 1, tags.reset)
+        end
     elseif type(tags)=="string" then
         self.tags, i = {}, 1
         local tagMatch = self.tagMatch
@@ -944,17 +959,22 @@ end
 
 ASSLineTagSection.getStyleTable = ASSLineTextSection.getStyleTable
 
-ASSTagList = createASSClass("ASSTagList", ASSBase, {"tags"}, {"table"})
+ASSTagList = createASSClass("ASSTagList", ASSBase, {"tags", "reset"}, {"table", ASSString})
 
-function ASSTagList:new(tags)
+function ASSTagList:new(tags, contentRef)
     if ASS.instanceOf(tags, ASSLineTagSection) then
-        self.tags = {}
+        self.tags, contentRef = {}, tags.parent
         tags:callback(function(tag)
-            self.tags[tag.__tag.name] = tag
+            if tag.__tag.name == "reset" then
+                self.tags, self.reset = {}, tag
+            else
+                self.tags[tag.__tag.name] = tag
+            end
         end)
     elseif tags==nil then
         self.tags = {}
     else self.tags = self:typeCheck(tags) end
+    self.contentRef = contentRef
     return self
 end
 
@@ -967,15 +987,18 @@ function ASSTagList:get()
 end
 
 function ASSTagList:merge(...)
-    local tbls, merged = {...}, ASSTagList()
+    local tbls, merged = {...}, ASSTagList(nil, self.contentRef)
     for i=1,#tbls do
         assert(ASS.instanceOf(tbls[i],ASSTagList), 
                string.format("Error: can only merge %s objects, got a %s for argument #%d.", ASSTagList.typeName, type(tbls[i]), i)
         )
+        if tbls[i].reset then   -- discard everything before a reset
+            merged.tags, merged.reset = {}, tbls[i].reset:copy()
+        end
         merged.tags = table.merge(merged.tags, tbls[i]:copy().tags)
     end
     self.tags = table.merge(self.tags, merged.tags)
-    return ASSTagList(table.merge(self:copy().tags, merged.tags))
+    return ASSTagList(table.merge(self:copy().tags, merged.tags), self.contentRef)
 end
 
 function ASSTagList:intersect(...)
@@ -986,9 +1009,12 @@ function ASSTagList:intersect(...)
         assert(ASS.instanceOf(tbls[i],ASSTagList), 
                string.format("Error: can only intersect %s objects, got a %s for argument #%d.", ASSTagList.typeName, type(tbls[i]), i)
         )
+        if tbls[i].reset then 
+            tbls[i] = self.contentRef:getStyleDefaultTags(tbls[i].reset)
+        end
         for name,tag in pairs(intersection.tags) do
             local isEqual = tag:equal(tbls[i].tags[name])
-            intersection.tags[name] =  isEqual and tag or nil
+            intersection.tags[name] = isEqual and tag or nil
             self.tags[name] = isEqual and atag or nil                  -- modify self but return copy
         end
     end
@@ -1001,13 +1027,16 @@ function ASSTagList:diff(other)
     )
 
     local diff={}
+    -- if this tag list contains a reset, we need to compare its tag  to the default values set by the reset 
+    -- instead of to the values of the other tag list
+    local cmp = (self.reset and self.contentRef:getStyleDefaultTags(self.reset) or other).tags
     for name,tag in pairs(self.tags) do
-        if not tag:equal(other.tags[name]) then
+        if not tag:equal(cmp[name]) then
             diff[name] = tag:copy()
         else self.tags[name] = nil
         end
     end
-    return ASSTagList(diff)
+    return ASSTagList(diff, self.contentRef)
 end
 
 function ASSTagList:getStyleTable(styleRef, name, coerce)
@@ -1061,6 +1090,10 @@ function ASSTagList:getTags(tagNames)
 
     local tags = tagNames and table.select(self.tags,tagNames) or self.tags
     return table.values(tags)
+end
+
+function ASSTagList:isEmpty()
+    return table.length(self.tags)<1 and not self.reset
 end
 --------------------- Override Tag Classes ---------------------
 
