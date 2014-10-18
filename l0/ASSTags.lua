@@ -443,8 +443,8 @@ function ASSLineContents:cleanTags(level, mergeSect)   -- TODO: optimize it, mak
 
             local tagList = section:getEffectiveTags(false,false)
             if level>=3 then tagList:diff(tagListPrev) end
-            if level>=4 then tagList:diff(tagListDef:merge(tagListPrev)) end
-            tagListPrev:merge(tagList)
+            if level>=4 then tagList:diff(tagListDef:merge(tagListPrev,false),false,true) end
+            tagListPrev:merge(tagList,false)
             
             return not tagList:isEmpty() and ASSLineTagSection(tagList) or false
         end, false, true, true)
@@ -972,10 +972,11 @@ function ASSTagList:new(tags, contentRef)
     if ASS.instanceOf(tags, ASSLineTagSection) then
         self.tags, contentRef = {}, tags.parent
         tags:callback(function(tag)
-            if tag.__tag.name == "reset" then
-                self.tags, self.reset = {}, tag
-            else
-                self.tags[tag.__tag.name] = tag
+            local props = tag.__tag
+            if props.name == "reset" then -- discard all previous non-global tags when a reset is encountered
+                self.tags, self.reset = self:getGlobal(), tag
+            elseif not (self.tags[props.name] and props.global) then  -- discard all except the first instance of global tags
+                self.tags[props.name] = tag
             end
         end)
     elseif tags==nil then
@@ -993,57 +994,76 @@ function ASSTagList:get()
     return flatTagList
 end
 
-function ASSTagList:merge(...)
-    local tbls, merged = {...}, ASSTagList(nil, self.contentRef)
-    for i=1,#tbls do
-        assert(ASS.instanceOf(tbls[i],ASSTagList), 
-               string.format("Error: can only merge %s objects, got a %s for argument #%d.", ASSTagList.typeName, type(tbls[i]), i)
+function ASSTagList:merge(tagLists, copyTags, overrideGlobalTags)
+    copyTags = default(copyTags, true)
+    if ASS.instanceOf(tagLists, ASSTagList) then
+        tagLists = {tagLists, self}
+    else tagLists[#tagLists] = self end
+
+    local merged = ASSTagList(nil, self.contentRef)
+    for i=1,#tagLists do
+        assert(ASS.instanceOf(tagLists[i],ASSTagList), 
+               string.format("Error: can only merge %s objects, got a %s for argument #%d.", ASSTagList.typeName, type(tagLists[i]), i)
         )
-        if tbls[i].reset then   -- discard everything before a reset
-            merged.tags, merged.reset = {}, tbls[i].reset:copy()
+        if tagLists[i].reset then   -- discard all previous non-global tags when a reset is encountered
+            merged.tags, merged.reset = merged:getGlobal(), tagLists[i].reset
         end
-        merged.tags = table.merge(merged.tags, tbls[i]:copy().tags)
+        for name,tag in pairs(tagLists[i].tags) do
+            if not (merged.tags[name] and tag.__tag.global) or overrideGlobalTags then
+                merged.tags[name] = tag  -- discard all except the first instance of global tags
+            end
+        end
     end
-    self.tags = table.merge(self.tags, merged.tags)
-    return ASSTagList(table.merge(self:copy().tags, merged.tags), self.contentRef)
+
+    if copyTags then merged = merged:copy() end
+    self.tags, self.reset = merged.tags, merged.reset
+    return self
 end
 
-function ASSTagList:intersect(...)
-    local tbls = {...}
-    local intersection = self:copy()
+function ASSTagList:intersect(tagLists, copyTags, returnOnly) -- returnOnly note: only provided because copying the tag list before diffing may be much slower
+    copyTags = default(copyTags, true)
+    if ASS.instanceOf(tagLists, ASSTagList) then
+        tagLists = {tagLists}
+    end
 
-    for i=1,#tbls do
-        assert(ASS.instanceOf(tbls[i],ASSTagList), 
-               string.format("Error: can only intersect %s objects, got a %s for argument #%d.", ASSTagList.typeName, type(tbls[i]), i)
+    local intersection = ASSTagList(self, self.contentRef)
+    for i=1,#tagLists do
+        assert(ASS.instanceOf(tagLists[i],ASSTagList), 
+               string.format("Error: can only intersect %s objects, got a %s for argument #%d.", ASSTagList.typeName, type(tagLists[i]), i)
         )
-        if tbls[i].reset then 
-            tbls[i] = self.contentRef:getStyleDefaultTags(tbls[i].reset)
-        end
         for name,tag in pairs(intersection.tags) do
-            local isEqual = tag:equal(tbls[i].tags[name])
-            intersection.tags[name] = isEqual and tag or nil
-            self.tags[name] = isEqual and atag or nil                  -- modify self but return copy
+            intersection.tags[name] = tag:equal(tagLists[i].tags[name]) and tag or nil
+        end
+        if intersection.reset and not intersection.reset:equal(tagLists[i].reset) then
+            intersection.reset = nil
         end
     end
-    return intersection
+    if copyTags then intersection=intersection:copy() end
+    if not returnOnly then 
+        self.tags, self.reset = intersection.tags, intersection.reset
+        return self
+    else return intersection end
 end
 
-function ASSTagList:diff(other)
+function ASSTagList:diff(other, returnOnly, ignoreGlobalState) -- returnOnly note: only provided because copying the tag list before diffing may be much slower
     assert(ASS.instanceOf(other,ASSTagList),
            string.format("Error: can only diff %s objects, got a %s.", ASSTagList.typeName, type(other))
     )
 
-    local diff={}
-    -- if this tag list contains a reset, we need to compare its tag  to the default values set by the reset 
-    -- instead of to the values of the other tag list
-    local cmp = (self.reset and self.contentRef:getStyleDefaultTags(self.reset) or other).tags
+    local diff = ASSTagList(nil, self.contentRef)
     for name,tag in pairs(self.tags) do
-        if not tag:equal(cmp[name]) then
-            diff[name] = tag:copy()
-        else self.tags[name] = nil
+        local global = tag.__tag.global and not ignoreGlobalState
+        -- if this tag list contains a reset, we need to compare its local tags to the default values set by the reset 
+        -- instead of to the values of the other tag list
+        local cmp = (self.reset and global) and self.contentRef:getStyleDefaultTags(self.reset) or other
+        -- since global tags can't be overwritten, assume global tags that are also present in the other tag list as equal
+        if not tag:equal(cmp.tags[name]) and not (global and other.tags[name]) then
+            if returnOnly then diff.tags[name] = tag end
+        elseif not returnOnly then 
+            self.tags[name] = nil
         end
     end
-    return ASSTagList(diff, self.contentRef)
+    return returnOnly and diff or self
 end
 
 function ASSTagList:getStyleTable(styleRef, name, coerce)
@@ -1101,6 +1121,14 @@ end
 
 function ASSTagList:isEmpty()
     return table.length(self.tags)<1 and not self.reset
+end
+
+function ASSTagList:getGlobal()
+    local global = {}
+    for name,tag in pairs(self.tags) do
+        global[name] = tag.__tag.global and tag or nil
+    end
+    return global
 end
 --------------------- Override Tag Classes ---------------------
 
@@ -1841,7 +1869,7 @@ function ASSFoundation:new()
     local tagMap = {
         scale_x= {overrideName="\\fscx", type=ASSNumber, pattern="\\fscx([%d%.]+)", format="\\fscx%.3N"},
         scale_y = {overrideName="\\fscy", type=ASSNumber, pattern="\\fscy([%d%.]+)", format="\\fscy%.3N"},
-        align = {overrideName="\\an", type=ASSAlign, pattern="\\an([1-9])", format="\\an%d"},
+        align = {overrideName="\\an", type=ASSAlign, pattern="\\an([1-9])", format="\\an%d", global=true},
         angle = {overrideName="\\frz", type=ASSNumber, pattern="\\frz?([%-%d%.]+)", format="\\frz%.3N"}, 
         angle_y = {overrideName="\\fry", type=ASSNumber, pattern="\\fry([%-%d%.]+)", format="\\fry%.3N", default=0},
         angle_x = {overrideName="\\frx", type=ASSNumber, pattern="\\frx([%-%d%.]+)", format="\\frx%.3N", default=0}, 
@@ -1862,10 +1890,14 @@ function ASSFoundation:new()
         color2 = {overrideName="\\2c", type=ASSColor, pattern="\\2c&H(%x%x)(%x%x)(%x%x)&", format="\\2c&H%02X%02X%02X&"},
         color3 = {overrideName="\\3c", type=ASSColor, pattern="\\3c&H(%x%x)(%x%x)(%x%x)&", format="\\3c&H%02X%02X%02X&"},
         color4 = {overrideName="\\4c", type=ASSColor, pattern="\\4c&H(%x%x)(%x%x)(%x%x)&", format="\\4c&H%02X%02X%02X&"},
-        clip_vect = {overrideName="\\clip", friendlyName="\\clip (Vector)", type=ASSClipVect, pattern="\\clip%(([mnlbspc] .-)%)", format="\\clip(%s)"}, 
-        iclip_vect = {overrideName="\\iclip", friendlyName="\\iclip (Vector)", type=ASSClipVect, props={inverse=true}, pattern="\\iclip%(([mnlbspc] .-)%)", format="\\iclip(%s)", default={"m 0 0 l 0 0 0 0 0 0 0 0"}},
-        clip_rect = {overrideName="\\clip", friendlyName="\\clip (Rectangle)", type=ASSClipRect, pattern="\\clip%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+)%)", format="\\clip(%.2N,%.2N,%.2N,%.2N)"}, 
-        iclip_rect = {overrideName="\\iclip", friendlyName="\\iclip (Rectangle)", type=ASSClipRect, props={inverse=true}, pattern="\\iclip%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+)%)", format="\\iclip(%.2N,%.2N,%.2N,%.2N)", default={0,0,0,0}},
+        clip_vect = {overrideName="\\clip", friendlyName="\\clip (Vector)", type=ASSClipVect, pattern="\\clip%(([mnlbspc] .-)%)", 
+                     format="\\clip(%s)", global=true}, 
+        iclip_vect = {overrideName="\\iclip", friendlyName="\\iclip (Vector)", type=ASSClipVect, props={inverse=true}, 
+                      pattern="\\iclip%(([mnlbspc] .-)%)", format="\\iclip(%s)", default={"m 0 0 l 0 0 0 0 0 0 0 0"}, global=true},
+        clip_rect = {overrideName="\\clip", friendlyName="\\clip (Rectangle)", type=ASSClipRect, global=true, 
+                     pattern="\\clip%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+)%)", format="\\clip(%.2N,%.2N,%.2N,%.2N)"}, 
+        iclip_rect = {overrideName="\\iclip", friendlyName="\\iclip (Rectangle)", type=ASSClipRect, props={inverse=true}, global=true, 
+                      pattern="\\iclip%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+)%)", format="\\iclip(%.2N,%.2N,%.2N,%.2N)", default={0,0,0,0}}, 
         blur_edges = {overrideName="\\be", type=ASSNumber, props={positive=true}, pattern="\\be([%d%.]+)", format="\\be%.2N", default=0}, 
         blur = {overrideName="\\blur", type=ASSNumber, props={positive=true}, pattern="\\blur([%d%.]+)", format="\\blur%.2N", default=0}, 
         shear_x = {overrideName="\\fax", type=ASSNumber, pattern="\\fax([%-%d%.]+)", format="\\fax%.2N", default=0}, 
@@ -1881,13 +1913,17 @@ function ASSFoundation:new()
         k_sweep = {overrideName="\\kf", type=ASSDuration, props={scale=10}, pattern="\\kf([%d]+)", format="\\kf%d", default=0},
         k_sweep_alt = {overrideName="\\K", type=ASSDuration, props={scale=10}, pattern="\\K([%d]+)", format="\\K%d", default=0},
         k_bord = {overrideName="\\ko", type=ASSDuration, props={scale=10}, pattern="\\ko([%d]+)", format="\\ko%d", default=0},
-        position = {overrideName="\\pos", type=ASSPosition, pattern="\\pos%(([%-%d%.]+),([%-%d%.]+)%)", format="\\pos(%.2N,%.2N)"},
-        move_simple = {overrideName="\\move", friendlyName="\\move (Simple)", type=ASSMove, props={simple=true}, pattern="\\move%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+)%)", format="\\move(%.2N,%.2N,%.2N,%.2N)"},
-        move = {overrideName="\\move", type=ASSMove, friendlyName="\\move (w/ Time)", pattern="\\move%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),(%d+),(%d+)%)", format="\\move(%.2N,%.2N,%.2N,%.2N,%.2N,%.2N)"},
-        origin = {overrideName="\\org", type=ASSPosition, pattern="\\org%(([%-%d%.]+),([%-%d%.]+)%)", format="\\org(%.2N,%.2N)"},
-        wrapstyle = {overrideName="\\q", type=ASSWrapStyle, pattern="\\q(%d)", format="\\q%d", default=0},
-        fade_simple = {overrideName="\\fad", type=ASSFade, props={simple=true}, pattern="\\fad%((%d+),(%d+)%)", format="\\fad(%d,%d)", default={0,0}},
-        fade = {overrideName="\\fade", type=ASSFade, pattern="\\fade%((.-)%)", format="\\fade(%d,%d,%d,%d,%d,%d,%d)", default={255,0,255,0,0,0,0}},
+        position = {overrideName="\\pos", type=ASSPosition, pattern="\\pos%(([%-%d%.]+),([%-%d%.]+)%)", format="\\pos(%.2N,%.2N)", global=true},
+        move_simple = {overrideName="\\move", friendlyName="\\move (Simple)", type=ASSMove, props={simple=true}, global=true, 
+                       pattern="\\move%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+)%)", format="\\move(%.2N,%.2N,%.2N,%.2N)"},
+        move = {overrideName="\\move", type=ASSMove, friendlyName="\\move (w/ Time)", global=true, 
+                pattern="\\move%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),(%d+),(%d+)%)", format="\\move(%.2N,%.2N,%.2N,%.2N,%.2N,%.2N)"},
+        origin = {overrideName="\\org", type=ASSPosition, pattern="\\org%(([%-%d%.]+),([%-%d%.]+)%)", format="\\org(%.2N,%.2N)", global=true},
+        wrapstyle = {overrideName="\\q", type=ASSWrapStyle, pattern="\\q(%d)", format="\\q%d", default=0, global=true},
+        fade_simple = {overrideName="\\fad", type=ASSFade, props={simple=true}, pattern="\\fad%((%d+),(%d+)%)",
+                       format="\\fad(%d,%d)", default={0,0}, global=true},
+        fade = {overrideName="\\fade", type=ASSFade, pattern="\\fade%((.-)%)", format="\\fade(%d,%d,%d,%d,%d,%d,%d)",
+                default={255,0,255,0,0,0,0}, global=true},
         transform = {overrideName="\\t", type=ASSTransform, pattern="\\t%((.-)%)", format="\\t(%s)"},
         unknown = {type=ASSUnknown, format="%s", friendlyName="Unknown Tag"},
         junk = {type=ASSUnknown, format="%s", friendlyName="Junk"}
@@ -1896,9 +1932,9 @@ function ASSFoundation:new()
     local toFriendlyName, toTagName, i = {}, {}
 
     for name,tag in pairs(tagMap) do
-        -- insert tag name into props
+        -- insert tag name and global idicator into props
         tag.props = tag.props or {}
-        tag.props.name = tag.props.name or name
+        tag.props.name, tag.props.global = tag.props.name or name, tag.global
         -- fill in missing friendly names
         tag.friendlyName = tag.friendlyName or tag.overrideName
         -- populate friendly name <-> tag name conversion tables
