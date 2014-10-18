@@ -554,6 +554,7 @@ function ASSLineContents:repositionSplitLines(splitLines, writeOrigin)
     return splitLines
 end
 
+local styleDefaultCache = {}
 function ASSLineContents:getStyleDefaultTags(style)    -- TODO: cache
     local line = self.line
 
@@ -567,6 +568,10 @@ function ASSLineContents:getStyleDefaultTags(style)    -- TODO: cache
         assert(type(style)=="table", "Error: couldn't find style with name: " .. style .. ".")
     else assert(type(style)=="table" and style.class=="style", 
                 "Error: invalid argument #1 (style): expected a style name or a styleRef, got a " .. type(style) .. ".")
+    end
+
+    if styleDefaultCache[style.raw] then
+        return styleDefaultCache[style.raw]
     end
 
     local function styleRef(tag)
@@ -621,7 +626,9 @@ function ASSLineContents:getStyleDefaultTags(style)    -- TODO: cache
         if tag.default then styleDefaults[name] = tag.type(tag.default, tag.props) end
     end
 
-    return ASSTagList(styleDefaults, self)
+    local tagList = ASSTagList(styleDefaults, self)
+    styleDefaultCache[style.raw] = tagListPrev
+    return tagList
 end
 
 function ASSLineContents:getTextExtents(coerce)   -- TODO: account for linebreaks
