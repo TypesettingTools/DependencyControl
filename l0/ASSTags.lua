@@ -538,14 +538,15 @@ function ASSLineContents:repositionSplitLines(splitLines, writeOrigin)
         data:removeTags("position")
         -- calculate new position
         local alignOffset = getAlignOffset[effTags.tags["align"]:get()%3](sectWidth,lineWidth)
-        effTags.tags["position"]:add(alignOffset+xOff,0)
+        local pos = effTags.tags["position"]:copy()
+        pos:add(alignOffset+xOff,0)
         -- write new position tag to first tag section
-        data:insertTags(effTags.tags["position"],1,1)
+        data:insertTags(pos,1,1)
 
         -- if desired, write a new origin to the line if the style or the override tags contain any angle
         if writeOrigin and (#data:getTags({"angle","angle_x","angle_y"})>0 or effTags.tags["angle"]:get()~=0) then
             data:removeTags("origin")
-            data:insertTags(origin,1,1)  --MUSTCOPY
+            data:insertTags(origin:copy(),1,1)
         end
 
         xOff = xOff + sectWidth
@@ -930,7 +931,7 @@ function ASSLineTagSection:insertTags(tags, index)
         end
 
         local insertIdx = index<0 and prevCnt+index+i or index+i-1
-        table.insert(self.tags, insertIdx, tags[i]:copy())
+        table.insert(self.tags, insertIdx, tags[i])
         inserted[i] = self.tags[insertIdx] 
     end
     return #inserted>1 and inserted or inserted[1]
