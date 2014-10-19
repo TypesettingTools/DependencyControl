@@ -443,7 +443,7 @@ function ASSLineContents:cleanTags(level, mergeSect)   -- TODO: optimize it, mak
 
             local tagList = section:getEffectiveTags(false,false)
             if level>=3 then tagList:diff(tagListPrev) end
-            if level>=4 then tagList:diff(tagListDef:merge(tagListPrev,false),false,true) end
+            if level>=4 then tagList:diff(tagListDef:merge(tagListPrev,false,true),false,true) end
             tagListPrev:merge(tagList,false)
             
             return not tagList:isEmpty() and ASSLineTagSection(tagList) or false
@@ -967,7 +967,6 @@ end
 ASSLineTagSection.getStyleTable = ASSLineTextSection.getStyleTable
 
 ASSTagList = createASSClass("ASSTagList", ASSBase, {"tags", "reset"}, {"table", ASSString})
-
 function ASSTagList:new(tags, contentRef)
     if ASS.instanceOf(tags, ASSLineTagSection) then
         self.tags, contentRef = {}, tags.parent
@@ -979,6 +978,8 @@ function ASSTagList:new(tags, contentRef)
                 self.tags[props.name] = tag
             end
         end)
+    elseif ASS.instanceOf(tags, ASSTagList) then
+        self.tags, self.reset, self.contentRef = util.copy(tags.tags), tags.reset, tags.contentRef
     elseif tags==nil then
         self.tags = {}
     else self.tags = self:typeCheck(tags) end
@@ -994,13 +995,13 @@ function ASSTagList:get()
     return flatTagList
 end
 
-function ASSTagList:merge(tagLists, copyTags, overrideGlobalTags)
+function ASSTagList:merge(tagLists, copyTags, returnOnly, overrideGlobalTags)
     copyTags = default(copyTags, true)
     if ASS.instanceOf(tagLists, ASSTagList) then
-        tagLists = {tagLists, self}
-    else tagLists[#tagLists] = self end
+        tagLists = {tagLists}
+    end
 
-    local merged = ASSTagList(nil, self.contentRef)
+    local merged = ASSTagList(self)
     for i=1,#tagLists do
         assert(ASS.instanceOf(tagLists[i],ASSTagList), 
                string.format("Error: can only merge %s objects, got a %s for argument #%d.", ASSTagList.typeName, type(tagLists[i]), i)
@@ -1016,8 +1017,10 @@ function ASSTagList:merge(tagLists, copyTags, overrideGlobalTags)
     end
 
     if copyTags then merged = merged:copy() end
-    self.tags, self.reset = merged.tags, merged.reset
-    return self
+    if not returnOnly then
+        self.tags, self.reset = merged.tags, merged.reset
+        return self
+    else return merged end
 end
 
 function ASSTagList:intersect(tagLists, copyTags, returnOnly) -- returnOnly note: only provided because copying the tag list before diffing may be much slower
@@ -1879,7 +1882,7 @@ function ASSFoundation:new()
         shadow = {overrideName="\\shad", type=ASSNumber, pattern="\\shad([%-%d%.]+)", format="\\shad%.2N"}, 
         shadow_x = {overrideName="\\xshad", type=ASSNumber, pattern="\\xshad([%-%d%.]+)", format="\\xshad%.2N"}, 
         shadow_y = {overrideName="\\yshad", type=ASSNumber, pattern="\\yshad([%-%d%.]+)", format="\\yshad%.2N"}, 
-        reset = {overrideName="\\r", type=ASSString, pattern="\\r([^\\}]*)", format="\\r%s", default=""}, 
+        reset = {overrideName="\\r", type=ASSString, pattern="\\r([^\\}]*)", format="\\r%s"}, 
         alpha = {overrideName="\\alpha", type=ASSHex, pattern="\\alpha&H(%x%x)&", format="\\alpha&H%02X&", default=0}, 
         alpha1 = {overrideName="\\1a", type=ASSHex, pattern="\\1a&H(%x%x)&", format="\\1a&H%02X&"}, 
         alpha2 = {overrideName="\\2a", type=ASSHex, pattern="\\2a&H(%x%x)&", format="\\2a&H%02X&"}, 
