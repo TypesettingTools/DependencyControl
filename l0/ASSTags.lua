@@ -374,13 +374,13 @@ function ASSLineContents:insertDefaultTags(tagNames, index, sectionPosition, dir
     return self:insertTags(defaultTags, index, sectionPosition, direct)
 end
 
-function ASSLineContents:getEffectiveTags(index,includeDefault,includePrevious)
-    index = default(index,1)
+function ASSLineContents:getEffectiveTags(index, includeDefault, includePrevious, copyTags)
+    index, copyTags = default(index,1), default(copyTags, true)
     assert(math.isInt(index) and index~=0,
            string.format("Error: argument #1 (index) to getEffectiveTags() must be an integer != 0, got '%s' of type %s", tostring(index), type(index))
     )
     if index<0 then index = index+#self.sections+1 end
-    return self.sections[index]:getEffectiveTags(includeDefault,includePrevious)
+    return self.sections[index]:getEffectiveTags(includeDefault,includePrevious,copyTags)
 end
 
 function ASSLineContents:getTagCount()
@@ -441,7 +441,7 @@ function ASSLineContents:cleanTags(level, mergeSect)   -- TODO: optimize it, mak
         self:callback(function(section,sections,i)
             if level<2 then return #section.tags>0 end
 
-            local tagList = section:getEffectiveTags(false,false)
+            local tagList = section:getEffectiveTags(false,false,false)
             if level>=3 then tagList:diff(tagListPrev) end
             if level>=4 then tagList:diff(tagListDef:merge(tagListPrev,false,true),false,true) end
             tagListPrev:merge(tagList,false)
@@ -524,14 +524,14 @@ function ASSLineContents:repositionSplitLines(splitLines, writeOrigin)
         [2] = function(wSec,wLine) return wSec/2-wLine/2 end -- center
     }
     local xOff = 0
-    local origin = writeOrigin and self:getEffectiveTags(-1,true,true).tags["origin"]
+    local origin = writeOrigin and self:getEffectiveTags(-1,true,true,false).tags["origin"]
 
 
     for i=1,#splitLines do
         local data = splitLines[i].ASS
         -- get tag state at last line section, if you use more than one \pos, \org or \an in a single line,
         -- you deserve things breaking around you
-        local effTags = data:getEffectiveTags(-1,true,true)
+        local effTags = data:getEffectiveTags(-1,true,true,false)
         local sectWidth = data:getTextExtents()
 
         -- kill all old position tags because we only ever need one
@@ -545,7 +545,7 @@ function ASSLineContents:repositionSplitLines(splitLines, writeOrigin)
         -- if desired, write a new origin to the line if the style or the override tags contain any angle
         if writeOrigin and (#data:getTags({"angle","angle_x","angle_y"})>0 or effTags.tags["angle"]:get()~=0) then
             data:removeTags("origin")
-            data:insertTags(origin,1,1)
+            data:insertTags(origin,1,1)  --MUSTCOPY
         end
 
         xOff = xOff + sectWidth
@@ -555,7 +555,8 @@ function ASSLineContents:repositionSplitLines(splitLines, writeOrigin)
 end
 
 local styleDefaultCache = {}
-function ASSLineContents:getStyleDefaultTags(style)    -- TODO: cache
+function ASSLineContents:getStyleDefaultTags(style, copyTags)    -- TODO: cache
+    copyTags = default(copyTags,true)
     local line = self.line
 
     if ASS.instanceOf(style, ASSString) then
@@ -571,7 +572,8 @@ function ASSLineContents:getStyleDefaultTags(style)    -- TODO: cache
     end
 
     if styleDefaultCache[style.raw] then
-        return styleDefaultCache[style.raw]
+        -- always return at least a fresh ASSTagList object to prevent the cached one from being overwritten
+        return copyTags and styleDefaultCache[style.raw]:copy() or ASSTagList(styleDefaultCache[style.raw])
     end
 
     local function styleRef(tag)
@@ -627,8 +629,8 @@ function ASSLineContents:getStyleDefaultTags(style)    -- TODO: cache
     end
 
     local tagList = ASSTagList(styleDefaults, self)
-    styleDefaultCache[style.raw] = tagListPrev
-    return tagList
+    styleDefaultCache[style.raw] = tagList
+    return copyTags and tagList:copy() or ASSTagList(tagList)
 end
 
 function ASSLineContents:getTextExtents(coerce)   -- TODO: account for linebreaks
@@ -651,7 +653,7 @@ function ASSLineContents:getMetrics(coerce, angle)
     local textCnt = self:getSectionCount(ASSLineTextSection)
     assert(not angle or angle==0 or textCnt<=1, 
            "Error: getting metrics at an angle is currently unsupported for lines with more than 1 text section.")
-    angle = default(angle, self.sections[1] and self.sections[1]:getEffectiveTags(true).tags.angle:getTagParams(coerce) or 0)
+    angle = default(angle, self.sections[1] and self.sections[1]:getEffectiveTags(true,true,false).tags.angle:getTagParams(coerce) or 0)
 
     self:callback(function(section, sections, i, j)
         local sectMetr = section:getMetrics(textCnt>1 and 0 or angle,coerce)
@@ -715,22 +717,22 @@ function ASSLineTextSection:getString(coerce)
     else return self:typeCheck(self.value) end
 end
 
-function ASSLineTextSection:getEffectiveTags(includeDefault,includePrevious)
-    includePrevious = default(includePrevious, true)
+function ASSLineTextSection:getEffectiveTags(includeDefault, includePrevious, copyTags)
+    includePrevious, copyTags = default(includePrevious, true), true
     -- previous and default tag lists
     local effTags
     if includeDefault then
-        effTags = self.parent:getStyleDefaultTags()
+        effTags = self.parent:getStyleDefaultTags(nil, copyTags)
     end
     if includePrevious and self.prevSection then
-        local prevTagList = self.prevSection:getEffectiveTags()
-        effTags = includeDefault and effTags:merge(prevTagList) or prevTagList
+        local prevTagList = self.prevSection:getEffectiveTags(false, true, copyTags)
+        effTags = includeDefault and effTags:merge(prevTagList, false) or prevTagList
     end
     return effTags or ASSTagList(nil, self.parent)
 end
 
 function ASSLineTextSection:getStyleTable(name, coerce)
-    return self:getEffectiveTags():getStyleTable(self.parent.line.styleRef, name, coerce)
+    return self:getEffectiveTags(false,true,false):getStyleTable(self.parent.line.styleRef, name, coerce)
 end
 
 function ASSLineTextSection:getTextExtents(coerce)
@@ -738,7 +740,7 @@ function ASSLineTextSection:getTextExtents(coerce)
 end
 
 function ASSLineTextSection:getMetrics(angle, coerce)
-    local tags = self:getEffectiveTags(true,true).tags
+    local tags = self:getEffectiveTags(true,true,false).tags
     angle = default(angle,tags.angle:getTagParams(coerce))
 
     if ASS.instanceOf(angle,ASSNumber) then
@@ -777,7 +779,6 @@ ASSLineTagSection.tagMatch = re.compile("\\\\[^\\\\\\(]+(?:\\([^\\)]+\\)[^\\\\]*
 
 function ASSLineTagSection:new(tags)
     if ASS.instanceOf(tags,ASSTagList) then
-        tags = tags:copy()
         self.tags = table.values(tags.tags)
         if tags.reset then
             table.insert(self.tags, 1, tags.reset)
@@ -948,20 +949,20 @@ function ASSLineTagSection:getString(coerce)
     return tagString
 end
 
-function ASSLineTagSection:getEffectiveTags(includeDefault,includePrevious)   -- TODO: properly handle transforms
-    includePrevious = default(includePrevious, true)
+function ASSLineTagSection:getEffectiveTags(includeDefault, includePrevious, copyTags)   -- TODO: properly handle transforms
+    includePrevious, copyTags = default(includePrevious, true), true
     -- previous and default tag lists
     local effTags
     if includeDefault then
-        effTags = self.parent:getStyleDefaultTags()
+        effTags = self.parent:getStyleDefaultTags(nil, copyTags)
     end
     if includePrevious and self.prevSection then
-        local prevTagList = self.prevSection:getEffectiveTags()
-        effTags = includeDefault and effTags:merge(prevTagList) or prevTagList
+        local prevTagList = self.prevSection:getEffectiveTags(false, true, copyTags)
+        effTags = includeDefault and effTags:merge(prevTagList, false) or prevTagList
     end
     -- tag list of this section
-    local tagList = ASSTagList(self)
-    return effTags and effTags:merge(tagList) or tagList
+    local tagList = copyTags and ASSTagList(self):copy() or ASSTagList(self)
+    return effTags and effTags:merge(tagList, false) or tagList
 end
 
 ASSLineTagSection.getStyleTable = ASSLineTextSection.getStyleTable
