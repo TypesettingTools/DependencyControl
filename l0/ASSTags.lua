@@ -646,34 +646,37 @@ function ASSLineContents:getTextExtents(coerce)   -- TODO: account for linebreak
     return width, unpack(other)
 end
 
-function ASSLineContents:getMetrics(coerce, angle)
-    local metr, bound = {ascent=0, descent=0, internal_leading=0, external_leading=0, height=0, width=0}, {0,0,0,0}
-    -- Limitation: different angles across sections will probably remain unsupported for a while, 
-    --             so only use a specified angle or the one from the first section
-    -- TODO: actually implement angle support for lines with more than one text section (requires shifting and merging of shapes)
+function ASSLineContents:getMetrics(inludeLineBounds, includeTypeBounds, coerce)
+    local metr = {ascent=0, descent=0, internal_leading=0, external_leading=0, height=0, width=0}
+    local lineBounds, typeBounds = includeLineBounds and {0,0,0,0}, includeTypeBounds and {0,0,0,0}
     local textCnt = self:getSectionCount(ASSLineTextSection)
-    assert(not angle or angle==0 or textCnt<=1, 
-           "Error: getting metrics at an angle is currently unsupported for lines with more than 1 text section.")
-    angle = default(angle, self.sections[1] and self.sections[1]:getEffectiveTags(true,true,false).tags.angle:getTagParams(coerce) or 0)
 
     self:callback(function(section, sections, i, j)
-        local sectMetr = section:getMetrics(textCnt>1 and 0 or angle,coerce)
-        if j==1 then
-            bound[1], bound[2] = sectMetr.bounding[1] or 0, sectMetr.bounding[2] or 0
+        local sectMetr = section:getMetrics(includeTypeBounds, coerce)
+        -- combine type bounding boxes
+        if includeTypeBounds then
+            if j==1 then
+                typeBounds[1], typeBounds[2] = sectMetr.typeBounds[1] or 0, sectMetr.typeBounds[2] or 0
+            end
+            typeBounds[2] = math.min(typeBounds[2],sectMetr.typeBounds[2] or 0)
+            typeBounds[3] = typeBounds[1] + sectMetr.typeBounds.width
+            typeBounds[4] = math.max(typeBounds[4],sectMetr.typeBounds[4] or 0)
         end
-        bound[2], bound[3], bound[4] = math.min(bound[2],sectMetr.bounding[2] or 0), bound[1] + sectMetr.box_width, 
-            math.max(bound[4],sectMetr.bounding[4] or 0)
-        metr.width = metr.width + sectMetr.width
         
+        -- add all section widths
+        metr.width = metr.width + sectMetr.width
+        -- get maximum encountered section values for all other metrics (does that make sense?)
         metr.ascent, metr.descent, metr.internal_leading, metr.external_leading, metr.height =
             math.max(sectMetr.ascent, metr.ascent), math.max(sectMetr.descent, metr.descent), 
             math.max(sectMetr.internal_leading, metr.internal_leading), math.max(sectMetr.external_leading, metr.external_leading),
             math.max(sectMetr.height, metr.height)
 
-        metr.shape = sectMetr.shape
     end, true, false, true)
-    metr.box_width, metr.box_height = bound[3]-bound[1], bound[4]-bound[2]
-    metr.bounding = bound
+    
+    if includeTypeBounds then
+        typeBounds.width, typeBounds.height = typeBounds[3]-typeBounds[1], typeBounds[4]-typeBounds[2]
+        metr.typeBounds = typeBounds
+    end
     return metr
 end
 
@@ -740,32 +743,39 @@ function ASSLineTextSection:getTextExtents(coerce)
     return aegisub.text_extents(self:getStyleTable(nil,coerce),self.value)
 end
 
-function ASSLineTextSection:getMetrics(angle, coerce)
-    local tags = self:getEffectiveTags(true,true,false).tags
-    angle = default(angle,tags.angle:getTagParams(coerce))
+function ASSLineTextSection:getMetrics(includeTypeBounds, coerce)
+    local fontObj = ASSLineTextSection:getYutilsFont()
+    local metrics = table.merge(fontObj.metrics(),fontObj.text_extents(self.value))
 
-    if ASS.instanceOf(angle,ASSNumber) then
-        angle = angle:getTagParams(coerce)
-    else assert(type(angle)=="number", 
-         string.format("Error: argument #1 (angle) to getMetrics() must be either a number or a %s object, got a %s",
-         ASSNumber.typeName, ASS.instanceOf(angle) and ASS.instanceOf(angle).typeName or type(angle)))
-    end 
-
-    local font = YUtils.decode.create_font(tags.fontname:getTagParams(coerce), tags.bold:getTagParams(coerce)>0,
-                 tags.italic:getTagParams(coerce)>0, tags.underline:getTagParams(coerce)>0, tags.strikeout:getTagParams(coerce)>0,
-                 tags.fontsize:getTagParams(coerce), tags.scale_x:getTagParams(coerce)/100, tags.scale_y:getTagParams(coerce)/100,
-                 tags.spacing:getTagParams(coerce)
-    )
-
-    local metrics, shape = table.merge(font:metrics(),font.text_extents(self.value)), font.text_to_shape(self.value)     
-    -- rotate shape
-    if angle%180~=0 then
-        shape = ASSClipVect({shape}):rotate(angle):getTagParams()
+    if includeTypeBounds then
+        metrics.typeBounds = {YUtils.shape.bounding(fontObj.text_to_shape(self.value))}
+        metrics.typeBounds.width = (metrics.bounding[3] or 0)-(metrics.bounding[1] or 0)
+        metrics.typeBounds.height = (metrics.bounding[4] or 0)-(metrics.bounding[2] or 0)
     end
-    -- get bounding box and calculate its length and height 
-    metrics.bounding, metrics.shape = {YUtils.shape.bounding(shape)}, shape
-    metrics.box_width, metrics.box_height = (metrics.bounding[3] or 0)-(metrics.bounding[1] or 0), (metrics.bounding[4] or 0)-(metrics.bounding[2] or 0)
+
     return metrics
+end
+
+function ASSLineTextSection:getShape(applyRotation, coerce)
+    applyRotation = default(applyRotation, false)
+    local shape, tagList = ASSLineTextSection:getYutilsFont().text_to_shape(self.value) 
+
+    -- rotate shape
+    if applyRotation then
+        local angle = tagList.tags.angle:getTagParams(coerce)
+        shape = angle%360~=0 and ASSClipVect({shape}):rotate(angle):getTagParams() or shape
+    end
+    return shape
+end
+
+function ASSLineTextSection:getYutilsFont(coerce)
+    local tagList = self:getEffectiveTags(true,true,false)
+    local tags = stagList.tags
+    return YUtils.decode.create_font(tags.fontname:getTagParams(coerce), tags.bold:getTagParams(coerce)>0,
+                                     tags.italic:getTagParams(coerce)>0, tags.underline:getTagParams(coerce)>0, tags.strikeout:getTagParams(coerce)>0,
+                                     tags.fontsize:getTagParams(coerce), tags.scale_x:getTagParams(coerce)/100, tags.scale_y:getTagParams(coerce)/100,
+                                     tags.spacing:getTagParams(coerce)
+    ), tagList
 end
 
 function ASSLineTextSection:reverse()
