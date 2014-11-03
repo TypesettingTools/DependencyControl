@@ -5,6 +5,7 @@ local l0Common = require("l0.Common")
 local YUtils = require("YUtils")
 local Line = require("a-mo.Line")
 local Log = require("a-mo.Log")
+local ASSInspector = require("ASSInspector.Inspector")
 
 function createASSClass(typeName,baseClass,order,types,tagProps)
   local cls, baseClass = {}, baseClass or {}
@@ -177,18 +178,23 @@ function ASSLineContents:new(line,sections)
     assert(line and line.text, string.format("Error: argument 1 to %s() must be a Line or %s object, got %s.\n", self.typeName, self.typeName, type(line)))
     if not sections then
         sections = {}
-        local i, j, ovrStart, ovrEnd = 1, 1
+        local i, j, drawingState, ovrStart, ovrEnd = 1, 1, ASS:createTag("drawing",0)
         while i<=#line.text do
             ovrStart, ovrEnd = line.text:find("{.-}",i)
             if ovrStart then
                 if ovrStart>i then
-                    sections[j] = ASSLineTextSection(line.text:sub(i,ovrStart-1))
-                    j=j+1 
+                    local substr = line.text:sub(i,ovrStart-1)
+                    sections[j], j = drawingState.value==0 and ASSLineTextSection(substr) or ASSLineDrawingSection(substr,  drawingState), j+1
                 end
                 sections[j] = ASSLineTagSection(line.text:sub(ovrStart+1,ovrEnd-1))
+                -- remove drawing tags from the tag sections so we don't have to keep state in sync with ASSLineDrawingSection
+                local drawingTags = sections[j]:removeTags("drawing")
+                drawingState = drawingTags[#drawingTags] or drawingState
+
                 i = ovrEnd +1
             else
-                sections[j] = ASSLineTextSection(line.text:sub(i))
+                local substr = line.text:sub(i)
+                sections[j] = drawingState.value==0 and ASSLineTextSection(substr) or ASSLineDrawingSection(substr, drawingState)
                 break
             end
             j=j+1
@@ -763,7 +769,7 @@ function ASSLineTextSection:getShape(applyRotation, coerce)
     -- rotate shape
     if applyRotation then
         local angle = tagList.tags.angle:getTagParams(coerce)
-        shape = angle%360~=0 and ASSClipVect({shape}):rotate(angle):getTagParams() or shape
+        shape = angle%360~=0 and ASSDrawing({shape}):rotate(angle):getTagParams() or shape
     end
     return shape
 end
@@ -1577,47 +1583,51 @@ function ASSClipRect:toggleInverse()
     return self:setInverse(not self.__tag.inverse)
 end
 
-ASSClipVect = createASSClass("ASSClipVect", ASSTagBase, {"commands"}, {"table"})
+ASSDrawing = createASSClass("ASSDrawing", ASSTagBase, {"commands", "scale"}, {"table", ASSNumber})
+ASSDrawing.__cmdMappings = {
+    m = ASSDrawMove,
+    n = ASSDrawMoveNc,
+    l = ASSDrawLine,
+    b = ASSDrawBezier,
+    c = ASSDrawClose
+}
+ASSDrawing.__cmdTypes = table.values(ASSDrawing.__cmdMappings)
 
-function ASSClipVect:new(...)
+function ASSDrawing:new(tags, tagProps, scale)
     --- two ways to create: [1] from string in a table [2] from list of ASSDraw objects
-    local args, tagProps = {...}, {}
-    self.commands = {}
-    if #args<=2 and type(args[1])=="table" and not args[1].instanceOf then
-        local cmdTypes = {
-            m = ASSDrawMove,
-            n = ASSDrawMoveNc,
-            l = ASSDrawLine,
-            b = ASSDrawBezier,
-            c = ASSDrawClose
-        }
-        local cmdParts, cmdType, prmCnt, i = args[1][1]:split(" "), "", 0, 1
+    local tagProps, cmdMap = {}, self.__cmdMappings
+    tags, scale = self:getArgs({tags, scale})
+    
+    -- construct from a single valid drawing command
+    if ASS.instanceOf(tags, self.__cmdTypes) then
+        self.commands = {tags}
+    -- construct from a table containing a single string of drawing commands
+    elseif #tags==1 and type(tags[1])=="string" then
+        self.commands = {}
+        local cmdParts, cmdType, prmCnt, i = tags[1]:split(" "), "", 0, 1
         while i<=#cmdParts do
-            if cmdTypes[cmdParts[i]]==ASSDrawClose then
+            if cmdMap[cmdParts[i]]==ASSDrawClose then
                 self.commands[#self.commands+1], i = ASSDrawClose({},self), i+1
-            elseif cmdTypes[cmdParts[i]] then
+            elseif cmdMap[cmdParts[i]] then
                 cmdType = cmdParts[i]
-                prmCnt, i = #cmdTypes[cmdType].__meta__.order, i+1
+                prmCnt, i = #cmdMap[cmdType].__meta__.order, i+1
             else 
-                self.commands[#self.commands+1] = cmdTypes[cmdType](table.sliceArray(cmdParts,i,i+prmCnt-1),self)
+                self.commands[#self.commands+1] = cmdMap[cmdType](table.sliceArray(cmdParts,i,i+prmCnt-1),self)
                 i=i+prmCnt
             end
         end
-        tagProps = args[2]
-    elseif type(args[1])=="table" then
-        tagProps = args[#args].instanceOf and {} or table.remove(args)
-        for i=1,#args do
-            assert(args[i].baseClass==ASSDrawBase, string.format("Error: argument %d to %s is not a drawing object.", i, self.typeName))
+    -- construct from a table containing valid drawing commands
+    elseif not ASS.instanceOf(tags) then
+        for i=1,#tags do
+            assert(tags[i].baseClass==ASSDrawBase, string.format("Error: argument %d to %s is not a drawing object.", i, self.typeName))
         end
-        self.commands = args
+        self.commands = tags
     end
     self:readProps(tagProps)
-    self:setInverse(self.__tag.inverse or false)
     return self
 end
 
-function ASSClipVect:getTagParams(coerce)
-    self:setInverse(self.__tag.inverse or false)
+function ASSDrawing:getTagParams(coerce)
     local cmds, cmdStr, j, lastCmdType = self.commands, {}, 1
     for i=1,#cmds do
         if lastCmdType~=cmds[i].__tag.name then
@@ -1629,22 +1639,10 @@ function ASSClipVect:getTagParams(coerce)
             cmdStr[j], j = params, j+1
         end
     end
-    return table.concat(cmdStr, " ")
+    return table.concat(cmdStr, " "), self.scale:getTagParams(coerce)
 end
 
---TODO: unify setInverse and toggleInverse for VectClip and RectClip by using multiple inheritance
-function ASSClipVect:setInverse(state)
-    state = type(state)==nil and true or state
-    self.__tag.inverse = state
-    self.__tag.name = state and "iclip_vect" or "clip_vect"
-    return state
-end
-
-function ASSClipVect:toggleInverse()
-    return self:setInverse(not self.__tag.inverse)
-end
-
-function ASSClipVect:commonOp(method, callback, default, x, y) -- drawing commands only have x and y in common
+function ASSDrawing:commonOp(method, callback, default, x, y) -- drawing commands only have x and y in common
     local res = {}
     for i=1,#self.commands do
         local subCnt = #self.commands[i].__meta__.order
@@ -1653,14 +1651,14 @@ function ASSClipVect:commonOp(method, callback, default, x, y) -- drawing comman
     return unpack(res)
 end
 
-function ASSClipVect:flatten(coerce)
+function ASSDrawing:flatten(coerce)
     local flatStr = YUtils.shape.flatten(self:getTagParams(coerce))
-    local flattened = ASSClipVect({flatStr},self.__tag)
+    local flattened = ASSDrawing({flatStr},self.__tag)
     self.commands = flattened.commands
     return flatStr
 end
 
-function ASSClipVect:getLength()
+function ASSDrawing:getLength()
     local totalLen,lens = 0, {}
     for i=1,#self.commands do
         local len = self.commands[i]:getLength(self.commands[i-1])
@@ -1669,7 +1667,7 @@ function ASSClipVect:getLength()
     return totalLen,lens
 end
 
-function ASSClipVect:getCommandAtLength(len, noUpdate)
+function ASSDrawing:getCommandAtLength(len, noUpdate)
     if not (noUpdate and self.length) then self:getLength() end
     local cmds, currTotalLen, nextTotalLen = self.commands,  0
     for i=1,#cmds do
@@ -1682,14 +1680,14 @@ function ASSClipVect:getCommandAtLength(len, noUpdate)
     -- error(string.format("Error: length requested (%02f) is exceeding the total length of the shape (%02f)",len,currTotalLen))
 end
 
-function ASSClipVect:getPositionAtLength(len, noUpdate, useCurveTime)
+function ASSDrawing:getPositionAtLength(len, noUpdate, useCurveTime)
     if not (noUpdate and self.length) then self:getLength() end
     local cmd, remLen  = self:getCommandAtLength(len, true)
     if not cmd then return false end
     return cmd:getPositionAtLength(remLen, true, useCurveTime)
 end
 
-function ASSClipVect:getAngleAtLength(len, noUpdate)
+function ASSDrawing:getAngleAtLength(len, noUpdate)
     if not (noUpdate and self.length) then self:getLength() end
     local cmd, remLen = self:getCommandAtLength(len, true)
     if not cmd then return false end
@@ -1700,7 +1698,7 @@ function ASSClipVect:getAngleAtLength(len, noUpdate)
     return cmd:getAngle(nil,true)
 end
 
-function ASSClipVect:rotate(angle)
+function ASSDrawing:rotate(angle)
     angle = default(angle,0)
     if ASS.instanceOf(angle,ASSNumber) then
         angle = angle:getTagParams(coerce)
@@ -1716,12 +1714,12 @@ function ASSClipVect:rotate(angle)
                           translate((bound[3]-bound[1])/2,(bound[4]-bound[2])/2,0).rotate("z",angle).
                           translate(-bound[3]+bound[1]/2,(-bound[4]+bound[2])/2,0)
         shape = YUtils.shape.transform(shape,rotMatrix)
-        self.commands = ASSClipVect({shape}).commands
+        self.commands = ASSDrawing({shape}).commands
     end
     return self
 end
 
-function ASSClipVect:get()
+function ASSDrawing:get()
     local commands, j = {}, 1
     for i=1,#self.commands do
         commands[j] = self.commands[i].__tag.name
@@ -1729,9 +1727,30 @@ function ASSClipVect:get()
         table.joinInto(commands, params)
         j=j+#params+1
     end
-    return commands
+    return commands, self.scale:get()
 end
-ASSClipVect.set, ASSClipVect.mod = nil, nil  -- TODO: check if these can be remapped/implemented in a way that makes sense, maybe work on strings
+ASSDrawing.set, ASSDrawing.mod = nil, nil  -- TODO: check if these can be remapped/implemented in a way that makes sense, maybe work on strings
+
+
+ASSClipVect = createASSClass("ASSClipVect", ASSDrawing, {"commands","scale"}, {"table", ASSNumber})
+--TODO: unify setInverse and toggleInverse for VectClip and RectClip by using multiple inheritance
+function ASSClipVect:setInverse(state)
+    state = type(state)==nil and true or state
+    self.__tag.inverse = state
+    self.__tag.name = state and "iclip_vect" or "clip_vect"
+    return state
+end
+
+function ASSClipVect:toggleInverse()
+    return self:setInverse(not self.__tag.inverse)
+end
+
+ASSLineDrawingSection = createASSClass("ASSLineDrawingSection", ASSDrawing, {"commands","scale"}, {"table", ASSNumber})
+ASSLineDrawingSection.getStyleTable = ASSLineTextSection.getStyleTable
+ASSLineDrawingSection.getEffectiveTags = ASSLineTextSection.getEffectiveTags
+
+
+--------------------- Unsupported Tag Classes and Stubs ---------------------
 
 ASSUnknown = createASSClass("ASSUnknown", ASSTagBase, {"value"}, {"string"})
 function ASSUnknown:new(value, tagProps)
@@ -1787,8 +1806,8 @@ function ASSDrawBase:getLength(prevCmd)
 
     local name, len = self.__tag.name, 0
     if name == "b" then
-        local shapeSection = ASSClipVect(ASSDrawMove(self.cursor:get()),self)
-        self.flattened = ASSClipVect({YUtils.shape.flatten(shapeSection:getTagParams())}) --save flattened shape for further processing
+        local shapeSection = ASSDrawing(ASSDrawMove(self.cursor:get()),self)
+        self.flattened = ASSDrawing({YUtils.shape.flatten(shapeSection:getTagParams())}) --save flattened shape for further processing
         len = self.flattened:getLength()
     elseif name =="m" or name == "n" then len=0
     elseif name =="l" then
@@ -1871,8 +1890,8 @@ function ASSDrawBezier:getFlattened(noUpdate)
         if not (noUpdate and self.cursor) then
             self.parent:getLength()
         end
-        local shapeSection = ASSClipVect(ASSDrawMove(self.cursor:get()),self)
-        self.flattened = ASSClipVect({YUtils.shape.flatten(shapeSection:getTagParams())})
+        local shapeSection = ASSDrawing(ASSDrawMove(self.cursor:get()),self)
+        self.flattened = ASSDrawing({YUtils.shape.flatten(shapeSection:getTagParams())})
     end
     return self.flattened
 end
@@ -1913,6 +1932,7 @@ function ASSFoundation:new()
                      pattern="\\clip%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+)%)", format="\\clip(%.2N,%.2N,%.2N,%.2N)"}, 
         iclip_rect = {overrideName="\\iclip", friendlyName="\\iclip (Rectangle)", type=ASSClipRect, props={inverse=true}, global=true, 
                       pattern="\\iclip%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+)%)", format="\\iclip(%.2N,%.2N,%.2N,%.2N)", default={0,0,0,0}}, 
+        drawing = {overrideName="\\p", type=ASSNumber, props={positive=true, precision=0}, pattern="\\p(%d+)", format="\\p%d", default=0}, 
         blur_edges = {overrideName="\\be", type=ASSNumber, props={positive=true}, pattern="\\be([%d%.]+)", format="\\be%.2N", default=0}, 
         blur = {overrideName="\\blur", type=ASSNumber, props={positive=true}, pattern="\\blur([%d%.]+)", format="\\blur%.2N", default=0}, 
         shear_x = {overrideName="\\fax", type=ASSNumber, pattern="\\fax([%-%d%.]+)", format="\\fax%.2N", default=0}, 
