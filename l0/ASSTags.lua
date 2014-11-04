@@ -1602,136 +1602,6 @@ function ASSClipRect:toggleInverse()
 end
 
 
---------------------- Drawing Command Classes ---------------------
-
-ASSDrawBase = createASSClass("ASSDrawBase", ASSTagBase, {}, {})
-function ASSDrawBase:new(...)
-    local args = {...}
-    if type(args[1]) == "table" then
-        self.parent = args[2]
-        args = {self:getArgs(args[1], nil, true)}
-    end
-    for i=1,#args do
-        if i>#self.__meta__.order then
-            self.parent = args[i]
-        else
-            self[self.__meta__.order[i]] = self.__meta__.types[i](args[i]) 
-        end
-    end
-    return self
-end
-
-function ASSDrawBase:getTagParams(coerce)
-    local params, parts = self.__meta__.order, {}
-    for i=1,#params do
-        parts[i] = tostring(self[params[i]]:getTagParams(coerce))
-    end
-    return self.__tag.name .. " " .. table.concat(parts)
-end
-
-function ASSDrawBase:getLength(prevCmd) 
-    -- get end coordinates (cursor) of previous command
-    local x0, y0 = 0, 0
-    if prevCmd and prevCmd.__tag.name == "b" then
-        x0, y0 = prevCmd.x3:get(), prevCmd.y3:get()
-    elseif prevCmd then x0, y0 = prevCmd.x:get(), prevCmd.y:get() end
-
-    -- save cursor for further processing
-    self.cursor = ASSPosition(x0,y0)
-
-    local name, len = self.__tag.name, 0
-    if name == "b" then
-        local shapeSection = ASSDrawing(ASSDrawMove(self.cursor:get()),self)
-        self.flattened = ASSDrawing({YUtils.shape.flatten(shapeSection:getTagParams())}) --save flattened shape for further processing
-        len = self.flattened:getLength()
-    elseif name =="m" or name == "n" then len=0
-    elseif name =="l" then
-        len = YUtils.math.distance(self.x:get()-x0, self.y:get()-y0)
-    end
-    -- save length for further processing
-    self.length = len
-    return len
-end
-
-function ASSDrawBase:getPositionAtLength(len, noUpdate, useCurveTime)
-    if not (self.length and self.cursor and noUpdate) then self.parent:getLength() end
-    local name, pos = self.__tag.name
-    if name == "b" and useCurveTime then
-        local px, py = YUtils.math.bezier(math.min(len/self.length,1), {{self.cursor:get()},{x1,y1},{x2,y2},{x3,y3}})
-        pos = ASSPosition(px, py)
-    elseif name == "b" then
-        local x1,y1,x2,y2,x3,y3 = self:get()
-        pos = self:getFlattened(true):getPositionAtLength(len, true)   -- we already know this data is up-to-date because self.parent:getLength() was run
-    elseif name == "l" then
-        pos = ASSPosition(self:copy():ScaleToLength(len,true))
-    elseif name == "m" then
-        pos = ASSPosition(self:get())
-    end
-    pos.__tag.name = "position"
-    return pos
-end
-
-ASSDrawMove = createASSClass("ASSDrawMove", ASSDrawBase, {"x","y"}, {ASSNumber, ASSNumber}, {name="m"})
-ASSDrawMoveNc = createASSClass("ASSDrawMoveNc", ASSDrawBase, {"x","y"}, {ASSNumber, ASSNumber}, {name="n"})
-ASSDrawLine = createASSClass("ASSDrawLine", ASSDrawBase, {"x","y"}, {ASSNumber, ASSNumber}, {name="l"})
-ASSDrawBezier = createASSClass("ASSDrawBezier", ASSDrawBase, {"x1","y1","x2","y2","x3","y3"}, {ASSNumber, ASSNumber, ASSNumber, ASSNumber, ASSNumber, ASSNumber}, {name="b"})
-ASSDrawClose = createASSClass("ASSDrawClose", ASSDrawBase, {}, {}, {name="c"})
---- TODO: b-spline support
-
-function ASSDrawLine:ScaleToLength(len,noUpdate)
-    if not (self.length and self.cursor and noUpdate) then self.parent:getLength() end
-    local scaled = self.cursor:copy()
-    scaled:add(YUtils.math.stretch(returnAll(
-        {ASSPosition(self:get()):sub(self.cursor)},
-        {0, len})
-    ))
-    self:set(scaled:get())
-    return self:get()
-end
-
-function ASSDrawLine:getAngle(ref, noUpdate)
-    if not (ref or (self.cursor and noUpdate)) then self.parent:getLength() end
-    ref = ref or self.cursor:copy()
-    assert(type(ref)=="table", "Error: argument ref to getAngle() must be of type table, got " .. type(ref) .. ".\n")
-    if ref.instanceOf[ASSDrawBezier] then
-        ref = ASSPosition(ref.x3, ref.y3)
-    elseif not ref.instanceOf then
-        ref = ASSPosition(ref[1], ref[2])
-    elseif not ref.instanceOf[ASSPosition] and ref.baseClass~=ASSDrawBase then
-        error("Error: argument ref to getAngle() must either be an ASSDraw object, an ASSPosition or a table containing coordinates x and y.\n")
-    end
-    local dx,dy = ASSPosition(self:get()):sub(ref)
-    return (360 - math.deg(math.atan2(dy,dx))) %360
-end
-
-function ASSDrawBezier:commonOp(method, callback, default, ...)
-    local args, j, res, valNames = {...}, 1, {}, self.__meta__.order
-    if #args<=2 then -- special case to allow common operation on all x an y values of a vector drawing
-        args[1], args[2] = args[1] or 0, args[2] or 0
-        args = table.join(args,args,args)
-    end
-    args = {self:getArgs(args, default, false)}
-    for i=1,#valNames do
-        local subCnt = #self[valNames[i]].__meta__.order
-        local subArgs = table.sliceArray(args,j,j+subCnt-1)
-        table.joinInto(res, {self[valNames[i]][method](self[valNames[i]],unpack(subArgs))})
-        j=j+subCnt
-    end
-    return unpack(res)
-end
-
-function ASSDrawBezier:getFlattened(noUpdate)
-    if not (noUpdate and self.flattened) then
-        if not (noUpdate and self.cursor) then
-            self.parent:getLength()
-        end
-        local shapeSection = ASSDrawing(ASSDrawMove(self.cursor:get()),self)
-        self.flattened = ASSDrawing({YUtils.shape.flatten(shapeSection:getTagParams())})
-    end
-    return self.flattened
-end
-
-
 --------------------- Drawing Classes ---------------------
 
 ASSDrawing = createASSClass("ASSDrawing", ASSTagBase, {"commands", "scale"}, {"table", ASSNumber})
@@ -1914,6 +1784,138 @@ end
 ASSUnknown.add, ASSUnknown.sub, ASSUnknown.mul, ASSUnknown.pow = nil, nil, nil, nil
 
 ASSTransform = createASSClass("ASSTransform", ASSUnknown, {"value"}, {"string"})   -- TODO: implement transforms
+
+
+
+--------------------- Drawing Command Classes ---------------------
+
+ASSDrawBase = createASSClass("ASSDrawBase", ASSTagBase, {}, {})
+function ASSDrawBase:new(...)
+    local args = {...}
+    if type(args[1]) == "table" then
+        self.parent = args[2]
+        args = {self:getArgs(args[1], nil, true)}
+    end
+    for i=1,#args do
+        if i>#self.__meta__.order then
+            self.parent = args[i]
+        else
+            self[self.__meta__.order[i]] = self.__meta__.types[i](args[i]) 
+        end
+    end
+    return self
+end
+
+function ASSDrawBase:getTagParams(coerce)
+    local params, parts = self.__meta__.order, {}
+    for i=1,#params do
+        parts[i] = tostring(self[params[i]]:getTagParams(coerce))
+    end
+    return self.__tag.name .. " " .. table.concat(parts)
+end
+
+function ASSDrawBase:getLength(prevCmd) 
+    -- get end coordinates (cursor) of previous command
+    local x0, y0 = 0, 0
+    if prevCmd and prevCmd.__tag.name == "b" then
+        x0, y0 = prevCmd.x3:get(), prevCmd.y3:get()
+    elseif prevCmd then x0, y0 = prevCmd.x:get(), prevCmd.y:get() end
+
+    -- save cursor for further processing
+    self.cursor = ASSPosition(x0,y0)
+
+    local name, len = self.__tag.name, 0
+    if name == "b" then
+        local shapeSection = ASSDrawing(ASSDrawMove(self.cursor:get()),self)
+        self.flattened = ASSDrawing({YUtils.shape.flatten(shapeSection:getTagParams())}) --save flattened shape for further processing
+        len = self.flattened:getLength()
+    elseif name =="m" or name == "n" then len=0
+    elseif name =="l" then
+        len = YUtils.math.distance(self.x:get()-x0, self.y:get()-y0)
+    end
+    -- save length for further processing
+    self.length = len
+    return len
+end
+
+function ASSDrawBase:getPositionAtLength(len, noUpdate, useCurveTime)
+    if not (self.length and self.cursor and noUpdate) then self.parent:getLength() end
+    local name, pos = self.__tag.name
+    if name == "b" and useCurveTime then
+        local px, py = YUtils.math.bezier(math.min(len/self.length,1), {{self.cursor:get()},{x1,y1},{x2,y2},{x3,y3}})
+        pos = ASSPosition(px, py)
+    elseif name == "b" then
+        local x1,y1,x2,y2,x3,y3 = self:get()
+        pos = self:getFlattened(true):getPositionAtLength(len, true)   -- we already know this data is up-to-date because self.parent:getLength() was run
+    elseif name == "l" then
+        pos = ASSPosition(self:copy():ScaleToLength(len,true))
+    elseif name == "m" then
+        pos = ASSPosition(self:get())
+    end
+    pos.__tag.name = "position"
+    return pos
+end
+
+ASSDrawMove = createASSClass("ASSDrawMove", ASSDrawBase, {"x","y"}, {ASSNumber, ASSNumber}, {name="m"})
+ASSDrawMoveNc = createASSClass("ASSDrawMoveNc", ASSDrawBase, {"x","y"}, {ASSNumber, ASSNumber}, {name="n"})
+ASSDrawLine = createASSClass("ASSDrawLine", ASSDrawBase, {"x","y"}, {ASSNumber, ASSNumber}, {name="l"})
+ASSDrawBezier = createASSClass("ASSDrawBezier", ASSDrawBase, {"x1","y1","x2","y2","x3","y3"}, {ASSNumber, ASSNumber, ASSNumber, ASSNumber, ASSNumber, ASSNumber}, {name="b"})
+ASSDrawClose = createASSClass("ASSDrawClose", ASSDrawBase, {}, {}, {name="c"})
+--- TODO: b-spline support
+
+function ASSDrawLine:ScaleToLength(len,noUpdate)
+    if not (self.length and self.cursor and noUpdate) then self.parent:getLength() end
+    local scaled = self.cursor:copy()
+    scaled:add(YUtils.math.stretch(returnAll(
+        {ASSPosition(self:get()):sub(self.cursor)},
+        {0, len})
+    ))
+    self:set(scaled:get())
+    return self:get()
+end
+
+function ASSDrawLine:getAngle(ref, noUpdate)
+    if not (ref or (self.cursor and noUpdate)) then self.parent:getLength() end
+    ref = ref or self.cursor:copy()
+    assert(type(ref)=="table", "Error: argument ref to getAngle() must be of type table, got " .. type(ref) .. ".\n")
+    if ref.instanceOf[ASSDrawBezier] then
+        ref = ASSPosition(ref.x3, ref.y3)
+    elseif not ref.instanceOf then
+        ref = ASSPosition(ref[1], ref[2])
+    elseif not ref.instanceOf[ASSPosition] and ref.baseClass~=ASSDrawBase then
+        error("Error: argument ref to getAngle() must either be an ASSDraw object, an ASSPosition or a table containing coordinates x and y.\n")
+    end
+    local dx,dy = ASSPosition(self:get()):sub(ref)
+    return (360 - math.deg(math.atan2(dy,dx))) %360
+end
+
+function ASSDrawBezier:commonOp(method, callback, default, ...)
+    local args, j, res, valNames = {...}, 1, {}, self.__meta__.order
+    if #args<=2 then -- special case to allow common operation on all x an y values of a vector drawing
+        args[1], args[2] = args[1] or 0, args[2] or 0
+        args = table.join(args,args,args)
+    end
+    args = {self:getArgs(args, default, false)}
+    for i=1,#valNames do
+        local subCnt = #self[valNames[i]].__meta__.order
+        local subArgs = table.sliceArray(args,j,j+subCnt-1)
+        table.joinInto(res, {self[valNames[i]][method](self[valNames[i]],unpack(subArgs))})
+        j=j+subCnt
+    end
+    return unpack(res)
+end
+
+function ASSDrawBezier:getFlattened(noUpdate)
+    if not (noUpdate and self.flattened) then
+        if not (noUpdate and self.cursor) then
+            self.parent:getLength()
+        end
+        local shapeSection = ASSDrawing(ASSDrawMove(self.cursor:get()),self)
+        self.flattened = ASSDrawing({YUtils.shape.flatten(shapeSection:getTagParams())})
+    end
+    return self.flattened
+end
+
 
 
 ----------- Tag Mapping -------------
