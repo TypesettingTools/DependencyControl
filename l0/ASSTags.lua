@@ -109,7 +109,7 @@ function ASSBase:getArgs(args, defaults, coerce, extraValidClasses)
             j=j+subCnt-1
         elseif args[j]==nil then
             -- write defaults
-            args[j] = type(defaults)=="table" and defaults[j] or defaults
+            outArgs[i] = type(defaults)=="table" and defaults[j] or defaults
         elseif coerce and type(args[j])~=valTypes[i] then -- TODO: check if gaps in arrays break with unpack                 
             outArgs[i] = self:coerce(args[j], valTypes[i])
         else outArgs[i]=args[j] end
@@ -216,6 +216,7 @@ function ASSLineContents:updateRefs(prevCnt)
         for i=1,#self.sections do
             self.sections[i].prevSection = self.sections[i-1]
             self.sections[i].parent = self
+            self.sections[i].index = i
         end
         return true
     else return false end
@@ -236,8 +237,9 @@ function ASSLineContents:getString(coerce, classes)
         elseif secType == ASSLineDrawingSection then
             str[i], drawingState = sections[i]:getString(), sections[i].scale
         else 
-            assert(coerce, string.format("Error: %s section #%d is not a {%s}.\n", 
-                 self.typeName, i, table.concat(table.select(ASS.classes.lineSection, {"typeName"}), ", "))
+            assert(coerce, string.format("Error: invalid %s section #%d. Expected {%s}, got a %s.\n", 
+                 self.typeName, i, table.concat(table.pluck(ASS.classes.lineSection, "typeName"), ", "),
+                 type(sections[i])=="table" and sections[i].typeName or type(sections[i]))
             )
         end
     end
@@ -782,19 +784,26 @@ end
 
 function ASSLineTextSection:getShape(applyRotation, coerce)
     applyRotation = default(applyRotation, false)
-    local shape, tagList = ASSLineTextSection:getYutilsFont().text_to_shape(self.value) 
+    local shape, tagList = self:getYutilsFont()
+    shape = ASSDrawing(shape.text_to_shape(self.value))
 
     -- rotate shape
     if applyRotation then
         local angle = tagList.tags.angle:getTagParams(coerce)
-        shape = angle%360~=0 and ASSDrawing({shape}):rotate(angle):getTagParams() or shape
+        shape:rotate(angle)
     end
     return shape
 end
 
+function ASSLineTextSection:convertToDrawing(applyRotation, coerce)
+    local shape = self:getShape(applyRotation, coerce)
+    self.parent.sections[self.index] = shape:getSection()
+    self.parent:updateRefs()
+end
+
 function ASSLineTextSection:getYutilsFont(coerce)
     local tagList = self:getEffectiveTags(true,true,false)
-    local tags = stagList.tags
+    local tags = tagList.tags
     return YUtils.decode.create_font(tags.fontname:getTagParams(coerce), tags.bold:getTagParams(coerce)>0,
                                      tags.italic:getTagParams(coerce)>0, tags.underline:getTagParams(coerce)>0, tags.strikeout:getTagParams(coerce)>0,
                                      tags.fontsize:getTagParams(coerce), tags.scale_x:getTagParams(coerce)/100, tags.scale_y:getTagParams(coerce)/100,
@@ -1723,7 +1732,7 @@ function ASSDrawing:rotate(angle)
          ASSNumber.typeName, ASS.instanceOf(angle) and ASS.instanceOf(angle).typeName or type(angle)))
     end 
 
-    if angle%180~=0 then
+    if angle%360~=0 then
         local shape = self:getTagParams()
         local bound = {YUtils.shape.bounding(shape)}
         local rotMatrix = YUtils.math.create_matrix().
@@ -1745,6 +1754,13 @@ function ASSDrawing:get()
     end
     return commands, self.scale:get()
 end
+
+function ASSDrawing:getSection()
+    local section = ASSLineDrawingSection()
+    section.commands, section.scale = self.commands, self.scale
+    return section
+end
+
 ASSDrawing.set, ASSDrawing.mod = nil, nil  -- TODO: check if these can be remapped/implemented in a way that makes sense, maybe work on strings
 
 
