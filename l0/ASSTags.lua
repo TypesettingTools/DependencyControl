@@ -185,7 +185,7 @@ function ASSLineContents:new(line,sections)
     assert(line and line.text, string.format("Error: argument 1 to %s() must be a Line or %s object, got %s.\n", self.typeName, self.typeName, type(line)))
     if not sections then
         sections = {}
-        local i, j, drawingState, ovrStart, ovrEnd = 1, 1, 0
+        local i, j, drawingState, ovrStart, ovrEnd = 1, 1, ASS:createTag("drawing",0)
         while i<=#line.text do
             ovrStart, ovrEnd = line.text:find("{.-}",i)
             if ovrStart then
