@@ -59,7 +59,7 @@ function ASSBase:checkRange(min,max,...)
     end
 end
 
-function ASSBase:CoerceNumber(num, default)
+function ASSBase:coerceNumber(num, default)
     num = tonumber(num)
     if not num then num=default or 0 end
     if self.__tag.positive then num=math.max(num,0) end
@@ -83,7 +83,8 @@ function ASSBase:coerce(value, type_)
     end
 end
 
-function ASSBase:getArgs(args, default, coerce, extraValidClasses)
+function ASSBase:getArgs(args, defaults, coerce, extraValidClasses)
+    -- TODO: make getArgs automatically create objects
     assert(type(args)=="table", "Error: first argument to getArgs must be a table of packed arguments, got " .. type(args) ..".\n")
     -- check if first arg is a compatible ASSClass and dump into args 
     if #args == 1 and type(args[1]) == "table" and args[1].typeName then
@@ -100,14 +101,15 @@ function ASSBase:getArgs(args, default, coerce, extraValidClasses)
 
     local valTypes, j, outArgs = self.__meta__.types, 1, {}
     for i=1,#self.__meta__.order do
-        -- write defaults
-        if args[j]==nil then args[j]=default end
-
         if ASS.instanceOf(valTypes[i]) then
             local subCnt = #valTypes[i].__meta__.order
-            outArgs = table.join(outArgs, {valTypes[i]:getArgs(table.sliceArray(args,j,j+subCnt-1), default, coerce)})
+            local defSlice = type(defaults)=="table" and table.sliceArray(defaults,j,j+subCnt-1) or defaults
+            local argSlice = table.sliceArray(args,j,j+subCnt-1)
+            outArgs = table.join(outArgs, {valTypes[i]:getArgs(argSlice, defSlice, coerce)})
             j=j+subCnt-1
-
+        elseif args[j]==nil then
+            -- write defaults
+            args[j] = type(defaults)=="table" and defaults[j] or defaults
         elseif coerce and type(args[j])~=valTypes[i] then -- TODO: check if gaps in arrays break with unpack                 
             outArgs[i] = self:coerce(args[j], valTypes[i])
         else outArgs[i]=args[j] end
@@ -183,7 +185,7 @@ function ASSLineContents:new(line,sections)
     assert(line and line.text, string.format("Error: argument 1 to %s() must be a Line or %s object, got %s.\n", self.typeName, self.typeName, type(line)))
     if not sections then
         sections = {}
-        local i, j, drawingState, ovrStart, ovrEnd = 1, 1, ASS:createTag("drawing",0)
+        local i, j, drawingState, ovrStart, ovrEnd = 1, 1, 0
         while i<=#line.text do
             ovrStart, ovrEnd = line.text:find("{.-}",i)
             if ovrStart then
@@ -219,31 +221,38 @@ function ASSLineContents:updateRefs(prevCnt)
     else return false end
 end
 
-function ASSLineContents:getString(coerce, noTags, noText, noCmts)
-    local str, sections = {}, self.sections
-    for i=1,#sections do
-        if ASS.instanceOf(sections[i], ASSLineTextSection) and not noText then
+function ASSLineContents:getString(coerce, classes)
+    local str, sections, drawingState = {}, self.sections
+    for i=#sections,1,-1 do
+        local secType = ASS.instanceOf(sections[i], ASS.classes.lineSection, classes)
+
+        if secType == ASSLineTextSection then
             str[i] = sections[i]:getString()
-        elseif ASS.instanceOf(sections[i], {not noTags and ASSLineTagSection, not noCmts and ASSLineCommentSection}) then
-            str[i] =  "{" .. sections[i]:getString() .. "}"
+        elseif secType == ASSLineTagSection then
+            str[i] =  "{" .. sections[i]:getString() .. (drawingState and drawingState:getTagString() or "") .."}"
+            drawingState = nil
+        elseif secType == ASSLineCommentSection then 
+            str[i] =  "{" .. sections[i]:getString() .."}"
+        elseif secType == ASSLineDrawingSection then
+            str[i], drawingState = sections[i]:getString(), sections[i].scale
         else 
-            assert(coerce, string.format("Error: %s section #%d is not a %s, %s or %s.\n", 
-                 self.typeName, i, ASSLineTextSection.typeName, ASSLineTagSection.typeName, ASSLineCommentSection.typeName)
-            ) 
+            assert(coerce, string.format("Error: %s section #%d is not a {%s}.\n", 
+                 self.typeName, i, table.concat(table.select(ASS.classes.lineSection, {"typeName"}), ", "))
+            )
         end
     end
     return table.concat(str)
 end
 
-function ASSLineContents:get(noTags, noText, noCmts, start, end_, relative)
+function ASSLineContents:get(sectionClasses, start, end_, relative)
     local result, j = {}, 1
     self:callback(function(section,sections,i)
         result[j], j = section:copy(), j+1
-    end, noTags, noText, noCmts, start, end_, relative)
+    end, sectionClasses, start, end_, relative)
     return result
 end
 
-function ASSLineContents:callback(callback, noTags, noText, noCmts, start, end_, relative, reverse)
+function ASSLineContents:callback(callback, sectionClasses, start, end_, relative, reverse)
     local prevCnt = #self.sections
     start = default(start,1)
     end_ = default(end_, start>=1 and math.max(prevCnt,1) or -1)
@@ -261,7 +270,7 @@ function ASSLineContents:callback(callback, noTags, noText, noCmts, start, end_,
     end
 
     for i=reverse and prevCnt or 1, reverse and 1 or prevCnt, reverse and -1 or 1 do
-        if ASS.instanceOf(sects[i], {not noText and ASSLineTextSection, not noTags and ASSLineTagSection, not noCmts and ASSLineCommentSection}) then
+        if ASS.instanceOf(sects[i], ASS.classes.lineSection, sectionClasses) then
             j=j+1
             if (relative and j>=start and j<=end_) or (not relative and i>=start and i<=end_) then
                 numRun = numRun+1
@@ -286,9 +295,9 @@ function ASSLineContents:insertSections(sections,index)
         sections = {sections}
     end
     for i=1,#sections do
-        assert(ASS.instanceOf(sections[i],{ASSLineTextSection, ASSLineTagSection, ASSLineCommentSection}),
-              string.format("Error: can only insert sections of type %s, %s or %s, got %s.\n", 
-              ASSLineTextSection.typeName, ASSLineTagSection.typeName, ASSLineCommentSection.typeName, type(sections[i]))
+        assert(ASS.instanceOf(sections[i],ASS.classes.lineSection),
+              string.format("Error: can only insert sections of type {%s}, got %s.\n", 
+              table.concat(table.select(ASS.classes.lineSection, {"typeName"}), ", "), type(sections[i]))
         )
         table.insert(self.sections, index+i-1, sections[i])
     end
@@ -318,7 +327,7 @@ function ASSLineContents:modTags(tagNames, callback, start, end_, relative)
             local sectModCnt = section:modTags(tagNames, callback, relative and sectStart or nil, relative and sectEnd or nil, true)
             modCnt = modCnt + (sectModCnt or 0)
         end
-    end, false, true, true, not relative and start or nil, not relative and end_ or nil, true, reverse)
+    end, ASSLineTagSection, not relative and start or nil, not relative and end_ or nil, true, reverse)
 
     return modCnt>0 and modCnt or false
 end
@@ -350,7 +359,7 @@ function ASSLineContents:removeTags(tags, start, end_, relative)
             local sectRemoved, matched = section:removeTags(tags, sectStart, sectEnd, true)
             removed, matchCnt = table.join(removed,sectRemoved), matchCnt+matched
         end
-    end, false, true, true, not relative and start or nil, not relative and end_ or nil, true, reverse)
+    end, ASSLineTagSection, not relative and start or nil, not relative and end_ or nil, true, reverse)
 
     return removed
 end
@@ -371,7 +380,7 @@ function ASSLineContents:insertTags(tags, index, sectionPosition, direct)
         local inserted
         local sectFound = self:callback(function(section)
             inserted = section:insertTags(tags, sectionPosition)
-        end, false, true, true, index, index, true)
+        end, ASSLineTagSection, index, index, true)
         if not sectFound and index==1 then
             inserted = self:insertSections(ASSLineTagSection(),1)[1]:insertTags(tags)
         end
@@ -404,21 +413,28 @@ end
 function ASSLineContents:stripTags()
     self:callback(function(section,sections,i)
         return false
-    end, false, true, true)
+    end, ASSLineTagSection)
     return self
 end
 
 function ASSLineContents:stripText()
     self:callback(function(section,sections,i)
         return false
-    end, true, false, true)
+    end, ASSLineTextSection)
     return self
 end
 
 function ASSLineContents:stripComments()
     self:callback(function(section,sections,i)
         return false
-    end, true, true, false)
+    end, ASSLineCommentSection)
+    return self
+end
+
+function ASSLineContents:stripDrawings()
+    self:callback(function(section,sections,i)
+        return false
+    end, ASSLineDrawingSection)
     return self
 end
 
@@ -441,7 +457,7 @@ function ASSLineContents:cleanTags(level, mergeSect)   -- TODO: optimize it, mak
             else 
                 lastTagSection, numMerged = i, 0 
             end
-        end, false, true, true)
+        end, ASSLineTagSection)
     end
 
     -- 1: remove empty sections, 2: dedup tags locally, 3: dedup tags globally
@@ -457,7 +473,7 @@ function ASSLineContents:cleanTags(level, mergeSect)   -- TODO: optimize it, mak
             tagListPrev:merge(tagList,false)
             
             return not tagList:isEmpty() and ASSLineTagSection(tagList) or false
-        end, false, true, true)
+        end, ASSLineTagSection)
     end
     return self
 end
@@ -467,11 +483,11 @@ function ASSLineContents:splitAtTags(cleanLevel, reposition, writeOrigin)
     local splitLines = {}
     self:callback(function(section,_,i,j)
         local splitLine = Line(self.line, self.line.parentCollection, {ASS={}})
-        splitLine.ASS = ASSLineContents(splitLine, table.insert(self:get(false,true,true,0,i),section))
+        splitLine.ASS = ASSLineContents(splitLine, table.insert(self:get(ASSLineTagSection,0,i),section))
         splitLine.ASS:cleanTags(cleanLevel)
         splitLine.ASS:commit()
         splitLines[j] = splitLine
-    end, true, false, true)
+    end, ASSLineTextSection)
     if reposition then self:repositionSplitLines(splitLines, writeOrigin) end
     return splitLines
 end
@@ -498,7 +514,7 @@ function ASSLineContents:splitAtIntervals(callback, cleanLevel, reposition, writ
             local skip = nextIdx>sectEndIdx+1
             idx = skip and sectEndIdx+1 or nextIdx 
             local addTextSection = skip and section:copy() or ASSLineTextSection(text:sub(1,nextIdx-off-1))
-            local addSections, lastContents = table.insert(self:get(false,true,true,lastI+1,i), addTextSection), splitLines[#splitLines].ASS
+            local addSections, lastContents = table.insert(self:get(ASSLineTagSection,lastI+1,i), addTextSection), splitLines[#splitLines].ASS
             lastContents:insertSections(addSections)
         end
             
@@ -507,14 +523,14 @@ function ASSLineContents:splitAtIntervals(callback, cleanLevel, reposition, writ
             assert(nextIdx>idx, "Error: callback function for splitAtIntervals must always return an index greater than the last index.")
             -- create a new line
             local splitLine = Line(self.line, self.line.parentCollection)
-            splitLine.ASS = ASSLineContents(splitLine, self:get(false,true,true,1,i))
+            splitLine.ASS = ASSLineContents(splitLine, self:get(ASSLineTagSection,1,i))
             splitLine.ASS:insertSections(ASSLineTextSection(unicode.sub(text,idx-off,nextIdx-off-1)))
             splitLines[splitCnt], splitCnt = splitLine, splitCnt+1      
             -- check if this section is long enough to fill the new line
             idx = sectEndIdx>=nextIdx-1 and nextIdx or sectEndIdx+1
         end
         lastI = i
-    end, true, false, true)
+    end, ASSLineTextSection)
     
     for i=1,#splitLines do
         splitLines[i].ASS:cleanTags(cleanLevel)
@@ -652,7 +668,7 @@ function ASSLineContents:getTextExtents(coerce)   -- TODO: account for linebreak
         table.process(other, extents, function(val1,val2)
             return math.max(val1,val2)
         end)
-    end, true, false, true)
+    end, ASSLineTextSection)
     return width, unpack(other)
 end
 
@@ -681,7 +697,7 @@ function ASSLineContents:getMetrics(inludeLineBounds, includeTypeBounds, coerce)
             math.max(sectMetr.internal_leading, metr.internal_leading), math.max(sectMetr.external_leading, metr.external_leading),
             math.max(sectMetr.height, metr.height)
 
-    end, true, false, true)
+    end, ASSLineTextSection)
     
     if includeTypeBounds then
         typeBounds.width, typeBounds.height = typeBounds[3]-typeBounds[1], typeBounds[4]-typeBounds[2]
@@ -690,22 +706,20 @@ function ASSLineContents:getMetrics(inludeLineBounds, includeTypeBounds, coerce)
     return metr
 end
 
-function ASSLineContents:getSectionCount(class)
-    if class then
+function ASSLineContents:getSectionCount(classes)
+    if classes then
         local cnt = 0
         self:callback(function(section, _, _, j)
             cnt = j
-        end, class~=ASSLineTagSection, class~=ASSLineTextSection, class~=ASSLineCommentSection, nil, nil, true)
+        end, classes, nil, nil, true)
         return cnt
     else
-        local tagCnt, textCnt, cmtCnt = 0, 0, 0
+        local cnt = {}
         self:callback(function(section)
-            if section.instanceOf[ASSLineTagSection] then tagCnt=tagCnt+1
-            elseif section.instanceOf[ASSLineTextSectionL] then textCnt=textCnt+1
-            elseif section.instanceOf[ASSLineCommentSection] then cmtCnt=cmtCnt+1
-            end
+            local cls = table.keys(section.instanceOf)[1]
+            cnt[cls] = cnt[cls] and cnt[cls]+1 or 1
         end)
-        return #self.sections, tagCnt, textCnt, cmtCnt
+        return cnt, #self.sections
     end
 end
 
@@ -714,7 +728,7 @@ function ASSLineContents:reverse()
     self:callback(function(section,_,_,j)
         reversed[j*2-1] = ASSLineTagSection(section:getEffectiveTags(true,true))
         reversed[j*2] = section:reverse()
-    end, true, false, true, nil, nil, nil, true)
+    end, ASSLineTextSection, nil, nil, nil, true)
     self.sections = reversed
     self:updateRefs()
     return self:cleanTags(4)
@@ -1241,7 +1255,7 @@ function ASSNumber:getTagParams(coerce, precision)
     precision = precision or self.__tag.precision
     local val = self.value
     if coerce then
-        self:CoerceNumber(val,0)
+        self:coerceNumber(val,0)
     else
         assert(precision <= self.__tag.precision, string.format("Error: output wih precision %d is not supported for %s (maximum: %d).\n", 
                precision,self.typeName,self.__tag.precision))
@@ -1269,7 +1283,7 @@ end
 function ASSPosition:getTagParams(coerce, precision)
     local x,y = self.x, self.y
     if coerce then
-        x,y = self:CoerceNumber(x,0), self:CoerceNumber(y,0)
+        x,y = self:coerceNumber(x,0), self:coerceNumber(y,0)
     else 
         self:checkType("number", x, y)
     end
@@ -1288,7 +1302,7 @@ function ASSTime:getTagParams(coerce, precision)
     local val = self.value
     if coerce then
         precision = math.min(precision,0)
-        val = self:CoerceNumber(0)
+        val = self:coerceNumber(0)
     else
         assert(precision <= 0, "Error: " .. self.typeName .." doesn't support floating point precision")
         self:checkType("number", self.value)
@@ -1721,31 +1735,22 @@ end
 --------------------- Drawing Classes ---------------------
 
 ASSDrawing = createASSClass("ASSDrawing", ASSTagBase, {"commands", "scale"}, {"table", ASSNumber})
-ASSDrawing.__cmdMappings = {
-    m = ASSDrawMove,
-    n = ASSDrawMoveNc,
-    l = ASSDrawLine,
-    b = ASSDrawBezier,
-    c = ASSDrawClose
-}
-ASSDrawing.__cmdTypes = table.values(ASSDrawing.__cmdMappings)
-
-function ASSDrawing:new(tags, scale, tagProps)
-    local cmdMap = self.__cmdMappings
-    Log.dump{ASSDrawing.__cmdMappings}
+function ASSDrawing:new(cmds, scale, tagProps)
+    local cmdMap = ASS.classes.drawingCommandMappings
     -- also accept alternative signature for clips
     if type(scale)=="table" and not (scale.instanceOf or tagProps) then
         tagProps, scale = scale, 1
     end
-    tags, scale = self:getArgs({tags, scale},nil,true)
+    cmds, scale = self:getArgs({cmds, scale},{{},1},true)
+    self.scale = ASS:createTag("drawing", scale)
     
     -- construct from a single valid drawing command
-    if ASS.instanceOf(tags, self.__cmdTypes) then
-        self.commands = {tags}
+    if ASS.instanceOf(cmds, ASS.classes.drawingCommands) then
+        self.commands = {cmds}
     -- construct from a table containing a single string of drawing commands
-    elseif #tags==1 and type(tags[1])=="string" then
+    elseif #cmds==1 and type(cmds[1])=="string" then
         self.commands = {}
-        local cmdParts, cmdType, prmCnt, i = tags[1]:split(" "), "", 0, 1
+        local cmdParts, cmdType, prmCnt, i = cmds[1]:split(" "), "", 0, 1
         while i<=#cmdParts do
             if cmdMap[cmdParts[i]]==ASSDrawClose then
                 self.commands[#self.commands+1], i = ASSDrawClose({},self), i+1
@@ -1758,11 +1763,11 @@ function ASSDrawing:new(tags, scale, tagProps)
             end
         end
     -- construct from a table containing valid drawing commands
-    elseif not ASS.instanceOf(tags) then
-        for i=1,#tags do
-            assert(tags[i].baseClass==ASSDrawBase, string.format("Error: argument %d to %s is not a drawing object.", i, self.typeName))
+    elseif not ASS.instanceOf(cmds) then
+        for i=1,#cmds do
+            assert(cmds[i].baseClass==ASSDrawBase, string.format("Error: argument %d to %s is not a drawing object.", i, self.typeName))
         end
-        self.commands = tags
+        self.commands = cmds
     end
     self:readProps(tagProps)
     return self
@@ -1994,6 +1999,18 @@ function ASSFoundation:new()
     end
 
     self.tagMap, self.toFriendlyName, self.toTagName = tagMap, toFriendlyName, toTagName
+
+    self.classes = {
+        lineSection = {ASSLineTextSection, ASSLineTagSection, ASSLineDrawingSection, ASSLineCommentSection},
+        drawingCommandMappings = {
+            m = ASSDrawMove,
+            n = ASSDrawMoveNc,
+            l = ASSDrawLine,
+            b = ASSDrawBezier,
+            c = ASSDrawClose
+        }
+    }
+    self.classes.drawingCommands = table.values(self.classes.drawingCommandMappings)
     return self
 end
 
@@ -2036,20 +2053,27 @@ function ASSFoundation:formatTag(tagRef, ...)
     return self:mapTag(tagRef.__tag.name).format:formatFancy(...)
 end
 
-function ASSFoundation.instanceOf(val,classes)
-    local isASSObj = type(val)=="table" and val.instanceOf
+function ASSFoundation.instanceOf(val, classes, filter)
+    local clsSetObj = type(val)=="table" and val.instanceOf
 
-    if not isASSObj then
+    if not clsSetObj then
         return false
     elseif type(classes)=="nil" then
-        return isASSObj and table.keys(isASSObj)[1]
+        return table.keys(clsSetObj)[1]
     elseif type(classes)~="table" or classes.instanceOf then
         classes = {classes}
     end
 
+    if type(filter)=="table" then
+        if filter.instanceOf then 
+            filter={[filter]=true} 
+        elseif #filter>0 then 
+            filter = table.set(filter)
+        end
+    end
     for i=1,#classes do 
-        if val.instanceOf[classes[i]] then
-            return true
+        if clsSetObj[classes[i]] and (not filter or filter[classes[i]]) then
+            return classes[i]
         end
     end
     return false
@@ -2059,6 +2083,5 @@ function ASSFoundation.parse(line)
     line.ASS = ASSLineContents(line)
     return line.ASS
 end
-
 
 ASS = ASSFoundation()
