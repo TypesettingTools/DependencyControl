@@ -1792,7 +1792,14 @@ ASSLineDrawingSection = createASSClass("ASSLineDrawingSection", ASSDrawing, {"co
 ASSLineDrawingSection.getStyleTable = ASSLineTextSection.getStyleTable
 ASSLineDrawingSection.getEffectiveTags = ASSLineTextSection.getEffectiveTags
 ASSLineDrawingSection.getString = ASSLineDrawingSection.getTagParams
-ASSLineDrawingSection.getTagParams = nil
+ASSLineDrawingSection.getTagParams, ASSLineDrawingSection.getTagString = nil
+
+function ASSLineDrawingSection:getBounds(coerce)
+    local bounds = {YUtils.shape.bounding(self:getString())}
+    bounds.width = (bounds[3] or 0)-(bounds[1] or 0)
+    bounds.height = (bounds[4] or 0)-(bounds[2] or 0)
+    return bounds
+end
 
 --------------------- Unsupported Tag Classes and Stubs ---------------------
 
