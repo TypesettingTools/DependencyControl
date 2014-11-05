@@ -234,6 +234,7 @@ function ASSLineContents:getString(coerce, classes)
             if drawingState ~= prevDrawingState then
                 if prevSecType==ASSLineTagSection then
                     table.insert(str,j-1,drawingState:getTagString())
+                    j=j+1
                 else
                     str[j], str[j+1], str[j+2], j = "{", drawingState:getTagString(), "}", j+3
                 end
