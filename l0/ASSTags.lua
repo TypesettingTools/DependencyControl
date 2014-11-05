@@ -1690,7 +1690,7 @@ function ASSDrawing:flatten(coerce)
     local flatStr = YUtils.shape.flatten(self:getTagParams(coerce))
     local flattened = ASSDrawing({flatStr},self.__tag)
     self.commands = flattened.commands
-    return flatStr
+    return self, flatStr
 end
 
 function ASSDrawing:getLength()
@@ -1733,6 +1733,11 @@ function ASSDrawing:getAngleAtLength(len, noUpdate)
     return cmd:getAngle(nil,true)
 end
 
+function ASSDrawing:outline(x,y,mode)
+    y, mode = default(y,x), default(mode, "round")
+    local outline = YUtils.shape.to_outline(YUtils.shape.flatten(self:getTagParams()),x,y,mode)
+    self.commands = ASS.instanceOf(self)({outline}).commands
+end
 function ASSDrawing:rotate(angle)
     angle = default(angle,0)
     if ASS.instanceOf(angle,ASSNumber) then
@@ -1792,7 +1797,7 @@ ASSLineDrawingSection = createASSClass("ASSLineDrawingSection", ASSDrawing, {"co
 ASSLineDrawingSection.getStyleTable = ASSLineTextSection.getStyleTable
 ASSLineDrawingSection.getEffectiveTags = ASSLineTextSection.getEffectiveTags
 ASSLineDrawingSection.getString = ASSLineDrawingSection.getTagParams
-ASSLineDrawingSection.getTagParams, ASSLineDrawingSection.getTagString = nil
+ASSLineDrawingSection.getTagString = nil
 
 function ASSLineDrawingSection:getBounds(coerce)
     local bounds = {YUtils.shape.bounding(self:getString())}
