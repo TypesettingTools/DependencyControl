@@ -223,25 +223,34 @@ function ASSLineContents:updateRefs(prevCnt)
 end
 
 function ASSLineContents:getString(coerce, classes)
-    local str, sections, drawingState = {}, self.sections
-    for i=#sections,1,-1 do
-        local secType = ASS.instanceOf(sections[i], ASS.classes.lineSection, classes)
+    local defDrawingState = ASS:createTag("drawing",0)
+    local j, str, sections, prevDrawingState, secType, prevSecType = 1, {}, self.sections, defDrawingState
 
-        if secType == ASSLineTextSection then
-            str[i] = sections[i]:getString()
-        elseif secType == ASSLineTagSection then
-            str[i] =  "{" .. sections[i]:getString() .. (drawingState and drawingState:getTagString() or "") .."}"
-            drawingState = nil
-        elseif secType == ASSLineCommentSection then 
-            str[i] =  "{" .. sections[i]:getString() .."}"
-        elseif secType == ASSLineDrawingSection then
-            str[i], drawingState = sections[i]:getString(), sections[i].scale
+    for i=1,#sections do
+        secType, lastSecType = ASS.instanceOf(sections[i], ASS.classes.lineSection, classes), secType
+        if secType == ASSLineTextSection or secType == ASSLineDrawingSection then
+            -- determine whether we need to enable or disable drawing mode and insert the appropriate tags
+            local drawingState = secType==ASSLineDrawingSection and sections[i].scale or defDrawingState
+            if drawingState ~= prevDrawingState then
+                if prevSecType==ASSLineTagSection then
+                    table.insert(str,j-1,drawingState:getTagString())
+                else
+                    str[j], str[j+1], str[j+2], j = "{", drawingState:getTagString(), "}", j+3
+                end
+                prevDrawingState = drawingState
+            end
+            str[j] = sections[i]:getString()
+
+        elseif secType == ASSLineTagSection or secType==ASSLineCommentSection then
+            str[j], str[j+1], str[j+2], j =  "{", sections[i]:getString(), "}", j+2
+
         else 
             assert(coerce, string.format("Error: invalid %s section #%d. Expected {%s}, got a %s.\n", 
                  self.typeName, i, table.concat(table.pluck(ASS.classes.lineSection, "typeName"), ", "),
                  type(sections[i])=="table" and sections[i].typeName or type(sections[i]))
             )
         end
+        prevSecType, j = secType, j+1
     end
     return table.concat(str)
 end
