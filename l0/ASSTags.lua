@@ -807,8 +807,8 @@ end
 
 function ASSLineTextSection:convertToDrawing(applyRotation, coerce)
     local shape = self:getShape(applyRotation, coerce)
-    self.parent.sections[self.index] = shape:getSection()
-    self.parent:updateRefs()
+    self.value, self.commands, self.scale = nil, shape.commands, shape.scale
+    setmetatable(self,ASSLineDrawingSection)
 end
 
 function ASSLineTextSection:getYutilsFont(coerce)
