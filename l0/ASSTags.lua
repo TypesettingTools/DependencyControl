@@ -780,13 +780,13 @@ function ASSLineTextSection:getTextExtents(coerce)
 end
 
 function ASSLineTextSection:getMetrics(includeTypeBounds, coerce)
-    local fontObj = ASSLineTextSection:getYutilsFont()
+    local fontObj = self:getYutilsFont()
     local metrics = table.merge(fontObj.metrics(),fontObj.text_extents(self.value))
 
     if includeTypeBounds then
         metrics.typeBounds = {YUtils.shape.bounding(fontObj.text_to_shape(self.value))}
-        metrics.typeBounds.width = (metrics.bounding[3] or 0)-(metrics.bounding[1] or 0)
-        metrics.typeBounds.height = (metrics.bounding[4] or 0)-(metrics.bounding[2] or 0)
+        metrics.typeBounds.width = (metrics.typeBounds[3] or 0)-(metrics.typeBounds[1] or 0)
+        metrics.typeBounds.height = (metrics.typeBounds[4] or 0)-(metrics.typeBounds[2] or 0)
     end
 
     return metrics
