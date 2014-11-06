@@ -594,25 +594,63 @@ function ASSLineContents:repositionSplitLines(splitLines, writeOrigin)
 end
 
 local styleDefaultCache = {}
-function ASSLineContents:getStyleDefaultTags(style, copyTags)    -- TODO: cache
-    copyTags = default(copyTags,true)
-    local line = self.line
 
+function ASSLineContents:getStyleRef(style)
     if ASS.instanceOf(style, ASSString) then
         style = style:get()
     end
     if style==nil or style=="" then
-        style = line.styleRef
+        style = self.line.styleRef
     elseif type(style)=="string" then
-        style = line.parentCollection.styles[style] or style
+        style = self.line.parentCollection.styles[style] or style
         assert(type(style)=="table", "Error: couldn't find style with name: " .. style .. ".")
     else assert(type(style)=="table" and style.class=="style", 
                 "Error: invalid argument #1 (style): expected a style name or a styleRef, got a " .. type(style) .. ".")
     end
+    return style
+end
 
-    if styleDefaultCache[style.raw] then
+function ASSLineContents:getPosition(style, align, forceDefault)
+    local effTags = not (forceDefault and align) and self:getEffectiveTags(-1,false,false,false).tags
+    align, style = align or effTags.align, self:getStyleRef(style)
+
+    if ASS.instanceOf(align,ASSAlign) then
+        align = align:get()
+    else assert(type(align)=="number", "Error: argument #1 (align) must be of type number or %s, got a %s.",
+         ASSAlign.typeName, ASS.instanceOf(align) or type(align))
+    end
+
+    if not forceDefault and effTags.position then
+        return effTags.position
+    end
+
+    local scriptInfo = util.getScriptInfo(self.line.parentCollection.sub) 
+    -- blatantly copied from torque's Line.moon
+    vMargin = self.line.margin_t == 0 and style.margin_t or self.line.margin_t
+    lMargin = self.line.margin_l == 0 and style.margin_l or self.line.margin_l
+    rMargin = self.line.margin_r == 0 and style.margin_r or self.line.margin_r
+
+    return ASS:createTag("position", self.line.defaultXPosition[align%3+1](scriptInfo.PlayResX, lMargin, rMargin), 
+                                     self.line.defaultYPosition[math.ceil(align/3)](scriptInfo.PlayResY, vMargin)
+    )
+end
+
+function ASSLineContents:getStyleDefaultTags(style, copyTags, useOvrAlign)    -- TODO: cache
+    copyTags, useOvrAlign = default(copyTags,true), default(useOvrAlign, true)
+    local line = self.line
+    style = self:getStyleRef(style)
+
+    -- alignment override tag may affect the default position so we'll have to retrieve it
+    local raw, align = style.raw, style.align
+    if useOvrAlign then
+        local ovrAlign = self:getEffectiveTags(-1,false,true,false).tags.align
+        align = ovrAlign and ovrAlign:get() or align
+        if style.align~=align then raw = raw.."_"..align end
+    end
+
+    if styleDefaultCache[raw] then
         -- always return at least a fresh ASSTagList object to prevent the cached one from being overwritten
-        return copyTags and styleDefaultCache[style.raw]:copy() or ASSTagList(styleDefaultCache[style.raw])
+        return copyTags and styleDefaultCache[raw]:copy() or ASSTagList(styleDefaultCache[raw])
     end
 
     local function styleRef(tag)
@@ -657,12 +695,11 @@ function ASSLineContents:getStyleDefaultTags(style, copyTags)    -- TODO: cache
         spacing = ASS:createTag("spacing", styleRef("spacing")),
         fontsize = ASS:createTag("fontsize", styleRef("fontsize")),
         fontname = ASS:createTag("fontname", styleRef("fontname")),
-        position = ASS:createTag("position", {self.line:getDefaultPosition()}),
+        position = self:getPosition(style, align, true),
         move_simple = ASS:createTag("move_simple", {self.line.xPosition, self.line.yPosition, self.line.xPosition, self.line.yPosition}),
         move = ASS:createTag("move", {self.line.xPosition, self.line.yPosition, self.line.xPosition, self.line.yPosition}),
         origin = ASS:createTag("origin", {self.line.xPosition, self.line.yPosition}),
     }
-
     for name,tag in pairs(ASS.tagMap) do
         if tag.default then styleDefaults[name] = tag.type(tag.default, tag.props) end
     end
