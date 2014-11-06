@@ -401,7 +401,7 @@ function ASSLineContents:insertTags(tags, index, sectionPosition, direct)
 end
 
 function ASSLineContents:insertDefaultTags(tagNames, index, sectionPosition, direct)
-    local defaultTags = self:getStyleDefaultTags():getTags(tagNames)
+    local defaultTags = self:getDefaultTags():getTags(tagNames)
     return self:insertTags(defaultTags, index, sectionPosition, direct)
 end
 
@@ -474,7 +474,7 @@ function ASSLineContents:cleanTags(level, mergeSect)   -- TODO: optimize it, mak
 
     -- 1: remove empty sections, 2: dedup tags locally, 3: dedup tags globally
     -- 4: remove tags matching style default and not changing state, end: remove empty sections
-    local tagListPrev, tagListDef = ASSTagList(nil, self), self:getStyleDefaultTags()
+    local tagListPrev, tagListDef = ASSTagList(nil, self), self:getDefaultTags()
     if level>=1 then
         self:callback(function(section,sections,i)
             if level<2 then return #section.tags>0 end
@@ -635,7 +635,7 @@ function ASSLineContents:getPosition(style, align, forceDefault)
     )
 end
 
-function ASSLineContents:getStyleDefaultTags(style, copyTags, useOvrAlign)    -- TODO: cache
+function ASSLineContents:getDefaultTags(style, copyTags, useOvrAlign)    -- TODO: cache
     copyTags, useOvrAlign = default(copyTags,true), default(useOvrAlign, true)
     local line = self.line
     style = self:getStyleRef(style)
@@ -799,7 +799,7 @@ function ASSLineTextSection:getEffectiveTags(includeDefault, includePrevious, co
     -- previous and default tag lists
     local effTags
     if includeDefault then
-        effTags = self.parent:getStyleDefaultTags(nil, copyTags)
+        effTags = self.parent:getDefaultTags(nil, copyTags)
     end
     if includePrevious and self.prevSection then
         local prevTagList = self.prevSection:getEffectiveTags(false, true, copyTags)
@@ -1028,7 +1028,7 @@ function ASSLineTagSection:insertTags(tags, index)
 end
 
 function ASSLineTagSection:insertDefaultTags(tagNames, index)
-    local defaultTags = self.parent:getStyleDefaultTags():getTags(tagNames)
+    local defaultTags = self.parent:getDefaultTags():getTags(tagNames)
     return self:insertTags(defaultTags, index)
 end
 
@@ -1045,7 +1045,7 @@ function ASSLineTagSection:getEffectiveTags(includeDefault, includePrevious, cop
     -- previous and default tag lists
     local effTags
     if includeDefault then
-        effTags = self.parent:getStyleDefaultTags(nil, copyTags)
+        effTags = self.parent:getDefaultTags(nil, copyTags)
     end
     if includePrevious and self.prevSection then
         local prevTagList = self.prevSection:getEffectiveTags(false, true, copyTags)
@@ -1150,7 +1150,7 @@ function ASSTagList:diff(other, returnOnly, ignoreGlobalState) -- returnOnly not
         local global = tag.__tag.global and not ignoreGlobalState
         -- if this tag list contains a reset, we need to compare its local tags to the default values set by the reset 
         -- instead of to the values of the other tag list
-        local cmp = (self.reset and global) and self.contentRef:getStyleDefaultTags(self.reset) or other
+        local cmp = (self.reset and global) and self.contentRef:getDefaultTags(self.reset) or other
         -- since global tags can't be overwritten, assume global tags that are also present in the other tag list as equal
         if not tag:equal(cmp.tags[name]) and not (global and other.tags[name]) then
             if returnOnly then diff.tags[name] = tag end
