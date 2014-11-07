@@ -794,6 +794,7 @@ function ASSLineTextSection:getString(coerce)
     else return self:typeCheck(self.value) end
 end
 
+
 function ASSLineTextSection:getEffectiveTags(includeDefault, includePrevious, copyTags)
     includePrevious, copyTags = default(includePrevious, true), true
     -- previous and default tag lists
@@ -801,10 +802,12 @@ function ASSLineTextSection:getEffectiveTags(includeDefault, includePrevious, co
     if includeDefault then
         effTags = self.parent:getDefaultTags(nil, copyTags)
     end
+
     if includePrevious and self.prevSection then
         local prevTagList = self.prevSection:getEffectiveTags(false, true, copyTags)
-        effTags = includeDefault and effTags:merge(prevTagList, false) or prevTagList
+        effTags = includeDefault and effTags:merge(prevTagList, false, false, true) or prevTagList
     end
+    
     return effTags or ASSTagList(nil, self.parent)
 end
 
@@ -817,29 +820,40 @@ function ASSLineTextSection:getTextExtents(coerce)
 end
 
 function ASSLineTextSection:getMetrics(includeTypeBounds, coerce)
-    local fontObj = self:getYutilsFont()
+    local fontObj, tagList, shape = self:getYutilsFont()
     local metrics = table.merge(fontObj.metrics(),fontObj.text_extents(self.value))
 
     if includeTypeBounds then
-        metrics.typeBounds = {YUtils.shape.bounding(fontObj.text_to_shape(self.value))}
+        shape = fontObj.text_to_shape(self.value)
+        metrics.typeBounds = {YUtils.shape.bounding(shape)}
         metrics.typeBounds.width = (metrics.typeBounds[3] or 0)-(metrics.typeBounds[1] or 0)
         metrics.typeBounds.height = (metrics.typeBounds[4] or 0)-(metrics.typeBounds[2] or 0)
     end
 
-    return metrics
+    return metrics, tagList, shape
 end
 
 function ASSLineTextSection:getShape(applyRotation, coerce)
     applyRotation = default(applyRotation, false)
-    local shape, tagList = self:getYutilsFont()
-    shape = ASSDrawing(shape.text_to_shape(self.value))
+    local metrics, tagList, shape = self:getMetrics(true)
+    local drawing = ASSDrawing(shape)
+ 
+    -- fix position based on aligment:
+    -- the vertical aligment is anchored in respect to baseline/ascender for type
+    -- and between the point of origin (top left) and the absolute height for drawings
+    if tagList.tags.align:isBottom() then
+        drawing:sub(0, metrics.height - metrics.typeBounds.height)
+    elseif tagList.tags.align:isCenterV() then
+        drawing:sub(0,(metrics.height - metrics.typeBounds.height)/2)
+    end
+    -- TODO: horizontal
 
     -- rotate shape
     if applyRotation then
         local angle = tagList.tags.angle:getTagParams(coerce)
-        shape:rotate(angle)
+        drawing:rotate(angle)
     end
-    return shape
+    return drawing
 end
 
 function ASSLineTextSection:convertToDrawing(applyRotation, coerce)
@@ -1049,7 +1063,7 @@ function ASSLineTagSection:getEffectiveTags(includeDefault, includePrevious, cop
     end
     if includePrevious and self.prevSection then
         local prevTagList = self.prevSection:getEffectiveTags(false, true, copyTags)
-        effTags = includeDefault and effTags:merge(prevTagList, false) or prevTagList
+        effTags = includeDefault and effTags:merge(prevTagList, false, false, true) or prevTagList
     end
     -- tag list of this section
     local tagList = copyTags and ASSTagList(self):copy() or ASSTagList(self)
