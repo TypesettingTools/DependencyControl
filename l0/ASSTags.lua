@@ -1531,6 +1531,24 @@ function ASSAlign:centerV()
     elseif self.value>=7 then self:down() end
 end
 
+function ASSAlign:centerH()
+    if self.value%3==1 then self:right()
+    elseif self.value%3==0 then self:left() end
+end
+
+function ASSAlign:isTop()
+    return self.value >= 7
+end
+
+function ASSAlign:isCenterV()
+    return self.value>3 and self.value<7
+end
+
+function ASSAlign:isBottom()
+    return self.value <= 3
+end
+
+
 ASSWeight = createASSClass("ASSWeight", ASSTagBase, {"weightClass","bold"}, {ASSNumber,ASSToggle})
 function ASSWeight:new(val, tagProps)
     if type(val) == "table" then
