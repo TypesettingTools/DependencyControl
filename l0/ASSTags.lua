@@ -838,9 +838,7 @@ function ASSLineTextSection:getShape(applyRotation, coerce)
     local metrics, tagList, shape = self:getMetrics(true)
     local drawing = ASSDrawing(shape)
  
-    -- fix position based on aligment:
-    -- the vertical aligment is anchored in respect to baseline/ascender for type
-    -- and between the point of origin (top left) and the absolute height for drawings
+    -- fix position based on aligment
     if tagList.tags.align:isBottom() then
         drawing:sub(0, metrics.height - metrics.typeBounds.height)
     elseif tagList.tags.align:isCenterV() then
