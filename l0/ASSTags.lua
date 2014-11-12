@@ -835,16 +835,12 @@ end
 
 function ASSLineTextSection:getShape(applyRotation, coerce)
     applyRotation = default(applyRotation, false)
-    local metrics, tagList, shape = self:getMetrics(true)
-    local drawing = ASSDrawing(shape)
- 
+    local metr, tagList, shape = self:getMetrics(true)
+    local drawing, an = ASSDrawing(shape), tagList.tags.align:getSet()
     -- fix position based on aligment
-    if tagList.tags.align:isBottom() then
-        drawing:sub(0, metrics.height - metrics.typeBounds.height)
-    elseif tagList.tags.align:isCenterV() then
-        drawing:sub(0,(metrics.height - metrics.typeBounds.height)/2)
-    end
-    -- TODO: horizontal
+        drawing:sub(not an.left and (metr.width-metr.typeBounds.width)   / (an.centerH and 2 or 1) or 0,
+                    not an.top  and (metr.height-metr.typeBounds.height) / (an.centerV and 2 or 1) or 0
+        )
 
     -- rotate shape
     if applyRotation then
@@ -1548,18 +1544,19 @@ function ASSAlign:centerH()
     elseif self.value%3==0 then self:left() end
 end
 
-function ASSAlign:isTop()
-    return self.value >= 7
+function ASSAlign:getSet(pos)
+    local val = self.value
+    local set = { top = val>=7, centerV = val>3 and val<7, bottom = val<=3,
+                  left = val%3==1, centerH = val%3==2, right = val%3==0 }
+    return pos==nil and set or set[pos]
 end
 
-function ASSAlign:isCenterV()
-    return self.value>3 and self.value<7
-end
-
-function ASSAlign:isBottom()
-    return self.value <= 3
-end
-
+function ASSAlign:isTop() return self:getSet("top") end
+function ASSAlign:isCenterV() return self:getSet("centerV") end
+function ASSAlign:isBottom() return self:getSet("bottom") end
+function ASSAlign:isLeft() return self:getSet("left") end
+function ASSAlign:isCenterH() return self:getSet("centerH") end
+function ASSAlign:isRight() return self:getSet("right") end
 
 ASSWeight = createASSClass("ASSWeight", ASSTagBase, {"weightClass","bold"}, {ASSNumber,ASSToggle})
 function ASSWeight:new(val, tagProps)
