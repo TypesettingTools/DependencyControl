@@ -169,7 +169,7 @@ end
 table.pluck = function(tbl, prop)
     local plucked = {}
     for i=1,#tbl do
-        plucked[i] = tbl[prop]
+        plucked[i] = tbl[i][prop]
     end
     return plucked
 end
