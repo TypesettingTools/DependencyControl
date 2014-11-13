@@ -174,6 +174,14 @@ table.merge = function(...)
     return tbl
 end
 
+table.mergeInto = function(target, ...)
+    local sources = {...}
+    for i=1,#sources do
+        for key, val in pairs(souces[i]) do target[key] = val end
+    end
+    return target
+end
+
 table.pluck = function(tbl, prop)
     local plucked = {}
     for i=1,#tbl do
