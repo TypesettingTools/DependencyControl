@@ -85,13 +85,14 @@ end
 
 table.intersect = function(...)
     local tbls = {...}
-    local intersection = tbls[1]
+    local intersection, j = tbls[1], 0
     for i=2,#tbls do
         for key,val in pairs(intersection) do
             intersection[key] = val==tbls[i][key] and val or nil
+            j=j+1
         end
     end
-    return intersection
+    return intersection, j
 end
 
 table.length = function(tbl) -- currently unused
