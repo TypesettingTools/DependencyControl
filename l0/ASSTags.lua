@@ -7,14 +7,16 @@ local Line = require("a-mo.Line")
 local Log = require("a-mo.Log")
 local ASSInspector = require("ASSInspector.Inspector")
 
-function createASSClass(typeName,baseClass,order,types,tagProps)
-  local cls, baseClass = {}, baseClass or {}
+function createASSClass(typeName, baseClass, order, types, tagProps, compatibleClasses)
+  baseClass, compatibleClasses = baseClass or {}, compatibleClasses or {}
+  local cls = {}
   for key, val in pairs(baseClass) do
     cls[key] = val
   end
 
   cls.__index = cls
-  cls.instanceOf = {[cls] = true}
+  cls.instanceOf = table.arrayToSet(compatibleClasses)
+  cls.instanceOf[cls] = true
   cls.typeName = typeName
   cls.__meta__ = { 
        order = order,
@@ -86,32 +88,32 @@ end
 function ASSBase:getArgs(args, defaults, coerce, extraValidClasses)
     -- TODO: make getArgs automatically create objects
     assert(type(args)=="table", "Error: first argument to getArgs must be a table of packed arguments, got " .. type(args) ..".\n")
-    -- check if first arg is a compatible ASSClass and dump into args 
-    if #args == 1 and type(args[1]) == "table" and args[1].typeName then
-        local res, selfClasses = false, table.keys(self.instanceOf)
-        if extraValidClasses then
-            table.joinInto(selfClasses, extraValidClasses)
+    local propTypes, propNames, j, outArgs = self.__meta__.types, self.__meta__.order, 1, {}
+
+    -- check if first and only arg is a compatible ASSClass and dump into args 
+    if #args == 1 and type(args[1]) == "table" and args[1].instanceOf then
+        local selfClasses = extraValidClasses and table.merge(self.instanceOf, extraValidClasses) or self.instanceOf
+        local _, clsMatchCnt = table.intersect(selfClasses, args[1].instanceOf)
+        if clsMatchCnt>0 then
+            args = {args[1]:get()}
+        else assert(type(propTypes[1]) == "table" and propTypes[1].instanceOf, 
+                    string.format("Error: object of class %s does not accept instances of class %s as argument.\n", self.typeName, args[1].typeName)
+             ) 
         end
-        for i=1,#selfClasses do
-            res = args[1].instanceOf[selfClasses[i]] and true or res
-        end
-        assert(res, string.format("%s does not accept instances of class %s as argument.\n", self.typeName, args[1].typeName))
-        args = {args[1]:get()}
     end
 
-    local valTypes, j, outArgs = self.__meta__.types, 1, {}
-    for i=1,#self.__meta__.order do
-        if ASS.instanceOf(valTypes[i]) then
-            local subCnt = #valTypes[i].__meta__.order
+    for i=1,#propNames do
+        if ASS.instanceOf(propTypes[i]) then
+            local subCnt = #propTypes[i].__meta__.order
             local defSlice = type(defaults)=="table" and table.sliceArray(defaults,j,j+subCnt-1) or defaults
-            local argSlice = table.sliceArray(args,j,j+subCnt-1)
-            outArgs = table.join(outArgs, {valTypes[i]:getArgs(argSlice, defSlice, coerce)})
-            j=j+subCnt-1
+            local argSlice = ASS.instanceOf(args[j]) and {args[j]} or table.sliceArray(args,j,j+subCnt-1)
+            outArgs = table.join(outArgs, {propTypes[i]:getArgs(argSlice, defSlice, coerce)})
+            j = j + #argSlice - 1
         elseif args[j]==nil then
             -- write defaults
             outArgs[i] = type(defaults)=="table" and defaults[j] or defaults
-        elseif coerce and type(args[j])~=valTypes[i] then -- TODO: check if gaps in arrays break with unpack                 
-            outArgs[i] = self:coerce(args[j], valTypes[i])
+        elseif coerce and type(args[j])~=propTypes[i] then -- TODO: check if gaps in arrays break with unpack                 
+            outArgs[i] = self:coerce(args[j], propTypes[i])
         else outArgs[i]=args[j] end
         j=j+1
     end
@@ -1021,7 +1023,7 @@ function ASSLineTagSection:insertTags(tags, index)
 
         local tagData = ASS.tagMap[tags[i].__tag.name]
         if not tagData then
-            error(string.format("Error: can't insert tag #%d of type %s: no with name '%s'.", i, tags[i].typeName, tags[i].__tag.name))
+            error(string.format("Error: can't insert tag #%d of type %s: no tag with name '%s'.", i, tags[i].typeName, tags[i].__tag.name))
         elseif cls ~= tagData.type then
             error(string.format("Error: can't insert tag #%d with name '%s': expected type was %s, got %s.", 
                                 i, tags[i].__tag.name, tagData.type.typeName, tags[i].typeName)
@@ -1331,32 +1333,22 @@ function ASSNumber:getTagParams(coerce, precision)
 end
 
 
-ASSPosition = createASSClass("ASSPosition", ASSTagBase, {"x","y"}, {"number", "number"})
-function ASSPosition:new(valx, valy, tagProps)
+ASSPoint = createASSClass("ASSPoint", ASSTagBase, {"x","y"}, {ASSNumber, ASSNumber})
+function ASSPoint:new(valx, valy, tagProps)
     if type(valx) == "table" then
         tagProps = valy
         valx, valy = self:getArgs(valx,0,true)
     end
     self:readProps(tagProps)
-    self:typeCheck(valx, valy)
-    self.x, self.y = valx, valy
+    self.x, self.y = ASSNumber(valx), ASSNumber(valy)
     return self
 end
 
-
-function ASSPosition:getTagParams(coerce, precision)
-    local x,y = self.x, self.y
-    if coerce then
-        x,y = self:coerceNumber(x,0), self:coerceNumber(y,0)
-    else 
-        self:checkType("number", x, y)
-    end
-    precision = precision or 3
-    local x = math.round(x,precision)
-    local y = math.round(y,precision)
-    return x, y
+function ASSPoint:getTagParams(coerce, precision)
+    return self.x:getTagParams(coerce, precision), self.y:getTagParams(coerce, precision)
 end
--- TODO: ASSPosition:move(ASSPosition) -> return \move tag
+
+-- TODO: ASSPosition:move(ASSPoint) -> return \move tag
 
 ASSTime = createASSClass("ASSTime", ASSNumber, {"value"}, {"number"}, {precision=0})
 -- TODO: implement adding by framecount
@@ -1444,7 +1436,7 @@ end
 
 ASSMove = createASSClass("ASSMove", ASSTagBase,
     {"startPos", "endPos", "startTime", "endTime"},
-    {ASSPosition,ASSPosition,ASSTime,ASSTime}
+    {ASSPoint,ASSPoint,ASSTime,ASSTime}
 )
 function ASSMove:new(startPosX,startPosY,endPosX,endPosY,startTime,endTime,tagProps)
     if type(startPosX) == "table" then
@@ -1459,8 +1451,8 @@ function ASSMove:new(startPosX,startPosY,endPosX,endPosY,startTime,endTime,tagPr
         self.__tag.name = "move_simple"
     else self.__tag.simple = false end
 
-    self.startPos = ASSPosition(startPosX,startPosY)
-    self.endPos = ASSPosition(endPosX,endPosY)
+    self.startPos = ASSPoint(startPosX,startPosY)
+    self.endPos = ASSPoint(endPosX,endPosY)
     self.startTime = ASSTime(startTime)
     self.endTime = ASSTime(endTime)
     return self
@@ -1654,7 +1646,7 @@ function ASSClip:new(arg1,arg2,arg3,arg4,tagProps)
     else error("Invalid argumets to ASSClip") end
 end
 
-ASSClipRect = createASSClass("ASSClipRect", ASSTagBase, {"topLeft", "bottomRight"}, {ASSPosition, ASSPosition})
+ASSClipRect = createASSClass("ASSClipRect", ASSTagBase, {"topLeft", "bottomRight"}, {ASSPoint, ASSPoint})
 
 function ASSClipRect:new(left,top,right,bottom,tagProps)
     if type(left) == "table" then
@@ -1662,8 +1654,8 @@ function ASSClipRect:new(left,top,right,bottom,tagProps)
         left,top,right,bottom = self:getArgs(left, nil, true)
     end
     self:readProps(tagProps)
-    self.topLeft = ASSPosition(left,top)
-    self.bottomRight = ASSPosition(right,bottom)
+    self.topLeft = ASSPoint(left,top)
+    self.bottomRight = ASSPoint(right,bottom)
     self:setInverse(self.__tag.inverse or false)
     return self
 end
@@ -1709,7 +1701,7 @@ function ASSDrawing:new(cmds, scale, tagProps)
                 self.commands[#self.commands+1], i = ASSDrawClose({},self), i+1
             elseif cmdMap[cmdParts[i]] then
                 cmdType = cmdParts[i]
-                prmCnt, i = #cmdMap[cmdType].__meta__.order, i+1
+                prmCnt, i = #cmdMap[cmdType].__meta__.order*2, i+1
             else 
                 self.commands[#self.commands+1] = cmdMap[cmdType](table.sliceArray(cmdParts,i,i+prmCnt-1),self)
                 i=i+prmCnt
@@ -1742,6 +1734,9 @@ function ASSDrawing:getTagParams(coerce)
 end
 
 function ASSDrawing:commonOp(method, callback, default, x, y) -- drawing commands only have x and y in common
+    if ASS.instanceOf(x, ASSPoint) then
+        x, y = x:get()
+    end
     local res = {}
     for i=1,#self.commands do
         local subCnt = #self.commands[i].__meta__.order
@@ -1870,6 +1865,7 @@ function ASSLineDrawingSection:getBounds(coerce)
     return bounds
 end
 
+
 --------------------- Unsupported Tag Classes and Stubs ---------------------
 
 ASSUnknown = createASSClass("ASSUnknown", ASSTagBase, {"value"}, {"string"})
@@ -1898,11 +1894,12 @@ function ASSDrawBase:new(...)
         self.parent = args[2]
         args = {self:getArgs(args[1], nil, true)}
     end
-    for i=1,#args do
-        if i>#self.__meta__.order then
+    for i=1,#args,2 do
+        if i/2>#self.__meta__.order then
             self.parent = args[i]
         else
-            self[self.__meta__.order[i]] = self.__meta__.types[i](args[i]) 
+            local j = (i+1)/2
+            self[self.__meta__.order[j]] = self.__meta__.types[j](args[i],args[i+1]) 
         end
     end
     return self
@@ -1910,9 +1907,10 @@ end
 
 function ASSDrawBase:getTagParams(coerce)
     local params, parts = self.__meta__.order, {}
-    for i=1,#params do
-        parts[i] = tostring(self[params[i]]:getTagParams(coerce))
+    for i=0,#params*2,2 do
+        parts[i+1], parts[i+2] = tostring(self[params[i/2]]:getTagParams(coerce))
     end
+    --opt
     return self.__tag.name .. " " .. table.concat(parts)
 end
 
@@ -1920,11 +1918,11 @@ function ASSDrawBase:getLength(prevCmd)
     -- get end coordinates (cursor) of previous command
     local x0, y0 = 0, 0
     if prevCmd and prevCmd.__tag.name == "b" then
-        x0, y0 = prevCmd.x3:get(), prevCmd.y3:get()
-    elseif prevCmd then x0, y0 = prevCmd.x:get(), prevCmd.y:get() end
+        x0, y0 = prevCmd.p3:get()
+    elseif prevCmd then x0, y0 = prevCmd:get() end
 
     -- save cursor for further processing
-    self.cursor = ASSPosition(x0,y0)
+    self.cursor = ASSPoint(x0,y0)
 
     local name, len = self.__tag.name, 0
     if name == "b" then
@@ -1933,7 +1931,8 @@ function ASSDrawBase:getLength(prevCmd)
         len = self.flattened:getLength()
     elseif name =="m" or name == "n" then len=0
     elseif name =="l" then
-        len = YUtils.math.distance(self.x:get()-x0, self.y:get()-y0)
+        local x, y = self:get()
+        len = YUtils.math.distance(x-x0, y-y0)
     end
     -- save length for further processing
     self.length = len
@@ -1944,24 +1943,23 @@ function ASSDrawBase:getPositionAtLength(len, noUpdate, useCurveTime)
     if not (self.length and self.cursor and noUpdate) then self.parent:getLength() end
     local name, pos = self.__tag.name
     if name == "b" and useCurveTime then
-        local px, py = YUtils.math.bezier(math.min(len/self.length,1), {{self.cursor:get()},{x1,y1},{x2,y2},{x3,y3}})
-        pos = ASSPosition(px, py)
+        local px, py = YUtils.math.bezier(math.min(len/self.length,1), {{self.cursor:get()},{self.p1:get()},{self.p2:get()},{self.p3:get()}})
+        pos = ASSPoint(px, py)
     elseif name == "b" then
-        local x1,y1,x2,y2,x3,y3 = self:get()
         pos = self:getFlattened(true):getPositionAtLength(len, true)   -- we already know this data is up-to-date because self.parent:getLength() was run
     elseif name == "l" then
-        pos = ASSPosition(self:copy():ScaleToLength(len,true))
+        pos = ASSPoint(self:copy():ScaleToLength(len,true))
     elseif name == "m" then
-        pos = ASSPosition(self:get())
+        pos = ASSPoint(self)
     end
     pos.__tag.name = "position"
     return pos
 end
 
-ASSDrawMove = createASSClass("ASSDrawMove", ASSDrawBase, {"x","y"}, {ASSNumber, ASSNumber}, {name="m"})
-ASSDrawMoveNc = createASSClass("ASSDrawMoveNc", ASSDrawBase, {"x","y"}, {ASSNumber, ASSNumber}, {name="n"})
-ASSDrawLine = createASSClass("ASSDrawLine", ASSDrawBase, {"x","y"}, {ASSNumber, ASSNumber}, {name="l"})
-ASSDrawBezier = createASSClass("ASSDrawBezier", ASSDrawBase, {"x1","y1","x2","y2","x3","y3"}, {ASSNumber, ASSNumber, ASSNumber, ASSNumber, ASSNumber, ASSNumber}, {name="b"})
+ASSDrawMove = createASSClass("ASSDrawMove", ASSDrawBase, {"value"}, {ASSPoint}, {name="m"})
+ASSDrawMoveNc = createASSClass("ASSDrawMoveNc", ASSDrawBase, {"value"}, {ASSPoint}, {name="n"})
+ASSDrawLine = createASSClass("ASSDrawLine", ASSDrawBase, {"value"}, {ASSPoint}, {name="l"})
+ASSDrawBezier = createASSClass("ASSDrawBezier", ASSDrawBase, {"p1","p2","p3"}, {ASSPoint, ASSPoint, ASSPoint}, {name="b"})
 ASSDrawClose = createASSClass("ASSDrawClose", ASSDrawBase, {}, {}, {name="c"})
 --- TODO: b-spline support
 
@@ -1969,7 +1967,7 @@ function ASSDrawLine:ScaleToLength(len,noUpdate)
     if not (self.length and self.cursor and noUpdate) then self.parent:getLength() end
     local scaled = self.cursor:copy()
     scaled:add(YUtils.math.stretch(returnAll(
-        {ASSPosition(self:get()):sub(self.cursor)},
+        {ASSPoint(self):sub(self.cursor)},
         {0, len})
     ))
     self:set(scaled:get())
@@ -1981,13 +1979,13 @@ function ASSDrawLine:getAngle(ref, noUpdate)
     ref = ref or self.cursor:copy()
     assert(type(ref)=="table", "Error: argument ref to getAngle() must be of type table, got " .. type(ref) .. ".\n")
     if ref.instanceOf[ASSDrawBezier] then
-        ref = ASSPosition(ref.x3, ref.y3)
+        ref = ASSPoint(ref.p3)
     elseif not ref.instanceOf then
-        ref = ASSPosition(ref[1], ref[2])
-    elseif not ref.instanceOf[ASSPosition] and ref.baseClass~=ASSDrawBase then
-        error("Error: argument ref to getAngle() must either be an ASSDraw object, an ASSPosition or a table containing coordinates x and y.\n")
+        ref = ASSPoint(ref[1], ref[2])
+    elseif not ref.instanceOf[ASSPoint] and ref.baseClass~=ASSDrawBase then
+        error("Error: argument ref to getAngle() must either be an ASSDraw object, an ASSPoint or a table containing coordinates x and y.\n")
     end
-    local dx,dy = ASSPosition(self:get()):sub(ref)
+    local dx,dy = ASSPoint(self):sub(ref)
     return (360 - math.deg(math.atan2(dy,dx))) %360
 end
 
@@ -2072,12 +2070,12 @@ function ASSFoundation:new()
         k_sweep = {overrideName="\\kf", type=ASSDuration, props={scale=10}, pattern="\\kf([%d]+)", format="\\kf%d", default=0},
         k_sweep_alt = {overrideName="\\K", type=ASSDuration, props={scale=10}, pattern="\\K([%d]+)", format="\\K%d", default=0},
         k_bord = {overrideName="\\ko", type=ASSDuration, props={scale=10}, pattern="\\ko([%d]+)", format="\\ko%d", default=0},
-        position = {overrideName="\\pos", type=ASSPosition, pattern="\\pos%(([%-%d%.]+),([%-%d%.]+)%)", format="\\pos(%.2N,%.2N)", global=true},
+        position = {overrideName="\\pos", type=ASSPoint, pattern="\\pos%(([%-%d%.]+),([%-%d%.]+)%)", format="\\pos(%.2N,%.2N)", global=true},
         move_simple = {overrideName="\\move", friendlyName="\\move (Simple)", type=ASSMove, props={simple=true}, global=true, 
                        pattern="\\move%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+)%)", format="\\move(%.2N,%.2N,%.2N,%.2N)"},
         move = {overrideName="\\move", type=ASSMove, friendlyName="\\move (w/ Time)", global=true, 
                 pattern="\\move%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),(%d+),(%d+)%)", format="\\move(%.2N,%.2N,%.2N,%.2N,%.2N,%.2N)"},
-        origin = {overrideName="\\org", type=ASSPosition, pattern="\\org%(([%-%d%.]+),([%-%d%.]+)%)", format="\\org(%.2N,%.2N)", global=true},
+        origin = {overrideName="\\org", type=ASSPoint, pattern="\\org%(([%-%d%.]+),([%-%d%.]+)%)", format="\\org(%.2N,%.2N)", global=true},
         wrapstyle = {overrideName="\\q", type=ASSWrapStyle, pattern="\\q(%d)", format="\\q%d", default=0, global=true},
         fade_simple = {overrideName="\\fad", type=ASSFade, props={simple=true}, pattern="\\fad%((%d+),(%d+)%)",
                        format="\\fad(%d,%d)", default={0,0}, global=true},
