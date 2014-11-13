@@ -53,6 +53,14 @@ string.toNumbers = function(base, ...)
     return unpack(numbers)
 end
 
+table.arrayToSet = function(tbl)
+    local set = {}
+    for i=1,#tbl do
+        set[tbl[i]] = true
+    end
+    return set
+end
+
 -- difference, union and intersection for hashtables (comparison is done on key-val pair)
 table.diff = function(left, right, preferLeft)
     local diff={}
