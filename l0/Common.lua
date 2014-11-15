@@ -177,7 +177,7 @@ end
 table.mergeInto = function(target, ...)
     local sources = {...}
     for i=1,#sources do
-        for key, val in pairs(souces[i]) do target[key] = val end
+        for key, val in pairs(sources[i]) do target[key] = val end
     end
     return target
 end
