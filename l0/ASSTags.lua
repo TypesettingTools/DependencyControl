@@ -178,7 +178,7 @@ function ASSBase:get()
     for i=1,#names do
         if ASS.instanceOf(self[names[i]]) then
             for j,subVal in pairs({self[names[i]]:get()}) do 
-                vals[j+valCnt-1], valCnt = subVal, valCnt+1
+                vals[valCnt], valCnt = subVal, valCnt+1
             end
         else 
             vals[valCnt], valCnt = self[names[i]], valCnt+1
