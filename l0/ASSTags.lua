@@ -1682,16 +1682,19 @@ function ASSDrawing:new(args)
     -- construct from a single string of drawing commands
     elseif args.raw then
         self.scale = ASS:createTag("drawing", args.scale or 1)
-        local cmdParts, cmdType, prmCnt, i = args.raw:split(" "), "", 0, 1
+        local cmdParts, cmdType, prmCnt, i, j = args.raw:split(" "), "", 0, 1, 1
         while i<=#cmdParts do
             if cmdMap[cmdParts[i]]==ASSDrawClose then
-                self.commands[#self.commands+1], i = ASSDrawClose({},self), i+1
+                self.commands[j] = ASSDrawClose()
+                self.commands[j].parent, i, j = self, i+1, j+1
             elseif cmdMap[cmdParts[i]] then
                 cmdType = cmdParts[i]
                 prmCnt, i = #cmdMap[cmdType].__meta__.order*2, i+1
-            else 
-                self.commands[#self.commands+1] = cmdMap[cmdType](table.sliceArray(cmdParts,i,i+prmCnt-1),self)
-                i=i+prmCnt
+            else
+                local prms = table.sliceArray(cmdParts,i,i+prmCnt-1)
+                self.commands[j] = cmdMap[cmdType](unpack(prms))
+                self.commands[j].parent = self
+                i, j = i+prmCnt, j+1
             end
         end
     else
@@ -1881,29 +1884,22 @@ ASSTransform = createASSClass("ASSTransform", ASSUnknown, {"value"}, {"string"})
 ASSDrawBase = createASSClass("ASSDrawBase", ASSTagBase, {}, {})
 function ASSDrawBase:new(...)
     local args = {...}
-    -- TODO: get rid of special handling
-    if type(args[1]) == "table" then
-        self.parent = args[2]
-        args = {self:getArgs(args[1], nil, true)}
-    end
+    args = {self:getArgs(args, 0, true)}
+
     for i=1,#args,2 do
-        if i/2>#self.__meta__.order then
-            self.parent = args[i]
-        else
-            local j = (i+1)/2
-            self[self.__meta__.order[j]] = self.__meta__.types[j]{args[i],args[i+1]}
-        end
+        local j = (i+1)/2
+        self[self.__meta__.order[j]] = self.__meta__.types[j]{args[i],args[i+1]}
     end
     return self
 end
 
 function ASSDrawBase:getTagParams(coerce)
     local params, parts = self.__meta__.order, {}
-    for i=0,#params*2,2 do
-        parts[i+1], parts[i+2] = tostring(self[params[i/2]]:getTagParams(coerce))
+    for i=2,#params*2,2 do
+        parts[i], parts[i+1] = self[params[i/2]]:getTagParams(coerce)
     end
-    -- TODO: opt
-    return self.__tag.name .. " " .. table.concat(parts)
+    parts[1] = self.__tag.name
+    return table.concat(parts, " ")
 end
 
 function ASSDrawBase:getLength(prevCmd) 
