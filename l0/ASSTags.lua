@@ -7,31 +7,43 @@ local Line = require("a-mo.Line")
 local Log = require("a-mo.Log")
 local ASSInspector = require("ASSInspector.Inspector")
 
-function createASSClass(typeName, baseClass, order, types, tagProps, compatibleClasses)
-  baseClass, compatibleClasses = baseClass or {}, compatibleClasses or {}
-  local cls = {}
-  for key, val in pairs(baseClass) do
-    cls[key] = val
-  end
+function createASSClass(typeName, baseClasses, order, types, tagProps, compatibleClasses)
+    if not baseClasses or baseClasses.instanceOf then
+        baseClasses = {baseClasses}
+    end
+    compatibleClasses = compatibleClasses or {}
+    local cls = {}
+    cls.baseClasses = {}
+    for i=1,#baseClasses do
+        for key, val in pairs(baseClasses[i]) do
+            cls[key] = val
+        end
+        cls.baseClasses[baseClasses[i]] = true
+    end
 
-  cls.__index = cls
-  cls.instanceOf = table.arrayToSet(compatibleClasses)
-  cls.instanceOf[cls] = true
-  cls.typeName = typeName
-  cls.__meta__ = { 
-       order = order,
-       types = types
-  }
-  cls.__defProps = table.merge(cls.__defProps or {},tagProps or {})
-  cls.baseClass=baseClass
+    cls.__index = cls
+    cls.instanceOf = {[cls] = true}
+    cls.typeName = typeName
+    cls.__meta__ = { 
+        order = order,
+        types = types
+    }
+    cls.__defProps = table.merge(cls.__defProps or {},tagProps or {})
 
-  setmetatable(cls, {
+    setmetatable(cls, {
     __call = function (cls, ...)
         local self = setmetatable({__tag = util.copy(cls.__defProps)}, cls)
         self = self:new(...)
         return self
     end})
-  return cls
+
+    -- compatible classes
+    cls.compatible = table.arrayToSet(compatibleClasses)
+    for i=1,#compatibleClasses do
+        compatibleClasses[i].instanceOf[cls] = true
+    end
+
+    return cls
 end
 
 --------------------- Base Class ---------------------
@@ -70,6 +82,7 @@ function ASSBase:coerceNumber(num, default)
 end
 
 function ASSBase:coerce(value, type_)
+    assert(type(value)~="table", "Error: can't cast a table to a " .. type_ ..".")
     local tagProps = self.__tag or self.__defProps
     if type(value) == type_ then
         return value
@@ -87,11 +100,14 @@ end
 
 function ASSBase:getArgs(args, defaults, coerce, extraValidClasses)
     -- TODO: make getArgs automatically create objects
-    assert(type(args)=="table", "Error: first argument to getArgs must be a table of packed arguments, got " .. type(args) ..".\n")
+    assert(type(args)=="table", "Error: first argument to getArgs must be a table of arguments, got a " .. type(args) ..".\n")
     local propTypes, propNames, j, outArgs = self.__meta__.types, self.__meta__.order, 1, {}
-
+    if not args then args={}
+    -- process "raw" property that holds all tag parameters when parsed from a string
+    elseif type(args.raw)=="table" then args=args.raw
+    elseif args.raw then args={args.raw}
     -- check if first and only arg is a compatible ASSClass and dump into args 
-    if #args == 1 and type(args[1]) == "table" and args[1].instanceOf then
+    elseif #args == 1 and type(args[1]) == "table" and args[1].instanceOf then
         local selfClasses = extraValidClasses and table.merge(self.instanceOf, extraValidClasses) or self.instanceOf
         local _, clsMatchCnt = table.intersect(selfClasses, args[1].instanceOf)
         if clsMatchCnt>0 then
@@ -112,12 +128,13 @@ function ASSBase:getArgs(args, defaults, coerce, extraValidClasses)
         elseif args[j]==nil then
             -- write defaults
             outArgs[i] = type(defaults)=="table" and defaults[j] or defaults
-        elseif coerce and type(args[j])~=propTypes[i] then -- TODO: check if gaps in arrays break with unpack                 
+        elseif coerce and type(args[j])~=propTypes[i] then               
             outArgs[i] = self:coerce(args[j], propTypes[i])
         else outArgs[i]=args[j] end
         j=j+1
     end
     --self:typeCheck(unpack(outArgs))
+
     return unpack(outArgs)
 end
 
@@ -193,7 +210,7 @@ function ASSLineContents:new(line,sections)
             if ovrStart then
                 if ovrStart>i then
                     local substr = line.text:sub(i,ovrStart-1)
-                    sections[j], j = drawingState.value==0 and ASSLineTextSection(substr) or ASSLineDrawingSection(substr,  drawingState), j+1
+                    sections[j], j = drawingState.value==0 and ASSLineTextSection(substr) or ASSLineDrawingSection{raw=substr, scale=drawingState}, j+1
                 end
                 sections[j] = ASSLineTagSection(line.text:sub(ovrStart+1,ovrEnd-1))
                 -- remove drawing tags from the tag sections so we don't have to keep state in sync with ASSLineDrawingSection
@@ -202,7 +219,7 @@ function ASSLineContents:new(line,sections)
                 i = ovrEnd +1
             else
                 local substr = line.text:sub(i)
-                sections[j] = drawingState.value==0 and ASSLineTextSection(substr) or ASSLineDrawingSection(substr, drawingState)
+                sections[j] = drawingState.value==0 and ASSLineTextSection(substr) or ASSLineDrawingSection{raw=substr, scale=drawingState}
                 break
             end
             j=j+1
@@ -657,14 +674,14 @@ function ASSLineContents:getDefaultTags(style, copyTags, useOvrAlign)    -- TODO
 
     local function styleRef(tag)
         if tag:find("alpha") then 
-            return {style[tag:gsub("alpha", "color")]:sub(3,4)}
+            return style[tag:gsub("alpha", "color")]:sub(3,4)
         elseif tag:find("color") then
-            return {style[tag]:sub(5,6),style[tag]:sub(7,8),style[tag]:sub(9,10)}
-        else return {style[tag]} end
+            return style[tag]:sub(5,6), style[tag]:sub(7,8), style[tag]:sub(9,10)
+        else return style[tag] end
     end
 
     local scriptInfo = util.getScriptInfo(self.line.parentCollection.sub)
-    local resX, resY = scriptInfo.PlayResX, scriptInfo.PlayResY
+    local resX, resY = tonumber(scriptInfo.PlayResX), tonumber(scriptInfo.PlayResY)
     self.line:extraMetrics()
 
     local styleDefaults = {
@@ -686,10 +703,10 @@ function ASSLineContents:getDefaultTags(style, copyTags, useOvrAlign)    -- TODO
         color2 = ASS:createTag("color2", styleRef("color2")),
         color3 = ASS:createTag("color3", styleRef("color3")),
         color4 = ASS:createTag("color4", styleRef("color4")),
-        clip_vect = ASS:createTag("clip_vect", {string.format("m 0 0 l %s 0 %s %s 0 %s 0 0",resX,resX,resY,resY)}),
-        iclip_vect = ASS:createTag("iclip_vect", {"m 0 0 l 0 0 0 0 0 0 0 0"}),
-        clip_rect = ASS:createTag("clip_rect", {0,0,resX,resY}),
-        iclip_rect = ASS:createTag("iclip_rect", {0,0,0,0}),
+        clip_vect = ASS:createTag("clip_vect", {ASSDrawMove(0,0), ASSDrawLine(resX,0), ASSDrawLine(resX,resY), ASSDrawLine(0,resY), ASSDrawLine(0,0)}),
+        iclip_vect = ASS:createTag("iclip_vect", {ASSDrawMove(0,0), ASSDrawLine(0,0), ASSDrawLine(0,0), ASSDrawLine(0,0), ASSDrawLine(0,0)}),
+        clip_rect = ASS:createTag("clip_rect", 0, 0, resX, resY),
+        iclip_rect = ASS:createTag("iclip_rect", 0, 0, 0, 0),
         bold = ASS:createTag("bold", styleRef("bold")),
         italic = ASS:createTag("italic", styleRef("italic")),
         underline = ASS:createTag("underline", styleRef("underline")),
@@ -698,12 +715,13 @@ function ASSLineContents:getDefaultTags(style, copyTags, useOvrAlign)    -- TODO
         fontsize = ASS:createTag("fontsize", styleRef("fontsize")),
         fontname = ASS:createTag("fontname", styleRef("fontname")),
         position = self:getPosition(style, align, true),
-        move_simple = ASS:createTag("move_simple", {self.line.xPosition, self.line.yPosition, self.line.xPosition, self.line.yPosition}),
-        move = ASS:createTag("move", {self.line.xPosition, self.line.yPosition, self.line.xPosition, self.line.yPosition}),
-        origin = ASS:createTag("origin", {self.line.xPosition, self.line.yPosition}),
+        -- TODO: fix these for alignment
+        move_simple = ASS:createTag("move_simple", self.line.xPosition, self.line.yPosition, self.line.xPosition, self.line.yPosition),
+        move = ASS:createTag("move", self.line.xPosition, self.line.yPosition, self.line.xPosition, self.line.yPosition),
+        origin = ASS:createTag("origin", self.line.xPosition, self.line.yPosition),
     }
     for name,tag in pairs(ASS.tagMap) do
-        if tag.default then styleDefaults[name] = tag.type(tag.default, tag.props) end
+        if tag.default then styleDefaults[name] = tag.type{raw=tag.default, tagProps=tag.props} end
     end
 
     local tagList = ASSTagList(styleDefaults, self)
@@ -838,7 +856,7 @@ end
 function ASSLineTextSection:getShape(applyRotation, coerce)
     applyRotation = default(applyRotation, false)
     local metr, tagList, shape = self:getMetrics(true)
-    local drawing, an = ASSDrawing(shape), tagList.tags.align:getSet()
+    local drawing, an = ASSDrawing{raw=shape}, tagList.tags.align:getSet()
     -- fix position based on aligment
         drawing:sub(not an.left and (metr.width-metr.typeBounds.width)   / (an.centerH and 2 or 1) or 0,
                     not an.top  and (metr.height-metr.typeBounds.height) / (an.centerV and 2 or 1) or 0
@@ -1307,9 +1325,9 @@ end
 
 ASSNumber = createASSClass("ASSNumber", ASSTagBase, {"value"}, {"number"}, {base=10, precision=3, scale=1})
 
-function ASSNumber:new(val, tagProps)
-    self:readProps(tagProps)
-    self.value = type(val)=="table" and self:getArgs(val,0,true) or val or 0
+function ASSNumber:new(args)
+    self:readProps(args.tagProps)
+    self.value = self:getArgs(args,0,true)
     self:typeCheck(self.value)
     if self.__tag.positive then self:checkPositive(self.value) end
     if self.__tag.range then self:checkRange(self.__tag.range[1], self.__tag.range[2], self.value) end
@@ -1334,13 +1352,10 @@ end
 
 
 ASSPoint = createASSClass("ASSPoint", ASSTagBase, {"x","y"}, {ASSNumber, ASSNumber})
-function ASSPoint:new(valx, valy, tagProps)
-    if type(valx) == "table" then
-        tagProps = valy
-        valx, valy = self:getArgs(valx,0,true)
-    end
-    self:readProps(tagProps)
-    self.x, self.y = ASSNumber(valx), ASSNumber(valy)
+function ASSPoint:new(args)
+    local x, y = self:getArgs(args,0,true)
+    self:readProps(args.tagProps)
+    self.x, self.y = ASSNumber{valx}, ASSNumber{valy}
     return self
 end
 
@@ -1372,13 +1387,10 @@ ASSDuration = createASSClass("ASSDuration", ASSTime, {"value"}, {"number"}, {pos
 ASSHex = createASSClass("ASSHex", ASSNumber, {"value"}, {"number"}, {range={0,255}, base=16, precision=0})
 
 ASSColor = createASSClass("ASSColor", ASSTagBase, {"r","g","b"}, {ASSHex,ASSHex,ASSHex})   
-function ASSColor:new(r,g,b, tagProps)
-    if type(r) == "table" then
-        tagProps = g
-        r,g,b = self:getArgs({r[3],r[2],r[1]},0,true)
-    end 
-    self:readProps(tagProps)
-    self.r, self.g, self.b = ASSHex(r), ASSHex(g), ASSHex(b)
+function ASSColor:new(args)
+    local b,g,r = self:getArgs(args,nil,true)
+    self:readProps(args.tagProps)
+    self.r, self.g, self.b = ASSHex{r}, ASSHex{g}, ASSHex{b}
     return self
 end
 
@@ -1396,25 +1408,22 @@ ASSFade = createASSClass("ASSFade", ASSTagBase,
     {"startDuration", "endDuration", "startTime", "endTime", "startAlpha", "midAlpha", "endAlpha"},
     {ASSDuration,ASSDuration,ASSTime,ASSTime,ASSHex,ASSHex,ASSHex}
 )
-function ASSFade:new(startDuration,endDuration,startTime,endTime,startAlpha,midAlpha,endAlpha,tagProps)
-    if type(startDuration) == "table" then
-        tagProps = endDuration or {}
-        prms={self:getArgs(startDuration,nil,true)}
-        if #prms == 2 then 
-            startDuration, endDuration = unpack(prms)
-            tagProps.simple = true
-        elseif #prms == 7 then
-            startDuration, endDuration, startTime, endTime = prms[5]-prms[4], prms[7]-prms[6], prms[4], prms[7] 
-        end
+function ASSFade:new(args)
+    if args.raw and #args.raw==7 then -- \fade
+        local a, num = args.raw, tonumber
+        a[1], a[2], a[3], a[4], a[5], a[6], a[7] = num(a[5])-num(a[4]), num(a[7])-num(a[6]), a[4], a[7], a[1], a[2], a[3]
     end 
-    self:readProps(tagProps)
+    startDuration, endDuration, startTime, endTime, startAlpha, midAlpha, endAlpha = self:getArgs(args,{0,0,0,0,255,0,255},true)
 
-    self.startDuration, self.endDuration = ASSDuration(startDuration), ASSDuration(endDuration)
-    self.startTime = self.__tag.simple and ASSTime(0) or ASSTime(startTime)
-    self.endTime = self.__tag.simple and nil or ASSTime(endTime)
-    self.startAlpha = self.__tag.simple and ASSHex(0) or ASSHex(startAlpha)
-    self.midAlpha = self.__tag.simple and ASSHex(255) or ASSHex(midAlpha)
-    self.endAlpha = self.__tag.simple and ASSHex(0) or ASSHex(endAlpha)
+    self:readProps(args.tagProps)
+    if self.__tag.simple == nil then
+        self.__tag.simple = self:setSimple(args.simple)
+    end
+
+    self.startDuration, self.endDuration = ASSDuration{startDuration}, ASSDuration{endDuration}
+    self.startTime, self.endTime = ASSTime{startTime}, ASSTime{endTime}
+    self.startAlpha, self.midAlpha, self.endAlpha = ASSHex{startAlpha}, ASSHex{midAlpha}, ASSHex{endAlpha}
+
     return self
 end
 
@@ -1434,27 +1443,32 @@ function ASSFade:getTagParams(coerce)
     end
 end
 
+function ASSFade:setSimple(state)
+    if state==nil then
+        state = self.startTime==0 and self.endTime==0 and self.startAlpha==255 and self.midAlpha==0 and self.endAlpha==255
+    end
+    self.__tag.simple, self.__tag.name = state, state and "fade_simple" or "fade"
+    return state
+end
+
 ASSMove = createASSClass("ASSMove", ASSTagBase,
     {"startPos", "endPos", "startTime", "endTime"},
     {ASSPoint,ASSPoint,ASSTime,ASSTime}
 )
-function ASSMove:new(startPosX,startPosY,endPosX,endPosY,startTime,endTime,tagProps)
-    if type(startPosX) == "table" then
-        tagProps = startPosY
-        startPosX,startPosY,endPosX,endPosY,startTime,endTime = self:getArgs(startPosX, nil, true)
-    end
-    self:readProps(tagProps)
-    assert((startTime==endTime and self.__tag.simple~=false) or (startTime and endTime), "Error: creating a complex move requires both start and end time.\n")
-    
-    if startTime==nil or endTime==nil or (startTime==0 and endTime==0) then
-        self.__tag.simple = true
-        self.__tag.name = "move_simple"
-    else self.__tag.simple = false end
+function ASSMove:new(args)
+    local startX, startY, endX, endY, startTime, endTime = self:getArgs(args, 0, true)
 
-    self.startPos = ASSPoint(startPosX,startPosY)
-    self.endPos = ASSPoint(endPosX,endPosY)
-    self.startTime = ASSTime(startTime)
-    self.endTime = ASSTime(endTime)
+    assert(startTime<=endTime, string.format("Error: argument #4 (endTime) to %s may not be smaller than argument #3 (starTime), got %d>=%d.", 
+                                             self.typeName, endTime, startTime)
+    )
+
+    if self.__tag.simple == nil then
+        self.__tag.simple = self:setSimple(args.simple)
+    end
+    self:readProps(args.tagProps)
+
+    self.startPos, self.endPos = ASSPoint{startX, startY}, ASSPoint{endX, endY}
+    self.startTime, self.endTime = ASSTime{startTime}, ASSTime{endTime}
     return self
 end
 
@@ -1471,14 +1485,18 @@ function ASSMove:getTagParams(coerce)
     end
 end
 
-ASSToggle = createASSClass("ASSToggle", ASSTagBase, {"value"}, {"boolean"})
-function ASSToggle:new(val, tagProps)
-    self:readProps(tagProps)
-    if type(val) == "table" then
-        self.value = self:getArgs(val,false,true)
-    else 
-        self.value = val or false 
+function ASSMove:setSimple(state)
+    if state==nil then
+        state = self.startTime==0 and self.endTime==0
     end
+    self.__tag.simple, self.__tag.name = state, state and "move_simple" or "move"
+    return state
+end
+
+ASSToggle = createASSClass("ASSToggle", ASSTagBase, {"value"}, {"boolean"})
+function ASSToggle:new(args)
+    self.value = self:getArgs(args,false,true)
+    self:readProps(args.tagProps)
     self:typeCheck(self.value)
     return self
 end
@@ -1551,18 +1569,15 @@ function ASSAlign:isCenterH() return self:getSet("centerH") end
 function ASSAlign:isRight() return self:getSet("right") end
 
 ASSWeight = createASSClass("ASSWeight", ASSTagBase, {"weightClass","bold"}, {ASSNumber,ASSToggle})
-function ASSWeight:new(val, tagProps)
-    if type(val) == "table" then
-        val = self:getArgs(val,0,true)
-        self.bold = (val==1 and true) or (val==0 and false)
-        self.weightClass = val>1 and val or 0
-    elseif type(val) == "boolean" then
-        self.bold, self.weightClass = val, 0
-    else self.weightClass = val
+function ASSWeight:new(args)
+    local weight, bold = self:getArgs(args,{0,false},true)
+                    -- also support signature ASSWeight{bold} without weight
+    if args.raw or (#args==1 and not ASS.instanceOf(args[1], ASSWeight)) then
+        weight, bold = weight~=1 and weight or 0, weight==1
     end
-    self:readProps(tagProps)
-    self.bold = ASSToggle(self.bold)
-    self.weightClass = ASSNumber(self.weightClass,{positive=true,precision=0})
+    self:readProps(args.tagProps)
+    self.bold = ASSToggle{self.bold}
+    self.weightClass = ASSNumber{self.weightClass, tagProps={positive=true, precision=0}}
     return self
 end
 
@@ -1591,23 +1606,14 @@ end
 ASSWrapStyle = createASSClass("ASSWrapStyle", ASSIndexed, {"value"}, {"number"}, {range={0,3}, default=0})
 
 ASSString = createASSClass("ASSString", ASSTagBase, {"value"}, {"string"})
-function ASSString:new(val, tagProps)
-    self:readProps(tagProps)
-    if type(val) == "table" then
-        self.value = self:getArgs(val,"",true)
-    else 
-        self.value = val or ""
-    end
+function ASSString:new(args)
+    self.value = self:getArgs(args,"",true)
+    self:readProps(args.tagProps)
     return self
 end
 
 function ASSString:getTagParams(coerce)
-    local val = self.value or ""
-    if coerce and type(val)~= "string" then
-        val = ""
-    else self:typeCheck(val) end
-
-    return val
+    return coerce and tostring(self.value) or self:typeCheck(self.value)
 end
 
 function ASSString:append(str)
@@ -1629,33 +1635,15 @@ end
 
 ASSString.add, ASSString.mul, ASSString.pow = ASSString.append, nil, nil
 
-ASSClip = createASSClass("ASSClip", ASSTagBase, {}, {})
-function ASSClip:new(arg1,arg2,arg3,arg4,tagProps)
-    if type(arg1) == "table" then
-        tagProps = arg2
-        arg1,arg2,arg3,arg4 = unpack(arg1)
-        if arg2 then
-            arg1,arg2,arg3,arg4 = string.toNumbers(10,arg1,arg2,arg3,arg4)
-        end
-    end
-    tagProps = tagProps or {}
-    if type(arg1)=="number" then
-        return ASSClipRect(arg1,arg2,arg3,arg4,tagProps)
-    elseif type(arg1)=="string" then
-        return ASSClipVect({arg1},tagProps)
-    else error("Invalid argumets to ASSClip") end
-end
 
 ASSClipRect = createASSClass("ASSClipRect", ASSTagBase, {"topLeft", "bottomRight"}, {ASSPoint, ASSPoint})
 
-function ASSClipRect:new(left,top,right,bottom,tagProps)
-    if type(left) == "table" then
-        tagProps = top
-        left,top,right,bottom = self:getArgs(left, nil, true)
-    end
-    self:readProps(tagProps)
-    self.topLeft = ASSPoint(left,top)
-    self.bottomRight = ASSPoint(right,bottom)
+function ASSClipRect:new(args)
+    local left, top, right, bottom = self:getArgs(args, 0, true)
+    self:readProps(args.tagProps)
+
+    self.topLeft = ASSPoint{left, top}
+    self.bottomRight = ASSPoint{right, bottom}
     self:setInverse(self.__tag.inverse or false)
     return self
 end
@@ -1679,23 +1667,22 @@ end
 
 --------------------- Drawing Classes ---------------------
 
-ASSDrawing = createASSClass("ASSDrawing", ASSTagBase, {"commands", "scale"}, {"table", ASSNumber})
-function ASSDrawing:new(cmds, scale, tagProps)
+ASSDrawing = createASSClass("ASSDrawing", ASSTagBase, {"commands"}, {"table"})
+function ASSDrawing:new(args)
+    -- TODO: support alternative signature for ASSLineDrawingSection
     local cmdMap = ASS.classes.drawingCommandMappings
-    -- also accept alternative signature for clips
-    if type(scale)=="table" and not (scale.instanceOf or tagProps) then
-        tagProps, scale = scale, 1
-    end
-    cmds, scale = self:getArgs({cmds, scale},{{},1},true)
-    self.scale = ASS:createTag("drawing", scale)
     
-    -- construct from a single valid drawing command
-    if ASS.instanceOf(cmds, ASS.classes.drawingCommands) then
-        self.commands = {cmds}
-    -- construct from a table containing a single string of drawing commands
-    elseif #cmds==1 and type(cmds[1])=="string" then
-        self.commands = {}
-        local cmdParts, cmdType, prmCnt, i = cmds[1]:split(" "), "", 0, 1
+    self.commands = {}
+    -- construct from a compatible object
+    -- note: does copy
+    if ASS.instanceOf(args[1], ASSDrawing, nil, true) then
+        local copy = args[1]:copy()
+        self.commands, self.scale = copy.commands, copy.scale
+        self.__tag.inverse = copy.__tag.inverse
+    -- construct from a single string of drawing commands
+    elseif args.raw then
+        self.scale = ASS:createTag("drawing", args.scale or 1)
+        local cmdParts, cmdType, prmCnt, i = args.raw:split(" "), "", 0, 1
         while i<=#cmdParts do
             if cmdMap[cmdParts[i]]==ASSDrawClose then
                 self.commands[#self.commands+1], i = ASSDrawClose({},self), i+1
@@ -1707,14 +1694,28 @@ function ASSDrawing:new(cmds, scale, tagProps)
                 i=i+prmCnt
             end
         end
-    -- construct from a table containing valid drawing commands
-    elseif not ASS.instanceOf(cmds) then
-        for i=1,#cmds do
-            assert(cmds[i].baseClass==ASSDrawBase, string.format("Error: argument %d to %s is not a drawing object.", i, self.typeName))
+    else
+    -- construct from valid drawing commands, also accept tables of drawing commands
+    -- note: doesn't copy
+        self.scale = ASS:createTag("drawing", args.scale or 1)
+        local j=1
+        for i=1,#args do
+            if ASS.instanceOf(args[i],ASS.classes.drawingCommands) then
+                self.commands[j], j = args[i], j+1
+            elseif type(args[i])=="table" and not args[i].instanceOf then
+                for k=1,#args[i] do
+                    assert(ASS.instanceOf(args[i][k],ASS.classes.drawingCommands), 
+                           string.format("Error: argument #%d to %s contains invalid drawing objects (#%d is a %s).",
+                                         i, self.typeName, k, ASS.instanceOf(args[i][k]) or type(args[i][k])
+                           ))
+                    self.commands[j], j = args[i][k], j+1
+                end
+            else error(string.format("Error: argument #%d to %s is not a valid drawing object, got a %s.",
+                                      i, self.typeName, ASS.instanceOf(args[i]) or type(args[i])))
+            end
         end
-        self.commands = cmds
     end
-    self:readProps(tagProps)
+    self:readProps(args.tagProps)
     return self
 end
 
@@ -1747,7 +1748,7 @@ end
 
 function ASSDrawing:flatten(coerce)
     local flatStr = YUtils.shape.flatten(self:getTagParams(coerce))
-    local flattened = ASSDrawing({flatStr},self.__tag)
+    local flattened = ASSDrawing{raw=flatStr, tagProps=self.__tag}
     self.commands = flattened.commands
     return self, flatStr
 end
@@ -1813,7 +1814,7 @@ function ASSDrawing:rotate(angle)
                           translate((bound[3]-bound[1])/2,(bound[4]-bound[2])/2,0).rotate("z",angle).
                           translate(-bound[3]+bound[1]/2,(-bound[4]+bound[2])/2,0)
         shape = YUtils.shape.transform(shape,rotMatrix)
-        self.commands = ASSDrawing({shape}).commands
+        self.commands = ASSDrawing{raw=shape}.commands
     end
     return self
 end
@@ -1830,7 +1831,7 @@ function ASSDrawing:get()
 end
 
 function ASSDrawing:getSection()
-    local section = ASSLineDrawingSection()
+    local section = ASSLineDrawingSection{}
     section.commands, section.scale = self.commands, self.scale
     return section
 end
@@ -1838,7 +1839,7 @@ end
 ASSDrawing.set, ASSDrawing.mod = nil, nil  -- TODO: check if these can be remapped/implemented in a way that makes sense, maybe work on strings
 
 
-ASSClipVect = createASSClass("ASSClipVect", ASSDrawing, {"commands","scale"}, {"table", ASSNumber})
+ASSClipVect = createASSClass("ASSClipVect", ASSDrawing, {"commands","scale"}, {"table", ASSNumber}, {}, {ASSDrawing})
 --TODO: unify setInverse and toggleInverse for VectClip and RectClip by using multiple inheritance
 function ASSClipVect:setInverse(state)
     state = type(state)==nil and true or state
@@ -1852,7 +1853,7 @@ function ASSClipVect:toggleInverse()
 end
 
 
-ASSLineDrawingSection = createASSClass("ASSLineDrawingSection", ASSDrawing, {"commands","scale"}, {"table", ASSNumber})
+ASSLineDrawingSection = createASSClass("ASSLineDrawingSection", ASSDrawing, {"commands","scale"}, {"table", ASSNumber}, {}, {ASSDrawing, ASSClipVect})
 ASSLineDrawingSection.getStyleTable = ASSLineTextSection.getStyleTable
 ASSLineDrawingSection.getEffectiveTags = ASSLineTextSection.getEffectiveTags
 ASSLineDrawingSection.getString = ASSLineDrawingSection.getTagParams
@@ -1868,17 +1869,7 @@ end
 
 --------------------- Unsupported Tag Classes and Stubs ---------------------
 
-ASSUnknown = createASSClass("ASSUnknown", ASSTagBase, {"value"}, {"string"})
-function ASSUnknown:new(value, tagProps)
-    self:readProps(tagProps)
-    self.value = type(value) == "table" and self:getArgs(value,"",true) or self:typeCheck(value)
-    return self
-end
-
-function ASSUnknown:getTagParams(coerce)
-    return coerce and tostring(self.value) or self:typeCheck(self.value)
-end
-
+ASSUnknown = createASSClass("ASSUnknown", ASSString, {"value"}, {"string"})
 ASSUnknown.add, ASSUnknown.sub, ASSUnknown.mul, ASSUnknown.pow = nil, nil, nil, nil
 
 ASSTransform = createASSClass("ASSTransform", ASSUnknown, {"value"}, {"string"})   -- TODO: implement transforms
@@ -1890,6 +1881,7 @@ ASSTransform = createASSClass("ASSTransform", ASSUnknown, {"value"}, {"string"})
 ASSDrawBase = createASSClass("ASSDrawBase", ASSTagBase, {}, {})
 function ASSDrawBase:new(...)
     local args = {...}
+    -- TODO: get rid of special handling
     if type(args[1]) == "table" then
         self.parent = args[2]
         args = {self:getArgs(args[1], nil, true)}
@@ -1899,7 +1891,7 @@ function ASSDrawBase:new(...)
             self.parent = args[i]
         else
             local j = (i+1)/2
-            self[self.__meta__.order[j]] = self.__meta__.types[j](args[i],args[i+1]) 
+            self[self.__meta__.order[j]] = self.__meta__.types[j]{args[i],args[i+1]}
         end
     end
     return self
@@ -1910,7 +1902,7 @@ function ASSDrawBase:getTagParams(coerce)
     for i=0,#params*2,2 do
         parts[i+1], parts[i+2] = tostring(self[params[i/2]]:getTagParams(coerce))
     end
-    --opt
+    -- TODO: opt
     return self.__tag.name .. " " .. table.concat(parts)
 end
 
@@ -1922,12 +1914,12 @@ function ASSDrawBase:getLength(prevCmd)
     elseif prevCmd then x0, y0 = prevCmd:get() end
 
     -- save cursor for further processing
-    self.cursor = ASSPoint(x0,y0)
+    self.cursor = ASSPoint{x0, y0}
 
     local name, len = self.__tag.name, 0
     if name == "b" then
-        local shapeSection = ASSDrawing(ASSDrawMove(self.cursor:get()),self)
-        self.flattened = ASSDrawing({YUtils.shape.flatten(shapeSection:getTagParams())}) --save flattened shape for further processing
+        local shapeSection = ASSDrawing{ASSDrawMove(self.cursor:get()),self}
+        self.flattened = ASSDrawing{raw=YUtils.shape.flatten(shapeSection:getTagParams())} --save flattened shape for further processing
         len = self.flattened:getLength()
     elseif name =="m" or name == "n" then len=0
     elseif name =="l" then
@@ -1944,13 +1936,13 @@ function ASSDrawBase:getPositionAtLength(len, noUpdate, useCurveTime)
     local name, pos = self.__tag.name
     if name == "b" and useCurveTime then
         local px, py = YUtils.math.bezier(math.min(len/self.length,1), {{self.cursor:get()},{self.p1:get()},{self.p2:get()},{self.p3:get()}})
-        pos = ASSPoint(px, py)
+        pos = ASSPoint{px, py}
     elseif name == "b" then
         pos = self:getFlattened(true):getPositionAtLength(len, true)   -- we already know this data is up-to-date because self.parent:getLength() was run
     elseif name == "l" then
-        pos = ASSPoint(self:copy():ScaleToLength(len,true))
+        pos = ASSPoint{self:copy():ScaleToLength(len,true)}
     elseif name == "m" then
-        pos = ASSPoint(self)
+        pos = ASSPoint{self}
     end
     pos.__tag.name = "position"
     return pos
@@ -1967,7 +1959,7 @@ function ASSDrawLine:ScaleToLength(len,noUpdate)
     if not (self.length and self.cursor and noUpdate) then self.parent:getLength() end
     local scaled = self.cursor:copy()
     scaled:add(YUtils.math.stretch(returnAll(
-        {ASSPoint(self):sub(self.cursor)},
+        {ASSPoint{self}:sub(self.cursor)},
         {0, len})
     ))
     self:set(scaled:get())
@@ -1979,13 +1971,13 @@ function ASSDrawLine:getAngle(ref, noUpdate)
     ref = ref or self.cursor:copy()
     assert(type(ref)=="table", "Error: argument ref to getAngle() must be of type table, got " .. type(ref) .. ".\n")
     if ref.instanceOf[ASSDrawBezier] then
-        ref = ASSPoint(ref.p3)
+        ref = ASSPoint{ref.p3}
     elseif not ref.instanceOf then
-        ref = ASSPoint(ref[1], ref[2])
-    elseif not ref.instanceOf[ASSPoint] and ref.baseClass~=ASSDrawBase then
+        ref = ASSPoint{ref[1], ref[2]}
+    elseif not ref.instanceOf[ASSPoint] and not ref.baseClasses[ASSDrawBase] then
         error("Error: argument ref to getAngle() must either be an ASSDraw object, an ASSPoint or a table containing coordinates x and y.\n")
     end
-    local dx,dy = ASSPoint(self):sub(ref)
+    local dx,dy = ASSPoint{self}:sub(ref)
     return (360 - math.deg(math.atan2(dy,dx))) %360
 end
 
@@ -2010,8 +2002,8 @@ function ASSDrawBezier:getFlattened(noUpdate)
         if not (noUpdate and self.cursor) then
             self.parent:getLength()
         end
-        local shapeSection = ASSDrawing(ASSDrawMove(self.cursor:get()),self)
-        self.flattened = ASSDrawing({YUtils.shape.flatten(shapeSection:getTagParams())})
+        local shapeSection = ASSDrawing{ASSDrawMove(self.cursor:get()),self}
+        self.flattened = ASSDrawing{raw=YUtils.shape.flatten(shapeSection:getTagParams())}
     end
     return self.flattened
 end
@@ -2049,7 +2041,7 @@ function ASSFoundation:new()
         clip_vect = {overrideName="\\clip", friendlyName="\\clip (Vector)", type=ASSClipVect, pattern="\\clip%(([mnlbspc] .-)%)", 
                      format="\\clip(%s)", global=true}, 
         iclip_vect = {overrideName="\\iclip", friendlyName="\\iclip (Vector)", type=ASSClipVect, props={inverse=true}, 
-                      pattern="\\iclip%(([mnlbspc] .-)%)", format="\\iclip(%s)", default={"m 0 0 l 0 0 0 0 0 0 0 0"}, global=true},
+                      pattern="\\iclip%(([mnlbspc] .-)%)", format="\\iclip(%s)", default="m 0 0 l 0 0 0 0 0 0 0 0", global=true},
         clip_rect = {overrideName="\\clip", friendlyName="\\clip (Rectangle)", type=ASSClipRect, global=true, 
                      pattern="\\clip%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+)%)", format="\\clip(%.2N,%.2N,%.2N,%.2N)"}, 
         iclip_rect = {overrideName="\\iclip", friendlyName="\\iclip (Rectangle)", type=ASSClipRect, props={inverse=true}, global=true, 
@@ -2134,7 +2126,7 @@ end
 
 function ASSFoundation:createTag(name, ...)
     local tag = self:mapTag(name)
-    return tag.type(returnAll({...},{tag.props}))  -- TODO: fix for nil arguments
+    return tag.type{tagProps=tag.props, ...} 
 end
 
 function ASSFoundation:getTagFromString(str)
@@ -2143,25 +2135,25 @@ function ASSFoundation:getTagFromString(str)
             local res = {str:find("^"..tag.pattern)}
             if #res>0 then
                 local start, end_ = table.remove(res,1), table.remove(res,1)
-                return tag.type(res,tag.props), start, end_
+                return tag.type{raw=res, tagProps=tag.props}, start, end_
             end
         end
     end
     local tagType = self.tagMap[str:sub(1,1)=="\\" and "unknown" or "junk"]
-    return ASSUnknown(str,tagType.props), 1, #str
+    return ASSUnknown{str, tagProps=tagType.props}, 1, #str
 end
 
 function ASSFoundation:formatTag(tagRef, ...)
     return self:mapTag(tagRef.__tag.name).format:formatFancy(...)
 end
 
-function ASSFoundation.instanceOf(val, classes, filter)
+function ASSFoundation.instanceOf(val, classes, filter, includeCompatible)
     local clsSetObj = type(val)=="table" and val.instanceOf
 
     if not clsSetObj then
         return false
-    elseif type(classes)=="nil" then
-        return table.keys(clsSetObj)[1]
+    elseif classes==nil then
+        return table.keys(clsSetObj)[1], includeCompatible and table.keys(val.compatible)
     elseif type(classes)~="table" or classes.instanceOf then
         classes = {classes}
     end
@@ -2174,7 +2166,7 @@ function ASSFoundation.instanceOf(val, classes, filter)
         end
     end
     for i=1,#classes do 
-        if clsSetObj[classes[i]] and (not filter or filter[classes[i]]) then
+        if (clsSetObj[classes[i]] or includeCompatible and val.compatible[classes[i]]) and (not filter or filter[classes[i]]) then
             return classes[i]
         end
     end
