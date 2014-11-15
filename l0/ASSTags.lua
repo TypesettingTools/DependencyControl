@@ -1355,7 +1355,7 @@ ASSPoint = createASSClass("ASSPoint", ASSTagBase, {"x","y"}, {ASSNumber, ASSNumb
 function ASSPoint:new(args)
     local x, y = self:getArgs(args,0,true)
     self:readProps(args.tagProps)
-    self.x, self.y = ASSNumber{valx}, ASSNumber{valy}
+    self.x, self.y = ASSNumber{x}, ASSNumber{y}
     return self
 end
 
