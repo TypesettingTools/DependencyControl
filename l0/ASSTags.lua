@@ -630,8 +630,10 @@ function ASSLineContents:getStyleRef(style)
 end
 
 function ASSLineContents:getPosition(style, align, forceDefault)
-    local effTags = not (forceDefault and align) and self:getEffectiveTags(-1,false,false,false).tags
-    align, style = align or effTags.align, self:getStyleRef(style)
+    self.line:extraMetrics()
+    local effTags = not (forceDefault and align) and self:getEffectiveTags(-1,false,true,false).tags
+    style = self:getStyleRef(style)
+    align = align or effTags.align or style.align
 
     if ASS.instanceOf(align,ASSAlign) then
         align = align:get()
@@ -651,7 +653,7 @@ function ASSLineContents:getPosition(style, align, forceDefault)
 
     return ASS:createTag("position", self.line.defaultXPosition[align%3+1](scriptInfo.PlayResX, lMargin, rMargin), 
                                      self.line.defaultYPosition[math.ceil(align/3)](scriptInfo.PlayResY, vMargin)
-    )
+    ), ASS:createTag("align", align)
 end
 
 function ASSLineContents:getDefaultTags(style, copyTags, useOvrAlign)    -- TODO: cache
@@ -660,12 +662,8 @@ function ASSLineContents:getDefaultTags(style, copyTags, useOvrAlign)    -- TODO
     style = self:getStyleRef(style)
 
     -- alignment override tag may affect the default position so we'll have to retrieve it
-    local raw, align = style.raw, style.align
-    if useOvrAlign then
-        local ovrAlign = self:getEffectiveTags(-1,false,true,false).tags.align
-        align = ovrAlign and ovrAlign:get() or align
-        if style.align~=align then raw = raw.."_"..align end
-    end
+    local position, align = self:getPosition(style, not useOvrAlign and style.align, true)
+    local raw = (useOvrAlign and style.align~=align.value) and style.raw.."_"..align.value or style.raw
 
     if styleDefaultCache[raw] then
         -- always return at least a fresh ASSTagList object to prevent the cached one from being overwritten
@@ -682,7 +680,6 @@ function ASSLineContents:getDefaultTags(style, copyTags, useOvrAlign)    -- TODO
 
     local scriptInfo = util.getScriptInfo(self.line.parentCollection.sub)
     local resX, resY = tonumber(scriptInfo.PlayResX), tonumber(scriptInfo.PlayResY)
-    self.line:extraMetrics()
 
     local styleDefaults = {
         scale_x = ASS:createTag("scale_x",styleRef("scale_x")),
@@ -714,11 +711,10 @@ function ASSLineContents:getDefaultTags(style, copyTags, useOvrAlign)    -- TODO
         spacing = ASS:createTag("spacing", styleRef("spacing")),
         fontsize = ASS:createTag("fontsize", styleRef("fontsize")),
         fontname = ASS:createTag("fontname", styleRef("fontname")),
-        position = self:getPosition(style, align, true),
-        -- TODO: fix these for alignment
-        move_simple = ASS:createTag("move_simple", self.line.xPosition, self.line.yPosition, self.line.xPosition, self.line.yPosition),
-        move = ASS:createTag("move", self.line.xPosition, self.line.yPosition, self.line.xPosition, self.line.yPosition),
-        origin = ASS:createTag("origin", self.line.xPosition, self.line.yPosition),
+        position = position,
+        move_simple = ASS:createTag("move_simple", position, position),
+        move = ASS:createTag("move", position, position),
+        origin = ASS:createTag("origin", position),
     }
     for name,tag in pairs(ASS.tagMap) do
         if tag.default then styleDefaults[name] = tag.type{raw=tag.default, tagProps=tag.props} end
