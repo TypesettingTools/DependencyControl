@@ -799,7 +799,40 @@ function ASSLineContents:reverse()
     return self:cleanTags(4)
 end
 
-ASSLineTextSection = createASSClass("ASSLineTextSection", ASSBase, {"value"}, {"string"})
+local ASSStringBase = createASSClass("ASSStringBase", ASSBase, {"value"}, {"string"})
+function ASSStringBase:new(args)
+    self.value = self:getArgs(args,"",true)
+    self:readProps(args.tagProps)
+    return self
+end
+
+function ASSStringBase:append(str)
+    return self:commonOp("append", function(val,str)
+        return val..str
+    end, "", str)
+end
+
+function ASSStringBase:prepend(str)
+    return self:commonOp("prepend", function(val,str)
+        return str..val
+    end, "", str)
+end
+
+function ASSStringBase:replace(pattern, rep, plainMatch, useRegex)
+    if plainMatch then
+        useRegex, pattern = false, target:patternEscape()
+    end
+    self.value = useRegex and re.sub(self.value, pattern, rep) or self.value:gsub(pattern, rep)
+    return self
+end
+
+function ASSStringBase:reverse()
+    self.value = unicode.reverse(self.value)
+    return self
+end
+
+ASSLineTextSection = createASSClass("ASSLineTextSection", ASSStringBase, {"value"}, {"string"})
+
 function ASSLineTextSection:new(value)
     self.value = self:typeCheck(self:getArgs({value},"",true))
     return self
@@ -880,11 +913,6 @@ function ASSLineTextSection:getYutilsFont(coerce)
                                      tags.fontsize:getTagParams(coerce), tags.scale_x:getTagParams(coerce)/100, tags.scale_y:getTagParams(coerce)/100,
                                      tags.spacing:getTagParams(coerce)
     ), tagList
-end
-
-function ASSLineTextSection:reverse()
-    self.value = unicode.reverse(self.value)
-    return self
 end
 
 ASSLineCommentSection = createASSClass("ASSLineCommentSection", ASSLineTextSection, {"value"}, {"string"})
@@ -1489,6 +1517,14 @@ function ASSMove:setSimple(state)
     return state
 end
 
+ASSString = createASSClass("ASSString", {ASSTagBase, ASSStringBase}, {"value"}, {"string"})
+
+function ASSString:getTagParams(coerce)
+    return coerce and tostring(self.value) or self:typeCheck(self.value)
+end
+ASSString.add, ASSString.mul, ASSString.pow = ASSString.append, nil, nil
+
+
 ASSToggle = createASSClass("ASSToggle", ASSTagBase, {"value"}, {"boolean"})
 function ASSToggle:new(args)
     self.value = self:getArgs(args,false,true)
@@ -1600,36 +1636,6 @@ function ASSWeight:setWeight(weightClass)
 end
 
 ASSWrapStyle = createASSClass("ASSWrapStyle", ASSIndexed, {"value"}, {"number"}, {range={0,3}, default=0})
-
-ASSString = createASSClass("ASSString", ASSTagBase, {"value"}, {"string"})
-function ASSString:new(args)
-    self.value = self:getArgs(args,"",true)
-    self:readProps(args.tagProps)
-    return self
-end
-
-function ASSString:getTagParams(coerce)
-    return coerce and tostring(self.value) or self:typeCheck(self.value)
-end
-
-function ASSString:append(str)
-    return self:commonOp("append", function(val,str)
-        return val..str
-    end, "", str)
-end
-
-function ASSString:prepend(str)
-    return self:commonOp("prepend", function(val,str)
-        return str..val
-    end, "", str)
-end
-
-function ASSString:replace(target,rep,useLuaPatterns)
-    self.value = useLuaPatterns and self.value:gsub(target, rep) or re.sub(self.value,target,rep)
-    return self.value
-end
-
-ASSString.add, ASSString.mul, ASSString.pow = ASSString.append, nil, nil
 
 
 ASSClipRect = createASSClass("ASSClipRect", ASSTagBase, {"topLeft", "bottomRight"}, {ASSPoint, ASSPoint})
