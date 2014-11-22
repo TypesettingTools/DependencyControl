@@ -482,8 +482,16 @@ end
 
 function ASSLineContents:commit(line)
     line = line or self.line
-    line.text = self:getString()
+    line.text, line.undoText = self:getString(), line.text
     return line.text
+end
+
+function ASSLineContents:undoCommit(line)
+    line = line or self.line
+    if line.undoText then
+        line.text, line.undoText = line.undoText
+        return true
+    else return false end
 end
 
 function ASSLineContents:cleanTags(level, mergeSect)   -- TODO: optimize it, make it work properly for transforms
