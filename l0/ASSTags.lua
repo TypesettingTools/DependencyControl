@@ -807,6 +807,32 @@ function ASSLineContents:getSectionCount(classes)
     end
 end
 
+function ASSLineContents:isAnimated()
+    local t, line = self:getEffectiveTags(-1, false, true, false).tags, self.line
+    local frameCount = aegisub.frame_from_ms(line.end_time) - aegisub.frame_from_ms(line.start_time)
+    if frameCount<2 then return false end
+
+    local karaTags = {t.k_fill, t.k_sweep, t.k_sweep_alt, t.k_bord}
+    for i=1,#karaTags do
+        if karaTags[i] and karaTags[i].value*karaTags[i].__tag.scale < line.duration then
+            -- this is broken right now due to incorrect handling of kara tags in getEffectiveTags
+            return true
+        end
+    end
+
+    if t.transform or
+    (t.move and not t.move.startPos:equal(t.move.endPos) and t.move.startTime<t.move.endTime) or
+    (t.move_simple and not t.move_simple.startPos:equal(t.move_simple.endPos) and t.move_simple.startTime<t.move_simple.endTime) or
+    (t.fade and (t.fade.startDuration>0 and not t.fade.startAlpha:equal(t.fade.midAlpha) or 
+                 t.fade.endDuration>0 and not t.fade.midAlpha:equal(t.fade.endAlpha))) or
+    (t.fade_simple and (t.fade_simple.startDuration>0 and not t.fade_simple.startAlpha:equal(t.fade_simple.midAlpha) or 
+                        t.fade_simple.endDuration>0 and not t.fade_simple.midAlpha:equal(t.fade_simple.endAlpha))) then
+        return true
+    end
+
+    return false
+end
+
 function ASSLineContents:reverse()
     local reversed, textCnt = {}, self:getSectionCount(ASSLineTextSection)
     self:callback(function(section,_,_,j)
