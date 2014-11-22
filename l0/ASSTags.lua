@@ -756,7 +756,7 @@ function ASSLineContents:getTextExtents(coerce)   -- TODO: account for linebreak
     return width, unpack(other)
 end
 
-function ASSLineContents:getMetrics(inludeLineBounds, includeTypeBounds, coerce)
+function ASSLineContents:getMetrics(includeLineBounds, includeTypeBounds, coerce)
     local metr = {ascent=0, descent=0, internal_leading=0, external_leading=0, height=0, width=0}
     local lineBounds, typeBounds = includeLineBounds and {0,0,0,0}, includeTypeBounds and {0,0,0,0}
     local textCnt = self:getSectionCount(ASSLineTextSection)
