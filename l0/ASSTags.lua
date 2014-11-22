@@ -8,37 +8,48 @@ local Log = require("a-mo.Log")
 local ASSInspector = require("ASSInspector.Inspector")
 
 function createASSClass(typeName, baseClasses, order, types, tagProps, compatibleClasses)
-    if not baseClasses or baseClasses.instanceOf then
+    if not baseClasses or type(baseClasses)=="table" and baseClasses.instanceOf then
         baseClasses = {baseClasses}
     end
-    compatibleClasses = compatibleClasses or {}
-    local cls = {}
+    local cls, clsMeta, compatibleClasses = {}, {}, compatibleClasses or {}
+
+    -- write base classes set and import class members
     cls.baseClasses = {}
     for i=1,#baseClasses do
-        for key, val in pairs(baseClasses[i]) do
-            cls[key] = val
+        for k, v in pairs(baseClasses[i]) do
+            cls[k] = v
         end
         cls.baseClasses[baseClasses[i]] = true
+
+        -- also import metamethods
+        for k, v in pairs(getmetatable(baseClasses[i])) do
+            clsMeta[k] = v
+        end
     end
 
-    cls.__index = cls
-    cls.instanceOf = {[cls] = true}
-    cls.typeName = typeName
-    cls.__meta__ = { 
-        order = order,
-        types = types
-    }
-    cls.__defProps = table.merge(cls.__defProps or {},tagProps or {})
-
-    setmetatable(cls, {
-    __call = function (cls, ...)
+    -- object constructor
+    clsMeta.__call = function(cls, ...)
         local self = setmetatable({__tag = util.copy(cls.__defProps)}, cls)
         self = self:new(...)
         return self
-    end})
+    end
+
+    -- metatable event registration
+    cls.__setMetaEvents = function(self, events)
+        local meta = getmetatable(self)
+        for k,v in pairs(events) do
+            meta[k] = v
+        end
+    end
+
+    cls.__index, cls.instanceOf, cls.typeName = cls, {[cls] = true}, typeName
+    cls.__meta__ = {order = order, types = types}
+    cls.__defProps = table.merge(cls.__defProps or {},tagProps or {})
+    setmetatable(cls, clsMeta)
 
     -- compatible classes
     cls.compatible = table.arrayToSet(compatibleClasses)
+    -- set mutual compatibility in reference classes
     for i=1,#compatibleClasses do
         compatibleClasses[i].instanceOf[cls] = true
     end
@@ -1374,6 +1385,18 @@ function ASSNumber:getTagParams(coerce, precision)
     return math.round(val,self.__tag.precision)
 end
 
+ASSNumber:__setMetaEvents{__lt = function(a,b)
+    local errStr = "Error: operand %d must be a number or an object of (or based on) the %s class, got a %s."
+    if type(a)=="table" and (a.instanceOf[ASSNumber] or a.baseClasses[ASSNumber]) then
+        a = a:get()
+    else assert(type(a)=="number", string.format(errStr, 1, ASSNumber.typeName, ASS.instanceOf(a).typeName or type(a))) end
+
+    if type(b)=="table" and (b.instanceOf[ASSNumber] or b.baseClasses[ASSNumber]) then
+        b = b:get()
+    else assert(type(b)=="number", string.format(errStr, 1, ASSNumber.typeName, ASS.instanceOf(b).typeName or type(b))) end
+
+    return a<b
+end}
 
 ASSPoint = createASSClass("ASSPoint", ASSTagBase, {"x","y"}, {ASSNumber, ASSNumber})
 function ASSPoint:new(args)
