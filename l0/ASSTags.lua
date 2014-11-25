@@ -221,7 +221,7 @@ function ASSLineContents:new(line,sections)
             if ovrStart then
                 if ovrStart>i then
                     local substr = line.text:sub(i,ovrStart-1)
-                    sections[j], j = drawingState.value==0 and ASSLineTextSection(substr) or ASSLineDrawingSection{raw=substr, scale=drawingState}, j+1
+                    sections[j], j = drawingState.value==0 and ASSLineTextSection(substr) or ASSLineDrawingSection{str=substr, scale=drawingState}, j+1
                 end
                 sections[j] = ASSLineTagSection(line.text:sub(ovrStart+1,ovrEnd-1))
                 -- remove drawing tags from the tag sections so we don't have to keep state in sync with ASSLineDrawingSection
@@ -230,7 +230,7 @@ function ASSLineContents:new(line,sections)
                 i = ovrEnd +1
             else
                 local substr = line.text:sub(i)
-                sections[j] = drawingState.value==0 and ASSLineTextSection(substr) or ASSLineDrawingSection{raw=substr, scale=drawingState}
+                sections[j] = drawingState.value==0 and ASSLineTextSection(substr) or ASSLineDrawingSection{str=substr, scale=drawingState}
                 break
             end
             j=j+1
@@ -1078,7 +1078,7 @@ function ASSLineTagSection:removeTags(tags, start, end_, relative)
     if type(tags)=="number" and relative==nil then    -- called without tags parameter -> delete all tags in range
         tags, start, end_, relative = nil, tags, start, end_
     end
-    
+
     if #self.tags==0 then
         return {}, 0
     elseif not (tags or start or end_) then
@@ -1771,9 +1771,9 @@ function ASSDrawing:new(args)
         self.commands, self.scale = copy.commands, copy.scale
         self.__tag.inverse = copy.__tag.inverse
     -- construct from a single string of drawing commands
-    elseif args.raw then
+    elseif args.raw or args.str then
         self.scale = ASS:createTag("drawing", args.scale or 1)
-        local cmdParts, cmdType, prmCnt, i, j = args.raw[1]:split(" "), "", 0, 1, 1
+        local cmdParts, cmdType, prmCnt, i, j = (args.str or args.raw[1]):split(" "), "", 0, 1, 1
         while i<=#cmdParts do
             if cmdMap[cmdParts[i]]==ASSDrawClose then
                 self.commands[j] = ASSDrawClose()
