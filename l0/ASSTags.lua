@@ -1450,7 +1450,14 @@ function ASSNumber:getTagParams(coerce, precision)
     return math.round(val,self.__tag.precision)
 end
 
-ASSNumber:__setMetaEvents{__lt = function(a,b)
+function ASSNumber.cmp(a, b, mode)
+    local modes = {
+        ["<"] = function() return a<b end,
+        [">"] = function() return a>b end,
+        ["<="] = function() return a<=b end,
+        [">="] = function() return a>=b end
+    }
+
     local errStr = "Error: operand %d must be a number or an object of (or based on) the %s class, got a %s."
     if type(a)=="table" and (a.instanceOf[ASSNumber] or a.baseClasses[ASSNumber]) then
         a = a:get()
@@ -1460,8 +1467,13 @@ ASSNumber:__setMetaEvents{__lt = function(a,b)
         b = b:get()
     else assert(type(b)=="number", string.format(errStr, 1, ASSNumber.typeName, ASS.instanceOf(b).typeName or type(b))) end
 
-    return a<b
-end}
+    return modes[mode]()
+end
+
+ASSNumber:__setMetaEvents{
+    __lt = function(a,b) ASSNumber.cmp(a, "<", b) end, 
+    __le = function(a,b) ASSNumber.cmp(a, "<=", b) end, 
+}
 
 ASSPoint = createASSClass("ASSPoint", ASSTagBase, {"x","y"}, {ASSNumber, ASSNumber})
 function ASSPoint:new(args)
