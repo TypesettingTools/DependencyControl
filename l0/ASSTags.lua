@@ -11,7 +11,7 @@ function createASSClass(typeName, baseClasses, order, types, tagProps, compatibl
     if not baseClasses or type(baseClasses)=="table" and baseClasses.instanceOf then
         baseClasses = {baseClasses}
     end
-    local cls, clsMeta, compatibleClasses = {}, {}, compatibleClasses or {}
+    local cls, compatibleClasses = {}, compatibleClasses or {}
 
     -- write base classes set and import class members
     cls.baseClasses = {}
@@ -20,32 +20,19 @@ function createASSClass(typeName, baseClasses, order, types, tagProps, compatibl
             cls[k] = v
         end
         cls.baseClasses[baseClasses[i]] = true
-
-        -- also import metamethods
-        for k, v in pairs(getmetatable(baseClasses[i])) do
-            clsMeta[k] = v
-        end
     end
 
     -- object constructor
-    clsMeta.__call = function(cls, ...)
+    setmetatable(cls, {
+    __call = function(cls, ...)
         local self = setmetatable({__tag = util.copy(cls.__defProps)}, cls)
         self = self:new(...)
         return self
-    end
-
-    -- metatable event registration
-    cls.__setMetaEvents = function(self, events)
-        local meta = getmetatable(self)
-        for k,v in pairs(events) do
-            meta[k] = v
-        end
-    end
+    end})
 
     cls.__index, cls.instanceOf, cls.typeName = cls, {[cls] = true}, typeName
     cls.__meta__ = {order = order, types = types}
     cls.__defProps = table.merge(cls.__defProps or {},tagProps or {})
-    setmetatable(cls, clsMeta)
 
     -- compatible classes
     cls.compatible = table.arrayToSet(compatibleClasses)
@@ -1450,7 +1437,7 @@ function ASSNumber:getTagParams(coerce, precision)
     return math.round(val,self.__tag.precision)
 end
 
-function ASSNumber.cmp(a, b, mode)
+function ASSNumber.cmp(a, mode, b)
     local modes = {
         ["<"] = function() return a<b end,
         [">"] = function() return a>b end,
@@ -1461,19 +1448,17 @@ function ASSNumber.cmp(a, b, mode)
     local errStr = "Error: operand %d must be a number or an object of (or based on) the %s class, got a %s."
     if type(a)=="table" and (a.instanceOf[ASSNumber] or a.baseClasses[ASSNumber]) then
         a = a:get()
-    else assert(type(a)=="number", string.format(errStr, 1, ASSNumber.typeName, ASS.instanceOf(a).typeName or type(a))) end
+    else assert(type(a)=="number", string.format(errStr, 1, ASSNumber.typeName, ASS.instanceOf(a) and a.typeName or type(a))) end
 
     if type(b)=="table" and (b.instanceOf[ASSNumber] or b.baseClasses[ASSNumber]) then
         b = b:get()
-    else assert(type(b)=="number", string.format(errStr, 1, ASSNumber.typeName, ASS.instanceOf(b).typeName or type(b))) end
+    else assert(type(b)=="number", string.format(errStr, 1, ASSNumber.typeName, ASS.instanceOf(b) and b.typeName or type(b))) end
 
     return modes[mode]()
 end
 
-ASSNumber:__setMetaEvents{
-    __lt = function(a,b) ASSNumber.cmp(a, "<", b) end, 
-    __le = function(a,b) ASSNumber.cmp(a, "<=", b) end, 
-}
+function ASSNumber.__lt(a,b) ASSNumber.cmp(a, "<", b) end
+function ASSNumber.__le(a,b) ASSNumber.cmp(a, "<=", b) end
 
 ASSPoint = createASSClass("ASSPoint", ASSTagBase, {"x","y"}, {ASSNumber, ASSNumber})
 function ASSPoint:new(args)
