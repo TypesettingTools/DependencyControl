@@ -1519,8 +1519,9 @@ ASSFade = createASSClass("ASSFade", ASSTagBase,
 )
 function ASSFade:new(args)
     if args.raw and #args.raw==7 then -- \fade
-        local a, num = args.raw, tonumber
-        a[1], a[2], a[3], a[4], a[5], a[6], a[7] = num(a[5])-num(a[4]), num(a[7])-num(a[6]), a[4], a[7], a[1], a[2], a[3]
+        local a, r, num = {}, args.raw, tonumber
+        a[1], a[2], a[3], a[4], a[5], a[6], a[7] = num(r[5])-num(r[4]), num(r[7])-num(r[6]), r[4], r[7], r[1], r[2], r[3]
+        args.raw = a
     end 
     startDuration, endDuration, startTime, endTime, startAlpha, midAlpha, endAlpha = self:getArgs(args,{0,0,0,0,255,0,255},true)
 
