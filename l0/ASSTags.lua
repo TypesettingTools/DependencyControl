@@ -483,6 +483,7 @@ end
 function ASSLineContents:commit(line)
     line = line or self.line
     line.text, line.undoText = self:getString(), line.text
+    line:createRaw()
     return line.text
 end
 
@@ -490,6 +491,7 @@ function ASSLineContents:undoCommit(line)
     line = line or self.line
     if line.undoText then
         line.text, line.undoText = line.undoText
+        line:createRaw()
         return true
     else return false end
 end
@@ -797,18 +799,18 @@ function ASSLineContents:getMetrics(includeLineBounds, includeTypeBounds, coerce
         local bounds, times = assi:getBounds{self.line}
         assert(bounds~=nil,"ASSInspector Error: " .. tostring(times))
 
-        if bounds then
+        if bounds[1]~=false then
             local frame, x1Min, y1Min, x2Max, y2Max = aegisub.frame_from_ms, 0, 0, 0, 0
             local lineBounds = {fbf={off=frame(times[1]), n=#bounds}}
             for i=1,lineBounds.fbf.n do
                 if bounds[i] then
                     local x1, y1, w, h = bounds[i].x, bounds[i].y, bounds[i].w, bounds[i].h
-                    local x2, y2 = x1+w, y2+h
-                    lineBounds.fbf[frame(times[i])] = {ASSPoint(x1,y1), ASSPoint(x2,y2), w=w, h=h}
+                    local x2, y2 = x1+w, y1+h
+                    lineBounds.fbf[frame(times[i])] = {ASSPoint{x1,y1}, ASSPoint{x2,y2}, w=w, h=h}
                     x1Min, y1Min, x2Max, y2Max = math.min(x1,x1Min), math.min(y1,y1Min), math.max(x2,x2Max), math.max(y2,y2Max)
                 else lineBounds.fbf[frame(times[i])] = {w=0, h=0} end
             end
-            lineBounds[1], lineBounds[2], lineBounds.w, lineBounds.h = ASSPoint(x1Min,y1Min), ASSPoint(x2Max, y2Max)
+            lineBounds[1], lineBounds[2], lineBounds.w, lineBounds.h = ASSPoint{x1Min,y1Min}, ASSPoint{x2Max, y2Max}
             metr.lineBounds = lineBounds
         else metr.lineBounds = {w=0, h=0} end
         self:undoCommit()
