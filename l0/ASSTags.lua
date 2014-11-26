@@ -800,6 +800,7 @@ function ASSLineContents:getMetrics(includeLineBounds, includeTypeBounds, coerce
             lineBounds[1], lineBounds[2], lineBounds.w, lineBounds.h = ASSPoint{x1Min,y1Min}, ASSPoint{x2Max, y2Max}
             metr.lineBounds = lineBounds
         else metr.lineBounds = {w=0, h=0} end
+        metr.lineBounds.rawText = self.line.text
         self:undoCommit()
     end
     return metr
