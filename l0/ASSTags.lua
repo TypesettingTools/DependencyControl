@@ -120,9 +120,12 @@ function ASSBase:getArgs(args, defaults, coerce, extraValidClasses)
         if ASS.instanceOf(propTypes[i]) then
             local subCnt = #propTypes[i].__meta__.order
             local defSlice = type(defaults)=="table" and table.sliceArray(defaults,j,j+subCnt-1) or defaults
-            local argSlice = ASS.instanceOf(args[j]) and {args[j]} or table.sliceArray(args,j,j+subCnt-1)
+
+            if not ASS.instanceOf(args[j]) then
+                argSlice, j = table.sliceArray(args,j,j+subCnt-1), j+subCnt-1
+            else argSlice = {args[j]} end
+
             outArgs = table.join(outArgs, {propTypes[i]:getArgs(argSlice, defSlice, coerce)})
-            j = j + #argSlice - 1
         elseif args[j]==nil then
             -- write defaults
             outArgs[i] = type(defaults)=="table" and defaults[j] or defaults
