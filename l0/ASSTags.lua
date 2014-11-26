@@ -1457,8 +1457,8 @@ function ASSNumber.cmp(a, mode, b)
     return modes[mode]()
 end
 
-function ASSNumber.__lt(a,b) ASSNumber.cmp(a, "<", b) end
-function ASSNumber.__le(a,b) ASSNumber.cmp(a, "<=", b) end
+function ASSNumber.__lt(a,b) return ASSNumber.cmp(a, "<", b) end
+function ASSNumber.__le(a,b) return ASSNumber.cmp(a, "<=", b) end
 
 ASSPoint = createASSClass("ASSPoint", ASSTagBase, {"x","y"}, {ASSNumber, ASSNumber})
 function ASSPoint:new(args)
