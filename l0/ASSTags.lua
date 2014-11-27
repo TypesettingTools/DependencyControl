@@ -996,8 +996,8 @@ function ASSLineTagSection:new(tags)
         table.joinInto(self.tags, tags.transforms)
     elseif type(tags)=="string" or type(tags)=="table" and #tags==1 and type(tags[1])=="string" then
         if type(tags)=="table" then tags=tags[1] end
-        self.tags, i = {}, 1
-        local tagMatch = self.tagMatch
+        self.tags = {}
+        local tagMatch, i = self.tagMatch, 1
         for match in tagMatch:gfind(tags) do
             local tag, start, end_ = ASS:getTagFromString(match)
             self.tags[i], i = tag, i+1
