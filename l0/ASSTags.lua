@@ -99,7 +99,7 @@ end
 function ASSBase:getArgs(args, defaults, coerce, extraValidClasses)
     -- TODO: make getArgs automatically create objects
     assert(type(args)=="table", "Error: first argument to getArgs must be a table of arguments, got a " .. type(args) ..".\n")
-    local propTypes, propNames, j, outArgs = self.__meta__.types, self.__meta__.order, 1, {}
+    local propTypes, propNames, j, outArgs, argSlice = self.__meta__.types, self.__meta__.order, 1, {}
     if not args then args={}
     -- process "raw" property that holds all tag parameters when parsed from a string
     elseif type(args.raw)=="table" then args=args.raw
@@ -196,6 +196,7 @@ function ASSBase:remove(returnCopy)
     return copy
 end
 ]]--
+
 
 --------------------- Container Classes ---------------------
 
@@ -785,7 +786,8 @@ function ASSLineContents:getMetrics(includeLineBounds, includeTypeBounds, coerce
         local assi, msg = ASSInspector(self.line.parentCollection.sub)
         assert(assi, "ASSInspector Error: " .. tostring(msg))
 
-        self.line.assi_exhaustive = self:isAnimated()
+        metr.animated = self:isAnimated()
+        self.line.assi_exhaustive = metr.animated
         local bounds, times = assi:getBounds{self.line}
         assert(bounds~=nil,"ASSInspector Error: " .. tostring(times))
 
@@ -986,11 +988,14 @@ ASSLineTagSection.tagMatch = re.compile("\\\\[^\\\\\\(]+(?:\\([^\\)]+\\)[^\\\\]*
 
 function ASSLineTagSection:new(tags)
     if ASS.instanceOf(tags,ASSTagList) then
+        -- TODO: check if it's a good idea to work with refs instead of copies
         self.tags = table.values(tags.tags)
         if tags.reset then
             table.insert(self.tags, 1, tags.reset)
         end
-    elseif type(tags)=="string" then
+        table.joinInto(self.tags, tags.transforms)
+    elseif type(tags)=="string" or type(tags)=="table" and #tags==1 and type(tags[1])=="string" then
+        if type(tags)=="table" then tags=tags[1] end
         self.tags, i = {}, 1
         local tagMatch = self.tagMatch
         for match in tagMatch:gfind(tags) do
@@ -1152,6 +1157,7 @@ function ASSLineTagSection:insertDefaultTags(tagNames, index)
 end
 
 function ASSLineTagSection:getString(coerce)
+    -- TODO: optimize
     local tagString = ""
     self:callback(function(tag)
         tagString = tagString .. tag:getTagString(coerce)
@@ -1179,12 +1185,15 @@ ASSLineTagSection.getStyleTable = ASSLineTextSection.getStyleTable
 
 ASSTagList = createASSClass("ASSTagList", ASSBase, {"tags", "reset"}, {"table", ASSString})
 function ASSTagList:new(tags, contentRef)
+    local transformTypes = table.arrayToSet(ASS.tagTypes.ASSTransform)
     if ASS.instanceOf(tags, ASSLineTagSection) then
-        self.tags, contentRef = {}, tags.parent
+        self.tags, self.transforms, contentRef, trIdx = {}, {}, tags.parent, 1
         tags:callback(function(tag)
             local props = tag.__tag
             if props.name == "reset" then -- discard all previous non-global tags when a reset is encountered
                 self.tags, self.reset = self:getGlobal(), tag
+            elseif transformTypes[props.name] then
+                self.transforms[trIdx], trIdx = tag, trIdx+1
             elseif not (self.tags[props.name] and props.global) then  -- discard all except the first instance of global tags
                 self.tags[props.name] = tag
             end
@@ -1463,6 +1472,7 @@ end
 
 function ASSNumber.__lt(a,b) return ASSNumber.cmp(a, "<", b) end
 function ASSNumber.__le(a,b) return ASSNumber.cmp(a, "<=", b) end
+
 
 ASSPoint = createASSClass("ASSPoint", ASSTagBase, {"x","y"}, {ASSNumber, ASSNumber})
 function ASSPoint:new(args)
@@ -1967,10 +1977,66 @@ end
 ASSUnknown = createASSClass("ASSUnknown", ASSString, {"value"}, {"string"})
 ASSUnknown.add, ASSUnknown.sub, ASSUnknown.mul, ASSUnknown.pow = nil, nil, nil, nil
 
-ASSTransform = createASSClass("ASSTransform", ASSUnknown, {"value"}, {"string"})   -- TODO: implement transforms
+ASSTransform = createASSClass("ASSTransform", ASSTagBase, {"tags", "startTime", "endTime", "accel"}, 
+                                                          {ASSLineTagSection, ASSTime, ASSTime, ASSNumber})
 
+function ASSTransform:new(args)
+    self:readProps(args.tagProps)
+    local types, tagName = ASS.tagTypes.ASSTransform, self.__tag.name
+    if args.raw then
+        local r = {}
+        if tagName == types[1] then        -- \t(<accel>,<style modifiers>)
+            r[1], r[4] = args.raw[1], args.raw[2]
+        elseif stagName == types[2] then    -- \t(<t1>,<t2>,<accel>,<style modifiers>)
+            r[1], r[2], r[3], r[4] = args.raw[4], args.raw[1], args.raw[2], args.raw[3]
+        elseif tagName == types[4] then    -- \t(<t1>,<t2>,<style modifiers>)
+            r[1], r[2], r[3] = args.raw[3], args.raw[1], args.raw[2]
+        else r = args.raw end
+        args.raw = r
+    end
+    tags, startTime, endTime, accel = self:getArgs(args,{"",0,0,1},true)
 
+    self.tags, self.accel = ASSLineTagSection(tags), ASSNumber{accel, tagProps={positive=true}}
+    self.startTime, self.endTime = ASSTime{startTime}, ASSTime{endTime}
+    return self
+end
 
+function ASSTransform:changeTagType(type_)
+    local types, typesSet = ASS.tagTypes.ASSTransform, table.arrayToSet(ASS.tagTypes.ASSTransform)
+    if not type_ then
+        local noTime = self.startTime==0 and self.endTime==0
+        self.__tag.name = self.accel==1 and (noTime and types[3] or types[4]) or noTime and types[1] or types[3]
+        self.__tag.typeLocked = false
+    else
+        assert(typesSet[type], "Error: invalid transform type: " .. tostring(type))
+        self.__tag.name, self.__tag.typeLocked = type_, true
+    end
+    return self.__tag.name, self.__tag.typeLocked
+end
+
+function ASSTransform:getTagParams(coerce)
+    local types, tagName = ASS.tagTypes.ASSTransform, self.__tag.name
+
+    if not self.__tag.typeLocked then
+        self:changeTagType()
+    end
+
+    local t1, t2 = self.startTime:getTagParams(coerce), self.endTime:getTagParams(coerce)
+    if coerce then
+        t2 = util.max(t1, t2)
+    else assert(t1<=t2, string.format("Error: transform start time must not be greater than the end time, got %d <= %d", t1, t2)) end
+
+    if tagName == types[3] then
+        return self.tags:getString(coerce)
+    elseif tagName == types[1] then
+        return self.accel:getTagParams(coerce), self.tags:getString(coerce)
+    elseif tagName == types[4] then
+        return t1, t2, self.tags:getString(coerce)
+    elseif tagName == types[2] then
+        return t1, t2, self.accel:getTagParams(coerce), self.tags:getString(coerce)
+    else error("Error: invalid transform type: " .. tostring(type)) end
+
+end
 --------------------- Drawing Command Classes ---------------------
 
 ASSDrawBase = createASSClass("ASSDrawBase", ASSTagBase, {}, {})
@@ -2161,7 +2227,10 @@ function ASSFoundation:new()
                        format="\\fad(%d,%d)", default={0,0}, global=true},
         fade = {overrideName="\\fade", type=ASSFade, pattern="\\fade%((.-)%)", format="\\fade(%d,%d,%d,%d,%d,%d,%d)",
                 default={255,0,255,0,0,0,0}, global=true},
-        transform = {overrideName="\\t", type=ASSTransform, pattern="\\t%((.-)%)", format="\\t(%s)"},
+        transform_simple = {overrideName="\\t", type=ASSTransform, pattern="\\t%(([^,]+)%)", format="\\t(%s)"}, 
+        transform_accel = {overrideName="\\t", type=ASSTransform, pattern="\\t%(([%d%.]+),([^,]+)%)", format="\\t(%.2N,%s)"}, 
+        transform_time = {overrideName="\\t", type=ASSTransform, pattern="\\t%(([%-%d]+),([%-%d]+),([^,]+)%)", format="\\t(%.2N,%.2N,%s)"}, 
+        transform = {overrideName="\\t", type=ASSTransform, pattern="\\t%(([%-%d]+),([%-%d]+),([%d%.]+),([^,]+)%)", format="\\t(%.2N,%.2N,%.2N,%s)"}, 
         unknown = {type=ASSUnknown, format="%s", friendlyName="Unknown Tag"},
         junk = {type=ASSUnknown, format="%s", friendlyName="Junk"}
     }
@@ -2193,6 +2262,10 @@ function ASSFoundation:new()
         }
     }
     self.classes.drawingCommands = table.values(self.classes.drawingCommandMappings)
+
+    -- TODO: dynamically generate this table
+    self.tagTypes = { ASSTransform = {"transform_accel", "transform_complex", "transform_simple", "transform_time"} }
+
     return self
 end
 
