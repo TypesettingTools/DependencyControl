@@ -1708,7 +1708,7 @@ function ASSWeight:new(args)
         weight, bold = weight~=1 and weight or 0, weight==1
     end
     self:readProps(args.tagProps)
-    self.bold = ASSToggle{self.bold}
+    self.bold = ASSToggle{bold}
     self.weightClass = ASSNumber{self.weightClass, tagProps={positive=true, precision=0}}
     return self
 end
