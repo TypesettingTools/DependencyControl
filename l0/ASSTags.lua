@@ -342,12 +342,27 @@ function ASSLineContents:insertSections(sections,index)
 end
 
 function ASSLineContents:removeSections(start, end_)
-    start = start or #self.sections     -- removes the last section by default
-    end_ = end_ or start
-    for i=start,end_ do
-        table.remove(self.sections,i)
-    end
+    local removed = {}
+    if not start then
+        self.sections, removed = {}, self.sections
+    elseif type(start) == "number" then
+        end_ = end_ or start
+        removed = table.removeRange(self.sections, start, end_)
+    elseif type(start) == "table" then
+        local toRemove = start.instanceOf and {start=true} or table.arrayToSet(start)
+        local j = 1
+        for i=1, #self.sections do
+            if toRemove[self.sections[i]] then
+                local sect = self.sections[i]
+                removed[i-j+1], self.sections[i] = sect, nil
+                sect.parent, sect.index, sect.prevSection = nil, nil, nil
+            elseif j~=i then
+                self.sections[j], j = self.sections[i], j+1
+            else j=i+1 end
+        end
+    else error("Error: invalid parameter #1. Expected a rangem, an ASSObject or a table of ASSObjects, got a " .. type(start)) end
     self:updateRefs()
+    return removed
 end
 
 function ASSLineContents:modTags(tagNames, callback, start, end_, relative)
