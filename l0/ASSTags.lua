@@ -1088,6 +1088,11 @@ function ASSLineTagSection:getTags(tagNames, start, end_, relative)
     return tags
 end
 
+function ASSLineTagSection:remove()
+    if not self.parent then return self end
+    return self.parent:removeSections(self)
+end
+
 function ASSLineTagSection:removeTags(tags, start, end_, relative)
     if type(tags)=="number" and relative==nil then    -- called without tags parameter -> delete all tags in range
         tags, start, end_, relative = nil, tags, start, end_
