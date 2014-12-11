@@ -217,6 +217,9 @@ function ASSLineContents:new(line,sections)
                 sections[j] = ASSLineTagSection(line.text:sub(ovrStart+1,ovrEnd-1))
                 -- remove drawing tags from the tag sections so we don't have to keep state in sync with ASSLineDrawingSection
                 local drawingTags = sections[j]:removeTags("drawing")
+                if #sections[j].tags == 0 then
+                    sections[j], j = nil, j-1
+                end
                 drawingState = drawingTags[#drawingTags] or drawingState
                 i = ovrEnd +1
             else
