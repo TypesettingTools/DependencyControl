@@ -129,6 +129,14 @@ table.find = function(tbl,findVal)
     end
 end
 
+table.first = function(tbl)
+    for key,val in pairs(tbl) do
+        if val and type(key)=="number" then
+            return val, key
+        end
+    end
+end
+
 table._insert = table.insert
 table.insert = function(tbl,...)
     table._insert(tbl,...)
@@ -196,6 +204,21 @@ table.process = function(tbl1,tbl2,callback)
         tbl1[key] = callback(val,tbl2[key],key,tbl1,tbl2)
     end
     return tblProc
+end
+
+table.removeRange = function(tbl, start, end_)
+    local tblLen = #tbl
+    end_ = end_ or tblLen
+    
+    if end_<=start then
+        return {table.remove(tbl, start)}
+    end
+
+    local rmLen, removed = end_-start+1, {}
+    for i=start, tblLen do
+        tbl[i], removed[i-start+1] = tbl[i+rmLen], tbl[i]
+    end
+    return removed
 end
 
 table.reverseArray = function(tbl)
