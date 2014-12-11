@@ -1053,7 +1053,7 @@ function ASSLineTagSection:callback(callback, tagNames, start, end_, relative, r
         end
     end
 
-    local j, numRun, tags = 0, 0, self.tags
+    local j, numRun, tags, tagsDeleted = 0, 0, self.tags, false
     if start<0 then
         start, end_ = relative and math.abs(end_) or prevCnt+start+1, relative and math.abs(start) or prevCnt+end_+1
     end
@@ -1065,14 +1065,14 @@ function ASSLineTagSection:callback(callback, tagNames, start, end_, relative, r
                 local result = callback(tags[i],self.tags,i,j)
                 numRun = numRun+1
                 if result==false then
-                    tags[i] = nil
+                    tags[i], tagsDeleted = nil, true
                 elseif type(result)~="nil" and result~=true then
                     tags[i] = result
                 end
             end
         end
     end
-    self.tags = table.trimArray(tags)
+    self.tags = tagsDeleted and table.trimArray(tags) or tags
     return numRun>0 and numRun or false
 end
 
