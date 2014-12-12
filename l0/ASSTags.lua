@@ -2108,7 +2108,7 @@ function ASSDrawBase:getLength(prevCmd)
     local name, len = self.__tag.name, 0
     if name == "b" then
         local shapeSection = ASSDrawing{ASSDrawMove(self.cursor:get()),self}
-        self.flattened = ASSDrawing{raw=YUtils.shape.flatten(shapeSection:getTagParams())} --save flattened shape for further processing
+        self.flattened = ASSDrawing{str=YUtils.shape.flatten(shapeSection:getTagParams())} --save flattened shape for further processing
         len = self.flattened:getLength()
     elseif name =="m" or name == "n" then len=0
     elseif name =="l" then
@@ -2192,7 +2192,7 @@ function ASSDrawBezier:getFlattened(noUpdate)
             self.parent:getLength()
         end
         local shapeSection = ASSDrawing{ASSDrawMove(self.cursor:get()),self}
-        self.flattened = ASSDrawing{raw=YUtils.shape.flatten(shapeSection:getTagParams())}
+        self.flattened = ASSDrawing{str=YUtils.shape.flatten(shapeSection:getTagParams())}
     end
     return self.flattened
 end
