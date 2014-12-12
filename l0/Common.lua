@@ -301,11 +301,11 @@ util.RGB_to_HSV = function(r,g,b)
     r,g,b = util.clamp(r,0,255), util.clamp(g,0,255), util.clamp(b,0,255)
     local v = math.max(r, g, b)
     local delta = v - math.min(r, g, b)
-    if delta==0 then 
+    if delta==0 then
         return 0,0,0
-    else         
-        local s,c = delta/v, (r==v and g-b) or (g==v and b-r+2) or (r-g+4)
-        local h = 60*c/delta
+    else     
+        local s = delta/v
+        local h = 60*(r==v and (g-b)/delta or g==v and (b-r)/delta+2 or (r-g)/delta+4)
         return h>0 and h or h+360, s, v/255
     end
 end
