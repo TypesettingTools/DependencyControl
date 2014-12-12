@@ -767,6 +767,34 @@ function ASSLineContents:getTextExtents(coerce)   -- TODO: account for linebreak
     return width, unpack(other)
 end
 
+function ASSLineContents:getLineBounds(noCommit)
+    if not noCommit then self:commit() end
+    local assi, msg = ASSInspector(self.line.parentCollection.sub)
+    assert(assi, "ASSInspector Error: " .. tostring(msg))
+
+    local animated, lineBounds = self:isAnimated()
+    self.line.assi_exhaustive = animated
+    local bounds, times = assi:getBounds{self.line}
+    assert(bounds~=nil,"ASSInspector Error: " .. tostring(times))
+
+    if bounds[1]~=false then
+        local frame, x1Min, y1Min, x2Max, y2Max = aegisub.frame_from_ms, 0, 0, 0, 0
+        lineBounds = {fbf={off=frame(times[1]), n=#bounds}}
+        for i=1,lineBounds.fbf.n do
+            if bounds[i] then
+                local x1, y1, w, h = bounds[i].x, bounds[i].y, bounds[i].w, bounds[i].h
+                local x2, y2 = x1+w, y1+h
+                lineBounds.fbf[frame(times[i])] = {ASSPoint{x1,y1}, ASSPoint{x2,y2}, w=w, h=h}
+                x1Min, y1Min, x2Max, y2Max = math.min(x1,x1Min), math.min(y1,y1Min), math.max(x2,x2Max), math.max(y2,y2Max)
+            else lineBounds.fbf[frame(times[i])] = {w=0, h=0} end
+        end
+        lineBounds[1], lineBounds[2], lineBounds.w, lineBounds.h = ASSPoint{x1Min,y1Min}, ASSPoint{x2Max, y2Max}
+    else lineBounds = {w=0, h=0} end
+    lineBounds.rawText = self.line.text
+    if not noCommit then self:undoCommit() end
+    return lineBounds, animated
+end
+
 function ASSLineContents:getMetrics(includeLineBounds, includeTypeBounds, coerce)
     local metr = {ascent=0, descent=0, internal_leading=0, external_leading=0, height=0, width=0}
     local lineBounds, typeBounds = includeLineBounds and {0,0,0,0}, includeTypeBounds and {0,0,0,0}
@@ -800,31 +828,7 @@ function ASSLineContents:getMetrics(includeLineBounds, includeTypeBounds, coerce
     end
 
     if includeLineBounds then
-        self:commit()
-        local assi, msg = ASSInspector(self.line.parentCollection.sub)
-        assert(assi, "ASSInspector Error: " .. tostring(msg))
-
-        metr.animated = self:isAnimated()
-        self.line.assi_exhaustive = metr.animated
-        local bounds, times = assi:getBounds{self.line}
-        assert(bounds~=nil,"ASSInspector Error: " .. tostring(times))
-
-        if bounds[1]~=false then
-            local frame, x1Min, y1Min, x2Max, y2Max = aegisub.frame_from_ms, 0, 0, 0, 0
-            local lineBounds = {fbf={off=frame(times[1]), n=#bounds}}
-            for i=1,lineBounds.fbf.n do
-                if bounds[i] then
-                    local x1, y1, w, h = bounds[i].x, bounds[i].y, bounds[i].w, bounds[i].h
-                    local x2, y2 = x1+w, y1+h
-                    lineBounds.fbf[frame(times[i])] = {ASSPoint{x1,y1}, ASSPoint{x2,y2}, w=w, h=h}
-                    x1Min, y1Min, x2Max, y2Max = math.min(x1,x1Min), math.min(y1,y1Min), math.max(x2,x2Max), math.max(y2,y2Max)
-                else lineBounds.fbf[frame(times[i])] = {w=0, h=0} end
-            end
-            lineBounds[1], lineBounds[2], lineBounds.w, lineBounds.h = ASSPoint{x1Min,y1Min}, ASSPoint{x2Max, y2Max}
-            metr.lineBounds = lineBounds
-        else metr.lineBounds = {w=0, h=0} end
-        metr.lineBounds.rawText = self.line.text
-        self:undoCommit()
+        metr.lineBounds, metr.animated = self:getLineBounds()
     end
     return metr
 end
