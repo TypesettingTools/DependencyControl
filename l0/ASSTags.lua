@@ -1822,7 +1822,7 @@ function ASSDrawing:new(args)
                 self.commands[j].parent, i, j = self, i+1, j+1
             elseif cmdMap[cmdParts[i]] then
                 cmdType = cmdParts[i]
-                prmCnt, i = #cmdMap[cmdType].__meta__.order*2, i+1
+                prmCnt, i = cmdMap[cmdType].__defProps.ords, i+1
             else
                 local prms = table.sliceArray(cmdParts,i,i+prmCnt-1)
                 self.commands[j] = cmdMap[cmdType](unpack(prms))
@@ -2075,9 +2075,13 @@ function ASSDrawBase:new(...)
     local args = {...}
     args = {self:getArgs(args, 0, true)}
 
-    for i=1,#args,2 do
-        local j = (i+1)/2
-        self[self.__meta__.order[j]] = self.__meta__.types[j]{args[i],args[i+1]}
+    if self.compatible[ASSPoint] then
+        self.x, self.y = ASSNumber{args[1]}, ASSNumber{args[2]}
+    else
+        for i=1,#args,2 do
+            local j = (i+1)/2
+            self[self.__meta__.order[j]] = self.__meta__.types[j]{args[i],args[i+1]}
+        end
     end
     return self
 end
@@ -2133,11 +2137,11 @@ function ASSDrawBase:getPositionAtLength(len, noUpdate, useCurveTime)
     return pos
 end
 
-ASSDrawMove = createASSClass("ASSDrawMove", ASSDrawBase, {"value"}, {ASSPoint}, {name="m"})
-ASSDrawMoveNc = createASSClass("ASSDrawMoveNc", ASSDrawBase, {"value"}, {ASSPoint}, {name="n"})
-ASSDrawLine = createASSClass("ASSDrawLine", ASSDrawBase, {"value"}, {ASSPoint}, {name="l"})
-ASSDrawBezier = createASSClass("ASSDrawBezier", ASSDrawBase, {"p1","p2","p3"}, {ASSPoint, ASSPoint, ASSPoint}, {name="b"})
-ASSDrawClose = createASSClass("ASSDrawClose", ASSDrawBase, {}, {}, {name="c"})
+ASSDrawMove = createASSClass("ASSDrawMove", ASSDrawBase, {"x", "y"}, {ASSNumber, ASSNumber}, {name="m", ords=2}, {ASSPoint})
+ASSDrawMoveNc = createASSClass("ASSDrawMoveNc", ASSDrawBase, {"x", "y"}, {ASSNumber, ASSNumber}, {name="n", ords=2}, {ASSDrawMove, ASSPoint})
+ASSDrawLine = createASSClass("ASSDrawLine", ASSDrawBase, {"x", "y"}, {ASSNumber, ASSNumber}, {name="l", ords=2}, {ASSPoint, ASSDrawMove, ASSDrawMoveNc})
+ASSDrawBezier = createASSClass("ASSDrawBezier", ASSDrawBase, {"p1","p2","p3"}, {ASSPoint, ASSPoint, ASSPoint}, {name="b", ords=6})
+ASSDrawClose = createASSClass("ASSDrawClose", ASSDrawBase, {}, {}, {name="c", ords=0})
 --- TODO: b-spline support
 
 function ASSDrawLine:ScaleToLength(len,noUpdate)
