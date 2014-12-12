@@ -2157,17 +2157,18 @@ end
 
 function ASSDrawLine:getAngle(ref, noUpdate)
     if not (ref or (self.cursor and noUpdate)) then self.parent:getLength() end
-    ref = ref or self.cursor:copy()
+    local ref, rx, ry = ref or self.cursor
     assert(type(ref)=="table", "Error: argument ref to getAngle() must be of type table, got " .. type(ref) .. ".\n")
     if ref.instanceOf[ASSDrawBezier] then
-        ref = ASSPoint{ref.p3}
+        rx, ry = ref.p3:get()
     elseif not ref.instanceOf then
-        ref = ASSPoint{ref[1], ref[2]}
-    elseif not ref.instanceOf[ASSPoint] and not ref.baseClasses[ASSDrawBase] then
-        error("Error: argument ref to getAngle() must either be an ASSDraw object, an ASSPoint or a table containing coordinates x and y.\n")
+        rx, ry = ref[1], ref[2]
+    elseif ref.compatible[ASSPoint] then
+        rx, ry = ref:get()
+    else error("Error: argument ref to getAngle() must either be an ASSDraw object, an ASSPoint or a table containing coordinates x and y.\n")
     end
-    local dx,dy = ASSPoint{self}:sub(ref)
-    return (360 - math.deg(math.atan2(dy,dx))) %360
+    local dx, dy = self.x.value-rx, self.y.value-ry
+    return ASS:createTag("angle", 360 - math.deg(math.atan2(dy,dx)))
 end
 
 function ASSDrawBezier:commonOp(method, callback, default, ...)
