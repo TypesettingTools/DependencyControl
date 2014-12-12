@@ -38,7 +38,7 @@ function createASSClass(typeName, baseClasses, order, types, tagProps, compatibl
     cls.compatible = table.arrayToSet(compatibleClasses)
     -- set mutual compatibility in reference classes
     for i=1,#compatibleClasses do
-        compatibleClasses[i].instanceOf[cls] = true
+        compatibleClasses[i].compatible[cls] = true
     end
 
     return cls
