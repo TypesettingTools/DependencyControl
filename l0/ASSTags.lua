@@ -40,6 +40,7 @@ function createASSClass(typeName, baseClasses, order, types, tagProps, compatibl
     for i=1,#compatibleClasses do
         compatibleClasses[i].compatible[cls] = true
     end
+    cls.compatible[cls] = true
 
     return cls
 end
