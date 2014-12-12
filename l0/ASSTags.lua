@@ -1445,7 +1445,7 @@ function ASSTagBase:equal(ASSTag)  -- checks equalness only of the relevant prop
     local vals1, vals2 = {self:get()}, {ASSTag:get()}
     if #vals1~=#vals2 then return false end
     for i=1,#vals1 do
-        if type(vals1[i])=="table" and #table.intersect(vals1[i],vals2[i])~=#vals1[i] then
+        if type(vals1[i])=="table" and #table.intersectInto(vals1[i],vals2[i])~=#vals1[i] then
             return false
         elseif type(vals1[i])~="table" and vals1[i]~=vals2[i] then return false end
     end
