@@ -1460,6 +1460,7 @@ function ASSNumber:new(args)
     self:typeCheck(self.value)
     if self.__tag.positive then self:checkPositive(self.value) end
     if self.__tag.range then self:checkRange(self.__tag.range[1], self.__tag.range[2], self.value) end
+    if self.__tag.mod then self.value = self.value % self.__tag.mod end
     return self
 end
 
@@ -1476,6 +1477,7 @@ function ASSNumber:getTagParams(coerce, precision)
         if self.__tag.positive then self:checkPositive(val) end
         if self.__tag.range then self:checkRange(self.__tag.range[1], self.__tag.range[2],val) end
     end
+    if self.__tag.mod then val = val % self.__tag.mod end
     return math.round(val,self.__tag.precision)
 end
 
@@ -2201,9 +2203,9 @@ function ASSFoundation:new()
         scale_x= {overrideName="\\fscx", type=ASSNumber, pattern="\\fscx([%d%.]+)", format="\\fscx%.3N"},
         scale_y = {overrideName="\\fscy", type=ASSNumber, pattern="\\fscy([%d%.]+)", format="\\fscy%.3N"},
         align = {overrideName="\\an", type=ASSAlign, pattern="\\an([1-9])", format="\\an%d", global=true},
-        angle = {overrideName="\\frz", type=ASSNumber, pattern="\\frz?([%-%d%.]+)", format="\\frz%.3N"}, 
-        angle_y = {overrideName="\\fry", type=ASSNumber, pattern="\\fry([%-%d%.]+)", format="\\fry%.3N", default={0}},
-        angle_x = {overrideName="\\frx", type=ASSNumber, pattern="\\frx([%-%d%.]+)", format="\\frx%.3N", default={0}}, 
+        angle = {overrideName="\\frz", type=ASSNumber, pattern="\\frz?([%-%d%.]+)", format="\\frz%.3N", props={mod=360}}, 
+        angle_y = {overrideName="\\fry", type=ASSNumber, pattern="\\fry([%-%d%.]+)", format="\\fry%.3N", default={0}, props={mod=360}},
+        angle_x = {overrideName="\\frx", type=ASSNumber, pattern="\\frx([%-%d%.]+)", format="\\frx%.3N", default={0}, props={mod=360}}, 
         outline = {overrideName="\\bord", type=ASSNumber, props={positive=true}, pattern="\\bord([%d%.]+)", format="\\bord%.2N"}, 
         outline_x = {overrideName="\\xbord", type=ASSNumber, props={positive=true}, pattern="\\xbord([%d%.]+)", format="\\xbord%.2N"}, 
         outline_y = {overrideName="\\ybord", type=ASSNumber,props={positive=true}, pattern="\\ybord([%d%.]+)", format="\\ybord%.2N"}, 
