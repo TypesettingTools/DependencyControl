@@ -107,8 +107,9 @@ function ASSBase:getArgs(args, defaults, coerce, extraValidClasses)
     elseif args.raw then args={args.raw}
     -- check if first and only arg is a compatible ASSClass and dump into args 
     elseif #args == 1 and type(args[1]) == "table" and args[1].instanceOf then
-        local selfClasses = extraValidClasses and table.merge(self.instanceOf, extraValidClasses) or self.instanceOf
-        local _, clsMatchCnt = table.intersect(selfClasses, args[1].instanceOf)
+        local selfClasses = extraValidClasses and table.merge(self.compatible, extraValidClasses) or self.compatible
+        local _, clsMatchCnt = table.intersect(selfClasses, args[1].compatible)
+
         if clsMatchCnt>0 then
             args = {args[1]:get()}
         else assert(type(propTypes[1]) == "table" and propTypes[1].instanceOf, 
