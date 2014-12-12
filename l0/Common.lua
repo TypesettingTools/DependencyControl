@@ -91,16 +91,21 @@ table.union = function(left, right, preferLeft)
     end
 end
 
-table.intersect = function(...)
+table.intersectInto = function(...)
     local tbls = {...}
     local intersection, j = tbls[1], 0
     for i=2,#tbls do
         for key,val in pairs(intersection) do
-            intersection[key] = val==tbls[i][key] and val or nil
-            j=j+1
+            if val~=tbls[i][key] then
+                intersection[key] = nil
+            elseif i==#tbls then j=j+1 end
         end
     end
     return intersection, j
+end
+
+table.intersect = function(tbl, ...)
+    return table.intersectInto(util.copy(tbl), ...)
 end
 
 table.length = function(tbl) -- currently unused
