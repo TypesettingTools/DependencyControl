@@ -1895,6 +1895,7 @@ function ASSDrawing:getLength()
         local len = self.commands[i]:getLength(self.commands[i-1])
         lens[i], totalLen = len, totalLen+len
     end
+    self.length = totalLen
     return totalLen,lens
 end
 
