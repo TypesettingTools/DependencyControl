@@ -902,7 +902,7 @@ end
 local ASSStringBase = createASSClass("ASSStringBase", ASSBase, {"value"}, {"string"})
 function ASSStringBase:new(args)
     self.value = self:getArgs(args,"",true)
-    self:readProps(args.tagProps)
+    self:readProps(args)
     return self
 end
 
@@ -1162,10 +1162,17 @@ function ASSLineTagSection:insertTags(tags, index)
     local prevCnt, inserted = #self.tags, {}
     index = default(index,math.max(prevCnt,1))
     assert(math.isInt(index) and index~=0,
-           string.format("Error: argument 2 to insertTags() must be an integer != 0, got '%s' of type %s", tostring(index), type(index))
+           string.format("Error: argument 2 (index) must be an integer != 0, got '%s' of type %s", tostring(index), type(index))
     )
-    if type(tags)~="table" or ASS.instanceOf(tags) then
-        tags = {tags}
+    
+    if type(tags)=="table" then
+        if tags.instanceOf[ASSLineTagSection] then
+            tags = tags.tags
+        elseif tags.instanceOf[ASSTagList] then
+            tags = ASSLineTagSection(tags).tags
+        elseif tags.instanceOf then tags = {tags} end
+        else error("Error: argument 1 (tags) must be one of the following: a tag object, a table of tag objects, an ASSLineTagSection or an ASSTagList; got a "
+                   .. type(tags) .. ".")
     end
 
     for i=1,#tags do
