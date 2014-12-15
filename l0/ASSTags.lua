@@ -112,7 +112,7 @@ function ASSBase:getArgs(args, defaults, coerce, extraValidClasses)
 
         if clsMatchCnt>0 then
             if args.deepCopy then 
-            args = {args[1]:get()}
+                args = {args[1]:get()}
             else
                 -- This is a fast path for compatible objects
                 -- TODO: check for issues caused by this change
@@ -193,7 +193,7 @@ function ASSBase:get()
             for j,subVal in pairs({self[names[i]]:get()}) do 
                 vals[valCnt], valCnt = subVal, valCnt+1
             end
-        else 
+        else
             vals[valCnt], valCnt = self[names[i]], valCnt+1
         end
     end
@@ -1173,7 +1173,7 @@ function ASSLineTagSection:insertTags(tags, index)
         elseif tags.instanceOf then tags = {tags} end
         else error("Error: argument 1 (tags) must be one of the following: a tag object, a table of tag objects, an ASSLineTagSection or an ASSTagList; got a "
                    .. type(tags) .. ".")
-    end
+        end
 
     for i=1,#tags do
         local cls = ASS.instanceOf(tags[i])
@@ -1456,9 +1456,9 @@ function ASSTagBase:readProps(args)
         end
     elseif args.tagProps then 
         for key, val in pairs(args.tagProps) do
-        self.__tag[key] = val
+            self.__tag[key] = val
+        end
     end
-end
 end
 
 function ASSTagBase:getTagString(coerce)
