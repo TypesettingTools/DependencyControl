@@ -1489,7 +1489,7 @@ function ASSNumber:new(args)
 end
 
 function ASSNumber:getTagParams(coerce, precision)
-    self:readProps(tagProps)
+
     precision = precision or self.__tag.precision
     local val = self.value
     if coerce then
