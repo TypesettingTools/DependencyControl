@@ -1020,13 +1020,21 @@ ASSLineCommentSection = createASSClass("ASSLineCommentSection", ASSLineTextSecti
 ASSLineTagSection = createASSClass("ASSLineTagSection", ASSBase, {"tags"}, {"table"})
 ASSLineTagSection.tagMatch = re.compile("\\\\[^\\\\\\(]+(?:\\([^\\)]+\\)[^\\\\]*)?|[^\\\\]+")
 
-function ASSLineTagSection:new(tags)
+function ASSLineTagSection:new(tags, transformableOnly)
     if ASS.instanceOf(tags,ASSTagList) then
         -- TODO: check if it's a good idea to work with refs instead of copies
-        self.tags = table.values(tags.tags)
+        local j=1
+        self.tags = {}
         if tags.reset then
-            table.insert(self.tags, 1, tags.reset)
+            self.tags[1], j = tags.reset, 2
         end
+
+        for _,tag in pairs(tags.tags) do
+            if not transformableOnly or tag.__tag.transformable or tag.instanceOf[ASSUnknown] then
+                self.tags[j], j = tag, j+1
+            end
+        end
+
         table.joinInto(self.tags, tags.transforms)
     elseif type(tags)=="string" or type(tags)=="table" and #tags==1 and type(tags[1])=="string" then
         if type(tags)=="table" then tags=tags[1] end
@@ -1034,7 +1042,9 @@ function ASSLineTagSection:new(tags)
         local tagMatch, i = self.tagMatch, 1
         for match in tagMatch:gfind(tags) do
             local tag, start, end_ = ASS:getTagFromString(match)
-            self.tags[i], i = tag, i+1
+            if not transformableOnly or tag.__tag.transformable or tag.instanceOf[ASSUnknown] then
+                self.tags[i], i = tag, i+1
+            end
             if end_ < #match then   -- comments inside tag sections are read into ASSUnknowns
                 local afterStr = match:sub(end_+1)
                 self.tags[i], i = ASS:createTag(afterStr:sub(1,1)=="\\" and "unknown" or "junk", afterStr), i+1
@@ -1230,25 +1240,80 @@ end
 
 ASSLineTagSection.getStyleTable = ASSLineTextSection.getStyleTable
 
-ASSTagList = createASSClass("ASSTagList", ASSBase, {"tags", "reset"}, {"table", ASSString})
+ASSTagList = createASSClass("ASSTagList", ASSBase, {"tags", "transforms" ,"reset", "startTime", "endTime", "accel"},
+                            {"table", "table", ASSString, ASSTime, ASSTime, ASSNumber})
+
 function ASSTagList:new(tags, contentRef)
-    local transformTypes = table.arrayToSet(ASS.tagTypes.ASSTransform)
     if ASS.instanceOf(tags, ASSLineTagSection) then
-        self.tags, self.transforms, contentRef, trIdx = {}, {}, tags.parent, 1
+        self.tags, self.transforms, self.contentRef = {}, {}, tags.parent
+        local trIdx, transforms, ovrTransTags, transTags = 1, {}, {}
+
         tags:callback(function(tag)
             local props = tag.__tag
-            if props.name == "reset" then -- discard all previous non-global tags when a reset is encountered
-                self.tags, self.reset = self:getGlobal(), tag
-            elseif transformTypes[props.name] then
-                self.transforms[trIdx], trIdx = tag, trIdx+1
-            elseif not (self.tags[props.name] and props.global) then  -- discard all except the first instance of global tags
+
+            -- Discard all previous non-global tags when a reset is encountered (including all transformed tags)
+            -- Vectorial clips are not "global" but can't be reset
+            if props.name == "reset" then 
+                self.tags, self.reset = self:getGlobal(true), tag
+
+                for i=1,#transforms do
+                    local keep = false
+                    transforms[i].tags:callback(function(tag)
+                        if tag.instanceOf[ASSClipRect] then 
+                            keep = true 
+                        else return false end
+                    end)
+                    if not keep then transforms[i] = nil end
+                end
+
+            -- Transforms are stored in a separate table because there can be more than one.
+            -- When the list is converted back into an ASSTagSection, the transforms are written to its end,
+            -- so we have to make sure transformed tags are not overridden afterwards:
+            -- If a transform is encountered any entries in the overridden transforms list
+            -- are marked as limited to all previous transforms in the transforms list.
+            elseif tag.instanceOf[ASSTransform] then
+                transforms[trIdx] = ASSTransform{tag, transformableOnly=true}   -- we need a shallow copy of the transform to filter
+                transTags, trIdx = transforms[trIdx].tags.tags, trIdx+1
+                for j=1,#transTags do
+                    if ovrTransTags[transTags[j].__tag.name] then
+                        ovrTransTags[transTags[j].__tag.name] = trIdx-1
+                    end
+                end
+
+            -- Discard all except the first instance of global tags.
+            -- This expects all global tags to be non-transformable which is true for ASSv4+
+            elseif not (self.tags[props.name] and props.global) then
                 self.tags[props.name] = tag
+                if tag.__tag.transformable then
+                    ovrTransTags[tag.__tag.name] = -1
+                end
             end
         end)
+        
+        -- filter tags by overridden transform list, keep transforms that have still tags left at the end
+        local t=1
+        for i=1,trIdx-1 do
+            if transforms[i] then
+                local transTagCnt = 0
+                transforms[i].tags:callback(function(tag)
+                    local ovrEnd = ovrTransTags[tag.__tag.name] or 0
+                    -- drop all overridden transforms
+                    if ovrEnd==-1 or ovrEnd>i then
+                        return false
+                    else transTagCnt = transTagCnt+1 end
+                end)
+                -- write final transforms table
+                if transTagCnt>0 then
+                    self.transforms[t], t = transforms[i], t+1
+                end
+            end
+        end
+
     elseif ASS.instanceOf(tags, ASSTagList) then
-        self.tags, self.reset, self.contentRef = util.copy(tags.tags), tags.reset, tags.contentRef
+        self.tags, self.reset, self.transforms = util.copy(tags.tags), tags.reset, util.copy(tags.transforms)
+        self.contentRef = tags.contentRef
     elseif tags==nil then
-        self.tags = {}
+        self.tags, self.transforms = {}, {}
     else error(string.format("Error: an %s can only be constructed from an %s or %s; got a %s.", 
                               ASSTagList.typeName, ASSLineTagSection.typeName, ASSTagList.typeName,
                               ASS.instanceOf(tags) and tags.typeName or type(tags))
@@ -1272,24 +1337,58 @@ function ASSTagList:merge(tagLists, copyTags, returnOnly, overrideGlobalTags)
         tagLists = {tagLists}
     end
 
-    local merged = ASSTagList(self)
+    local merged, ovrTransTags, resetIdx, seenTransform = ASSTagList(self), {}, 0, #self.transforms>0
     for i=1,#tagLists do
         assert(ASS.instanceOf(tagLists[i],ASSTagList), 
                string.format("Error: can only merge %s objects, got a %s for argument #%d.", ASSTagList.typeName, type(tagLists[i]), i)
         )
         if tagLists[i].reset then   -- discard all previous non-global tags when a reset is encountered
-            merged.tags, merged.reset = merged:getGlobal(), tagLists[i].reset
+            merged.tags, merged.reset = merged:getGlobal(true), tagLists[i].reset
+            resetIdx = i
         end
+
+        seenTransform = seenTransform or #tagLists[i].transforms>0
+        
         for name,tag in pairs(tagLists[i].tags) do
+            -- discard all except the first instance of global tags
             if not (merged.tags[name] and tag.__tag.global) or overrideGlobalTags then
-                merged.tags[name] = tag  -- discard all except the first instance of global tags
+                merged.tags[name] = tag
+                -- mark transformable tags in previous transform lists as overridden
+                if seenTransform and tag.__tag.transformable then
+                    ovrTransTags[tag.__tag.name] = i
+                end
+            end
+        end
+    end
+
+    merged.transforms = {}
+    if seenTransform then
+        local t=1
+        for i=0,#tagLists do
+            local transforms = i==0 and self.transforms or tagLists[i].transforms
+            for j=1,#transforms do
+                local transform = i==0 and transforms[j] or ASSTransform{transforms[j]}
+                local transTagCnt = 0
+
+                transform.tags:callback(function(tag)
+                    local ovrEnd = ovrTransTags[tag.__tag.name] or 0
+                    -- remove transforms overwritten by resets or the override table
+                    if resetIdx>i and not tag.instanceOf[ASSClipRect] or ovrEnd>i then
+                        return false
+                    else transTagCnt = transTagCnt+1 end
+                end)
+
+                -- fill final transforms table
+                if transTagCnt > 0 then
+                    merged.transforms[t], t = transform, t+1
+                end
             end
         end
     end
 
     if copyTags then merged = merged:copy() end
     if not returnOnly then
-        self.tags, self.reset = merged.tags, merged.reset
+        self.tags, self.reset, self.transforms = merged.tags, merged.reset, merged.transforms
         return self
     else return merged end
 end
@@ -1325,18 +1424,32 @@ function ASSTagList:diff(other, returnOnly, ignoreGlobalState) -- returnOnly not
     )
 
     local diff = ASSTagList(nil, self.contentRef)
+    local defaults = self.contentRef:getDefaultTags(self.reset)
+    local otherTransSet = other:isTagTransformed()
+
     for name,tag in pairs(self.tags) do
         local global = tag.__tag.global and not ignoreGlobalState
+
         -- if this tag list contains a reset, we need to compare its local tags to the default values set by the reset 
         -- instead of to the values of the other tag list
-        local cmp = (self.reset and global) and self.contentRef:getDefaultTags(self.reset) or other
-        -- since global tags can't be overwritten, assume global tags that are also present in the other tag list as equal
-        if not tag:equal(cmp.tags[name]) and not (global and other.tags[name]) then
+        local ref = (self.reset and not global) and defaults or other
+
+        -- since global tags can't be overwritten, only treat global tags that are also present in the other tag list as different
+        if global and not other.tags[name]
+        -- all local tags transformed in the previous section will change state (no matter the tag values) when used in this section,
+        -- unless this section begins with a reset, in which case only rectangular clips are kept
+        or not (global or self.reset and not tag.instanceOf[ASSClipRect]) and otherTransSet[name] 
+        -- check local tags for equality in reference list
+        or not (global or tag:equal(ref.tags[name])) then
             if returnOnly then diff.tags[name] = tag end
+        
         elseif not returnOnly then 
             self.tags[name] = nil
         end
     end
+    diff.reset = self.reset
+    -- transforms can't be deduplicated so all of them will be kept in the diff
+    diff.transforms = self.transforms
     return returnOnly and diff or self
 end
 
@@ -1394,7 +1507,7 @@ function ASSTagList:getTags(tagNames)
 end
 
 function ASSTagList:isEmpty()
-    return table.length(self.tags)<1 and not self.reset
+    return table.length(self.tags)<1 and not self.reset and #self.transforms==0
 end
 
 function ASSTagList:getGlobal()
