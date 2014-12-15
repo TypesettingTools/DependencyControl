@@ -723,7 +723,8 @@ function ASSLineContents:getDefaultTags(style, copyTags, useOvrAlign)    -- TODO
     local scriptInfo = util.getScriptInfo(self.line.parentCollection.sub)
     local resX, resY = tonumber(scriptInfo.PlayResX), tonumber(scriptInfo.PlayResY)
 
-    local styleDefaults = {
+    local tagList = ASSTagList(nil, self)
+    tagList.tags = {
         scale_x = ASS:createTag("scale_x",styleRef("scale_x")),
         scale_y = ASS:createTag("scale_y", styleRef("scale_y")),
         align = ASS:createTag("align", styleRef("align")),
@@ -759,10 +760,9 @@ function ASSLineContents:getDefaultTags(style, copyTags, useOvrAlign)    -- TODO
         origin = ASS:createTag("origin", position),
     }
     for name,tag in pairs(ASS.tagMap) do
-        if tag.default then styleDefaults[name] = tag.type{raw=tag.default, tagProps=tag.props} end
+        if tag.default then tagList.tags[name] = tag.type{raw=tag.default, tagProps=tag.props} end
     end
 
-    local tagList = ASSTagList(styleDefaults, self)
     styleDefaultCache[style.raw] = tagList
     return copyTags and tagList:copy() or ASSTagList(tagList)
 end
@@ -1249,8 +1249,12 @@ function ASSTagList:new(tags, contentRef)
         self.tags, self.reset, self.contentRef = util.copy(tags.tags), tags.reset, tags.contentRef
     elseif tags==nil then
         self.tags = {}
-    else self.tags = self:typeCheck(tags) end
-    self.contentRef = contentRef
+    else error(string.format("Error: an %s can only be constructed from an %s or %s; got a %s.", 
+                              ASSTagList.typeName, ASSLineTagSection.typeName, ASSTagList.typeName,
+                              ASS.instanceOf(tags) and tags.typeName or type(tags))
+         ) 
+    end
+    self.contentRef = contentRef or self.contentRef
     return self
 end
 
