@@ -1178,6 +1178,7 @@ function ASSLineTagSection:insertTags(tags, index)
     for i=1,#tags do
         local cls = ASS.instanceOf(tags[i])
         if not cls then
+            -- TODO: check if it's actually a tag object
             error(string.format("Error: argument %d to insertTags() must be a tag object, got a %s", i, type(tags[i])))
         end
 
