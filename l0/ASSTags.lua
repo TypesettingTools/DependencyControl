@@ -1331,6 +1331,16 @@ function ASSTagList:get()
     return flatTagList
 end
 
+function ASSTagList:isTagTransformed(tagName)
+    local set = {}
+    for i=1,#self.transforms do
+        for j=1,#self.transforms[i].tags.tags do
+            set[self.transforms[i].tags.tags[j].__tag.name] = true
+        end
+    end
+    return tagName and set[tagName] or set
+end
+
 function ASSTagList:merge(tagLists, copyTags, returnOnly, overrideGlobalTags)
     copyTags = default(copyTags, true)
     if ASS.instanceOf(tagLists, ASSTagList) then
