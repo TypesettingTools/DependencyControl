@@ -1055,6 +1055,19 @@ function ASSLineTagSection:new(tags, transformableOnly)
             return ASSLineCommentSection(tags)
         end
     elseif tags==nil then self.tags={}
+    elseif ASS.instanceOf(tags, ASSLineTagSection) then
+        self.parent = tags.parent
+        if transformableOnly then
+            local j=1
+            self.tags = {}
+            for i=1,#tags.tags do
+                if tags.tags[i].__tag.transformable or tags.tags[i].instanceOf[ASSUnknown]then
+                    self.tags[j], j = tags.tags[i], j+1
+                end
+            end
+        else
+            self.tags = util.copy(tags.tags)
+        end
     else self.tags = self:typeCheck(self:getArgs({tags})) end
     return self
 end
