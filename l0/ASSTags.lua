@@ -30,7 +30,7 @@ function createASSClass(typeName, baseClasses, order, types, tagProps, compatibl
         return self
     end})
 
-    cls.__index, cls.instanceOf, cls.typeName = cls, {[cls] = true}, typeName
+    cls.__index, cls.instanceOf, cls.typeName, cls.class = cls, {[cls] = true}, typeName, cls
     cls.__meta__ = {order = order, types = types}
     cls.__defProps = table.merge(cls.__defProps or {},tagProps or {})
 
