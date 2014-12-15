@@ -452,7 +452,7 @@ function ASSLineContents:insertTags(tags, index, sectionPosition, direct)
 end
 
 function ASSLineContents:insertDefaultTags(tagNames, index, sectionPosition, direct)
-    local defaultTags = self:getDefaultTags():getTags(tagNames)
+    local defaultTags = self:getDefaultTags():filterTags(tagNames)
     return self:insertTags(defaultTags, index, sectionPosition, direct)
 end
 
@@ -1505,15 +1505,41 @@ function ASSTagList:getStyleTable(styleRef, name, coerce)
     return sTbl
 end
 
-function ASSTagList:getTags(tagNames)
+function ASSTagList:filterTags(tagNames, returnOnly)
     if type(tagNames)=="string" then tagNames={tagNames} end
-    assert(not tagNames or type(tagNames)=="table", "Error: argument 1 to getTags() must be either a single or a table of tag names, got a " .. type(tagNames))
-    if tagNames and #tagNames==0 then
-        return {}
+    assert(not tagNames or type(tagNames)=="table", 
+           "Error: argument 1 to selectTags() must be either a single or a table of tag names, got a " .. type(tagNames))
+    
+    local filtered = ASSTagList(nil, self.contentRef)
+    local selected, transTypes, retTrans = {}, ASS.tagTypes.transform
+    
+    if not tagNames then 
+        return returnOnly and self:copy() or self
+    elseif #tagNames==0 then
+        return filtered
     end
 
-    local tags = tagNames and table.select(self.tags,tagNames) or self.tags
-    return table.values(tags)
+    for i=1,#tagNames do
+        local name = tagNames[i]
+        assert(type(name)=="string", 
+               string.format("Error: invalid tag name #%d '(%s)'. expected a string, got a %s", i, tostring(name), type(name))
+        )
+        if name == "reset" then
+            filtered.reset = self.reset
+        elseif transTypes[name] then
+            retTrans = true         -- TODO: pseudo transform name
+        elseif self.tags[name] then
+            filtered.tags[name] = self.tags[name]
+        end
+    end
+
+    if returnOnly then
+        if retTransforms then filtered.transforms = util.copy(self.transforms) end
+        return filtered
+    end
+
+    self.tags, self.reset, self.transforms = filtered.tags, filtered.reset, retTrans and self.transforms or {}
+    return self
 end
 
 function ASSTagList:isEmpty()
