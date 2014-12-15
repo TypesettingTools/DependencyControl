@@ -1445,10 +1445,16 @@ function ASSTagBase:mod(callback, ...)
     return self:set(callback(self:get(...)))
 end
 
-function ASSTagBase:readProps(tagProps)
-    for key, val in pairs(tagProps or {}) do
+function ASSTagBase:readProps(args)
+    if type(args[1])=="table" and args[1].instanceOf and args[1].instanceOf[self.class] then
+        for k, v in pairs(args[1].__tag) do
+            self.__tag[k] = v
+        end
+    elseif args.tagProps then 
+        for key, val in pairs(args.tagProps) do
         self.__tag[key] = val
     end
+end
 end
 
 function ASSTagBase:getTagString(coerce)
@@ -1473,7 +1479,7 @@ end
 ASSNumber = createASSClass("ASSNumber", ASSTagBase, {"value"}, {"number"}, {base=10, precision=3, scale=1})
 
 function ASSNumber:new(args)
-    self:readProps(args.tagProps)
+    self:readProps(args)
     self.value = self:getArgs(args,0,true)
     self:typeCheck(self.value)
     if self.__tag.positive then self:checkPositive(self.value) end
@@ -1526,7 +1532,7 @@ function ASSNumber.__le(a,b) return ASSNumber.cmp(a, "<=", b) end
 ASSPoint = createASSClass("ASSPoint", ASSTagBase, {"x","y"}, {ASSNumber, ASSNumber})
 function ASSPoint:new(args)
     local x, y = self:getArgs(args,0,true)
-    self:readProps(args.tagProps)
+    self:readProps(args)
     self.x, self.y = ASSNumber{x}, ASSNumber{y}
     return self
 end
@@ -1561,7 +1567,7 @@ ASSHex = createASSClass("ASSHex", ASSNumber, {"value"}, {"number"}, {range={0,25
 ASSColor = createASSClass("ASSColor", ASSTagBase, {"r","g","b"}, {ASSHex,ASSHex,ASSHex})   
 function ASSColor:new(args)
     local b,g,r = self:getArgs(args,nil,true)
-    self:readProps(args.tagProps)
+    self:readProps(args)
     self.r, self.g, self.b = ASSHex{r}, ASSHex{g}, ASSHex{b}
     return self
 end
@@ -1588,7 +1594,7 @@ function ASSFade:new(args)
     end 
     startDuration, endDuration, startTime, endTime, startAlpha, midAlpha, endAlpha = self:getArgs(args,{0,0,0,0,255,0,255},true)
 
-    self:readProps(args.tagProps)
+    self:readProps(args)
     if self.__tag.simple == nil then
         self.__tag.simple = self:setSimple(args.simple)
     end
@@ -1638,7 +1644,7 @@ function ASSMove:new(args)
     if self.__tag.simple == nil then
         self.__tag.simple = self:setSimple(args.simple)
     end
-    self:readProps(args.tagProps)
+    self:readProps(args)
 
     self.startPos, self.endPos = ASSPoint{startX, startY}, ASSPoint{endX, endY}
     self.startTime, self.endTime = ASSTime{startTime}, ASSTime{endTime}
@@ -1677,7 +1683,7 @@ ASSString.add, ASSString.mul, ASSString.pow = ASSString.append, nil, nil
 ASSToggle = createASSClass("ASSToggle", ASSTagBase, {"value"}, {"boolean"})
 function ASSToggle:new(args)
     self.value = self:getArgs(args,false,true)
-    self:readProps(args.tagProps)
+    self:readProps(args)
     self:typeCheck(self.value)
     return self
 end
@@ -1756,7 +1762,7 @@ function ASSWeight:new(args)
     if args.raw or (#args==1 and not ASS.instanceOf(args[1], ASSWeight)) then
         weight, bold = weight~=1 and weight or 0, weight==1
     end
-    self:readProps(args.tagProps)
+    self:readProps(args)
     self.bold = ASSToggle{bold}
     self.weightClass = ASSNumber{self.weightClass, tagProps={positive=true, precision=0}}
     return self
@@ -1791,7 +1797,7 @@ ASSClipRect = createASSClass("ASSClipRect", ASSTagBase, {"topLeft", "bottomRight
 
 function ASSClipRect:new(args)
     local left, top, right, bottom = self:getArgs(args, 0, true)
-    self:readProps(args.tagProps)
+    self:readProps(args)
 
     self.topLeft = ASSPoint{left, top}
     self.bottomRight = ASSPoint{right, bottom}
@@ -1869,7 +1875,7 @@ function ASSDrawing:new(args)
             end
         end
     end
-    self:readProps(args.tagProps)
+    self:readProps(args)
     return self
 end
 
@@ -2031,7 +2037,7 @@ ASSTransform = createASSClass("ASSTransform", ASSTagBase, {"tags", "startTime", 
                                                           {ASSLineTagSection, ASSTime, ASSTime, ASSNumber})
 
 function ASSTransform:new(args)
-    self:readProps(args.tagProps)
+    self:readProps(args)
     local types, tagName = ASS.tagTypes.ASSTransform, self.__tag.name
     if args.raw then
         local r = {}
