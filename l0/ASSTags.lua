@@ -111,7 +111,17 @@ function ASSBase:getArgs(args, defaults, coerce, extraValidClasses)
         local _, clsMatchCnt = table.intersect(selfClasses, args[1].compatible)
 
         if clsMatchCnt>0 then
+            if args.deepCopy then 
             args = {args[1]:get()}
+            else
+                -- This is a fast path for compatible objects
+                -- TODO: check for issues caused by this change
+                local obj = args[1]
+                for i=1,#self.__meta__.order do
+                    args[i] = obj[self.__meta__.order[i]]
+                end
+                return unpack(args)
+            end
         else assert(type(propTypes[1]) == "table" and propTypes[1].instanceOf, 
                     string.format("Error: object of class %s does not accept instances of class %s as argument.\n", self.typeName, args[1].typeName)
              ) 
