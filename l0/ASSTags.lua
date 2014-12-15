@@ -2291,7 +2291,7 @@ function ASSFoundation:new()
         transform_simple = {overrideName="\\t", type=ASSTransform, pattern="\\t%(([^,]+)%)", format="\\t(%s)"}, 
         transform_accel = {overrideName="\\t", type=ASSTransform, pattern="\\t%(([%d%.]+),([^,]+)%)", format="\\t(%.2N,%s)"}, 
         transform_time = {overrideName="\\t", type=ASSTransform, pattern="\\t%(([%-%d]+),([%-%d]+),([^,]+)%)", format="\\t(%.2N,%.2N,%s)"}, 
-        transform = {overrideName="\\t", type=ASSTransform, pattern="\\t%(([%-%d]+),([%-%d]+),([%d%.]+),([^,]+)%)", format="\\t(%.2N,%.2N,%.2N,%s)"}, 
+        transform_complex = {overrideName="\\t", type=ASSTransform, pattern="\\t%(([%-%d]+),([%-%d]+),([%d%.]+),([^,]+)%)", format="\\t(%.2N,%.2N,%.2N,%s)"}, 
         unknown = {type=ASSUnknown, format="%s", friendlyName="Unknown Tag"},
         junk = {type=ASSUnknown, format="%s", friendlyName="Junk"}
     }
