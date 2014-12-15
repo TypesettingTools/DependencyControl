@@ -2052,19 +2052,19 @@ function ASSTransform:new(args)
     end
     tags, startTime, endTime, accel = self:getArgs(args,{"",0,0,1},true)
 
-    self.tags, self.accel = ASSLineTagSection(tags), ASSNumber{accel, tagProps={positive=true}}
+    self.tags, self.accel = ASSLineTagSection(tags,args.transformableOnly), ASSNumber{accel, tagProps={positive=true}}
     self.startTime, self.endTime = ASSTime{startTime}, ASSTime{endTime}
     return self
 end
 
 function ASSTransform:changeTagType(type_)
-    local types, typesSet = ASS.tagTypes.ASSTransform, table.arrayToSet(ASS.tagTypes.ASSTransform)
+    local types = ASS.tagTypes.ASSTransform
     if not type_ then
         local noTime = self.startTime==0 and self.endTime==0
         self.__tag.name = self.accel==1 and (noTime and types[3] or types[4]) or noTime and types[1] or types[3]
         self.__tag.typeLocked = false
     else
-        assert(typesSet[type], "Error: invalid transform type: " .. tostring(type))
+        assert(types[type], "Error: invalid transform type: " .. tostring(type))
         self.__tag.name, self.__tag.typeLocked = type_, true
     end
     return self.__tag.name, self.__tag.typeLocked
@@ -2325,7 +2325,16 @@ function ASSFoundation:new()
     self.classes.drawingCommands = table.values(self.classes.drawingCommandMappings)
 
     -- TODO: dynamically generate this table
-    self.tagTypes = { ASSTransform = {"transform_accel", "transform_complex", "transform_simple", "transform_time"} }
+    self.tagTypes = { 
+        ASSTransform = {"transform_accel", "transform_complex", "transform_simple", "transform_time", "transform"},
+        ASSClipRect = {"clip_rect", "iclip_rect"}
+    }
+
+    for _,tagType in pairs(self.tagTypes) do
+        for i=1,#tagType do
+            tagType[tagType[i]] = true
+        end
+    end
 
     return self
 end
