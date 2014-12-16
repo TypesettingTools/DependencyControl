@@ -2562,6 +2562,7 @@ function ASSFoundation:new()
     -- TODO: dynamically generate this table
     self.tagTypes = {
         all = table.keys(self.tagMap),
+        clips = {"clip_rect", "iclip_rect", "clip_vect", "iclip_vect"},
         ASSTransform = {"transform_accel", "transform_complex", "transform_simple", "transform_time", "transform"},
         ASSClipRect = {"clip_rect", "iclip_rect"}
     }
