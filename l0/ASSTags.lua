@@ -543,7 +543,7 @@ function ASSLineContents:cleanTags(level, mergeSect)   -- TODO: optimize it, mak
             local tagList = section:getEffectiveTags(false,false,false)
             if level>=3 then tagList:diff(tagListPrev) end
             if level>=4 then tagList:diff(tagListDef:merge(tagListPrev,false,true),false,true) end
-            tagListPrev:merge(tagList,false)
+            tagListPrev:merge(tagList, false, false, false, true)
             
             return not tagList:isEmpty() and ASSLineTagSection(tagList) or false
         end, ASSLineTagSection)
@@ -1354,19 +1354,32 @@ function ASSTagList:isTagTransformed(tagName)
     return tagName and set[tagName] or set
 end
 
-function ASSTagList:merge(tagLists, copyTags, returnOnly, overrideGlobalTags)
+function ASSTagList:merge(tagLists, copyTags, returnOnly, overrideGlobalTags, expandResets)
     copyTags = default(copyTags, true)
     if ASS.instanceOf(tagLists, ASSTagList) then
         tagLists = {tagLists}
     end
 
     local merged, ovrTransTags, resetIdx, seenTransform = ASSTagList(self), {}, 0, #self.transforms>0
+    if expandResets and self.reset then
+        local expReset = merged.contentRef:getDefaultTags(merged.reset)
+        merged.tags = merged:getDefaultTags(merged.reset):merge(merged.tags, false)
+    end
+
     for i=1,#tagLists do
         assert(ASS.instanceOf(tagLists[i],ASSTagList), 
                string.format("Error: can only merge %s objects, got a %s for argument #%d.", ASSTagList.typeName, type(tagLists[i]), i)
         )
-        if tagLists[i].reset then   -- discard all previous non-global tags when a reset is encountered
-            merged.tags, merged.reset = merged:getGlobal(true), tagLists[i].reset
+
+        if tagLists[i].reset then
+            if expandResets then
+                local expReset = tagLists[i].contentRef:getDefaultTags(tagLists[i].reset)
+                merged.tags = overrideGlobalTags and expReset or expReset:merge(merged:getGlobal(true),false)
+            else
+                -- discard all previous non-global tags when a reset is encountered
+                merged.tags, merged.reset = merged:getGlobal(true), tagLists[i].reset
+            end
+
             resetIdx = i
         end
 
