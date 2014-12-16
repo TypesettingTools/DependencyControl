@@ -1459,8 +1459,16 @@ function ASSTagList:diff(other, returnOnly, ignoreGlobalState) -- returnOnly not
            string.format("Error: can only diff %s objects, got a %s.", ASSTagList.typeName, type(other))
     )
 
-    local diff = ASSTagList(nil, self.contentRef)
-    local defaults = self.contentRef:getDefaultTags(self.reset)
+    local diff, ownReset = ASSTagList(nil, self.contentRef), self.reset
+
+    if #other.tags == 0 and self.reset and (
+        other.reset and self.reset.value == other.reset.value
+        or not other.reset and (self.reset.value == "" or self.reset.value == other.contentRef:getStyleRef().name)
+    ) then
+        ownReset, self.reset = nil, returnOnly and self.reset or nil
+    end
+
+    local defaults = ownReset and self.contentRef:getDefaultTags(ownReset)
     local otherReset = other.reset and other.contentRef:getDefaultTags(other.reset)
     local otherTransSet = other:isTagTransformed()
 
@@ -1469,13 +1477,13 @@ function ASSTagList:diff(other, returnOnly, ignoreGlobalState) -- returnOnly not
 
         -- if this tag list contains a reset, we need to compare its local tags to the default values set by the reset 
         -- instead of to the values of the other tag list
-        local ref = (self.reset and not global) and defaults or other
+        local ref = (ownReset and not global) and defaults or other
 
         -- since global tags can't be overwritten, only treat global tags that are also present in the other tag list as different
         if global and not other.tags[name]
         -- all local tags transformed in the previous section will change state (no matter the tag values) when used in this section,
         -- unless this section begins with a reset, in which case only rectangular clips are kept
-        or not (global or self.reset and not tag.instanceOf[ASSClipRect]) and otherTransSet[name] 
+        or not (global or ownReset and not tag.instanceOf[ASSClipRect]) and otherTransSet[name] 
         -- check local tags for equality in reference list
         or not (global or tag:equal(ref.tags[name]) or otherReset and tag:equal(otherReset.tags[name])) then
             if returnOnly then diff.tags[name] = tag end
@@ -1484,7 +1492,7 @@ function ASSTagList:diff(other, returnOnly, ignoreGlobalState) -- returnOnly not
             self.tags[name] = nil
         end
     end
-    diff.reset = self.reset
+    diff.reset = ownReset
     -- transforms can't be deduplicated so all of them will be kept in the diff
     diff.transforms = self.transforms
     return returnOnly and diff or self
