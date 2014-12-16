@@ -2548,7 +2548,8 @@ function ASSFoundation:new()
     self.classes.drawingCommands = table.values(self.classes.drawingCommandMappings)
 
     -- TODO: dynamically generate this table
-    self.tagTypes = { 
+    self.tagTypes = {
+        all = table.keys(self.tagMap),
         ASSTransform = {"transform_accel", "transform_complex", "transform_simple", "transform_time", "transform"},
         ASSClipRect = {"clip_rect", "iclip_rect"}
     }
