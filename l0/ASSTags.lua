@@ -539,11 +539,15 @@ function ASSLineContents:cleanTags(level, mergeSect)   -- TODO: optimize it, mak
     if level>=1 then
         self:callback(function(section,sections,i)
             if level<2 then return #section.tags>0 end
-
+            local isLastSection = i==#sections
+            
             local tagList = section:getEffectiveTags(false,false,false)
             if level>=3 then tagList:diff(tagListPrev) end
-            if level>=4 then tagList:diff(tagListDef:merge(tagListPrev,false,true),false,true) end
-            tagListPrev:merge(tagList, false, false, false, true)
+            if level>=4 then
+                if i==#sections then tagList:filterTags(nil, {globalOrRectClip=true}) end
+                tagList:diff(tagListDef:merge(tagListPrev,false,true),false,true)
+            end
+            if not isLastSection then tagListPrev:merge(tagList,false, false, false, true) end
             
             return not tagList:isEmpty() and ASSLineTagSection(tagList) or false
         end, ASSLineTagSection)
