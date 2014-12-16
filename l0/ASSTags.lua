@@ -1691,7 +1691,7 @@ function ASSTagBase:readProps(args)
 end
 
 function ASSTagBase:getTagString(coerce)
-    return ASS:formatTag(self, self:getTagParams(coerce))
+    return self.disabled and "" or ASS:formatTag(self, self:getTagParams(coerce))
 end
 
 function ASSTagBase:equal(ASSTag)  -- checks equalness only of the relevant properties
