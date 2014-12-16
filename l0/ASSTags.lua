@@ -780,36 +780,12 @@ function ASSLineContents:getTextExtents(coerce)   -- TODO: account for linebreak
 end
 
 function ASSLineContents:getLineBounds(noCommit)
-    if not noCommit then self:commit() end
-    local assi, msg = ASSInspector(self.line.parentCollection.sub)
-    assert(assi, "ASSInspector Error: " .. tostring(msg))
-
-    local animated, lineBounds = self:isAnimated()
-    self.line.assi_exhaustive = animated
-    local bounds, times = assi:getBounds{self.line}
-    assert(bounds~=nil,"ASSInspector Error: " .. tostring(times))
-
-    if bounds[1]~=false then
-        local frame, x1Min, y1Min, x2Max, y2Max = aegisub.frame_from_ms, 0, 0, 0, 0
-        lineBounds = {fbf={off=frame(times[1]), n=#bounds}}
-        for i=1,lineBounds.fbf.n do
-            if bounds[i] then
-                local x1, y1, w, h = bounds[i].x, bounds[i].y, bounds[i].w, bounds[i].h
-                local x2, y2 = x1+w, y1+h
-                lineBounds.fbf[frame(times[i])] = {ASSPoint{x1,y1}, ASSPoint{x2,y2}, w=w, h=h}
-                x1Min, y1Min, x2Max, y2Max = math.min(x1,x1Min), math.min(y1,y1Min), math.max(x2,x2Max), math.max(y2,y2Max)
-            else lineBounds.fbf[frame(times[i])] = {w=0, h=0} end
-        end
-        lineBounds[1], lineBounds[2], lineBounds.w, lineBounds.h = ASSPoint{x1Min,y1Min}, ASSPoint{x2Max, y2Max}
-    else lineBounds = {w=0, h=0} end
-    lineBounds.rawText = self.line.text
-    if not noCommit then self:undoCommit() end
-    return lineBounds, animated
+    return ASSLineBounds(self, noCommit)
 end
 
 function ASSLineContents:getMetrics(includeLineBounds, includeTypeBounds, coerce)
     local metr = {ascent=0, descent=0, internal_leading=0, external_leading=0, height=0, width=0}
-    local lineBounds, typeBounds = includeLineBounds and {0,0,0,0}, includeTypeBounds and {0,0,0,0}
+    local typeBounds = includeTypeBounds and {0,0,0,0}
     local textCnt = self:getSectionCount(ASSLineTextSection)
 
     self:callback(function(section, sections, i, j)
@@ -897,6 +873,63 @@ function ASSLineContents:reverse()
     self.sections = reversed
     self:updateRefs()
     return self:cleanTags(4)
+end
+
+ASSLineBounds = createASSClass("ASSLineBounds", ASSBase, {1, 2, "w", "h", "fbf", "animated", "rawText"}, 
+                              {"ASSPoint", "ASSPoint", "number", "number", "table", "boolean", "string"})
+function ASSLineBounds:new(cnts, noCommit)
+    assert(ASS.instanceOf(cnts, ASSLineContents), 
+           string.format("Error: argument #1 must be an object of type %s, got a %s.", 
+                          ASSLineTagSection.typeName, ASS.instanceOf(cnts) or type(cnts))
+    )
+    if not noCommit then cnts:commit() end
+    local assi, msg = ASSInspector(cnts.line.parentCollection.sub)
+    assert(assi, "ASSInspector Error: " .. tostring(msg))
+
+    self.animated = cnts:isAnimated()
+    cnts.line.assi_exhaustive = animated
+
+    local bounds, times = assi:getBounds{cnts.line}
+    assert(bounds~=nil,"ASSInspector Error: " .. tostring(times))
+
+    if bounds[1]~=false then
+        local frame, x2Max, y2Max, x1Min, y1Min = aegisub.frame_from_ms, 0, 0
+        self.fbf={off=frame(times[1]), n=#bounds}
+        for i=1,self.fbf.n do
+            if bounds[i] then
+                local x1, y1, w, h = bounds[i].x, bounds[i].y, bounds[i].w, bounds[i].h
+                local x2, y2 = x1+w, y1+h
+                self.fbf[frame(times[i])] = {ASSPoint{x1,y1}, ASSPoint{x2,y2}, w=w, h=h, hash=bounds[i].hash}
+                x1Min, y1Min = math.min(x1, x1Min or x1), math.min(y1, y1Min or y1)
+                x2Max, y2Max = math.max(x2, x2Max), math.max(y2, y2Max)
+            else self.fbf[frame(times[i])] = {w=0, h=0, hash=false} end
+        end
+        self[1], self[2], self.w, self.h = ASSPoint{x1Min,y1Min}, ASSPoint{x2Max, y2Max}, x2Max-x1Min, y2Max-y1Min
+    else self.w, self.h, self.fbf = 0, 0, {n=0} end
+    
+    self.rawText = cnts.line.text
+    if not noCommit then cnts:undoCommit() end
+    return self
+end
+
+function ASSLineBounds:equal(other)
+    assert(ASS.instanceOf(other, ASSLineBounds), 
+           string.format("Error: argument #1 must be an object of type %s, got a %s.", 
+                          ASSLineBounds.typeName, ASS.instanceOf(other) or type(other))
+    )
+    if self.w + other.w == 0 then 
+        return true
+    elseif self.w~=other.w or self.h~=other.h or self.animated~=other.animated or self.fbf.n~=other.fbf.n then
+        return false
+    end
+
+    for i=0,self.fbf.n-1 do
+        if self.fbf[self.fbf.off+i].hash ~= other.fbf[other.fbf.off+i].hash then
+            return false
+        end
+    end
+
+    return true
 end
 
 local ASSStringBase = createASSClass("ASSStringBase", ASSBase, {"value"}, {"string"})
