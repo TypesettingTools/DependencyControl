@@ -1573,31 +1573,43 @@ function ASSTagList:getStyleTable(styleRef, name, coerce)
     return sTbl
 end
 
-function ASSTagList:filterTags(tagNames, returnOnly)
+function ASSTagList:filterTags(tagNames, tagProps, returnOnly)
     if type(tagNames)=="string" then tagNames={tagNames} end
     assert(not tagNames or type(tagNames)=="table", 
            "Error: argument 1 to selectTags() must be either a single or a table of tag names, got a " .. type(tagNames))
     
     local filtered = ASSTagList(nil, self.contentRef)
-    local selected, transTypes, retTrans = {}, ASS.tagTypes.transform
+    local selected, transTypes, retTrans = {}, ASS.tagTypes.ASSTransform
+    local propCnt = tagProps and table.length(tagProps) or 0
     
-    if not tagNames then 
+    if not tagNames and not (tagProps or #tagProps==0) then 
         return returnOnly and self:copy() or self
+    elseif not tagNames then
+        tagNames = ASS.tagTypes.all
     elseif #tagNames==0 then
         return filtered
     end
 
     for i=1,#tagNames do
-        local name = tagNames[i]
+        local name, propMatch = tagNames[i], true
+        local selfTag = name=="reset" and self.reset or self.tags[name]
         assert(type(name)=="string", 
                string.format("Error: invalid tag name #%d '(%s)'. expected a string, got a %s", i, tostring(name), type(name))
         )
-        if name == "reset" then
-            filtered.reset = self.reset
+
+        if propCnt~=0 and selfTag then
+            local _, propMatchCnt = table.intersect(tagProps, self.tags[name].__tag)
+            propMatch = propMatchCnt == propCnt
+        end
+
+        if not (propMatch and selfTag) then
+            -- do nothing
+        elseif name == "reset" then
+            filtered.reset = selfTag
         elseif transTypes[name] then
             retTrans = true         -- TODO: pseudo transform name
         elseif self.tags[name] then
-            filtered.tags[name] = self.tags[name]
+            filtered.tags[name] = selfTag
         end
     end
 
