@@ -2520,9 +2520,11 @@ function ASSFoundation:new()
     local toFriendlyName, toTagName, i = {}, {}
 
     for name,tag in pairs(tagMap) do
-        -- insert tag name and global idicator into props
+        -- insert tag name into props
         tag.props = tag.props or {}
-        tag.props.name, tag.props.global = tag.props.name or name, tag.global
+        tag.props.name = tag.props.name or name
+        -- generate properties for treating rectangular clips as global tags
+        tag.props.globalOrRectClip = tag.props.global or tag.type==ASSClipRect
         -- fill in missing friendly names
         tag.friendlyName = tag.friendlyName or tag.overrideName
         -- populate friendly name <-> tag name conversion tables
