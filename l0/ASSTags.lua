@@ -1448,6 +1448,7 @@ function ASSTagList:diff(other, returnOnly, ignoreGlobalState) -- returnOnly not
 
     local diff = ASSTagList(nil, self.contentRef)
     local defaults = self.contentRef:getDefaultTags(self.reset)
+    local otherReset = other.reset and other.contentRef:getDefaultTags(other.reset)
     local otherTransSet = other:isTagTransformed()
 
     for name,tag in pairs(self.tags) do
@@ -1463,7 +1464,7 @@ function ASSTagList:diff(other, returnOnly, ignoreGlobalState) -- returnOnly not
         -- unless this section begins with a reset, in which case only rectangular clips are kept
         or not (global or self.reset and not tag.instanceOf[ASSClipRect]) and otherTransSet[name] 
         -- check local tags for equality in reference list
-        or not (global or tag:equal(ref.tags[name])) then
+        or not (global or tag:equal(ref.tags[name]) or otherReset and tag:equal(otherReset.tags[name])) then
             if returnOnly then diff.tags[name] = tag end
         
         elseif not returnOnly then 
