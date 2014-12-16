@@ -243,11 +243,14 @@ table.trimArray = function(tbl)
 end
 
 table.select = function(tbl,keys)
-    local selected = {}
+    local selected, len = {}, 0
     for i=1,#keys do
         selected[keys[i]] = tbl[keys[i]]
+        if selected[keys[i]] then
+            len = len + 1
+        end
     end
-    return selected
+    return selected, len
 end
 
 table.sliceArray = function(tbl, istart, iend)
