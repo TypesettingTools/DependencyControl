@@ -1629,7 +1629,7 @@ end
 function ASSTagList:getGlobal(includeRectClips)
     local global = {}
     for name,tag in pairs(self.tags) do
-        global[name] = (tag.__tag.global or (includeRectClips and tag.instanceOf[ASSClipRect])) and tag or nil
+        global[name] = (includeRectClips and tag.__tag.globalOrRectClip or tag.__tag.global) and tag or nil
     end
     return global
 end
