@@ -2048,7 +2048,7 @@ function ASSClipRect:getTagParams(coerce)
 end
 
 function ASSClipRect:setInverse(state)
-    state = type(state)==nil and true or false
+    state = type(state)==nil and true or state
     self.__tag.inverse = state
     self.__tag.name = state and "iclip_rect" or "clip_rect"
     return state
