@@ -2047,7 +2047,7 @@ function ASSClipRect:getTagParams(coerce)
 end
 
 function ASSClipRect:setInverse(state)
-    state = type(state)==nil and true or state
+    state = state==nil and true or state
     self.__tag.inverse = state
     self.__tag.name = state and "iclip_rect" or "clip_rect"
     return state
@@ -2239,7 +2239,7 @@ ASSDrawing.set, ASSDrawing.mod = nil, nil  -- TODO: check if these can be remapp
 ASSClipVect = createASSClass("ASSClipVect", ASSDrawing, {"commands","scale"}, {"table", ASSNumber}, {}, {ASSDrawing})
 --TODO: unify setInverse and toggleInverse for VectClip and RectClip by using multiple inheritance
 function ASSClipVect:setInverse(state)
-    state = type(state)==nil and true or state
+    state = state==nil and true or state
     self.__tag.inverse = state
     self.__tag.name = state and "iclip_vect" or "clip_vect"
     return state
@@ -2465,7 +2465,7 @@ end
 
 ASSFoundation = createASSClass("ASSFoundation")
 function ASSFoundation:new()
-    local tagMap = {
+    self.tagMap = {
         scale_x= {overrideName="\\fscx", type=ASSNumber, pattern="\\fscx([%d%.]+)", format="\\fscx%.3N", props={transformable=true}},
         scale_y = {overrideName="\\fscy", type=ASSNumber, pattern="\\fscy([%d%.]+)", format="\\fscy%.3N", props={transformable=true}},
         align = {overrideName="\\an", type=ASSAlign, pattern="\\an([1-9])", format="\\an%d", props={global=true}},
@@ -2532,9 +2532,9 @@ function ASSFoundation:new()
         junk = {type=ASSUnknown, format="%s", friendlyName="Junk"}
     }
 
-    local toFriendlyName, toTagName, i = {}, {}
+    self.toFriendlyName, self.toTagName = {}, {}
 
-    for name,tag in pairs(tagMap) do
+    for name,tag in pairs(self.tagMap) do
         -- insert tag name into props
         tag.props = tag.props or {}
         tag.props.name = tag.props.name or name
@@ -2544,11 +2544,11 @@ function ASSFoundation:new()
         tag.friendlyName = tag.friendlyName or tag.overrideName
         -- populate friendly name <-> tag name conversion tables
         if tag.friendlyName then
-            toFriendlyName[name], toTagName[tag.friendlyName] = tag.friendlyName, name 
+            self.toFriendlyName[name], self.toTagName[tag.friendlyName] = tag.friendlyName, name 
         end
     end
 
-    self.tagMap, self.toFriendlyName, self.toTagName = tagMap, toFriendlyName, toTagName
+
 
     self.classes = {
         lineSection = {ASSLineTextSection, ASSLineTagSection, ASSLineDrawingSection, ASSLineCommentSection},
