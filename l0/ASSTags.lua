@@ -2524,6 +2524,7 @@ function ASSFoundation:new()
                        format="\\fad(%d,%d)", default={0,0}},
         fade = {overrideName="\\fade", type=ASSFade, pattern="\\fade%((.-)%)", format="\\fade(%d,%d,%d,%d,%d,%d,%d)",
                 default={255,0,255,0,0,0,0}, props={global=true}},
+        transform = {overrideName="\\t", type=ASSTransform, props={pseudo=true}},
         transform_simple = {overrideName="\\t", type=ASSTransform, pattern="\\t%(([^,]+)%)", format="\\t(%s)"}, 
         transform_accel = {overrideName="\\t", type=ASSTransform, pattern="\\t%(([%d%.]+),([^,]+)%)", format="\\t(%.2N,%s)"}, 
         transform_time = {overrideName="\\t", type=ASSTransform, pattern="\\t%(([%-%d]+),([%-%d]+),([^,]+)%)", format="\\t(%.2N,%.2N,%s)"}, 
