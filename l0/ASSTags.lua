@@ -658,7 +658,6 @@ function ASSLineContents:repositionSplitLines(splitLines, writeOrigin)
     return splitLines
 end
 
-local styleDefaultCache = {}
 
 function ASSLineContents:getStyleRef(style)
     if ASS.instanceOf(style, ASSString) then
@@ -702,7 +701,9 @@ function ASSLineContents:getPosition(style, align, forceDefault)
     ), ASS:createTag("align", align)
 end
 
-function ASSLineContents:getDefaultTags(style, copyTags, useOvrAlign)    -- TODO: cache
+-- TODO: make all caches members of ASSFoundation
+local styleDefaultCache = {}
+function ASSLineContents:getDefaultTags(style, copyTags, useOvrAlign)
     copyTags, useOvrAlign = default(copyTags,true), default(useOvrAlign, true)
     local line = self.line
     style = self:getStyleRef(style)
