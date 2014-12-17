@@ -1582,7 +1582,7 @@ function ASSTagList:filterTags(tagNames, tagProps, returnOnly)
            "Error: argument 1 to selectTags() must be either a single or a table of tag names, got a " .. type(tagNames))
     
     local filtered = ASSTagList(nil, self.contentRef)
-    local selected, transTypes, retTrans = {}, ASS.tagNames[ASSTransform]
+    local selected, transNames, retTrans = {}, ASS.tagNames[ASSTransform]
     local propCnt = tagProps and table.length(tagProps) or 0
     
     if not tagNames and not (tagProps or #tagProps==0) then 
@@ -1609,7 +1609,7 @@ function ASSTagList:filterTags(tagNames, tagProps, returnOnly)
             -- do nothing
         elseif name == "reset" then
             filtered.reset = selfTag
-        elseif transTypes[name] then
+        elseif transNames[name] then
             retTrans = true         -- TODO: filter transforms by type
         elseif self.tags[name] then
             filtered.tags[name] = selfTag
@@ -2274,14 +2274,14 @@ ASSTransform = createASSClass("ASSTransform", ASSTagBase, {"tags", "startTime", 
 
 function ASSTransform:new(args)
     self:readProps(args)
-    local types, tagName = ASS.tagNames[ASSTransform], self.__tag.name
+    local names, tagName = ASS.tagNames[ASSTransform], self.__tag.name
     if args.raw then
         local r = {}
-        if tagName == types[1] then        -- \t(<accel>,<style modifiers>)
+        if tagName == names[1] then        -- \t(<accel>,<style modifiers>)
             r[1], r[4] = args.raw[1], args.raw[2]
-        elseif stagName == types[2] then    -- \t(<t1>,<t2>,<accel>,<style modifiers>)
+        elseif tagName == names[2] then    -- \t(<t1>,<t2>,<accel>,<style modifiers>)
             r[1], r[2], r[3], r[4] = args.raw[4], args.raw[1], args.raw[2], args.raw[3]
-        elseif tagName == types[4] then    -- \t(<t1>,<t2>,<style modifiers>)
+        elseif tagName == names[4] then    -- \t(<t1>,<t2>,<style modifiers>)
             r[1], r[2], r[3] = args.raw[3], args.raw[1], args.raw[2]
         else r = args.raw end
         args.raw = r
@@ -2294,20 +2294,20 @@ function ASSTransform:new(args)
 end
 
 function ASSTransform:changeTagType(type_)
-    local types = ASS.tagNames[ASSTransform]
+    local names = ASS.tagNames[ASSTransform]
     if not type_ then
         local noTime = self.startTime==0 and self.endTime==0
-        self.__tag.name = self.accel==1 and (noTime and types[3] or types[4]) or noTime and types[1] or types[3]
+        self.__tag.name = self.accel==1 and (noTime and names[3] or names[4]) or noTime and names[1] or names[3]
         self.__tag.typeLocked = false
     else
-        assert(types[type], "Error: invalid transform type: " .. tostring(type))
+        assert(names[type], "Error: invalid transform type: " .. tostring(type))
         self.__tag.name, self.__tag.typeLocked = type_, true
     end
     return self.__tag.name, self.__tag.typeLocked
 end
 
 function ASSTransform:getTagParams(coerce)
-    local types, tagName = ASS.tagNames[ASSTransform], self.__tag.name
+    local names, tagName = ASS.tagNames[ASSTransform], self.__tag.name
 
     if not self.__tag.typeLocked then
         self:changeTagType()
@@ -2318,13 +2318,13 @@ function ASSTransform:getTagParams(coerce)
         t2 = util.max(t1, t2)
     else assert(t1<=t2, string.format("Error: transform start time must not be greater than the end time, got %d <= %d", t1, t2)) end
 
-    if tagName == types[3] then
+    if tagName == names[3] then
         return self.tags:getString(coerce)
-    elseif tagName == types[1] then
+    elseif tagName == names[1] then
         return self.accel:getTagParams(coerce), self.tags:getString(coerce)
-    elseif tagName == types[4] then
+    elseif tagName == names[4] then
         return t1, t2, self.tags:getString(coerce)
-    elseif tagName == types[2] then
+    elseif tagName == names[2] then
         return t1, t2, self.accel:getTagParams(coerce), self.tags:getString(coerce)
     else error("Error: invalid transform type: " .. tostring(type)) end
 
