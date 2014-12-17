@@ -1264,12 +1264,11 @@ function ASSLineTagSection:insertDefaultTags(tagNames, index)
 end
 
 function ASSLineTagSection:getString(coerce)
-    -- TODO: optimize
-    local tagString = ""
-    self:callback(function(tag)
-        tagString = tagString .. tag:getTagString(coerce)
+    local tagStrings = {}
+    self:callback(function(tag, _, i)
+        tagStrings[i] = tag:getTagString(coerce)
     end)
-    return tagString
+    return table.concat(tagStrings)
 end
 
 function ASSLineTagSection:getEffectiveTags(includeDefault, includePrevious, copyTags)   -- TODO: properly handle transforms
