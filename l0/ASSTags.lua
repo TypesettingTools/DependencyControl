@@ -1582,13 +1582,13 @@ function ASSTagList:filterTags(tagNames, tagProps, returnOnly)
            "Error: argument 1 to selectTags() must be either a single or a table of tag names, got a " .. type(tagNames))
     
     local filtered = ASSTagList(nil, self.contentRef)
-    local selected, transTypes, retTrans = {}, ASS.tagTypes.ASSTransform
+    local selected, transTypes, retTrans = {}, ASS.tagNames[ASSTransform]
     local propCnt = tagProps and table.length(tagProps) or 0
     
     if not tagNames and not (tagProps or #tagProps==0) then 
         return returnOnly and self:copy() or self
     elseif not tagNames then
-        tagNames = ASS.tagTypes.all
+        tagNames = ASS.tagNames.all
     elseif #tagNames==0 then
         return filtered
     end
@@ -2274,7 +2274,7 @@ ASSTransform = createASSClass("ASSTransform", ASSTagBase, {"tags", "startTime", 
 
 function ASSTransform:new(args)
     self:readProps(args)
-    local types, tagName = ASS.tagTypes.ASSTransform, self.__tag.name
+    local types, tagName = ASS.tagNames[ASSTransform], self.__tag.name
     if args.raw then
         local r = {}
         if tagName == types[1] then        -- \t(<accel>,<style modifiers>)
@@ -2294,7 +2294,7 @@ function ASSTransform:new(args)
 end
 
 function ASSTransform:changeTagType(type_)
-    local types = ASS.tagTypes.ASSTransform
+    local types = ASS.tagNames[ASSTransform]
     if not type_ then
         local noTime = self.startTime==0 and self.endTime==0
         self.__tag.name = self.accel==1 and (noTime and types[3] or types[4]) or noTime and types[1] or types[3]
@@ -2307,7 +2307,7 @@ function ASSTransform:changeTagType(type_)
 end
 
 function ASSTransform:getTagParams(coerce)
-    local types, tagName = ASS.tagTypes.ASSTransform, self.__tag.name
+    local types, tagName = ASS.tagNames[ASSTransform], self.__tag.name
 
     if not self.__tag.typeLocked then
         self:changeTagType()
@@ -2533,7 +2533,10 @@ function ASSFoundation:new()
         junk = {type=ASSUnknown, format="%s", friendlyName="Junk"}
     }
 
-    self.toFriendlyName, self.toTagName = {}, {}
+    self.tagNames, self.toFriendlyName, self.toTagName = {
+        all = table.keys(self.tagMap),
+        clips = {"clip_rect", "iclip_rect", "clip_vect", "iclip_vect"}
+    }, {}, {}
 
     for name,tag in pairs(self.tagMap) do
         -- insert tag name into props
@@ -2547,9 +2550,19 @@ function ASSFoundation:new()
         if tag.friendlyName then
             self.toFriendlyName[name], self.toTagName[tag.friendlyName] = tag.friendlyName, name 
         end
+        -- fill tag names table
+        local tagType = self.tagNames[tag.type]
+        if not tagType then
+            self.tagNames[tag.type] = {name, n=1}
+        else tagType[tagType.n+1] = name end
     end
 
-
+    -- make tag names table also work as a set
+    for _,tagType in pairs(self.tagNames) do
+        for i=1,#tagType do
+            tagType[tagType[i]] = true
+        end
+    end
 
     self.classes = {
         lineSection = {ASSLineTextSection, ASSLineTagSection, ASSLineDrawingSection, ASSLineCommentSection},
@@ -2562,20 +2575,6 @@ function ASSFoundation:new()
         }
     }
     self.classes.drawingCommands = table.values(self.classes.drawingCommandMappings)
-
-    -- TODO: dynamically generate this table
-    self.tagTypes = {
-        all = table.keys(self.tagMap),
-        clips = {"clip_rect", "iclip_rect", "clip_vect", "iclip_vect"},
-        ASSTransform = {"transform_accel", "transform_complex", "transform_simple", "transform_time", "transform"},
-        ASSClipRect = {"clip_rect", "iclip_rect"}
-    }
-
-    for _,tagType in pairs(self.tagTypes) do
-        for i=1,#tagType do
-            tagType[tagType[i]] = true
-        end
-    end
 
     return self
 end
