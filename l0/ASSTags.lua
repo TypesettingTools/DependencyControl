@@ -462,7 +462,8 @@ function ASSLineContents:getEffectiveTags(index, includeDefault, includePrevious
            string.format("Error: argument #1 (index) to getEffectiveTags() must be an integer != 0, got '%s' of type %s", tostring(index), type(index))
     )
     if index<0 then index = index+#self.sections+1 end
-    return self.sections[index]:getEffectiveTags(includeDefault,includePrevious,copyTags)
+    return self.sections[index] and self.sections[index]:getEffectiveTags(includeDefault,includePrevious,copyTags) 
+           or ASSTagList(nil, self)
 end
 
 function ASSLineContents:getTagCount()
