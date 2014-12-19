@@ -2559,13 +2559,16 @@ function ASSFoundation:new()
         local tagType = self.tagNames[tag.type]
         if not tagType then
             self.tagNames[tag.type] = {name, n=1}
-        else tagType[tagType.n+1] = name end
+        else 
+            tagType[tagType.n+1], tagType.n = name, tagType.n+1
+        end
     end
 
     -- make tag names table also work as a set
-    for _,tagType in pairs(self.tagNames) do
-        for i=1,#tagType do
-            tagType[tagType[i]] = true
+    for _,names in pairs(self.tagNames) do
+        if not names.n then names.n = #names end
+        for i=1,names.n do
+            names[names[i]] = true
         end
     end
 
