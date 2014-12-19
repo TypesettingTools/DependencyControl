@@ -1518,7 +1518,8 @@ function ASSTagList:diff(other, returnOnly, ignoreGlobalState) -- returnOnly not
         -- instead of to the values of the other tag list
         local ref = (ownReset and not global) and defaults or other
 
-        -- since global tags can't be overwritten, only treat global tags that are also present in the other tag list as different
+        -- since global tags can't be overwritten, only treat global tags that are not 
+        -- present in the other tag list as different
         if global and not other.tags[name]
         -- all local tags transformed in the previous section will change state (no matter the tag values) when used in this section,
         -- unless this section begins with a reset, in which case only rectangular clips are kept
