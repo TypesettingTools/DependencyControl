@@ -2285,7 +2285,7 @@ function ASSTransform:new(args)
             r[1], r[4] = args.raw[1], args.raw[2]
         elseif tagName == names[2] then    -- \t(<t1>,<t2>,<accel>,<style modifiers>)
             r[1], r[2], r[3], r[4] = args.raw[4], args.raw[1], args.raw[2], args.raw[3]
-        elseif tagName == names[4] then    -- \t(<t1>,<t2>,<style modifiers>)
+        elseif tagName == names[3] then    -- \t(<t1>,<t2>,<style modifiers>)
             r[1], r[2], r[3] = args.raw[3], args.raw[1], args.raw[2]
         else r = args.raw end
         args.raw = r
