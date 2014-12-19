@@ -2539,7 +2539,8 @@ function ASSFoundation:new()
 
     self.tagNames, self.toFriendlyName, self.toTagName = {
         all = table.keys(self.tagMap),
-        clips = {"clip_rect", "iclip_rect", "clip_vect", "iclip_vect"}
+        clips = {"clip_rect", "iclip_rect", "clip_vect", "iclip_vect"},
+        karaoke = {"k_fill", "k_sweep", "k_sweep_alt", "k_bord"}
     }, {}, {}
 
     for name,tag in pairs(self.tagMap) do
