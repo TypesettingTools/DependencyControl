@@ -407,6 +407,47 @@ function ASSLineContents:getTags(tagNames, start, end_, relative)
     return tags
 end
 
+function ASSLineContents:replaceTags(tagList)  -- TODO: transform and reset support
+    if type(tagList)=="table" then
+        if tagList.instanceOf[ASSLineTagSection] then
+            tagList = ASSTagList(tagList)
+        elseif tagList.instanceOf and not tagList.instanceOf[ASSTagList] then
+            local tag = tagList
+            tagList = ASSTagList(nil, self) 
+            tagList.tags[tag.__tag.name] = tag
+        else tagList = ASSTagList(ASSLineTagSection(tagList)) end
+    else error("Error: argument 1 must be one of the following: a tag object, a table of tag objects, an ASSLineTagSection or an ASSTagList; got a "
+               .. type(tagList) .. ".")
+    end
+    
+    local firstIsTagSection = #self.sections>0 and self.sections[1].instanceOf[ASSLineTagSection]
+    local globalSection = firstIsTagSection and self.sections[1] or ASSLineTagSection()
+    local toInsert = ASSTagList(tagList)
+
+    -- search for tags in line, replace them if found
+    -- remove all matching global tags that are not in the first section
+    self:callback(function(section,_,i)
+        section:callback(function(tag)
+            local props = tag.__tag
+            if tagList.tags[props.name] then
+                if props.global and i>1 then
+                    return false
+                else
+                    toInsert.tags[props.name] = nil 
+                    return tagList.tags[props.name]:copy()
+                end
+            end
+        end)
+    end, ASSLineTagSection)
+
+    -- insert the global tag section at the beginning of the line in case it doesn't exist
+    if not firstIsTagSection and table.length(toInsert)>0 then
+        self:insertSections(globalSection,1)
+    end
+    -- insert remaining tags (not replaced) into the first section
+    globalSection:insertTags(toInsert)
+end
+
 function ASSLineContents:removeTags(tags, start, end_, relative)
     start = default(start,1)
     if relative then 
