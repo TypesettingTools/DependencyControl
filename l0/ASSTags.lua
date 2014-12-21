@@ -1286,7 +1286,7 @@ function ASSLineTagSection:getString(coerce)
     return table.concat(tagStrings)
 end
 
-function ASSLineTagSection:getEffectiveTags(includeDefault, includePrevious, copyTags)   -- TODO: properly handle transforms
+function ASSLineTagSection:getEffectiveTags(includeDefault, includePrevious, copyTags)   -- TODO: properly handle transforms, include forward sections for global tags
     includePrevious, copyTags = default(includePrevious, true), true
     -- previous and default tag lists
     local effTags
@@ -1296,10 +1296,11 @@ function ASSLineTagSection:getEffectiveTags(includeDefault, includePrevious, cop
     if includePrevious and self.prevSection then
         local prevTagList = self.prevSection:getEffectiveTags(false, true, copyTags)
         effTags = includeDefault and effTags:merge(prevTagList, false, false, true) or prevTagList
+        includeDefault = false
     end
     -- tag list of this section
     local tagList = copyTags and ASSTagList(self):copy() or ASSTagList(self)
-    return effTags and effTags:merge(tagList, false) or tagList
+    return effTags and effTags:merge(tagList, false, nil, includeDefault) or tagList
 end
 
 ASSLineTagSection.getStyleTable = ASSLineTextSection.getStyleTable
