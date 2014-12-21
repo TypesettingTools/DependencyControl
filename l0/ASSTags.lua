@@ -1246,9 +1246,9 @@ function ASSLineTagSection:insertTags(tags, index)
         elseif tags.instanceOf[ASSTagList] then
             tags = ASSLineTagSection(tags).tags
         elseif tags.instanceOf then tags = {tags} end
-        else error("Error: argument 1 (tags) must be one of the following: a tag object, a table of tag objects, an ASSLineTagSection or an ASSTagList; got a "
-                   .. type(tags) .. ".")
-        end
+    else error("Error: argument 1 (tags) must be one of the following: a tag object, a table of tag objects, an ASSLineTagSection or an ASSTagList; got a "
+               .. type(tags) .. ".")
+    end
 
     for i=1,#tags do
         local cls = ASS.instanceOf(tags[i])
