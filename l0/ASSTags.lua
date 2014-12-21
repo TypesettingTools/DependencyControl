@@ -2468,11 +2468,11 @@ function ASSTransform:getTagParams(coerce)
         t2 = util.max(t1, t2)
     else assert(t1<=t2, string.format("Error: transform start time must not be greater than the end time, got %d <= %d", t1, t2)) end
 
-    if tagName == names[3] then
+    if tagName == names[4] then
         return self.tags:getString(coerce)
     elseif tagName == names[1] then
         return self.accel:getTagParams(coerce), self.tags:getString(coerce)
-    elseif tagName == names[4] then
+    elseif tagName == names[3] then
         return t1, t2, self.tags:getString(coerce)
     elseif tagName == names[2] then
         return t1, t2, self.accel:getTagParams(coerce), self.tags:getString(coerce)
