@@ -2440,6 +2440,12 @@ function ASSLineDrawingSection:getBounds(coerce)
     return bounds
 end
 
+function ASSLineDrawingSection:getClip(inverse)
+    local effTags, ex = self.parent:getEffectiveTags(-1, true, true, false).tags , self:getExtremePoints()
+    local clip = ASS:createTag(ASS.tagNames[ASSClipVect][inverse and 2 or 1], self)
+    local anOff = effTags.align:getPositionOffset(ex.w, ex.h)
+    return clip:add(effTags.position):sub(anOff)
+end
 
 --------------------- Unsupported Tag Classes and Stubs ---------------------
 
