@@ -1101,17 +1101,23 @@ function ASSLineTagSection:new(tags, transformableOnly)
         end
     elseif tags==nil then self.tags={}
     elseif ASS.instanceOf(tags, ASSLineTagSection) then
+        -- does only shallow-copy, good idea?
         self.parent = tags.parent
-        if transformableOnly then
-            local j=1
-            self.tags = {}
-            for i=1,#tags.tags do
-                if tags.tags[i].__tag.transformable or tags.tags[i].instanceOf[ASSUnknown]then
-                    self.tags[j], j = tags.tags[i], j+1
-                end
+        local j, otherTags = 1, tags.tags
+        self.tags = {}
+        for i=1,#otherTags do
+            if transformableOnly and (otherTags[i].__tag.transformable or otherTags[i].instanceOf[ASSUnknown]) then
+                self.tags[j] = otherTags[i]
+                self.tags[j].parent, j = self, j+1
             end
-        else
-            self.tags = util.copy(tags.tags)
+        end
+    elseif type(tags)=="table" then
+        self.tags = {}
+        local allTags = ASS.tagNames.all
+        for i=1,#tags do
+            assertEx(allTags[tags[i].__tag.name or false], "supplied tag #d (a %s with name '%s') is not a supported tag.",
+                     i, type(tags[i])=="table" and tags[i].typeName or type(tags[i]), tag.__tag and tag.__tag.name)
+            self.tags[i], tags[i].parent = tags[i], self
         end
     else self.tags = self:typeCheck(self:getArgs({tags})) end
     return self
