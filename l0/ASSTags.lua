@@ -2,10 +2,13 @@ local re = require("aegisub.re")
 local unicode = require("aegisub.unicode")
 local util = require("aegisub.util")
 local l0Common = require("l0.Common")
-local YUtils = require("YUtils")
 local Line = require("a-mo.Line")
 local Log = require("a-mo.Log")
 local ASSInspector = require("ASSInspector.Inspector")
+
+local YUtilsMissingMsg, YUtils = [[Error: this method requires Yutils, but the module was not found.
+Get it at https://github.com/Youka/Yutils]]
+HAVE_YUTILS, YUtils = pcall(require, "YUtils")
 
 local assertEx = assertEx
 
@@ -1053,6 +1056,7 @@ function ASSLineTextSection:getTextExtents(coerce)
 end
 
 function ASSLineTextSection:getMetrics(includeTypeBounds, coerce)
+    assert(HAVE_YUTILS, YUtilsMissingMsg)
     local fontObj, tagList, shape = self:getYutilsFont()
     local metrics = table.merge(fontObj.metrics(),fontObj.text_extents(self.value))
 
@@ -1090,6 +1094,7 @@ function ASSLineTextSection:convertToDrawing(applyRotation, coerce)
 end
 
 function ASSLineTextSection:getYutilsFont(coerce)
+    assert(HAVE_YUTILS, YUtilsMissingMsg)
     local tagList = self:getEffectiveTags(true,true,false)
     local tags = tagList.tags
     return YUtils.decode.create_font(tags.fontname:getTagParams(coerce), tags.bold:getTagParams(coerce)>0,
@@ -2258,6 +2263,7 @@ function ASSDrawing:commonOp(method, callback, default, x, y) -- drawing command
 end
 
 function ASSDrawing:flatten(coerce)
+    assert(HAVE_YUTILS, YUtilsMissingMsg)
     local flatStr = YUtils.shape.flatten(self:getTagParams(coerce))
     local flattened = ASSDrawing{raw=flatStr, tagProps=self.__tag}
     self.commands = flattened.commands
@@ -2320,6 +2326,7 @@ function ASSDrawing:getExtremePoints(allowCompatible)
 end
 
 function ASSDrawing:outline(x,y,mode)
+    assert(HAVE_YUTILS, YUtilsMissingMsg)
     y, mode = default(y,x), default(mode, "round")
     local outline = YUtils.shape.to_outline(YUtils.shape.flatten(self:getTagParams()),x,y,mode)
     self.commands = ASS.instanceOf(self)({outline}).commands
@@ -2334,6 +2341,7 @@ function ASSDrawing:rotate(angle)
     end 
 
     if angle%360~=0 then
+        assert(HAVE_YUTILS, YUtilsMissingMsg)
         local shape = self:getTagParams()
         local bound = {YUtils.shape.bounding(shape)}
         local rotMatrix = YUtils.math.create_matrix().
@@ -2423,6 +2431,7 @@ function ASSLineDrawingSection:alignToOrigin(mode)
 end
 
 function ASSLineDrawingSection:getBounds(coerce)
+    assert(HAVE_YUTILS, YUtilsMissingMsg)
     local bounds = {YUtils.shape.bounding(self:getString())}
     bounds.width = (bounds[3] or 0)-(bounds[1] or 0)
     bounds.height = (bounds[4] or 0)-(bounds[2] or 0)
@@ -2523,6 +2532,7 @@ function ASSDrawBase:getTagParams(coerce)
 end
 
 function ASSDrawBase:getLength(prevCmd) 
+    assert(HAVE_YUTILS, YUtilsMissingMsg)
     -- get end coordinates (cursor) of previous command
     local x0, y0 = 0, 0
     if prevCmd and prevCmd.__tag.name == "b" then
@@ -2548,6 +2558,7 @@ function ASSDrawBase:getLength(prevCmd)
 end
 
 function ASSDrawBase:getPositionAtLength(len, noUpdate, useCurveTime)
+    assert(HAVE_YUTILS, YUtilsMissingMsg)
     if not (self.length and self.cursor and noUpdate) then self.parent:getLength() end
     local name, pos = self.__tag.name
     if name == "b" and useCurveTime then
@@ -2580,6 +2591,7 @@ function ASSDrawClose:getPoints()
 end
 
 function ASSDrawLine:ScaleToLength(len,noUpdate)
+    assert(HAVE_YUTILS, YUtilsMissingMsg)
     if not (self.length and self.cursor and noUpdate) then self.parent:getLength() end
     local scaled = self.cursor:copy()
     scaled:add(YUtils.math.stretch(returnAll(
@@ -2623,6 +2635,7 @@ function ASSDrawBezier:commonOp(method, callback, default, ...)
 end
 
 function ASSDrawBezier:getFlattened(noUpdate)
+    assert(HAVE_YUTILS, YUtilsMissingMsg)
     if not (noUpdate and self.flattened) then
         if not (noUpdate and self.cursor) then
             self.parent:getLength()
