@@ -1353,6 +1353,7 @@ function ASSTagList:new(tags, contentRef)
     if ASS.instanceOf(tags, ASSLineTagSection) then
         self.tags, self.transforms, self.contentRef = {}, {}, tags.parent
         local trIdx, transforms, ovrTransTags, transTags = 1, {}, {}
+        local seenVectClip = false
 
         tags:callback(function(tag)
             local props = tag.__tag
@@ -1388,10 +1389,14 @@ function ASSTagList:new(tags, contentRef)
 
             -- Discard all except the first instance of global tags.
             -- This expects all global tags to be non-transformable which is true for ASSv4+
-            elseif not (self.tags[props.name] and props.global) then
+            -- Since there can be only one vectorial clip or iclip at a time, only keep the first one
+            elseif not (self.tags[props.name] and props.global) 
+            and not (seenVectClip and tag.instanceOf[ASSClipVect]) then
                 self.tags[props.name] = tag
                 if tag.__tag.transformable then
                     ovrTransTags[tag.__tag.name] = -1
+                elseif tag.instanceOf[ASSClipVect]  then
+                    seenVectClip = true
                 end
             end
         end)
@@ -1453,7 +1458,9 @@ function ASSTagList:merge(tagLists, copyTags, returnOnly, overrideGlobalTags, ex
         tagLists = {tagLists}
     end
 
-    local merged, ovrTransTags, resetIdx, seenTransform = ASSTagList(self), {}, 0, #self.transforms>0
+    local merged, ovrTransTags, resetIdx = ASSTagList(self), {}, 0
+    local seenTransform, seenVectClip = #self.transforms>0, self.clip_vect or self.iclip_vect
+
     if expandResets and self.reset then
         local expReset = merged.contentRef:getDefaultTags(merged.reset)
         merged.tags = merged:getDefaultTags(merged.reset):merge(merged.tags, false)
@@ -1480,7 +1487,13 @@ function ASSTagList:merge(tagLists, copyTags, returnOnly, overrideGlobalTags, ex
         
         for name,tag in pairs(tagLists[i].tags) do
             -- discard all except the first instance of global tags
-            if not (merged.tags[name] and tag.__tag.global) or overrideGlobalTags then
+            -- also discard all vectorial clips if one was already seen
+            if overrideGlobalTags or not (merged.tags[name] and tag.__tag.global)
+            and not (seenVectClip and tag.instanceOf[ASSClipVect]) then
+                -- when overriding tags, make sure vect. iclips also overwrite vect. clips and vice versa
+                if overrideGlobalTags then
+                    merged.tags.clip_vect, merged.tags.iclip_vect = nil, nil
+                end
                 merged.tags[name] = tag
                 -- mark transformable tags in previous transform lists as overridden
                 if seenTransform and tag.__tag.transformable then
@@ -1572,9 +1585,12 @@ function ASSTagList:diff(other, returnOnly, ignoreGlobalState) -- returnOnly not
         -- instead of to the values of the other tag list
         local ref = (ownReset and not global) and defaults or other
 
-        -- since global tags can't be overwritten, only treat global tags that are not 
-        -- present in the other tag list as different
-        if global and not other.tags[name]
+        -- Since global tags can't be overwritten, only treat global tags that are not 
+        -- present in the other tag list as different.
+        -- There can be only vector (i)clip at the time, so treat any we encounter in this list only as different
+        -- when there are neither in the other list.
+        if global and not other.tags[name] 
+                  and not (tag.instanceOf[ASSClipVect] and (other.tags.clip_vect or other.tags.iclip_vect))
         -- all local tags transformed in the previous section will change state (no matter the tag values) when used in this section,
         -- unless this section begins with a reset, in which case only rectangular clips are kept
         or not (global or ownReset and not tag.instanceOf[ASSClipRect]) and otherTransSet[name] 
