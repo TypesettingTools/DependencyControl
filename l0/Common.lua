@@ -353,3 +353,9 @@ end
 function default(var, val)
     return type(var)=="nil" and val or var
 end
+
+function assertEx(cond, msg, ...)
+    if not cond then
+        return string.format("Error: " .. msg, ...)
+    end
+end

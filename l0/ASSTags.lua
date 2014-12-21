@@ -7,6 +7,8 @@ local Line = require("a-mo.Line")
 local Log = require("a-mo.Log")
 local ASSInspector = require("ASSInspector.Inspector")
 
+local assertEx = assertEx
+
 function createASSClass(typeName, baseClasses, order, types, tagProps, compatibleClasses)
     if not baseClasses or type(baseClasses)=="table" and baseClasses.instanceOf then
         baseClasses = {baseClasses}
