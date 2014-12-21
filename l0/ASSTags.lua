@@ -1087,10 +1087,12 @@ function ASSLineTagSection:new(tags, transformableOnly)
             local tag, start, end_ = ASS:getTagFromString(match)
             if not transformableOnly or tag.__tag.transformable or tag.instanceOf[ASSUnknown] then
                 self.tags[i], i = tag, i+1
+                tag.parent = self
             end
             if end_ < #match then   -- comments inside tag sections are read into ASSUnknowns
                 local afterStr = match:sub(end_+1)
                 self.tags[i], i = ASS:createTag(afterStr:sub(1,1)=="\\" and "unknown" or "junk", afterStr), i+1
+                self.tags[i].parent = self
             end
         end
         
@@ -1150,6 +1152,7 @@ function ASSLineTagSection:callback(callback, tagNames, start, end_, relative, r
                     tags[i], tagsDeleted = nil, true
                 elseif type(result)~="nil" and result~=true then
                     tags[i] = result
+                    tags[i].parent = self
                 end
             end
         end
@@ -1215,7 +1218,7 @@ function ASSLineTagSection:removeTags(tags, start, end_, relative)
         if tagNames[tag.__tag.name] or tagObjects[tag] or not tags then
             matched = matched + 1
             if not relative or (matched>=start and matched<=end_) then
-                removed[#removed+1] = tag
+                removed[#removed+1], tag.parent = tag, nil
                 return false
             end
         end
@@ -1258,6 +1261,7 @@ function ASSLineTagSection:insertTags(tags, index)
 
         local insertIdx = index<0 and prevCnt+index+i or index+i-1
         table.insert(self.tags, insertIdx, tags[i])
+        tags[i].parent = self
         inserted[i] = self.tags[insertIdx] 
     end
     return #inserted>1 and inserted or inserted[1]
