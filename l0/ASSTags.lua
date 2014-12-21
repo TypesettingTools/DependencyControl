@@ -1652,19 +1652,19 @@ ASSTagBase = createASSClass("ASSTagBase", ASSBase)
 
 function ASSTagBase:commonOp(method, callback, default, ...)
     local args = {self:getArgs({...}, default, false)}
-    local j, res, valNames = 1, {}, self.__meta__.order
+    local j, valNames = 1, self.__meta__.order
     for i=1,#valNames do
         if ASS.instanceOf(self[valNames[i]]) then
             local subCnt = #self[valNames[i]].__meta__.order
             local subArgs = unpack(table.sliceArray(args,j,j+subCnt-1))
-            res=table.join(res,{self[valNames[i]][method](self[valNames[i]],subArgs)})
+            self[valNames[i]][method](self[valNames[i]],subArgs)
             j=j+subCnt
         else 
             self[valNames[i]]=callback(self[valNames[i]],args[j])
-            res[j], j = self[valNames[i]], j+1
+            j = self[valNames[i]], j+1
         end
     end
-    return unpack(res)
+    return self
 end
 
 function ASSTagBase:add(...)
@@ -2144,12 +2144,11 @@ function ASSDrawing:commonOp(method, callback, default, x, y) -- drawing command
     if ASS.instanceOf(x, ASSPoint) then
         x, y = x:get()
     end
-    local res = {}
     for i=1,#self.commands do
         local subCnt = #self.commands[i].__meta__.order
-        res = table.join(res,{self.commands[i][method](self.commands[i],x,y)})
+        self.commands[i][method](self.commands[i],x,y)
     end
-    return unpack(res)
+    return self
 end
 
 function ASSDrawing:flatten(coerce)
@@ -2443,7 +2442,7 @@ function ASSDrawLine:getAngle(ref, noUpdate)
 end
 
 function ASSDrawBezier:commonOp(method, callback, default, ...)
-    local args, j, res, valNames = {...}, 1, {}, self.__meta__.order
+    local args, j, valNames = {...}, 1, self.__meta__.order
     if #args<=2 then -- special case to allow common operation on all x an y values of a vector drawing
         args[1], args[2] = args[1] or 0, args[2] or 0
         args = table.join(args,args,args)
@@ -2452,10 +2451,10 @@ function ASSDrawBezier:commonOp(method, callback, default, ...)
     for i=1,#valNames do
         local subCnt = #self[valNames[i]].__meta__.order
         local subArgs = table.sliceArray(args,j,j+subCnt-1)
-        table.joinInto(res, {self[valNames[i]][method](self[valNames[i]],unpack(subArgs))})
+        self[valNames[i]][method](self[valNames[i]],unpack(subArgs))
         j=j+subCnt
     end
-    return unpack(res)
+    return self
 end
 
 function ASSDrawBezier:getFlattened(noUpdate)
