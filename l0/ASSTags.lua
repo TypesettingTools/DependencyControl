@@ -2057,6 +2057,14 @@ function ASSAlign:isLeft() return self:getSet("left") end
 function ASSAlign:isCenterH() return self:getSet("centerH") end
 function ASSAlign:isRight() return self:getSet("right") end
 
+function ASSAlign:getPositionOffset(w, h)
+    local x, y = {w, 0, w/2}, {h, h/2, 0}
+    local off = ASSPoint{x[self.value%3+1], y[math.ceil(self.value/3)]}
+    return off
+end
+
+
+
 ASSWeight = createASSClass("ASSWeight", ASSTagBase, {"weightClass","bold"}, {ASSNumber,ASSToggle})
 function ASSWeight:new(args)
     local weight, bold = self:getArgs(args,{0,false},true)
