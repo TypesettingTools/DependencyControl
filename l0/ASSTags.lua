@@ -2369,6 +2369,14 @@ ASSLineDrawingSection.getEffectiveTags = ASSLineTextSection.getEffectiveTags
 ASSLineDrawingSection.getString = ASSLineDrawingSection.getTagParams
 ASSLineDrawingSection.getTagString = nil
 
+function ASSLineDrawingSection:alignToOrigin(mode)
+    mode = ASSAlign(mode or 7)
+    local ex = self:getExtremePoints(true)
+    local off = mode:getPositionOffset(ex.w, ex.h)
+    self:sub(off):sub(ex.left.x, ex.top.y)
+    return off, ex
+end
+
 function ASSLineDrawingSection:getBounds(coerce)
     local bounds = {YUtils.shape.bounding(self:getString())}
     bounds.width = (bounds[3] or 0)-(bounds[1] or 0)
