@@ -2289,6 +2289,20 @@ function ASSDrawing:getAngleAtLength(len, noUpdate)
     return cmd:getAngle(nil,true)
 end
 
+function ASSDrawing:getExtremePoints(allowCompatible)
+    local top, left, bottom, right
+    for i=1,#self.commands do
+        local pts = self.commands[i]:getPoints(allowCompatible)
+        for i=1,#pts do
+            if not top or top.y > pts[i].y then top=pts[i] end
+            if not left or left.x > pts[i].x then left=pts[i] end
+            if not bottom or bottom.y < pts[i].y then bottom=pts[i] end
+            if not right or right.x < pts[i].x then right=pts[i] end
+        end
+    end
+    return {top=top, left=left, bottom=bottom, right=right, w=right.x-left.x, h=bottom.y-top.y}
+end
+
 function ASSDrawing:outline(x,y,mode)
     y, mode = default(y,x), default(mode, "round")
     local outline = YUtils.shape.to_outline(YUtils.shape.flatten(self:getTagParams()),x,y,mode)
