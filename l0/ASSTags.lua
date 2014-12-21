@@ -2189,6 +2189,32 @@ function ASSDrawing:new(args)
     return self
 end
 
+function ASSDrawing:callback(callback, commandTypes)
+    local cmdSet = {}
+    if type(commandTypes)=="string" then commandTypes={commandTypes} end
+    if commandTypes then
+        assert(type(commandTypes)=="table", "Error: argument 2 to callback must be either a table of strings or a single string, got " .. type(commandTypes))
+        for i=1,#commandTypes do
+            tagSet[commandTypes[i]] = true
+        end
+    end
+
+    local j, cmdsDeleted = 1, false
+    for i=1,#self.commands do
+        local cmd=self.commands[i]
+        if not commandTypes or cmdSet[cmd.__tag.name] then
+            local res = callback(cmd, self.commands, i, j)
+            j=j+1
+            if res==false then
+                self.commands[i], cmdsDeleted = nil, true
+            elseif res~=nil and res~=true then
+                self.commands[i] = res
+            end
+        end
+    end
+    if cmdsDeleted then self.commands = table.trimArray(self.commands) end
+end
+
 function ASSDrawing:getTagParams(coerce)
     local cmds, cmdStr, j, lastCmdType = self.commands, {}, 1
     for i=1,#cmds do
