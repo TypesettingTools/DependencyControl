@@ -419,8 +419,10 @@ function ASSLineContents:replaceTags(tagList)  -- TODO: transform and reset supp
             tagList = ASSTagList(nil, self) 
             tagList.tags[tag.__tag.name] = tag
         else tagList = ASSTagList(ASSLineTagSection(tagList)) end
-    else error("Error: argument 1 must be one of the following: a tag object, a table of tag objects, an ASSLineTagSection or an ASSTagList; got a "
-               .. type(tagList) .. ".")
+    else
+        assertEx(tagList==nil, "argument #1 must be a tag object, a table of tag objects, an %s or an ASSTagList; got a %s.",
+                 ASSLineTagSection.typeName, ASSTagList.typeName, type(tagList))
+        return
     end
     
     local firstIsTagSection = #self.sections>0 and self.sections[1].instanceOf[ASSLineTagSection]
