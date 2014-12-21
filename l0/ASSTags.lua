@@ -1686,6 +1686,10 @@ function ASSTagBase:mul(...)
     return self:commonOp("mul", function(a,b) return a*b end, 1, ...)
 end
 
+function ASSTagBase:div(...)
+    return self:commonOp("div", function(a,b) return a/b end, 1, ...)
+end
+
 function ASSTagBase:pow(...)
     return self:commonOp("pow", function(a,b) return a^b end, 1, ...)
 end
