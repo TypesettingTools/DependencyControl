@@ -2422,12 +2422,20 @@ function ASSDrawBase:getPositionAtLength(len, noUpdate, useCurveTime)
     return pos
 end
 
+function ASSDrawBase:getPoints(allowCompatible)
+    return allowCompatible and {self} or {ASSPoint{self}}
+end
+
 ASSDrawMove = createASSClass("ASSDrawMove", ASSDrawBase, {"x", "y"}, {ASSNumber, ASSNumber}, {name="m", ords=2}, {ASSPoint})
 ASSDrawMoveNc = createASSClass("ASSDrawMoveNc", ASSDrawBase, {"x", "y"}, {ASSNumber, ASSNumber}, {name="n", ords=2}, {ASSDrawMove, ASSPoint})
 ASSDrawLine = createASSClass("ASSDrawLine", ASSDrawBase, {"x", "y"}, {ASSNumber, ASSNumber}, {name="l", ords=2}, {ASSPoint, ASSDrawMove, ASSDrawMoveNc})
 ASSDrawBezier = createASSClass("ASSDrawBezier", ASSDrawBase, {"p1","p2","p3"}, {ASSPoint, ASSPoint, ASSPoint}, {name="b", ords=6})
 ASSDrawClose = createASSClass("ASSDrawClose", ASSDrawBase, {}, {}, {name="c", ords=0})
 --- TODO: b-spline support
+
+function ASSDrawClose:getPoints()
+    return {}
+end
 
 function ASSDrawLine:ScaleToLength(len,noUpdate)
     if not (self.length and self.cursor and noUpdate) then self.parent:getLength() end
@@ -2483,7 +2491,9 @@ function ASSDrawBezier:getFlattened(noUpdate)
     return self.flattened
 end
 
-
+function ASSDrawBezier:getPoints()
+    return {self.p1, self.p2, self.p3}
+end
 
 ----------- Tag Mapping -------------
 
