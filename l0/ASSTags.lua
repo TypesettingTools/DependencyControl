@@ -1938,7 +1938,7 @@ ASSString = createASSClass("ASSString", {ASSTagBase, ASSStringBase}, {"value"}, 
 function ASSString:getTagParams(coerce)
     return coerce and tostring(self.value) or self:typeCheck(self.value)
 end
-ASSString.add, ASSString.mul, ASSString.pow = ASSString.append, nil, nil
+ASSString.add, ASSString.mul, ASSString.div, ASSString.pow = ASSString.append, nil, nil, nil
 
 
 ASSToggle = createASSClass("ASSToggle", ASSTagBase, {"value"}, {"boolean"})
@@ -2291,7 +2291,7 @@ end
 --------------------- Unsupported Tag Classes and Stubs ---------------------
 
 ASSUnknown = createASSClass("ASSUnknown", ASSString, {"value"}, {"string"})
-ASSUnknown.add, ASSUnknown.sub, ASSUnknown.mul, ASSUnknown.pow = nil, nil, nil, nil
+ASSUnknown.add, ASSUnknown.sub, ASSUnknown.mul, ASSUnknown.div, ASSUnknown.pow = nil, nil, nil, nil, nil
 
 ASSTransform = createASSClass("ASSTransform", ASSTagBase, {"tags", "startTime", "endTime", "accel"}, 
                                                           {ASSLineTagSection, ASSTime, ASSTime, ASSNumber})
