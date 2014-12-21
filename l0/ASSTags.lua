@@ -2362,6 +2362,35 @@ function ASSClipVect:toggleInverse()
     return self:setInverse(not self.__tag.inverse)
 end
 
+function ASSClipVect:getDrawing(trimDrawing, pos, an)
+    if ASS.instanceOf(pos, ASSTagList) then
+        pos, an = pos.tags.position, pos.tags.align
+    end
+
+    if not (pos and an) then
+        if self.parent and self.parent.parent then
+            local effTags = self.parent.parent:getEffectiveTags(-1, true, true, false).tags
+            pos, an = pos or effTags.position, an or effTags.align
+        elseif not an then an=ASSAlign(7) end
+    end
+
+    assertEx(not pos or ASS.instanceOf(pos, ASSPoint, nil, true), 
+             "argument position must be an %d or a compatible object, got a %s.",
+             ASSPoint.typeName, type(pos)=="table" and pos.typeName or type(pos))
+    assertEx(ASS.instanceOf(an, ASSAlign), 
+             "argument align must be an %d or a compatible object, got a %s.",
+             ASSAlign.typeName, type(pos)=="table" and an.typeName or type(an))
+
+    local drawing = ASSLineDrawingSection{self}
+    local ex = self:getExtremePoints()
+    local anOff = an:getPositionOffset(ex.w, ex.h)
+
+    if trimDrawing or not pos then
+        drawing:sub(ex.left.x, ex.top.y)
+        return drawing, ASS:createTag("position", ex.left.x, ex.top.y):add(anOff)
+    else return drawing:add(anOff):sub(pos) end
+end
+
 
 ASSLineDrawingSection = createASSClass("ASSLineDrawingSection", ASSDrawing, {"commands","scale"}, {"table", ASSNumber}, {}, {ASSDrawing, ASSClipVect})
 ASSLineDrawingSection.getStyleTable = ASSLineTextSection.getStyleTable
