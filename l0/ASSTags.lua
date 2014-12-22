@@ -2143,6 +2143,26 @@ function ASSClipRect:getTagParams(coerce)
     return returnAll({self.topLeft:getTagParams(coerce)}, {self.bottomRight:getTagParams(coerce)})
 end
 
+function ASSClipRect:getVect()
+    local vect = ASS:createTag(ASS.tagNames[ASSClipVect][self.__tag.inverse and 2 or 1])
+    return vect:drawRect(self.topLeft, self.bottomRight)
+end
+
+function ASSClipRect:getDrawing(trimDrawing, pos, an)
+    if ASS.instanceOf(pos, ASSTagList) then
+        pos, an = pos.tags.position, pos.tags.align
+    end
+
+    if not (pos and an) then
+        if self.parent and self.parent.parent then
+            local effTags = self.parent.parent:getEffectiveTags(-1, true, true, false).tags
+            pos, an = pos or effTags.position, an or effTags.align
+        end
+    end
+    
+    return self:getVect():getDrawing(trimDrawing, pos, an)
+end
+
 function ASSClipRect:setInverse(state)
     state = state==nil and true or state
     self.__tag.inverse = state
