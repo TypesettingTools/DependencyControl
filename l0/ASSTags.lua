@@ -2284,6 +2284,12 @@ function ASSDrawing:commonOp(method, callback, default, x, y) -- drawing command
     return self
 end
 
+function ASSDrawing:drawRect(tl, br)
+    local rect = {ASSDrawMove(tl), ASSDrawLine(br.x, tl.y), ASSDrawLine(br), ASSDrawLine(tl.x, br.y)}
+    table.joinInto(self.commands, rect)
+    return self, rect
+end
+
 function ASSDrawing:flatten(coerce)
     assert(HAVE_YUTILS, YUtilsMissingMsg)
     local flatStr = YUtils.shape.flatten(self:getTagParams(coerce))
