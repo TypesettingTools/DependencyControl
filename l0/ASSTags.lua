@@ -2417,7 +2417,7 @@ function ASSClipVect:getDrawing(trimDrawing, pos, an)
         if self.parent and self.parent.parent then
             local effTags = self.parent.parent:getEffectiveTags(-1, true, true, false).tags
             pos, an = pos or effTags.position, an or effTags.align
-        elseif not an then an=ASSAlign(7) end
+        elseif not an then an=ASSAlign{7} end
     end
 
     assertEx(not pos or ASS.instanceOf(pos, ASSPoint, nil, true), 
