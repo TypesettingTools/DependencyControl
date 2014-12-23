@@ -2818,12 +2818,18 @@ function ASSFoundation:new()
     return self
 end
 
-function ASSFoundation:getTagNames(overrideName)
-    if self.tagMap[overrideName] then return name
-    else
-        local tagNames = {}
-        for key,val in pairs(self.tagMap) do
-            tagNames[#tagNames+1] = val.overrideName==name and key
+function ASSFoundation:getTagNames(ovrNames)
+    if type(ovrNames)=="string" then
+        if self.tagMap[ovrNames] then return name end
+        ovrNames = {ovrNames}
+    end
+
+    local tagNames, t = {}, 1
+    local ovrNamesSet = table.arrayToSet(ovrNames)
+
+    for k,v in pairs(self.tagMap) do
+        if ovrNamesSet[v.overrideName] then
+            tagNames[t], t = k, t+1
         end
     end
     return tagNames
