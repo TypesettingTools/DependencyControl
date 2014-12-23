@@ -185,11 +185,14 @@ table.joinInto = function(arr, ...)
     return arr
 end
 
-table.keys = function(tbl)
+table.keys = function(tbl, exclude)
     local keys, keysN = {}, 0
+    local excludeSet = exclude and table.arrayToSet(type(exclude)=="table" and exclude or {exclude})
     for key,_ in pairs(tbl) do
-        keysN = keysN + 1
-        keys[keysN] = key
+        if not (exclude and excludeSet[key]) then
+            keysN = keysN + 1
+            keys[keysN] = key
+        end
     end
     return keys
 end
