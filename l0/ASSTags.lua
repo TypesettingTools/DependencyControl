@@ -566,7 +566,7 @@ function ASSLineContents:undoCommit(line)
     else return false end
 end
 
-function ASSLineContents:cleanTags(level, mergeSect)
+function ASSLineContents:cleanTags(level, mergeSect, defaultToKeep)
     mergeSect, level = default(mergeSect,true), default(level,3)
     -- Merge consecutive sections
     if mergeSect then
@@ -584,7 +584,16 @@ function ASSLineContents:cleanTags(level, mergeSect)
 
     -- 1: remove empty sections, 2: dedup tags locally, 3: dedup tags globally
     -- 4: remove tags matching style default and not changing state, end: remove empty sections
-    local tagListPrev, tagListDef = ASSTagList(nil, self), self:getDefaultTags()
+    local tagListPrev = ASSTagList(nil, self)
+    
+    if level>=3 then
+        tagListDef = self:getDefaultTags()
+        if not defaultToKeep or #defaultToKeep==1 and defaultToKeep[1]=="position" then
+            -- speed up the default mode a little by using a precomputed tag name table
+            tagListDef:filterTags(ASS.tagNames.noPos)
+        else tagListDef:filterTags(defaultToKeep, nil, false, true) end
+    end
+
     if level>=1 then
         self:callback(function(section,sections,i)
             if level<2 then return #section.tags>0 end
@@ -2760,6 +2769,7 @@ function ASSFoundation:new()
 
     self.tagNames, self.toFriendlyName, self.toTagName = {
         all = table.keys(self.tagMap),
+        noPos = table.keys(self.tagMap, "position"),
         clips = {"clip_rect", "iclip_rect", "clip_vect", "iclip_vect"},
         karaoke = {"k_fill", "k_sweep", "k_sweep_alt", "k_bord"}
     }, {}, {}
