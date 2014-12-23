@@ -1657,7 +1657,7 @@ function ASSTagList:getStyleTable(styleRef, name, coerce)
     return sTbl
 end
 
-function ASSTagList:filterTags(tagNames, tagProps, returnOnly)
+function ASSTagList:filterTags(tagNames, tagProps, returnOnly, inverseNameMatch)
     if type(tagNames)=="string" then tagNames={tagNames} end
     assert(not tagNames or type(tagNames)=="table", 
            "Error: argument 1 to selectTags() must be either a single or a table of tag names, got a " .. type(tagNames))
@@ -1665,13 +1665,15 @@ function ASSTagList:filterTags(tagNames, tagProps, returnOnly)
     local filtered = ASSTagList(nil, self.contentRef)
     local selected, transNames, retTrans = {}, ASS.tagNames[ASSTransform]
     local propCnt = tagProps and table.length(tagProps) or 0
-    
+   
     if not tagNames and not (tagProps or #tagProps==0) then 
         return returnOnly and self:copy() or self
     elseif not tagNames then
         tagNames = ASS.tagNames.all
     elseif #tagNames==0 then
         return filtered
+    elseif inverseNameMatch then
+        tagNames = table.diff(tagNames, ASS.tagNames.all)
     end
 
     for i=1,#tagNames do
@@ -2159,7 +2161,7 @@ function ASSClipRect:getDrawing(trimDrawing, pos, an)
             pos, an = pos or effTags.position, an or effTags.align
         end
     end
-    
+
     return self:getVect():getDrawing(trimDrawing, pos, an)
 end
 
