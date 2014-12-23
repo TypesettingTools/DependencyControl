@@ -76,6 +76,21 @@ table.diff = function(left, right, preferLeft)
     return diff
 end
 
+table.diffValues = function(left, right, preferLeft)
+    local diff, j = {}
+    if preferLeft then
+        left, right = right, left
+    end
+    local leftSet = table.arrayToSet(left)
+
+    for i=1,#right do
+        if not leftSet[right[i]] then
+            diff[j], j = right[i], j+1
+        end
+    end
+    return diff
+end
+
 table.union = function(left, right, preferLeft)
     if preferLeft then
         left, right = right, left
