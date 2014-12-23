@@ -86,7 +86,7 @@ function ASSBase:coerceNumber(num, default)
 end
 
 function ASSBase:coerce(value, type_)
-    assert(type(value)~="table", "Error: can't cast a table to a " .. type_ ..".")
+    assertEx(type(value)~="table", "can't cast a table to a %s.", tostring(type_))
     local tagProps = self.__tag or self.__defProps
     if type(value) == type_ then
         return value
