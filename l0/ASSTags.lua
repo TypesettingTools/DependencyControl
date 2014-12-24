@@ -2924,6 +2924,25 @@ function ASSFoundation:getTagFromString(str)
     return ASSUnknown{str, tagProps=tagType.props}, 1, #str
 end
 
+function ASSFoundation:getTagsNamesFromProps(props)
+    local names, n = {}, 1
+    for name,tag in pairs(self.tagMap) do
+        if tag.props then
+            local propMatch = true
+            for k,v in pairs(props) do
+                if tag.props[k]~=v or tag.props[k]==false and tag.props[k] then 
+                    propMatch = false
+                    break
+                end
+            end
+            if propMatch then 
+                names[n], n = name, n+1
+            end
+        end
+    end
+    return names
+end
+
 function ASSFoundation:formatTag(tagRef, ...)
     return self:mapTag(tagRef.__tag.name).format:formatFancy(...)
 end
