@@ -1120,8 +1120,9 @@ ASSLineCommentSection = createASSClass("ASSLineCommentSection", ASSLineTextSecti
 ASSLineTagSection = createASSClass("ASSLineTagSection", ASSBase, {"tags"}, {"table"})
 ASSLineTagSection.tagMatch = re.compile("\\\\[^\\\\\\(]+(?:\\([^\\)]+\\)[^\\\\]*)?|[^\\\\]+")
 
-function ASSLineTagSection:new(tags, transformableOnly)
+function ASSLineTagSection:new(tags, transformableOnly, tagSortOrder)
     if ASS.instanceOf(tags,ASSTagList) then
+        tagSortOrder = tagSortOrder or ASS.tagSortOrder
         -- TODO: check if it's a good idea to work with refs instead of copies
         local j=1
         self.tags = {}
@@ -1129,8 +1130,9 @@ function ASSLineTagSection:new(tags, transformableOnly)
             self.tags[1], j = tags.reset, 2
         end
 
-        for _,tag in pairs(tags.tags) do
-            if not transformableOnly or tag.__tag.transformable or tag.instanceOf[ASSUnknown] then
+        for i=1,#tagSortOrder do
+            local tag = tags.tags[tagSortOrder[i]]
+            if tag and (not transformableOnly or tag.__tag.transformable or tag.instanceOf[ASSUnknown]) then
                 self.tags[j], j = tag, j+1
             end
         end
@@ -2812,12 +2814,13 @@ function ASSFoundation:new()
                              sort=99}
     }
 
-    self.tagNames, self.toFriendlyName, self.toTagName = {
+    self.tagNames, self.toFriendlyName, self.toTagName, self.tagSortOrder = {
         all = table.keys(self.tagMap),
         noPos = table.keys(self.tagMap, "position"),
-        clips = {"clip_rect", "iclip_rect", "clip_vect", "iclip_vect"},
-        karaoke = {"k_fill", "k_sweep", "k_sweep_alt", "k_bord"}
-    }, {}, {}
+        clips = self:getTagsNamesFromProps{clip=true},
+        karaoke = self:getTagsNamesFromProps{karaoke=true},
+        childAlpha = self:getTagsNamesFromProps{childAlpha=true}
+    }, {}, {}, {}
 
     for name,tag in pairs(self.tagMap) do
         -- insert tag name into props
@@ -2838,7 +2841,13 @@ function ASSFoundation:new()
         else 
             tagType[tagType.n+1], tagType.n = name, tagType.n+1
         end
+        -- fill sort order table
+        if tag.sort then
+            self.tagSortOrder[tag.sort] = name
+        end
     end
+
+    self.tagSortOrder = table.trimArray(self.tagSortOrder)
 
     -- make tag names table also work as a set
     for _,names in pairs(self.tagNames) do
