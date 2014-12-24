@@ -253,9 +253,9 @@ table.reverseArray = function(tbl)
 end
 
 table.trimArray = function(tbl)
-    local trimmed = {}
+    local trimmed, t = {}, 1
     for _,val in pairs(tbl) do
-        if val~=nil then table.insert(trimmed,val) end
+        trimmed[t], t = val, t+1
     end
     return trimmed
 end
