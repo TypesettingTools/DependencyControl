@@ -1371,7 +1371,7 @@ function ASSTagList:new(tags, contentRef)
     if ASS.instanceOf(tags, ASSLineTagSection) then
         self.tags, self.transforms, self.contentRef = {}, {}, tags.parent
         local trIdx, transforms, ovrTransTags, transTags = 1, {}, {}
-        local seenVectClip = false
+        local seenVectClip, childAlphaNames = false, ASS.tagNames.childAlpha
 
         tags:callback(function(tag)
             local props = tag.__tag
@@ -1415,6 +1415,11 @@ function ASSTagList:new(tags, contentRef)
                     ovrTransTags[tag.__tag.name] = -1
                 elseif tag.instanceOf[ASSClipVect]  then
                     seenVectClip = true
+                end
+                if tag.__tag.masterAlpha then
+                    for i=1,#childAlphaNames do
+                        self.tags[childAlphaNames[i]] = nil
+                    end
                 end
             end
         end)
@@ -1478,6 +1483,7 @@ function ASSTagList:merge(tagLists, copyTags, returnOnly, overrideGlobalTags, ex
 
     local merged, ovrTransTags, resetIdx = ASSTagList(self), {}, 0
     local seenTransform, seenVectClip = #self.transforms>0, self.clip_vect or self.iclip_vect
+    local childAlphaNames = ASS.tagNames.childAlpha
 
     if expandResets and self.reset then
         local expReset = merged.contentRef:getDefaultTags(merged.reset)
@@ -1516,6 +1522,11 @@ function ASSTagList:merge(tagLists, copyTags, returnOnly, overrideGlobalTags, ex
                 -- mark transformable tags in previous transform lists as overridden
                 if seenTransform and tag.__tag.transformable then
                     ovrTransTags[tag.__tag.name] = i
+                end
+                if tag.__tag.masterAlpha then
+                    for i=1,#childAlphaNames do
+                        self.tags[childAlphaNames[i]] = nil
+                    end
                 end
             end
         end
