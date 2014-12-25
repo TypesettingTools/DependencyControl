@@ -182,7 +182,7 @@ table.joinInto = function(arr, ...)
             arr[arrN] = args[i][j]
         end
     end
-    return arr
+    return arr, arrN
 end
 
 table.keys = function(tbl, exclude)
