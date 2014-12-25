@@ -566,7 +566,7 @@ function ASSLineContents:undoCommit(line)
     else return false end
 end
 
-function ASSLineContents:cleanTags(level, mergeSect, defaultToKeep)
+function ASSLineContents:cleanTags(level, mergeSect, defaultToKeep, tagSortOrder)
     mergeSect, level = default(mergeSect,true), default(level,3)
     -- Merge consecutive sections
     if mergeSect then
@@ -607,7 +607,7 @@ function ASSLineContents:cleanTags(level, mergeSect, defaultToKeep)
             end
             if not isLastSection then tagListPrev:merge(tagList,false, false, false, true) end
             
-            return not tagList:isEmpty() and ASSLineTagSection(tagList) or false
+            return not tagList:isEmpty() and ASSLineTagSection(tagList, false, tagSortOrder) or false
         end, ASSLineTagSection)
     end
     return self
