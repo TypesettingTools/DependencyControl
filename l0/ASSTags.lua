@@ -2897,12 +2897,16 @@ function ASSFoundation:getTagNames(ovrNames)
     end
 
     local tagNames, t = {}, 1
-    local ovrNamesSet = table.arrayToSet(ovrNames)
-
-    for k,v in pairs(self.tagMap) do
-        if ovrNamesSet[v.overrideName] then
-            tagNames[t], t = k, t+1
+    for i=1,#ovrNames do
+        local ovrToTag = ASS.tagNames[ovrNames[i]]
+        if ovrToTag and ovrToTag.n==1 then
+            tagNames[t] = ovrToTag[1]
+        elseif ovrToTag then
+            tagNames, t = table.joinInto(tagNames, ovrToTag)
+        elseif self.tagMap[ovrNames[i]] then
+            tagNames[t] = ovrNames[i]
         end
+        t=t+1
     end
     return tagNames
 end
