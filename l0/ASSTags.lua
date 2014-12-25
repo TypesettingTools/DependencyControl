@@ -2852,6 +2852,13 @@ function ASSFoundation:new()
         else 
             tagType[tagType.n+1], tagType.n = name, tagType.n+1
         end
+        -- fill override tag name -> internal tag name mapping tables
+        if tag.overrideName then
+            local ovrToName = self.tagNames[tag.overrideName]
+            if ovrToName then
+                ovrToName[#ovrToName+1] = name
+            else self.tagNames[tag.overrideName] = {name} end
+        end
         -- fill sort order table
         if tag.sort then
             self.tagSortOrder[tag.sort] = name
