@@ -1996,13 +1996,13 @@ function ASSMove:new(args)
                                              self.typeName, endTime, startTime)
     )
 
+    self:readProps(args)
+    self.startPos, self.endPos = ASSPoint{startX, startY}, ASSPoint{endX, endY}
+    self.startTime, self.endTime = ASSTime{startTime}, ASSTime{endTime}
     if self.__tag.simple == nil then
         self.__tag.simple = self:setSimple(args.simple)
     end
-    self:readProps(args)
 
-    self.startPos, self.endPos = ASSPoint{startX, startY}, ASSPoint{endX, endY}
-    self.startTime, self.endTime = ASSTime{startTime}, ASSTime{endTime}
     return self
 end
 
