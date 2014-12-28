@@ -1972,7 +1972,7 @@ ASSMove = createASSClass("ASSMove", ASSTagBase,
 function ASSMove:new(args)
     local startX, startY, endX, endY, startTime, endTime = self:getArgs(args, 0, true)
 
-    assert(startTime<=endTime, string.format("Error: argument #4 (endTime) to %s may not be smaller than argument #3 (starTime), got %d>=%d.", 
+    assert(startTime<=endTime, string.format("Error: argument #4 (endTime) to %s may not be smaller than argument #3 (startTime), got %d>=%d.", 
                                              self.typeName, endTime, startTime)
     )
 
