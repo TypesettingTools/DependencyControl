@@ -948,8 +948,13 @@ function ASSLineBounds:new(cnts, noCommit)
                           ASSLineTagSection.typeName, ASS.instanceOf(cnts) or type(cnts))
     )
     if not noCommit then cnts:commit() end
-    local assi, msg = ASSInspector(cnts.line.parentCollection.sub)
-    assert(assi, "ASSInspector Error: " .. tostring(msg))
+
+    local assi, msg = ASS.cache.ASSInspector[cnts.line.parentCollection]
+    if not assi then
+        assi, msg = ASSInspector(cnts.line.parentCollection.sub)
+        assert(assi, "ASSInspector Error: " .. tostring(msg))
+        ASS.cache.ASSInspector[cnts.line.parentCollection] = assi
+    end
 
     self.animated = cnts:isAnimated()
     cnts.line.assi_exhaustive = animated
@@ -2892,6 +2897,8 @@ function ASSFoundation:new()
         }
     }
     self.classes.drawingCommands = table.values(self.classes.drawingCommandMappings)
+
+    self.cache = {ASSInspector = {}}
 
     return self
 end
