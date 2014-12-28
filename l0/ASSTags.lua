@@ -1949,13 +1949,13 @@ function ASSFade:new(args)
     startDuration, endDuration, startTime, endTime, startAlpha, midAlpha, endAlpha = self:getArgs(args,{0,0,0,0,255,0,255},true)
 
     self:readProps(args)
-    if self.__tag.simple == nil then
-        self.__tag.simple = self:setSimple(args.simple)
-    end
-
     self.startDuration, self.endDuration = ASSDuration{startDuration}, ASSDuration{endDuration}
     self.startTime, self.endTime = ASSTime{startTime}, ASSTime{endTime}
     self.startAlpha, self.midAlpha, self.endAlpha = ASSHex{startAlpha}, ASSHex{midAlpha}, ASSHex{endAlpha}
+
+    if self.__tag.simple == nil then
+        self.__tag.simple = self:setSimple(args.simple)
+    end
 
     return self
 end
@@ -1978,7 +1978,7 @@ end
 
 function ASSFade:setSimple(state)
     if state==nil then
-        state = self.startTime:equal(0) and self.endTime.equal(0) and 
+        state = self.startTime:equal(0) and self.endTime:equal(0) and 
                 self.startAlpha:equal(255) and self.midAlpha:equal(0) and self.endAlpha:equal(255)
     end
     self.__tag.simple, self.__tag.name = state, state and "fade_simple" or "fade"
