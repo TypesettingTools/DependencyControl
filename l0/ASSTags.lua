@@ -1810,7 +1810,7 @@ function ASSTagBase:equal(ASSTag)  -- checks equalness only of the relevant prop
     local vals2
     if type(ASSTag)~="table" then
         vals2 = {ASSTag}
-    elseif not tag.instanceOf then
+    elseif not ASSTag.instanceOf then
         vals2 = ASSTag
     elseif ASS.instanceOf(ASSTag)==ASS.instanceOf(self) and self.__tag.name==ASSTag.__tag.name then
         vals2 = {ASSTag:get()}
