@@ -1807,11 +1807,16 @@ function ASSTagBase:getTagString(coerce)
 end
 
 function ASSTagBase:equal(ASSTag)  -- checks equalness only of the relevant properties
-    if ASS.instanceOf(ASSTag)~=ASS.instanceOf(self) or self.__tag.name~=ASSTag.__tag.name then
-        return false
-    end
+    local vals2
+    if type(ASSTag)~="table" then
+        vals2 = {ASSTag}
+    elseif not tag.instanceOf then
+        vals2 = ASSTag
+    elseif ASS.instanceOf(ASSTag)==ASS.instanceOf(self) and self.__tag.name==ASSTag.__tag.name then
+        vals2 = {ASSTag:get()}
+    else return false end
 
-    local vals1, vals2 = {self:get()}, {ASSTag:get()}
+    local vals1 = {self:get()}
     if #vals1~=#vals2 then return false end
     for i=1,#vals1 do
         if type(vals1[i])=="table" and #table.intersectInto(vals1[i],vals2[i]) ~= #vals2[i] then
@@ -1973,7 +1978,8 @@ end
 
 function ASSFade:setSimple(state)
     if state==nil then
-        state = self.startTime==0 and self.endTime==0 and self.startAlpha==255 and self.midAlpha==0 and self.endAlpha==255
+        state = self.startTime:equal(0) and self.endTime.equal(0) and 
+                self.startAlpha:equal(255) and self.midAlpha:equal(0) and self.endAlpha:equal(255)
     end
     self.__tag.simple, self.__tag.name = state, state and "fade_simple" or "fade"
     return state
@@ -2015,7 +2021,7 @@ end
 
 function ASSMove:setSimple(state)
     if state==nil then
-        state = self.startTime==0 and self.endTime==0
+        state = self.startTime:equal(0) and self.endTime:equal(0)
     end
     self.__tag.simple, self.__tag.name = state, state and "move_simple" or "move"
     return state
@@ -2529,8 +2535,8 @@ end
 function ASSTransform:changeTagType(type_)
     local names = ASS.tagNames[ASSTransform]
     if not type_ then
-        local noTime = self.startTime==0 and self.endTime==0
-        self.__tag.name = self.accel==1 and (noTime and names[3] or names[4]) or noTime and names[1] or names[3]
+        local noTime = self.startTime:equal(0) and self.endTime:equal(0)
+        self.__tag.name = self.accel:equal(1) and (noTime and names[4] or names[3]) or noTime and names[1] or names[2]
         self.__tag.typeLocked = false
     else
         assert(names[type], "Error: invalid transform type: " .. tostring(type))
@@ -2553,11 +2559,11 @@ function ASSTransform:getTagParams(coerce)
 
     if tagName == names[4] then
         return self.tags:getString(coerce)
-    elseif tagName == names[1] then
+    elseif tagName == names[1] then                                         -- \t(<accel>,<style modifiers>)
         return self.accel:getTagParams(coerce), self.tags:getString(coerce)
-    elseif tagName == names[3] then
+    elseif tagName == names[3] then                                         -- \t(<t1>,<t2>,<style modifiers>)
         return t1, t2, self.tags:getString(coerce)
-    elseif tagName == names[2] then
+    elseif tagName == names[2] then                                         -- \t(<t1>,<t2>,<accel>,<style modifiers>)
         return t1, t2, self.accel:getTagParams(coerce), self.tags:getString(coerce)
     else error("Error: invalid transform type: " .. tostring(type)) end
 
