@@ -2758,7 +2758,7 @@ function ASSFoundation:new()
         blur_edges =        {overrideName="\\be",    type=ASSNumber,    pattern="\\be([%d%.]+)",                      format="\\be%.2N", 
                              sort=36, props={positive=true, transformable=true}, default={0}}, 
         blur =              {overrideName="\\blur",  type=ASSNumber,    pattern="\\blur([%d%.]+)",                    format="\\blur%.2N",
-                             sort=35, default={0}}, 
+                             sort=35, props={positive=true, transformable=true}, default={0}}, 
         shear_x =           {overrideName="\\fax",   type=ASSNumber,    pattern="\\fax([%-%d%.]+)",                   format="\\fax%.2N", 
                              sort=11, props={transformable=true}, default={0}}, 
         shear_y =           {overrideName="\\fay",   type=ASSNumber,    pattern="\\fay([%-%d%.]+)",                   format="\\fay%.2N", 
