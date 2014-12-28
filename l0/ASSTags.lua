@@ -1569,31 +1569,6 @@ function ASSTagList:merge(tagLists, copyTags, returnOnly, overrideGlobalTags, ex
     else return merged end
 end
 
-function ASSTagList:intersect(tagLists, copyTags, returnOnly) -- returnOnly note: only provided because copying the tag list before diffing may be much slower
-    copyTags = default(copyTags, true)
-    if ASS.instanceOf(tagLists, ASSTagList) then
-        tagLists = {tagLists}
-    end
-
-    local intersection = ASSTagList(self, self.contentRef)
-    for i=1,#tagLists do
-        assert(ASS.instanceOf(tagLists[i],ASSTagList), 
-               string.format("Error: can only intersect %s objects, got a %s for argument #%d.", ASSTagList.typeName, type(tagLists[i]), i)
-        )
-        for name,tag in pairs(intersection.tags) do
-            intersection.tags[name] = tag:equal(tagLists[i].tags[name]) and tag or nil
-        end
-        if intersection.reset and not intersection.reset:equal(tagLists[i].reset) then
-            intersection.reset = nil
-        end
-    end
-    if copyTags then intersection=intersection:copy() end
-    if not returnOnly then 
-        self.tags, self.reset = intersection.tags, intersection.reset
-        return self
-    else return intersection end
-end
-
 function ASSTagList:diff(other, returnOnly, ignoreGlobalState) -- returnOnly note: only provided because copying the tag list before diffing may be much slower
     assert(ASS.instanceOf(other,ASSTagList),
            string.format("Error: can only diff %s objects, got a %s.", ASSTagList.typeName, type(other))
