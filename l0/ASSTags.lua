@@ -82,7 +82,7 @@ function ASSBase:coerceNumber(num, default)
     if not num then num=default or 0 end
     if self.__tag.positive then num=math.max(num,0) end
     if self.__tag.range then num=util.clamp(num,self.__tag.range[1], self.__tag.range[2]) end
-    return num 
+    return num
 end
 
 function ASSBase:coerce(value, type_)
@@ -110,13 +110,13 @@ function ASSBase:getArgs(args, defaults, coerce, extraValidClasses)
     -- process "raw" property that holds all tag parameters when parsed from a string
     elseif type(args.raw)=="table" then args=args.raw
     elseif args.raw then args={args.raw}
-    -- check if first and only arg is a compatible ASSClass and dump into args 
+    -- check if first and only arg is a compatible ASSClass and dump into args
     elseif #args == 1 and type(args[1]) == "table" and args[1].instanceOf then
         local selfClasses = extraValidClasses and table.merge(self.compatible, extraValidClasses) or self.compatible
         local _, clsMatchCnt = table.intersect(selfClasses, args[1].compatible)
 
         if clsMatchCnt>0 then
-            if args.deepCopy then 
+            if args.deepCopy then
                 args = {args[1]:get()}
             else
                 -- This is a fast path for compatible objects
@@ -127,9 +127,9 @@ function ASSBase:getArgs(args, defaults, coerce, extraValidClasses)
                 end
                 return unpack(args)
             end
-        else assert(type(propTypes[1]) == "table" and propTypes[1].instanceOf, 
+        else assert(type(propTypes[1]) == "table" and propTypes[1].instanceOf,
                     string.format("Error: object of class %s does not accept instances of class %s as argument.\n", self.typeName, args[1].typeName)
-             ) 
+             )
         end
     end
 
@@ -141,12 +141,11 @@ function ASSBase:getArgs(args, defaults, coerce, extraValidClasses)
             if not ASS.instanceOf(args[j]) then
                 argSlice, j = table.sliceArray(args,j,j+subCnt-1), j+subCnt-1
             else argSlice = {args[j]} end
-
             outArgs = table.join(outArgs, {propTypes[i]:getArgs(argSlice, defSlice, coerce)})
         elseif args[j]==nil then
             -- write defaults
             outArgs[i] = type(defaults)=="table" and defaults[j] or defaults
-        elseif coerce and type(args[j])~=propTypes[i] then               
+        elseif coerce and type(args[j])~=propTypes[i] then
             outArgs[i] = self:coerce(args[j], propTypes[i])
         else outArgs[i]=args[j] end
         j=j+1
@@ -182,9 +181,9 @@ function ASSBase:typeCheck(...)
                 valTypes[i]:typeCheck(unpack(table.sliceArray(args,j,j+subCnt-1)))
                 j=j+subCnt-1
             end
-        else    
+        else
             assert(type(args[j])==valTypes[i] or args[j]==nil or valTypes[i]=="nil",
-                   string.format("Error: bad type for argument #%d (%s). Expected %s, got %s.", i, valNames[i], valTypes[i], type(args[j]))) 
+                   string.format("Error: bad type for argument #%d (%s). Expected %s, got %s.", i, valNames[i], valTypes[i], type(args[j])))
         end
         j=j+1
     end
@@ -195,7 +194,7 @@ function ASSBase:get()
     local vals, names, valCnt = {}, self.__meta__.order, 1
     for i=1,#names do
         if ASS.instanceOf(self[names[i]]) then
-            for j,subVal in pairs({self[names[i]]:get()}) do 
+            for j,subVal in pairs({self[names[i]]:get()}) do
                 vals[valCnt], valCnt = subVal, valCnt+1
             end
         else
@@ -205,7 +204,7 @@ function ASSBase:get()
     return unpack(vals)
 end
 
---- TODO: implement working alternative 
+--- TODO: implement working alternative
 --[[
 function ASSBase:remove(returnCopy)
     local copy = returnCopy and ASSBase:copy() or true
@@ -286,8 +285,8 @@ function ASSLineContents:getString(coerce, classes)
         elseif secType == ASSLineTagSection or secType==ASSLineCommentSection then
             str[j], str[j+1], str[j+2], j =  "{", sections[i]:getString(), "}", j+2
 
-        else 
-            assert(coerce, string.format("Error: invalid %s section #%d. Expected {%s}, got a %s.\n", 
+        else
+            assert(coerce, string.format("Error: invalid %s section #%d. Expected {%s}, got a %s.\n",
                  self.typeName, i, table.concat(table.pluck(ASS.classes.lineSection, "typeName"), ", "),
                  type(sections[i])=="table" and sections[i].typeName or type(sections[i]))
             )
@@ -311,9 +310,9 @@ function ASSLineContents:callback(callback, sectionClasses, start, end_, relativ
     end_ = default(end_, start>=1 and math.max(prevCnt,1) or -1)
     reverse = relative and start<0 or reverse
 
-    assert(math.isInt(start) and math.isInt(end_), 
+    assert(math.isInt(start) and math.isInt(end_),
            string.format("Error: arguments 'start' and 'end' to callback() must be integers, got %s and %s.", type(start), type(end_)))
-    assert((start>0)==(end_>0) and start~=0 and end_~=0, 
+    assert((start>0)==(end_>0) and start~=0 and end_~=0,
            string.format("Error: arguments 'start' and 'end' to callback() must be either both >0 or both <0, got %d and %d.", start, end_))
     assert(start <= end_, string.format("Error: condition 'start' <= 'end' not met, got %d <= %d", start, end_))
 
@@ -349,7 +348,7 @@ function ASSLineContents:insertSections(sections,index)
     end
     for i=1,#sections do
         assert(ASS.instanceOf(sections[i],ASS.classes.lineSection),
-              string.format("Error: can only insert sections of type {%s}, got %s.\n", 
+              string.format("Error: can only insert sections of type {%s}, got %s.\n",
               table.concat(table.select(ASS.classes.lineSection, {"typeName"}), ", "), type(sections[i]))
         )
         table.insert(self.sections, index+i-1, sections[i])
@@ -416,7 +415,7 @@ function ASSLineContents:replaceTags(tagList)  -- TODO: transform and reset supp
             tagList = ASSTagList(tagList)
         elseif tagList.instanceOf and not tagList.instanceOf[ASSTagList] then
             local tag = tagList
-            tagList = ASSTagList(nil, self) 
+            tagList = ASSTagList(nil, self)
             tagList.tags[tag.__tag.name] = tag
         else tagList = ASSTagList(ASSLineTagSection(tagList)) end
     else
@@ -424,7 +423,7 @@ function ASSLineContents:replaceTags(tagList)  -- TODO: transform and reset supp
                  ASSLineTagSection.typeName, ASSTagList.typeName, type(tagList))
         return
     end
-    
+
     local firstIsTagSection = #self.sections>0 and self.sections[1].instanceOf[ASSLineTagSection]
     local globalSection = firstIsTagSection and self.sections[1] or ASSLineTagSection()
     local toInsert = ASSTagList(tagList)
@@ -438,7 +437,7 @@ function ASSLineContents:replaceTags(tagList)  -- TODO: transform and reset supp
                 if props.global and i>1 then
                     return false
                 else
-                    toInsert.tags[props.name] = nil 
+                    toInsert.tags[props.name] = nil
                     return tagList.tags[props.name]:copy()
                 end
             end
@@ -455,7 +454,7 @@ end
 
 function ASSLineContents:removeTags(tags, start, end_, relative)
     start = default(start,1)
-    if relative then 
+    if relative then
         end_ = default(end_, start<0 and -1 or self:getTagCount())
     end
     -- TODO: validation for start and end_
@@ -483,7 +482,7 @@ function ASSLineContents:insertTags(tags, index, sectionPosition, direct)
 
     if direct then
         local section = self.sections[index>0 and index or #self.sections-index+1]
-        assert(ASS.instanceOf(section, ASSLineTagSection), string.format("Error: can't insert tag in section #%d of type %s.", 
+        assert(ASS.instanceOf(section, ASSLineTagSection), string.format("Error: can't insert tag in section #%d of type %s.",
                index, section and section.typeName or "<no section>")
         )
         return section:insertTags(tags, sectionPosition)
@@ -510,7 +509,7 @@ function ASSLineContents:getEffectiveTags(index, includeDefault, includePrevious
            string.format("Error: argument #1 (index) to getEffectiveTags() must be an integer != 0, got '%s' of type %s", tostring(index), type(index))
     )
     if index<0 then index = index+#self.sections+1 end
-    return self.sections[index] and self.sections[index]:getEffectiveTags(includeDefault,includePrevious,copyTags) 
+    return self.sections[index] and self.sections[index]:getEffectiveTags(includeDefault,includePrevious,copyTags)
            or ASSTagList(nil, self)
 end
 
@@ -576,8 +575,8 @@ function ASSLineContents:cleanTags(level, mergeSect, defaultToKeep, tagSortOrder
                 sections[lastTagSection].tags = table.join(sections[lastTagSection].tags, section.tags)
                 numMerged = numMerged+1
                 return false
-            else 
-                lastTagSection, numMerged = i, 0 
+            else
+                lastTagSection, numMerged = i, 0
             end
         end, ASSLineTagSection)
     end
@@ -585,7 +584,7 @@ function ASSLineContents:cleanTags(level, mergeSect, defaultToKeep, tagSortOrder
     -- 1: remove empty sections, 2: dedup tags locally, 3: dedup tags globally
     -- 4: remove tags matching style default and not changing state, end: remove empty sections
     local tagListPrev = ASSTagList(nil, self)
-    
+
     if level>=3 then
         tagListDef = self:getDefaultTags()
         if not defaultToKeep or #defaultToKeep==1 and defaultToKeep[1]=="position" then
@@ -598,7 +597,7 @@ function ASSLineContents:cleanTags(level, mergeSect, defaultToKeep, tagSortOrder
         self:callback(function(section,sections,i)
             if level<2 then return #section.tags>0 end
             local isLastSection = i==#sections
-            
+
             local tagList = section:getEffectiveTags(false,false,false)
             if level>=3 then tagList:diff(tagListPrev) end
             if level>=4 then
@@ -606,7 +605,7 @@ function ASSLineContents:cleanTags(level, mergeSect, defaultToKeep, tagSortOrder
                 tagList:diff(tagListDef:merge(tagListPrev,false,true),false,true)
             end
             if not isLastSection then tagListPrev:merge(tagList,false, false, false, true) end
-            
+
             return not tagList:isEmpty() and ASSLineTagSection(tagList, false, tagSortOrder) or false
         end, ASSLineTagSection)
     end
@@ -635,7 +634,7 @@ function ASSLineContents:splitAtIntervals(callback, cleanLevel, reposition, writ
             return idx+step
         end
     else assert(type(callback)=="function", "Error: first argument to splitAtIntervals must be either a number or a callback function.\n") end
-    
+
     local len, idx, sectEndIdx, nextIdx, lastI = unicode.len(self:copy():stripTags():getString()), 1, 0, 0
     local splitLines, splitCnt = {}, 1
 
@@ -647,12 +646,12 @@ function ASSLineContents:splitAtIntervals(callback, cleanLevel, reposition, writ
         if nextIdx > idx then
             -- carried over part may span over more than this entire section
             local skip = nextIdx>sectEndIdx+1
-            idx = skip and sectEndIdx+1 or nextIdx 
+            idx = skip and sectEndIdx+1 or nextIdx
             local addTextSection = skip and section:copy() or ASSLineTextSection(text:sub(1,nextIdx-off-1))
             local addSections, lastContents = table.insert(self:get(ASSLineTagSection,lastI+1,i), addTextSection), splitLines[#splitLines].ASS
             lastContents:insertSections(addSections)
         end
-            
+
         while idx <= sectEndIdx do
             nextIdx = math.ceil(callback(idx,len))
             assert(nextIdx>idx, "Error: callback function for splitAtIntervals must always return an index greater than the last index.")
@@ -660,13 +659,13 @@ function ASSLineContents:splitAtIntervals(callback, cleanLevel, reposition, writ
             local splitLine = Line(self.line, self.line.parentCollection)
             splitLine.ASS = ASSLineContents(splitLine, self:get(ASSLineTagSection,1,i))
             splitLine.ASS:insertSections(ASSLineTextSection(unicode.sub(text,idx-off,nextIdx-off-1)))
-            splitLines[splitCnt], splitCnt = splitLine, splitCnt+1      
+            splitLines[splitCnt], splitCnt = splitLine, splitCnt+1
             -- check if this section is long enough to fill the new line
             idx = sectEndIdx>=nextIdx-1 and nextIdx or sectEndIdx+1
         end
         lastI = i
     end, ASSLineTextSection)
-    
+
     for i=1,#splitLines do
         splitLines[i].ASS:cleanTags(cleanLevel)
         splitLines[i].ASS:commit()
@@ -716,7 +715,6 @@ function ASSLineContents:repositionSplitLines(splitLines, writeOrigin)
     return splitLines
 end
 
-
 function ASSLineContents:getStyleRef(style)
     if ASS.instanceOf(style, ASSString) then
         style = style:get()
@@ -726,7 +724,7 @@ function ASSLineContents:getStyleRef(style)
     elseif type(style)=="string" then
         style = self.line.parentCollection.styles[style] or style
         assert(type(style)=="table", "Error: couldn't find style with name: " .. style .. ".")
-    else assert(type(style)=="table" and style.class=="style", 
+    else assert(type(style)=="table" and style.class=="style",
                 "Error: invalid argument #1 (style): expected a style name or a styleRef, got a " .. type(style) .. ".")
     end
     return style
@@ -748,13 +746,13 @@ function ASSLineContents:getPosition(style, align, forceDefault)
         return effTags.position
     end
 
-    local scriptInfo = util.getScriptInfo(self.line.parentCollection.sub) 
+    local scriptInfo = util.getScriptInfo(self.line.parentCollection.sub)
     -- blatantly copied from torque's Line.moon
     vMargin = self.line.margin_t == 0 and style.margin_t or self.line.margin_t
     lMargin = self.line.margin_l == 0 and style.margin_l or self.line.margin_l
     rMargin = self.line.margin_r == 0 and style.margin_r or self.line.margin_r
 
-    return ASS:createTag("position", self.line.defaultXPosition[align%3+1](scriptInfo.PlayResX, lMargin, rMargin), 
+    return ASS:createTag("position", self.line.defaultXPosition[align%3+1](scriptInfo.PlayResX, lMargin, rMargin),
                                      self.line.defaultYPosition[math.ceil(align/3)](scriptInfo.PlayResY, vMargin)
     ), ASS:createTag("align", align)
 end
@@ -776,7 +774,7 @@ function ASSLineContents:getDefaultTags(style, copyTags, useOvrAlign)
     end
 
     local function styleRef(tag)
-        if tag:find("alpha") then 
+        if tag:find("alpha") then
             return style[tag:gsub("alpha", "color")]:sub(3,4)
         elseif tag:find("color") then
             return style[tag]:sub(5,6), style[tag]:sub(7,8), style[tag]:sub(9,10)
@@ -862,17 +860,17 @@ function ASSLineContents:getMetrics(includeLineBounds, includeTypeBounds, coerce
             typeBounds[3] = typeBounds[1] + sectMetr.typeBounds.width
             typeBounds[4] = math.max(typeBounds[4],sectMetr.typeBounds[4] or 0)
         end
-        
+
         -- add all section widths
         metr.width = metr.width + sectMetr.width
         -- get maximum encountered section values for all other metrics (does that make sense?)
         metr.ascent, metr.descent, metr.internal_leading, metr.external_leading, metr.height =
-            math.max(sectMetr.ascent, metr.ascent), math.max(sectMetr.descent, metr.descent), 
+            math.max(sectMetr.ascent, metr.ascent), math.max(sectMetr.descent, metr.descent),
             math.max(sectMetr.internal_leading, metr.internal_leading), math.max(sectMetr.external_leading, metr.external_leading),
             math.max(sectMetr.height, metr.height)
 
     end, ASSLineTextSection)
-    
+
     if includeTypeBounds then
         typeBounds.width, typeBounds.height = typeBounds[3]-typeBounds[1], typeBounds[4]-typeBounds[2]
         metr.typeBounds = typeBounds
@@ -881,6 +879,7 @@ function ASSLineContents:getMetrics(includeLineBounds, includeTypeBounds, coerce
     if includeLineBounds then
         metr.lineBounds, metr.animated = self:getLineBounds()
     end
+
     return metr
 end
 
@@ -919,9 +918,9 @@ function ASSLineContents:isAnimated()
     if #effTags.transforms>0 or
     (t.move and not t.move.startPos:equal(t.move.endPos) and t.move.startTime<t.move.endTime) or
     (t.move_simple and not t.move_simple.startPos:equal(t.move_simple.endPos) and t.move_simple.startTime<t.move_simple.endTime) or
-    (t.fade and (t.fade.startDuration>0 and not t.fade.startAlpha:equal(t.fade.midAlpha) or 
+    (t.fade and (t.fade.startDuration>0 and not t.fade.startAlpha:equal(t.fade.midAlpha) or
                  t.fade.endDuration>0 and not t.fade.midAlpha:equal(t.fade.endAlpha))) or
-    (t.fade_simple and (t.fade_simple.startDuration>0 and not t.fade_simple.startAlpha:equal(t.fade_simple.midAlpha) or 
+    (t.fade_simple and (t.fade_simple.startDuration>0 and not t.fade_simple.startAlpha:equal(t.fade_simple.midAlpha) or
                         t.fade_simple.endDuration>0 and not t.fade_simple.midAlpha:equal(t.fade_simple.endAlpha))) then
         return true
     end
@@ -940,11 +939,11 @@ function ASSLineContents:reverse()
     return self:cleanTags(4)
 end
 
-ASSLineBounds = createASSClass("ASSLineBounds", ASSBase, {1, 2, "w", "h", "fbf", "animated", "rawText"}, 
+ASSLineBounds = createASSClass("ASSLineBounds", ASSBase, {1, 2, "w", "h", "fbf", "animated", "rawText"},
                               {"ASSPoint", "ASSPoint", "number", "number", "table", "boolean", "string"})
 function ASSLineBounds:new(cnts, noCommit)
-    assert(ASS.instanceOf(cnts, ASSLineContents), 
-           string.format("Error: argument #1 must be an object of type %s, got a %s.", 
+    assert(ASS.instanceOf(cnts, ASSLineContents),
+           string.format("Error: argument #1 must be an object of type %s, got a %s.",
                           ASSLineTagSection.typeName, ASS.instanceOf(cnts) or type(cnts))
     )
     if not noCommit then cnts:commit() end
@@ -976,18 +975,18 @@ function ASSLineBounds:new(cnts, noCommit)
         end
         self[1], self[2], self.w, self.h = ASSPoint{x1Min,y1Min}, ASSPoint{x2Max, y2Max}, x2Max-x1Min, y2Max-y1Min
     else self.w, self.h, self.fbf = 0, 0, {n=0} end
-    
+
     self.rawText = cnts.line.text
     if not noCommit then cnts:undoCommit() end
     return self
 end
 
 function ASSLineBounds:equal(other)
-    assert(ASS.instanceOf(other, ASSLineBounds), 
-           string.format("Error: argument #1 must be an object of type %s, got a %s.", 
+    assert(ASS.instanceOf(other, ASSLineBounds),
+           string.format("Error: argument #1 must be an object of type %s, got a %s.",
                           ASSLineBounds.typeName, ASS.instanceOf(other) or type(other))
     )
-    if self.w + other.w == 0 then 
+    if self.w + other.w == 0 then
         return true
     elseif self.w~=other.w or self.h~=other.h or self.animated~=other.animated or self.fbf.n~=other.fbf.n then
         return false
@@ -1059,7 +1058,7 @@ function ASSLineTextSection:getEffectiveTags(includeDefault, includePrevious, co
         local prevTagList = self.prevSection:getEffectiveTags(false, true, copyTags)
         effTags = includeDefault and effTags:merge(prevTagList, false, false, true) or prevTagList
     end
-    
+
     return effTags or ASSTagList(nil, self.parent)
 end
 
@@ -1159,7 +1158,7 @@ function ASSLineTagSection:new(tags, transformableOnly, tagSortOrder)
                 self.tags[i].parent = self
             end
         end
-        
+
         if #self.tags==0 and #tags>0 then    -- no tags found but string not empty -> must be a comment section
             return ASSLineCommentSection(tags)
         end
@@ -1193,9 +1192,9 @@ function ASSLineTagSection:callback(callback, tagNames, start, end_, relative, r
     end_ = default(end_, start>=1 and math.max(prevCnt,1) or -1)
     reverse = relative and start<0 or reverse
 
-    assert(math.isInt(start) and math.isInt(end_), 
+    assert(math.isInt(start) and math.isInt(end_),
            string.format("Error: arguments 'start' and 'end' to callback() must be integers, got %s and %s.", type(start), type(end_)))
-    assert((start>0)==(end_>0) and start~=0 and end_~=0, 
+    assert((start>0)==(end_>0) and start~=0 and end_~=0,
            string.format("Error: arguments 'start' and 'end' to callback() must be either both >0 or both <0, got %d and %d.", start, end_))
     assert(start <= end_, string.format("Error: condition 'start' <= 'end' not met, got %d <= %d", start, end_))
 
@@ -1263,14 +1262,14 @@ function ASSLineTagSection:removeTags(tags, start, end_, relative)
 
     start, end_ = default(start,1), default(end_, start and start<0 and -1 or #self.tags)
     -- wrap single tags and tag objects
-    if tags~=nil and (type(tags)~="table" or ASS.instanceOf(tags)) then 
+    if tags~=nil and (type(tags)~="table" or ASS.instanceOf(tags)) then
         tags = {tags}
     end
 
     local tagNames, tagObjects, removed, reverse = {}, {}, {}, start<0
     -- build sets
     if tags and #tags>0 then
-        for i=1,#tags do 
+        for i=1,#tags do
             if ASS.instanceOf(tags[i]) then
                 tagObjects[tags[i]] = true
             elseif type(tags[i]=="string") then
@@ -1303,7 +1302,7 @@ function ASSLineTagSection:insertTags(tags, index)
     assert(math.isInt(index) and index~=0,
            string.format("Error: argument 2 (index) must be an integer != 0, got '%s' of type %s", tostring(index), type(index))
     )
-    
+
     if type(tags)=="table" then
         if tags.instanceOf[ASSLineTagSection] then
             tags = tags.tags
@@ -1324,7 +1323,7 @@ function ASSLineTagSection:insertTags(tags, index)
         if not tagData then
             error(string.format("Error: can't insert tag #%d of type %s: no tag with name '%s'.", i, tags[i].typeName, tags[i].__tag.name))
         elseif cls ~= tagData.type then
-            error(string.format("Error: can't insert tag #%d with name '%s': expected type was %s, got %s.", 
+            error(string.format("Error: can't insert tag #%d with name '%s': expected type was %s, got %s.",
                                 i, tags[i].__tag.name, tagData.type.typeName, tags[i].typeName)
             )
         end
@@ -1332,7 +1331,7 @@ function ASSLineTagSection:insertTags(tags, index)
         local insertIdx = index<0 and prevCnt+index+i or index+i-1
         table.insert(self.tags, insertIdx, tags[i])
         tags[i].parent = self
-        inserted[i] = self.tags[insertIdx] 
+        inserted[i] = self.tags[insertIdx]
     end
     return #inserted>1 and inserted or inserted[1]
 end
@@ -1369,6 +1368,7 @@ end
 
 ASSLineTagSection.getStyleTable = ASSLineTextSection.getStyleTable
 
+
 ASSTagList = createASSClass("ASSTagList", ASSBase, {"tags", "transforms" ,"reset", "startTime", "endTime", "accel"},
                             {"table", "table", ASSString, ASSTime, ASSTime, ASSNumber})
 
@@ -1383,14 +1383,14 @@ function ASSTagList:new(tags, contentRef)
 
             -- Discard all previous non-global tags when a reset is encountered (including all transformed tags)
             -- Vectorial clips are not "global" but can't be reset
-            if props.name == "reset" then 
+            if props.name == "reset" then
                 self.tags, self.reset = self:getGlobal(true), tag
 
                 for i=1,#transforms do
                     local keep = false
                     transforms[i].tags:callback(function(tag)
-                        if tag.instanceOf[ASSClipRect] then 
-                            keep = true 
+                        if tag.instanceOf[ASSClipRect] then
+                            keep = true
                         else return false end
                     end)
                     if not keep then transforms[i] = nil end
@@ -1413,7 +1413,7 @@ function ASSTagList:new(tags, contentRef)
             -- Discard all except the first instance of global tags.
             -- This expects all global tags to be non-transformable which is true for ASSv4+
             -- Since there can be only one vectorial clip or iclip at a time, only keep the first one
-            elseif not (self.tags[props.name] and props.global) 
+            elseif not (self.tags[props.name] and props.global)
             and not (seenVectClip and tag.instanceOf[ASSClipVect]) then
                 self.tags[props.name] = tag
                 if tag.__tag.transformable then
@@ -1428,7 +1428,7 @@ function ASSTagList:new(tags, contentRef)
                 end
             end
         end)
-        
+
         -- filter tags by overridden transform list, keep transforms that have still tags left at the end
         local t=1
         for i=1,trIdx-1 do
@@ -1453,10 +1453,10 @@ function ASSTagList:new(tags, contentRef)
         self.contentRef = tags.contentRef
     elseif tags==nil then
         self.tags, self.transforms = {}, {}
-    else error(string.format("Error: an %s can only be constructed from an %s or %s; got a %s.", 
+    else error(string.format("Error: an %s can only be constructed from an %s or %s; got a %s.",
                               ASSTagList.typeName, ASSLineTagSection.typeName, ASSTagList.typeName,
                               ASS.instanceOf(tags) and tags.typeName or type(tags))
-         ) 
+         )
     end
     self.contentRef = contentRef or self.contentRef
     return self
@@ -1496,7 +1496,7 @@ function ASSTagList:merge(tagLists, copyTags, returnOnly, overrideGlobalTags, ex
     end
 
     for i=1,#tagLists do
-        assert(ASS.instanceOf(tagLists[i],ASSTagList), 
+        assert(ASS.instanceOf(tagLists[i],ASSTagList),
                string.format("Error: can only merge %s objects, got a %s for argument #%d.", ASSTagList.typeName, type(tagLists[i]), i)
         )
 
@@ -1513,7 +1513,7 @@ function ASSTagList:merge(tagLists, copyTags, returnOnly, overrideGlobalTags, ex
         end
 
         seenTransform = seenTransform or #tagLists[i].transforms>0
-        
+
         for name,tag in pairs(tagLists[i].tags) do
             -- discard all except the first instance of global tags
             -- also discard all vectorial clips if one was already seen
@@ -1590,24 +1590,24 @@ function ASSTagList:diff(other, returnOnly, ignoreGlobalState) -- returnOnly not
     for name,tag in pairs(self.tags) do
         local global = tag.__tag.global and not ignoreGlobalState
 
-        -- if this tag list contains a reset, we need to compare its local tags to the default values set by the reset 
+        -- if this tag list contains a reset, we need to compare its local tags to the default values set by the reset
         -- instead of to the values of the other tag list
         local ref = (ownReset and not global) and defaults or other
 
-        -- Since global tags can't be overwritten, only treat global tags that are not 
+        -- Since global tags can't be overwritten, only treat global tags that are not
         -- present in the other tag list as different.
         -- There can be only vector (i)clip at the time, so treat any we encounter in this list only as different
         -- when there are neither in the other list.
-        if global and not other.tags[name] 
+        if global and not other.tags[name]
                   and not (tag.instanceOf[ASSClipVect] and (other.tags.clip_vect or other.tags.iclip_vect))
         -- all local tags transformed in the previous section will change state (no matter the tag values) when used in this section,
         -- unless this section begins with a reset, in which case only rectangular clips are kept
-        or not (global or ownReset and not tag.instanceOf[ASSClipRect]) and otherTransSet[name] 
+        or not (global or ownReset and not tag.instanceOf[ASSClipRect]) and otherTransSet[name]
         -- check local tags for equality in reference list
         or not (global or tag:equal(ref.tags[name]) or otherReset and tag:equal(otherReset.tags[name])) then
             if returnOnly then diff.tags[name] = tag end
-        
-        elseif not returnOnly then 
+
+        elseif not returnOnly then
             self.tags[name] = nil
         end
     end
@@ -1618,7 +1618,7 @@ function ASSTagList:diff(other, returnOnly, ignoreGlobalState) -- returnOnly not
 end
 
 function ASSTagList:getStyleTable(styleRef, name, coerce)
-    assert(type(styleRef)=="table" and styleRef.class=="style", 
+    assert(type(styleRef)=="table" and styleRef.class=="style",
            "Error: argument 1 to getStyleTable() must be a style table, got a " .. tostring(type(styleRef))
     )
     local function color(num)
@@ -1626,7 +1626,7 @@ function ASSTagList:getStyleTable(styleRef, name, coerce)
         local alpha, color = tag(a), {tag(c)}
         local str = (alpha and string.format("&H%02X", alpha) or styleRef[c]:sub(1,4)) ..
                     (#color==3 and string.format("%02X%02X%02X&", unpack(color)) or styleRef[c]:sub(5))
-        return str 
+        return str
     end
     function tag(name,bool)
         if self.tags[name] then
@@ -1644,7 +1644,7 @@ function ASSTagList:getStyleTable(styleRef, name, coerce)
         align=tag("align"), angle=tag("angle"), bold=tag("bold",true),
         color1=color(1), color2=color(2), color3=color(3), color4=color(4),
         encoding=tag("encoding"), fontname=tag("fontname"), fontsize=tag("fontsize"),
-        italic=tag("italic",true), outline=tag("outline"), underline=tag("underline",true), 
+        italic=tag("italic",true), outline=tag("outline"), underline=tag("underline",true),
         scale_x=tag("scale_x"), scale_y=tag("scale_y"), shadow=tag("shadow"),
         spacing=tag("spacing"), strikeout=tag("strikeout",true)
     }
@@ -1653,7 +1653,7 @@ function ASSTagList:getStyleTable(styleRef, name, coerce)
     sTbl.raw = string.formatFancy("Style: %s,%s,%N,%s,%s,%s,%s,%B,%B,%B,%B,%N,%N,%N,%N,%d,%N,%N,%d,%d,%d,%d,%d",
                sTbl.name, sTbl.fontname, sTbl.fontsize, sTbl.color1, sTbl.color2, sTbl.color3, sTbl.color4,
                sTbl.bold, sTbl.italic, sTbl.underline, sTbl.strikeout, sTbl.scale_x, sTbl.scale_y,
-               sTbl.spacing, sTbl.angle, sTbl.borderstyle, sTbl.outline, sTbl.shadow, sTbl.align, 
+               sTbl.spacing, sTbl.angle, sTbl.borderstyle, sTbl.outline, sTbl.shadow, sTbl.align,
                sTbl.margin_l, sTbl.margin_r, sTbl.margin_t, sTbl.encoding
     )
     return sTbl
@@ -1661,14 +1661,14 @@ end
 
 function ASSTagList:filterTags(tagNames, tagProps, returnOnly, inverseNameMatch)
     if type(tagNames)=="string" then tagNames={tagNames} end
-    assert(not tagNames or type(tagNames)=="table", 
+    assert(not tagNames or type(tagNames)=="table",
            "Error: argument 1 to selectTags() must be either a single or a table of tag names, got a " .. type(tagNames))
-    
+
     local filtered = ASSTagList(nil, self.contentRef)
     local selected, transNames, retTrans = {}, ASS.tagNames[ASSTransform]
     local propCnt = tagProps and table.length(tagProps) or 0
-   
-    if not tagNames and not (tagProps or #tagProps==0) then 
+
+    if not tagNames and not (tagProps or #tagProps==0) then
         return returnOnly and self:copy() or self
     elseif not tagNames then
         tagNames = ASS.tagNames.all
@@ -1681,7 +1681,7 @@ function ASSTagList:filterTags(tagNames, tagProps, returnOnly, inverseNameMatch)
     for i=1,#tagNames do
         local name, propMatch = tagNames[i], true
         local selfTag = name=="reset" and self.reset or self.tags[name]
-        assert(type(name)=="string", 
+        assert(type(name)=="string",
                string.format("Error: invalid tag name #%d '(%s)'. expected a string, got a %s", i, tostring(name), type(name))
         )
 
@@ -1734,7 +1734,7 @@ function ASSTagBase:commonOp(method, callback, default, ...)
             local subArgs = unpack(table.sliceArray(args,j,j+subCnt-1))
             self[valNames[i]][method](self[valNames[i]],subArgs)
             j=j+subCnt
-        else 
+        else
             self[valNames[i]]=callback(self[valNames[i]],args[j])
             j = self[valNames[i]], j+1
         end
@@ -1775,7 +1775,7 @@ function ASSTagBase:readProps(args)
         for k, v in pairs(args[1].__tag) do
             self.__tag[k] = v
         end
-    elseif args.tagProps then 
+    elseif args.tagProps then
         for key, val in pairs(args.tagProps) do
             self.__tag[key] = val
         end
@@ -1798,11 +1798,13 @@ function ASSTagBase:equal(ASSTag)  -- checks equalness only of the relevant prop
 
     local vals1 = {self:get()}
     if #vals1~=#vals2 then return false end
+
     for i=1,#vals1 do
         if type(vals1[i])=="table" and #table.intersectInto(vals1[i],vals2[i]) ~= #vals2[i] then
             return false
         elseif type(vals1[i])~="table" and vals1[i]~=vals2[i] then return false end
     end
+
     return true
 end
 
@@ -1819,13 +1821,12 @@ function ASSNumber:new(args)
 end
 
 function ASSNumber:getTagParams(coerce, precision)
-
     precision = precision or self.__tag.precision
     local val = self.value
     if coerce then
         self:coerceNumber(val,0)
     else
-        assert(precision <= self.__tag.precision, string.format("Error: output wih precision %d is not supported for %s (maximum: %d).\n", 
+        assert(precision <= self.__tag.precision, string.format("Error: output wih precision %d is not supported for %s (maximum: %d).\n",
                precision,self.typeName,self.__tag.precision))
         self:typeCheck(self.value)
         if self.__tag.positive then self:checkPositive(val) end
@@ -1898,7 +1899,7 @@ end
 ASSDuration = createASSClass("ASSDuration", ASSTime, {"value"}, {"number"}, {positive=true})
 ASSHex = createASSClass("ASSHex", ASSNumber, {"value"}, {"number"}, {range={0,255}, base=16, precision=0})
 
-ASSColor = createASSClass("ASSColor", ASSTagBase, {"r","g","b"}, {ASSHex,ASSHex,ASSHex})   
+ASSColor = createASSClass("ASSColor", ASSTagBase, {"r","g","b"}, {ASSHex,ASSHex,ASSHex})
 function ASSColor:new(args)
     local b,g,r = self:getArgs(args,nil,true)
     self:readProps(args)
@@ -1925,7 +1926,7 @@ function ASSFade:new(args)
         local a, r, num = {}, args.raw, tonumber
         a[1], a[2], a[3], a[4], a[5], a[6], a[7] = num(r[5])-num(r[4]), num(r[7])-num(r[6]), r[4], r[7], r[1], r[2], r[3]
         args.raw = a
-    end 
+    end
     startDuration, endDuration, startTime, endTime, startAlpha, midAlpha, endAlpha = self:getArgs(args,{0,0,0,0,255,0,255},true)
 
     self:readProps(args)
@@ -1951,14 +1952,14 @@ function ASSFade:getTagParams(coerce)
              self:checkPositive(t2,t3)
              assert(t1<=t2 and t2<=t3 and t3<=t4, string.format("Error: fade times must evaluate to t1<=t2<=t3<=t4, got %d<=%d<=%d<=%d", t1,t2,t3,t4))
         end
-        return self.startAlpha:getTagParams(coerce), self.midAlpha:getTagParams(coerce), self.endAlpha:getTagParams(coerce), 
+        return self.startAlpha:getTagParams(coerce), self.midAlpha:getTagParams(coerce), self.endAlpha:getTagParams(coerce),
                math.min(t1,t2), util.clamp(t2,t1,t3), util.clamp(t3,t2,t4), math.max(t4,t3)
     end
 end
 
 function ASSFade:setSimple(state)
     if state==nil then
-        state = self.startTime:equal(0) and self.endTime:equal(0) and 
+        state = self.startTime:equal(0) and self.endTime:equal(0) and
                 self.startAlpha:equal(255) and self.midAlpha:equal(0) and self.endAlpha:equal(255)
     end
     self.__tag.simple, self.__tag.name = state, state and "fade_simple" or "fade"
@@ -1972,13 +1973,14 @@ ASSMove = createASSClass("ASSMove", ASSTagBase,
 function ASSMove:new(args)
     local startX, startY, endX, endY, startTime, endTime = self:getArgs(args, 0, true)
 
-    assert(startTime<=endTime, string.format("Error: argument #4 (endTime) to %s may not be smaller than argument #3 (startTime), got %d>=%d.", 
+    assert(startTime<=endTime, string.format("Error: argument #4 (endTime) to %s may not be smaller than argument #3 (startTime), got %d>=%d.",
                                              self.typeName, endTime, startTime)
     )
 
     self:readProps(args)
     self.startPos, self.endPos = ASSPoint{startX, startY}, ASSPoint{endX, endY}
     self.startTime, self.endTime = ASSTime{startTime}, ASSTime{endTime}
+
     if self.__tag.simple == nil then
         self.__tag.simple = self:setSimple(args.simple)
     end
@@ -2185,13 +2187,14 @@ function ASSClipRect:toggleInverse()
 end
 
 
+
 --------------------- Drawing Classes ---------------------
 
 ASSDrawing = createASSClass("ASSDrawing", ASSTagBase, {"commands"}, {"table"})
 function ASSDrawing:new(args)
     -- TODO: support alternative signature for ASSLineDrawingSection
     local cmdMap = ASS.classes.drawingCommandMappings
-    
+
     self.commands = {}
     -- construct from a compatible object
     -- note: does copy
@@ -2227,7 +2230,7 @@ function ASSDrawing:new(args)
                 self.commands[j], j = args[i], j+1
             elseif type(args[i])=="table" and not args[i].instanceOf then
                 for k=1,#args[i] do
-                    assert(ASS.instanceOf(args[i][k],ASS.classes.drawingCommands), 
+                    assert(ASS.instanceOf(args[i][k],ASS.classes.drawingCommands),
                            string.format("Error: argument #%d to %s contains invalid drawing objects (#%d is a %s).",
                                          i, self.typeName, k, ASS.instanceOf(args[i][k]) or type(args[i][k])
                            ))
@@ -2276,7 +2279,7 @@ function ASSDrawing:getTagParams(coerce)
             cmdStr[j], j = lastCmdType, j+1
         end
         local params = table.concat({cmds[i]:get(coerce)}," ")
-        if params~="" then 
+        if params~="" then
             cmdStr[j], j = params, j+1
         end
     end
@@ -2373,10 +2376,10 @@ function ASSDrawing:rotate(angle)
     angle = default(angle,0)
     if ASS.instanceOf(angle,ASSNumber) then
         angle = angle:getTagParams(coerce)
-    else assert(type(angle)=="number", 
+    else assert(type(angle)=="number",
          string.format("Error: argument #1 (angle) to rotate() must be either a number or a %s object, got a %s",
          ASSNumber.typeName, ASS.instanceOf(angle) and ASS.instanceOf(angle).typeName or type(angle)))
-    end 
+    end
 
     if angle%360~=0 then
         assert(HAVE_YUTILS, YUtilsMissingMsg)
@@ -2436,10 +2439,10 @@ function ASSClipVect:getDrawing(trimDrawing, pos, an)
         elseif not an then an=ASSAlign{7} end
     end
 
-    assertEx(not pos or ASS.instanceOf(pos, ASSPoint, nil, true), 
+    assertEx(not pos or ASS.instanceOf(pos, ASSPoint, nil, true),
              "argument position must be an %d or a compatible object, got a %s.",
              ASSPoint.typeName, type(pos)=="table" and pos.typeName or type(pos))
-    assertEx(ASS.instanceOf(an, ASSAlign), 
+    assertEx(ASS.instanceOf(an, ASSAlign),
              "argument align must be an %d or a compatible object, got a %s.",
              ASSAlign.typeName, type(pos)=="table" and an.typeName or type(an))
 
@@ -2488,7 +2491,7 @@ end
 ASSUnknown = createASSClass("ASSUnknown", ASSString, {"value"}, {"string"})
 ASSUnknown.add, ASSUnknown.sub, ASSUnknown.mul, ASSUnknown.div, ASSUnknown.pow = nil, nil, nil, nil, nil
 
-ASSTransform = createASSClass("ASSTransform", ASSTagBase, {"tags", "startTime", "endTime", "accel"}, 
+ASSTransform = createASSClass("ASSTransform", ASSTagBase, {"tags", "startTime", "endTime", "accel"},
                                                           {ASSLineTagSection, ASSTime, ASSTime, ASSNumber})
 
 function ASSTransform:new(args)
@@ -2575,7 +2578,7 @@ function ASSDrawBase:getTagParams(coerce)
     return table.concat(parts, " ")
 end
 
-function ASSDrawBase:getLength(prevCmd) 
+function ASSDrawBase:getLength(prevCmd)
     assert(HAVE_YUTILS, YUtilsMissingMsg)
     -- get end coordinates (cursor) of previous command
     local x0, y0 = 0, 0
@@ -2699,42 +2702,42 @@ end
 ASSFoundation = createASSClass("ASSFoundation")
 function ASSFoundation:new()
     self.tagMap = {
-        scale_x =           {overrideName="\\fscx",  type=ASSNumber,    pattern="\\fscx([%d%.]+)",                    format="\\fscx%.3N", 
+        scale_x =           {overrideName="\\fscx",  type=ASSNumber,    pattern="\\fscx([%d%.]+)",                    format="\\fscx%.3N",
                              sort=6, props={transformable=true}},
-        scale_y =           {overrideName="\\fscy",  type=ASSNumber,    pattern="\\fscy([%d%.]+)",                    format="\\fscy%.3N", 
+        scale_y =           {overrideName="\\fscy",  type=ASSNumber,    pattern="\\fscy([%d%.]+)",                    format="\\fscy%.3N",
                              sort=7, props={transformable=true}},
-        align =             {overrideName="\\an",    type=ASSAlign,     pattern="\\an([1-9])",                        format="\\an%d", 
+        align =             {overrideName="\\an",    type=ASSAlign,     pattern="\\an([1-9])",                        format="\\an%d",
                              sort=1, props={global=true}},
-        angle =             {overrideName="\\frz",   type=ASSNumber,    pattern="\\frz?([%-%d%.]+)",                  format="\\frz%.3N", 
-                             sort=8, props={transformable=true, mod=360}}, 
-        angle_y =           {overrideName="\\fry",   type=ASSNumber,    pattern="\\fry([%-%d%.]+)",                   format="\\fry%.3N", 
+        angle =             {overrideName="\\frz",   type=ASSNumber,    pattern="\\frz?([%-%d%.]+)",                  format="\\frz%.3N",
+                             sort=8, props={transformable=true, mod=360}},
+        angle_y =           {overrideName="\\fry",   type=ASSNumber,    pattern="\\fry([%-%d%.]+)",                   format="\\fry%.3N",
                              sort=9, props={transformable=true, mod=360}, default={0}},
         angle_x =           {overrideName="\\frx",   type=ASSNumber,    pattern="\\frx([%-%d%.]+)",                   format="\\frx%.3N",
-                             sort=10, props={transformable=true, mod=360}, default={0}}, 
-        outline =           {overrideName="\\bord",  type=ASSNumber,    pattern="\\bord([%d%.]+)",                    format="\\bord%.2N", 
-                             sort=20, props={positive=true, transformable=true}}, 
-        outline_x =         {overrideName="\\xbord", type=ASSNumber,    pattern="\\xbord([%d%.]+)",                   format="\\xbord%.2N", 
-                             sort=21, props={positive=true, transformable=true}}, 
+                             sort=10, props={transformable=true, mod=360}, default={0}},
+        outline =           {overrideName="\\bord",  type=ASSNumber,    pattern="\\bord([%d%.]+)",                    format="\\bord%.2N",
+                             sort=20, props={positive=true, transformable=true}},
+        outline_x =         {overrideName="\\xbord", type=ASSNumber,    pattern="\\xbord([%d%.]+)",                   format="\\xbord%.2N",
+                             sort=21, props={positive=true, transformable=true}},
         outline_y =         {overrideName="\\ybord", type=ASSNumber,    pattern="\\ybord([%d%.]+)",                   format="\\ybord%.2N",
-                             sort=22, props={positive=true, transformable=true}}, 
-        shadow =            {overrideName="\\shad",  type=ASSNumber,    pattern="\\shad([%-%d%.]+)",                  format="\\shad%.2N", 
-                             sort=23, props={transformable=true}}, 
+                             sort=22, props={positive=true, transformable=true}},
+        shadow =            {overrideName="\\shad",  type=ASSNumber,    pattern="\\shad([%-%d%.]+)",                  format="\\shad%.2N",
+                             sort=23, props={transformable=true}},
         shadow_x =          {overrideName="\\xshad", type=ASSNumber,    pattern="\\xshad([%-%d%.]+)",                 format="\\xshad%.2N",
-                             sort=24, props={transformable=true}}, 
-        shadow_y =          {overrideName="\\yshad", type=ASSNumber,    pattern="\\yshad([%-%d%.]+)",                 format="\\yshad%.2N", 
-                             sort=25, props={transformable=true}}, 
-        reset =             {overrideName="\\r",     type=ASSString,    pattern="\\r([^\\}]*)",                       format="\\r%s", 
-                             props={transformable=true}}, 
+                             sort=24, props={transformable=true}},
+        shadow_y =          {overrideName="\\yshad", type=ASSNumber,    pattern="\\yshad([%-%d%.]+)",                 format="\\yshad%.2N",
+                             sort=25, props={transformable=true}},
+        reset =             {overrideName="\\r",     type=ASSString,    pattern="\\r([^\\}]*)",                       format="\\r%s",
+                             props={transformable=true}},
         alpha =             {overrideName="\\alpha", type=ASSHex,       pattern="\\alpha&H(%x%x)&",                   format="\\alpha&H%02X&",
-                             sort=30, props={transformable=true, masterAlpha=true}, default={0}}, 
-        alpha1 =            {overrideName="\\1a",    type=ASSHex,       pattern="\\1a&H(%x%x)&",                      format="\\1a&H%02X&", 
-                             sort=31, props={transformable=true, childAlpha=true}}, 
-        alpha2 =            {overrideName="\\2a",    type=ASSHex,       pattern="\\2a&H(%x%x)&",                      format="\\2a&H%02X&", 
-                             sort=32, props={transformable=true, childAlpha=true}}, 
-        alpha3 =            {overrideName="\\3a",    type=ASSHex,       pattern="\\3a&H(%x%x)&",                      format="\\3a&H%02X&", 
-                             sort=33, props={transformable=true, childAlpha=true}}, 
-        alpha4 =            {overrideName="\\4a",    type=ASSHex,       pattern="\\4a&H(%x%x)&",                      format="\\4a&H%02X&", 
-                             sort=34, props={transformable=true, childAlpha=true}}, 
+                             sort=30, props={transformable=true, masterAlpha=true}, default={0}},
+        alpha1 =            {overrideName="\\1a",    type=ASSHex,       pattern="\\1a&H(%x%x)&",                      format="\\1a&H%02X&",
+                             sort=31, props={transformable=true, childAlpha=true}},
+        alpha2 =            {overrideName="\\2a",    type=ASSHex,       pattern="\\2a&H(%x%x)&",                      format="\\2a&H%02X&",
+                             sort=32, props={transformable=true, childAlpha=true}},
+        alpha3 =            {overrideName="\\3a",    type=ASSHex,       pattern="\\3a&H(%x%x)&",                      format="\\3a&H%02X&",
+                             sort=33, props={transformable=true, childAlpha=true}},
+        alpha4 =            {overrideName="\\4a",    type=ASSHex,       pattern="\\4a&H(%x%x)&",                      format="\\4a&H%02X&",
+                             sort=34, props={transformable=true, childAlpha=true}},
         color =             {overrideName="\\c",     type=ASSColor,
                              props={name="color1", transformable=true, pseudo=true}},
         color1 =            {overrideName="\\1c",    type=ASSColor,     pattern="\\1?c&H(%x%x)(%x%x)(%x%x)&",         format="\\1c&H%02X%02X%02X&",  friendlyName="\\1c & \\c",
@@ -2746,65 +2749,65 @@ function ASSFoundation:new()
         color4 =            {overrideName="\\4c",    type=ASSColor,     pattern="\\4c&H(%x%x)(%x%x)(%x%x)&",          format="\\4c&H%02X%02X%02X&",
                              sort=29, props={transformable=true}},
         clip_vect =         {overrideName="\\clip",  type=ASSClipVect,  pattern="\\clip%(([mnlbspc] .-)%)",           format="\\clip(%s)",         friendlyName="\\clip (Vector)",
-                             sort=41, props={global=true, clip=true}}, 
+                             sort=41, props={global=true, clip=true}},
         iclip_vect =        {overrideName="\\iclip", type=ASSClipVect,  pattern="\\iclip%(([mnlbspc] .-)%)",          format="\\iclip(%s)",        friendlyName="\\iclip (Vector)",
                              sort=42, props={inverse=true, global=true, clip=true}, default={"m 0 0 l 0 0 0 0 0 0 0 0"}},
         clip_rect =         {overrideName="\\clip",  type=ASSClipRect,  pattern="\\clip%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+)%)", format="\\clip(%.2N,%.2N,%.2N,%.2N)", friendlyName="\\clip (Rectangle)",
-                             sort=39, props={transformable=true, global=false, clip=true}}, 
+                             sort=39, props={transformable=true, global=false, clip=true}},
         iclip_rect =        {overrideName="\\iclip", type=ASSClipRect,  pattern="\\iclip%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+)%)", format="\\iclip(%.2N,%.2N,%.2N,%.2N)", friendlyName="\\iclip (Rectangle)",
-                             sort=40, props={inverse=true, global=false, transformable=true, clip=true}, default={0,0,0,0}}, 
-        drawing =           {overrideName="\\p",     type=ASSNumber,    pattern="\\p(%d+)",                           format="\\p%d", 
-                             sort=44, props={positive=true, precision=0}, default={0}}, 
-        blur_edges =        {overrideName="\\be",    type=ASSNumber,    pattern="\\be([%d%.]+)",                      format="\\be%.2N", 
-                             sort=36, props={positive=true, transformable=true}, default={0}}, 
+                             sort=40, props={inverse=true, global=false, transformable=true, clip=true}, default={0,0,0,0}},
+        drawing =           {overrideName="\\p",     type=ASSNumber,    pattern="\\p(%d+)",                           format="\\p%d",
+                             sort=44, props={positive=true, precision=0}, default={0}},
+        blur_edges =        {overrideName="\\be",    type=ASSNumber,    pattern="\\be([%d%.]+)",                      format="\\be%.2N",
+                             sort=36, props={positive=true, transformable=true}, default={0}},
         blur =              {overrideName="\\blur",  type=ASSNumber,    pattern="\\blur([%d%.]+)",                    format="\\blur%.2N",
-                             sort=35, props={positive=true, transformable=true}, default={0}}, 
-        shear_x =           {overrideName="\\fax",   type=ASSNumber,    pattern="\\fax([%-%d%.]+)",                   format="\\fax%.2N", 
-                             sort=11, props={transformable=true}, default={0}}, 
-        shear_y =           {overrideName="\\fay",   type=ASSNumber,    pattern="\\fay([%-%d%.]+)",                   format="\\fay%.2N", 
-                             sort=12, props={transformable=true}, default={0}}, 
+                             sort=35, props={positive=true, transformable=true}, default={0}},
+        shear_x =           {overrideName="\\fax",   type=ASSNumber,    pattern="\\fax([%-%d%.]+)",                   format="\\fax%.2N",
+                             sort=11, props={transformable=true}, default={0}},
+        shear_y =           {overrideName="\\fay",   type=ASSNumber,    pattern="\\fay([%-%d%.]+)",                   format="\\fay%.2N",
+                             sort=12, props={transformable=true}, default={0}},
         bold =              {overrideName="\\b",     type=ASSWeight,    pattern="\\b(%d+)",                           format="\\b%d",
                              sort=16},
         italic =            {overrideName="\\i",     type=ASSToggle,    pattern="\\i([10])",                          format="\\i%d",
-                             sort=17}, 
+                             sort=17},
         underline =         {overrideName="\\u",     type=ASSToggle,    pattern="\\u([10])",                          format="\\u%d",
                              sort=18},
         strikeout =         {overrideName="\\s",     type=ASSToggle,    pattern="\\s([10])",                          format="\\s%d",
                              sort=19},
-        spacing =           {overrideName="\\fsp",   type=ASSNumber,    pattern="\\fsp([%-%d%.]+)",                   format="\\fsp%.2N", 
+        spacing =           {overrideName="\\fsp",   type=ASSNumber,    pattern="\\fsp([%-%d%.]+)",                   format="\\fsp%.2N",
                              sort=15, props={transformable=true}},
-        fontsize =          {overrideName="\\fs",    type=ASSNumber,    pattern="\\fs([%d%.]+)",                      format="\\fs%.2N", 
+        fontsize =          {overrideName="\\fs",    type=ASSNumber,    pattern="\\fs([%d%.]+)",                      format="\\fs%.2N",
                              sort=14, props={positive=true, transformable=true}},
-        fontname =          {overrideName="\\fn",    type=ASSString,    pattern="\\fn([^\\}]*)",                      format="\\fn%s", 
+        fontname =          {overrideName="\\fn",    type=ASSString,    pattern="\\fn([^\\}]*)",                      format="\\fn%s",
                              sort=13},
-        k_fill =            {overrideName="\\k",     type=ASSDuration,  pattern="\\k([%d]+)",                         format="\\k%d", 
+        k_fill =            {overrideName="\\k",     type=ASSDuration,  pattern="\\k([%d]+)",                         format="\\k%d",
                              sort=45, props={scale=10, karaoke=true}, default={0}},
-        k_sweep =           {overrideName="\\kf",    type=ASSDuration,  pattern="\\kf([%d]+)",                        format="\\kf%d", 
+        k_sweep =           {overrideName="\\kf",    type=ASSDuration,  pattern="\\kf([%d]+)",                        format="\\kf%d",
                              sort=46, props={scale=10, karaoke=true}, default={0}},
-        k_sweep_alt =       {overrideName="\\K",     type=ASSDuration,  pattern="\\K([%d]+)",                         format="\\K%d", 
+        k_sweep_alt =       {overrideName="\\K",     type=ASSDuration,  pattern="\\K([%d]+)",                         format="\\K%d",
                              sort=47, props={scale=10, karaoke=true}, default={0}},
-        k_bord =            {overrideName="\\ko",    type=ASSDuration,  pattern="\\ko([%d]+)",                        format="\\ko%d", 
+        k_bord =            {overrideName="\\ko",    type=ASSDuration,  pattern="\\ko([%d]+)",                        format="\\ko%d",
                              sort=48, props={scale=10, karaoke=true}, default={0}},
         position =          {overrideName="\\pos",   type=ASSPoint,     pattern="\\pos%(([%-%d%.]+),([%-%d%.]+)%)",   format="\\pos(%.3N,%.3N)",
                              sort=2, props={global=true}},
         move_simple =       {overrideName="\\move",  type=ASSMove,      pattern="\\move%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+)%)", format="\\move(%.3N,%.3N,%.3N,%.3N)", friendlyName="\\move (Simple)",
-                             sort=3, props={simple=true, global=true}},  
+                             sort=3, props={simple=true, global=true}},
         move =              {overrideName="\\move",  type=ASSMove,      pattern="\\move%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),(%d+),(%d+)%)", format="\\move(%.3N,%.3N,%.3N,%.3N,%.3N,%.3N)", friendlyName="\\move (w/ Time)",
-                             sort=4, props={global=true}}, 
+                             sort=4, props={global=true}},
         origin =            {overrideName="\\org",   type=ASSPoint,     pattern="\\org%(([%-%d%.]+),([%-%d%.]+)%)",   format="\\org(%.3N,%.3N)",
                              sort=5, props={global=true}},
-        wrapstyle =         {overrideName="\\q",     type=ASSWrapStyle, pattern="\\q(%d)",                            format="\\q%d", 
+        wrapstyle =         {overrideName="\\q",     type=ASSWrapStyle, pattern="\\q(%d)",                            format="\\q%d",
                              sort=43, props={global=true}, default={0}},
         fade_simple =       {overrideName="\\fad",   type=ASSFade,      pattern="\\fad%((%d+),(%d+)%)",               format="\\fad(%d,%d)",
                              sort=37, props={simple=true, global=true}, default={0,0}},
         fade =              {overrideName="\\fade",  type=ASSFade,      pattern="\\fade%((.-)%)",                     format="\\fade(%d,%d,%d,%d,%d,%d,%d)",
                              sort=38, props={global=true}, default={255,0,255,0,0,0,0}},
-        transform =         {overrideName="\\t",     type=ASSTransform, 
+        transform =         {overrideName="\\t",     type=ASSTransform,
                              props={pseudo=true}},
-        transform_simple =  {overrideName="\\t",     type=ASSTransform, pattern="\\t%(([^,]+)%)",                     format="\\t(%s)"}, 
-        transform_accel =   {overrideName="\\t",     type=ASSTransform, pattern="\\t%(([%d%.]+),([^,]+)%)",           format="\\t(%.2N,%s)"}, 
-        transform_time =    {overrideName="\\t",     type=ASSTransform, pattern="\\t%(([%-%d]+),([%-%d]+),([^,]+)%)", format="\\t(%.2N,%.2N,%s)"}, 
-        transform_complex = {overrideName="\\t",     type=ASSTransform, pattern="\\t%(([%-%d]+),([%-%d]+),([%d%.]+),([^,]+)%)", format="\\t(%.2N,%.2N,%.2N,%s)"}, 
+        transform_simple =  {overrideName="\\t",     type=ASSTransform, pattern="\\t%(([^,]+)%)",                     format="\\t(%s)"},
+        transform_accel =   {overrideName="\\t",     type=ASSTransform, pattern="\\t%(([%d%.]+),([^,]+)%)",           format="\\t(%.2N,%s)"},
+        transform_time =    {overrideName="\\t",     type=ASSTransform, pattern="\\t%(([%-%d]+),([%-%d]+),([^,]+)%)", format="\\t(%.2N,%.2N,%s)"},
+        transform_complex = {overrideName="\\t",     type=ASSTransform, pattern="\\t%(([%-%d]+),([%-%d]+),([%d%.]+),([^,]+)%)", format="\\t(%.2N,%.2N,%.2N,%s)"},
         unknown =           {                        type=ASSUnknown,                                                 format="%s", friendlyName="Unknown Tag",
                              sort=98},
         junk =              {                        type=ASSUnknown,                                                 format="%s", friendlyName="Junk",
@@ -2829,13 +2832,13 @@ function ASSFoundation:new()
         tag.friendlyName = tag.friendlyName or tag.overrideName
         -- populate friendly name <-> tag name conversion tables
         if tag.friendlyName then
-            self.toFriendlyName[name], self.toTagName[tag.friendlyName] = tag.friendlyName, name 
+            self.toFriendlyName[name], self.toTagName[tag.friendlyName] = tag.friendlyName, name
         end
         -- fill tag names table
         local tagType = self.tagNames[tag.type]
         if not tagType then
             self.tagNames[tag.type] = {name, n=1}
-        else 
+        else
             tagType[tagType.n+1], tagType.n = name, tagType.n+1
         end
         -- fill override tag name -> internal tag name mapping tables
@@ -2896,6 +2899,7 @@ function ASSFoundation:getTagNames(ovrNames)
         end
         t=t+1
     end
+
     return tagNames
 end
 
@@ -2906,7 +2910,7 @@ end
 
 function ASSFoundation:createTag(name, ...)
     local tag = self:mapTag(name)
-    return tag.type{tagProps=tag.props, ...} 
+    return tag.type{tagProps=tag.props, ...}
 end
 
 function ASSFoundation:getTagFromString(str)
@@ -2929,12 +2933,12 @@ function ASSFoundation:getTagsNamesFromProps(props)
         if tag.props then
             local propMatch = true
             for k,v in pairs(props) do
-                if tag.props[k]~=v or tag.props[k]==false and tag.props[k] then 
+                if tag.props[k]~=v or tag.props[k]==false and tag.props[k] then
                     propMatch = false
                     break
                 end
             end
-            if propMatch then 
+            if propMatch then
                 names[n], n = name, n+1
             end
         end
@@ -2958,13 +2962,13 @@ function ASSFoundation.instanceOf(val, classes, filter, includeCompatible)
     end
 
     if type(filter)=="table" then
-        if filter.instanceOf then 
-            filter={[filter]=true} 
-        elseif #filter>0 then 
+        if filter.instanceOf then
+            filter={[filter]=true}
+        elseif #filter>0 then
             filter = table.set(filter)
         end
     end
-    for i=1,#classes do 
+    for i=1,#classes do
         if (clsSetObj[classes[i]] or includeCompatible and val.compatible[classes[i]]) and (not filter or filter[classes[i]]) then
             return classes[i]
         end
