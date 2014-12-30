@@ -1762,6 +1762,10 @@ function ASSTagBase:pow(...)
     return self:commonOp("pow", function(a,b) return a^b end, 1, ...)
 end
 
+function ASSTagBase:mod(...)
+    return self:commonOp("mod", function(a,b) return a%b end, 1, ...)
+end
+
 function ASSTagBase:set(...)
     return self:commonOp("set", function(a,b) return b end, nil, ...)
 end
@@ -1862,6 +1866,7 @@ function ASSNumber.__add(a,b) return type(a)=="table" and a:copy():add(b) or b:c
 function ASSNumber.__sub(a,b) return type(a)=="table" and a:copy():sub(b) or b:copy():sub(a) end
 function ASSNumber.__mul(a,b) return type(a)=="table" and a:copy():mul(b) or b:copy():mul(a) end
 function ASSNumber.__div(a,b) return type(a)=="table" and a:copy():div(b) or b:copy():div(a) end
+function ASSNumber.__mod(a,b) return type(a)=="table" and a:copy():mod(b) or b:copy():mod(a) end
 
 
 ASSPoint = createASSClass("ASSPoint", ASSTagBase, {"x","y"}, {ASSNumber, ASSNumber})
@@ -2014,7 +2019,7 @@ ASSString = createASSClass("ASSString", {ASSTagBase, ASSStringBase}, {"value"}, 
 function ASSString:getTagParams(coerce)
     return coerce and tostring(self.value) or self:typeCheck(self.value)
 end
-ASSString.add, ASSString.mul, ASSString.div, ASSString.pow = ASSString.append, nil, nil, nil
+ASSString.add, ASSString.mul, ASSString.div, ASSString.pow, ASSString.mod = ASSString.append, nil, nil, nil, nil
 
 
 ASSToggle = createASSClass("ASSToggle", ASSTagBase, {"value"}, {"boolean"})
@@ -2489,7 +2494,7 @@ end
 --------------------- Unsupported Tag Classes and Stubs ---------------------
 
 ASSUnknown = createASSClass("ASSUnknown", ASSString, {"value"}, {"string"})
-ASSUnknown.add, ASSUnknown.sub, ASSUnknown.mul, ASSUnknown.div, ASSUnknown.pow = nil, nil, nil, nil, nil
+ASSUnknown.add, ASSUnknown.sub, ASSUnknown.mul, ASSUnknown.div, ASSUnknown.pow, ASSUnknown.mod = nil, nil, nil, nil, nil, nil
 
 ASSTransform = createASSClass("ASSTransform", ASSTagBase, {"tags", "startTime", "endTime", "accel"},
                                                           {ASSLineTagSection, ASSTime, ASSTime, ASSNumber})
