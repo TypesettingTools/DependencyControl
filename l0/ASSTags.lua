@@ -57,7 +57,7 @@ function ASSBase:checkType(type_, ...) --TODO: get rid of
     local vals = table.pack(...)
     for i=1,vals.n do
         result = (type_=="integer" and math.isInt(vals[i])) or type(vals[i])==type_
-        assert(result, string.format("Error: %s must be a %s, got %s.\n",self.typeName,type_,type(vals[i])))
+        assertEx(result, "%s must be a %s, got %s.", self.typeName, type_, type(vals[i]))
     end
 end
 
@@ -65,7 +65,7 @@ function ASSBase:checkPositive(...)
     self:checkType("number", ...)
     local vals = table.pack(...)
     for i=1,vals.n do
-        assert(vals[i] >= 0, string.format("Error: %s tagProps do not permit numbers < 0, got %d.\n", self.typeName,vals[i]))
+        assertEx(vals[i] >= 0, "%s tagProps do not permit numbers < 0, got %d.", self.typeName, vals[i])
     end
 end
 
@@ -73,7 +73,8 @@ function ASSBase:checkRange(min,max,...)
     self:checkType("number",...)
     local vals = table.pack(...)
     for i=1,vals.n do
-        assert(vals[i] >= min and vals[i] <= max, string.format("Error: %s must be in range %d-%d, got %d.\n",self.typeName,min,max,vals[i]))
+        assertEx(vals[i] >= min and vals[i] <= max, "%s must be in range %d-%d, got %d.",
+                 self.typeName, min, max, vals[i]))
     end
 end
 
@@ -104,7 +105,7 @@ end
 
 function ASSBase:getArgs(args, defaults, coerce, extraValidClasses)
     -- TODO: make getArgs automatically create objects
-    assert(type(args)=="table", "Error: first argument to getArgs must be a table of arguments, got a " .. type(args) ..".\n")
+    assertEx(type(args)=="table", "first argument to getArgs must be a table of arguments, got a %s.", type(args))
     local propTypes, propNames, j, outArgs, argSlice = self.__meta__.types, self.__meta__.order, 1, {}
     if not args then args={}
     -- process "raw" property that holds all tag parameters when parsed from a string
@@ -127,8 +128,9 @@ function ASSBase:getArgs(args, defaults, coerce, extraValidClasses)
                 end
                 return unpack(args)
             end
-        else assert(type(propTypes[1]) == "table" and propTypes[1].instanceOf,
-                    string.format("Error: object of class %s does not accept instances of class %s as argument.\n", self.typeName, args[1].typeName)
+        else assertEx(type(propTypes[1]) == "table" and propTypes[1].instanceOf,
+                      "object of class %s does not accept instances of class %s as argument.",
+                      self.typeName, args[1].typeName
              )
         end
     end
@@ -182,8 +184,8 @@ function ASSBase:typeCheck(...)
                 j=j+subCnt-1
             end
         else
-            assert(type(args[j])==valTypes[i] or args[j]==nil or valTypes[i]=="nil",
-                   string.format("Error: bad type for argument #%d (%s). Expected %s, got %s.", i, valNames[i], valTypes[i], type(args[j])))
+            assertEx(type(args[j])==valTypes[i] or args[j]==nil or valTypes[i]=="nil",
+                   "bad type for argument #%d (%s). Expected %s, got %s.", i, valNames[i], valTypes[i], type(args[j]))
         end
         j=j+1
     end
@@ -219,7 +221,8 @@ end
 ASSLineContents = createASSClass("ASSLineContents", ASSBase, {"sections"}, {"table"})
 function ASSLineContents:new(line,sections)
     sections = self:getArgs({sections})
-    assert(line and line.text, string.format("Error: argument 1 to %s() must be a Line or %s object, got %s.\n", self.typeName, self.typeName, type(line)))
+    assertEx(line and line.text, "argument 1 to %s() must be a Line or %s object, got %s.",
+             self.typeName, self.typeName, type(line))
     if not sections then
         sections = {}
         local i, j, drawingState, ovrStart, ovrEnd = 1, 1, ASS:createTag("drawing",0)
@@ -286,9 +289,9 @@ function ASSLineContents:getString(coerce, classes)
             str[j], str[j+1], str[j+2], j =  "{", sections[i]:getString(), "}", j+2
 
         else
-            assert(coerce, string.format("Error: invalid %s section #%d. Expected {%s}, got a %s.\n",
+            assertEx(coerce, "invalid %s section #%d. Expected {%s}, got a %s.",
                  self.typeName, i, table.concat(table.pluck(ASS.classes.lineSection, "typeName"), ", "),
-                 type(sections[i])=="table" and sections[i].typeName or type(sections[i]))
+                 type(sections[i])=="table" and sections[i].typeName or type(sections[i])
             )
         end
         prevSecType, j = secType, j+1
@@ -310,11 +313,11 @@ function ASSLineContents:callback(callback, sectionClasses, start, end_, relativ
     end_ = default(end_, start>=1 and math.max(prevCnt,1) or -1)
     reverse = relative and start<0 or reverse
 
-    assert(math.isInt(start) and math.isInt(end_),
-           string.format("Error: arguments 'start' and 'end' to callback() must be integers, got %s and %s.", type(start), type(end_)))
-    assert((start>0)==(end_>0) and start~=0 and end_~=0,
-           string.format("Error: arguments 'start' and 'end' to callback() must be either both >0 or both <0, got %d and %d.", start, end_))
-    assert(start <= end_, string.format("Error: condition 'start' <= 'end' not met, got %d <= %d", start, end_))
+    assertEx(math.isInt(start) and math.isInt(end_),
+             "arguments 'start' and 'end' to callback() must be integers, got %s and %s.", type(start), type(end_))
+    assertEx((start>0)==(end_>0) and start~=0 and end_~=0,
+             "arguments 'start' and 'end' to callback() must be either both >0 or both <0, got %d and %d.", start, end_)
+    assertEx(start <= end_, "condition 'start' <= 'end' not met, got %d <= %d", start, end_)
 
     local j, numRun, sects = 0, 0, self.sections
     if start<0 then
@@ -347,9 +350,8 @@ function ASSLineContents:insertSections(sections,index)
         sections = {sections}
     end
     for i=1,#sections do
-        assert(ASS.instanceOf(sections[i],ASS.classes.lineSection),
-              string.format("Error: can only insert sections of type {%s}, got %s.\n",
-              table.concat(table.select(ASS.classes.lineSection, {"typeName"}), ", "), type(sections[i]))
+        assertEx(ASS.instanceOf(sections[i],ASS.classes.lineSection), "can only insert sections of type {%s}, got %s.",
+                 table.concat(table.select(ASS.classes.lineSection, {"typeName"}), ", "), type(sections[i])
         )
         table.insert(self.sections, index+i-1, sections[i])
     end
@@ -475,15 +477,15 @@ function ASSLineContents:removeTags(tags, start, end_, relative)
 end
 
 function ASSLineContents:insertTags(tags, index, sectionPosition, direct)
-    assert(index==nil or math.isInt(index) and index~=0,
-           string.format("Error: argument #2 (index) to insertTags() must be an integer != 0, got '%s' of type %s", tostring(index), type(index))
+    assertEx(index==nil or math.isInt(index) and index~=0,
+             "argument #2 (index) to insertTags() must be an integer != 0, got '%s' of type %s", tostring(index), type(index)
     )
     index = default(index, 1)
 
     if direct then
         local section = self.sections[index>0 and index or #self.sections-index+1]
-        assert(ASS.instanceOf(section, ASSLineTagSection), string.format("Error: can't insert tag in section #%d of type %s.",
-               index, section and section.typeName or "<no section>")
+        assertEx(ASS.instanceOf(section, ASSLineTagSection), "can't insert tag in section #%d of type %s.",
+               index, section and section.typeName or "<no section>"
         )
         return section:insertTags(tags, sectionPosition)
     else
@@ -505,8 +507,9 @@ end
 
 function ASSLineContents:getEffectiveTags(index, includeDefault, includePrevious, copyTags)
     index, copyTags = default(index,1), default(copyTags, true)
-    assert(math.isInt(index) and index~=0,
-           string.format("Error: argument #1 (index) to getEffectiveTags() must be an integer != 0, got '%s' of type %s", tostring(index), type(index))
+    assertEx(math.isInt(index) and index~=0,
+             "argument #1 (index) to getEffectiveTags() must be an integer != 0, got '%s' of type %s.",
+             tostring(index), type(index)
     )
     if index<0 then index = index+#self.sections+1 end
     return self.sections[index] and self.sections[index]:getEffectiveTags(includeDefault,includePrevious,copyTags)
@@ -633,7 +636,9 @@ function ASSLineContents:splitAtIntervals(callback, cleanLevel, reposition, writ
         callback = function(idx,len)
             return idx+step
         end
-    else assert(type(callback)=="function", "Error: first argument to splitAtIntervals must be either a number or a callback function.\n") end
+    else assertEx(type(callback)=="function", "argument #1 must be either a number or a callback function, got a %s.",
+                 type(callback))
+    end
 
     local len, idx, sectEndIdx, nextIdx, lastI = unicode.len(self:copy():stripTags():getString()), 1, 0, 0
     local splitLines, splitCnt = {}, 1
@@ -654,7 +659,8 @@ function ASSLineContents:splitAtIntervals(callback, cleanLevel, reposition, writ
 
         while idx <= sectEndIdx do
             nextIdx = math.ceil(callback(idx,len))
-            assert(nextIdx>idx, "Error: callback function for splitAtIntervals must always return an index greater than the last index.")
+            assertEx(nextIdx>idx, "index returned by callback function must increase with every iteration, got %d<=%d.",
+                     nextIdx, idx)
             -- create a new line
             local splitLine = Line(self.line, self.line.parentCollection)
             splitLine.ASS = ASSLineContents(splitLine, self:get(ASSLineTagSection,1,i))
@@ -723,9 +729,9 @@ function ASSLineContents:getStyleRef(style)
         style = self.line.styleRef
     elseif type(style)=="string" then
         style = self.line.parentCollection.styles[style] or style
-        assert(type(style)=="table", "Error: couldn't find style with name: " .. style .. ".")
-    else assert(type(style)=="table" and style.class=="style",
-                "Error: invalid argument #1 (style): expected a style name or a styleRef, got a " .. type(style) .. ".")
+        assertEx(type(style)=="table", "couldn't find style with name '%s'.", style)
+    else assertEx(type(style)=="table" and style.class=="style",
+                "invalid argument #1 (style): expected a style name or a styleRef, got a %s.", type(style))
     end
     return style
 end
@@ -738,7 +744,7 @@ function ASSLineContents:getPosition(style, align, forceDefault)
 
     if ASS.instanceOf(align,ASSAlign) then
         align = align:get()
-    else assert(type(align)=="number", "Error: argument #1 (align) must be of type number or %s, got a %s.",
+    else assertEx(type(align)=="number", "argument #1 (align) must be of type number or %s, got a %s.",
          ASSAlign.typeName, ASS.instanceOf(align) or type(align))
     end
 
@@ -942,16 +948,15 @@ end
 ASSLineBounds = createASSClass("ASSLineBounds", ASSBase, {1, 2, "w", "h", "fbf", "animated", "rawText"},
                               {"ASSPoint", "ASSPoint", "number", "number", "table", "boolean", "string"})
 function ASSLineBounds:new(cnts, noCommit)
-    assert(ASS.instanceOf(cnts, ASSLineContents),
-           string.format("Error: argument #1 must be an object of type %s, got a %s.",
-                          ASSLineTagSection.typeName, ASS.instanceOf(cnts) or type(cnts))
+    assertEx(ASS.instanceOf(cnts, ASSLineContents), "argument #1 must be an object of type %s, got a %s.",
+             ASSLineTagSection.typeName, ASS.instanceOf(cnts) or type(cnts)
     )
     if not noCommit then cnts:commit() end
 
     local assi, msg = ASS.cache.ASSInspector[cnts.line.parentCollection]
     if not assi then
         assi, msg = ASSInspector(cnts.line.parentCollection.sub)
-        assert(assi, "ASSInspector Error: " .. tostring(msg))
+        assertEx(assi, "ASSInspector Error: %s.", tostring(msg))
         ASS.cache.ASSInspector[cnts.line.parentCollection] = assi
     end
 
@@ -959,7 +964,7 @@ function ASSLineBounds:new(cnts, noCommit)
     cnts.line.assi_exhaustive = animated
 
     local bounds, times = assi:getBounds{cnts.line}
-    assert(bounds~=nil,"ASSInspector Error: " .. tostring(times))
+    assertEx(bounds~=nil,"ASSInspector Error: %s.", tostring(times))
 
     if bounds[1]~=false then
         local frame, x2Max, y2Max, x1Min, y1Min = aegisub.frame_from_ms, 0, 0
@@ -982,10 +987,8 @@ function ASSLineBounds:new(cnts, noCommit)
 end
 
 function ASSLineBounds:equal(other)
-    assert(ASS.instanceOf(other, ASSLineBounds),
-           string.format("Error: argument #1 must be an object of type %s, got a %s.",
-                          ASSLineBounds.typeName, ASS.instanceOf(other) or type(other))
-    )
+    assertEx(ASS.instanceOf(other, ASSLineBounds), "argument #1 must be an object of type %s, got a %s.",
+             ASSLineBounds.typeName, ASS.instanceOf(other) or type(other))
     if self.w + other.w == 0 then
         return true
     elseif self.w~=other.w or self.h~=other.h or self.animated~=other.animated or self.fbf.n~=other.fbf.n then
@@ -1192,15 +1195,15 @@ function ASSLineTagSection:callback(callback, tagNames, start, end_, relative, r
     end_ = default(end_, start>=1 and math.max(prevCnt,1) or -1)
     reverse = relative and start<0 or reverse
 
-    assert(math.isInt(start) and math.isInt(end_),
-           string.format("Error: arguments 'start' and 'end' to callback() must be integers, got %s and %s.", type(start), type(end_)))
-    assert((start>0)==(end_>0) and start~=0 and end_~=0,
-           string.format("Error: arguments 'start' and 'end' to callback() must be either both >0 or both <0, got %d and %d.", start, end_))
-    assert(start <= end_, string.format("Error: condition 'start' <= 'end' not met, got %d <= %d", start, end_))
+    assertEx(math.isInt(start) and math.isInt(end_), "arguments 'start' and 'end' must be integers, got %s and %s.",
+             type(start), type(end_))
+    assertEx((start>0)==(end_>0) and start~=0 and end_~=0,
+             "arguments 'start' and 'end' must be either both >0 or both <0, got %d and %d.", start, end_)
+    assertEx(start <= end_, "condition 'start' <= 'end' not met, got %d <= %d", start, end_)
 
     if type(tagNames)=="string" then tagNames={tagNames} end
     if tagNames then
-        assert(type(tagNames)=="table", "Error: argument 2 to callback must be either a table of strings or a single string, got " .. type(tagNames))
+        assertEx(type(tagNames)=="table", "argument #2 must be either a table of strings or a single string, got %s.", type(tagNames))
         for i=1,#tagNames do
             tagSet[tagNames[i]] = true
         end
@@ -1299,9 +1302,8 @@ end
 function ASSLineTagSection:insertTags(tags, index)
     local prevCnt, inserted = #self.tags, {}
     index = default(index,math.max(prevCnt,1))
-    assert(math.isInt(index) and index~=0,
-           string.format("Error: argument 2 (index) must be an integer != 0, got '%s' of type %s", tostring(index), type(index))
-    )
+    assertEx(math.isInt(index) and index~=0,
+           "argument #2 (index) must be an integer != 0, got '%s' of type %s.", tostring(index), type(index))
 
     if type(tags)=="table" then
         if tags.instanceOf[ASSLineTagSection] then
@@ -1496,9 +1498,8 @@ function ASSTagList:merge(tagLists, copyTags, returnOnly, overrideGlobalTags, ex
     end
 
     for i=1,#tagLists do
-        assert(ASS.instanceOf(tagLists[i],ASSTagList),
-               string.format("Error: can only merge %s objects, got a %s for argument #%d.", ASSTagList.typeName, type(tagLists[i]), i)
-        )
+        assertEx(ASS.instanceOf(tagLists[i],ASSTagList),
+                 "can only merge %s objects, got a %s for argument #%d.", ASSTagList.typeName, type(tagLists[i]), i)
 
         if tagLists[i].reset then
             if expandResets then
@@ -1570,9 +1571,7 @@ function ASSTagList:merge(tagLists, copyTags, returnOnly, overrideGlobalTags, ex
 end
 
 function ASSTagList:diff(other, returnOnly, ignoreGlobalState) -- returnOnly note: only provided because copying the tag list before diffing may be much slower
-    assert(ASS.instanceOf(other,ASSTagList),
-           string.format("Error: can only diff %s objects, got a %s.", ASSTagList.typeName, type(other))
-    )
+    assertEx(ASS.instanceOf(other,ASSTagList), "can only diff %s objects, got a %s.", ASSTagList.typeName, type(other))
 
     local diff, ownReset = ASSTagList(nil, self.contentRef), self.reset
 
@@ -1618,9 +1617,8 @@ function ASSTagList:diff(other, returnOnly, ignoreGlobalState) -- returnOnly not
 end
 
 function ASSTagList:getStyleTable(styleRef, name, coerce)
-    assert(type(styleRef)=="table" and styleRef.class=="style",
-           "Error: argument 1 to getStyleTable() must be a style table, got a " .. tostring(type(styleRef))
-    )
+    assertEx(type(styleRef)=="table" and styleRef.class=="style",
+             "argument #1 must be a style table, got a %s.", type(styleRef))
     local function color(num)
         local a, c = "alpha"..tostring(num), "color"..tostring(num)
         local alpha, color = tag(a), {tag(c)}
@@ -1661,8 +1659,8 @@ end
 
 function ASSTagList:filterTags(tagNames, tagProps, returnOnly, inverseNameMatch)
     if type(tagNames)=="string" then tagNames={tagNames} end
-    assert(not tagNames or type(tagNames)=="table",
-           "Error: argument 1 to selectTags() must be either a single or a table of tag names, got a " .. type(tagNames))
+    assertEx(not tagNames or type(tagNames)=="table",
+             "argument #1 must be either a single or a table of tag names, got a %s.", type(tagNames))
 
     local filtered = ASSTagList(nil, self.contentRef)
     local selected, transNames, retTrans = {}, ASS.tagNames[ASSTransform]
@@ -1681,9 +1679,8 @@ function ASSTagList:filterTags(tagNames, tagProps, returnOnly, inverseNameMatch)
     for i=1,#tagNames do
         local name, propMatch = tagNames[i], true
         local selfTag = name=="reset" and self.reset or self.tags[name]
-        assert(type(name)=="string",
-               string.format("Error: invalid tag name #%d '(%s)'. expected a string, got a %s", i, tostring(name), type(name))
-        )
+        assertEx(type(name)=="string", "invalid tag name #%d '(%s)'. expected a string, got a %s",
+                 i, tostring(name), type(name))
 
         if propCnt~=0 and selfTag then
             local _, propMatchCnt = table.intersect(tagProps, self.tags[name].__tag)
@@ -1830,8 +1827,8 @@ function ASSNumber:getTagParams(coerce, precision)
     if coerce then
         self:coerceNumber(val,0)
     else
-        assert(precision <= self.__tag.precision, string.format("Error: output wih precision %d is not supported for %s (maximum: %d).\n",
-               precision,self.typeName,self.__tag.precision))
+        assertEx(precision <= self.__tag.precision, "output wih precision %d is not supported for %s (maximum: %d).",
+                 precision, self.typeName, self.__tag.precision)
         self:typeCheck(self.value)
         if self.__tag.positive then self:checkPositive(val) end
         if self.__tag.range then self:checkRange(self.__tag.range[1], self.__tag.range[2],val) end
@@ -1848,14 +1845,14 @@ function ASSNumber.cmp(a, mode, b)
         [">="] = function() return a>=b end
     }
 
-    local errStr = "Error: operand %d must be a number or an object of (or based on) the %s class, got a %s."
+    local errStr = "operand %d must be a number or an object of (or based on) the %s class, got a %s."
     if type(a)=="table" and (a.instanceOf[ASSNumber] or a.baseClasses[ASSNumber]) then
         a = a:get()
-    else assert(type(a)=="number", string.format(errStr, 1, ASSNumber.typeName, ASS.instanceOf(a) and a.typeName or type(a))) end
+    else assertEx(type(a)=="number", errStr, 1, ASSNumber.typeName, ASS.instanceOf(a) and a.typeName or type(a)) end
 
     if type(b)=="table" and (b.instanceOf[ASSNumber] or b.baseClasses[ASSNumber]) then
         b = b:get()
-    else assert(type(b)=="number", string.format(errStr, 1, ASSNumber.typeName, ASS.instanceOf(b) and b.typeName or type(b))) end
+    else assertEx(type(b)=="number", errStr, 1, ASSNumber.typeName, ASS.instanceOf(b) and b.typeName or type(b)) end
 
     return modes[mode]()
 end
@@ -1893,7 +1890,7 @@ function ASSTime:getTagParams(coerce, precision)
         precision = math.min(precision,0)
         val = self:coerceNumber(0)
     else
-        assert(precision <= 0, "Error: " .. self.typeName .." doesn't support floating point precision")
+        assertEx(precision <= 0, "%s doesn't support floating point precision.", self.typeName)
         self:checkType("number", self.value)
         if self.__tag.positive then self:checkPositive(self.value) end
     end
@@ -1955,7 +1952,8 @@ function ASSFade:getTagParams(coerce)
         local t3 = t4 - self.endDuration:getTagParams(coerce)
         if not coerce then
              self:checkPositive(t2,t3)
-             assert(t1<=t2 and t2<=t3 and t3<=t4, string.format("Error: fade times must evaluate to t1<=t2<=t3<=t4, got %d<=%d<=%d<=%d", t1,t2,t3,t4))
+             assertEx(t1<=t2 and t2<=t3 and t3<=t4, "fade times must evaluate to t1<=t2<=t3<=t4, got %d<=%d<=%d<=%d.",
+                      t1,t2,t3,t4)
         end
         return self.startAlpha:getTagParams(coerce), self.midAlpha:getTagParams(coerce), self.endAlpha:getTagParams(coerce),
                math.min(t1,t2), util.clamp(t2,t1,t3), util.clamp(t3,t2,t4), math.max(t4,t3)
@@ -1978,9 +1976,8 @@ ASSMove = createASSClass("ASSMove", ASSTagBase,
 function ASSMove:new(args)
     local startX, startY, endX, endY, startTime, endTime = self:getArgs(args, 0, true)
 
-    assert(startTime<=endTime, string.format("Error: argument #4 (endTime) to %s may not be smaller than argument #3 (startTime), got %d>=%d.",
-                                             self.typeName, endTime, startTime)
-    )
+    assertEx(startTime<=endTime, "argument #4 (endTime) to %s may not be smaller than argument #3 (startTime), got %d>=%d.",
+             self.typeName, endTime, startTime)
 
     self:readProps(args)
     self.startPos, self.endPos = ASSPoint{startX, startY}, ASSPoint{endX, endY}
@@ -1999,7 +1996,7 @@ function ASSMove:getTagParams(coerce)
     else
         local t1,t2 = self.startTime:getTagParams(coerce), self.endTime:getTagParams(coerce)
         if not coerce then
-             assert(t1<=t2, string.format("Error: move times must evaluate to t1<=t2, got %d<=%d.\n", t1,t2))
+             assertEx(t1<=t2, "move times must evaluate to t1<=t2, got %d<=%d.", t1,t2)
         end
         return returnAll({self.startPos:getTagParams(coerce)}, {self.endPos:getTagParams(coerce)},
                          {math.min(t1,t2)}, {math.max(t2,t1)})
@@ -2031,7 +2028,8 @@ function ASSToggle:new(args)
 end
 
 function ASSToggle:toggle(state)
-    assert(type(state)=="boolean" or type(state)=="nil", "Error: state argument to toggle must be true, false or nil.\n")
+    assertEx(type(state)=="boolean" or type(state)=="nil",
+             "argument #1 (state) must be true, false or nil, got a %s.", type(state))
     self.value = state==nil and not self.value or state
     return self.value
 end
@@ -2235,10 +2233,10 @@ function ASSDrawing:new(args)
                 self.commands[j], j = args[i], j+1
             elseif type(args[i])=="table" and not args[i].instanceOf then
                 for k=1,#args[i] do
-                    assert(ASS.instanceOf(args[i][k],ASS.classes.drawingCommands),
-                           string.format("Error: argument #%d to %s contains invalid drawing objects (#%d is a %s).",
-                                         i, self.typeName, k, ASS.instanceOf(args[i][k]) or type(args[i][k])
-                           ))
+                    assertEx(ASS.instanceOf(args[i][k],ASS.classes.drawingCommands),
+                             "argument #%d to %s contains invalid drawing objects (#%d is a %s).",
+                             i, self.typeName, k, ASS.instanceOf(args[i][k]) or type(args[i][k])
+                    )
                     self.commands[j], j = args[i][k], j+1
                 end
             else error(string.format("Error: argument #%d to %s is not a valid drawing object, got a %s.",
@@ -2254,7 +2252,8 @@ function ASSDrawing:callback(callback, commandTypes)
     local cmdSet = {}
     if type(commandTypes)=="string" then commandTypes={commandTypes} end
     if commandTypes then
-        assert(type(commandTypes)=="table", "Error: argument 2 to callback must be either a table of strings or a single string, got " .. type(commandTypes))
+        assertEx(type(commandTypes)=="table", "argument #2 must be either a table of strings or a single string, got a %s.",
+                 type(commandTypes))
         for i=1,#commandTypes do
             tagSet[commandTypes[i]] = true
         end
@@ -2381,9 +2380,8 @@ function ASSDrawing:rotate(angle)
     angle = default(angle,0)
     if ASS.instanceOf(angle,ASSNumber) then
         angle = angle:getTagParams(coerce)
-    else assert(type(angle)=="number",
-         string.format("Error: argument #1 (angle) to rotate() must be either a number or a %s object, got a %s",
-         ASSNumber.typeName, ASS.instanceOf(angle) and ASS.instanceOf(angle).typeName or type(angle)))
+    else assertEx(type(angle)=="number", "argument #1 (angle) must be either a number or a %s object, got a %s.",
+         ASSNumber.typeName, ASS.instanceOf(angle) and ASS.instanceOf(angle).typeName or type(angle))
     end
 
     if angle%360~=0 then
@@ -2527,7 +2525,7 @@ function ASSTransform:changeTagType(type_)
         self.__tag.name = self.accel:equal(1) and (noTime and names[4] or names[3]) or noTime and names[1] or names[2]
         self.__tag.typeLocked = false
     else
-        assert(names[type], "Error: invalid transform type: " .. tostring(type))
+        assertEx(names[type], "invalid transform type '%s'.", tostring(type))
         self.__tag.name, self.__tag.typeLocked = type_, true
     end
     return self.__tag.name, self.__tag.typeLocked
@@ -2543,7 +2541,7 @@ function ASSTransform:getTagParams(coerce)
     local t1, t2 = self.startTime:getTagParams(coerce), self.endTime:getTagParams(coerce)
     if coerce then
         t2 = util.max(t1, t2)
-    else assert(t1<=t2, string.format("Error: transform start time must not be greater than the end time, got %d <= %d", t1, t2)) end
+    else assertEx(t1<=t2, "transform start time must not be greater than the end time, got %d <= %d.", t1, t2) end
 
     if tagName == names[4] then
         return self.tags:getString(coerce)
@@ -2657,7 +2655,7 @@ end
 function ASSDrawLine:getAngle(ref, noUpdate)
     if not (ref or (self.cursor and noUpdate)) then self.parent:getLength() end
     local ref, rx, ry = ref or self.cursor
-    assert(type(ref)=="table", "Error: argument ref to getAngle() must be of type table, got " .. type(ref) .. ".\n")
+    assertEx(type(ref)=="table", "argument #1 (ref) must be of type table, got a %s.", type(ref))
     if ref.instanceOf[ASSDrawBezier] then
         rx, ry = ref.p3:get()
     elseif not ref.instanceOf then
@@ -2909,8 +2907,8 @@ function ASSFoundation:getTagNames(ovrNames)
 end
 
 function ASSFoundation:mapTag(name)
-    assert(type(name)=="string", "Error: argument 1 to mapTag() must be a string, got a " .. type(name))
-    return assert(self.tagMap[name],"Error: can't find tag " .. name)
+    assertEx(type(name)=="string", "argument #1 must be a string, got a %s.", type(name))
+    return assertEx(self.tagMap[name], "can't find tag %s", name)
 end
 
 function ASSFoundation:createTag(name, ...)
