@@ -2705,7 +2705,7 @@ function ASSDrawContour:insertCommands(cmds, index)
         assertEx(clsSet[cmd.class] and not cmd.instanceOf[ASSDrawMove],
                  "command #%d must be a drawing command object, but not a %s; got a %s", ASSDrawMove.typeName, cmd.typeName)
 
-        local insertIdx = index<0 and prevCnt+index+i or index+i-1
+        local insertIdx = index<0 and prevCnt+index+i+1 or index+i-1
         table.insert(self.commands, insertIdx, cmd)
         cmd.parent = self
         inserted[i] = self.commands[insertIdx]
