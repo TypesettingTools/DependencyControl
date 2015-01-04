@@ -2688,7 +2688,7 @@ function ASSDrawContour:callback(callback, commandTypes, getPoints)
     end
 end
 
-function ASSDrawContour:insertCommands(cmds, index)
+function ASSDrawContour:insertCommands(cmds, index, acceptMoves)
     local prevCnt, inserted, clsSet = #self.commands, {}, ASS.classes.drawingCommands
     index = default(index, math.max(prevCnt,1))
     assertEx(math.isInt(index) and index~=0,
@@ -2696,13 +2696,15 @@ function ASSDrawContour:insertCommands(cmds, index)
     assertEx(type(cmds)=="table",
            "argument #1 (cmds) must be either a drawing command object or a table of drawing commands, got a %s.", type(cmds))
 
-    if cmds.instanceOf then cmds = {cmds} end
+    if cmds.class==ASSDrawContour then
+        accceptMoves, cmds = true, cmds.commands
+    elseif cmds.instanceOf then cmds = {cmds} end
 
     for i=1,#cmds do
         local cmdIsTbl, cmd = type(cmds[i])=="table", cmds[i]
         assertEx(cmdIsTbl and cmd.class, "command #%d must be a drawing command object, got a %s",
                  i, cmdIsTbl and cmd.typeName or type(cmd))
-        assertEx(clsSet[cmd.class] and not cmd.instanceOf[ASSDrawMove],
+        assertEx(clsSet[cmd.class] and (not cmd.instanceOf[ASSDrawMove] or acceptMoves),
                  "command #%d must be a drawing command object, but not a %s; got a %s", ASSDrawMove.typeName, cmd.typeName)
 
         local insertIdx = index<0 and prevCnt+index+i+1 or index+i-1
