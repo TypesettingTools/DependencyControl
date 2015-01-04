@@ -2301,7 +2301,10 @@ function ASSDrawing:callback(callback, start, end_, includeCW, includeCCW)
     local j, cntsDeleted = 1, false
     includeCW, includeCCW = default(includeCW, true), default(includeCCW, true)
     for i=1,#self.contours do
-        if (includeCW or self.isCCW) and (includeCCW or not self.isCCW) then
+        if not (includeCW and includeCCW) and cnt.isCW==nil then
+            cnt:getDirection()
+        end
+        if (includeCW or not self.isCW) and (includeCCW or self.isCW) then
             local res = callback(self.contours[i], self.contours, i, j)
             j=j+1
             if res==false then
@@ -2318,6 +2321,7 @@ function ASSDrawing:callback(callback, start, end_, includeCW, includeCCW)
 end
 
 function ASSDrawing:modCommands(callback, commandTypes, start, end_, includeCW, includeCCW)
+    includeCW, includeCCW = default(includeCW, true), default(includeCCW, true)
     local cmdSet = {}
     if type(commandTypes)=="string" then commandTypes={commandTypes} end
     if commandTypes then
@@ -2331,7 +2335,10 @@ function ASSDrawing:modCommands(callback, commandTypes, start, end_, includeCW, 
     local matchedCmdCnt, matchedCntsCnt, cntsDeleted = 1, false
     for i=1,#self.contours do
         local cnt = self.contours[i]
-        if (includeCW or self.isCCW) and (includeCCW or not self.isCCW) then
+        if not (includeCW and includeCCW) and cnt.isCW==nil then
+            cnt:getDirection()
+        end
+        if (includeCW or not cnt.isCW) and (includeCCW or cnt.isCW) then
             local cmdsDeleted = false
             for j=1,#cnt.commands do
                 if not commandTypes or cmdSet[cmd.__tag.name] then
@@ -2341,14 +2348,14 @@ function ASSDrawing:modCommands(callback, commandTypes, start, end_, includeCW, 
                         cnt.commands[j], cmdsDeleted = nil, true
                     elseif res~=nil and res~=true then
                         cnt.commands[j] = res
-                        cnt.length, self.length = nil, nil
+                        cnt.length, cnt.isCW, self.length = nil, nil, nil
                     end
                 end
             end
             matchedCntsCnt = matchedCntsCnt + 1
             if cmdsDeleted then
                 cnt.commands = table.reduce(cnt.commands)
-                cnt.length, self.length = nil, nil
+                cnt.length, cnt.isCW, self.length = nil, nil, nil
                 if #cnt.commands == 0 then
                     self.contours[i], cntsDeleted = nil, true
                 end
@@ -2676,7 +2683,7 @@ function ASSDrawContour:callback(callback, commandTypes, getPoints)
     end
     if cmdsDeleted then self.commands = table.reduce(self.commands) end
     if j>1 then
-        self.length = nil
+        self.length, self.isCW = nil, nil
         if self.parent then self.parent.length=nil end
     end
 end
@@ -2704,7 +2711,7 @@ function ASSDrawContour:insertCommands(cmds, index)
         inserted[i] = self.commands[insertIdx]
     end
     if #cmds>0 then
-        self.length = nil
+        self.length, self.isCW = nil, nil
         if self.parent then self.parent.length = nil end
     end
     return i>1 and inserted or inserted[1]
@@ -2742,6 +2749,24 @@ function ASSDrawContour:getCommandAtLength(len, noUpdate)
     end
     return false
     -- error(string.format("Error: length requested (%02f) is exceeding the total length of the shape (%02f)",len,currTotalLen))
+end
+
+function ASSDrawContour:getDirection()
+    local angle, vec = ASS:createTag("angle", 0)
+    assertEx(self.commands[1].instanceOf[ASSDrawMove], "first drawing command must be a %s, got a %s.",
+             ASSDrawMove.typeName, self.commands[1].typeName)
+
+    local p0, p1 = self.commands[1]
+    self:callback(function(point, cmds, i, j, cmd, p)
+        if j==2 then p1 = point
+        elseif j>2 then
+            local vec0, vec1 = p1:copy():sub(p0), point:copy():sub(p1)
+            angle:add(vec1:getAngle(vec0, true))
+            p0, p1 = p1, point
+        end
+    end, nil, true)
+    self.isCW = angle>=0
+    return self.isCW
 end
 
 function ASSDrawContour:getExtremePoints(allowCompatible)
@@ -2821,7 +2846,7 @@ end
 function ASSDrawContour:outline(x, y, mode)
     -- may violate the "one move per contour" principle
     self.commands = self:getOutline(x, y, mode, false).contours[1].commands
-    self.length = nil
+    self.length, self.isCW = nil, nil
 end
 
 function ASSDrawContour:rotate(angle)
