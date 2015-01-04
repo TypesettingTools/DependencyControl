@@ -375,5 +375,5 @@ end
 function assertEx(cond, msg, ...)
     if not cond then
         return string.format("Error: " .. msg, ...)
-    end
+    else return cond end
 end
