@@ -23,7 +23,7 @@ string.formatFancy = function(fmtStr,...)
     local outStr=fmtStr:gsub("(%%[%+%- 0]*%d*.?%d*[hlLzjtI]*)([aABcedEfFgGcnNopiuAsuxX])", function(opts,type_)
         i=i+1
         if type_=="N" then
-            return tonumber(string.format(opts.."f", args[i])) 
+            return tonumber(string.format(opts.."f", args[i]))
         elseif type_=="B" then
             return args[i] and 1 or 0
         else
@@ -39,7 +39,7 @@ end
 
 function string:split(sep)
     local sep, fields = sep or "", {}
-    self:gsub(string.format("([^%s]+)", sep), function(field) 
+    self:gsub(string.format("([^%s]+)", sep), function(field)
         fields[#fields+1] = field
     end)
     return fields
@@ -67,7 +67,7 @@ table.diff = function(left, right, preferLeft)
     if preferLeft then
         left, right = right, left
     end
-    
+
     for key,val in pairs(right) do
         if val ~= left[key] then
             diff[key] = val
@@ -232,7 +232,7 @@ end
 table.removeRange = function(tbl, start, end_)
     local tblLen = #tbl
     end_ = end_ or tblLen
-    
+
     if end_<=start then
         return {table.remove(tbl, start)}
     end
@@ -274,8 +274,8 @@ end
 table.sliceArray = function(tbl, istart, iend)
     istart, iend = istart or 1, iend or #tbl
     local arr={}
-    for i = istart, iend do 
-        arr[1+i-istart] = tbl[i] 
+    for i = istart, iend do
+        arr[1+i-istart] = tbl[i]
     end
     return arr
 end
@@ -324,7 +324,7 @@ util.RGB_to_HSV = function(r,g,b)
     local delta = v - math.min(r, g, b)
     if delta==0 then
         return 0,0,0
-    else     
+    else
         local s = delta/v
         local h = 60*(r==v and (g-b)/delta or g==v and (b-r)/delta+2 or (r-g)/delta+4)
         return h>0 and h or h+360, s, v/255
@@ -360,7 +360,7 @@ returnAll = function(...) -- blame lua
                 arrN = arrN + 1
                 arr[arrN] = val
             end
-        else 
+        else
             arrN = arrN + 1
             arr[arrN] = arg
         end
