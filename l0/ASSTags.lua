@@ -2714,7 +2714,7 @@ function ASSDrawContour:insertCommands(cmds, index)
         self.length, self.isCW = nil, nil
         if self.parent then self.parent.length = nil end
     end
-    return i>1 and inserted or inserted[1]
+    return #cmds>1 and inserted or inserted[1]
 end
 
 function ASSDrawContour:flatten(coerce)
