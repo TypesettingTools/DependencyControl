@@ -369,7 +369,7 @@ returnAll = function(...) -- blame lua
 end
 
 function default(var, val)
-    return type(var)=="nil" and val or var
+    return var==nil and val or var
 end
 
 function assertEx(cond, msg, ...)
