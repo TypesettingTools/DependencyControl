@@ -2193,62 +2193,108 @@ end
 
 --------------------- Drawing Classes ---------------------
 
-ASSDrawing = createASSClass("ASSDrawing", ASSTagBase, {"commands"}, {"table"})
+ASSDrawing = createASSClass("ASSDrawing", ASSTagBase, {"contours"}, {"table"})
 function ASSDrawing:new(args)
     -- TODO: support alternative signature for ASSLineDrawingSection
-    local cmdMap = ASS.classes.drawingCommandMappings
-
-    self.commands = {}
+    local cmdMap, lastCmdType = ASS.classes.drawingCommandMappings
     -- construct from a compatible object
     -- note: does copy
     if ASS.instanceOf(args[1], ASSDrawing, nil, true) then
         local copy = args[1]:copy()
-        self.commands, self.scale = copy.commands, copy.scale
+        self.contours, self.scale = copy.contours, copy.scale
         self.__tag.inverse = copy.__tag.inverse
     -- construct from a single string of drawing commands
     elseif args.raw or args.str then
-        self.scale = ASS:createTag("drawing", args.scale or 1)
-        local cmdParts, cmdType, prmCnt, i, j = (args.str or args.raw[1]):split(" "), "", 0, 1, 1
+        self.contours, self.scale = {}, ASS:createTag("drawing", args.scale or 1)
+        local cmdParts, i, j = (args.str or args.raw[1]):split(" "), 1, 1
+        local contour, c = {}, 1
         while i<=#cmdParts do
-            if cmdMap[cmdParts[i]]==ASSDrawClose then
-                self.commands[j] = ASSDrawClose()
-                self.commands[j].parent, i, j = self, i+1, j+1
-            elseif cmdMap[cmdParts[i]] then
-                cmdType = cmdParts[i]
-                prmCnt, i = cmdMap[cmdType].__defProps.ords, i+1
-            else
-                local prms = table.sliceArray(cmdParts,i,i+prmCnt-1)
-                self.commands[j] = cmdMap[cmdType](unpack(prms))
-                self.commands[j].parent = self
-                i, j = i+prmCnt, j+1
+            local cmd, cmdType = cmdParts[i], cmdMap[cmdParts[i]]
+            if cmdType == ASSDrawMove and i>1 and args.splitContours~=false then
+                self.contours[c], c = ASSDrawContour(contour), c+1
+                contour, j = {}, 1
             end
+            if cmdType == ASSDrawClose then
+                contour[j] = ASSDrawClose()
+                contour[j].parent = self
+            elseif cmdType or cmdParts[i]:find("^[%-%d%.]+$") and lastCmdType then
+                if not cmdType then
+                    i=i-1
+                else lastCmdType = cmdType end
+                local prmCnt = lastCmdType.__defProps.ords
+                local prms = table.sliceArray(cmdParts,i+1,i+prmCnt)
+                contour[j] = lastCmdType(unpack(prms))
+                contour[j].parent = self
+                i = i+prmCnt
+            else error(string.format("Error: Unsupported drawing Command '%s'.", cmdParts[i])) end
+            i, j = i+1, j+1
         end
+        self.contours[c] = #contour>0 and ASSDrawContour(contour) or nil
+
     else
-    -- construct from valid drawing commands, also accept tables of drawing commands
+    -- construct from valid drawing commands, also accept contours and tables of drawing commands
     -- note: doesn't copy
-        self.scale = ASS:createTag("drawing", args.scale or 1)
-        local j=1
+        self.contours, self.scale = {}, ASS:createTag("drawing", args.scale or 1)
+        local contour, c = {}, 1
+        local j, cmdSet = 1, ASS.classes.drawingCommands
         for i=1,#args do
-            if ASS.instanceOf(args[i],ASS.classes.drawingCommands) then
-                self.commands[j], j = args[i], j+1
-            elseif type(args[i])=="table" and not args[i].instanceOf then
+            assertEx(type(args[i])=="table",
+                     "argument #%d is not a valid drawing object, contour or table, got a %s.", i, type(args[i]))
+            if args[i].instanceOf then
+                if args[i].instanceOf[ASSDrawContour] then
+                    if #contour>0 then
+                        self.contours[c], c = ASSDrawContour(contour), c+1
+                    end
+                    self.contours[c], c = args[i], c+1
+                    contour, j = {}, 1
+                elseif args[i].instanceOf[ASSDrawMove] and i>1 and args.splitContours~=false then
+                    self.contours[c], c = ASSDrawContour(contour), c+1
+                    contour, j = {args[i]}, 2
+                elseif ASS.instanceOf(args[i], cmdSet) then
+                    contour[j], j = args[i], j+1
+                else error(string.format("argument #%d is not a valid drawing object or contour, got a %s.",
+                                         i, args[i].class.typeName))
+                end
+            else
                 for k=1,#args[i] do
                     assertEx(ASS.instanceOf(args[i][k],ASS.classes.drawingCommands),
                              "argument #%d to %s contains invalid drawing objects (#%d is a %s).",
                              i, self.typeName, k, ASS.instanceOf(args[i][k]) or type(args[i][k])
                     )
-                    self.commands[j], j = args[i][k], j+1
+                    if args[i][k].instanceOf[ASSDrawMove] then
+                        self.contours[c], c = ASSDrawContour(contour), c+1
+                        contour, j = {args[i][k]}, 2
+                    else contour[j], j = args[i][k], j+1 end
                 end
-            else error(string.format("Error: argument #%d to %s is not a valid drawing object, got a %s.",
-                                      i, self.typeName, ASS.instanceOf(args[i]) or type(args[i])))
             end
         end
+        self.contours[c] = #contour>0 and ASSDrawContour(contour) or nil
     end
     self:readProps(args)
     return self
 end
 
-function ASSDrawing:callback(callback, commandTypes)
+function ASSDrawing:callback(callback, start, end_, includeCW, includeCCW)
+    local j, cntsDeleted = 1, false
+    includeCW, includeCCW = default(includeCW, true), default(includeCCW, true)
+    for i=1,#self.contours do
+        if (includeCW or self.isCCW) and (includeCCW or not self.isCCW) then
+            local res = callback(self.contours[i], self.contours, i, j)
+            j=j+1
+            if res==false then
+                self.contours[i], cntsDeleted = nil, true
+            elseif res~=nil and res~=true then
+                self.contours[i], self.length = res, true
+            end
+        end
+    end
+    if cntsDeleted then
+        self.contours = table.trimArray(self.contours)
+        self.length = nil
+    end
+end
+
+function ASSDrawing:modCommands(callback, commandTypes, start, end_, includeCW, includeCCW)
     local cmdSet = {}
     if type(commandTypes)=="string" then commandTypes={commandTypes} end
     if commandTypes then
@@ -2259,80 +2305,139 @@ function ASSDrawing:callback(callback, commandTypes)
         end
     end
 
-    local j, cmdsDeleted = 1, false
-    for i=1,#self.commands do
-        local cmd=self.commands[i]
-        if not commandTypes or cmdSet[cmd.__tag.name] then
-            local res = callback(cmd, self.commands, i, j)
-            j=j+1
-            if res==false then
-                self.commands[i], cmdsDeleted = nil, true
-            elseif res~=nil and res~=true then
-                self.commands[i] = res
+    local matchedCmdCnt, matchedCntsCnt, cntsDeleted = 1, false
+    for i=1,#self.contours do
+        local cnt = self.contours[i]
+        if (includeCW or self.isCCW) and (includeCCW or not self.isCCW) then
+            local cmdsDeleted = false
+            for j=1,#cnt.commands do
+                if not commandTypes or cmdSet[cmd.__tag.name] then
+                    local res = callback(cnt.commands[j], cnt.commands, j, matchedCmdCnt, i, matchedCntsCnt)
+                    matchedCmdCnt = matchedCmdCnt + 1
+                    if res==false then
+                        cnt.commands[j], cmdsDeleted = nil, true
+                    elseif res~=nil and res~=true then
+                        cnt.commands[j] = res
+                        cnt.length, self.length = nil, nil
+                    end
+                end
+            end
+            matchedCntsCnt = matchedCntsCnt + 1
+            if cmdsDeleted then
+                cnt.commands = table.trimArray(cnt.commands)
+                cnt.length, self.length = nil, nil
+                if #cnt.commands == 0 then
+                    self.contours[i], cntsDeleted = nil, true
+                end
             end
         end
     end
-    if cmdsDeleted then self.commands = table.trimArray(self.commands) end
+    if cntsDeleted then self.contours = table.trimArray(self.contours) end
+end
+
+function ASSDrawing:insertCommands(cmds, index)
+    local prevCnt, addContour, a, newContour, n = #self.contours, {}, 1
+    index = index or prevCnt
+    assertEx(math.isInt(index) and index~=0,
+             "argument #2 (index) must be an integer != 0, got '%s' of type %s.", tostring(index), type(index))
+    assertEx(type(cmds)=="table",
+           "argument #1 (cmds) must be either a drawing command object or a table of drawing commands, got a %s.", type(cmds))
+
+    if index<0 then index=prevCnt+index+1 end
+    local cntAtIdx = self.contours[index] or self.contours[prevCnt]
+    if cmds.instanceOf then cmds = {cmds} end
+
+    for i=1,#cmds do
+        local cmdIsTbl = type(cmds[i])=="table"
+        assertEx(cmdIsTbl and cmds[i].instanceOf,"command #%d must be a drawing command object, got a %s",
+                 cmdIsTbl and cmd.typeName or type(cmds[i]))
+        if cmds[i].instanceOf[ASSDrawMove] then
+            if newContour then
+                self:insertContours(ASSDrawContour(contour), math.min(index, #self.contours+1))
+            end
+            newContour, index, n = {cmds[i]}, index+1, 2
+        elseif newContour then
+            newContour[n], n = cmds[i], n+1
+        else addContour[a], a = cmds[i], a+1 end
+    end
+    if #addContour>0 then cntAtIdx:insertCommands(addContour) end
+    if newContour then
+        self:insertContours(ASSDrawContour(contour), math.min(index, #self.contours+1))
+    end
+end
+
+function ASSDrawing:insertContours(cnts, index)
+    index = index or #self.contours+1
+
+    assertEx(type(cnts)=="table", "argument #1 (cnts) must be either a single contour object or a table of contours, got a %s.",
+             type(cnts))
+
+    if cnts.compatible and cnts.compatible[ASSDrawing] then
+        cnts = cnts:copy().contours
+    elseif cnts.instanceOf then cnts = {cnts} end
+
+    for i=1,#cnts do
+        assertEx(ASS.instanceOf(cnts[i], ASSDrawContour), "can only insert objects of class %s, got a %s.",
+                 ASSDrawContour.typeName, type(cnts[i])=="table" and cnts[i].typeName or type(cnts[i]))
+
+        table.insert(self.contours, index+i-1, cnts[i])
+        cnts[i].parent = self
+    end
+    if #cnts>0 then self.length = nil end
+
+    return cnts
 end
 
 function ASSDrawing:getTagParams(coerce)
-    local cmds, cmdStr, j, lastCmdType = self.commands, {}, 1
-    for i=1,#cmds do
-        if lastCmdType~=cmds[i].__tag.name then
-            lastCmdType = cmds[i].__tag.name
-            cmdStr[j], j = lastCmdType, j+1
-        end
-        local params = table.concat({cmds[i]:get(coerce)}," ")
-        if params~="" then
-            cmdStr[j], j = params, j+1
-        end
+    local cmdStr, j = {}, 1
+    for i=1,#self.contours do
+        cmdStr[i] = self.contours[i]:getTagParams()
     end
     return table.concat(cmdStr, " "), self.scale:getTagParams(coerce)
 end
 
 function ASSDrawing:commonOp(method, callback, default, x, y) -- drawing commands only have x and y in common
-    if ASS.instanceOf(x, ASSPoint) then
-        x, y = x:get()
-    end
-    for i=1,#self.commands do
-        local subCnt = #self.commands[i].__meta__.order
-        self.commands[i][method](self.commands[i],x,y)
+    for i=1,#self.contours do
+        self.contours[i]:commonOp(method, callback, default, x, y)
     end
     return self
 end
 
-function ASSDrawing:drawRect(tl, br)
-    local rect = {ASSDrawMove(tl), ASSDrawLine(br.x, tl.y), ASSDrawLine(br), ASSDrawLine(tl.x, br.y)}
-    table.joinInto(self.commands, rect)
+function ASSDrawing:drawRect(tl, br) -- TODO: contour direction
+    local rect = ASSDrawContour{ASSDrawMove(tl), ASSDrawLine(br.x, tl.y), ASSDrawLine(br), ASSDrawLine(tl.x, br.y)}
+    self:insertContours(rect)
     return self, rect
 end
 
 function ASSDrawing:flatten(coerce)
-    assert(HAVE_YUTILS, YUtilsMissingMsg)
-    local flatStr = YUtils.shape.flatten(self:getTagParams(coerce))
-    local flattened = ASSDrawing{raw=flatStr, tagProps=self.__tag}
-    self.commands = flattened.commands
-    return self, flatStr
+    local flatStr, _ = {}
+    for i=1,#self.contours do
+        _, flatStr[i] = self.contours[i]:flatten(coerce)
+    end
+    return self, table.concat(flatStr, " ")
 end
 
 function ASSDrawing:getLength()
-    local totalLen,lens = 0, {}
-    for i=1,#self.commands do
-        local len = self.commands[i]:getLength(self.commands[i-1])
-        lens[i], totalLen = len, totalLen+len
+    local totalLen, lens = 0, {}
+    for i=1,#self.contours do
+        local len, lenParts = self.contours[i]:getLength()
+        table.joinInto(lens, lenParts)
+        totalLen = totalLen+len
     end
     self.length = totalLen
-    return totalLen,lens
+    return totalLen, lens
 end
 
 function ASSDrawing:getCommandAtLength(len, noUpdate)
     if not (noUpdate and self.length) then self:getLength() end
-    local cmds, currTotalLen, nextTotalLen = self.commands,  0
-    for i=1,#cmds do
-        nextTotalLen = currTotalLen + cmds[i].length
-        if nextTotalLen-len > -0.001 and cmds[i].length>0 and not (cmds[i].instanceOf[ASSDrawMove] or cmds[i].instanceOf[ASSDrawMoveNc]) then
-            return cmds[i], math.max(len-currTotalLen,0)
-        else currTotalLen = nextTotalLen end
+    local currTotalLen = 0
+    for i=1,#self.contours do
+        local cnt = self.contours[i]
+        if currTotalLen+cnt.length-len > -0.001 and cnt.length>0 then
+            local cmd, remLen = cnt:getCommandAtLength(len, noUpdate)
+            assert(cmd or i==#self.contours, "Unexpected Error: command at length not found in target contour.")
+            return cmd, remLen, cnt, i
+        else currTotalLen = currTotalLen + cnt.length - len end
     end
     return false
     -- error(string.format("Error: length requested (%02f) is exceeding the total length of the shape (%02f)",len,currTotalLen))
@@ -2340,41 +2445,45 @@ end
 
 function ASSDrawing:getPositionAtLength(len, noUpdate, useCurveTime)
     if not (noUpdate and self.length) then self:getLength() end
-    local cmd, remLen  = self:getCommandAtLength(len, true)
+    local cmd, remLen, cnt  = self:getCommandAtLength(len, true)
     if not cmd then return false end
-    return cmd:getPositionAtLength(remLen, true, useCurveTime)
+    return cmd:getPositionAtLength(remLen, true, useCurveTime), cmd, cnt
 end
 
 function ASSDrawing:getAngleAtLength(len, noUpdate)
     if not (noUpdate and self.length) then self:getLength() end
-    local cmd, remLen = self:getCommandAtLength(len, true)
+    local cmd, remLen, cnt = self:getCommandAtLength(len, true)
     if not cmd then return false end
 
-    if cmd.instanceOf[ASSDrawBezier] then
-        cmd = cmd.flattened:getCommandAtLength(remLen, true)
-    end
-    return cmd:getAngle(nil,true)
+    local fCmd = cmd.instanceOf[ASSDrawBezier] and cmd.flattened:getCommandAtLength(remLen, true) or cmd
+    return fCmd:getAngle(nil,true), cmd, cnt
 end
 
 function ASSDrawing:getExtremePoints(allowCompatible)
-    local top, left, bottom, right
-    for i=1,#self.commands do
-        local pts = self.commands[i]:getPoints(allowCompatible)
-        for i=1,#pts do
-            if not top or top.y > pts[i].y then top=pts[i] end
-            if not left or left.x > pts[i].x then left=pts[i] end
-            if not bottom or bottom.y < pts[i].y then bottom=pts[i] end
-            if not right or right.x < pts[i].x then right=pts[i] end
-        end
+    if #self.contours==0 then return {w=0, h=0} end
+    local ext = self.contours[1]:getExtremePoints(allowCompatible)
+
+    for i=2,#self.contours do
+        local pts = self.contours[i]:getExtremePoints(allowCompatible)
+        if ext.top.y > pts.top.y then ext.top=pts.top.y end
+        if ext.left.x > pts.left.x then ext.left=pts.left.x end
+        if ext.bottom.y < pts.bottom.y then bottom=pts.bottom.y end
+        if ext.right.x < pts.right.x then right=pts.right.x end
     end
-    return {top=top, left=left, bottom=bottom, right=right, w=right.x-left.x, h=bottom.y-top.y}
+    ext.w, ext.h = ext.right.x-ext.left.x, ext.bottom.y-ext.top.y
+    return ext
 end
 
 function ASSDrawing:outline(x,y,mode)
+    self.contours = self:getOutline(x,y,mode).contours
+    self.length = nil
+end
+
+function ASSDrawing:getOutline(x,y,mode)
     assert(HAVE_YUTILS, YUtilsMissingMsg)
     y, mode = default(y,x), default(mode, "round")
     local outline = YUtils.shape.to_outline(YUtils.shape.flatten(self:getTagParams()),x,y,mode)
-    self.commands = ASS.instanceOf(self)({outline}).commands
+    return self.class{raw=outline}
 end
 function ASSDrawing:rotate(angle)
     angle = default(angle,0)
@@ -2392,25 +2501,22 @@ function ASSDrawing:rotate(angle)
                           translate((bound[3]-bound[1])/2,(bound[4]-bound[2])/2,0).rotate("z",angle).
                           translate(-bound[3]+bound[1]/2,(-bound[4]+bound[2])/2,0)
         shape = YUtils.shape.transform(shape,rotMatrix)
-        self.commands = ASSDrawing{raw=shape}.commands
+        self.contours = ASSDrawing{raw=shape}.contours
     end
     return self
 end
 
 function ASSDrawing:get()
     local commands, j = {}, 1
-    for i=1,#self.commands do
-        commands[j] = self.commands[i].__tag.name
-        local params = {self.commands[i]:get()}
-        table.joinInto(commands, params)
-        j=j+#params+1
+    for i=1, #self.contours do
+        table.joinInto(commands, self.contours[i]:get())
     end
     return commands, self.scale:get()
 end
 
 function ASSDrawing:getSection()
     local section = ASSLineDrawingSection{}
-    section.commands, section.scale = self.commands, self.scale
+    section.contours, section.scale = self.contours, self.scale
     return section
 end
 
@@ -2487,6 +2593,204 @@ function ASSLineDrawingSection:getClip(inverse)
     local clip = ASS:createTag(ASS.tagNames[ASSClipVect][inverse and 2 or 1], self)
     local anOff = effTags.align:getPositionOffset(ex.w, ex.h)
     return clip:add(effTags.position):sub(anOff)
+end
+
+
+ASSDrawContour = createASSClass("ASSDrawContour", ASSBase, {"commands"}, {"table"})
+function ASSDrawContour:new(args)
+    local cmds, clsSet = {}, ASS.classes.drawingCommands
+    for i=1,#args do
+        assertEx(type(args[i])=="table" and args[i].instanceOf and clsSet[args[i].class],
+                 "argument #%d is not a valid drawing command object (%s).", i, args[i].typeName or type(args[i]))
+        if i==1 then
+            assertEx(args[i].instanceOf[ASSDrawMove], "first drawing command of a contour must be of class %s, got a %s.",
+                     ASSDrawMove.typeName, args[i].typeName)
+        end
+        cmds[i] = args[i]
+    end
+    self.commands = cmds
+    return self
+end
+
+function ASSDrawContour:callback(callback, commandTypes)
+    local cmdSet = {}
+    if type(commandTypes)=="string" then commandTypes={commandTypes} end
+    if commandTypes then
+        assertEx(type(commandTypes)=="table", "argument #2 must be either a table of strings or a single string, got a %s.",
+                 type(commandTypes))
+        for i=1,#commandTypes do
+            tagSet[commandTypes[i]] = true
+        end
+    end
+
+    local j, cmdsDeleted = 1, false
+    for i=1,#self.commands do
+        local cmd = self.commands[i]
+        if not commandTypes or cmdSet[cmd.__tag.name] then
+            local res = callback(cmd, self.commands, i, j)
+            j=j+1
+            if res==false then
+                self.commands[i], cmdsDeleted = nil, true
+            elseif res~=nil and res~=true then
+                self.commands[i] = res
+            end
+        end
+    end
+    if cmdsDeleted then self.commands = table.trimArray(self.commands) end
+    if j>1 then
+        self.length = nil
+        if self.parent then self.parent.length=nil end
+    end
+end
+
+function ASSDrawContour:insertCommands(cmds, index)
+    local prevCnt, inserted, clsSet = #self.commands, {}, ASS.classes.drawingCommands
+    index = default(index, math.max(prevCnt,1))
+    assertEx(math.isInt(index) and index~=0,
+           "argument #2 (index) must be an integer != 0, got '%s' of type %s.", tostring(index), type(index))
+    assertEx(type(cmds)=="table",
+           "argument #1 (cmds) must be either a drawing command object or a table of drawing commands, got a %s.", type(cmds))
+
+    if cmds.instanceOf then cmds = {cmds} end
+
+    for i=1,#cmds do
+        local cmdIsTbl, cmd = type(cmds[i])=="table", cmds[i]
+        assertEx(cmdIsTbl and cmd.class, "command #%d must be a drawing command object, got a %s",
+                 i, cmdIsTbl and cmd.typeName or type(cmd))
+        assertEx(clsSet[cmd.class] and not cmd.instanceOf[ASSDrawMove],
+                 "command #%d must be a drawing command object, but not a %s; got a %s", ASSDrawMove.typeName, cmd.typeName)
+
+        local insertIdx = index<0 and prevCnt+index+i or index+i-1
+        table.insert(self.commands, insertIdx, cmd)
+        cmd.parent = self
+        inserted[i] = self.commands[insertIdx]
+    end
+    if #cmds>0 then
+        self.length = nil
+        if self.parent then self.parent.length = nil end
+    end
+    return i>1 and inserted or inserted[1]
+end
+
+function ASSDrawContour:flatten(coerce)
+    assert(HAVE_YUTILS, YUtilsMissingMsg)
+    local flatStr = YUtils.shape.flatten(self:getTagParams(coerce))
+    local flattened = ASSDrawing{raw=flatStr, tagProps=self.__tag}
+    self.commands = flattened.commands
+    return self, flatStr
+end
+
+function ASSDrawContour:get()
+    local commands, j = {}, 1
+    for i=1,#self.commands do
+        commands[j] = self.commands[i].__tag.name
+        local params = {self.commands[i]:get()}
+        table.joinInto(commands, params)
+        j=j+#params+1
+    end
+    return commands
+end
+
+function ASSDrawContour:getCommandAtLength(len, noUpdate)
+    if not (noUpdate and self.length) then self:getLength() end
+    local currTotalLen, nextTotalLen = 0
+    for i=1,#self.commands do
+        local cmd = self.commands[i]
+        nextTotalLen = currTotalLen + cmd.length
+        if nextTotalLen-len > -0.001 and cmd.length>0
+        and not (cmd.instanceOf[ASSDrawMove] or cmd.instanceOf[ASSDrawMoveNc]) then
+            return cmd, math.max(len-currTotalLen,0)
+        else currTotalLen = nextTotalLen end
+    end
+    return false
+    -- error(string.format("Error: length requested (%02f) is exceeding the total length of the shape (%02f)",len,currTotalLen))
+end
+
+function ASSDrawContour:getExtremePoints(allowCompatible)
+    local top, left, bottom, right
+    for i=1,#self.commands do
+        local pts = self.commands[i]:getPoints(allowCompatible)
+        for i=1,#pts do
+            if not top or top.y > pts[i].y then top=pts[i] end
+            if not left or left.x > pts[i].x then left=pts[i] end
+            if not bottom or bottom.y < pts[i].y then bottom=pts[i] end
+            if not right or right.x < pts[i].x then right=pts[i] end
+        end
+    end
+    return {top=top, left=left, bottom=bottom, right=right, w=right.x-left.x, h=bottom.y-top.y}
+end
+
+function ASSDrawContour:getLength()
+    local totalLen, lens = 0, {}
+    for i=1,#self.commands do
+        local len = self.commands[i]:getLength(self.commands[i-1])
+        lens[i], totalLen = len, totalLen+len
+    end
+    self.length = totalLen
+    return totalLen, lens
+end
+
+function ASSDrawContour:getPositionAtLength(len, noUpdate, useCurveTime)
+    if not (noUpdate and self.length) then self:getLength() end
+    local cmd, remLen  = self:getCommandAtLength(len, true)
+    if not cmd then return false end
+    return cmd:getPositionAtLength(remLen, true, useCurveTime), cmd
+end
+
+function ASSDrawContour:getAngleAtLength(len, noUpdate)
+    if not (noUpdate and self.length) then self:getLength() end
+    local cmd, remLen = self:getCommandAtLength(len, true)
+    if not cmd then return false end
+
+    local fCmd = cmd.instanceOf[ASSDrawBezier] and cmd.flattened:getCommandAtLength(remLen, true) or cmd
+    return fCmd:getAngle(nil,true), cmd
+end
+
+function ASSDrawContour:getTagParams(coerce)
+    local cmdStr, j, lastCmdType = {}, 1
+    for i=1,#self.commands do
+        local cmd = self.commands[i]
+        if lastCmdType ~= cmd.__tag.name then
+            lastCmdType = cmd.__tag.name
+            cmdStr[j], j = lastCmdType, j+1
+        end
+        local params = table.concat({cmd:get(coerce)}," ")
+        if params~="" then
+            cmdStr[j], j = params, j+1
+        end
+    end
+    return table.concat(cmdStr, " ")
+end
+
+function ASSDrawContour:commonOp(method, callback, default, x, y) -- drawing commands only have x and y in common
+    if ASS.instanceOf(x, ASSPoint, nil, true) then
+        x, y = x:get()
+    end
+    for i=1,#self.commands do
+        local subCnt = #self.commands[i].__meta__.order
+        self.commands[i][method](self.commands[i],x,y)
+    end
+    return self
+end
+
+function ASSDrawContour:getOutline(x, y, mode, splitContours)
+    assert(HAVE_YUTILS, YUtilsMissingMsg)
+    y, mode = default(y,x), default(mode, "round")
+    local outline = YUtils.shape.to_outline(YUtils.shape.flatten(self:getTagParams()),x,y,mode)
+    return (self.parent and self.parent.class or ASSDrawing){raw=outline, splitContours=splitContours}
+end
+
+function ASSDrawContour:outline(x, y, mode)
+    -- may violate the "one move per contour" principle
+    self.commands = self:getOutline(x, y, mode, false).contours[1].commands
+    self.length = nil
+end
+
+function ASSDrawContour:rotate(angle)
+    ASSDrawing.rotate(self, angle)
+    self.commands = self.contours[1]  -- rotating a contour should produce no additional contours
+    self.contours = nil
+    return self
 end
 
 --------------------- Unsupported Tag Classes and Stubs ---------------------
