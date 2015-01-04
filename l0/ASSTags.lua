@@ -2643,13 +2643,9 @@ end
 function ASSDrawLine:ScaleToLength(len,noUpdate)
     assert(HAVE_YUTILS, YUtilsMissingMsg)
     if not (self.length and self.cursor and noUpdate) then self.parent:getLength() end
-    local scaled = self.cursor:copy()
-    scaled:add(YUtils.math.stretch(returnAll(
-        {ASSPoint{self}:sub(self.cursor)},
-        {0, len})
-    ))
-    self:set(scaled:get())
-    return self:get()
+    self:sub(self.cursor)
+    self:set(self.cursor:copy():add(YUtils.math.stretch(self.x.value, self.y.value, 0, len)))
+    return self
 end
 
 function ASSDrawLine:getAngle(ref, noUpdate)
