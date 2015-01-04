@@ -2879,6 +2879,14 @@ function ASSFoundation:new()
     }
     self.classes.drawingCommands = table.values(self.classes.drawingCommandMappings)
 
+    -- make classes table also work as a set
+    for _,cls in pairs(self.classes) do
+        if not cls.n then cls.n = #cls end
+        for i=1,#cls do
+            cls[cls[i]] = true
+        end
+    end
+
     self.cache = {ASSInspector = {}}
 
     return self
