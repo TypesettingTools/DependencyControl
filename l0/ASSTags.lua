@@ -2688,6 +2688,33 @@ function ASSDrawContour:callback(callback, commandTypes, getPoints)
     end
 end
 
+function ASSDrawContour:expand(x, y)
+    x = default(x,1)
+    y = default(y,x)
+
+    assertEx(type(x)=="number" and type(y)=="number", "x and y must be a number or nil, got x=%s (%s) and y=%s (%s).",
+             tostring(x), type(x), tostring(y), type(y))
+    if x==0 and y==0 then return self end
+    assertEx(x>=0 and y>=0 or x<=0 and y<=0,
+             "cannot expand and inpand at the same time (sign must be the same for x and y); got x=%d, y=%d.", x, y)
+
+    self:getDirection()
+    local newCmds, sameDir = {}
+    if x<0 or y<0 then
+        x, y = math.abs(x), math.abs(y)
+        sameDir = self.isCW==false
+    else sameDir = self.isCW==true end
+    local outline = self:getOutline(x, y)
+
+    -- may violate the "one move per contour" principle
+    self.commands, self.length, self.isCW = {}, nil, nil
+
+    for i=sameDir and 2 or 1, #outline.contours, 2 do
+        self:insertCommands(outline.contours[i].commands, -1, true)
+    end
+    return self
+end
+
 function ASSDrawContour:insertCommands(cmds, index, acceptMoves)
     local prevCnt, inserted, clsSet = #self.commands, {}, ASS.classes.drawingCommands
     index = default(index, math.max(prevCnt,1))
