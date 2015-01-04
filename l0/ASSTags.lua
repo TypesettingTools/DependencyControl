@@ -2513,7 +2513,7 @@ function ASSDrawing:getOutline(x,y,mode)
     assert(HAVE_YUTILS, YUtilsMissingMsg)
     y, mode = default(y,x), default(mode, "round")
     local outline = YUtils.shape.to_outline(YUtils.shape.flatten(self:getTagParams()),x,y,mode)
-    return self.class{raw=outline}
+    return self.class{str=outline}
 end
 function ASSDrawing:rotate(angle)
     angle = default(angle,0)
@@ -2840,7 +2840,7 @@ function ASSDrawContour:getOutline(x, y, mode, splitContours)
     assert(HAVE_YUTILS, YUtilsMissingMsg)
     y, mode = default(y,x), default(mode, "round")
     local outline = YUtils.shape.to_outline(YUtils.shape.flatten(self:getTagParams()),x,y,mode)
-    return (self.parent and self.parent.class or ASSDrawing){raw=outline, splitContours=splitContours}
+    return (self.parent and self.parent.class or ASSDrawing){str=outline, splitContours=splitContours}
 end
 
 function ASSDrawContour:outline(x, y, mode)
