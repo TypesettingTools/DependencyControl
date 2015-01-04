@@ -74,7 +74,7 @@ function ASSBase:checkRange(min,max,...)
     local vals = table.pack(...)
     for i=1,vals.n do
         assertEx(vals[i] >= min and vals[i] <= max, "%s must be in range %d-%d, got %d.",
-                 self.typeName, min, max, vals[i]))
+                 self.typeName, min, max, vals[i])
     end
 end
 
