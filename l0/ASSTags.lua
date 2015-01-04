@@ -339,7 +339,7 @@ function ASSLineContents:callback(callback, sectionClasses, start, end_, relativ
             end
         end
     end
-    self.sections = table.trimArray(self.sections)
+    self.sections = table.reduce(self.sections)
     self:updateRefs(prevCnt)
     return numRun>0 and numRun or false
 end
@@ -1229,7 +1229,7 @@ function ASSLineTagSection:callback(callback, tagNames, start, end_, relative, r
             end
         end
     end
-    self.tags = tagsDeleted and table.trimArray(tags) or tags
+    self.tags = tagsDeleted and table.reduce(tags) or tags
     return numRun>0 and numRun or false
 end
 
@@ -2289,7 +2289,7 @@ function ASSDrawing:callback(callback, start, end_, includeCW, includeCCW)
         end
     end
     if cntsDeleted then
-        self.contours = table.trimArray(self.contours)
+        self.contours = table.reduce(self.contours)
         self.length = nil
     end
 end
@@ -2324,7 +2324,7 @@ function ASSDrawing:modCommands(callback, commandTypes, start, end_, includeCW, 
             end
             matchedCntsCnt = matchedCntsCnt + 1
             if cmdsDeleted then
-                cnt.commands = table.trimArray(cnt.commands)
+                cnt.commands = table.reduce(cnt.commands)
                 cnt.length, self.length = nil, nil
                 if #cnt.commands == 0 then
                     self.contours[i], cntsDeleted = nil, true
@@ -2332,7 +2332,7 @@ function ASSDrawing:modCommands(callback, commandTypes, start, end_, includeCW, 
             end
         end
     end
-    if cntsDeleted then self.contours = table.trimArray(self.contours) end
+    if cntsDeleted then self.contours = table.reduce(self.contours) end
 end
 
 function ASSDrawing:insertCommands(cmds, index)
@@ -2636,7 +2636,7 @@ function ASSDrawContour:callback(callback, commandTypes)
             end
         end
     end
-    if cmdsDeleted then self.commands = table.trimArray(self.commands) end
+    if cmdsDeleted then self.commands = table.reduce(self.commands) end
     if j>1 then
         self.length = nil
         if self.parent then self.parent.length=nil end
@@ -3157,7 +3157,7 @@ function ASSFoundation:new()
         end
     end
 
-    self.tagSortOrder = table.trimArray(self.tagSortOrder)
+    self.tagSortOrder = table.reduce(self.tagSortOrder)
 
     -- make tag names table also work as a set
     for _,names in pairs(self.tagNames) do
