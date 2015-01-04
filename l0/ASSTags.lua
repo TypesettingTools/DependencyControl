@@ -1878,6 +1878,29 @@ function ASSPoint:getTagParams(coerce, precision)
     return self.x:getTagParams(coerce, precision), self.y:getTagParams(coerce, precision)
 end
 
+function ASSPoint:getAngle(ref, vectAngle)
+    local rx, ry
+    assertEx(type(ref)=="table", "argument #1 (ref) must be of type table, got a %s.", type(ref))
+    if ref.instanceOf[ASSDrawBezier] then
+        rx, ry = ref.p3:get()
+    elseif not ref.instanceOf then
+        rx, ry = ref[1], ref[2]
+        assertEx(type(rx)=="number" and type(rx)=="number",
+                 "table with reference coordinates must be of format {x,y}, got {%s,%s}.", tostring(rx), tostring(ry))
+    elseif ref.compatible[ASSPoint] then
+        rx, ry = ref:get()
+    else error(string.format(
+               "Error: argument #1 (ref) be an %s (or compatible), a drawing command or a coordinates table, got a %s.",
+               ASSPoint.typeName, ref.typeName))
+    end
+    local sx, sy = self.x.value, self.y.value
+    local cw = (sx*ry - sy*rx)<0
+    local deg = math.deg(vectAngle and math.acos((sx*rx + sy*ry) / math.sqrt(sx^2 + sy^2) /
+                                       math.sqrt(rx^2 + ry^2)) * (cw and 1 or -1)
+                                    or -math.atan2(sy-ry, sx-rx))
+    return ASS:createTag("angle", deg), cw
+end
+
 -- TODO: ASSPosition:move(ASSPoint) -> return \move tag
 
 ASSTime = createASSClass("ASSTime", ASSNumber, {"value"}, {"number"}, {precision=0})
@@ -2456,7 +2479,7 @@ function ASSDrawing:getAngleAtLength(len, noUpdate)
     if not cmd then return false end
 
     local fCmd = cmd.instanceOf[ASSDrawBezier] and cmd.flattened:getCommandAtLength(remLen, true) or cmd
-    return fCmd:getAngle(nil,true), cmd, cnt
+    return fCmd:getAngle(nil, false, true), cmd, cnt
 end
 
 function ASSDrawing:getExtremePoints(allowCompatible)
@@ -2758,7 +2781,7 @@ function ASSDrawContour:getAngleAtLength(len, noUpdate)
     if not cmd then return false end
 
     local fCmd = cmd.instanceOf[ASSDrawBezier] and cmd.flattened:getCommandAtLength(remLen, true) or cmd
-    return fCmd:getAngle(nil,true), cmd
+    return fCmd:getAngle(nil, false, true), cmd
 end
 
 function ASSDrawContour:getTagParams(coerce)
@@ -2967,20 +2990,12 @@ function ASSDrawLine:ScaleToLength(len,noUpdate)
     return self
 end
 
-function ASSDrawLine:getAngle(ref, noUpdate)
-    if not (ref or (self.cursor and noUpdate)) then self.parent:getLength() end
-    local ref, rx, ry = ref or self.cursor
-    assertEx(type(ref)=="table", "argument #1 (ref) must be of type table, got a %s.", type(ref))
-    if ref.instanceOf[ASSDrawBezier] then
-        rx, ry = ref.p3:get()
-    elseif not ref.instanceOf then
-        rx, ry = ref[1], ref[2]
-    elseif ref.compatible[ASSPoint] then
-        rx, ry = ref:get()
-    else error("Error: argument ref to getAngle() must either be an ASSDraw object, an ASSPoint or a table containing coordinates x and y.\n")
+function ASSDrawLine:getAngle(ref, vectAngle, noUpdate)
+    if not ref then
+        if not (self.cursor and noUpdate) then self.parent:getLength() end
+        ref = self.cursor
     end
-    local dx, dy = self.x.value-rx, self.y.value-ry
-    return ASS:createTag("angle", 360 - math.deg(math.atan2(dy,dx)))
+    return ASSPoint.getAngle(self, ref, vectAngle)
 end
 
 function ASSDrawBezier:commonOp(method, callback, default, ...)
