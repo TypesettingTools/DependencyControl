@@ -252,12 +252,14 @@ table.reverseArray = function(tbl)
     return rTbl
 end
 
-table.trimArray = function(tbl)
-    local trimmed, t = {}, 1
-    for _,val in pairs(tbl) do
-        trimmed[t], t = val, t+1
+table.reduce = function(tbl)
+    local reduced, r = {}, 1
+    for k,v in pairs(tbl) do
+        if type(k)=="number" then
+            reduced[r], r = v, r+1
+        else reduced[k]=v end
     end
-    return trimmed
+    return reduced
 end
 
 table.select = function(tbl,keys)
