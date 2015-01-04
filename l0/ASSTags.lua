@@ -2612,7 +2612,7 @@ function ASSDrawContour:new(args)
     return self
 end
 
-function ASSDrawContour:callback(callback, commandTypes)
+function ASSDrawContour:callback(callback, commandTypes, getPoints)
     local cmdSet = {}
     if type(commandTypes)=="string" then commandTypes={commandTypes} end
     if commandTypes then
@@ -2627,12 +2627,27 @@ function ASSDrawContour:callback(callback, commandTypes)
     for i=1,#self.commands do
         local cmd = self.commands[i]
         if not commandTypes or cmdSet[cmd.__tag.name] then
-            local res = callback(cmd, self.commands, i, j)
-            j=j+1
-            if res==false then
-                self.commands[i], cmdsDeleted = nil, true
-            elseif res~=nil and res~=true then
-                self.commands[i] = res
+            if getPoints and not cmd.compatible[ASSPoint] then
+                local pointsDeleted = false
+                for p=1,#cmd.__meta__.order do
+                    local res = callback(cmd[cmd.__meta__.order[p]], self.commands, i, j, cmd, p)
+                    j=j+1
+                    if res==false then
+                        cmdsDeleted, pointsDeleted = true, true   -- deleting a single point causes the whole command to be deleted
+                    elseif res~=nil and res~=true then
+                        local class = cmd.__meta__.types[p]
+                        cmd[cmd.__meta__.order[p]] = res.instanceOf[class] and res or class{res}
+                    end
+                end
+                if pointsDeleted then self.commands[i] = nil end
+            else
+                local res = callback(cmd, self.commands, i, j)
+                j=j+1
+                if res==false then
+                    self.commands[i], cmdsDeleted = nil, true
+                elseif res~=nil and res~=true then
+                    self.commands[i] = res
+                end
             end
         end
     end
