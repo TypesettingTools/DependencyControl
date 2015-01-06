@@ -2928,12 +2928,12 @@ function ASSTransform:changeTagType(type_)
 end
 
 function ASSTransform:getTagParams(coerce)
-    local names, tagName = ASS.tagNames[ASSTransform], self.__tag.name
 
     if not self.__tag.typeLocked then
         self:changeTagType()
     end
 
+    local names, tagName = ASS.tagNames[ASSTransform], self.__tag.name
     local t1, t2 = self.startTime:getTagParams(coerce), self.endTime:getTagParams(coerce)
     if coerce then
         t2 = util.max(t1, t2)
