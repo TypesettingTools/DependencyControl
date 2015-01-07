@@ -2495,10 +2495,10 @@ function ASSDrawing:getExtremePoints(allowCompatible)
 
     for i=2,#self.contours do
         local pts = self.contours[i]:getExtremePoints(allowCompatible)
-        if ext.top.y > pts.top.y then ext.top=pts.top.y end
-        if ext.left.x > pts.left.x then ext.left=pts.left.x end
-        if ext.bottom.y < pts.bottom.y then bottom=pts.bottom.y end
-        if ext.right.x < pts.right.x then right=pts.right.x end
+        if ext.top.y > pts.top.y then ext.top=pts.top end
+        if ext.left.x > pts.left.x then ext.left=pts.left end
+        if ext.bottom.y < pts.bottom.y then ext.bottom=pts.bottom end
+        if ext.right.x < pts.right.x then ext.right=pts.right end
     end
     ext.w, ext.h = ext.right.x-ext.left.x, ext.bottom.y-ext.top.y
     return ext
