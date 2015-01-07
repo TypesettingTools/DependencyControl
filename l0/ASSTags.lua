@@ -961,12 +961,12 @@ function ASSLineBounds:new(cnts, noCommit)
     end
 
     self.animated = cnts:isAnimated()
-    cnts.line.assi_exhaustive = animated
+    cnts.line.assi_exhaustive = self.animated
 
     local bounds, times = assi:getBounds{cnts.line}
     assertEx(bounds~=nil,"ASSInspector Error: %s.", tostring(times))
 
-    if bounds[1]~=false then
+    if bounds[1]~=false or self.animated then
         local frame, x2Max, y2Max, x1Min, y1Min = aegisub.frame_from_ms, 0, 0
         self.fbf={off=frame(times[1]), n=#bounds}
         for i=1,self.fbf.n do
