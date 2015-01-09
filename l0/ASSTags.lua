@@ -949,6 +949,7 @@ end
 ASSLineBounds = createASSClass("ASSLineBounds", ASSBase, {1, 2, "w", "h", "fbf", "animated", "rawText"},
                               {"ASSPoint", "ASSPoint", "number", "number", "table", "boolean", "string"})
 function ASSLineBounds:new(cnts, noCommit)
+    -- TODO: throw error if no video is open
     assertEx(ASS.instanceOf(cnts, ASSLineContents), "argument #1 must be an object of type %s, got a %s.",
              ASSLineTagSection.typeName, ASS.instanceOf(cnts) or type(cnts)
     )
@@ -2620,6 +2621,7 @@ function ASSLineDrawingSection:getBounds(coerce)
 end
 
 function ASSLineDrawingSection:getClip(inverse)
+    -- TODO: scale support
     local effTags, ex = self.parent:getEffectiveTags(-1, true, true, false).tags , self:getExtremePoints()
     local clip = ASS:createTag(ASS.tagNames[ASSClipVect][inverse and 2 or 1], self)
     local anOff = effTags.align:getPositionOffset(ex.w, ex.h)
@@ -2955,8 +2957,7 @@ end
 
 ASSDrawBase = createASSClass("ASSDrawBase", ASSTagBase, {}, {})
 function ASSDrawBase:new(...)
-    local args = {...}
-    args = {self:getArgs(args, 0, true)}
+    local args = {self:getArgs({...}, 0, true)}
 
     if self.compatible[ASSPoint] then
         self.x, self.y = ASSNumber{args[1]}, ASSNumber{args[2]}
