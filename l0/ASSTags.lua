@@ -221,7 +221,7 @@ end
 ASSLineContents = createASSClass("ASSLineContents", ASSBase, {"sections"}, {"table"})
 function ASSLineContents:new(line,sections)
     sections = self:getArgs({sections})
-    assertEx(line and line.text, "argument 1 to %s() must be a Line or %s object, got %s.",
+    assertEx(line and line.__class==Line, "argument 1 to %s() must be a Line or %s object, got %s.",
              self.typeName, self.typeName, type(line))
     if not sections then
         sections = {}
