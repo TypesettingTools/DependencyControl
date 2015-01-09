@@ -248,8 +248,9 @@ function ASSLineContents:new(line,sections)
             end
             j=j+1
         end
-    end
-    self.line, self.sections = line, self:typeCheck(sections)
+    else sections = self:typeCheck(util.copy(sections)) end
+    -- TODO: check if typeCheck works correctly with compatible classes and doesn't do useless busy work
+    self.line, self.sections = line, sections
     self:updateRefs()
     return self
 end
