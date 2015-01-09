@@ -3274,6 +3274,8 @@ function ASSFoundation:new()
 
     self.cache = {ASSInspector = {}}
 
+    self.lineDefaults = {actor="", class="dialogue", comment=false, effect="", start_time=0, end_time=5000,
+                         margin_l=0, margin_r=0, margin_t=0, section="[Events]", style="Default", text=""}
     return self
 end
 
@@ -3307,6 +3309,58 @@ end
 function ASSFoundation:createTag(name, ...)
     local tag = self:mapTag(name)
     return tag.type{tagProps=tag.props, ...}
+end
+
+function ASSFoundation:createLine(args)
+    local defaults, cnts, ref, newLine = self.lineDefaults, args[1], args[2]
+    assertEx(cnts==nil or type(cnts)=="table",
+             "argument #1 (contents) must be a Line or %s object, a section or a table of sections, or nil; got a %s.",
+             ASSLineContents.typeName, type(cnts))
+
+    local msg = "argument #2 (ref) must be a Line, LineCollection or %s object or nil; got a %s."
+    if type(ref)=="table" then
+        if ref.__class == Line then
+            ref = ref.parentCollection
+        elseif ref.class == ASSLineContents then
+            ref = ref.line.parentCollection
+        end
+        assertEx(ref.__class==LineCollection, msg, ASSLineContents.typeName, ref.typeName or "table")
+    elseif ref~=nil then
+        error(string.format(msg, ASSLineContents.typeName, type(ref)))
+    end
+
+    msg = "argument #1 (contents) must be a Line or %s object, a section or a table of sections, or nil; got a %s."
+    if not cnts then
+        assertEx(ref, "can only create a Line with a reference to a LineCollection, but none could be found.")
+        newLine = Line({}, ref, table.merge(defaults, args))
+        newLine:parse()
+    elseif type(cnts)~="table" then
+        error(string.format(msg, ASSLineContents.typeName, type(cnts)))
+    elseif cnts.__class==Line then
+        -- Line objects will be copied and the ASSFoundation stuff committen and reparsed (full copy)
+        local text = cnts.ASS and cnts.ASS:getString() or cnts.text
+        newLine = Line(cnts, ref, args)
+        newLine.text = text
+        newLine:parse()
+    elseif cnts.class==ASSLineContents then
+        -- ASSLineContents object will be attached to the new line
+        -- line properties other than the text will be taken either from the defaults or the current previous line
+        newLine = useLineProps and Line(cnts.line, ref, args) or Line({}, ref, table.merge(defaults, args))
+        newLine.ASS, cnts.ASS.line = cnts.ASS, newLine
+        newLine:commit()
+    else
+        -- A new ASSLineContents object is created from the supplied sections and attached to a new Line
+        if cnts.class then cnts = {cnts} end
+        local secTypes = ASS.classes.lineSection
+        newLine = Line({}, ref, table.merge(defaults, args))
+        for i=1,#cnts do
+            -- TODO: move into ASSLineContents:new()
+            assertEx(ASS.instanceOf(cnts[i],secTypes), msg, ASSLineContents.typeName, cnts[i].typeName or type(cnts[i]))
+        end
+        newLine.ASS = ASSLineContents(newLine, cnts)
+        newLine:commit()
+    end
+    newLine:createRaw()
 end
 
 function ASSFoundation:getTagFromString(str)
