@@ -2329,11 +2329,11 @@ function ASSDrawing:modCommands(callback, commandTypes, start, end_, includeCW, 
         assertEx(type(commandTypes)=="table", "argument #2 must be either a table of strings or a single string, got a %s.",
                  type(commandTypes))
         for i=1,#commandTypes do
-            tagSet[commandTypes[i]] = true
+            cmdSet[commandTypes[i]] = true
         end
     end
 
-    local matchedCmdCnt, matchedCntsCnt, cntsDeleted = 1, false
+    local matchedCmdCnt, matchedCntsCnt, cntsDeleted = 1, 1, false
     for i=1,#self.contours do
         local cnt = self.contours[i]
         if not (includeCW and includeCCW) and cnt.isCW==nil then
@@ -2650,7 +2650,7 @@ function ASSDrawContour:callback(callback, commandTypes, getPoints)
         assertEx(type(commandTypes)=="table", "argument #2 must be either a table of strings or a single string, got a %s.",
                  type(commandTypes))
         for i=1,#commandTypes do
-            tagSet[commandTypes[i]] = true
+            cmdSet[commandTypes[i]] = true
         end
     end
 
@@ -2750,8 +2750,8 @@ end
 function ASSDrawContour:flatten(coerce)
     assert(HAVE_YUTILS, YUtilsMissingMsg)
     local flatStr = YUtils.shape.flatten(self:getTagParams(coerce))
-    local flattened = ASSDrawing{raw=flatStr, tagProps=self.__tag}
-    self.commands = flattened.commands
+    local flattened = ASSDrawing{str=flatStr, tagProps=self.__tag}
+    self.commands = flattened.contours[1].commands
     return self, flatStr
 end
 
