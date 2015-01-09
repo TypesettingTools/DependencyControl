@@ -2324,7 +2324,7 @@ end
 function ASSDrawing:modCommands(callback, commandTypes, start, end_, includeCW, includeCCW)
     includeCW, includeCCW = default(includeCW, true), default(includeCCW, true)
     local cmdSet = {}
-    if type(commandTypes)=="string" then commandTypes={commandTypes} end
+    if type(commandTypes)=="string" or ASS.instanceOf(commandTypes) then commandTypes={commandTypes} end
     if commandTypes then
         assertEx(type(commandTypes)=="table", "argument #2 must be either a table of strings or a single string, got a %s.",
                  type(commandTypes))
@@ -2342,7 +2342,7 @@ function ASSDrawing:modCommands(callback, commandTypes, start, end_, includeCW, 
         if (includeCW or not cnt.isCW) and (includeCCW or cnt.isCW) then
             local cmdsDeleted = false
             for j=1,#cnt.commands do
-                if not commandTypes or cmdSet[cmd.__tag.name] then
+                if not commandTypes or cmdSet[cnt.commands[j].__tag.name] or cmdSet[cnt.commands[j].class] then
                     local res = callback(cnt.commands[j], cnt.commands, j, matchedCmdCnt, i, matchedCntsCnt)
                     matchedCmdCnt = matchedCmdCnt + 1
                     if res==false then
@@ -2645,7 +2645,7 @@ end
 
 function ASSDrawContour:callback(callback, commandTypes, getPoints)
     local cmdSet = {}
-    if type(commandTypes)=="string" then commandTypes={commandTypes} end
+    if type(commandTypes)=="string" or ASS.instanceOf(commandTypes) then commandTypes={commandTypes} end
     if commandTypes then
         assertEx(type(commandTypes)=="table", "argument #2 must be either a table of strings or a single string, got a %s.",
                  type(commandTypes))
@@ -2657,7 +2657,7 @@ function ASSDrawContour:callback(callback, commandTypes, getPoints)
     local j, cmdsDeleted = 1, false
     for i=1,#self.commands do
         local cmd = self.commands[i]
-        if not commandTypes or cmdSet[cmd.__tag.name] then
+        if not commandTypes or cmdSet[cmd.__tag.name] or cmdSet[cmd.class] then
             if getPoints and not cmd.compatible[ASSPoint] then
                 local pointsDeleted = false
                 for p=1,#cmd.__meta__.order do
