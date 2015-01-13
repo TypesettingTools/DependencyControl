@@ -1093,7 +1093,7 @@ end
 function ASSLineTextSection:getShape(applyRotation, coerce)
     applyRotation = default(applyRotation, false)
     local metr, tagList, shape = self:getMetrics(true)
-    local drawing, an = ASSDrawing{raw=shape}, tagList.tags.align:getSet()
+    local drawing, an = ASSDrawing{str=shape}, tagList.tags.align:getSet()
     -- fix position based on aligment
         drawing:sub(not an.left and (metr.width-metr.typeBounds.width)   / (an.centerH and 2 or 1) or 0,
                     not an.top  and (metr.height-metr.typeBounds.height) / (an.centerV and 2 or 1) or 0
@@ -1109,8 +1109,8 @@ end
 
 function ASSLineTextSection:convertToDrawing(applyRotation, coerce)
     local shape = self:getShape(applyRotation, coerce)
-    self.value, self.commands, self.scale = nil, shape.commands, shape.scale
-    setmetatable(self,ASSLineDrawingSection)
+    self.value, self.contours, self.scale = nil, shape.contours, shape.scale
+    setmetatable(self, ASSLineDrawingSection)
 end
 
 function ASSLineTextSection:getYutilsFont(coerce)
