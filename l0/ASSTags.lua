@@ -2841,7 +2841,8 @@ function ASSDrawContour:getExtremePoints(allowCompatible)
             if not right or right.x < pts[i].x then right=pts[i] end
         end
     end
-    return {top=top, left=left, bottom=bottom, right=right, w=right.x-left.x, h=bottom.y-top.y}
+    return {top=top, left=left, bottom=bottom, right=right, w=right.x-left.x, h=bottom.y-top.y,
+            bounds={left.x.value, top.y.value, right.x.value, bottom.y.value}}
 end
 
 function ASSDrawContour:getLength()
