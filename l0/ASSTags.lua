@@ -2884,7 +2884,6 @@ function ASSDrawContour:commonOp(method, callback, default, x, y) -- drawing com
         x, y = x:get()
     end
     for i=1,#self.commands do
-        local subCnt = #self.commands[i].__meta__.order
         self.commands[i][method](self.commands[i],x,y)
     end
     return self
