@@ -2614,7 +2614,7 @@ function ASSClipVect:getDrawing(trimDrawing, pos, an)
     local anOff = an:getPositionOffset(ex.w, ex.h)
 
     if trimDrawing or not pos then
-        drawing:sub(ex.left.x, ex.top.y)
+        drawing:sub(ex.left.x.value, ex.top.y.value)
         return drawing, ASS:createTag("position", ex.left.x, ex.top.y):add(anOff)
     else return drawing:add(anOff):sub(pos) end
 end
