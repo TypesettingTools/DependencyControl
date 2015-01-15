@@ -3391,7 +3391,12 @@ function ASSFoundation:createLine(args)
         for i=1,#cnts do
             -- TODO: move into ASSLineContents:new()
             assertEx(ASS.instanceOf(cnts[i],secTypes), msg, ASSLineContents.typeName, cnts[i].typeName or type(cnts[i]))
+            if not ref then
+                local lc = self:getParentLineContents()
+                ref = lc and lc.line.parentCollection
+            end
         end
+        assertEx(ref, msgNoRef)
         newLine.ASS = ASSLineContents(newLine, cnts)
         newLine:commit()
     end
