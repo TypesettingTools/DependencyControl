@@ -47,6 +47,16 @@ local function createASSClass(typeName, baseClasses, order, types, tagProps, com
     end
     cls.compatible[cls] = true
 
+    cls.getRawArgCnt = function(self)
+        local cnt, meta = 0, self.__meta__
+        if not meta.types then return 0 end
+        for i=1,#meta.types do
+            cnt = cnt + (type(meta.types[i])=="table" and meta.types[i].class and meta.types[i]:getRawArgCnt() or 1)
+        end
+        return cnt
+    end
+    cls.__meta__.rawArgCnt = cls:getRawArgCnt()
+
     return cls
 end
 
