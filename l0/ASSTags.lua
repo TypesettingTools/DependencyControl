@@ -272,6 +272,12 @@ function ASSLineContents:new(line,sections)
         end
     else sections = self:typeCheck(util.copy(sections)) end
     -- TODO: check if typeCheck works correctly with compatible classes and doesn't do useless busy work
+    if line.parentCollection then
+        self.sub, self.styles = line.parentCollection.sub, line.parentCollection.styles
+        self.scriptInfo = line.parentCollection.meta
+        ASS.cache.lastParentCollection = line.parentCollection
+        ASS.cache.lastStyles = line.parentCollection.styles
+    else self.scriptInfo = self.sub and ASS:getScriptInfo(self.sub) end
     self.line, self.sections = line, sections
     self:updateRefs()
     return self
@@ -979,7 +985,7 @@ function ASSLineBounds:new(cnts, noCommit)
 
     local assi, msg = ASS.cache.ASSInspector[cnts.line.parentCollection]
     if not assi then
-        assi, msg = ASSInspector(cnts.line.parentCollection.sub)
+        assi, msg = ASSInspector(cnts.sub)
         assertEx(assi, "ASSInspector Error: %s.", tostring(msg))
         ASS.cache.ASSInspector[cnts.line.parentCollection] = assi
     end
