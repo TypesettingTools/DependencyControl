@@ -116,7 +116,7 @@ end
 function ASSBase:getArgs(args, defaults, coerce, extraValidClasses)
     -- TODO: make getArgs automatically create objects
     assertEx(type(args)=="table", "first argument to getArgs must be a table of arguments, got a %s.", type(args))
-    local propTypes, propNames, j, outArgs, argSlice = self.__meta__.types, self.__meta__.order, 1, {}
+    local propTypes, propNames = self.__meta__.types, self.__meta__.order
     if not args then args={}
     -- process "raw" property that holds all tag parameters when parsed from a string
     elseif type(args.raw)=="table" then args=args.raw
@@ -145,25 +145,37 @@ function ASSBase:getArgs(args, defaults, coerce, extraValidClasses)
         end
     end
 
+    -- TODO: check if we can get rid of either the index into the default table or the output table
+    local defIdx, j, outArgs, o = 1, 1, {}, 1
     for i=1,#propNames do
         if ASS.instanceOf(propTypes[i]) then
-            local subCnt = #propTypes[i].__meta__.order
-            local defSlice = type(defaults)=="table" and table.sliceArray(defaults,j,j+subCnt-1) or defaults
+            local argSlice, a, rawArgCnt, propRawArgCnt, defSlice = {}, 1, 0, propTypes[i].__meta__.rawArgCnt
+            while rawArgCnt<propRawArgCnt do
+                argSlice[a], a = args[j], a+1
+                rawArgCnt = rawArgCnt + (type(args[j])=="table" and args[j].class and args[j].__meta__.rawArgCnt or 1)
+                j=j+1
+            end
 
-            if not ASS.instanceOf(args[j]) then
-                argSlice, j = table.sliceArray(args,j,j+subCnt-1), j+subCnt-1
-            else argSlice = {args[j]} end
-            outArgs = table.join(outArgs, {propTypes[i]:getArgs(argSlice, defSlice, coerce)})
-        elseif args[j]==nil then
-            -- write defaults
-            outArgs[i] = type(defaults)=="table" and defaults[j] or defaults
-        elseif coerce and type(args[j])~=propTypes[i] then
-            outArgs[i] = self:coerce(args[j], propTypes[i])
-        else outArgs[i]=args[j] end
-        j=j+1
+            if type(defaults) == "table" then
+                defSlice = table.sliceArray(defaults, defIdx, defIdx+propRawArgCnt-1)
+                defIdx = defIdx + propRawArgCnt
+            end
+
+            outArgs, o = table.joinInto(outArgs, {propTypes[i]:getArgs(argSlice, defSlice or defaults, coerce)})
+        else
+            if args[j]==nil then -- write defaults
+                outArgs[o] = type(defaults)=="table" and defaults[defIdx] or defaults
+            elseif type(args[j])=="table" and args[j].class then
+                assertEx(args[j].__meta__.rawArgCnt==1, "type mismatch in argument #%d (%s). Expected a %s or a compatible object, but got a %s.",
+                         i, propNames[i], propTypes[i], args[j].typeName)
+                outArgs[o] = args[j]:get()
+            elseif coerce and type(args[j])~=propTypes[i] then
+                outArgs[o] = self:coerce(args[j], propTypes[i])
+            else outArgs[o] = args[j] end
+            j, defIdx = j+1, defIdx+1
+        end
+        o=o+1
     end
-    --self:typeCheck(unpack(outArgs))
-
     return unpack(outArgs)
 end
 
