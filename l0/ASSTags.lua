@@ -3079,8 +3079,10 @@ end
 function ASSDrawBezier:commonOp(method, callback, default, ...)
     local args, j, valNames = {...}, 1, self.__meta__.order
     if #args<=2 then -- special case to allow common operation on all x an y values of a vector drawing
-        args[1], args[2] = args[1] or 0, args[2] or 0
-        args = table.join(args,args,args)
+        args[3], args[4], args[5], args[6] = args[1], args[2], args[1], args[2]
+        if type(default)=="table" and #default<=2 then
+            default = {default[1], default[2], default[1], default[2]}
+        end
     end
     args = {self:getArgs(args, default, false)}
     for i=1,#valNames do
