@@ -3391,6 +3391,16 @@ function ASSFoundation:createLine(args)
     newLine:createRaw()
 end
 
+function ASSFoundation:getParentLineContents(obj)
+    if not self.instanceOf(obj) then return nil end
+    while obj do
+        if obj.class == ASSLineContents then
+            return obj
+        end
+        obj = obj.parent
+    end
+    return nil
+end
 function ASSFoundation:getTagFromString(str)
     for _,tag in pairs(self.tagMap) do
         if tag.pattern then
