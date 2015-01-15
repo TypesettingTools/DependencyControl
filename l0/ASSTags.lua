@@ -3355,21 +3355,24 @@ function ASSFoundation:createLine(args)
     end
 
     msg = "argument #1 (contents) must be a Line or %s object, a section or a table of sections, or nil; got a %s."
+    local msgNoRef = "can only create a Line with a reference to a LineCollection, but none could be found."
     if not cnts then
-        assertEx(ref, "can only create a Line with a reference to a LineCollection, but none could be found.")
+        assertEx(ref, msgNoRef)
         newLine = Line({}, ref, table.merge(defaults, args))
         newLine:parse()
     elseif type(cnts)~="table" then
         error(string.format(msg, ASSLineContents.typeName, type(cnts)))
     elseif cnts.__class==Line then
-        -- Line objects will be copied and the ASSFoundation stuff committen and reparsed (full copy)
+        -- Line objects will be copied and the ASSFoundation stuff committed and reparsed (full copy)
         local text = cnts.ASS and cnts.ASS:getString() or cnts.text
+        ref = ref or cnts.parentCollection or error(msgNoRef)
         newLine = Line(cnts, ref, args)
         newLine.text = text
         newLine:parse()
     elseif cnts.class==ASSLineContents then
         -- ASSLineContents object will be attached to the new line
         -- line properties other than the text will be taken either from the defaults or the current previous line
+        ref = ref or cnts.line.parentCollection or error(msgNoRef)
         newLine = useLineProps and Line(cnts.line, ref, args) or Line({}, ref, table.merge(defaults, args))
         newLine.ASS, cnts.ASS.line = cnts.ASS, newLine
         newLine:commit()
