@@ -775,7 +775,7 @@ function ASSLineContents:getPosition(style, align, forceDefault)
         return effTags.position
     end
 
-    local scriptInfo = util.getScriptInfo(self.line.parentCollection.sub)
+    local scriptInfo = self.scriptInfo or ASS:getScriptInfo(self.sub)
     -- blatantly copied from torque's Line.moon
     vMargin = self.line.margin_t == 0 and style.margin_t or self.line.margin_t
     lMargin = self.line.margin_l == 0 and style.margin_l or self.line.margin_l
@@ -810,7 +810,7 @@ function ASSLineContents:getDefaultTags(style, copyTags, useOvrAlign)
         else return style[tag] end
     end
 
-    local scriptInfo = util.getScriptInfo(self.line.parentCollection.sub)
+    local scriptInfo = self.scriptInfo or ASS:getScriptInfo(self.sub)
     local resX, resY = tonumber(scriptInfo.PlayResX), tonumber(scriptInfo.PlayResY)
 
     local tagList = ASSTagList(nil, self)
@@ -3401,6 +3401,19 @@ function ASSFoundation:getParentLineContents(obj)
     end
     return nil
 end
+
+function ASSFoundation:getScriptInfo(obj)
+    local lineContents = self:getParentLineContents(obj)
+    if lineContents and lineContents.scriptInfo then
+        return lineContents.scriptInfo
+    end
+    obj = default(obj, self.cache.lastSub)
+    assertEx(obj and type(obj)=="userdata" and obj.insert,
+             "can't get script info because no valid subtitles object was supplied or cached.")
+    self.cache.lastSub = obj
+    return util.getScriptInfo(obj), lineContents
+end
+
 function ASSFoundation:getTagFromString(str)
     for _,tag in pairs(self.tagMap) do
         if tag.pattern then
