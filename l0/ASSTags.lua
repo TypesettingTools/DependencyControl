@@ -3426,7 +3426,7 @@ function ASSFoundation:createLine(args)
 end
 
 function ASSFoundation:getParentLineContents(obj)
-    if not self.instanceOf(obj) then return nil end
+    if not type(obj)=="table" and obj.class then return nil end
     while obj do
         if obj.class == ASSLineContents then
             return obj
