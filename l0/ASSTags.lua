@@ -3437,15 +3437,15 @@ function ASSFoundation:getParentLineContents(obj)
 end
 
 function ASSFoundation:getScriptInfo(obj)
-    local lineContents = self:getParentLineContents(obj)
-    if lineContents and lineContents.scriptInfo then
-        return lineContents.scriptInfo
+    if type(obj)=="table" and obj.class then
+        local lineContents = self:getParentLineContents(obj)
+        return lineContents and lineContents.scriptInfo, lineContents
     end
     obj = default(obj, self.cache.lastSub)
     assertEx(obj and type(obj)=="userdata" and obj.insert,
              "can't get script info because no valid subtitles object was supplied or cached.")
     self.cache.lastSub = obj
-    return util.getScriptInfo(obj), lineContents
+    return util.getScriptInfo(obj)
 end
 
 function ASSFoundation:getTagFromString(str)
