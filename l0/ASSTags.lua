@@ -3369,12 +3369,23 @@ function ASSFoundation:createLine(args)
         error(string.format(msg, ASSLineContents.typeName, type(ref)))
     end
 
-    msg = "argument #1 (contents) must be a Line or %s object, a section or a table of sections, or nil; got a %s."
+    msg = "argument #1 (contents) must be a Line or %s object, a section or a table of sections, a raw line or line string, or nil; got a %s."
     local msgNoRef = "can only create a Line with a reference to a LineCollection, but none could be found."
     if not cnts then
         assertEx(ref, msgNoRef)
         newLine = Line({}, ref, table.merge(defaults, args))
         newLine:parse()
+    elseif type(cnts)=="string" then
+        local p, s, num = {}, {cnts:match("^Dialogue: (%d+),(.-),(.-),(.-),(.-),(%d*),(%d*),(%d*),(.-),(.-)$")}, tonumber
+        if #s == 0 then
+            p = util.copy(defaults)
+            p.text = cnts
+        else
+            p.layer, p.start_time, p.end_time, p.style = num(s[1]), util.timecode2ms(s[2]), util.timecode2ms(s[3]), s[4]
+            p.actor, p.margin_l, p.margin_r, p.margin_t, p.effect, p.text = s[5], num(s[6]), num(s[7]), num(s[8]), s[9], s[10]
+        end
+        newLine = Line({}, assertEx(ref, msgNoRef), table.merge(defaults, p, args))
+        ASS.parse(newLine)
     elseif type(cnts)~="table" then
         error(string.format(msg, ASSLineContents.typeName, type(cnts)))
     elseif cnts.__class==Line then
