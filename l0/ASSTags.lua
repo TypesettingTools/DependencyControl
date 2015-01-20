@@ -2905,6 +2905,9 @@ function ASSDrawContour:commonOp(method, callback, default, x, y) -- drawing com
     return self
 end
 
+ASSDrawContour.add, ASSDrawContour.sub, ASSDrawContour.mul, ASSDrawContour.div, ASSDrawContour.mod, ASSDrawContour.pow =
+ASSTagBase.add, ASSTagBase.sub, ASSTagBase.mul, ASSTagBase.div, ASSTagBase.mod, ASSTagBase.pow
+
 function ASSDrawContour:getOutline(x, y, mode, splitContours)
     assert(HAVE_YUTILS, YUtilsMissingMsg)
     y, mode = default(y,x), default(mode, "round")
