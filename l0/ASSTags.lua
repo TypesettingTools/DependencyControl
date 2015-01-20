@@ -2265,12 +2265,12 @@ function ASSDrawing:new(args)
         while i<=#cmdParts do
             local cmd, cmdType = cmdParts[i], cmdMap[cmdParts[i]]
             if cmdType == ASSDrawMove and i>1 and args.splitContours~=false then
-                self.contours[c], c = ASSDrawContour(contour), c+1
-                contour, j = {}, 1
+                self.contours[c] = ASSDrawContour(contour)
+                self.contours[c].parent = self
+                contour, j, c = {}, 1, c+1
             end
             if cmdType == ASSDrawClose then
                 contour[j] = ASSDrawClose()
-                contour[j].parent = self
             elseif cmdType or cmdParts[i]:find("^[%-%d%.]+$") and lastCmdType then
                 if not cmdType then
                     i=i-1
@@ -2278,13 +2278,14 @@ function ASSDrawing:new(args)
                 local prmCnt = lastCmdType.__defProps.ords
                 local prms = table.sliceArray(cmdParts,i+1,i+prmCnt)
                 contour[j] = lastCmdType(unpack(prms))
-                contour[j].parent = self
                 i = i+prmCnt
             else error(string.format("Error: Unsupported drawing Command '%s'.", cmdParts[i])) end
             i, j = i+1, j+1
         end
-        self.contours[c] = #contour>0 and ASSDrawContour(contour) or nil
-
+        if #contour>0 then
+            self.contours[c] = ASSDrawContour(contour)
+            self.contours[c].parent = self
+        end
     else
     -- construct from valid drawing commands, also accept contours and tables of drawing commands
     -- note: doesn't copy
@@ -2297,7 +2298,8 @@ function ASSDrawing:new(args)
             if args[i].instanceOf then
                 if args[i].instanceOf[ASSDrawContour] then
                     if #contour>0 then
-                        self.contours[c], c = ASSDrawContour(contour), c+1
+                        self.contours[c] = ASSDrawContour(contour)
+                        self.contours[c].parent, c = self, c+1
                     end
                     self.contours[c], c = args[i], c+1
                     contour, j = {}, 1
@@ -2316,13 +2318,17 @@ function ASSDrawing:new(args)
                              i, self.typeName, k, ASS.instanceOf(args[i][k]) or type(args[i][k])
                     )
                     if args[i][k].instanceOf[ASSDrawMove] then
-                        self.contours[c], c = ASSDrawContour(contour), c+1
-                        contour, j = {args[i][k]}, 2
+                        self.contours[c] = ASSDrawContour(contour)
+                        self.contours[c].parent = self
+                        contour, j, c = {args[i][k]}, 2, c+1
                     else contour[j], j = args[i][k], j+1 end
                 end
             end
         end
-        self.contours[c] = #contour>0 and ASSDrawContour(contour) or nil
+        if #contour>0 then
+            self.contours[c] = ASSDrawContour(contour)
+            self.contours[c].parent = self
+        end
     end
     self:readProps(args)
     return self
@@ -2669,6 +2675,7 @@ function ASSDrawContour:new(args)
                      ASSDrawMove.typeName, args[i].typeName)
         end
         cmds[i] = args[i]
+        cmds[i].parent = self
     end
     self.commands = cmds
     return self
