@@ -384,6 +384,6 @@ end
 
 function assertEx(cond, msg, ...)
     if not cond then
-        return string.format("Error: " .. msg, ...)
+        error(string.format("Error: " .. msg, ...))
     else return cond end
 end
