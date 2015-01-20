@@ -3391,14 +3391,13 @@ function ASSFoundation:createLine(args)
     elseif cnts.__class==Line then
         -- Line objects will be copied and the ASSFoundation stuff committed and reparsed (full copy)
         local text = cnts.ASS and cnts.ASS:getString() or cnts.text
-        ref = ref or cnts.parentCollection or error(msgNoRef)
-        newLine = Line(cnts, ref, args)
+        newLine = Line(cnts, assertEx(ref or cnts.parentCollection, msgNoRef), args)
         newLine.text = text
         newLine:parse()
     elseif cnts.class==ASSLineContents then
         -- ASSLineContents object will be attached to the new line
         -- line properties other than the text will be taken either from the defaults or the current previous line
-        ref = ref or cnts.line.parentCollection or error(msgNoRef)
+        ref = assertEx(ref or cnts.parentCollection, msgNoRef)
         newLine = useLineProps and Line(cnts.line, ref, args) or Line({}, ref, table.merge(defaults, args))
         newLine.ASS, cnts.ASS.line = cnts.ASS, newLine
         newLine:commit()
