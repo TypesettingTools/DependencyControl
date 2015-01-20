@@ -3,6 +3,7 @@ local unicode = require("aegisub.unicode")
 local util = require("aegisub.util")
 local l0Common = require("l0.Common")
 local Line = require("a-mo.Line")
+local LineCollection = require("a-mo.LineCollection")
 local Log = require("a-mo.Log")
 local ASSInspector = require("ASSInspector.Inspector")
 
