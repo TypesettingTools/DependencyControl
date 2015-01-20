@@ -3317,8 +3317,11 @@ function ASSFoundation:new()
 
     self.cache = {ASSInspector = {}}
 
-    self.lineDefaults = {actor="", class="dialogue", comment=false, effect="", start_time=0, end_time=5000,
-                         margin_l=0, margin_r=0, margin_t=0, section="[Events]", style="Default", text=""}
+    self.defaults = {
+        line = {actor="", class="dialogue", comment=false, effect="", start_time=0, end_time=5000, layer=0,
+                margin_l=0, margin_r=0, margin_t=0, section="[Events]", style="Default", text="", extra={}}
+    }
+
     return self
 end
 
@@ -3355,7 +3358,7 @@ function ASSFoundation:createTag(name, ...)
 end
 
 function ASSFoundation:createLine(args)
-    local defaults, cnts, ref, newLine = self.lineDefaults, args[1], args[2]
+    local defaults, cnts, ref, newLine = self.defaults.line, args[1], args[2]
 
     local msg = "argument #2 (ref) must be a Line, LineCollection or %s object or nil; got a %s."
     if type(ref)=="table" then
@@ -3514,3 +3517,7 @@ function ASSFoundation.parse(line)
 end
 
 ASS = ASSFoundation()
+
+ASS.defaults.drawingTestTags = ASSLineTagSection{ASS:createTag("position",0,0), ASS:createTag("align",7),
+                               ASS:createTag("outline", 0), ASS:createTag("scale_x", 100), ASS:createTag("scale_y", 100),
+                               ASS:createTag("alpha", 0), ASS:createTag("angle", 0), ASS:createTag("shadow", 0)}
