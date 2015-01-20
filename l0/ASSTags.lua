@@ -3419,6 +3419,7 @@ function ASSFoundation:createLine(args)
         newLine.ASS:commit()
     end
     newLine:createRaw()
+    return newLine
 end
 
 function ASSFoundation:getParentLineContents(obj)
