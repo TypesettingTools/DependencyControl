@@ -1798,7 +1798,7 @@ function ASSTagBase:set(...)
     return self:commonOp("set", function(a,b) return b end, nil, ...)
 end
 
-function ASSTagBase:mod(callback, ...)
+function ASSTagBase:modify(callback, ...)
     return self:set(callback(self:get(...)))
 end
 
