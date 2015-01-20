@@ -2642,9 +2642,10 @@ ASSLineDrawingSection.getTagString = nil
 function ASSLineDrawingSection:alignToOrigin(mode)
     mode = ASSAlign{mode or 7}
     local ex = self:getExtremePoints(true)
-    local off = mode:getPositionOffset(ex.w, ex.h)
-    self:sub(off):sub(ex.left.x, ex.top.y)
-    return off, ex
+    local cmdOff = ASSPoint{ex.left.x, ex.top.y}
+    local posOff = mode:getPositionOffset(ex.w, ex.h):add(cmdOff)
+    self:sub(cmdOff)
+    return posOff, ex
 end
 
 function ASSLineDrawingSection:getBounds(coerce)
