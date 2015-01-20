@@ -276,7 +276,7 @@ function ASSLineContents:new(line,sections)
         self.sub, self.styles = line.parentCollection.sub, line.parentCollection.styles
         self.scriptInfo = line.parentCollection.meta
         ASS.cache.lastParentCollection = line.parentCollection
-        ASS.cache.lastStyles = line.parentCollection.styles
+        ASS.cache.lastStyles, ASS.cache.lastSub = line.parentCollection.styles, self.sub
     else self.scriptInfo = self.sub and ASS:getScriptInfo(self.sub) end
     self.line, self.sections = line, sections
     self:updateRefs()
