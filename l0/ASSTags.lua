@@ -442,9 +442,9 @@ end
 
 function ASSLineContents:replaceTags(tagList)  -- TODO: transform and reset support
     if type(tagList)=="table" then
-        if tagList.instanceOf[ASSLineTagSection] then
+        if tagList.class == ASSLineTagSection then
             tagList = ASSTagList(tagList)
-        elseif tagList.instanceOf and not tagList.instanceOf[ASSTagList] then
+        elseif tagList.class and tagList.class ~= ASSTagList then
             local tag = tagList
             tagList = ASSTagList(nil, self)
             tagList.tags[tag.__tag.name] = tag
