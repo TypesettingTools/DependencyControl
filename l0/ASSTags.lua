@@ -3393,7 +3393,7 @@ function ASSFoundation:createLine(args)
         local text = cnts.ASS and cnts.ASS:getString() or cnts.text
         newLine = Line(cnts, assertEx(ref or cnts.parentCollection, msgNoRef), args)
         newLine.text = text
-        newLine:parse()
+        ASS.parse(newLine)
     elseif cnts.class==ASSLineContents then
         -- ASSLineContents object will be attached to the new line
         -- line properties other than the text will be taken either from the defaults or the current previous line
@@ -3416,7 +3416,7 @@ function ASSFoundation:createLine(args)
         end
         assertEx(ref, msgNoRef)
         newLine.ASS = ASSLineContents(newLine, cnts)
-        newLine:commit()
+        newLine.ASS:commit()
     end
     newLine:createRaw()
 end
