@@ -979,7 +979,7 @@ ASSLineBounds = createASSClass("ASSLineBounds", ASSBase, {1, 2, "w", "h", "fbf",
 function ASSLineBounds:new(cnts, noCommit)
     -- TODO: throw error if no video is open
     assertEx(ASS.instanceOf(cnts, ASSLineContents), "argument #1 must be an object of type %s, got a %s.",
-             ASSLineTagSection.typeName, ASS.instanceOf(cnts) or type(cnts)
+             ASSLineContents.typeName, ASS.instanceOf(cnts) or type(cnts)
     )
     if not noCommit then cnts:commit() end
 
