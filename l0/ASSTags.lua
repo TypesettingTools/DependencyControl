@@ -3356,9 +3356,6 @@ end
 
 function ASSFoundation:createLine(args)
     local defaults, cnts, ref, newLine = self.lineDefaults, args[1], args[2]
-    assertEx(cnts==nil or type(cnts)=="table",
-             "argument #1 (contents) must be a Line or %s object, a section or a table of sections, or nil; got a %s.",
-             ASSLineContents.typeName, type(cnts))
 
     local msg = "argument #2 (ref) must be a Line, LineCollection or %s object or nil; got a %s."
     if type(ref)=="table" then
