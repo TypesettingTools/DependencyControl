@@ -354,6 +354,12 @@ util.getScriptInfo = function(sub)
     return scriptInfo
 end
 
+util.timecode2ms = function(tc)
+    local split, num = {tc:match("^(%d):(%d%d):(%d%d)%.(%d%d)$")}, tonumber
+    assert(#split==4, "invalid timecode")
+    return ((num(split[1])*60 + num(split[2]))*60 + num(split[3]))*1000 + num(split[4])*10
+end
+
 returnAll = function(...) -- blame lua
     local arr, arrN = {}, 0
     for _, arg in ipairs({...}) do
