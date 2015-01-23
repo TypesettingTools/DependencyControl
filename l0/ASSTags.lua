@@ -1188,8 +1188,8 @@ function ASSLineTagSection:new(tags, transformableOnly, tagSortOrder)
             end
             if end_ < #match then   -- comments inside tag sections are read into ASSUnknowns
                 local afterStr = match:sub(end_+1)
-                self.tags[i], i = ASS:createTag(afterStr:sub(1,1)=="\\" and "unknown" or "junk", afterStr), i+1
-                self.tags[i].parent = self
+                self.tags[i] = ASS:createTag(afterStr:sub(1,1)=="\\" and "unknown" or "junk", afterStr)
+                self.tags[i].parent, i = self, i+1
             end
         end
 
