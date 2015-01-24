@@ -1847,11 +1847,19 @@ ASSNumber = createASSClass("ASSNumber", ASSTagBase, {"value"}, {"number"}, {base
 function ASSNumber:new(args)
     self:readProps(args)
     self.value = self:getArgs(args,0,true)
-    self:typeCheck(self.value)
-    if self.__tag.positive then self:checkPositive(self.value) end
-    if self.__tag.range then self:checkRange(self.__tag.range[1], self.__tag.range[2], self.value) end
+    self:checkValue()
     if self.__tag.mod then self.value = self.value % self.__tag.mod end
     return self
+end
+
+function ASSNumber:checkValue()
+    self:typeCheck(self.value)
+    if self.__tag.range then
+        math.inRange(self.value, self.__tag.range[1], self.__tag.range[2], self.typeName, self.integer)
+    else
+        if self.__tag.positive then assertEx(self.value>=0, "%s must be a positive number, got %d.", self.typeName, self.value) end
+        if self.__tag.integer then math.isInt(self.value, self.typeName) end
+    end
 end
 
 function ASSNumber:getTagParams(coerce, precision)
@@ -1862,9 +1870,7 @@ function ASSNumber:getTagParams(coerce, precision)
     else
         assertEx(precision <= self.__tag.precision, "output wih precision %d is not supported for %s (maximum: %d).",
                  precision, self.typeName, self.__tag.precision)
-        self:typeCheck(self.value)
-        if self.__tag.positive then self:checkPositive(val) end
-        if self.__tag.range then self:checkRange(self.__tag.range[1], self.__tag.range[2],val) end
+        self:checkValue()
     end
     if self.__tag.mod then val = val % self.__tag.mod end
     return math.round(val,self.__tag.precision)
