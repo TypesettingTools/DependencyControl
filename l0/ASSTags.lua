@@ -2899,7 +2899,7 @@ function ASSDrawContour:getTagParams(scale, coerce)
             lastCmdType = cmd.__tag.name
             cmdStr[j], j = lastCmdType, j+1
         end
-        local params={cmd:get()}
+        local params={cmd:getTagParams(coerce)}
         for p=1,#params do
             cmdStr[j] = scale>1 and params[p]*(2^(scale-1)) or params[p]
             j = j+1
@@ -3025,10 +3025,11 @@ end
 
 function ASSDrawBase:getTagParams(coerce)
     local params, parts = self.__meta__.order, {}
-    for i=2,#params*2,2 do
-        parts[i], parts[i+1] = self[params[i/2]]:getTagParams(coerce)
+    local i, j = 1, 1
+    while i<=self.__meta__.rawArgCnt do
+        parts[i], parts[i+1] = self[params[j]]:getTagParams(coerce)
+        i, j = i+self[params[j]].__meta__.rawArgCnt, j+1
     end
-    parts[1] = self.__tag.name
     return table.concat(parts, " ")
 end
 
