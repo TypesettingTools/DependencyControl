@@ -2259,8 +2259,15 @@ function ASSDrawing:new(args)
         self.__tag.inverse = copy.__tag.inverse
     -- construct from a single string of drawing commands
     elseif args.raw or args.str then
-        self.contours, self.scale = {}, ASS:createTag("drawing", args.scale or 1)
-        local cmdParts, i, j = (args.str or args.raw[1]):split(" "), 1, 1
+        self.contours = {}
+        local str = args.str or args.raw[1]
+        if self.class == ASSClipVect then
+            local _,sepIdx = str:find("^%d+,")
+            self.scale = ASS:createTag("drawing", epIdx and tonumber(str:sub(0,sepIdx-1)) or 1)
+            str = sepIdx and str:sub(sepIdx+1) or str
+        else self.scale = ASS:createTag("drawing", args.scale or 1) end
+
+        local cmdParts, i, j = str:split(" "), 1, 1
         local contour, c = {}, 1
         while i<=#cmdParts do
             local cmd, cmdType = cmdParts[i], cmdMap[cmdParts[i]]
