@@ -1,8 +1,22 @@
 local util = require("aegisub.util")
 local unicode = require("aegisub.unicode")
 
-math.isInt = function(num)
-    return type(num) == "number" and math.floor(num) == num
+math.isInt = function(num, assertName)
+    local isInt = type(num) == "number" and math.floor(num) == num
+    if assertName then
+        assertEx(isInt, "%s must be an integer, got %s.",
+                 type(assertName)=="string" and assertName or "number", tostring(num))
+    else return isInt end
+end
+
+math.inRange = function(num, min, max, assertName, forceInt)
+    local inRange = type(num)=="number"
+                    and num >= min and num <= max
+                    and not (forceInt and math.floor(num) ~= num)
+    if assertName then
+        assertEx(inRange, "%s must be %sin range %d-%d, got %s.", type(assertName)=="string" and assertName or "number",
+                 forceInt and "an integer " or "", min, max, tostring(num))
+    else return inRange end
 end
 
 math.toStrings = function(...)
