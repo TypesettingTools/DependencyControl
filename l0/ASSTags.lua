@@ -3201,7 +3201,7 @@ function ASSFoundation:new()
         iclip_rect =        {overrideName="\\iclip", type=ASSClipRect,  pattern="\\iclip%(([%-%d%.]+),([%-%d%.]+),([%-%d%.]+),([%-%d%.]+)%)", format="\\iclip(%.2N,%.2N,%.2N,%.2N)", friendlyName="\\iclip (Rectangle)",
                              sort=40, props={inverse=true, global=false, transformable=true, clip=true}, default={0,0,0,0}},
         drawing =           {overrideName="\\p",     type=ASSNumber,    pattern="\\p(%d+)",                           format="\\p%d",
-                             sort=44, props={positive=true, precision=0}, default={0}},
+                             sort=44, props={positive=true, integer=true, precision=0}, default={0}},
         blur_edges =        {overrideName="\\be",    type=ASSNumber,    pattern="\\be([%d%.]+)",                      format="\\be%.2N",
                              sort=36, props={positive=true, transformable=true}, default={0}},
         blur =              {overrideName="\\blur",  type=ASSNumber,    pattern="\\blur([%d%.]+)",                    format="\\blur%.2N",
