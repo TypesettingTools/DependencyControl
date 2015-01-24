@@ -1890,10 +1890,11 @@ end
 function ASSNumber.__lt(a,b) return ASSNumber.cmp(a, "<", b) end
 function ASSNumber.__le(a,b) return ASSNumber.cmp(a, "<=", b) end
 function ASSNumber.__add(a,b) return type(a)=="table" and a:copy():add(b) or b:copy():add(a) end
-function ASSNumber.__sub(a,b) return type(a)=="table" and a:copy():sub(b) or b:copy():sub(a) end
+function ASSNumber.__sub(a,b) return type(a)=="table" and a:copy():sub(b) or ASSNumber{a}:sub(b) end
 function ASSNumber.__mul(a,b) return type(a)=="table" and a:copy():mul(b) or b:copy():mul(a) end
-function ASSNumber.__div(a,b) return type(a)=="table" and a:copy():div(b) or b:copy():div(a) end
-function ASSNumber.__mod(a,b) return type(a)=="table" and a:copy():mod(b) or b:copy():mod(a) end
+function ASSNumber.__div(a,b) return type(a)=="table" and a:copy():div(b) or ASSNumber{a}:div(b) end
+function ASSNumber.__mod(a,b) return type(a)=="table" and a:copy():mod(b) or ASSNumber{a}:mod(b) end
+function ASSNumber.__pow(a,b) return type(a)=="table" and a:copy():pow(b) or ASSNumber{a}:pow(b) end
 
 
 ASSPoint = createASSClass("ASSPoint", ASSTagBase, {"x","y"}, {ASSNumber, ASSNumber})
