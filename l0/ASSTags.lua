@@ -2293,6 +2293,10 @@ function ASSDrawing:new(args)
             self.contours[c] = ASSDrawContour(contour)
             self.contours[c].parent = self
         end
+
+        if self.scale>=1 then
+            self:div(2^(self.scale-1),2^(self.scale-1))
+        end
     else
     -- construct from valid drawing commands, also accept contours and tables of drawing commands
     -- note: doesn't copy
@@ -2465,7 +2469,7 @@ end
 function ASSDrawing:getTagParams(coerce)
     local cmdStr, j = {}, 1
     for i=1,#self.contours do
-        cmdStr[i] = self.contours[i]:getTagParams()
+        cmdStr[i] = self.contours[i]:getTagParams(self.scale, coerce)
     end
     return table.concat(cmdStr, " "), self.scale:getTagParams(coerce)
 end
@@ -2886,7 +2890,8 @@ function ASSDrawContour:getAngleAtLength(len, noUpdate)
     return fCmd:getAngle(nil, false, true), cmd
 end
 
-function ASSDrawContour:getTagParams(coerce)
+function ASSDrawContour:getTagParams(scale, coerce)
+    scale = (scale or self.parent and self.parent.scale):get() or 1
     local cmdStr, j, lastCmdType = {}, 1
     for i=1,#self.commands do
         local cmd = self.commands[i]
@@ -2894,9 +2899,10 @@ function ASSDrawContour:getTagParams(coerce)
             lastCmdType = cmd.__tag.name
             cmdStr[j], j = lastCmdType, j+1
         end
-        local params = table.concat({cmd:get(coerce)}," ")
-        if params~="" then
-            cmdStr[j], j = params, j+1
+        local params={cmd:get()}
+        for p=1,#params do
+            cmdStr[j] = scale>1 and params[p]*(2^(scale-1)) or params[p]
+            j = j+1
         end
     end
     return table.concat(cmdStr, " ")
