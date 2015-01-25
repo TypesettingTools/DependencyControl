@@ -1262,7 +1262,12 @@ function ASSLineTagSection:callback(callback, tagNames, start, end_, relative, r
         end
     end
 
-    if #tagsDeleted>0 then table.removeFromArray(tags, unpack(tagsDeleted)) end
+    if #tagsDeleted>0 then
+        table.removeFromArray(tags, unpack(tagsDeleted))
+        for i=1,#tagsDeleted do
+            tags[i].deleted = false
+        end
+    end
     return numRun>0 and numRun or false
 end
 
