@@ -1987,14 +1987,16 @@ ASSFade = createASSClass("ASSFade", ASSTagBase,
     {ASSDuration,ASSDuration,ASSTime,ASSTime,ASSHex,ASSHex,ASSHex}
 )
 function ASSFade:new(args)
-    if args.raw and #args.raw==7 then -- \fade
+    self:readProps(args)
+    if args.raw and self.__tag.name=="fade" then
         local a, r, num = {}, args.raw, tonumber
-        a[1], a[2], a[3], a[4], a[5], a[6], a[7] = num(r[5])-num(r[4]), num(r[7])-num(r[6]), r[4], r[7], r[1], r[2], r[3]
+        a[1], a[2], a[3], a[4] = num(r[5])-num(r[4]), num(r[7])-num(r[6]), r[4], r[7]
+        -- avoid having alpha values automatically parsed as hex strings
+        a[5], a[6], a[7] = num(r[1]), num(r[2]), num(r[3])
         args.raw = a
     end
     startDuration, endDuration, startTime, endTime, startAlpha, midAlpha, endAlpha = self:getArgs(args,{0,0,0,0,255,0,255},true)
 
-    self:readProps(args)
     self.startDuration, self.endDuration = ASSDuration{startDuration}, ASSDuration{endDuration}
     self.startTime, self.endTime = ASSTime{startTime}, ASSTime{endTime}
     self.startAlpha, self.midAlpha, self.endAlpha = ASSHex{startAlpha}, ASSHex{midAlpha}, ASSHex{endAlpha}
@@ -3254,7 +3256,7 @@ function ASSFoundation:new()
                              sort=43, props={global=true}, default={0}},
         fade_simple =       {overrideName="\\fad",   type=ASSFade,      pattern="\\fad%((%d+),(%d+)%)",               format="\\fad(%d,%d)",
                              sort=37, props={simple=true, global=true}, default={0,0}},
-        fade =              {overrideName="\\fade",  type=ASSFade,      pattern="\\fade%((.-)%)",                     format="\\fade(%d,%d,%d,%d,%d,%d,%d)",
+        fade =              {overrideName="\\fade",  type=ASSFade,      pattern="\\fade%((%d+),(%d+),(%d+),([%-%d]+),([%-%d]+),([%-%d]+),([%-%d]+)%)", format="\\fade(%d,%d,%d,%d,%d,%d,%d)",
                              sort=38, props={global=true}, default={255,0,255,0,0,0,0}},
         transform =         {overrideName="\\t",     type=ASSTransform,
                              props={pseudo=true}},
