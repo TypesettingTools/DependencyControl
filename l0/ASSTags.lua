@@ -1233,7 +1233,7 @@ function ASSLineTagSection:callback(callback, tagNames, start, end_, relative, r
         end
     end
 
-    local j, numRun, tags, tagsDeleted = 0, 0, self.tags, false
+    local j, numRun, tags, tagsDeleted = 0, 0, self.tags, {}
     if start<0 then
         start, end_ = relative and math.abs(end_) or prevCnt+start+1, relative and math.abs(start) or prevCnt+end_+1
     end
@@ -1245,7 +1245,7 @@ function ASSLineTagSection:callback(callback, tagNames, start, end_, relative, r
                 local result = callback(tags[i],self.tags,i,j)
                 numRun = numRun+1
                 if result==false then
-                    tags[i], tagsDeleted = nil, true
+                    tags[i].deleted, tagsDeleted = true, {i}
                 elseif type(result)~="nil" and result~=true then
                     tags[i] = result
                     tags[i].parent = self
@@ -1253,7 +1253,8 @@ function ASSLineTagSection:callback(callback, tagNames, start, end_, relative, r
             end
         end
     end
-    self.tags = tagsDeleted and table.reduce(tags) or tags
+
+    if #tagsDeleted>0 then table.removeFromArray(tags, unpack(tagsDeleted)) end
     return numRun>0 and numRun or false
 end
 
@@ -1356,7 +1357,7 @@ function ASSLineTagSection:insertTags(tags, index)
 
         local insertIdx = index<0 and prevCnt+index+i or index+i-1
         table.insert(self.tags, insertIdx, tags[i])
-        tags[i].parent = self
+        tags[i].parent, tags[i].deleted = self, false
         inserted[i] = self.tags[insertIdx]
     end
     return #inserted>1 and inserted or inserted[1]
@@ -1808,7 +1809,7 @@ function ASSTagBase:readProps(args)
 end
 
 function ASSTagBase:getTagString(coerce)
-    return self.disabled and "" or ASS:formatTag(self, self:getTagParams(coerce))
+    return (self.disabled or self.deleted) and "" or ASS:formatTag(self, self:getTagParams(coerce))
 end
 
 function ASSTagBase:equal(ASSTag)  -- checks equalness only of the relevant properties
