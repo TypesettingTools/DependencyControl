@@ -95,7 +95,11 @@ function ASSBase:coerce(value, type_)
         return value
     elseif type_ == "number" then
         if type(value)=="boolean" then return value and 1 or 0
-        else return tonumber(value,tagProps.base or 10)*(tagProps.scale or 1) end
+        else
+            cval = tonumber(value, tagProps.base or 10)
+            assertEx(cval, "failed coercing value '%s' of type %s to a number on creation of %s object.",
+                     tostring(value), type(value), self.typeName)
+        return cval*(tagProps.scale or 1) end
     elseif type_ == "string" then
         return tostring(value)
     elseif type_ == "boolean" then
