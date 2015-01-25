@@ -258,6 +258,16 @@ table.removeRange = function(tbl, start, end_)
     return removed
 end
 
+table.removeFromArray = function(tbl, ...)
+    local indexes, shift = {...}, 0
+    local set = table.arrayToSet(indexes)
+    for i=1,#tbl+#indexes do
+        if set[i] then shift=shift+1
+        else tbl[i-shift]=tbl[i] end
+    end
+    return tbl
+end
+
 table.reverseArray = function(tbl)
     local length, rTbl = #tbl, {}
     for i,val in ipairs(tbl) do
