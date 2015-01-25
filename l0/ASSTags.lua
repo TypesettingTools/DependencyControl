@@ -1437,18 +1437,9 @@ function ASSTagList:new(tags, contentRef)
                 end
 
             -- Transforms are stored in a separate table because there can be more than one.
-            -- When the list is converted back into an ASSTagSection, the transforms are written to its end,
-            -- so we have to make sure transformed tags are not overridden afterwards:
-            -- If a transform is encountered any entries in the overridden transforms list
-            -- are marked as limited to all previous transforms in the transforms list.
             elseif tag.instanceOf[ASSTransform] then
                 transforms[trIdx] = ASSTransform{tag, transformableOnly=true}   -- we need a shallow copy of the transform to filter
                 transTags, trIdx = transforms[trIdx].tags.tags, trIdx+1
-                for j=1,#transTags do
-                    if ovrTransTags[transTags[j].__tag.name] then
-                        ovrTransTags[transTags[j].__tag.name] = trIdx-1
-                    end
-                end
 
             -- Discard all except the first instance of global tags.
             -- This expects all global tags to be non-transformable which is true for ASSv4+
@@ -1457,7 +1448,11 @@ function ASSTagList:new(tags, contentRef)
             and not (seenVectClip and tag.instanceOf[ASSClipVect]) then
                 self.tags[props.name] = tag
                 if tag.__tag.transformable then
-                    ovrTransTags[tag.__tag.name] = -1
+                    -- When the list is converted back into an ASSTagSection, the transforms are written to its end,
+                    -- so we have to make sure transformed tags are not overridden afterwards:
+                    -- If a transformable tag is encountered, its entry in the overridden transforms list
+                    -- is set to the nummber of the last transform(+1), so the tag can be purged from all previous transforms.
+                    ovrTransTags[tag.__tag.name] = trIdx
                 elseif tag.instanceOf[ASSClipVect]  then
                     seenVectClip = true
                 end
@@ -1477,7 +1472,7 @@ function ASSTagList:new(tags, contentRef)
                 transforms[i].tags:callback(function(tag)
                     local ovrEnd = ovrTransTags[tag.__tag.name] or 0
                     -- drop all overridden transforms
-                    if ovrEnd==-1 or ovrEnd>i then
+                    if ovrEnd>i then
                         return false
                     else transTagCnt = transTagCnt+1 end
                 end)
