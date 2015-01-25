@@ -1000,8 +1000,12 @@ function ASSLineBounds:new(cnts, noCommit)
                 x2Max, y2Max = math.max(x2, x2Max), math.max(y2, y2Max)
             else self.fbf[frame(times[i])] = {w=0, h=0, hash=false} end
         end
-        self[1], self[2], self.w, self.h = ASSPoint{x1Min,y1Min}, ASSPoint{x2Max, y2Max}, x2Max-x1Min, y2Max-y1Min
-        self.firstHash = self.fbf[self.fbf.off].hash
+
+        if x1Min then
+           self[1], self[2], self.w, self.h = ASSPoint{x1Min,y1Min}, ASSPoint{x2Max, y2Max}, x2Max-x1Min, y2Max-y1Min
+           self.firstHash = self.fbf[self.fbf.off].hash
+        else self.w, self.h = 0, 0 end
+
     else self.w, self.h, self.fbf = 0, 0, {n=0} end
 
     self.rawText = cnts.line.text
