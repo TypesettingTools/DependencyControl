@@ -436,7 +436,7 @@ function ASSLineContents:getTags(tagNames, start, end_, relative)
     return tags
 end
 
-function ASSLineContents:replaceTags(tagList)  -- TODO: transform and reset support
+function ASSLineContents:replaceTags(tagList, start, end_, relative)  -- TODO: transform and reset support
     if type(tagList)=="table" then
         if tagList.class == ASSLineTagSection then
             tagList = ASSTagList(tagList)
@@ -451,8 +451,6 @@ function ASSLineContents:replaceTags(tagList)  -- TODO: transform and reset supp
         return
     end
 
-    local firstIsTagSection = #self.sections>0 and self.sections[1].instanceOf[ASSLineTagSection]
-    local globalSection = firstIsTagSection and self.sections[1] or ASSLineTagSection()
     local toInsert = ASSTagList(tagList)
 
     -- search for tags in line, replace them if found
@@ -469,14 +467,21 @@ function ASSLineContents:replaceTags(tagList)  -- TODO: transform and reset supp
                 end
             end
         end)
-    end, ASSLineTagSection)
+    end, ASSLineTagSection, start, end_, relative)
 
-    -- insert the global tag section at the beginning of the line in case it doesn't exist
-    if not firstIsTagSection and table.length(toInsert)>0 then
-        self:insertSections(globalSection,1)
+    local globalToInsert, toInsert = toInsert:filterTags(nil, {global=true})
+    local firstIsTagSection = #self.sections>0 and self.sections[1].instanceOf[ASSLineTagSection]
+    local globalSection = firstIsTagSection and self.sections[1] or ASSLineTagSection()
+    -- Insert the global tag section at the beginning of the line
+    -- in case it doesn't exist and we have global tags to insert.
+    -- Always insert the global tags into the first section.
+    if table.length(globalToInsert.tags)>0 then
+        if not firstIsTagSection then self:insertSections(globalSection,1) end
+        globalSection:insertTags(globalToInsert)
     end
-    -- insert remaining tags (not replaced) into the first section
-    globalSection:insertTags(toInsert)
+
+    -- insert remaining tags (not replaced) into the first processed section
+    self:insertTags(toInsert, start or 1, nil, not relative)
 end
 
 function ASSLineContents:removeTags(tags, start, end_, relative)
