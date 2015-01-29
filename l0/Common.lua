@@ -384,6 +384,16 @@ util.timecode2ms = function(tc)
     return ((num(split[1])*60 + num(split[2]))*60 + num(split[3]))*1000 + num(split[4])*10
 end
 
+util.ms2timecode = function(num)
+    local ms = num%1000
+    num = (num-ms)/1000
+    local s = num % 60
+    num = (num-s)/60
+    local m = num % 60
+    local h = (num-m)/60
+    assertEx(h<=9, "timecode too large to create an ASS timecode")
+    return string.format("%01d:%02d:%02d.%02d", h, m, s, ms/10)
+end
 returnAll = function(...) -- blame lua
     local arr, arrN = {}, 0
     for _, arg in ipairs({...}) do
