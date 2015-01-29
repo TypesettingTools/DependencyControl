@@ -1695,7 +1695,7 @@ function ASSTagList:filterTags(tagNames, tagProps, returnOnly, inverseNameMatch)
     assertEx(not tagNames or type(tagNames)=="table",
              "argument #1 must be either a single or a table of tag names, got a %s.", type(tagNames))
 
-    local filtered = ASSTagList(nil, self.contentRef)
+    local filtered, removed = ASSTagList(nil, self.contentRef), ASSTagList(nil, self.contentRef)
     local selected, transNames, retTrans = {}, ASS.tagNames[ASSTransform]
     local propCnt = tagProps and table.length(tagProps) or 0
 
@@ -1709,6 +1709,7 @@ function ASSTagList:filterTags(tagNames, tagProps, returnOnly, inverseNameMatch)
         tagNames = table.diff(tagNames, ASS.tagNames.all)
     end
 
+    local target
     for i=1,#tagNames do
         local name, propMatch = tagNames[i], true
         local selfTag = name=="reset" and self.reset or self.tags[name]
@@ -1720,24 +1721,26 @@ function ASSTagList:filterTags(tagNames, tagProps, returnOnly, inverseNameMatch)
             propMatch = propMatchCnt == propCnt
         end
 
-        if not (propMatch and selfTag) then
-            -- do nothing
-        elseif name == "reset" then
-            filtered.reset = selfTag
+        target = propMatch and selfTag and filtered or removed
+
+        if name == "reset" then
+            target.reset = selfTag
         elseif transNames[name] then
-            retTrans = true         -- TODO: filter transforms by type
+            target.retTrans = true         -- TODO: filter transforms by type
         elseif self.tags[name] then
-            filtered.tags[name] = selfTag
+            target.tags[name] = selfTag
         end
     end
 
+    target = filtered.retTrans and filtered or removed
+    target.transforms = returnOnly and util.copy(self.transforms) or self.transforms
+
     if returnOnly then
-        if retTransforms then filtered.transforms = util.copy(self.transforms) end
-        return filtered
+        return filtered, removed
     end
 
-    self.tags, self.reset, self.transforms = filtered.tags, filtered.reset, retTrans and self.transforms or {}
-    return self
+    self.tags, self.reset, self.transforms = filtered.tags, filtered.reset, filtered.transforms
+    return self, removed
 end
 
 function ASSTagList:isEmpty()
