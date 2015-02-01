@@ -2696,7 +2696,12 @@ function ASSLineDrawingSection:getClip(inverse)
 end
 
 
-ASSDrawContour = createASSClass("ASSDrawContour", ASSBase, {"commands"}, {"table"})
+ASSDrawContour = createASSClass("ASSDrawContour", ASSBase, {"commands"}, {"table"}, nil, nil, function(tbl, key)
+    if key=="isCW" then
+        return tbl:getDirection()
+    else return getmetatable(tbl)[key] end
+end)
+
 function ASSDrawContour:new(args)
     local cmds, clsSet = {}, ASS.classes.drawingCommands
     for i=1,#args do
@@ -2769,7 +2774,6 @@ function ASSDrawContour:expand(x, y)
     assertEx(x>=0 and y>=0 or x<=0 and y<=0,
              "cannot expand and inpand at the same time (sign must be the same for x and y); got x=%d, y=%d.", x, y)
 
-    self:getDirection()
     local newCmds, sameDir = {}
     if x<0 or y<0 then
         x, y = math.abs(x), math.abs(y)
