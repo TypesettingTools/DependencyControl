@@ -13,7 +13,7 @@ HAVE_YUTILS, YUtils = pcall(require, "YUtils")
 
 local assertEx = assertEx
 
-local function createASSClass(typeName, baseClasses, order, types, tagProps, compatibleClasses)
+local function createASSClass(typeName, baseClasses, order, types, tagProps, compatibleClasses, customIndex)
     if not baseClasses or type(baseClasses)=="table" and baseClasses.instanceOf then
         baseClasses = {baseClasses}
     end
