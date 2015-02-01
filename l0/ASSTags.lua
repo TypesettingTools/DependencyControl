@@ -985,11 +985,14 @@ function ASSLineBounds:new(cnts, noCommit)
     )
     if not noCommit then cnts:commit() end
 
-    local assi, msg = ASS.cache.ASSInspector[cnts.line.parentCollection]
+    local assi, msg = ASS.cache.ASSInspector
     if not assi then
         assi, msg = ASSInspector(cnts.sub)
         assertEx(assi, "ASSInspector Error: %s.", tostring(msg))
-        ASS.cache.ASSInspector[cnts.line.parentCollection] = assi
+        ASS.cache.ASSInspector = assi
+    elseif cnts.line.sub ~= ASS.cache.lastSub then
+        assi:updateHeader(cnts.line.sub)
+        ASS.cache.lastSub = cnts.line.sub
     end
 
     self.animated = cnts:isAnimated()
@@ -3353,7 +3356,7 @@ function ASSFoundation:new()
         end
     end
 
-    self.cache = {ASSInspector = {}}
+    self.cache = {}
 
     self.defaults = {
         line = {actor="", class="dialogue", comment=false, effect="", start_time=0, end_time=5000, layer=0,
