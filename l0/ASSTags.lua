@@ -1222,7 +1222,7 @@ function ASSLineTagSection:new(tags, transformableOnly, tagSortOrder)
         local allTags = ASS.tagNames.all
         for i=1,#tags do
             local tag = tags[i]
-            assertEx(allTags[tag.__tag.name or false], "supplied tag #d (a %s with name '%s') is not a supported tag.",
+            assertEx(allTags[tag.__tag.name or false], "supplied tag %d (a %s with name '%s') is not a supported tag.",
                      i, type(tag)=="table" and tags[i].typeName or type(tag), tag.__tag and tag.__tag.name)
             self.tags[i], tag.parent = tag, self
         end
