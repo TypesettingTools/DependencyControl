@@ -1250,7 +1250,9 @@ function ASSLineTagSection:callback(callback, tagNames, start, end_, relative, r
         end
     end
 
-    local j, numRun, tags, tagsDeleted = 0, 0, self.tags, {}
+    local j, numRun, tags, rmCnt = 0, 0, self.tags, 0
+    self.toRemove = {}
+
     if start<0 then
         start, end_ = relative and math.abs(end_) or prevCnt+start+1, relative and math.abs(start) or prevCnt+end_+1
     end
@@ -1259,10 +1261,11 @@ function ASSLineTagSection:callback(callback, tagNames, start, end_, relative, r
         if not tagNames or tagSet[tags[i].__tag.name] then
             j=j+1
             if (relative and j>=start and j<=end_) or (not relative and i>=start and i<=end_) then
-                local result = callback(tags[i],self.tags,i,j)
+                local result = callback(tags[i], self.tags, i, j, self.toRemove)
                 numRun = numRun+1
                 if result==false then
-                    tags[i].deleted, tagsDeleted = true, {i}
+                    self.toRemove[tags[i]], self.toRemove[rmCnt+1], rmCnt = true, i, rmCnt+1
+                    if tags[i].parent == self then tags[i].parent=nil end
                 elseif type(result)~="nil" and result~=true then
                     tags[i] = result
                     tags[i].parent = self
@@ -1271,12 +1274,12 @@ function ASSLineTagSection:callback(callback, tagNames, start, end_, relative, r
         end
     end
 
-    if #tagsDeleted>0 then
-        table.removeFromArray(tags, unpack(tagsDeleted))
-        for i=1,#tagsDeleted do
-            tags[i].deleted = false
-        end
+    -- delay removal of tags until the all contours have been processed
+    if rmCnt>0 then
+        table.removeFromArray(tags, self.toRemove)
     end
+    self.toRemove = {}
+
     return numRun>0 and numRun or false
 end
 
@@ -1393,7 +1396,7 @@ end
 function ASSLineTagSection:getString(coerce)
     local tagStrings = {}
     self:callback(function(tag, _, i)
-        tagStrings[i] = tag:getTagString(coerce)
+        tagStrings[i] = tag:getTagString(self, coerce)
     end)
     return table.concat(tagStrings)
 end
@@ -1828,8 +1831,9 @@ function ASSTagBase:readProps(args)
     end
 end
 
-function ASSTagBase:getTagString(coerce)
-    return (self.disabled or self.deleted) and "" or ASS:formatTag(self, self:getTagParams(coerce))
+function ASSTagBase:getTagString(caller, coerce)
+    return (self.disabled or caller and caller.toRemove and caller.toRemove[self]) and ""
+           or ASS:formatTag(self, self:getTagParams(coerce))
 end
 
 function ASSTagBase:equal(ASSTag)  -- checks equalness only of the relevant properties
