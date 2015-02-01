@@ -2373,26 +2373,28 @@ function ASSDrawing:new(args)
 end
 
 function ASSDrawing:callback(callback, start, end_, includeCW, includeCCW)
-    local j, cntsDeleted = 1, false
+    local j, rmCnt = 1, 0
+    self.toRemove = {}
     includeCW, includeCCW = default(includeCW, true), default(includeCCW, true)
     for i=1,#self.contours do
-        if not (includeCW and includeCCW) and cnt.isCW==nil then
-            cnt:getDirection()
-        end
-        if (includeCW or not self.isCW) and (includeCCW or self.isCW) then
-            local res = callback(self.contours[i], self.contours, i, j)
+        local cnt = self.contours[i]
+        if (includeCW or not cnt.isCW) and (includeCCW or cnt.isCW) then
+            local res = callback(cnt, self.contours, i, j, self.toRemove)
             j=j+1
             if res==false then
-                self.contours[i], cntsDeleted = nil, true
+                self.toRemove[cnt], self.toRemove[rmCnt+1], rmCnt = true, i, rmCnt+1
             elseif res~=nil and res~=true then
                 self.contours[i], self.length = res, true
             end
         end
     end
-    if cntsDeleted then
-        self.contours = table.reduce(self.contours)
+
+    -- delay removal of contours until the all contours have been processed
+    if rmCnt>0 then
+        table.removeFromArray(self.contours, self.toRemove)
         self.length = nil
     end
+    self.toRemove = {}
 end
 
 function ASSDrawing:modCommands(callback, commandTypes, start, end_, includeCW, includeCCW)
@@ -2407,20 +2409,20 @@ function ASSDrawing:modCommands(callback, commandTypes, start, end_, includeCW, 
         end
     end
 
-    local matchedCmdCnt, matchedCntsCnt, cntsDeleted = 1, 1, false
+    local matchedCmdCnt, matchedCntsCnt, rmCntsCnt, rmCmdsCnt = 1, 1, 0, 0
+    self.toRemove = {}
+
     for i=1,#self.contours do
         local cnt = self.contours[i]
-        if not (includeCW and includeCCW) and cnt.isCW==nil then
-            cnt:getDirection()
-        end
         if (includeCW or not cnt.isCW) and (includeCCW or cnt.isCW) then
-            local cmdsDeleted = false
+            cnt.toRemove, rmCmdsCnt = {}, 0
             for j=1,#cnt.commands do
                 if not commandTypes or cmdSet[cnt.commands[j].__tag.name] or cmdSet[cnt.commands[j].class] then
-                    local res = callback(cnt.commands[j], cnt.commands, j, matchedCmdCnt, i, matchedCntsCnt)
+                    local res = callback(cnt.commands[j], cnt.commands, j, matchedCmdCnt, i, matchedCntsCnt,
+                                         cnt.toRemove, self.toRemove)
                     matchedCmdCnt = matchedCmdCnt + 1
                     if res==false then
-                        cnt.commands[j], cmdsDeleted = nil, true
+                        cnt.toRemove[cnt.commands[j]], cnt.toRemove[rmCmdsCnt+1], rmCmdsCnt = true, j, rmCmdsCnt+1
                     elseif res~=nil and res~=true then
                         cnt.commands[j] = res
                         cnt.length, cnt.isCW, self.length = nil, nil, nil
@@ -2428,16 +2430,22 @@ function ASSDrawing:modCommands(callback, commandTypes, start, end_, includeCW, 
                 end
             end
             matchedCntsCnt = matchedCntsCnt + 1
-            if cmdsDeleted then
-                cnt.commands = table.reduce(cnt.commands)
-                cnt.length, cnt.isCW, self.length = nil, nil, nil
+            if rmCmdsCnt>0 then
+                table.removeFromArray(cnt.commands, cnt.toRemove)
+                cnt.length, cnt.isCW, self.length, cnt.toRemove = nil, nil, nil, {}
                 if #cnt.commands == 0 then
-                    self.contours[i], cntsDeleted = nil, true
+                    self.toRemove[cnt], self.toRemove[rmCntsCnt+1], rmCntsCnt = true, i, rmCntsCnt+1
                 end
             end
         end
     end
-    if cntsDeleted then self.contours = table.reduce(self.contours) end
+
+    -- delay removal of contours until the all contours have been processed
+    if rmCntsCnt>0 then
+        table.removeFromArray(self.contours, self.toRemove)
+        self.length = nil
+    end
+    self.toRemove = {}
 end
 
 function ASSDrawing:insertCommands(cmds, index)
@@ -2496,7 +2504,7 @@ end
 function ASSDrawing:getTagParams(coerce)
     local cmdStr, j = {}, 1
     for i=1,#self.contours do
-        cmdStr[i] = self.contours[i]:getTagParams(self.scale, coerce)
+        cmdStr[i] = self.contours[i]:getTagParams(self.scale, self, coerce)
     end
     return table.concat(cmdStr, " "), self.scale:getTagParams(coerce)
 end
@@ -2921,8 +2929,14 @@ function ASSDrawContour:getAngleAtLength(len, noUpdate)
     return fCmd:getAngle(nil, false, true), cmd
 end
 
-function ASSDrawContour:getTagParams(scale, coerce)
+function ASSDrawContour:getTagParams(scale, caller, coerce)
     scale = (scale or self.parent and self.parent.scale):get() or 1
+
+    -- make contours subject to delayed deletion disappear
+    if caller and caller.toRemove and caller.toRemove[self] then
+        return ""
+    end
+
     local cmdStr, j, lastCmdType = {}, 1
     for i=1,#self.commands do
         local cmd = self.commands[i]
