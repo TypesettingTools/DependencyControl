@@ -1212,7 +1212,7 @@ function ASSLineTagSection:new(tags, transformableOnly, tagSortOrder)
         local j, otherTags = 1, tags.tags
         self.tags = {}
         for i=1,#otherTags do
-            if transformableOnly and (otherTags[i].__tag.transformable or otherTags[i].instanceOf[ASSUnknown]) then
+            if not transformableOnly or (otherTags[i].__tag.transformable or otherTags[i].instanceOf[ASSUnknown]) then
                 self.tags[j] = otherTags[i]
                 self.tags[j].parent, j = self, j+1
             end
