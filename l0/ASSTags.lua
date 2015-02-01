@@ -3559,7 +3559,7 @@ function ASSFoundation.instanceOf(val, classes, filter, includeCompatible)
         if filter.instanceOf then
             filter={[filter]=true}
         elseif #filter>0 then
-            filter = table.set(filter)
+            filter = table.arrayToSet(filter)
         end
     end
     for i=1,#classes do
