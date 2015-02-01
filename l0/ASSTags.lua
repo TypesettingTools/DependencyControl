@@ -1815,6 +1815,18 @@ function ASSTagBase:set(...)
     return self:commonOp("set", function(a,b) return b end, nil, ...)
 end
 
+function ASSTagBase:round(...)
+    return self:commonOp("round", function(a,b) return math.round(a,b) end, nil, ...)
+end
+
+function ASSTagBase:ceil()
+    return self:commonOp("ceil", function(a) return math.ceil(a) end, nil)
+end
+
+function ASSTagBase:floor()
+    return self:commonOp("floor", function(a) return math.floor(a) end, nil)
+end
+
 function ASSTagBase:modify(callback, ...)
     return self:set(callback(self:get(...)))
 end
