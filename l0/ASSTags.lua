@@ -2599,6 +2599,28 @@ function ASSDrawing:getOutline(x,y,mode)
     return self.class{str=outline}
 end
 
+function ASSDrawing:removeContours(cnts, start, end_, includeCW, includeCCW)
+    local cntsType = type(cnts)
+    if not cnts and not start and not end_ and includeCW==nil and includeCCW==nil then
+        local removed = self.contours
+        self.contours, self.length = {}, nil
+        return removed
+    elseif not cnts or cntsType=="number" or cntsType=="table" and cnts.class==ASSDrawContour then
+        self:callback(function(cnt,_,i)
+            return cnts and cnts~=i and cnts~=cnt
+        end, start, end_, includeCW, includeCCW)
+    else assertEx(cntsType=="table" and not cnts.class,
+                  "argument #1 must be either an %s object, an index, nil or a table of contours/indexes; got a %s.",
+                  ASSDrawContour.typeName, cntsType=="table" and cnts.typeName or cntsType)
+    end
+
+    local cntsSet = table.arrayToSet(cnts)
+    self:callback(function(cnt,_,i)
+        return not cntsSet[cnt] and not cntsSet[i]
+    end, start, end_, includeCW, includeCCW)
+end
+
+
 function ASSDrawing:getFullyCoveredContours()
     local scriptInfo, parentContents = ASS:getScriptInfo(self)
     local parentCollection = parentContents and parentContents.line.parentCollection or LineCollection(ASS.cache.lastSub)
