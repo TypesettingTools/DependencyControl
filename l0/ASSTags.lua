@@ -2598,6 +2598,26 @@ function ASSDrawing:getOutline(x,y,mode)
     local outline = YUtils.shape.to_outline(YUtils.shape.flatten(self:getTagParams()),x,y,mode)
     return self.class{str=outline}
 end
+
+function ASSDrawing:getFullyCoveredContours()
+    local scriptInfo, parentContents = ASS:getScriptInfo(self)
+    local parentCollection = parentContents and parentContents.line.parentCollection or LineCollection(ASS.cache.lastSub)
+    local covCnts, c = {}, 0
+
+    self:callback(function(cnt, cnts, i)
+        if covCnts[cnt] then return end
+        for j=i+1,#cnts do
+            if not (covCnts[cnt] or covCnts[cnts[j]]) and cnts[j].isCW==cnt.isCW then
+                local covered = cnt:getFullyCovered(cnts[j], scriptInfo, parentCollection)
+                if covered then
+                    covCnts[covered], c = true, c+1
+                    covCnts[c] = covered==cnt and i or j
+                end
+            end
+        end
+    end)
+    return covCnts
+end
 function ASSDrawing:rotate(angle)
     angle = default(angle,0)
     if ASS.instanceOf(angle,ASSNumber) then
@@ -2984,6 +3004,43 @@ function ASSDrawContour:rotate(angle)
     self.commands = self.contours[1]  -- rotating a contour should produce no additional contours
     self.contours = nil
     return self
+end
+
+function ASSDrawContour:getFullyCovered(contour, scriptInfo, parentCollection)
+    if not scriptInfo and parentCollection then
+        local parentContents
+        scriptInfo, parentContents = ASS:getScriptInfo(self)
+        parentCollection = parentContents and parentContents.line.parentCollection or LineCollection(ASS.cache.lastSub)
+    end
+
+    local bs, bo = self:getExtremePoints().bounds, contour:getExtremePoints().bounds
+    local bounds = {math.min(bs[1],bo[1]), math.min(bs[2],bo[2]), math.max(bs[3], bo[3]), math.max(bs[4],bo[4])}
+    local w, h, safe = bounds[3]-bounds[1], bounds[4]-bounds[2], 1.05
+    local sx, sy = w*safe/scriptInfo.PlayResX, h*safe/scriptInfo.PlayResY
+    -- move contours as close as possible to point of origin
+    -- and proportionally scale it to fully fit the render surface
+    local a = self:copy():sub(bounds[1], bounds[2])
+    local b = contour:copy():sub(bounds[1], bounds[2])
+
+    if sx>1 or sy>1 then
+        local fac = math.max(sx,sy)
+        a:div(fac, fac)
+        b:div(fac, fac)
+    end
+
+    local tags = ASS.defaults.drawingTestTags
+    -- create line with both contours and get reference line bounds
+    local section = ASSLineDrawingSection{a, b}
+    local testLineCnts = ASS:createLine{{tags, section}, parentCollection}.ASS
+    -- create lines with only one of the two contours
+    local lbAB = ASSLineBounds(testLineCnts)
+    testLineCnts.sections[2].contours[2] = nil
+    local lbA = ASSLineBounds(testLineCnts)
+    testLineCnts.sections[2].contours[1] = b
+    local lbB = ASSLineBounds(testLineCnts)
+    -- compare the render results of both single contours to the reference
+    -- if one is identical to the reference it is covering up the other one (or the other one is 0-width)
+    return lbAB:equal(lbA) and contour or lbAB:equal(lbB) and self or false
 end
 
 --------------------- Unsupported Tag Classes and Stubs ---------------------
