@@ -2740,7 +2740,7 @@ function ASSClipVect:getDrawing(trimDrawing, pos, an)
 end
 
 
-ASSLineDrawingSection = createASSClass("ASSLineDrawingSection", ASSDrawing, {"commands","scale"}, {"table", ASSNumber}, {}, {ASSDrawing, ASSClipVect})
+ASSLineDrawingSection = createASSClass("ASSLineDrawingSection", ASSDrawing, {"contours","scale"}, {"table", ASSNumber}, {}, {ASSDrawing, ASSClipVect})
 ASSLineDrawingSection.getStyleTable = ASSLineTextSection.getStyleTable
 ASSLineDrawingSection.getEffectiveTags = ASSLineTextSection.getEffectiveTags
 ASSLineDrawingSection.getString = ASSLineDrawingSection.getTagParams
