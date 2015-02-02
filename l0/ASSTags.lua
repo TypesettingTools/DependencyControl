@@ -1962,11 +1962,17 @@ function ASSPoint:getAngle(ref, vectAngle)
                "Error: argument #1 (ref) be an %s (or compatible), a drawing command or a coordinates table, got a %s.",
                ASSPoint.typeName, ref.typeName))
     end
-    local sx, sy = self.x.value, self.y.value
-    local cw = (sx*ry - sy*rx)<0
-    local deg = math.deg(vectAngle and math.acos((sx*rx + sy*ry) / math.sqrt(sx^2 + sy^2) /
-                                       math.sqrt(rx^2 + ry^2)) * (cw and 1 or -1)
-                                    or -math.atan2(sy-ry, sx-rx))
+
+    local sx, sy, deg = self.x.value, self.y.value
+    if vectAngle then
+        local cw = (sx*ry - sy*rx)<0
+        local a = (sx*rx + sy*ry) / math.sqrt(sx^2 + sy^2) / math.sqrt(rx^2 + ry^2)
+        -- math.acos(x) only defined for -1<x<1, a may be 1/0
+        deg = (a>=1 or a<=-1 or a~=a) and 0 or math.deg(math.acos(a) * (cw and 1 or -1))
+    else
+        deg = math.deg(-math.atan2(sy-ry, sx-rx))
+    end
+
     return ASS:createTag("angle", deg), cw
 end
 
