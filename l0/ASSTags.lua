@@ -2659,6 +2659,43 @@ function ASSDrawing:getFullyCoveredContours()
     end)
     return covCnts
 end
+
+function ASSDrawing:getHoles()
+    local scriptInfo, parentContents = ASS:getScriptInfo(self)
+    local parentCollection = parentContents and parentContents.line.parentCollection or LineCollection(ASS.cache.lastSub)
+
+    local bounds, safe = self:getExtremePoints(), 1.05
+    local scaleFac = math.max(bounds.w.value*safe/scriptInfo.PlayResX, bounds.h.value*safe/scriptInfo.PlayResY)
+
+    local testDrawing = ASSLineDrawingSection{self}
+    testDrawing:modCommands(function(cmd)
+        cmd:sub(bounds.left.x, bounds.top.y)
+        if scaleFac>1 then cmd:div(scaleFac, scaleFac) end
+        -- snap drawing commands to the pixel grid to avoid false positives
+        -- when using the absence of opaque pixels in the clipped drawing to determine
+        -- whether the contour is a hole
+        cmd:ceil(0,0)
+    end)
+
+    local testLineCnts = ASS:createLine{{ASSLineTagSection(ASS.defaults.drawingTestTags), testDrawing}, parentCollection}.ASS
+    local testTagCnt = #testLineCnts.sections[1].tags
+
+    local covered, holes, other, h, o = self:getFullyCoveredContours(), {}, {}, 1, 1
+    local coveredSet = table.arrayToSet(covered)
+    testDrawing:callback(function(cnt, _, i)
+        if not coveredSet[self.contours[i]] then
+            testLineCnts.sections[1].tags[testTagCnt+1] = ASS:createTag("clip_vect", cnt)
+            if not ASSLineBounds(testLineCnts).firstFrameIsSolid then
+                -- clipping the drawing to the contour produced no solid pixels (only subpixel residue)
+                -- most likely means the contour is a hole
+                holes[h], h = self.contours[i], h+1
+            else other[o], o = self.contours[i], o+1 end
+        end
+    end)
+
+    return holes, other, covered
+end
+
 function ASSDrawing:rotate(angle)
     angle = default(angle,0)
     if ASS.instanceOf(angle,ASSNumber) then
