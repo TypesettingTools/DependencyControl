@@ -238,7 +238,7 @@ end
 --------------------- Container Classes ---------------------
 
 ASSLineContents = createASSClass("ASSLineContents", ASSBase, {"sections"}, {"table"})
-function ASSLineContents:new(line,sections)
+function ASSLineContents:new(line, sections)
     sections = self:getArgs({sections})
     assertEx(line and line.__class==Line, "argument 1 to %s() must be a Line or %s object, got %s.",
              self.typeName, self.typeName, type(line))
@@ -2853,8 +2853,8 @@ function ASSDrawContour:expand(x, y)
     local newCmds, sameDir = {}
     if x<0 or y<0 then
         x, y = math.abs(x), math.abs(y)
-        sameDir = self.isCW==false
-    else sameDir = self.isCW==true end
+        sameDir = not self.isCW
+    else sameDir = self.isCW end
     local outline = self:getOutline(x, y)
 
     -- may violate the "one move per contour" principle
