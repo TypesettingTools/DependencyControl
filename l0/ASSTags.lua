@@ -1150,6 +1150,12 @@ function ASSLineTextSection:convertToDrawing(applyRotation, coerce)
     local shape = self:getShape(applyRotation, coerce)
     self.value, self.contours, self.scale = nil, shape.contours, shape.scale
     setmetatable(self, ASSLineDrawingSection)
+    return self
+end
+
+function ASSLineTextSection:expand(x,y)
+    self:convertToDrawing()
+    return self:expand(x,y)
 end
 
 function ASSLineTextSection:getYutilsFont(coerce)
@@ -2539,6 +2545,18 @@ function ASSDrawing:drawRect(tl, br) -- TODO: contour direction
     local rect = ASSDrawContour{ASSDrawMove(tl), ASSDrawLine(br.x, tl.y), ASSDrawLine(br), ASSDrawLine(tl.x, br.y)}
     self:insertContours(rect)
     return self, rect
+end
+
+function ASSDrawing:expand(x, y)
+    local holes, other, covered = self:getHoles()
+    self:removeContours(covered)
+    for i=1,#holes do
+        holes[i]:expand(-x,-y)
+    end
+    for i=1,#other do
+        other[i]:expand(x,y)
+    end
+    return self
 end
 
 function ASSDrawing:flatten(coerce)
