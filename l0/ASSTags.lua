@@ -3084,6 +3084,15 @@ function ASSDrawContour:getFullyCovered(contour, scriptInfo, parentCollection)
     return lbAB:equal(lbA) and contour or lbAB:equal(lbB) and self or false
 end
 
+function ASSDrawContour:reverseDirection()
+    local revCmds, n = {self.commands[1]}, #self.commands
+    for i=n,2,-1 do
+        revCmds[n-i+2] = self.commands[i]
+    end
+    self.isCW, self.commands = nil, revCmds
+    return self
+end
+
 --------------------- Unsupported Tag Classes and Stubs ---------------------
 
 ASSUnknown = createASSClass("ASSUnknown", ASSString, {"value"}, {"string"})
