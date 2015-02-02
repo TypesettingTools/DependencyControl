@@ -1008,7 +1008,7 @@ function ASSLineBounds:new(cnts, noCommit)
             if bounds[i] then
                 local x1, y1, w, h = bounds[i].x, bounds[i].y, bounds[i].w, bounds[i].h
                 local x2, y2 = x1+w, y1+h
-                self.fbf[frame(times[i])] = {ASSPoint{x1,y1}, ASSPoint{x2,y2}, w=w, h=h, hash=bounds[i].hash}
+                self.fbf[frame(times[i])] = {ASSPoint{x1,y1}, ASSPoint{x2,y2}, w=w, h=h, hash=bounds[i].hash, solid=bounds[i].solid}
                 x1Min, y1Min = math.min(x1, x1Min or x1), math.min(y1, y1Min or y1)
                 x2Max, y2Max = math.max(x2, x2Max), math.max(y2, y2Max)
             else self.fbf[frame(times[i])] = {w=0, h=0, hash=false} end
@@ -1017,6 +1017,7 @@ function ASSLineBounds:new(cnts, noCommit)
         if x1Min then
            self[1], self[2], self.w, self.h = ASSPoint{x1Min,y1Min}, ASSPoint{x2Max, y2Max}, x2Max-x1Min, y2Max-y1Min
            self.firstHash = self.fbf[self.fbf.off].hash
+           self.firstFrameIsSolid = self.fbf[self.fbf.off].solid
         else self.w, self.h = 0, 0 end
 
     else self.w, self.h, self.fbf = 0, 0, {n=0} end
