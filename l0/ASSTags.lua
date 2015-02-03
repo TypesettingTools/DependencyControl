@@ -393,7 +393,7 @@ function ASSLineContents:removeSections(start, end_)
         end_ = end_ or start
         removed = table.removeRange(self.sections, start, end_)
     elseif type(start) == "table" then
-        local toRemove = start.instanceOf and {start=true} or table.arrayToSet(start)
+        local toRemove = start.instanceOf and {[start]=true} or table.arrayToSet(start)
         local j = 1
         for i=1, #self.sections do
             if toRemove[self.sections[i]] then
