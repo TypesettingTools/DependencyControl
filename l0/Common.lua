@@ -260,6 +260,10 @@ end
 
 table.removeFromArray = function(tbl, ...)
     local indexes, shift = {...}, 0
+    if type(indexes[1])=="table" then
+        indexes = indexes[1]
+    end
+
     local set = table.arrayToSet(indexes)
     for i=1,#tbl+#indexes do
         if set[i] then shift=shift+1
