@@ -176,7 +176,7 @@ function ASSBase:getArgs(args, defaults, coerce, extraValidClasses)
     return unpack(outArgs)
 end
 
-function ASSBase:copy()
+function ASSBase:copy() --TODO: optimize
     local newObj, meta = {}, getmetatable(self)
     setmetatable(newObj, meta)
     for key,val in pairs(self) do
