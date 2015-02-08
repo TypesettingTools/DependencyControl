@@ -3573,6 +3573,24 @@ function ASSFoundation:mapTag(name)
     return assertEx(self.tagMap[name], "can't find tag %s", name)
 end
 
+function ASSFoundation:addStyle(tagList, name, styleRef, sub)
+    local style = tagList:getStyleTable(styleRef, name, coerce)
+    sub = sub and type(sub)=="userdata" and sub.insert
+          or tagList.contentRef.line.parentCollection and tagList.contentRef.line.parentCollection
+          or ASS.cache.lastSub
+          or error("no valid subtitles object was supplied or cached.")
+
+    local styles, s = {}
+    for i=1,#sub do
+        if sub[i].class=="style" then
+            styles[sub[i].name], s = sub[i], i
+        elseif s then break end
+    end
+
+    sub.insert(s+1, style)
+    styles[style.name], ASS.cache.lastStyles = style, styles
+end
+
 function ASSFoundation:createTag(name, ...)
     local tag = self:mapTag(name)
     return tag.type{tagProps=tag.props, ...}
