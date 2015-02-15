@@ -1,5 +1,14 @@
-local util = require("aegisub.util")
-local unicode = require("aegisub.unicode")
+local DependencyControl = require("l0.DependencyControl")
+local version = DependencyControl{
+    name = "Common",
+    version = "0.1.0",
+    description = "Collection of commonly used functions",
+    author = "line0",
+    moduleName = "l0.Common",
+    url = "https://github.com/TypesettingCartel/ASSFoundation",
+    {"aegisub.util", "aegisub.unicode", "a-mo.Log"},
+}
+local util, unicode, Log = version:requireModules()
 
 math.isInt = function(num, assertName)
     local isInt = type(num) == "number" and math.floor(num) == num
@@ -425,3 +434,5 @@ function assertEx(cond, msg, ...)
         error(string.format("Error: " .. msg, ...))
     else return cond end
 end
+
+return version:register({version=version})
