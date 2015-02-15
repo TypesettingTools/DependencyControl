@@ -146,7 +146,7 @@ table.intersect = function(tbl, ...)
     return table.intersectInto(util.copy(tbl), ...)
 end
 
-table.length = function(tbl) -- currently unused
+table.length = function(tbl)
     local n = 0
     for _, _ in pairs(tbl) do n = n + 1 end
     return n
@@ -299,7 +299,7 @@ table.reduce = function(tbl)
     return reduced
 end
 
-table.select = function(tbl,keys)
+table.select = function(tbl, keys)
     local selected, len = {}, 0
     for i=1,#keys do
         selected[keys[i]] = tbl[keys[i]]
@@ -404,7 +404,7 @@ util.ms2timecode = function(num)
     num = (num-s)/60
     local m = num % 60
     local h = (num-m)/60
-    assertEx(h<=9, "timecode too large to create an ASS timecode")
+    assertEx(h<=9, "value too large to create an ASS timecode")
     return string.format("%01d:%02d:%02d.%02d", h, m, s, ms/10)
 end
 returnAll = function(...) -- blame lua
