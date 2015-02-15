@@ -76,8 +76,8 @@ string.toNumbers = function(base, ...)
     return unpack(numbers)
 end
 
-table.arrayToSet = function(tbl)
-    local set = {}
+table.arrayToSet = function(tbl, reuse)
+    local set = reuse and tbl or {}
     for i=1,#tbl do
         set[tbl[i]] = true
     end
