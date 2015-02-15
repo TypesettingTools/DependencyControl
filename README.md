@@ -5,7 +5,7 @@ ASSFoundation
 
 ----------------------------------
 
-## DepedencyControl ##
+## DependencyControl ##
 
 DependencyControl is a Lua module for versioning and dependency managment of Aegisub macros and modules. It also provides a global script registry allowing for certain aspects of script management and customization.
 
@@ -27,7 +27,7 @@ __Requirements__:
 
 #### For Macros: ####
 
-Load DependencyControl at the start of your macro and create a version record. Script and version information is automatically pulled from the *script_* variables. Here's an example of a macro loads requires several modules - some of which have a version record as well as some that don't.
+Load DependencyControl at the start of your macro and create a version record. Script and version information is automatically pulled from the *script_* variables. Here's an example of a macro that requires several modules - some of which have a version record as well as some that don't.
 
 ```Lua
 script_name="Move Along Path"
