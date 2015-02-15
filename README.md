@@ -18,6 +18,10 @@ __Features__:
  * Supports circular dependencies (limitations apply)
  * Supports loading of private module copies for cases where an older or custom version of a module is required
  * _Planned: Automatic script update from the web_
+ 
+__Requirements__: 
+ * Aegisub 3.2.0+
+ * [LuaJSON](https://github.com/harningt/luajson)
 
 ### Usage ###
 
