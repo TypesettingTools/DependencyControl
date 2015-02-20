@@ -362,7 +362,7 @@ util.RGB_to_HSV = function(r,g,b)
     local v = math.max(r, g, b)
     local delta = v - math.min(r, g, b)
     if delta==0 then
-        return 0,0,0
+        return 0,0,v/255
     else
         local s = delta/v
         local h = 60*(r==v and (g-b)/delta or g==v and (b-r)/delta+2 or (r-g)/delta+4)
