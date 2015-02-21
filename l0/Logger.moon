@@ -59,6 +59,17 @@ class Logger
     debug: (...) => @log 4, ...
     trace: (...) => @log 5, ...
 
+    progress: (progress=false, msg = "", ...) =>
+        if @progressStep and not progress
+            @logEx nil, "■"\rep(10-@progressStep).."]", true, ""
+            @progressStep = nil
+        elseif progress
+            unless @progressStep
+                @progressStep = 0
+                @logEx nil, "[", false, msg, ...
+            step = math.floor(progress * 0.01 + 0.5) / 0.01
+            @logEx nil, "■"\rep(step-@progressStep), false, ""
+
     -- taken from https://github.com/TypesettingCartel/Aegisub-Motion/blob/master/src/Log.moon
     dump: ( item, ignore, level = @defaultLevel ) ->
         if "table" != type item
