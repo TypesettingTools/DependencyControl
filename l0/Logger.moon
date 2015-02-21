@@ -26,27 +26,31 @@ class Logger
 
         @fileName = aegisub.decode_path "?user/log/#{os.date '%Y-%m-%d-%H-%M-%S'}-#{'%04x'\format math.random 0, 16^4-1}_#{@fileBaseName}.log"
 
-    log: (level = @defaultLevel, msg = "", ...) =>
-        return false if not level and msg == ""
-
-        local formatArgs
-        if "number" != type level
-            msg, formatArgs = level, {msg, ...}
-            level = @defaultLevel
-        else formatArgs = {...}
+    logEx: (level = @defaultLevel, msg = "", insertLineFeed = true, prefix = @prefix,  ...) =>
+        return false if msg == ""
+        lineFeed = insertLineFeed and "\n" or ""
 
         show = aegisub.log and @toWindow
         if @toFile and level <= @maxToFileLevel
             @handle = io.open(@fileName, "a") unless @handle
-            line = "[#{levels[level]\upper!}] #{os.date '%H:%M:%S'} #{show and '+' or '•'} #{@prefix}#{msg}\n"\format unpack formatArgs
+            linePre = @lastHadLineFeed and "[#{levels[level]\upper!}] #{os.date '%H:%M:%S'} #{show and '+' or '•'}" or ""
+            line = table.concat({linePre, prefix, msg, lineFeed})\format ...
             @handle\write(line)\flush!
 
         if level<2
-            error "Error: #{@prefix}#{msg}"\format unpack formatArgs
+            error "Error: #{prefix}#{msg}"\format ...
         elseif show
-            aegisub.log level, "#{@prefix}#{msg}\n", unpack formatArgs
+            aegisub.log level, table.concat({prefix, msg, lineFeed})\format ...
 
+        @lastHadLineFeed = insertLineFeed
         return true
+
+    log: (level, msg, ...) =>
+        return false unless level or msg
+
+        if "number" != type level
+            return @logEx @defaultLevel, level, true, msg, nil, ...
+        else return @logEx level, msg, true, nil, ...
 
     fatal: (...) => @log 0, ...
     error: (...) => @log 1, ...
