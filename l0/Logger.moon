@@ -71,7 +71,7 @@ class Logger
             @logEx nil, "■"\rep(step-@progressStep), false, ""
 
     -- taken from https://github.com/TypesettingCartel/Aegisub-Motion/blob/master/src/Log.moon
-    dump: ( item, ignore, level = @defaultLevel ) ->
+    dump: ( item, ignore, level = @defaultLevel ) =>
         if "table" != type item
             return @log level, item
 
