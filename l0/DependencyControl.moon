@@ -268,7 +268,7 @@ class DependencyControl
             mdl.ref, LOADED_MODULES[moduleName] = res, res
         return mdl.ref
 
-    requireModules: (modules=@requiredModules, forceUpdate, returnErrorOnly) =>
+    requireModules: (modules=@requiredModules, forceUpdate, returnErrorOnly, addFeeds={@feed}) =>
         for i,mdl in ipairs modules
             if type(mdl)=="string"
                 modules[i] = {mdl}
@@ -284,7 +284,7 @@ class DependencyControl
                 unless loaded
                     -- try to fetch and load a missing module from the web
                     fetchedModule = @@ moduleName:mdl[1], name:.name or mdl[1], version:-1, url:.url, feed:.feed, virtual:true
-                    res, err, isPrivate = fetchedModule\update true, {@feed}
+                    res, err, isPrivate = fetchedModule\update true, addFeeds
                     if res>0
                         @load mdl, isPrivate
                         .updated = true
@@ -305,7 +305,7 @@ class DependencyControl
                         .outdated = true
                         continue if .updated
 
-                        res, err, isPrivate = loadedVer\update true, {@feed}, true
+                        res, err, isPrivate = loadedVer\update true, addFeeds, true
                         if res > 0
                             if loadedVer\check .version
                                 .ref, .outdated, .reason = loadedVer.ref, false, nil
