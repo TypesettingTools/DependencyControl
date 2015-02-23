@@ -7,6 +7,7 @@ DownloadManager = require "DownloadManager.DownloadManager"
 
 class DependencyControl
     semParts = {{"major", 16}, {"minor", 8}, {"patch", 0}}
+    namespaceValidation = re.compile "^(?:[-\\w]+\\.)+[-\\w]+$"
     msgs = {
         missingModules: "Error: one or more of the modules required by %s could not be found on your system:\n%s\n%s"
         missingOptionalModules: "Error: a %s feature you're trying to use requires additional modules that were not found on your system:\n%s\n%s"
@@ -17,6 +18,7 @@ class DependencyControl
         outdatedTemplate: "— %s (Installed: v%s; Required: v%s)%s\n—— Reason: %s"
         missingRecord: "Error: module '%s' is missing a version record."
         moduleError: "Error in module %s:\n%s"
+        badNamespace: "Namespace '%s' failed validation. Namespace rules: must contain 1+ single dots, but not start or end with a dot; all other characters must be in [A-Za-z0-9-_]."
         badVersionString: "Error: can't parse version string '%s'. Make sure it conforms to semantic versioning standards."
         versionOverflow: "Error: %s version must be an integer < 255, got %s."
         updNoSuitableVersion: "The version of '%s' downloaded (v%s) did not satisfy the %s requirements (v%s)."
@@ -127,6 +129,7 @@ class DependencyControl
             assert @namespace, "Error: namespace required"
             @type = "macros"
 
+        assert #namespaceValidation\find(@namespace) > 0, msgs.badNamespace\format @namespace
         @name = @namespace unless @name
         @configFile = configFile or "#{@namespace}.json"
         @version = @parse @version
