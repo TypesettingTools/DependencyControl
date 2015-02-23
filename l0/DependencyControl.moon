@@ -1,5 +1,6 @@
 json = require "json"
-lfs = require "lfs"
+lfs = require "aegisub.lfs"
+re = require "aegisub.re"
 ffi = require "ffi"
 Logger = require "l0.Logger"
 PreciseTimer = require "PreciseTimer.PreciseTimer"
@@ -35,17 +36,20 @@ class DependencyControl
         cantRemoveFile: "Couldn't overwrite file '%s': %s"
         cantRenameFile: "Couldn't move file '%s' to '%s': %s"
         updateInfo: {
-            starting: "Starting %supdate of %s '%s' (v%s)... ",
-            fetching: "Trying to %sfetch missing %s '%s'...",
-            updateReqs: "Checking requirements...",
-            feedCandidates: "Trying %d candidate feeds (%s mode)...",
-            feedTrying: "Checking feed %d/%d (%s)...",
-            tempDir: "Downloading files into temporary folder '%s'...",
-            filesDownloading: "Downloading %d files...",
-            fileUnchanged: "Skipped unchanged file '%s'.",
-            fileAddDownload: "Addeding Download %s ==> '%s'.",
-            updateReady: "Update ready. Using temporary directory '%s'.",
+            starting: "Starting %supdate of %s '%s' (v%s)... "
+            fetching: "Trying to %sfetch missing %s '%s'..."
+            updateReqs: "Checking requirements..."
+            feedCandidates: "Trying %d candidate feeds (%s mode)..."
+            feedTrying: "Checking feed %d/%d (%s)..."
+            tempDir: "Downloading files into temporary folder '%s'..."
+            filesDownloading: "Downloading %d files..."
+            fileUnchanged: "Skipped unchanged file '%s'."
+            fileAddDownload: "Addeding Download %s ==> '%s'."
+            updateReady: "Update ready. Using temporary directory '%s'."
             movingFiles: "Downloads complete. Now moving files to Aegisub automation directory '%s'..."
+            movedFile: "Moved '%s' ==> '%s'."
+            overwritingFile: "File '%s' already exists, overwriting..."
+            createdDir: "Created target directory '%s'."
         }
         updateError: {
             [1]: "Couldn't %s %s '%s' because the updater is disabled.",
@@ -418,10 +422,9 @@ class DependencyControl
         return feed
 
     moveFile: (source, target) =>
-        -- msg: moving file
         mode, err = lfs.attributes target, "mode"
         if mode == "file"
-            -- msg: file already exists, overwriting
+            logger\log msgs.updateInfo.overwritingFile, target
             res, err = os.remove target
             unless res -- can't remove old target file, probably locked or lack of permissions
                 return false, msgs.cantRemoveFile\format target, err
@@ -436,10 +439,10 @@ class DependencyControl
             if err
                 return false, msgs.moveGenericError\format source, target, err
             elseif not mode
-                -- msg: target directory doesn't exist, create it
                 res, err = lfs.mkdir dir
                 if err -- can't create directory (possibly a permission error)
                     return false, msgs.moveCreateDirError\format dir, err, dl.outfile, dl.targetFile
+                logger\log msgs.updateInfo.createdDir, dir
             elseif mode != "directory" -- a file of the same name as the target directory is already present
                 return false, msgs.moveExistsNoDir\format dir, mode, source, target
 
@@ -448,6 +451,7 @@ class DependencyControl
         unless res -- renaming the file failed, probably a permission issue
             return false, msgs.cantRenameFile, source, target, err
 
+        logger\log msgs.updateInfo.movedFile, source, target
         return true
 
     updateFromFeed: (feed, force = false) =>
@@ -585,11 +589,13 @@ class DependencyControl
 
         logger\log msgs.updateInfo.movingFiles, scriptDir
         moveErrors = {}
+        logger.indent += 1
         for dl in *dlm.downloads
             res, err = @moveFile dl.outfile, dl.targetFile
             -- don't immediately error out if moving of a single file failed
             -- try to move as many files as possible and let the user handle the rest
             moveErrors[#moveErrors+1] = err unless res
+        logger.indent -= 1
 
         if #moveErrors>0
             extErr = table.concat moveErrors, "\n— "
