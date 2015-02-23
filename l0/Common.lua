@@ -1,11 +1,12 @@
 local DependencyControl = require("l0.DependencyControl")
 local version = DependencyControl{
-    name = "Common",
-    version = "0.1.0",
+    name = "ASSFoundation Common Components",
+    version = "0.1.1",
     description = "Collection of commonly used functions",
     author = "line0",
-    moduleName = "l0.Common",
+    moduleName = "l0.ASSFoundation.Common",
     url = "https://github.com/TypesettingCartel/ASSFoundation",
+    feed = "https://raw.githubusercontent.com/TypesettingCartel/ASSFoundation/master/DependencyControl.json",
     {"aegisub.util", "aegisub.unicode", "a-mo.Log"},
 }
 local util, unicode, Log = version:requireModules()

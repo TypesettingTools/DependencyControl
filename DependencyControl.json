@@ -1,0 +1,236 @@
+{
+  "dependencyControlFeedFormatVersion": "0.1.0",
+  "name": "ASSFoundation",
+  "description": "ASSFoundation and ancillary modules.",
+  "baseUrl": "https://github.com/TypesettingCartel/ASSFoundation",
+  "url": "@{baseUrl}",
+  "maintainer": "line0",
+  "modules": {
+    "l0.ASSFoundation": {
+      "url": "@{baseUrl}",
+      "author": "line0",
+      "name": "ASSFoundation",
+      "description": "General purpose ASS processing library.",
+      "fileBaseUrl": "https://raw.githubusercontent.com/TypesettingCartel/ASSFoundation/v@{version}-@{channel}/@{namespacePath}",
+      "channels": {
+        "alpha": {
+          "version": "0.1.1",
+          "released": "2015-02-23",
+          "default": true,
+          "files": [
+            {
+              "name": ".lua",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "49551D56D52DAF14F28E196E9326EA7A839E498C"
+            },
+            {
+              "name": "/Base.lua",
+              "sha1": "CB9A56C64D75053606F0A4EE79006AD5F89A7643"
+            },
+            {
+              "name": "/ClassFactory.lua",
+              "sha1": "A25418C3A73F9ED5ECBDD33BD9F67A29A0ADD5DC"
+            },
+            {
+              "name": "/FoundationMethods.lua",
+              "sha1": "71A779DB85BFD37B68625E25332AE439F796CEB7"
+            },
+            {
+              "name": "/LineBounds.lua",
+              "sha1": "81CD126E1A86273FDEDC56BDDFADDD634F93E227"
+            },
+            {
+              "name": "/LineContents.lua",
+              "sha1": "7BB7EBF567A1E2EA2E9BB8216439F3E92E55E3ED"
+            },
+            {
+              "name": "/TagList.lua",
+              "sha1": "8964AB786F0982AD94E7624C18D24646B99ED868"
+            },
+            {
+              "name": "/Draw/Bezier.lua",
+              "sha1": "798BA2A1096E7246CFCB0C810D4D9DC4A26C1087"
+            },
+            {
+              "name": "/Draw/Close.lua",
+              "sha1": "77A5066EABCA17926042CDE5872E402560DB685D"
+            },
+            {
+              "name": "/Draw/CommandBase.lua",
+              "sha1": "843113CAA731368E160C540013AF453595CEE087"
+            },
+            {
+              "name": "/Draw/Contour.lua",
+              "sha1": "3D6252C632DD9D73AA5F037C713811D36670B2E1"
+            },
+            {
+              "name": "/Draw/DrawingBase.lua",
+              "sha1": "2CB1DA6A6196AFBF490C5E2211BBFCAC4E6C67B9"
+            },
+            {
+              "name": "/Draw/Line.lua",
+              "sha1": "282D0E594CEB1488D3776227C702DA2007DA3288"
+            },
+            {
+              "name": "/Primitive/Number.lua",
+              "sha1": "E1CF92A8A053D073ED8912533C7D20BCB934FA00"
+            },
+            {
+              "name": "/Primitive/Point.lua",
+              "sha1": "5B6049C8E1C3BCC573E3EB4082E6336B8BDD46A3"
+            },
+            {
+              "name": "/Primitive/String.lua",
+              "sha1": "0F3268CA3062B31D97384F9F27233846671385BD"
+            },
+            {
+              "name": "/Primitive/Time.lua",
+              "sha1": "D9DFE8102EC506DE85F6709B8D86AD3B79E17DE9"
+            },
+            {
+              "name": "/Section/Comment.lua",
+              "sha1": "9FF448324A5532FFBDAC66A843F197623CB40E7E"
+            },
+            {
+              "name": "/Section/Drawing.lua",
+              "sha1": "7AF4E4362EAFB1091FF4465E0F83BB03E43CBDAC"
+            },
+            {
+              "name": "/Section/Tag.lua",
+              "sha1": "BDD32E8308AF9CDE642192D959516EBCB9A08971"
+            },
+            {
+              "name": "/Section/Text.lua",
+              "sha1": "35291B5EB2437317566DFE5CFFFB8C4E510415FD"
+            },
+            {
+              "name": "/Tag/Align.lua",
+              "sha1": "55CE2E4DC17581E67ECC69F97969564F94866C65"
+            },
+            {
+              "name": "/Tag/Base.lua",
+              "sha1": "821FD80282462A07EF7135D12C53332887D8AF51"
+            },
+            {
+              "name": "/Tag/ClipRect.lua",
+              "sha1": "3CBAA1D07E3C7E13A34A1E067A9373F2D2018C0B"
+            },
+            {
+              "name": "/Tag/ClipVect.lua",
+              "sha1": "A99DB31EE4154A220A418A2B44ED680A4D71D072"
+            },
+            {
+              "name": "/Tag/Color.lua",
+              "sha1": "E6B9997AD616E515BCB036FFBA6DDF7206838AA8"
+            },
+            {
+              "name": "/Tag/Fade.lua",
+              "sha1": "C66BC0F13E38C804D0307E4F1F8709A09454BB04"
+            },
+            {
+              "name": "/Tag/Indexed.lua",
+              "sha1": "CDD8670A95525429AA37E8187FD13FEFE9D6DB3D"
+            },
+            {
+              "name": "/Tag/Move.lua",
+              "sha1": "22F334A5792DC974ADE14E4ACC3E56614BB6902B"
+            },
+            {
+              "name": "/Tag/String.lua",
+              "sha1": "F9FBBDFDE3C46413EF4E2E90FCCB544BF5D75883"
+            },
+            {
+              "name": "/Tag/Toggle.lua",
+              "sha1": "81BD61D31BFCF6695305843C8F43DCF04C69DE20"
+            },
+            {
+              "name": "/Tag/Transform.lua",
+              "sha1": "A92EA1C204B87800D54D4C28ADE08DEFE0E488D5"
+            },
+            {
+              "name": "/Tag/Weight.lua",
+              "sha1": "C6B37431F9A33F82715E5C84C98FDF051AD3B940"
+            }
+          ],
+          "requiredModules": [
+            "aegisub.re",
+            "aegisub.util",
+            "aegisub.unicode",
+            {
+              "moduleName": "l0.ASSFoundation.Common",
+              "name": "ASSFoundation Common Components",
+              "version": "0.1.1",
+              "url": "@{baseUrl}"
+            },
+            {
+              "moduleName": "a-mo.LineCollection",
+              "version": "1.0.1",
+              "name": "Aegisub-Motion (LineCollection)",
+              "url": "https://github.com/TypesettingCartel/Aegisub-Motion"
+            },
+            {
+              "moduleName": "a-mo.Line",
+              "version": "1.0.0",
+              "name": "Aegisub-Motion (Line)",
+              "url": "https://github.com/TypesettingCartel/Aegisub-Motion"
+            },
+            {
+              "moduleName": "a-mo.Log",
+              "name": "Aegisub-Motion (Log)",
+              "url": "https://github.com/TypesettingCartel/Aegisub-Motion"
+            },
+            "ASSInspector.Inspector",
+            {
+              "moduleName": "YUtils",
+              "optional": true
+            }
+          ]
+        }
+      },
+      "changelog": {
+        "0.1.1": [
+          "Added update feeds"
+        ],
+        "0.1.0": [
+          "Reorganized module files"
+        ]
+      }
+    },
+    "l0.ASSFoundation.Common": {
+      "url": "@{baseUrl}",
+      "author": "line0",
+      "name": "ASSFoundation Common Components",
+      "description": "Collection of commonly used functions.",
+      "fileBaseUrl": "https://raw.githubusercontent.com/TypesettingCartel/ASSFoundation/cmn-v@{version}-@{channel}/@{namespacePath}",
+      "channels": {
+        "alpha": {
+          "version": "0.1.1",
+          "released": "2015-02-23",
+          "default": true,
+          "files": [
+            {
+              "name": ".lua",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "AF52FBC6928A09563012B76952E5E1A7B552AEFC"
+            }
+          ],
+          "requiredModules": [
+            "aegisub.util",
+            "aegisub.unicode",
+            {
+              "moduleName": "a-mo.Log",
+              "name": "Aegisub-Motion (Log)",
+              "url": "https://github.com/TypesettingCartel/Aegisub-Motion"
+            }
+          ]
+        }
+      },
+      "changelog": {
+        "0.1.1": [
+          "Fixed broken RGB to HSV color conversion",
+          "Added update feeds"
+        ]
+      }
+    }
+  }
+}
