@@ -313,7 +313,7 @@ class DependencyControl
                             .reason = @getUpdaterErrorMsg res, .name or mdl[1], false, true, err
                         else .reason = msgs.updNoSuitableUpdate\format loadedVer.name, loadedVer\get!, @name, .version
 
-                    elseif loadedVer\update(forceUpdate) > 0 -- perform regular update
+                    elseif loadedVer\update(forceUpdate, addFeeds) > 0 -- perform regular update
                         .ref = loadedVer.ref
                     .loaded = loadedVer
                 else .loaded = type(loaded)=="table" and loaded.version or true
