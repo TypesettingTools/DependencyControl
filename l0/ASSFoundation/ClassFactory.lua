@@ -1,4 +1,4 @@
-local common = require("l0.Common")
+local common = require("l0.ASSFoundation.Common")
 local util = require("aegisub.util")
 
 return function (typeName, baseClasses, order, types, tagProps, compatibleClasses, customIndex)
