@@ -50,6 +50,7 @@ class DependencyControl
             movedFile: "Moved '%s' ==> '%s'."
             overwritingFile: "File '%s' already exists, overwriting..."
             createdDir: "Created target directory '%s'."
+            changelog: "Changelog for %s v%s (released %s):"
         }
         updateError: {
             [1]: "Couldn't %s %s '%s' because the updater is disabled.",
@@ -617,7 +618,18 @@ class DependencyControl
                    @moduleName and "module" or "macro", @name, @get!
         @virtual = false
 
-        -- TODO: display changelog
+        -- display changelog
+        if type(scriptData.changelog)=="table"
+            changes = [{@parse(ver), entry} for ver, entry in pairs scriptData.changelog when @check ver]
+            table.sort changes, (a,b) -> a[1]>b[1]
+            if #changes>0
+                logger\log msgs.updateInfo.changelog, @name, @get!, scriptData.released or "<no date>"
+                logger.indent += 1
+                for chg in *changes
+                    msg = type(chg[2]) ~= "table" and tostring(chg[2]) or table.concat chg[2], "\n——"
+                    logger\logEx nil, "%s: #{msg}", true, "", @get(chg[1])
+                logger.indent -= 1
+
         logger\log msgs.updReloadNotice
 
         @writeConfig!
