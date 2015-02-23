@@ -227,8 +227,8 @@ class DependencyControl
 
         return version
 
-    get: =>
-        parts = [bit.rshift(@version, part[2])%256 for part in *semParts]
+    get: (version = @version) =>
+        parts = [bit.rshift(version, part[2])%256 for part in *semParts]
         return "%d.%d.%d"\format unpack parts
 
     getConfigFileName: () =>
