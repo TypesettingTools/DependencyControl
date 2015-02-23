@@ -82,7 +82,7 @@ class DependencyControl
         maxDepth: 7,
         templates: {
             feedName:      {depth: 1, order: 1, key: "name"                                                  }
-            baseURL:       {depth: 1, order: 2, key: "baseURL"                                               }
+            baseUrl:       {depth: 1, order: 2, key: "baseUrl"                                               }
             namespace:     {depth: 3, order: 1, parentKeys: {macros:true, modules:true}                      }
             namespacePath: {depth: 3, order: 2, parentKeys: {macros:true, modules:true}, repl:"%.", to: "/"  }
             scriptName:    {depth: 3, order: 3, key: "name"                                                  }
