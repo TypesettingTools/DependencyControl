@@ -158,17 +158,21 @@ class DependencyControl
     loadConfig: (forceReloadGlobal=false) =>
         return false if @virtual and @@config and not forceReloadGlobal
 
+        local config
         handle = io.open depConf.file, "r"
-        config = handle and json.decode handle\read "*a"
-        handle\close!
-        needUpdateConfig = {false, not config}
+        if handle
+            config = handle and json.decode handle\read "*a"
+            config = nil if "table" ~= type config
+            handle\close!
+
+        updateLocal, updateGlobal = false, not config
 
         -- load global config and fill in missing default config values
         unless @@config and not forceReloadGlobal
             @@config = config and config.config or {}
             for k,v in pairs depConf.globalDefaults
                 if @@config[k] == nil
-                    @@config[k], needUpdateConfig[2] = v, true
+                    @@config[k], updateGlobal = v, true
 
         -- load per-script config
         -- virtual modules are not yet present on the user's system and have no persistent configuration
@@ -176,12 +180,12 @@ class DependencyControl
             @config = {}
         else
             @config = config and config[@type][@namespace] or {}
-            needUpdateConfig[1] = @updateScriptConfigFields!
+            updateLocal = @updateScriptConfigFields!
 
         -- write config file if contents are missing or are out of sync with the script version record
-        @writeConfig unpack needUpdateConfig
+        @writeConfig updateLocal, updateGlobal, not config and 5000 or nil
 
-    writeConfig: (writeLocal=true, writeGlobal=false) =>
+    writeConfig: (writeLocal=true, writeGlobal=false, waitTime=800) =>
         writeLocal or= @updateScriptConfigFields!
         unless writeLocal or writeGlobal return false
 
@@ -190,7 +194,7 @@ class DependencyControl
 
         -- avoid concurrent config file access
         -- TODO: better and actually safe implementation
-        PreciseTimer\sleep math.random!*30 for i=1,20
+        PreciseTimer\sleep math.random!*(waitTime/2) for i=1,2
         lockFile, limit = depConf.file..".lock", 50
         locked = lfs.attributes lockFile, "mode"
         while locked and limit>0
@@ -199,7 +203,8 @@ class DependencyControl
             limit -= 1
         lfs.touch lockFile
 
-        handle, config = io.open depConf.file, "r"
+        local config
+        handle = io.open depConf.file, "r"
 
         if handle
             config = json.decode(handle\read "*a") or {}
