@@ -44,7 +44,7 @@ class DependencyControl
             tempDir: "Downloading files into temporary folder '%s'..."
             filesDownloading: "Downloading %d files..."
             fileUnchanged: "Skipped unchanged file '%s'."
-            fileAddDownload: "Addeding Download %s ==> '%s'."
+            fileAddDownload: "Added Download %s ==> '%s'."
             updateReady: "Update ready. Using temporary directory '%s'."
             movingFiles: "Downloads complete. Now moving files to Aegisub automation directory '%s'..."
             movedFile: "Moved '%s' ==> '%s'."
@@ -487,7 +487,7 @@ class DependencyControl
             else feedCache[feed] = @expandFeed feedData
 
             if @@config.dumpFeeds
-                handle = io.open table.concat(feedFile, "", 1, 3).."exp.json", "w"
+                handle = io.open table.concat(feedFile, "", 1, 3)..".exp.json", "w"
                 handle\write(json.encode feedData)\close!
 
 
@@ -555,8 +555,8 @@ class DependencyControl
 
         scriptSubDir = @moduleName and @moduleName\gsub("%.","/") or @namespace
         scriptDir = aegisub.decode_path "?user/automation/#{@moduleName and 'include' or 'autoload'}"
-        baseName = "#{scriptDir}/#{@scriptSubDir}"
-        tmpBaseName = "#{tmpDir}/#{@scriptSubDir}"
+        baseName = "#{scriptDir}/#{scriptSubDir}"
+        tmpBaseName = "#{tmpDir}/#{scriptSubDir}"
 
         dlm\clear!
         for file in *data.files
@@ -573,13 +573,13 @@ class DependencyControl
 
             logger\log msgs.updateInfo.fileAddDownload, file.url, prettyName
             dl, err = dlm\addDownload file.url, tmpName, file.sha1
-            unless id
+            unless dl
                 logger\log @getUpdaterErrorMsg -115, @name, @moduleName, @virtual, err
                 return -115, err
             dl.targetFile = name
 
         dlm\waitForFinish (progress) ->
-            logger\progress progress, updateInfo.filesDownloading, dlm.downloadCount
+            logger\progress progress, msgs.updateInfo.filesDownloading, dlm.downloadCount
             return true
         logger\progress!
 
