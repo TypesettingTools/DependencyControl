@@ -139,6 +139,17 @@ class DependencyControl
         @configFile = configFile or "#{@namespace}.json"
         @version = @parse @version
 
+        @requiredModules or= {}
+        -- normalize short format module tables
+        for i, mdl in pairs @requiredModules
+            switch type mdl
+                when "table"
+                    mdl.moduleName or= mdl[1]
+                    mdl[1] = nil
+                when "string"
+                    @requiredModules[i] = {moduleName: mdl}
+                else logger\error msgs.badModuleRecord, i, tostring mdl
+
         @loadConfig!
         logger.defaultLevel = @@config.traceLevel
         @@config.platform = "#{ffi.os}-#{ffi.arch}"
@@ -241,7 +252,7 @@ class DependencyControl
 
     checkOptionalModules: (modules, noAssert) =>
         modules = type(modules)=="string" and {[modules]:true} or {mdl,true for mdl in *modules}
-        missing = [msgs.missingTemplate\format mdl[1], mdl.version, mdl.url and ": #{mdl.url}" or "",
+        missing = [msgs.missingTemplate\format mdl.moduleName, mdl.version, mdl.url and ": #{mdl.url}" or "",
             mdl.reason or "" for mdl in *@requiredModules when mdl.optional and mdl.missing and modules[mdl.name]]
 
         if #missing>0
@@ -252,8 +263,8 @@ class DependencyControl
         return nil
 
     load: (mdl, usePrivate) =>
-        moduleName = usePrivate and "#{@namespace}.#{mdl[1]}" or mdl[1]
-        name = "#{mdl.name or mdl[1]}#{usePrivate and ' (Private Copy)'}"
+        moduleName = usePrivate and "#{@namespace}.#{mdl.moduleName}" or mdl.moduleName
+        name = "#{mdl.name or mdl.moduleName}#{usePrivate and ' (Private Copy)' or ''}"
 
         -- pass already loaded modules as reference
         if LOADED_MODULES[moduleName]
@@ -270,12 +281,7 @@ class DependencyControl
         return mdl.ref
 
     requireModules: (modules=@requiredModules, forceUpdate, returnErrorOnly, addFeeds={@feed}) =>
-        for i,mdl in ipairs modules
-            if type(mdl)=="string"
-                modules[i] = {mdl}
-                mdl = modules[i]
-            elseif mdl["1"]
-                mdl[1] = mdl["1"]  -- artifact of lua->json->lua
+        for mdl in *modules
 
             -- try to load private copies of required modules first
             loaded = @load mdl, true
@@ -284,20 +290,21 @@ class DependencyControl
             with mdl
                 unless loaded
                     -- try to fetch and load a missing module from the web
-                    fetchedModule = @@ moduleName:mdl[1], name:.name or mdl[1], version:-1, url:.url, feed:.feed, virtual:true
+                    fetchedModule = @@{moduleName:.moduleName, name:.name or .moduleName,
+                                       version:-1, url:.url, feed:.feed, virtual:true}
                     res, err, isPrivate = fetchedModule\update true, addFeeds
                     if res>0
                         @load mdl, isPrivate
                         .updated = true
                     else
-                        .reason = @getUpdaterErrorMsg res, .name or mdl[1], true, true, err
-                        LOADED_MODULES[mdl[1]] = nil
+                        .reason = @getUpdaterErrorMsg res, .name or .moduleName, true, true, err
+                        LOADED_MODULES[.moduleName] = nil
 
                 -- check version
                 if .version and not .missing
-                    loadedVer = assert loaded.version, msgs.missingRecord\format(mdl[1])
+                    loadedVer = assert loaded.version, msgs.missingRecord\format(.moduleName)
                     if type(loadedVer)~="table" or loadedVer.__class~=@@
-                        loadedVer = @@ moduleName:mdl[1], version:loadedVer, unmanaged:true
+                        loadedVer = @@ moduleName:.moduleName, version:loadedVer, unmanaged:true
 
                     -- force an update check for outdated modules
                     if not loadedVer\check .version
@@ -311,7 +318,7 @@ class DependencyControl
                             if loadedVer\check .version
                                 .ref, .outdated, .reason = loadedVer.ref, false, nil
                         elseif res < 0 -- update failed, settle for the regular outdated message
-                            .reason = @getUpdaterErrorMsg res, .name or mdl[1], false, true, err
+                            .reason = @getUpdaterErrorMsg res, .name or .moduleName, false, true, err
                         else .reason = msgs.updNoSuitableUpdate\format loadedVer.name, loadedVer\get!, @name, .version
 
                     elseif loadedVer\update(forceUpdate, addFeeds) > 0 -- perform regular update
@@ -320,13 +327,13 @@ class DependencyControl
                 else .loaded = type(loaded)=="table" and loaded.version or true
 
         errorMsg = ""
-        missing = [msgs.missingTemplate\format mdl[1], mdl.version, mdl.url and ": #{mdl.url}" or "",
+        missing = [msgs.missingTemplate\format mdl.moduleName, mdl.version, mdl.url and ": #{mdl.url}" or "",
                    mdl.reason for mdl in *modules when mdl.missing and not mdl.optional]
         if #missing>0
             downloadHint = msgs.missingModulesDownloadHint\format aegisub.decode_path "?user/automation/include"
             errorMsg ..= msgs.missingModules\format @name, table.concat(missing), downloadHint
 
-        outdated = [msgs.outdatedTemplate\format mdl[1], mdl.loaded\get!, mdl.version, mdl.url and ": #{mdl.url}" or "",
+        outdated = [msgs.outdatedTemplate\format mdl.moduleName, mdl.loaded\get!, mdl.version, mdl.url and ": #{mdl.url}" or "",
                     mdl.reason for mdl in *modules when mdl.outdated]
         if #outdated>0
             errorMsg ..= msgs.outdatedModules\format @name, table.concat outdated
