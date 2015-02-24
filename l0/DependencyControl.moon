@@ -210,7 +210,9 @@ class DependencyControl
             config.config = @@config if writeGlobal
             if writeLocal and not @virtual
                 config[@type][@namespace] = {k,v for k,v in pairs @config when not depConf.ignoreFields[k]}
-        else config = configScheme
+        else
+            -- don't make this a oneliner or moonscript will break scoping
+            config = configScheme
 
         handle = io.open(depConf.file, "w")\write(json.encode config)
         handle\flush!
