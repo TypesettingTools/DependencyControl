@@ -18,9 +18,10 @@ class DependencyControl
 %s\nPlease update the modules in question manually and reload your automation scripts."
         outdatedTemplate: "— %s (Installed: v%s; Required: v%s)%s\n—— Reason: %s"
         missingRecord: "Error: module '%s' is missing a version record."
-        moduleError: "Error in module %s:\n%s"
+        moduleError: "Error in module %s:"
         badNamespace: "Namespace '%s' failed validation. Namespace rules: must contain 1+ single dots, but not start or end with a dot; all other characters must be in [A-Za-z0-9-_]."
         badVersionString: "Error: can't parse version string '%s'. Make sure it conforms to semantic versioning standards."
+        badModuleRecord: "Invalid required module record #%d (%s)."
         versionOverflow: "Error: %s version must be an integer < 255, got %s."
         updNoSuitableVersion: "The version of '%s' downloaded (v%s) did not satisfy the %s requirements (v%s)."
         updNoSuitableUpdate: "The installed version of '%s'(v%s) did not satisfy the %s requirements (v%s), but no update could be found."
@@ -65,9 +66,9 @@ class DependencyControl
             [13]: "Couldn't %s %s '%s': failed to create temporary download directory %s",
             [14]: "Aborted %s of %s '%s' because the feed contained a missing or malformed SHA-1 hash for file %s."
             [17]: "Couldn't finish %s of %s '%s' because some files couldn't be moved to their target location:\n—"
-            [100]: "Error in component %s during %s of %s '%s':\n — %s"
+            [100]: "Error (%d) in component %s during %s of %s '%s':\n— %s"
         }
-        updaterErrorComponent: {"DownloadManager", "cURL"}
+        updaterErrorComponent: {"DownloadManager", "DownloadManager"}
     }
     depConf = {
         file: aegisub.decode_path "?user/#{@@__name}.json",
@@ -378,13 +379,14 @@ class DependencyControl
         if code <= -100
             -- Generic downstream error
             -- VarArgs: 1: isModule, 2: isFetch, 3: error msg
-            return msgs.updateError[100]\format msgs.updaterErrorComponent[math.floor(-code/100)], args[2] and "fetch" or "update",
-                   args[1] and "module" or "macro", name, args[3]
+            return msgs.updateError[100]\format -code, msgs.updaterErrorComponent[math.floor(-code/100)],
+                   args[2] and "fetch" or "update", args[1] and "module" or "macro", name, args[3]
         else
             -- Updater error:
             -- VarArgs: 1: isModule, 2: isFetch, 3: additional information
             error tostring(code) unless msgs.updateError[-code]
-            return msgs.updateError[-code]\format args[2] and "fetch" or "update", args[1] and "module" or "macro",
+            return msgs.updateError[-code]\format args[2] and "fetch" or "update",
+                                                  args[1] and "module" or "macro",
                                                   name, args[3]
 
     expandFeed: (feed) =>
