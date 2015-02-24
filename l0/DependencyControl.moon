@@ -415,7 +415,7 @@ class DependencyControl
 
             -- update rolling template variables last
             for name,_ in pairs rolling
-                rvars[depth][name] = obj[templates[name].key] or rvars[depth-1][name]
+                rvars[depth][name] = obj[templates[name].key] or rvars[depth-1][name] or ""
                 rvars[depth][name] = expandTemplates rvars[depth][name], depth, -1
                 obj[templates[name].key] and= rvars[depth][name]
 
