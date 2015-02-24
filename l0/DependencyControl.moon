@@ -449,6 +449,19 @@ class DependencyControl
         recurse feed
         return feed
 
+    createDir: (path, isFile) =>
+        dir = isFile and path\match("^(.+)[/\\].-$") or path
+        mode, err = lfs.attributes dir, "mode"
+        if err
+            return false, msgs.createDir.genericError\format err
+        elseif not mode
+            res, err = lfs.mkdir dir
+            if err -- can't create directory (possibly a permission error)
+                return false, msgs.createDir.createError\format err
+        elseif mode != "directory" -- a file of the same name as the target directory is already present
+            return false, msgs.createDir.otherExists\format mode
+        return dir
+
     moveFile: (source, target) =>
         mode, err = lfs.attributes target, "mode"
         if mode == "file"
@@ -462,17 +475,10 @@ class DependencyControl
             return false, msgs.moveGenericError\format source, target, err
 
         else -- target file not found, check directory
-            dir = dl.targetFile\match "^(.+)[/\\].-$"
-            mode, err = lfs.attributes dir, "mode"
-            if err
-                return false, msgs.moveGenericError\format source, target, err
-            elseif not mode
-                res, err = lfs.mkdir dir
-                if err -- can't create directory (possibly a permission error)
-                    return false, msgs.moveCreateDirError\format dir, err, dl.outfile, dl.targetFile
-                logger\log msgs.updateInfo.createdDir, dir
-            elseif mode != "directory" -- a file of the same name as the target directory is already present
-                return false, msgs.moveExistsNoDir\format dir, mode, source, target
+            dir, err = @createDir target, true
+            unless dir
+                return false, msgs.moveCreateDirError\format source, target, err
+            logger\log msgs.updateInfo.createdDir, dir
 
         -- at this point the target directory exists and the target file doesn't, move the file
         res, err = os.rename source target
