@@ -275,7 +275,10 @@ class DependencyControl
         loaded, res = pcall require, moduleName
         mdl.missing = not loaded and res\match "^module '.+' not found:"
         -- check for module errors
-        assert loaded or mdl.missing, msgs.moduleError\format(name, res)
+        unless loaded or mdl.missing
+            -- run require unprotected again to get a better stack trace
+            logger\log msgs.moduleError, name
+            require moduleName
 
         if loaded
             mdl.ref, LOADED_MODULES[moduleName] = res, res
