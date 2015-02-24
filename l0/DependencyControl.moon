@@ -31,11 +31,15 @@ class DependencyControl
         updSuccess: "%s of %s '%s' (v%s) complete."
         updReloadNotice: "Please rescan your autoload directory for the changes to take effect."
         moveExistsNoFile: "Couldn't move file '%s' to '%s' because a %s of the same name is already present."
-        moveExistsNoDir: "Couldn't create directory '%s' because a %s of the same name is already present. File '%s' not moved to '%s'"
         moveGenericError: "An error occured while moving file '%s' to '%s':\n%s"
-        moveCreateDirError: "Couldn't create directory '%s' (%s), file '%s' not moved to '%s'.",
+        moveCreateDirError: "Failed moving '%s' to '%s' (%s).",
         cantRemoveFile: "Couldn't overwrite file '%s': %s"
         cantRenameFile: "Couldn't move file '%s' to '%s': %s"
+        createDir: {
+            genericError: "Can't retrieve attributes: %s."
+            createError: "Error creating directory: %s."
+            otherExists: "Couldn't create directory because a %s of the same name is already present."
+        }
         updateInfo: {
             starting: "Starting %supdate of %s '%s' (v%s)... "
             fetching: "Trying to %sfetch missing %s '%s'..."
@@ -71,12 +75,12 @@ class DependencyControl
         updaterErrorComponent: {"DownloadManager", "DownloadManager"}
     }
     depConf = {
-        file: aegisub.decode_path "?user/#{@@__name}.json",
+        file: aegisub.decode_path "?user/config/l0.#{@@__name}.json",
         scriptFields: {"author", "configFile", "feed", "moduleName", "name", "namespace", "url",
                        "requiredModules", "version", "unmanaged"},
         ignoreFields: {ref:true, config:true, virtual:true, type:true},
         globalDefaults: {updaterEnabled:true, updateInterval:302400, traceLevel:3, extraFeeds:{},
-                         tryAllFeeds:false, dumpFeeds:true}
+                         tryAllFeeds:false, dumpFeeds:true, configDir:"?user/config"}
     }
 
     templateData = {
@@ -111,6 +115,9 @@ class DependencyControl
     logger = Logger fileBaseName: @@__name, prefix: "[#{@@__name}] ", toFile: true, defaultLevel: depConf.globalDefaults.traceLevel
     dlm = DownloadManager!
     feedCache = {}
+    configDirExists = false
+
+    @createDir depConf.file, true
 
     new: (args)=>
         {@requiredModules, moduleName:@moduleName, configFile:configFile, virtual:@virtual, name:@name,
@@ -154,6 +161,7 @@ class DependencyControl
         @loadConfig!
         logger.defaultLevel = @@config.traceLevel
         @@config.platform = "#{ffi.os}-#{ffi.arch}"
+        configDirExists or= @createDir @@config.configDir
 
     loadConfig: (forceReloadGlobal=false) =>
         return false if @virtual and @@config and not forceReloadGlobal
@@ -251,7 +259,7 @@ class DependencyControl
         return "%d.%d.%d"\format unpack parts
 
     getConfigFileName: () =>
-        return aegisub.decode_path "?user/#{@configFile}"
+        return aegisub.decode_path "#{@@config.configDir}/#{@configFile}"
 
     check: (value) =>
         if type(value)=="string"
