@@ -57,11 +57,17 @@ class DependencyControl
             overwritingFile: "File '%s' already exists, overwriting..."
             createdDir: "Created target directory '%s'."
             changelog: "Changelog for %s v%s (released %s):"
+            waiting: "Waiting for update intiated by %s to finish..."
+            abortWait: "Timeout reached after %d seconds."
+            waitFinished: "Waited %d seconds."
+            unsetVirtual: "Update initated by %s already fetched %s '%s', switching to update mode."
+            orphaned: "Ignoring orphaned in-progress update started by %s."
         }
         updateError: {
             [1]: "Couldn't %s %s '%s' because the updater is disabled.",
             [2]: "Skipping %s of unmanaged %s '%s'.",
             [3]: "No feed available to %s %s '%s' from.",
+            [4]: "Skipping %s of %s '%s': Another update initiated by %s is already running."
             [7]: "Couldn't %s %s '%s': error parsing feed %s.",
             [8]: "The specified feed doesn't have the required data to %s the %s '%s'.",
             [9]: "Couldn't %s %s '%s' because the specified channel '%s' wasn't present in the feed.",
@@ -80,8 +86,9 @@ class DependencyControl
         scriptFields: {"author", "configFile", "feed", "moduleName", "name", "namespace", "url",
                        "requiredModules", "version", "unmanaged"},
         globalDefaults: {updaterEnabled:true, updateInterval:302400, traceLevel:3, extraFeeds:{},
-                         tryAllFeeds:false, dumpFeeds:true, configDir:"?user/config",
-                         logMaxCount: 200, logMaxAge: 604800, logMaxSize:10*(10^6)}
+                         tryAllFeeds:false, dumpFeeds:false, configDir:"?user/config",
+                         logMaxCount: 200, logMaxAge: 604800, logMaxSize:10*(10^6),
+                         updateWaitTimeout: 30, updateOrphanTimeout: 600}
     }
 
     templateData = {
@@ -116,7 +123,7 @@ class DependencyControl
     logger = Logger fileBaseName: @@__name, prefix: "[#{@@__name}] ", toFile: true, defaultLevel: depConf.globalDefaults.traceLevel
     dlm = DownloadManager!
     feedCache = {}
-    configDirExists, logsHaveBeenTrimmed = false, false
+    configDirExists, logsHaveBeenTrimmed, reloadPending = false, false, false
     platform = "#{ffi.os}-#{ffi.arch}"
 
     @createDir depConf.file, true
@@ -165,7 +172,10 @@ class DependencyControl
         -- write config file if contents are missing or are out of sync with the script version record
         -- ramp up the random wait time on first initialization (many scripts may want to write configuration data)
         -- we can't really profit from write concerting here because we don't know which module loads last
-        @writeConfig firstInit and 5000 or 800, false, shouldWriteConfig
+        hadReloadPending = @config.c.reloadPending
+        @config.c.reloadPending = false
+
+        @writeConfig firstInit and 5000 or 800, false, shouldWriteConfig or hadReloadPending
 
         logger.defaultLevel = @@config.c.traceLevel
         configDirExists or= @createDir @@config.c.configDir
@@ -223,8 +233,8 @@ class DependencyControl
 
     getLogger: (args) =>
         args.fileBaseName or= @namespace
-        args.toFile = @config.logToFile if args.toFile == nil
-        args.defaultLevel or= @config.logLevel
+        args.toFile = @config.c.logToFile if args.toFile == nil
+        args.defaultLevel or= @config.c.logLevel
         args.prefix or= @moduleName and "[#{@name}]"
 
         return Logger args
@@ -610,7 +620,7 @@ class DependencyControl
         @version = @parse data.version
         @requiredModules = data.requiredModules
         -- TODO: only set this flag if the script wasn't loaded before
-        @config.c.needsReload = true
+        @config.c.reloadPending, reloadPending = true, true
 
         logger\log msgs.updSuccess, @virtual and "Download" or "Update",
                    @moduleName and "module" or "macro", @name, @get!
@@ -670,6 +680,55 @@ class DependencyControl
             logger\log @getUpdaterErrorMsg -3, @name, @moduleName, @virtual
             return -3
 
+        -- check if an other update is already running
+        -- wait our turn in forced mode, otherwise return an error
+
+        @@config\load!
+        running = @@config.c.updaterRunning
+        if running and running.host != script_name
+            otherHost = @@config.c.updaterRunning.host
+
+            if running.time + @@config.c.updateOrphanTimeout < os.time!
+                logger\log msgs.updateInfo.orphaned, otherHost
+            elseif force or @virtual
+                logger\log msgs.updateInfo.waiting, otherHost
+                timeout = @@config.c.updateWaitTimeout
+                while running and timeout > 0
+                    PreciseTimer\sleep 1000*math.min 1, timeout
+                    timeout -= 1
+                    @@config\load!
+                    running = @@config.c.updaterRunning
+                logger\log timeout <= 0 and msgs.updateInfo.abortWait or msgs.updateInfo.waitFinished,
+                           @@config.c.updateWaitTimeout
+
+                -- check if a virtual module has been installed in the meantime
+                -- and clear the flag if associated configuration was found
+                if @virtual
+                    @config\setFile depConf.file
+                    if @config\load!
+                        logger\log timeout msgs.updateInfo.unsetVirtual, otherHost,
+                                   @moduleName and "module" or "macro", @name
+                        @virtual = false
+                    else @config\unsetFile depConf.file
+                else @config\load!
+
+                -- reload important module version information from configuration
+                -- because the values we have might not be up-to-date anymore
+                if @config.c.reloadPending and not @virtual
+                    {moduleName:@moduleName, name:@name, namespace:@namespace,
+                     feed:@feed, unmanaged:@unmanaged, version:@version} = @config.c
+                    reloadPending = true
+
+            else
+                logger\log @getUpdaterErrorMsg -4, @name, @moduleName, @virtual, running.host
+                return -4, running.host
+
+        -- register the running update in the config file to prevent collisions
+        -- with other scripts trying to update the same modules
+
+        @@config.c.updaterRunning = host: script_name, time: os.time!
+        @@config\write!
+
         minRes, minErr, res = 0
         logger\log msgs.updateInfo.feedCandidates, #feeds, tryAllFeeds and "exhaustive" or "normal"
         for i, feed in ipairs feeds
@@ -681,6 +740,9 @@ class DependencyControl
             -- return the one that's the farthest in to the updates process
             if res%100 < res
                 minRes, minErr = res, err
+
+        @@config.c.updaterRunning = false
+        @@config\write!
 
         if res<0
             return minRes, minErr
