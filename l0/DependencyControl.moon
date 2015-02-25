@@ -523,7 +523,7 @@ class DependencyControl
 
         -- pick an update channel: user choice or the channel defined as default in the feed
         local data
-        with @config
+        with @config.c
             .lastChannel, .channels = .activeChannel, {}
             for name, channel in pairs scriptData.channels
                 .channels[#.channels+1] = name
