@@ -624,8 +624,8 @@ class DependencyControl
                 logger\log msgs.updateInfo.changelog, @name, @get!, data.released or "<no date>"
                 logger.indent += 1
                 for chg in *changes
-                    msg = type(chg[2]) ~= "table" and tostring(chg[2]) or table.concat chg[2], "\n——"
-                    logger\logEx nil, "%s: #{msg}", true, "", @get(chg[1])
+                    msg = type(chg[2]) ~= "table" and tostring(chg[2]) or table.concat chg[2], "\n • "
+                    logger\logEx nil, "%s:\n • #{msg}", true, "", @get(chg[1])
                 logger.indent -= 1
 
         logger\log msgs.updReloadNotice
