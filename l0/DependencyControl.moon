@@ -641,6 +641,7 @@ class DependencyControl
             return 0  -- the update interval has not yet been passed since the last update check
 
         @config.c.lastUpdateCheck = os.time!
+        @config\write!
         logger\log @virtual and  msgs.updateInfo.fetching or msgs.updateInfo.starting, force and "forced " or "",
                    @moduleName and "module" or "macro", @name, not @virtual and @get!
 
