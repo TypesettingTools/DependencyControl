@@ -79,7 +79,8 @@ class DependencyControl
         scriptFields: {"author", "configFile", "feed", "moduleName", "name", "namespace", "url",
                        "requiredModules", "version", "unmanaged"},
         globalDefaults: {updaterEnabled:true, updateInterval:302400, traceLevel:3, extraFeeds:{},
-                         tryAllFeeds:false, dumpFeeds:true, configDir:"?user/config"}
+                         tryAllFeeds:false, dumpFeeds:true, configDir:"?user/config",
+                         logMaxCount: 200, logMaxAge: 604800, logMaxSize:10*(10^6)}
     }
 
     templateData = {
@@ -114,7 +115,7 @@ class DependencyControl
     logger = Logger fileBaseName: @@__name, prefix: "[#{@@__name}] ", toFile: true, defaultLevel: depConf.globalDefaults.traceLevel
     dlm = DownloadManager!
     feedCache = {}
-    configDirExists = false
+    configDirExists, logsHaveBeenTrimmed = false, false
 
     @createDir depConf.file, true
 
@@ -672,6 +673,28 @@ class DependencyControl
             return minRes, minErr
 
         return res, err
+
+    trimLogs: (doWipe, maxAge = @@config.c.logMaxAge, maxSize = @@config.c.logMaxSize, maxLogs = @@config.c.logMaxCount) =>
+        files, totalSize, deletedSize, now = {}, 0, 0, os.time!
+
+        for file in lfs.dir @@config.c.configDir
+            attr = lfs.attributes file
+            if type(attr) == "table" and attr.mode == "file" and file\find Logger.fileMatchTemplate
+                count += 1
+                file[count] = {name:file, modified:attr.modification, size:attr.size}
+
+        table.sort files, (a,b) -> a.modified > b.modified
+        total, kept = #files, 0
+
+        for i, file in ipairs files
+            totalSize += file.size
+            if doWipe or kept > maxLogs or totalSize > maxSize or file.modified+maxAge < now
+                deletedSize += file.size
+                os.remove file
+            else
+                kept += 1
+
+        return total-kept, deletedSize, total, totalSize
 
 DependencyControl.__class.version = DependencyControl{
     name: "DependencyControl",
