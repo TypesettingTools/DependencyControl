@@ -78,7 +78,6 @@ class DependencyControl
         file: aegisub.decode_path "?user/config/l0.#{@@__name}.json",
         scriptFields: {"author", "configFile", "feed", "moduleName", "name", "namespace", "url",
                        "requiredModules", "version", "unmanaged"},
-        ignoreFields: {ref:true, config:true, virtual:true, type:true},
         globalDefaults: {updaterEnabled:true, updateInterval:302400, traceLevel:3, extraFeeds:{},
                          tryAllFeeds:false, dumpFeeds:true, configDir:"?user/config"}
     }
@@ -158,86 +157,42 @@ class DependencyControl
                     @requiredModules[i] = {moduleName: mdl}
                 else logger\error msgs.badModuleRecord, i, tostring mdl
 
-        @loadConfig!
-        logger.defaultLevel = @@config.traceLevel
-        @@config.platform = "#{ffi.os}-#{ffi.arch}"
-        configDirExists or= @createDir @@config.configDir
+        firstInit, shouldWriteConfig = @loadConfig!
 
-    loadConfig: (forceReloadGlobal=false) =>
+        -- write config file if contents are missing or are out of sync with the script version record
+        -- ramp up the random wait time on first initialization (many scripts may want to write configuration data)
+        -- we can't really profit from write concerting here because we don't know which module loads last
+        @writeConfig firstInit and 5000 or 800, false, shouldWriteConfig
+
+        logger.defaultLevel = @@config.c.traceLevel
+        @@config.c.platform = "#{ffi.os}-#{ffi.arch}"
+        configDirExists or= @createDir @@config.c.configDir
+        logsHaveBeenTrimmed or= @trimLogs!
+
+
+    loadConfig: (forceReloadGlobal = false) =>
         return false if @virtual and @@config and not forceReloadGlobal
 
-        local config
-        handle = io.open depConf.file, "r"
-        if handle
-            config = handle and json.decode handle\read "*a"
-            config = nil if "table" ~= type config
-            handle\close!
-
-        updateLocal, updateGlobal = false, not config
-
-        -- load global config and fill in missing default config values
-        unless @@config and not forceReloadGlobal
-            @@config = config and config.config or {}
-            for k,v in pairs depConf.globalDefaults
-                if @@config[k] == nil
-                    @@config[k], updateGlobal = v, true
+        -- load global config
+        local firstInit
+        if @@config
+            @@config\load! if forceReloadGlobal
+        else
+            @@config = ConfigHandler depConf.file, depConf.globalDefaults, {"config"}, true
+            firstInit = not @@config\load!
 
         -- load per-script config
         -- virtual modules are not yet present on the user's system and have no persistent configuration
-        if @virtual
-            @config = {}
+        @config = ConfigHandler not @virtual and depConf.file, {}, {@type, @namespace}
+        -- copy script information to the config
+        return firstInit, @config\import @, depConf.scriptFields
+
+    writeConfig: (waitTime, concert = true, writeLocal, writeGlobal) =>
+        if concert
+            @@config\write true, waitTime
         else
-            @config = config and config[@type][@namespace] or {}
-            updateLocal = @updateScriptConfigFields!
-
-        -- write config file if contents are missing or are out of sync with the script version record
-        @writeConfig updateLocal, updateGlobal, not config and 5000 or nil
-
-    writeConfig: (writeLocal=true, writeGlobal=false, waitTime=800) =>
-        writeLocal or= @updateScriptConfigFields!
-        unless writeLocal or writeGlobal return false
-
-        -- first module ever registered is always DependencyControl
-        configScheme = {config: @@config, modules: {[@@version and @@version.moduleName or @moduleName]: @}, macros: {}}
-
-        -- avoid concurrent config file access
-        -- TODO: better and actually safe implementation
-        PreciseTimer\sleep math.random!*(waitTime/2) for i=1,2
-        lockFile, limit = depConf.file..".lock", 50
-        locked = lfs.attributes lockFile, "mode"
-        while locked and limit>0
-            PreciseTimer\sleep 100
-            locked = lfs.attributes lockFile, "mode"
-            limit -= 1
-        lfs.touch lockFile
-
-        local config
-        handle = io.open depConf.file, "r"
-
-        if handle
-            config = json.decode(handle\read "*a") or {}
-            handle\close!
-            for k,v in pairs configScheme
-                config[k] = v unless config[k]
-
-            config.config = @@config if writeGlobal
-            if writeLocal and not @virtual
-                config[@type][@namespace] = {k,v for k,v in pairs @config when not depConf.ignoreFields[k]}
-        else
-            -- don't make this a oneliner or moonscript will break scoping
-            config = configScheme
-
-        handle = io.open(depConf.file, "w")\write(json.encode config)
-        handle\flush!
-        handle\close!
-        os.remove lockFile
-
-    updateScriptConfigFields: =>
-        needUpdateConfig = false
-        for k in *depConf.scriptFields
-            unless @config[k]==@[k] or type(@[k])=="table" and type(@config[k])=="table" and #@[k] == #@config[k]
-                @config[k], needUpdateConfig = @[k], true
-        return needUpdateConfig
+            @@config\write false, waitTime if writeGlobal
+            @config\write false, waitTime if writeLocal
 
     parse: (value) =>
         return value if type(value)=="number"
@@ -259,7 +214,7 @@ class DependencyControl
         return "%d.%d.%d"\format unpack parts
 
     getConfigFileName: () =>
-        return aegisub.decode_path "#{@@config.configDir}/#{@configFile}"
+        return aegisub.decode_path "#{@@config.c.configDir}/#{@configFile}"
 
     check: (value) =>
         if type(value)=="string"
@@ -375,7 +330,7 @@ class DependencyControl
             name, description = @name, @description
 
         menuName = {}
-        menuName[1] = @config.customMenu if @config.customMenu
+        menuName[1] = @config.c.customMenu if @config.c.customMenu
         menuName[#menuName+1] = @name if useSubmenu
         menuName[#menuName+1] = name
 
@@ -495,7 +450,7 @@ class DependencyControl
             feedData = feedCache[feed]
         else
             feedFile = {aegisub.decode_path("?user/"), "l0.#{@@__name}_feed_",
-                        @@config.dumpFeeds and "%08X"\format(math.random 0, 16^8-1) or "latest", ".json"}
+                        @@config.c.dumpFeeds and "%08X"\format(math.random 0, 16^8-1) or "latest", ".json"}
             feedFilePath = table.concat feedFile
 
             dl, err = dlm\addDownload feed, feedFilePath
@@ -519,7 +474,7 @@ class DependencyControl
                 return -7, feed
             else feedCache[feed] = @expandFeed feedData
 
-            if @@config.dumpFeeds
+            if @@config.c.dumpFeeds
                 handle = io.open table.concat(feedFile, "", 1, 3)..".exp.json", "w"
                 handle\write(json.encode feedData)\close!
 
@@ -563,15 +518,15 @@ class DependencyControl
             logger.indent -= 1
             return -10, err
 
-        platformExtErr = "#{@@config.platform};#{@config.lastChannel}"
+        platformExtErr = "#{@@config.c.platform};#{@config.c.lastChannel}"
         -- check if our platform is supported
-        if data.platforms and not ({p,true for p in *data.platforms})[@@config.platform]
+        if data.platforms and not ({p,true for p in *data.platforms})[@@config.c.platform]
             logger\log @getUpdaterErrorMsg -11, @name, @moduleName, @virtual, platformExtErr
             return -11, extErr
 
         -- check if any files are available for download
         unless data.files
-            extErr = "#{@@config.platform};#{@config.lastChannel}"
+            extErr = "#{@@config.c.platform};#{@config.c.lastChannel}"
             logger\log @getUpdaterErrorMsg -12, @name, @moduleName, @virtual, platformExtErr
             return -12, extErr
 
@@ -645,7 +600,7 @@ class DependencyControl
         @version = @parse data.version
         @requiredModules = data.requiredModules
         -- TODO: only set this flag if the script wasn't loaded before
-        @config.needsReload = true
+        @config.c.needsReload = true
 
         logger\log msgs.updSuccess, @virtual and "Download" or "Update",
                    @moduleName and "module" or "macro", @name, @get!
@@ -671,8 +626,8 @@ class DependencyControl
         -- TODO: check handling of private module copies (need extra return value?)
         return 1, @get!
 
-    update: (force = false, addFeeds = {}, tryAllFeeds = @virtual or @@config.tryAllFeeds) =>
-        unless @@config.updaterEnabled
+    update: (force = false, addFeeds = {}, tryAllFeeds = @virtual or @@config.c.tryAllFeeds) =>
+        unless @@config.c.updaterEnabled
             logger\log @getUpdaterErrorMsg -1, @name, @moduleName, @virtual
             return -1
 
@@ -681,21 +636,21 @@ class DependencyControl
             logger\log @getUpdaterErrorMsg -2, @name, @moduleName, @virtual
             return -2
 
-        if @config.lastUpdateCheck and (@config.lastUpdateCheck + @@config.updateInterval > os.time!) and not force
+        if @config.c.lastUpdateCheck and (@config.c.lastUpdateCheck + @@config.c.updateInterval > os.time!) and not force
             return 0  -- the update interval has not yet been passed since the last update check
 
-        @config.lastUpdateCheck = os.time!
+        @config.c.lastUpdateCheck = os.time!
         logger\log @virtual and  msgs.updateInfo.fetching or msgs.updateInfo.starting, force and "forced " or "",
                    @moduleName and "module" or "macro", @name, not @virtual and @get!
 
         feeds = {}
-        if @config.userFeed
+        if @config.c.userFeed
             -- setting a userFeed for a module locks the module to that feed
-            feeds[1] = @config.userFeed
+            feeds[1] = @config.c.userFeed
         else
             feeds[1] = @feed
             feeds[#feeds+1] = feed for feed in *addFeeds
-            feeds[#feeds+1] = feed for feed in *@@config.extraFeeds
+            feeds[#feeds+1] = feed for feed in *@@config.c.extraFeeds
 
         if #feeds==0
             logger\log @getUpdaterErrorMsg -3, @name, @moduleName, @virtual
