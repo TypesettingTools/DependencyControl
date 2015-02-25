@@ -290,12 +290,12 @@ class DependencyControl
 
     requireModules: (modules=@requiredModules, forceUpdate, returnErrorOnly, addFeeds={@feed}) =>
         for mdl in *modules
-
-            -- try to load private copies of required modules first
-            loaded = @load mdl, true
-            loaded = @load mdl unless loaded
-
             with mdl
+                ._ref, ._updated, ._missing, ._outdated, ._reason = nil, nil, nil, nil, nil
+                -- try to load private copies of required modules first
+                loaded = @load mdl, true
+                loaded = @load mdl unless loaded
+
                 unless loaded
                     -- try to fetch and load a missing module from the web
                     fetchedModule = @@{moduleName:.moduleName, name:.name or .moduleName,
