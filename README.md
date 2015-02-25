@@ -1,5 +1,5 @@
-ASSFoundation
-=============
+DependencyControl - Enterprise Aegisub Script Management
+========================================================
 
  1. [DependencyControl](#dependencycontrol)
 
@@ -18,8 +18,8 @@ __Features__:
  * Supports circular dependencies (limitations apply)
  * Supports loading of private module copies for cases where an older or custom version of a module is required
  * _Planned: Automatic script update from the web_
- 
-__Requirements__: 
+
+__Requirements__:
  * Aegisub 3.2.0+
  * [LuaJSON](https://github.com/harningt/luajson)
 
@@ -58,7 +58,7 @@ For a __single macro__ that should be registered using the *script_name* as auto
 version:registerMacro(myProcessingFunction)
 ```
 
-For a script that registers __several macros__ using its own submenu use: 
+For a script that registers __several macros__ using its own submenu use:
 ```Lua
 version:registerMacros{
     {script_name, "Opens the Move Along Path GUI", showDialog, validClip},
@@ -95,8 +95,8 @@ local createASSClass, re, util, unicode, Common, LineCollection, Line, Log, ASSI
 
 ```
 
-A reference to the version record must be added as the *.version* field of your returned module for version control to work. 
-A module should also register itself to enable circular dependency support. The *:register()* method returns your module, so the last lines of your module should look like this: 
+A reference to the version record must be added as the *.version* field of your returned module for version control to work.
+A module should also register itself to enable circular dependency support. The *:register()* method returns your module, so the last lines of your module should look like this:
 
 ```Lua
 
@@ -119,7 +119,7 @@ __Arguments:__
     * __*str* [url]__: The URL of the site where the module can be downloaded from (will be shown to the user in error methods).
     * __*bool* [optional=false]__: Marks the module as an optional requirement. If the module is missing on the user's system, no error will be thrown. However, version requirements *will* be checked if the module was found.
     * __*str* [name]__: Friendly module name (used for error messages).
-  
+
 * _name, description, author_: Required for modules, pulled from the *script_* globals for macros.
 * _version_: Must conform to [Semantic Versioning](http://semver.org/) standards. Labels and build metadata are not supported at this time
 * _moduleName_: module name (as used in require statements). Required for modules, must be nil for macros
@@ -138,7 +138,7 @@ Checks if the optional __modules__ have been loaded, where __modules__ is a list
 
 __:get() --> *str* versionString__
 
-Returns the module version as a SemVer string. 
+Returns the module version as a SemVer string.
 
 __:getConfigFileName() --> *str* configFileName__
 
@@ -146,7 +146,7 @@ Generates and returns a full path to the registered config file name for the mod
 
 __:load(*tbl* module, *bool* usePrivate) --> *tbl* moduleRef__
 
-Loads and returns single module and only errors out in case of module errors. Mostly intended for internal use. If __usePrivate__ is true, a private copy of the module is loaded instead. 
+Loads and returns single module and only errors out in case of module errors. Mostly intended for internal use. If __usePrivate__ is true, a private copy of the module is loaded instead.
 
 __:parse(*str/num* versionString) --> *int* version__
 
@@ -166,16 +166,16 @@ Alternative Signature:
 
 __:registerMacro(*func* processing_function, *func* [validation_function], *func* is_active_function, *bool* [useSubmenu=false])__
 
-Registers a single macro using script name and description by default. 
+Registers a single macro using script name and description by default.
 If __useSubmenu__ is set to true, the macro will be placed in a submenu using the script name.
 
-If the script entry in the DependencyControl configuration file contains a __customMenu__ property, the macro will be placed in the specified menu. Do note that that this setting is for *user customization* and not to be changed without the user's consent. 
+If the script entry in the DependencyControl configuration file contains a __customMenu__ property, the macro will be placed in the specified menu. Do note that that this setting is for *user customization* and not to be changed without the user's consent.
 
 For the other arguments, please refer to the [aegisub.register_macro](http://docs.aegisub.org/latest/Automation/Lua/Registration/#aegisub.register_macro) API documentation.
 
 __:registerMacros(*tbl* macros, *bool* [useSubmenuDefault=true])__
 
-Registers multiple macros, where __macros__ is a list of tables containing the arguments to a __:registerMacro()__ call for each automation menu entry.  a single macro using script name and description by default. 
+Registers multiple macros, where __macros__ is a list of tables containing the arguments to a __:registerMacro()__ call for each automation menu entry.  a single macro using script name and description by default.
 If __useSubmenuDefault__ is set to true, the macros will be placed in a submenu using the script name unless overriden by per-macro settings.
 
 __:requireModules([modules=@requiredModules]) --> ...__
