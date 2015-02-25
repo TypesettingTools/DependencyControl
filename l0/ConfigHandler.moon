@@ -21,9 +21,12 @@ class ConfigHandler
 
         -- set up user configuration and make defaults accessible
         @userConfig = {}
-        @config = setmetatable {}, {__index: (_, key) ->
-            if @userConfig[key] ~= nil return @userConfig[key]
-            else return @defaults[key]}
+        @config = setmetatable {}, {
+            __index: (_, k) ->
+                if @userConfig[k] ~= nil return @userConfig[k]
+                else return @defaults[k]
+            __newindex: (_, k, v) -> @userConfig[k] = v
+        }
         @c = @config -- shortcut
 
         -- rig defaults in a way that writing to contained tables deep-copies the whole default
