@@ -225,7 +225,7 @@ class DependencyControl
     checkOptionalModules: (modules, noAssert) =>
         modules = type(modules)=="string" and {[modules]:true} or {mdl,true for mdl in *modules}
         missing = [msgs.missingTemplate\format mdl.moduleName, mdl.version, mdl.url and ": #{mdl.url}" or "",
-            mdl.reason or "" for mdl in *@requiredModules when mdl.optional and mdl.missing and modules[mdl.name]]
+            mdl._reason or "" for mdl in *@requiredModules when mdl.optional and mdl._missing and modules[mdl.name]]
 
         if #missing>0
             downloadHint = msgs.missingModulesDownloadHint\format aegisub.decode_path "?user/automation/include"
@@ -240,20 +240,18 @@ class DependencyControl
 
         -- pass already loaded modules as reference
         if LOADED_MODULES[moduleName]
-            mdl.ref, mdl.missing = LOADED_MODULES[moduleName], false
-            return mdl.ref
+            mdl._ref, mdl._missing = LOADED_MODULES[moduleName], false
+            return mdl._ref
 
         loaded, res = pcall require, moduleName
-        mdl.missing = not loaded and res\match "^module '.+' not found:"
+        mdl._missing = not loaded and res\match "^module '.+' not found:"
         -- check for module errors
-        unless loaded or mdl.missing
-            -- run require unprotected again to get a better stack trace
-            logger\log msgs.moduleError, name
-            require moduleName
+        unless loaded or mdl._missing
+            logger\error msgs.moduleError, name, res
 
         if loaded
-            mdl.ref, LOADED_MODULES[moduleName] = res, res
-        return mdl.ref
+            mdl._ref, LOADED_MODULES[moduleName] = res, res
+        return mdl._ref
 
     requireModules: (modules=@requiredModules, forceUpdate, returnErrorOnly, addFeeds={@feed}) =>
         for mdl in *modules
@@ -270,13 +268,13 @@ class DependencyControl
                     res, err, isPrivate = fetchedModule\update true, addFeeds
                     if res>0
                         @load mdl, isPrivate
-                        .updated = true
+                        ._updated = true
                     else
-                        .reason = @getUpdaterErrorMsg res, .name or .moduleName, true, true, err
+                        ._reason = @getUpdaterErrorMsg res, .name or .moduleName, true, true, err
                         LOADED_MODULES[.moduleName] = nil
 
                 -- check version
-                if .version and not .missing
+                if .version and not ._missing
                     loadedVer = assert loaded.version, msgs.missingRecord\format(.moduleName)
                     if type(loadedVer)~="table" or loadedVer.__class~=@@
                         loadedVer = @@ moduleName:.moduleName, version:loadedVer, unmanaged:true
@@ -284,32 +282,32 @@ class DependencyControl
                     -- force an update check for outdated modules
                     if not loadedVer\check .version
                         -- module was freshly fetched/updated and still couldn't satisfy the version requirements
-                        .reason = msgs.updNoSuitableVersion\format loadedVer.name, loadedVer\get!, @name, .version
-                        .outdated = true
-                        continue if .updated
+                        ._reason = msgs.updNoSuitableVersion\format loadedVer.name, loadedVer\get!, @name, .version
+                        ._outdated = true
+                        continue if ._updated
 
                         res, err, isPrivate = loadedVer\update true, addFeeds, true
                         if res > 0
                             if loadedVer\check .version
-                                .ref, .outdated, .reason = loadedVer.ref, false, nil
+                                ._ref, ._outdated, ._reason = loadedVer._ref, false, nil
                         elseif res < 0 -- update failed, settle for the regular outdated message
-                            .reason = @getUpdaterErrorMsg res, .name or .moduleName, false, true, err
-                        else .reason = msgs.updNoSuitableUpdate\format loadedVer.name, loadedVer\get!, @name, .version
+                            ._reason = @getUpdaterErrorMsg res, .name or .moduleName, false, true, err
+                        else ._reason = msgs.updNoSuitableUpdate\format loadedVer.name, loadedVer\get!, @name, .version
 
                     elseif loadedVer\update(forceUpdate, addFeeds) > 0 -- perform regular update
-                        .ref = loadedVer.ref
-                    .loaded = loadedVer
-                else .loaded = type(loaded)=="table" and loaded.version or true
+                        ._ref = loadedVer._ref
+                    ._loaded = loadedVer
+                else ._loaded = type(loaded) == "table" and loaded.version or true
 
         errorMsg = ""
         missing = [msgs.missingTemplate\format mdl.moduleName, mdl.version, mdl.url and ": #{mdl.url}" or "",
-                   mdl.reason for mdl in *modules when mdl.missing and not mdl.optional]
+                   mdl._reason for mdl in *modules when mdl._missing and not mdl.optional]
         if #missing>0
             downloadHint = msgs.missingModulesDownloadHint\format aegisub.decode_path "?user/automation/include"
             errorMsg ..= msgs.missingModules\format @name, table.concat(missing), downloadHint
 
-        outdated = [msgs.outdatedTemplate\format mdl.moduleName, mdl.loaded\get!, mdl.version, mdl.url and ": #{mdl.url}" or "",
-                    mdl.reason for mdl in *modules when mdl.outdated]
+        outdated = [msgs.outdatedTemplate\format mdl.moduleName, mdl._loaded\get!, mdl.version, mdl.url and ": #{mdl.url}" or "",
+                    mdl._reason for mdl in *modules when mdl._outdated]
         if #outdated>0
             errorMsg ..= msgs.outdatedModules\format @name, table.concat outdated
 
@@ -317,7 +315,7 @@ class DependencyControl
             error errorMsg if not returnErrorOnly
             return errorMsg
 
-        return unpack [mdl.ref for mdl in *modules when mdl.loaded or mdl.optional] if not returnErrorOnly
+        return unpack [mdl._ref for mdl in *modules when mdl._loaded or mdl.optional] if not returnErrorOnly
 
     register: (selfRef) =>
         -- replace dummy refs with real refs to own module
