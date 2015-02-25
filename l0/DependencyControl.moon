@@ -193,8 +193,6 @@ class DependencyControl
 
 
     loadConfig: (forceReloadGlobal = false) =>
-        return false if @virtual and @@config and not forceReloadGlobal
-
         -- load global config
         local firstInit
         if @@config
@@ -206,8 +204,9 @@ class DependencyControl
         -- load per-script config
         -- virtual modules are not yet present on the user's system and have no persistent configuration
         @config = ConfigHandler not @virtual and depConf.file, {}, {@type, @namespace}
-        -- copy script information to the config
-        return firstInit, @config\import @, depConf.scriptFields
+        --  copy script information to the config
+        shouldWriteConfig = not @virtual and @config\import @, depConf.scriptFields
+        return firstInit, shouldWriteConfig
 
     writeConfig: (waitTime, concert = true, writeLocal, writeGlobal) =>
         if concert
