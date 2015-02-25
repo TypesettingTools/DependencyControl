@@ -3,6 +3,7 @@ lfs = require "aegisub.lfs"
 re = require "aegisub.re"
 ffi = require "ffi"
 Logger = require "l0.Logger"
+ConfigHandler = require "l0.ConfigHandler"
 PreciseTimer = require "PreciseTimer.PreciseTimer"
 DownloadManager = require "DownloadManager.DownloadManager"
 
@@ -435,7 +436,7 @@ class DependencyControl
             logger\log msgs.updateInfo.createdDir, dir
 
         -- at this point the target directory exists and the target file doesn't, move the file
-        res, err = os.rename source target
+        res, err = os.rename source, target
         unless res -- renaming the file failed, probably a permission issue
             return false, msgs.cantRenameFile, source, target, err
 
@@ -610,7 +611,7 @@ class DependencyControl
             changes = [{@parse(ver), entry} for ver, entry in pairs scriptData.changelog when @check ver]
             table.sort changes, (a,b) -> a[1]>b[1]
             if #changes>0
-                logger\log msgs.updateInfo.changelog, @name, @get!, scriptData.released or "<no date>"
+                logger\log msgs.updateInfo.changelog, @name, @get!, data.released or "<no date>"
                 logger.indent += 1
                 for chg in *changes
                     msg = type(chg[2]) ~= "table" and tostring(chg[2]) or table.concat chg[2], "\n——"
