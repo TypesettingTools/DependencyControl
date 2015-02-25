@@ -19,7 +19,7 @@ class DependencyControl
 %s\nPlease update the modules in question manually and reload your automation scripts."
         outdatedTemplate: "— %s (Installed: v%s; Required: v%s)%s\n—— Reason: %s"
         missingRecord: "Error: module '%s' is missing a version record."
-        moduleError: "Error in module %s:"
+        moduleError: "Error in module %s:\n%s"
         badNamespace: "Namespace '%s' failed validation. Namespace rules: must contain 1+ single dots, but not start or end with a dot; all other characters must be in [A-Za-z0-9-_]."
         badVersionString: "Error: can't parse version string '%s'. Make sure it conforms to semantic versioning standards."
         badModuleRecord: "Invalid required module record #%d (%s)."
@@ -73,7 +73,7 @@ class DependencyControl
             [17]: "Couldn't finish %s of %s '%s' because some files couldn't be moved to their target location:\n—"
             [100]: "Error (%d) in component %s during %s of %s '%s':\n— %s"
         }
-        updaterErrorComponent: {"DownloadManager", "DownloadManager"}
+        updaterErrorComponent: {"DownloadManager (adding download)", "DownloadManager"}
     }
     depConf = {
         file: aegisub.decode_path "?user/config/l0.#{@@__name}.json",
@@ -559,12 +559,12 @@ class DependencyControl
                 logger\log msgs.updateInfo.fileUnchanged, prettyName
                 continue
 
-            logger\log msgs.updateInfo.fileAddDownload, file.url, prettyName
             dl, err = dlm\addDownload file.url, tmpName, file.sha1
             unless dl
                 logger\log @getUpdaterErrorMsg -115, @name, @moduleName, @virtual, err
                 return -115, err
             dl.targetFile = name
+            logger\log msgs.updateInfo.fileAddDownload, file.url, prettyName
 
         dlm\waitForFinish (progress) ->
             logger\progress progress, msgs.updateInfo.filesDownloading, dlm.downloadCount
@@ -595,7 +595,6 @@ class DependencyControl
 
 
         -- Update script information/configuration
-        -- TODO: check json [1]->["1"] issue in requiredModules
         {url:@url, author:@author, name:@name, description:@description} = scriptData
         @version = @parse data.version
         @requiredModules = data.requiredModules
@@ -622,6 +621,9 @@ class DependencyControl
 
         @writeConfig!
 
+        -- TODO: platform specific file support
+        -- TODO: additional variable: this feed url
+        -- TODO: postpone update if other update in progress (lock file with macro as content)
         -- TODO: reload self: update global registry, return a new ref
         -- TODO: check handling of private module copies (need extra return value?)
         return 1, @get!
