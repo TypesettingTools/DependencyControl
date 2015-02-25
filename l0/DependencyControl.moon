@@ -218,6 +218,17 @@ class DependencyControl
     getConfigFileName: () =>
         return aegisub.decode_path "#{@@config.c.configDir}/#{@configFile}"
 
+    getConfigHandler: (defaults, section, noLoad) =>
+        return ConfigHandler @getConfigFileName, default, section, noLoad
+
+    getLogger: (args) =>
+        args.fileBaseName or= @namespace
+        args.toFile = @config.logToFile if args.toFile == nil
+        args.defaultLevel or= @config.logLevel
+        args.prefix or= @moduleName and "[#{@name}]"
+
+        return Logger args
+
     check: (value) =>
         if type(value)=="string"
             value = @parse value
