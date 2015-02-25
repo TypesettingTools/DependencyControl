@@ -11,17 +11,24 @@ class DependencyControl
     semParts = {{"major", 16}, {"minor", 8}, {"patch", 0}}
     namespaceValidation = re.compile "^(?:[-\\w]+\\.)+[-\\w]+$"
     msgs = {
+        badRecordError: "Bad {#@@__name} record (%s)."
+        badRecord: {
+            noUnmanagedMacros: "Creating unmanaged version records for macros is not allowed"
+            missingNamespace: "No namespace defined"
+            badVersion: "Couldn't parse version number: %s"
+            badNamespace: "Namespace '%s' failed validation. Namespace rules: must contain 1+ single dots, but not start or end with a dot; all other characters must be in [A-Za-z0-9-_]."
+        }
         missingModules: "Error: one or more of the modules required by %s could not be found on your system:\n%s\n%s"
         missingOptionalModules: "Error: a %s feature you're trying to use requires additional modules that were not found on your system:\n%s\n%s"
-        missingModulesDownloadHint: "Please download the modules in question, put them in your %s folder and reload your automation scripts."
+        missingModulesDownloadHint: "Please download the modules in question manually, put them in your %s folder and reload your automation scripts."
         missingTemplate: "— %s (v%s+)%s\n—— Reason: %s"
         outdatedModules: "Error: one or more of the modules required by %s are outdated on your system:
 %s\nPlease update the modules in question manually and reload your automation scripts."
         outdatedTemplate: "— %s (Installed: v%s; Required: v%s)%s\n—— Reason: %s"
         missingRecord: "Error: module '%s' is missing a version record."
         moduleError: "Error in module %s:\n%s"
-        badNamespace: "Namespace '%s' failed validation. Namespace rules: must contain 1+ single dots, but not start or end with a dot; all other characters must be in [A-Za-z0-9-_]."
-        badVersionString: "Error: can't parse version string '%s'. Make sure it conforms to semantic versioning standards."
+        badVersionString: "Can't parse version string '%s'. Make sure it conforms to semantic versioning standards."
+        badVersionType: "Argument had the wrong type: expected string or number, got '%s'"
         badModuleRecord: "Invalid required module record #%d (%s)."
         versionOverflow: "Error: %s version must be an integer < 255, got %s."
         updNoSuitableVersion: "The version of '%s' downloaded (v%s) did not satisfy the %s requirements (v%s)."
@@ -64,6 +71,7 @@ class DependencyControl
             orphaned: "Ignoring orphaned in-progress update started by %s."
         }
         updateError: {
+            [0]: "Couldn't %s %s '%s' because of a paradox: module not found but updater says up-to-date (%s)"
             [1]: "Couldn't %s %s '%s' because the updater is disabled.",
             [2]: "Skipping %s of unmanaged %s '%s'.",
             [3]: "No feed available to %s %s '%s' from.",
@@ -71,12 +79,13 @@ class DependencyControl
             [7]: "Couldn't %s %s '%s': error parsing feed %s.",
             [8]: "The specified feed doesn't have the required data to %s the %s '%s'.",
             [9]: "Couldn't %s %s '%s' because the specified channel '%s' wasn't present in the feed.",
-            [10]: "Couldn't %s %s '%s' because its requirements could not be satisfied:",
-            [11]: "Couldn't %s %s '%s': unsupported platform (%s).",
-            [12]: "Couldn't %s %s '%s' because the feed doesn't specify any files for your platform (%s).",
-            [13]: "Couldn't %s %s '%s': failed to create temporary download directory %s",
-            [14]: "Aborted %s of %s '%s' because the feed contained a missing or malformed SHA-1 hash for file %s."
-            [17]: "Couldn't finish %s of %s '%s' because some files couldn't be moved to their target location:\n—"
+            [13]: "Couldn't %s %s '%s': feed contains an inalid version record (%s)."
+            [15]: "Couldn't %s %s '%s' because its requirements could not be satisfied:",
+            [20]: "Couldn't %s %s '%s': unsupported platform (%s).",
+            [25]: "Couldn't %s %s '%s' because the feed doesn't specify any files for your platform (%s).",
+            [30]: "Couldn't %s %s '%s': failed to create temporary download directory %s",
+            [35]: "Aborted %s of %s '%s' because the feed contained a missing or malformed SHA-1 hash for file %s."
+            [50]: "Couldn't finish %s of %s '%s' because some files couldn't be moved to their target location:\n—"
             [100]: "Error (%d) in component %s during %s of %s '%s':\n— %s"
         }
         updaterErrorComponent: {"DownloadManager (adding download)", "DownloadManager"}
@@ -147,14 +156,15 @@ class DependencyControl
 
         else
             @name, @description, @author, @version = script_name, script_description, script_author, script_version
-            assert not unmanaged, "Error: creating unmanaged version records for macros is not allowed."
-            assert @namespace, "Error: namespace required"
+            logger\assert not unmanaged, msgs.badRecordError, msgs.badRecord.noUnmanagedMacros
+            logger\assert @namespace, msgs.badRecordError, msgs.badRecord.missingNamespace
             @type = "macros"
 
-        assert #namespaceValidation\find(@namespace) > 0, msgs.badNamespace\format @namespace
+        logger\assert #namespaceValidation\find(@namespace) > 0, msgs.badRecord.badNamespace, @namespace
         @name = @namespace unless @name
         @configFile = configFile or "#{@namespace}.json"
-        @version = @parse @version
+        @version, err = @parse @version
+        logger\assert @version, msgs.badRecordError, msgs.badRecord.badVersion\format err
 
         @requiredModules or= {}
         -- normalize short format module tables
@@ -207,19 +217,23 @@ class DependencyControl
             @config\write false, waitTime if writeLocal
 
     parse: (value) =>
-        return value if type(value)=="number"
-        return 0 if not value or type(value)~="string"
+        switch type value
+            when "number" then return math.max value, 0
+            when "nil" then return 0
+            when "string"
+                matches = {value\match "^(%d+).(%d+).(%d+)$"}
+                if #matches!=3
+                    return false, msgs.badVersionString\format value
 
-        matches = {value\match "^(%d+).(%d+).(%d+)$"}
-        assert #matches==3, msgs.badVersionString\format value
+                version = 0
+                for i, part in ipairs semParts
+                    value = tonumber(matches[i])
+                    if type(value) != "number" or value>256
+                        return false, msgs.versionOverflow\format part[1], tostring value
+                    version += bit.lshift value, part[2]
+                return version
 
-        version = 0
-        for i, part in ipairs semParts
-            value = tonumber(matches[i])
-            assert type(value)=="number" and value<256, msgs.versionOverflow\format(part[1], tostring value)
-            version += bit.lshift value, part[2]
-
-        return version
+            else return false, msgs.badVersionType\format type value
 
     get: (version = @version) =>
         parts = [bit.rshift(version, part[2])%256 for part in *semParts]
@@ -240,11 +254,12 @@ class DependencyControl
         return Logger args
 
     check: (value) =>
-        if type(value)=="string"
-            value = @parse value
-        return @version>=value
+        if type(value) != "number"
+            value, err = @parse value
+            return nil, err unless value
+        return @version >= value
 
-    checkOptionalModules: (modules, noAssert) =>
+    checkOptionalModules: (modules) =>
         modules = type(modules)=="string" and {[modules]:true} or {mdl,true for mdl in *modules}
         missing = [msgs.missingTemplate\format mdl.moduleName, mdl.version, mdl.url and ": #{mdl.url}" or "",
             mdl._reason or "" for mdl in *@requiredModules when mdl.optional and mdl._missing and modules[mdl.name]]
@@ -252,9 +267,8 @@ class DependencyControl
         if #missing>0
             downloadHint = msgs.missingModulesDownloadHint\format aegisub.decode_path "?user/automation/include"
             errorMsg = msgs.missingOptionalModules\format @name, table.concat(missing), downloadHint
-            return errorMsg if noAssert
-            logger\error errorMsg
-        return nil
+            return false, errorMsg
+        return true
 
     load: (mdl, usePrivate) =>
         moduleName = usePrivate and "#{@namespace}.#{mdl.moduleName}" or mdl.moduleName
@@ -334,7 +348,7 @@ class DependencyControl
             errorMsg ..= msgs.outdatedModules\format @name, table.concat outdated
 
         if #errorMsg>0
-            error errorMsg if not returnErrorOnly
+            logger\error errorMsg if not returnErrorOnly
             return errorMsg
 
         return unpack [mdl._ref for mdl in *modules when mdl._loaded or mdl.optional] if not returnErrorOnly
@@ -378,7 +392,6 @@ class DependencyControl
         else
             -- Updater error:
             -- VarArgs: 1: isModule, 2: isFetch, 3: additional information
-            error tostring(code) unless msgs.updateError[-code]
             return msgs.updateError[-code]\format args[2] and "fetch" or "update",
                                                   args[1] and "module" or "macro",
                                                   name, args[3]
@@ -523,7 +536,12 @@ class DependencyControl
                 logger\log @getUpdaterErrorMsg -9, @name, @moduleName, @virtual, .lastChannel
                 return -9, .lastChannel
 
-        if @check data.version
+        res, err = @check data.version
+        if res == nil
+            extErr = "#{@config.c.lastChannel}/#{tostring(data.version)}"
+            logger\log @getUpdaterErrorMsg -13, @name, @moduleName, @virtual, extErr
+            return -13, extErr
+        elseif res
             logger\log msgs.updNoNewVersion, @moduleName and "Module" or "Macro", @name, @get!
             return 0
 
@@ -533,23 +551,24 @@ class DependencyControl
         err = @requireModules data.requiredModules or {}, true, true
         logger.indent -= 1
         if err
-            logger\log @getUpdaterErrorMsg -10, @name, @moduleName, @virtual
+            logger\log @getUpdaterErrorMsg -15, @name, @moduleName, @virtual
             logger.indent += 1
             logger\log err
             logger.indent -= 1
-            return -10, err
+            return -15, err
 
         platformExtErr = "#{platform};#{@config.c.lastChannel}"
         -- check if our platform is supported
         if data.platforms and not ({p,true for p in *data.platforms})[platform]
-            logger\log @getUpdaterErrorMsg -11, @name, @moduleName, @virtual, platformExtErr
-            return -11, platformExtErr
+            logger\log @getUpdaterErrorMsg -20, @name, @moduleName, @virtual, platformExtErr
+            return -20, platformExtErr
 
         -- check if any files are available for download
         files = data.files and [file for file in *data.files when not file.platform or file.platform == platform]
         unless files and #files>0
-            logger\log @getUpdaterErrorMsg -12, @name, @moduleName, @virtual, platformExtErr
-            return -12, platformExtErr
+            logger\log @getUpdaterErrorMsg -25, @name, @moduleName, @virtual, platformExtErr
+            return -25, platformExtErr
+
 
         -- download updated scripts to temp directory
         -- check hashes before download, only update changed files
@@ -558,8 +577,8 @@ class DependencyControl
         res, err = lfs.mkdir tmpDir
         if res or err
             extErr = "#{tmpDir} (#{err})"
-            logger\log @getUpdaterErrorMsg -13, @name, @moduleName, @virtual, extErr
-            return -13, extErr
+            logger\log @getUpdaterErrorMsg -30, @name, @moduleName, @virtual, extErr
+            return -30, extErr
         logger\log msgs.updateInfo.updateReady, tmpDir
 
         scriptSubDir = @moduleName and @moduleName\gsub("%.","/") or @namespace
@@ -573,8 +592,8 @@ class DependencyControl
 
             unless type(file.sha1)=="string" and #file.sha1 == 40 and tonumber(file.sha1, 16)
                 extErr = "#{prettyName} (#{tostring(file.sha1)\lower!})"
-                logger\log @getUpdaterErrorMsg -14, @name, @moduleName, @virtual, extErr
-                return -14, extErr
+                logger\log @getUpdaterErrorMsg -35, @name, @moduleName, @virtual, extErr
+                return -35, extErr
 
             if dlm\checkFileSHA1 name, file.sha1
                 logger\log msgs.updateInfo.fileUnchanged, prettyName
@@ -582,8 +601,8 @@ class DependencyControl
 
             dl, err = dlm\addDownload file.url, tmpName, file.sha1
             unless dl
-                logger\log @getUpdaterErrorMsg -115, @name, @moduleName, @virtual, err
-                return -115, err
+                logger\log @getUpdaterErrorMsg -140, @name, @moduleName, @virtual, err
+                return -140, err
             dl.targetFile = name
             logger\log msgs.updateInfo.fileAddDownload, file.url, prettyName
 
@@ -594,8 +613,8 @@ class DependencyControl
 
         if dlm.failedCount>0
             err = table.concat ["#{dl.url}: #{dl.error}" for dl in *dlm.failedDownloads], "\n —"
-            logger\log @getUpdaterErrorMsg -216, @name, @moduleName, @virtual, err
-            return -216, err
+            logger\log @getUpdaterErrorMsg -245, @name, @moduleName, @virtual, err
+            return -245, err
 
         logger\log msgs.updateInfo.movingFiles, scriptDir
         moveErrors = {}
@@ -609,8 +628,8 @@ class DependencyControl
 
         if #moveErrors>0
             extErr = table.concat moveErrors, "\n— "
-            logger\log @getUpdaterErrorMsg -17, @name, @moduleName, @virtual, extErr
-            return -17, err
+            logger\log @getUpdaterErrorMsg -50, @name, @moduleName, @virtual, extErr
+            return -50, err
 
         -- Update process finished
 
