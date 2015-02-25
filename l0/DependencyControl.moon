@@ -477,13 +477,13 @@ class DependencyControl
         return true
 
     updateFromFeed: (feed, force = false) =>
-        local feedData
+        local feedData, feedFile
         if feedCache[feed]
             logger\log msgs.updUsingCached
             feedData = feedCache[feed]
         else
-            feedFile = {aegisub.decode_path("?user/"), "l0.#{@@__name}_feed_",
-                        @@config.c.dumpFeeds and "%08X"\format(math.random 0, 16^8-1) or "latest", ".json"}
+            feedFile = {aegisub.decode_path(@@config.c.dumpFeeds and "?user/" or "?temp"),
+                        "l0.#{@@__name}_feed_", "%08X"\format(math.random 0, 16^8-1), ".json"}
             feedFilePath = table.concat feedFile
 
             dl, err = dlm\addDownload feed, feedFilePath
