@@ -536,7 +536,8 @@ class DependencyControl
             return -11, platformExtErr
 
         -- check if any files are available for download
-        unless data.files
+        files = data.files and [file for file in *data.files when not file.platform or file.platform == platform]
+        unless files and #files>0
             logger\log @getUpdaterErrorMsg -12, @name, @moduleName, @virtual, platformExtErr
             return -12, platformExtErr
 
@@ -557,7 +558,7 @@ class DependencyControl
         tmpBaseName = "#{tmpDir}/#{scriptSubDir}"
 
         dlm\clear!
-        for file in *data.files
+        for file in *files
             tmpName, name, prettyName = tmpBaseName..file.name, baseName..file.name, scriptSubDir..file.name
 
             unless type(file.sha1)=="string" and #file.sha1 == 40 and tonumber(file.sha1, 16)
