@@ -756,7 +756,8 @@ class DependencyControl
             break if res > (tryAllFeeds and 0 or -1)
             -- since we have multiple possible error states (one for every feed)
             -- return the one that's the farthest in to the updates process
-            if res%100 < res
+            normRes = -(-res%100)
+            if res <0 and normRes < minRes
                 minRes, minErr = res, err
 
         @@config.c.updaterRunning = false
