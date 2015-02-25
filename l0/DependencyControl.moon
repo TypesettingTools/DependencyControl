@@ -518,17 +518,16 @@ class DependencyControl
             logger.indent -= 1
             return -10, err
 
-        platformExtErr = "#{@@config.c.platform};#{@config.c.lastChannel}"
+        platformExtErr = "#{platform};#{@config.c.lastChannel}"
         -- check if our platform is supported
-        if data.platforms and not ({p,true for p in *data.platforms})[@@config.c.platform]
+        if data.platforms and not ({p,true for p in *data.platforms})[platform]
             logger\log @getUpdaterErrorMsg -11, @name, @moduleName, @virtual, platformExtErr
-            return -11, extErr
+            return -11, platformExtErr
 
         -- check if any files are available for download
         unless data.files
-            extErr = "#{@@config.c.platform};#{@config.c.lastChannel}"
             logger\log @getUpdaterErrorMsg -12, @name, @moduleName, @virtual, platformExtErr
-            return -12, extErr
+            return -12, platformExtErr
 
         -- download updated scripts to temp directory
         -- check hashes before download, only update changed files
