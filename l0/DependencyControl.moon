@@ -117,6 +117,7 @@ class DependencyControl
     dlm = DownloadManager!
     feedCache = {}
     configDirExists, logsHaveBeenTrimmed = false, false
+    platform = "#{ffi.os}-#{ffi.arch}"
 
     @createDir depConf.file, true
 
@@ -167,7 +168,6 @@ class DependencyControl
         @writeConfig firstInit and 5000 or 800, false, shouldWriteConfig
 
         logger.defaultLevel = @@config.c.traceLevel
-        @@config.c.platform = "#{ffi.os}-#{ffi.arch}"
         configDirExists or= @createDir @@config.c.configDir
         logsHaveBeenTrimmed or= @trimLogs!
 
