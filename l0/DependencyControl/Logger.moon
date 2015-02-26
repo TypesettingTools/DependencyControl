@@ -6,14 +6,21 @@ class Logger
     defaultLevel: 2
     maxToFileLevel: 4
     fileBaseName: script_name
+    fileSubName: ""
+    logDir: "?user/log"
+    fileTemplate: "%s/%s-%04x_%s_%s.log"
+    fileMatchTemplate: "%d%d%d%d%-%d%d%-%d%d%-%d%d%-%d%d%-%d%d%-%x%x%x%x_@{fileBaseName}_?.*%.log$"
     prefix: ""
-    toFile: false
-    toWindow: true
+    toFile: false, toWindow: true
+    indent: 0
+    usePrefix: true
+    indentStr: "—"
+    maxFiles: 200, maxAge: 604800, maxSize:10*(10^6)
+
     Timer, seeded = PreciseTimer!, false
 
     new: (args) =>
-        {defaultLevel: @defaultLevel, maxToFileLevel: @maxToFileLevel,
-         fileBaseName: @fileBaseName, prefix: @prefix, toFile: @toFile, toWindow: @toWindow} = args
+        @[k] = v for k, v in pairs args
 
         -- scripts are loaded simultaneously, so we need to avoid seeding the rng with the same time
         unless seeded
@@ -23,8 +30,10 @@ class Logger
             seeded = true
 
          -- TODO: autodelete old logs
-
-        @fileName = aegisub.decode_path "?user/log/#{os.date '%Y-%m-%d-%H-%M-%S'}-#{'%04x'\format math.random 0, 16^4-1}_#{@fileBaseName}.log"
+        escaped = @fileBaseName\gsub("([%%%(%)%[%]%.%*%-%+%?%$%^])","%%%1")
+        @fileMatch = @fileMatchTemplate\gsub "@{fileBaseName}", escaped
+        @fileName = @fileTemplate\format aegisub.decode_path(@logDir), os.date("%Y-%m-%d-%H-%M-%S"),
+                                          math.random(0, 16^4-1), @fileBaseName, @fileSubName
 
     logEx: (level = @defaultLevel, msg = "", insertLineFeed = true, prefix = @prefix,  ...) =>
         return false if msg == ""
@@ -112,3 +121,28 @@ class Logger
     windowError: ( errorMessage ) ->
         aegisub.dialog.display { { class: "label", label: errorMessage } }, { "&Close" }, { cancel: "&Close" }
         aegisub.cancel!
+
+
+    trimFiles: (doWipe, maxAge = @maxAge, maxSize = @maxSize, maxFiles = @maxFiles) =>
+        files, totalSize, deletedSize, now, f = {}, 0, 0, os.time!, 0
+
+        dir = aegisub.decode_path @logDir
+        lfs.chdir dir
+        for file in lfs.dir dir
+            attr = lfs.attributes file
+            if type(attr) == "table" and attr.mode == "file" and file\find @fileMatch
+                @log "!!2"
+                f += 1
+                files[f] = {name:file, modified:attr.modification, size:attr.size}
+
+        table.sort files, (a,b) -> a.modified > b.modified
+        total, kept = #files, 0
+
+        for i, file in ipairs files
+            totalSize += file.size
+            if doWipe or kept > maxFiles or totalSize > maxSize or file.modified+maxAge < now
+                deletedSize += file.size
+                os.remove file.name
+            else
+                kept += 1
+        return total-kept, deletedSize, total, totalSize

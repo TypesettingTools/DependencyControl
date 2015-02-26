@@ -11,12 +11,13 @@ class DependencyControl
     semParts = {{"major", 16}, {"minor", 8}, {"patch", 0}}
     namespaceValidation = re.compile "^(?:[-\\w]+\\.)+[-\\w]+$"
     msgs = {
-        badRecordError: "Bad {#@@__name} record (%s)."
+        badRecordError: "Error: Bad {#@@__name} record (%s)."
         badRecord: {
             noUnmanagedMacros: "Creating unmanaged version records for macros is not allowed"
             missingNamespace: "No namespace defined"
             badVersion: "Couldn't parse version number: %s"
             badNamespace: "Namespace '%s' failed validation. Namespace rules: must contain 1+ single dots, but not start or end with a dot; all other characters must be in [A-Za-z0-9-_]."
+            badModuleTable: "Invalid required module table #%d (%s)."
         }
         missingModules: "Error: one or more of the modules required by %s could not be found on your system:\n%s\n%s"
         missingOptionalModules: "Error: a %s feature you're trying to use requires additional modules that were not found on your system:\n%s\n%s"
@@ -29,7 +30,6 @@ class DependencyControl
         moduleError: "Error in module %s:\n%s"
         badVersionString: "Can't parse version string '%s'. Make sure it conforms to semantic versioning standards."
         badVersionType: "Argument had the wrong type: expected string or number, got '%s'"
-        badModuleRecord: "Invalid required module record #%d (%s)."
         versionOverflow: "Error: %s version must be an integer < 255, got %s."
         skippedCheck: "Skipped update check for module '%s': Another update initiated by %s is already running."
         updNoSuitableVersion: "The version of '%s' downloaded (v%s) did not satisfy the %s requirements (v%s)."
@@ -96,9 +96,10 @@ class DependencyControl
         scriptFields: {"author", "configFile", "feed", "moduleName", "name", "namespace", "url",
                        "requiredModules", "version", "unmanaged"},
         globalDefaults: {updaterEnabled:true, updateInterval:302400, traceLevel:3, extraFeeds:{},
-                         tryAllFeeds:false, dumpFeeds:false, configDir:"?user/config",
-                         logMaxCount: 200, logMaxAge: 604800, logMaxSize:10*(10^6),
-                         updateWaitTimeout: 130, updateOrphanTimeout: 600}
+                         tryAllFeeds:false, dumpFeeds:true, configDir:"?user/config",
+                         logMaxFiles: 200, logMaxAge: 604800, logMaxSize:10*(10^6),
+                         updateWaitTimeout: 130, updateOrphanTimeout: 600,
+                         logDir: "?user/log", writeLogs: true}
         initWaitTime: 800
         firstInitWaitTime: 5000
     }
@@ -132,12 +133,11 @@ class DependencyControl
                     j += 1
             table.sort .sourceAt[i], (a,b) -> return .templates[a].order < .templates[b].order
 
-    logger = Logger fileBaseName: @@__name, prefix: "[#{@@__name}] ", toFile: true, defaultLevel: depConf.globalDefaults.traceLevel
     dlm = DownloadManager!
     feedCache = {}
     platform = "#{ffi.os}-#{ffi.arch}"
 
-    configDirExists, logsHaveBeenTrimmed, reloadPending, updaterLockingInstance = nil
+    configDirExists, logsHaveBeenTrimmed, reloadPending, updaterLockingInstance, logger = nil
     @createDir depConf.file, true
 
     new: (args)=>
@@ -159,15 +159,15 @@ class DependencyControl
 
         else
             @name, @description, @author, @version = script_name, script_description, script_author, script_version
-            logger\assert not unmanaged, msgs.badRecordError, msgs.badRecord.noUnmanagedMacros
-            logger\assert @namespace, msgs.badRecordError, msgs.badRecord.missingNamespace
+            assert not unmanaged, msgs.badRecordError\format msgs.badRecord.noUnmanagedMacros
+            assert @namespace, msgs.badRecordError\format msgs.badRecord.missingNamespace
             @type = "macros"
 
-        logger\assert #namespaceValidation\find(@namespace) > 0, msgs.badRecord.badNamespace, @namespace
+        assert #namespaceValidation\find(@namespace) > 0, msgs.badRecord.badNamespace\format @namespace
         @name = @namespace unless @name
         @configFile = configFile or "#{@namespace}.json"
         @version, err = @getVersionNumber @version
-        logger\assert @version, msgs.badRecordError, msgs.badRecord.badVersion\format err
+        assert @version, msgs.badRecordError\format msgs.badRecord.badVersion\format err
 
         @requiredModules or= {}
         -- normalize short format module tables
@@ -178,9 +178,15 @@ class DependencyControl
                     mdl[1] = nil
                 when "string"
                     @requiredModules[i] = {moduleName: mdl}
-                else logger\error msgs.badModuleRecord, i, tostring mdl
+                else error msgs.badRecordError\format msgs.badRecord.badModuleTable\format i, tostring mdl
 
         shouldWriteConfig, firstInit = @loadConfig!
+
+        logger or= Logger { fileBaseName: "DepCtrl", fileSubName: script_name, prefix: "[#{@@__name}] ",
+                            toFile: @@config.c.writeLogs, defaultLevel: @@config.c.traceLevel,
+                            maxAge: @@config.c.logMaxAge,maxSize: @@config.c.logMaxSize, maxFiles: @@config.c.logMaxFiles,
+                            logDir: @@config.c.logDir
+                          }
 
         -- write config file if contents are missing or are out of sync with the script version record
         -- ramp up the random wait time on first initialization (many scripts may want to write configuration data)
@@ -189,9 +195,8 @@ class DependencyControl
         @writeConfig shouldWriteConfig, false, false,
                      firstInit and depConf.firstInitWaitTime or depConf.initWaitTime
 
-        logger.defaultLevel = @@config.c.traceLevel
         configDirExists or= @createDir @@config.c.configDir
-        logsHaveBeenTrimmed or= @trimLogs!
+        logsHaveBeenTrimmed or= logger\trimFiles!
 
     loadConfig: (importRecord = false, forceReloadGlobal = false) =>
         -- load global config
@@ -793,28 +798,6 @@ class DependencyControl
 
         return maxRes if maxRes > -1
         return minRes, minErr
-
-    trimLogs: (doWipe, maxAge = @@config.c.logMaxAge, maxSize = @@config.c.logMaxSize, maxLogs = @@config.c.logMaxCount) =>
-        files, totalSize, deletedSize, now = {}, 0, 0, os.time!
-
-        for file in lfs.dir @@config.c.configDir
-            attr = lfs.attributes file
-            if type(attr) == "table" and attr.mode == "file" and file\find Logger.fileMatchTemplate
-                count += 1
-                file[count] = {name:file, modified:attr.modification, size:attr.size}
-
-        table.sort files, (a,b) -> a.modified > b.modified
-        total, kept = #files, 0
-
-        for i, file in ipairs files
-            totalSize += file.size
-            if doWipe or kept > maxLogs or totalSize > maxSize or file.modified+maxAge < now
-                deletedSize += file.size
-                os.remove file
-            else
-                kept += 1
-
-        return total-kept, deletedSize, total, totalSize
 
 DependencyControl.__class.version = DependencyControl{
     name: "DependencyControl",
