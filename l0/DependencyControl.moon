@@ -326,8 +326,8 @@ class DependencyControl
                                        version:-1, url:.url, feed:.feed, virtual:true}
                     haveUpdaterLock or= @getUpdaterLock true
                     res, err, isPrivate = fetchedModule\update true, addFeeds
-                    if res>0
-                        @load mdl, isPrivate
+                    if res >= 0
+                        loaded = @load mdl, isPrivate
                         ._updated = true
                     else
                         ._reason = @getUpdaterErrorMsg res, .name or .moduleName, true, true, err
