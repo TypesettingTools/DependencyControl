@@ -5,7 +5,7 @@ class Logger
     levels = {"fatal", "error", "warning", "hint", "debug", "trace"}
     defaultLevel: 2
     maxToFileLevel: 4
-    fileBaseName: script_name
+    fileBaseName: script_namespace
     fileSubName: ""
     logDir: "?user/log"
     fileTemplate: "%s/%s-%04x_%s_%s.log"

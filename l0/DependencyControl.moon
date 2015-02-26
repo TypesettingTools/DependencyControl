@@ -142,7 +142,7 @@ class DependencyControl
 
     new: (args)=>
         {@requiredModules, moduleName:@moduleName, configFile:configFile, virtual:@virtual, name:@name,
-         description:@description, url:@url, namespace:@namespace, feed:@feed, unmanaged:@unmanaged,
+         description:@description, url:@url, feed:@feed, unmanaged:@unmanaged,
          author:@author, version:@version, configFile:@configFile} = args
 
         if @moduleName
@@ -520,7 +520,7 @@ class DependencyControl
 
         @@config\load!
         running = @@config.c.updaterRunning
-        if running and running.host != script_name
+        if running and running.host != script_namespace
             otherHost = @@config.c.updaterRunning.host
 
             if running.time + @@config.c.updateOrphanTimeout < os.time!
@@ -541,7 +541,7 @@ class DependencyControl
         -- register the running update in the config file to prevent collisions
         -- with other scripts trying to update the same modules
 
-        @@config.c.updaterRunning = host: script_name, time: os.time!
+        @@config.c.updaterRunning = host: script_namespace, time: os.time!
         @@config\write!
         updaterLockingInstance = @
 
