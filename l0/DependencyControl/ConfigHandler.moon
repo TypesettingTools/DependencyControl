@@ -94,17 +94,18 @@ class ConfigHandler
         config, err = @readFile!
         return config, err unless config
 
+        sectionExists = true
         for i=1, #@section
             config = config[@section[i]]
             switch type config
                 when "table" continue
                 when "nil"
-                    config = {}
+                    config, sectionExists = {}, false
                     break
                 else return false, errors.badKey\format "retrive", i, tostring(@section[i]),type config
 
         @userConfig[k] = v for k,v in pairs config
-        return @config
+        return sectionExists
 
     mergeSection: (config) =>
         section = config
