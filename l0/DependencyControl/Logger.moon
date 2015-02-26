@@ -29,7 +29,7 @@ class Logger
             math.random, math.random, math.random
             seeded = true
 
-         -- TODO: autodelete old logs
+        @lastHadLineFeed = true
         escaped = @fileBaseName\gsub("([%%%(%)%[%]%.%*%-%+%?%$%^])","%%%1")
         @fileMatch = @fileMatchTemplate\gsub "@{fileBaseName}", escaped
         @fileName = @fileTemplate\format aegisub.decode_path(@logDir), os.date("%Y-%m-%d-%H-%M-%S"),
