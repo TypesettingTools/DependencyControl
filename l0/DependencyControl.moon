@@ -98,7 +98,9 @@ class DependencyControl
         globalDefaults: {updaterEnabled:true, updateInterval:302400, traceLevel:3, extraFeeds:{},
                          tryAllFeeds:false, dumpFeeds:false, configDir:"?user/config",
                          logMaxCount: 200, logMaxAge: 604800, logMaxSize:10*(10^6),
-                         updateWaitTimeout: 30, updateOrphanTimeout: 600}
+                         updateWaitTimeout: 130, updateOrphanTimeout: 600}
+        initWaitTime: 800
+        firstInitWaitTime: 5000
     }
 
     templateData = {
@@ -133,9 +135,9 @@ class DependencyControl
     logger = Logger fileBaseName: @@__name, prefix: "[#{@@__name}] ", toFile: true, defaultLevel: depConf.globalDefaults.traceLevel
     dlm = DownloadManager!
     feedCache = {}
-    configDirExists, logsHaveBeenTrimmed, reloadPending = false, false, false
     platform = "#{ffi.os}-#{ffi.arch}"
 
+    configDirExists, logsHaveBeenTrimmed, reloadPending, updaterLockingInstance = nil
     @createDir depConf.file, true
 
     new: (args)=>
@@ -700,10 +702,7 @@ class DependencyControl
             logger\log @getUpdaterErrorMsg -50, @name, @moduleName, @virtual, extErr
             return -50, err
 
-        -- Update process finished
-
-
-        -- Update script information/configuration
+        -- Update complete, refresh script information/configuration
         {url:@url, author:@author, name:@name, description:@description} = scriptData
         @version = @parse data.version
         @requiredModules = data.requiredModules
@@ -731,9 +730,8 @@ class DependencyControl
         logger\log msgs.updReloadNotice
 
 
-        -- TODO: platform specific file support
         -- TODO: additional variable: this feed url
-        -- TODO: postpone update if other update in progress (lock file with macro as content)
+        -- TODO: add config file migration
         -- TODO: reload self: update global registry, return a new ref
         -- TODO: check handling of private module copies (need extra return value?)
         return 1, @get!
