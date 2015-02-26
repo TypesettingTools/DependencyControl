@@ -144,7 +144,6 @@ class Logger
         for file in lfs.dir dir
             attr = lfs.attributes file
             if type(attr) == "table" and attr.mode == "file" and file\find @fileMatch
-                @log "!!2"
                 f += 1
                 files[f] = {name:file, modified:attr.modification, size:attr.size}
 
