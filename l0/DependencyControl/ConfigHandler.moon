@@ -13,11 +13,7 @@ class ConfigHandler
 
     new: (@file, @defaults = {}, @section = {}, noLoad) =>
         -- register all handlers for concerted writing
-        if @file
-            if @@handlers[@file]
-                table.insert @@handlers[@file], @
-            else @@handlers[@file] = {@}
-            @lockFile = "#{@file}.lock"
+        @setFile @file
 
         -- set up user configuration and make defaults accessible
         @userConfig = {}
@@ -56,6 +52,22 @@ class ConfigHandler
 
         recurse @defaults
         @load! unless noLoad
+
+    setFile: (file) =>
+        return false unless file
+        if @@handlers[file]
+            table.insert @@handlers[file], @
+        else @@handlers[file] = {@}
+        @file, @lockFile = file, "#{@file}.lock"
+        return true
+
+    unsetFile: =>
+        handlers = @@handlers[@file]
+        if handlers and #handlers>1
+            @@handlers[@file] = [handler for handler in *handlers when handler != @]
+        else @@handlers[@file] = nil
+        @lockFile, @file = nil, nil
+        return true
 
     readFile: (file = @file) =>
         mode, err = lfs.attributes @file, "mode"
