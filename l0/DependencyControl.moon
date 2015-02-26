@@ -777,26 +777,22 @@ class DependencyControl
             logger\log msgs.updateInfo.unsetVirtual, @moduleName and "module" or "macro", @name
             error "dbg" if @name == "l0.ASSFoundation"
 
-        minRes, minErr, res = 0
+        minRes, maxRes, minErr, res = 0, -1
         logger\log msgs.updateInfo.feedCandidates, #feeds, tryAllFeeds and "exhaustive" or "normal"
         for i, feed in ipairs feeds
             logger\log msgs.updateInfo.feedTrying, i, #feeds, feed
             res, err = @updateFromFeed feed, force
             -- ignore up-to-date result and try other feeds when tryAllFeeds is set
-            break if res > (tryAllFeeds and 0 or -1)
+            maxRes = math.max res, maxRes
+            break if res >= (tryAllFeeds and 1 or 0)
             -- since we have multiple possible error states (one for every feed)
-            -- return the one that's the farthest in to the updates process
+            -- return the one that's the farthest into the updates process
             normRes = -(-res%100)
             if res <0 and normRes < minRes
                 minRes, minErr = res, err
 
-        @@config.c.updaterRunning = false
-        @@config\write!
-
-        if res<0
-            return minRes, minErr
-
-        return res, err
+        return maxRes if maxRes > -1
+        return minRes, minErr
 
     trimLogs: (doWipe, maxAge = @@config.c.logMaxAge, maxSize = @@config.c.logMaxSize, maxLogs = @@config.c.logMaxCount) =>
         files, totalSize, deletedSize, now = {}, 0, 0, os.time!
