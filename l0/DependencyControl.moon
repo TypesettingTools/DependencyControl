@@ -391,10 +391,10 @@ class DependencyControl
         if #outdated>0
             errorMsg ..= msgs.outdatedModules\format @name, table.concat outdated
 
-        if #errorMsg>0
-            logger\error errorMsg unless updateMode
-            return errorMsg
-
+        if updateMode
+            return #errorMsg == 0, errorMsg
+        elseif #errorMsg > 0
+            logger\error errorMsg
         return unpack [mdl._ref for mdl in *modules when mdl._loaded or mdl.optional]
 
     register: (selfRef) =>
@@ -630,9 +630,9 @@ class DependencyControl
         -- force version check required modules first
         logger\log msgs.updateInfo.updateReqs
         logger.indent += 1
-        err = @requireModules data.requiredModules or {}, true, true
+        success, err = @requireModules data.requiredModules or {}, true, true
         logger.indent -= 1
-        if err
+        unless success
             logger\log @getUpdaterErrorMsg -15, @name, @moduleName, @virtual
             logger.indent += 1
             logger\log err
