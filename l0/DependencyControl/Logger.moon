@@ -124,7 +124,7 @@ class Logger
         recurse item, "    "
         result[count+1] = "}"
 
-        @log level, table.concat(result, "\n")
+        @log level, table.concat(result, "\n")\gsub "%%", "%%%%"
 
     windowError: ( errorMessage ) ->
         aegisub.dialog.display { { class: "label", label: errorMessage } }, { "&Close" }, { cancel: "&Close" }
