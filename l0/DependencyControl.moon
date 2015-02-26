@@ -166,7 +166,7 @@ class DependencyControl
         logger\assert #namespaceValidation\find(@namespace) > 0, msgs.badRecord.badNamespace, @namespace
         @name = @namespace unless @name
         @configFile = configFile or "#{@namespace}.json"
-        @version, err = @parse @version
+        @version, err = @getVersionNumber @version
         logger\assert @version, msgs.badRecordError, msgs.badRecord.badVersion\format err
 
         @requiredModules or= {}
@@ -240,7 +240,7 @@ class DependencyControl
             @@config\write false, waitTime if writeGlobal
             @config\write false, waitTime if writeLocal
 
-    parse: (value) =>
+    getVersionNumber: (value) =>
         switch type value
             when "number" then return math.max value, 0
             when "nil" then return 0
@@ -259,7 +259,7 @@ class DependencyControl
 
             else return false, msgs.badVersionType\format type value
 
-    get: (version = @version) =>
+    getVersionString: (version = @version) =>
         parts = [bit.rshift(version, part[2])%256 for part in *semParts]
         return "%d.%d.%d"\format unpack parts
 
@@ -277,9 +277,9 @@ class DependencyControl
 
         return Logger args
 
-    check: (value) =>
+    checkVersion: (value) =>
         if type(value) != "number"
-            value, err = @parse value
+            value, err = @getVersionNumber value
             return nil, err unless value
         return @version >= value
 
@@ -294,7 +294,7 @@ class DependencyControl
             return false, errorMsg
         return true
 
-    load: (mdl, usePrivate) =>
+    loadModule: (mdl, usePrivate) =>
         moduleName = usePrivate and "#{@namespace}.#{mdl.moduleName}" or mdl.moduleName
         name = "#{mdl.name or mdl.moduleName}#{usePrivate and ' (Private Copy)' or ''}"
 
@@ -319,8 +319,8 @@ class DependencyControl
             with mdl
                 ._ref, ._updated, ._missing, ._outdated, ._reason = nil, nil, nil, nil, nil
                 -- try to load private copies of required modules first
-                loaded = @load mdl, true
-                loaded = @load mdl unless loaded
+                loaded = @loadModule mdl, true
+                loaded = @loadModule mdl unless loaded
 
                 unless loaded
                     -- try to fetch and load a missing module from the web
@@ -329,7 +329,7 @@ class DependencyControl
                     haveUpdaterLock or= @getUpdaterLock true
                     res, err, isPrivate = fetchedModule\update true, addFeeds
                     if res >= 0
-                        loaded = @load mdl, isPrivate
+                        loaded = @loadModule mdl, isPrivate
                         ._updated = true
                     else
                         ._reason = @getUpdaterErrorMsg res, .name or .moduleName, true, true, err
@@ -342,20 +342,20 @@ class DependencyControl
                         loadedVer = @@ moduleName:.moduleName, version:loadedVer, unmanaged:true
 
                     -- force an update check for outdated modules
-                    if not loadedVer\check .version
+                    if not loadedVer\checkVersion .version
                         -- module was freshly fetched/updated and still couldn't satisfy the version requirements
-                        ._reason = msgs.updNoSuitableVersion\format loadedVer.name, loadedVer\get!, @name, .version
+                        ._reason = msgs.updNoSuitableVersion\format loadedVer.name, loadedVer\getVersionString!, @name, .version
                         ._outdated = true
                         continue if ._updated
 
                         haveUpdaterLock or= @getUpdaterLock true
                         res, err, isPrivate = loadedVer\update true, addFeeds, true
                         if res > 0  -- TODO: fix (unload, reload accept 0 res or just return current information along with update result)
-                            if loadedVer\check .version
+                            if loadedVer\checkVersion .version
                                 ._ref, ._outdated, ._reason = loadedVer._ref, false, nil
                         elseif res < 0 -- update failed, settle for the regular outdated message
                             ._reason = @getUpdaterErrorMsg res, .name or .moduleName, false, true, err
-                        else ._reason = msgs.updNoSuitableUpdate\format loadedVer.name, loadedVer\get!, @name, .version
+                        else ._reason = msgs.updNoSuitableUpdate\format loadedVer.name, loadedVer\getVersionString!, @name, .version
 
                     else  -- perform regular update check if we can get a lock without waiting
                         haveUpdaterLock, runningHost = @getUpdaterLock!
@@ -375,7 +375,7 @@ class DependencyControl
             downloadHint = msgs.missingModulesDownloadHint\format aegisub.decode_path "?user/automation/include"
             errorMsg ..= msgs.missingModules\format @name, table.concat(missing), downloadHint
 
-        outdated = [msgs.outdatedTemplate\format mdl.moduleName, mdl._loaded\get!, mdl.version, mdl.url and ": #{mdl.url}" or "",
+        outdated = [msgs.outdatedTemplate\format mdl.moduleName, mdl._loaded\getVersionString!, mdl.version, mdl.url and ": #{mdl.url}" or "",
                     mdl._reason for mdl in *modules when mdl._outdated]
         if #outdated>0
             errorMsg ..= msgs.outdatedModules\format @name, table.concat outdated
@@ -548,7 +548,7 @@ class DependencyControl
         @@config.c.updaterRunning = false
         @@config\write!
 
-    updateFromFeed: (feed, force = false) =>
+    processUpdate: (feed, force = false) =>
         local feedData, feedFile
         if feedCache[feed]
             logger\log msgs.updUsingCached
@@ -607,13 +607,13 @@ class DependencyControl
                 logger\log @getUpdaterErrorMsg -9, @name, @moduleName, @virtual, .lastChannel
                 return -9, .lastChannel
 
-        res, err = @check data.version
+        res, err = @checkVersion data.version
         if res == nil
             extErr = "#{@config.c.lastChannel}/#{tostring(data.version)}"
             logger\log @getUpdaterErrorMsg -13, @name, @moduleName, @virtual, extErr
             return -13, extErr
         elseif res
-            logger\log msgs.updNoNewVersion, @moduleName and "Module" or "Macro", @name, @get!
+            logger\log msgs.updNoNewVersion, @moduleName and "Module" or "Macro", @name, @getVersionString!
             return 0
 
         -- force version check required modules first
@@ -704,23 +704,24 @@ class DependencyControl
 
         -- Update complete, refresh script information/configuration
         {url:@url, author:@author, name:@name, description:@description} = scriptData
-        @version = @parse data.version
+        @version = @getVersionNumber data.version
         @requiredModules = data.requiredModules
 
         -- TODO: only set this flag if a reload is actually required
         reloadPending = true
 
         logger\log msgs.updSuccess, @virtual and "Download" or "Update",
-                   @moduleName and "module" or "macro", @name, @get!
+                   @moduleName and "module" or "macro", @name, @getVersionString!
+
         @virtual = false
         @writeConfig!
 
         -- display changelog
         if type(scriptData.changelog)=="table"
-            changes = [{@parse(ver), entry} for ver, entry in pairs scriptData.changelog when @check ver]
+            changes = [{@getVersionNumber(ver), entry} for ver, entry in pairs scriptData.changelog when @checkVersion ver]
             table.sort changes, (a,b) -> a[1]>b[1]
             if #changes>0
-                logger\log msgs.updateInfo.changelog, @name, @get!, data.released or "<no date>"
+                logger\log msgs.updateInfo.changelog, @name, @getVersionString!, data.released or "<no date>"
                 logger.indent += 1
                 for chg in *changes
                     msg = type(chg[2]) ~= "table" and tostring(chg[2]) or table.concat chg[2], "\n • "
@@ -734,7 +735,8 @@ class DependencyControl
         -- TODO: add config file migration
         -- TODO: reload self: update global registry, return a new ref
         -- TODO: check handling of private module copies (need extra return value?)
-        return 1, @get!
+
+        return 1, @getVersionString!
 
     update: (force = false, addFeeds = {}, tryAllFeeds = @virtual or @@config.c.tryAllFeeds) =>
         unless @@config.c.updaterEnabled
@@ -752,7 +754,7 @@ class DependencyControl
         @config.c.lastUpdateCheck = os.time!
         @config\write!
         logger\log @virtual and  msgs.updateInfo.fetching or msgs.updateInfo.starting, force and "forced " or "",
-                   @moduleName and "module" or "macro", @name, not @virtual and @get!
+                   @moduleName and "module" or "macro", @name, not @virtual and @getVersionString!
 
         feeds = {}
         if @config.c.userFeed
@@ -779,7 +781,7 @@ class DependencyControl
         logger\log msgs.updateInfo.feedCandidates, #feeds, tryAllFeeds and "exhaustive" or "normal"
         for i, feed in ipairs feeds
             logger\log msgs.updateInfo.feedTrying, i, #feeds, feed
-            res, err = @updateFromFeed feed, force
+            res, err = @processUpdate feed, force
             -- ignore up-to-date result and try other feeds when tryAllFeeds is set
             maxRes = math.max res, maxRes
             break if res >= (tryAllFeeds and 1 or 0)
