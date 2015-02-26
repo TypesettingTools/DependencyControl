@@ -736,7 +736,7 @@ class DependencyControl
                 logger.indent += 1
                 for chg in *changes
                     msg = type(chg[2]) ~= "table" and tostring(chg[2]) or table.concat chg[2], "\n • "
-                    logger\logEx nil, "%s:\n • #{msg}", true, "", @get(chg[1])
+                    logger\logEx nil, "%s:\n • #{msg}", true, "", @getVersionString(chg[1])
                 logger.indent -= 1
 
         logger\log msgs.updReloadNotice
