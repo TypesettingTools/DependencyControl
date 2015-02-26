@@ -197,10 +197,11 @@ class DependencyControl
         -- ramp up the random wait time on first initialization (many scripts may want to write configuration data)
         -- we can't really profit from write concerting here because we don't know which module loads last
 
+        @configDir = @@config.c.configDir
         @writeConfig shouldWriteConfig, false, false,
                      firstInit and depConf.firstInitWaitTime or depConf.initWaitTime
 
-        configDirExists or= @createDir @@config.c.configDir
+        configDirExists or= @createDir @configDir
         logsHaveBeenTrimmed or= logger\trimFiles!
 
     loadConfig: (importRecord = false, forceReloadGlobal = false) =>
