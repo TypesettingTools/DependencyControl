@@ -177,7 +177,7 @@ class DependencyControl
                     @requiredModules[i] = {moduleName: mdl}
                 else logger\error msgs.badModuleRecord, i, tostring mdl
 
-        firstInit, shouldWriteConfig = @loadConfig!
+        shouldWriteConfig, firstInit = @loadConfig!
 
         -- write config file if contents are missing or are out of sync with the script version record
         -- ramp up the random wait time on first initialization (many scripts may want to write configuration data)
@@ -185,14 +185,14 @@ class DependencyControl
         hadReloadPending = @config.c.reloadPending
         @config.c.reloadPending = false
 
-        @writeConfig firstInit and 5000 or 800, false, shouldWriteConfig or hadReloadPending
+        @writeConfig shouldWriteConfig, false, false,
+                     firstInit and depConf.firstInitWaitTime or depConf.initWaitTime
 
         logger.defaultLevel = @@config.c.traceLevel
         configDirExists or= @createDir @@config.c.configDir
         logsHaveBeenTrimmed or= @trimLogs!
 
-
-    loadConfig: (forceReloadGlobal = false) =>
+    loadConfig: (importRecord = false, forceReloadGlobal = false) =>
         -- load global config
         local firstInit
         if @@config
@@ -203,12 +203,36 @@ class DependencyControl
 
         -- load per-script config
         -- virtual modules are not yet present on the user's system and have no persistent configuration
-        @config = ConfigHandler not @virtual and depConf.file, {}, {@type, @namespace}
-        --  copy script information to the config
-        shouldWriteConfig = not @virtual and @config\import @, depConf.scriptFields
-        return firstInit, shouldWriteConfig
+        @config or= ConfigHandler not @virtual and depConf.file, {}, {@type, @namespace}, true
 
-    writeConfig: (waitTime, concert = true, writeLocal, writeGlobal) =>
+        -- import and overwrites version record from the configuration
+        if importRecord
+            -- check if a module that was previously virtual was installed in the meantime
+            -- TODO: prevent issues caused by orphaned config entries
+            haveConfig = false
+            if @virtual
+                @config\setFile depConf.file
+                if @config\load!
+                    haveConfig, @virtual = true, false
+                else @config\unsetFile!
+            else
+                haveConfig = @config\load!
+
+            -- only need to refresh data if the record was changed by an update
+            if haveConfig
+                @[key] = @config.c[key] for key in *depConf.scriptFields
+
+        elseif not @virtual
+            --  copy script information to the config
+            @config\load!
+            shouldWriteConfig = @config\import @, depConf.scriptFields
+            return shouldWriteConfig, firstInit
+
+        return false, firstInit
+
+    writeConfig: (writeLocal = true, writeGlobal = true, concert = false, waitTime) =>
+        unless @virtual or @config.file
+            @config.setFile depConf.file
         if concert
             @@config\write true, waitTime
         else
@@ -643,6 +667,7 @@ class DependencyControl
         logger\log msgs.updSuccess, @virtual and "Download" or "Update",
                    @moduleName and "module" or "macro", @name, @get!
         @virtual = false
+        @writeConfig!
 
         -- display changelog
         if type(scriptData.changelog)=="table"
@@ -658,7 +683,6 @@ class DependencyControl
 
         logger\log msgs.updReloadNotice
 
-        @writeConfig!
 
         -- TODO: platform specific file support
         -- TODO: additional variable: this feed url
@@ -698,54 +722,13 @@ class DependencyControl
             logger\log @getUpdaterErrorMsg -3, @name, @moduleName, @virtual
             return -3
 
-        -- check if an other update is already running
-        -- wait our turn in forced mode, otherwise return an error
-
-        @@config\load!
-        running = @@config.c.updaterRunning
-        if running and running.host != script_name
-            otherHost = @@config.c.updaterRunning.host
-
-            if running.time + @@config.c.updateOrphanTimeout < os.time!
-                logger\log msgs.updateInfo.orphaned, otherHost
-            elseif force or @virtual
-                logger\log msgs.updateInfo.waiting, otherHost
-                timeout = @@config.c.updateWaitTimeout
-                while running and timeout > 0
-                    PreciseTimer\sleep 1000*math.min 1, timeout
-                    timeout -= 1
-                    @@config\load!
-                    running = @@config.c.updaterRunning
-                logger\log timeout <= 0 and msgs.updateInfo.abortWait or msgs.updateInfo.waitFinished,
-                           @@config.c.updateWaitTimeout
-
-                -- check if a virtual module has been installed in the meantime
-                -- and clear the flag if associated configuration was found
-                if @virtual
-                    @config\setFile depConf.file
-                    if @config\load!
-                        logger\log timeout msgs.updateInfo.unsetVirtual, otherHost,
-                                   @moduleName and "module" or "macro", @name
-                        @virtual = false
-                    else @config\unsetFile depConf.file
-                else @config\load!
-
-                -- reload important module version information from configuration
-                -- because the values we have might not be up-to-date anymore
-                if @config.c.reloadPending and not @virtual
-                    {moduleName:@moduleName, name:@name, namespace:@namespace,
-                     feed:@feed, unmanaged:@unmanaged, version:@version} = @config.c
-                    reloadPending = true
-
-            else
-                logger\log @getUpdaterErrorMsg -4, @name, @moduleName, @virtual, running.host
-                return -4, running.host
-
-        -- register the running update in the config file to prevent collisions
-        -- with other scripts trying to update the same modules
-
-        @@config.c.updaterRunning = host: script_name, time: os.time!
-        @@config\write!
+        -- reload important module version information from configuration
+        -- because another updater instance might have updated them in the meantime
+        wasVirtual = @virtual
+        @loadConfig true
+        if wasVirtual and not @virtual
+            logger\log msgs.updateInfo.unsetVirtual, @moduleName and "module" or "macro", @name
+            error "dbg" if @name == "l0.ASSFoundation"
 
         minRes, minErr, res = 0
         logger\log msgs.updateInfo.feedCandidates, #feeds, tryAllFeeds and "exhaustive" or "normal"
