@@ -31,6 +31,7 @@ class DependencyControl
         badVersionType: "Argument had the wrong type: expected string or number, got '%s'"
         badModuleRecord: "Invalid required module record #%d (%s)."
         versionOverflow: "Error: %s version must be an integer < 255, got %s."
+        skippedCheck: "Skipped update check for module '%s': Another update initiated by %s is already running."
         updNoSuitableVersion: "The version of '%s' downloaded (v%s) did not satisfy the %s requirements (v%s)."
         updNoSuitableUpdate: "The installed version of '%s'(v%s) did not satisfy the %s requirements (v%s), but no update could be found."
         updNoNewVersion: "%s '%s' (v%s) is up-to-date."
@@ -67,7 +68,7 @@ class DependencyControl
             waiting: "Waiting for update intiated by %s to finish..."
             abortWait: "Timeout reached after %d seconds."
             waitFinished: "Waited %d seconds."
-            unsetVirtual: "Update initated by %s already fetched %s '%s', switching to update mode."
+            unsetVirtual: "Update initated by another macro already fetched %s '%s', switching to update mode."
             orphaned: "Ignoring orphaned in-progress update started by %s."
         }
         updateError: {
@@ -182,8 +183,6 @@ class DependencyControl
         -- write config file if contents are missing or are out of sync with the script version record
         -- ramp up the random wait time on first initialization (many scripts may want to write configuration data)
         -- we can't really profit from write concerting here because we don't know which module loads last
-        hadReloadPending = @config.c.reloadPending
-        @config.c.reloadPending = false
 
         @writeConfig shouldWriteConfig, false, false,
                      firstInit and depConf.firstInitWaitTime or depConf.initWaitTime
@@ -312,7 +311,8 @@ class DependencyControl
             mdl._ref, LOADED_MODULES[moduleName] = res, res
         return mdl._ref
 
-    requireModules: (modules=@requiredModules, forceUpdate, returnErrorOnly, addFeeds={@feed}) =>
+    requireModules: (modules=@requiredModules, forceUpdate, updateMode, addFeeds={@feed}) =>
+        haveUpdaterLock = false
         for mdl in *modules
             with mdl
                 ._ref, ._updated, ._missing, ._outdated, ._reason = nil, nil, nil, nil, nil
@@ -324,6 +324,7 @@ class DependencyControl
                     -- try to fetch and load a missing module from the web
                     fetchedModule = @@{moduleName:.moduleName, name:.name or .moduleName,
                                        version:-1, url:.url, feed:.feed, virtual:true}
+                    haveUpdaterLock or= @getUpdaterLock true
                     res, err, isPrivate = fetchedModule\update true, addFeeds
                     if res>0
                         @load mdl, isPrivate
@@ -345,18 +346,25 @@ class DependencyControl
                         ._outdated = true
                         continue if ._updated
 
+                        haveUpdaterLock or= @getUpdaterLock true
                         res, err, isPrivate = loadedVer\update true, addFeeds, true
-                        if res > 0
+                        if res > 0  -- TODO: fix (unload, reload accept 0 res or just return current information along with update result)
                             if loadedVer\check .version
                                 ._ref, ._outdated, ._reason = loadedVer._ref, false, nil
                         elseif res < 0 -- update failed, settle for the regular outdated message
                             ._reason = @getUpdaterErrorMsg res, .name or .moduleName, false, true, err
                         else ._reason = msgs.updNoSuitableUpdate\format loadedVer.name, loadedVer\get!, @name, .version
 
-                    elseif loadedVer\update(forceUpdate, addFeeds) > 0 -- perform regular update
-                        ._ref = loadedVer._ref
+                    else  -- perform regular update check if we can get a lock without waiting
+                        haveUpdaterLock, runningHost = @getUpdaterLock!
+                        if haveUpdaterLock
+                            res = loadedVer\update(forceUpdate, addFeeds) -- perform regular update
+                            ._ref = loadedVer._ref if res > 0
+                        else logger\log msgs.skippedCheck, .name or .moduleName, runningHost
                     ._loaded = loadedVer
                 else ._loaded = type(loaded) == "table" and loaded.version or true
+
+        @releaseUpdaterLock!
 
         errorMsg = ""
         missing = [msgs.missingTemplate\format mdl.moduleName, mdl.version, mdl.url and ": #{mdl.url}" or "",
@@ -371,7 +379,7 @@ class DependencyControl
             errorMsg ..= msgs.outdatedModules\format @name, table.concat outdated
 
         if #errorMsg>0
-            logger\error errorMsg if not returnErrorOnly
+            logger\error errorMsg unless updateMode
             return errorMsg
 
         return unpack [mdl._ref for mdl in *modules when mdl._loaded or mdl.optional] if not returnErrorOnly
@@ -499,6 +507,44 @@ class DependencyControl
 
         logger\log msgs.updateInfo.movedFile, source, target
         return true
+
+    getUpdaterLock: (doWait, waitTimeout = @@config.c.updateWaitTimeout) =>
+        return true if updaterLockingInstance
+
+        @@config\load!
+        running = @@config.c.updaterRunning
+        if running and running.host != script_name
+            otherHost = @@config.c.updaterRunning.host
+
+            if running.time + @@config.c.updateOrphanTimeout < os.time!
+                logger\log msgs.updateInfo.orphaned, otherHost
+            elseif doWait
+                logger\log msgs.updateInfo.waiting, otherHost
+                timeout = waitTimeout
+                while running and timeout > 0
+                    PreciseTimer\sleep 1000
+                    timeout -= 1
+                    @@config\load!
+                    running = @@config.c.updaterRunning
+                logger\log timeout <= 0 and msgs.updateInfo.abortWait or msgs.updateInfo.waitFinished,
+                           waitTimeout - timeout
+
+            else return false, running.host
+
+        -- register the running update in the config file to prevent collisions
+        -- with other scripts trying to update the same modules
+
+        @@config.c.updaterRunning = host: script_name, time: os.time!
+        @@config\write!
+        updaterLockingInstance = @
+
+        return true
+
+    releaseUpdaterLock: =>
+        return false unless updaterLockingInstance == @
+        updaterLockingInstance = false
+        @@config.c.updaterRunning = false
+        @@config\write!
 
     updateFromFeed: (feed, force = false) =>
         local feedData, feedFile
@@ -661,8 +707,9 @@ class DependencyControl
         {url:@url, author:@author, name:@name, description:@description} = scriptData
         @version = @parse data.version
         @requiredModules = data.requiredModules
-        -- TODO: only set this flag if the script wasn't loaded before
-        @config.c.reloadPending, reloadPending = true, true
+
+        -- TODO: only set this flag if a reload is actually required
+        reloadPending = true
 
         logger\log msgs.updSuccess, @virtual and "Download" or "Update",
                    @moduleName and "module" or "macro", @name, @get!
