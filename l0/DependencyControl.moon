@@ -151,7 +151,7 @@ class DependencyControl
             -- set a dummy reference to this module since this module is not ready
             -- when the other one tries to load it (and vice versa)
             export LOADED_MODULES = {} unless LOADED_MODULES
-            unless LOADED_MODULES[@moduleName]
+            unless LOADED_MODULES[@moduleName] or @virtual
                 @ref = {}
                 LOADED_MODULES[@moduleName] = setmetatable {}, @ref
 
