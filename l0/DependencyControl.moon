@@ -137,7 +137,8 @@ class DependencyControl
     feedCache = {}
     platform = "#{ffi.os}-#{ffi.arch}"
 
-    configDirExists, logsHaveBeenTrimmed, reloadPending, updaterLockingInstance, logger = nil
+    configDirExists, reloadPending, updaterLockingInstance, logger = nil
+    logsHaveBeenTrimmed, feedsHaveBeenTrimmed = nil
     @createDir depConf.file, true
 
     new: (args)=>
@@ -159,6 +160,7 @@ class DependencyControl
 
         else
             @name, @description, @author, @version = script_name, script_description, script_author, script_version
+            @namespace = script_namespace
             assert not unmanaged, msgs.badRecordError\format msgs.badRecord.noUnmanagedMacros
             assert @namespace, msgs.badRecordError\format msgs.badRecord.missingNamespace
             @type = "macros"
@@ -182,11 +184,14 @@ class DependencyControl
 
         shouldWriteConfig, firstInit = @loadConfig!
 
-        logger or= Logger { fileBaseName: "DepCtrl", fileSubName: script_name, prefix: "[#{@@__name}] ",
+        logger or= Logger { fileBaseName: "DepCtrl", fileSubName: script_namespace, prefix: "[#{@@__name}] ",
                             toFile: @@config.c.writeLogs, defaultLevel: @@config.c.traceLevel,
                             maxAge: @@config.c.logMaxAge,maxSize: @@config.c.logMaxSize, maxFiles: @@config.c.logMaxFiles,
-                            logDir: @@config.c.logDir
-                          }
+                            logDir: @@config.c.logDir }
+
+        feedsHaveBeenTrimmed or= Logger({fileMatchTemplate: "l0.#{@@__name}_feed_%x%x%x%x.*%.json",
+                                         logDir: @@config.c.dumpFeeds and "?user" or "?temp",
+                                         maxFiles:20})\trimFiles!
 
         -- write config file if contents are missing or are out of sync with the script version record
         -- ramp up the random wait time on first initialization (many scripts may want to write configuration data)
@@ -559,8 +564,8 @@ class DependencyControl
             logger\log msgs.updUsingCached
             feedData = feedCache[feed]
         else
-            feedFile = {aegisub.decode_path(@@config.c.dumpFeeds and "?user/" or "?temp"),
-                        "l0.#{@@__name}_feed_", "%08X"\format(math.random 0, 16^8-1), ".json"}
+            feedFile = {aegisub.decode_path(@@config.c.dumpFeeds and "?user/" or "?temp/"),
+                        "l0.#{@@__name}_feed_", "%04X"\format(math.random 0, 16^4-1), ".json"}
             feedFilePath = table.concat feedFile
 
             dl, err = dlm\addDownload feed, feedFilePath
