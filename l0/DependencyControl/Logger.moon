@@ -37,12 +37,19 @@ class Logger
 
     logEx: (level = @defaultLevel, msg = "", insertLineFeed = true, prefix = @prefix,  ...) =>
         return false if msg == ""
-        lineFeed = insertLineFeed and "\n" or ""
+
+        prefix = "" unless @usePrefix
+        lineFeed, indentStr = insertLineFeed and "\n" or "", ""
+        if @indent>0 and @lastHadLineFeed
+            indentRep = @indentStr\rep(@indent)
+            indentStr = indentRep .. " "
+            -- connect indentation supplied in the user message
+            msg = msg\gsub("\n", "\n"..indentStr)\gsub "\n#{indentStr}(#{@indentStr})", "\n#{indentRep}%1"
 
         show = aegisub.log and @toWindow
         if @toFile and level <= @maxToFileLevel
             @handle = io.open(@fileName, "a") unless @handle
-            linePre = @lastHadLineFeed and "[#{levels[level]\upper!}] #{os.date '%H:%M:%S'} #{show and '+' or '•'}" or ""
+            linePre = @lastHadLineFeed and "#{indentStr}[#{levels[level]\upper!}] #{os.date '%H:%M:%S'} #{show and '+' or '•'} " or ""
             line = table.concat({linePre, prefix, msg, lineFeed})\format ...
             @handle\write(line)\flush!
 
