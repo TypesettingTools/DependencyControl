@@ -75,6 +75,11 @@ class Logger
     debug: (...) => @log 4, ...
     trace: (...) => @log 5, ...
 
+    assert: (cond, ...) =>
+        if not cond
+            @log 1, ...
+        else return cond
+
     progress: (progress=false, msg = "", ...) =>
         if @progressStep and not progress
             @logEx nil, "■"\rep(10-@progressStep).."]", true, ""
