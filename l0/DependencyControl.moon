@@ -384,7 +384,7 @@ class DependencyControl
             logger\error errorMsg unless updateMode
             return errorMsg
 
-        return unpack [mdl._ref for mdl in *modules when mdl._loaded or mdl.optional] if not returnErrorOnly
+        return unpack [mdl._ref for mdl in *modules when mdl._loaded or mdl.optional]
 
     register: (selfRef) =>
         -- replace dummy refs with real refs to own module
