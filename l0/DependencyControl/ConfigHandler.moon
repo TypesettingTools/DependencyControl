@@ -1,6 +1,8 @@
 lfs = require "aegisub.lfs"
-PreciseTimer = require "PT.PreciseTimer"
 util = require "aegisub.util"
+PreciseTimer = require "PT.PreciseTimer"
+Logger = require "l0.DependencyControl.Logger"
+mutex = require "BM.BadMutex"
 
 class ConfigHandler
     @handlers = {}
@@ -9,9 +11,21 @@ class ConfigHandler
         badKey: "Can't %s section because the key #%d (%s) leads to a %s."
         jsonRoot: "JSON root element must be an array or a hashtable, got a %s."
         noFile: "No config file defined."
+        timeoutWrite: "Timeout (%d seconds) reached after waiting for another write to the config file to finish."
+        failedLockWrite: "Failed to lock config file for writing: %s"
+        waitLockFailed: "Error waiting for existing lock to be released: %s"
+        forceReleaseFailed: "Failed to force-release existing lock after timeout had passed (%s)"
+        noLock: "#{@@__name} doesn't have a lock"
+        writeFailedRead: "Failed reading config file: %s."
+    }
+    traceMsgs = {
+        waitingLock: "Waiting %d ms before trying to get a lock..."
+        waitingLock: "Waiting for config file lock to be released (%d seconds passed)... "
+        waitingLockFinished: "Lock was released after %d seconds."
+        waitingLockTimeout: "Timeout was reached after %d seconds, force-releasing lock..."
     }
 
-    new: (@file, @defaults = {}, @section = {}, noLoad) =>
+    new: (@file, @defaults = {}, @section = {}, noLoad, @logger = Logger fileBaseName: @@__name) =>
         -- register all handlers for concerted writing
         @setFile @file
 
@@ -58,7 +72,7 @@ class ConfigHandler
         if @@handlers[file]
             table.insert @@handlers[file], @
         else @@handlers[file] = {@}
-        @file, @lockFile = file, "#{@file}.lock"
+        @file = file
         return true
 
     unsetFile: =>
@@ -66,7 +80,7 @@ class ConfigHandler
         if handlers and #handlers>1
             @@handlers[@file] = [handler for handler in *handlers when handler != @]
         else @@handlers[@file] = nil
-        @lockFile, @file = nil, nil
+        @file = nil
         return true
 
     readFile: (file = @file) =>
@@ -122,18 +136,21 @@ class ConfigHandler
         section[k] = v for k,v in pairs @userConfig
         return config
 
-    write: (concertWrite, waitWriteTime = 500, waitLockTime) =>
+    write: (concertWrite, waitLockTime = 5000) =>
         return false, errors.noFile unless @file
 
-        -- avoid concurrent config file access
-        -- TODO: better and actually safe implementation
-        PreciseTimer.sleep math.random!*(waitWriteTime/2) for i=1,2
-        @getLock waitLockTime
+        -- get a lock to avoid concurrent config file access
+        time, err = @getLock waitLockTime
+        unless time
+            return false, errors.failedLockWrite\format err
 
+        -- read the config file
         config, err = @readFile!
-        return false, err if err
+        if err
+            return false, errors.writeFailedRead\format err
         config or= {}
 
+        -- merge in our section
         -- concerted writing allows us to update a configuration file
         -- shared by multiple handlers in the lua environment
         handlers = concertWrite and @@handlers[@file] or {@}
@@ -141,38 +158,58 @@ class ConfigHandler
             config, err = handler\mergeSection config
             return false, err unless config
 
-        @getLock!
+        -- write the whole config file in one go
         handle, err = io.open(@file, "w")
-        return false, err unless handle
+        unless handle
+            @releaseLock!
+            return false, err
+
         success, res = pcall json.encode, config
         unless success
             @releaseLock!
             return false, res
+
+
+        handle\setvbuf "full"
         handle\write res
         handle\flush!
         handle\close!
         @releaseLock!
 
-    getLock: (timeout) =>
-        return true if @hasLock
-        locked = lfs.attributes @lockFile, "mode"
-        @waitLock timeout if locked
-        lfs.touch @lockFile
-        @hasLock = true
+        return true
 
-    waitLock: (timeout = 5000, interval = 100) =>
-        locked = lfs.attributes @lockFile, "mode"
-        while locked and timeout > 0
-            PreciseTimer.sleep interval
-            locked = lfs.attributes @lockFile, "mode"
-            timeout -= interval
-        return timeout>0 and true or @releaseLock true
+    getLock: (waitTimeout, checkInterval = 100) =>
+        return 0 if @hasLock
+        success = mutex.tryLock!
+        if success
+            @hasLock = true
+            return 0
+
+        timeout, timePassed = waitTimeout, 0
+        while not success and timeout > 0
+            PreciseTimer.sleep checkInterval
+            success = mutex.tryLock!
+            timeout -= checkInterval
+            timePassed = waitTimeout - timeout
+            @logger\trace traceMsgs.waitingLock, timePassed/1000
+        if timeout > 0
+            @logger\trace traceMsgs.waitingLockFinished, timePassed/1000
+            @hasLock = true
+            return timePassed
+        else
+            @logger\trace traceMsgs.waitingLockTimeout, waitTimeout/1000
+            success, err = @releaseLock true
+            unless success
+                return false, errors.forceReleaseFailed\format err
+            @hasLock = true
+            return waitTimeout
 
     releaseLock: (force) =>
         if @hasLock or force
             @hasLock = false
-            return os.remove @lockFile
-        return false
+            mutex.unlock!
+            return true
+        return false, errors.noLock
 
     -- copied from Aegisub util.moon, adjusted to skip private keys
     deepCopy: (tbl) =>
