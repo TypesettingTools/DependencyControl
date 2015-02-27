@@ -23,9 +23,9 @@ __Requirements__:
 
 ### Documentation ###
 
- 1. [DependencyControl for Users](#FIXME)
- 2. [Usage for Automation Scripts](#FIXME)
- 3. [DependencyControl Class Reference](#FIXME)
+ 1. [DependencyControl for Users](#dependency-control-for-users)
+ 2. [Usage for Automation Scripts](#usage-for-automation-scripts)
+ 3. [Reference](#reference)
  4. [The Anatomy of an Updater Feed](#FIXME) (tbd)
  5. [Ancillary Components: Logger and ConfigHandler](#FIXME) (tbd)
 
@@ -235,8 +235,8 @@ Used to turn an updater return __code__ into a human-readable error message. The
 
 VarArgs:
 
- 1. __ *bool* isModule__: True when component is a  module, false when it is an automation script/macro
- 2. __ *bool* isFetch__: True when we are fetching a missing module, false when updating
+ 1. __*bool* isModule__: True when component is a  module, false when it is an automation script/macro
+ 2. __*bool* isFetch__: True when we are fetching a missing module, false when updating
  3. __extError__: Extended error information as returned by the _:update()_ method
 
 __:getUpdaterLock(*bool* [doWait], *int* [waitTimeout=(user config)]) --> *bool* result, *str* runningHost__
@@ -319,6 +319,6 @@ By default, the updater will process all suitable feeds until one feed confirms 
 
 Returns a result code (0: up-to-date, 1: update performed, <=-1: error) and extendend error information which can be fed into _:getUpdaterErrorMsg()_ to get a descriptive error message.
 
-__:writeConfig(*bool* [writeLocal=true], *bool* [writeGlobal=true], *bool* [concert]] __
+__:writeConfig(*bool* [writeLocal=true], *bool* [writeGlobal=true], *bool* [concert]]__
 
 Writes __global__ and per-module __local__ configuration. If __concert__ is true, concerted writing will be used to update the configuration of all DependencyControl hosted by any given macro/environment at once. See ConfigHandler documentation for more information. _Intended for internal use._
