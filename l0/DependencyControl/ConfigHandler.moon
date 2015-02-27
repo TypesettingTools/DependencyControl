@@ -11,7 +11,6 @@ class ConfigHandler
         badKey: "Can't %s section because the key #%d (%s) leads to a %s."
         jsonRoot: "JSON root element must be an array or a hashtable, got a %s."
         noFile: "No config file defined."
-        timeoutWrite: "Timeout (%d seconds) reached after waiting for another write to the config file to finish."
         failedLockWrite: "Failed to lock config file for writing: %s"
         waitLockFailed: "Error waiting for existing lock to be released: %s"
         forceReleaseFailed: "Failed to force-release existing lock after timeout had passed (%s)"
