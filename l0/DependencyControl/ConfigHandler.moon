@@ -16,12 +16,13 @@ class ConfigHandler
         forceReleaseFailed: "Failed to force-release existing lock after timeout had passed (%s)"
         noLock: "#{@@__name} doesn't have a lock"
         writeFailedRead: "Failed reading config file: %s."
+        lockTimeout: "Timeout reached while waiting for write lock."
     }
     traceMsgs = {
         waitingLock: "Waiting %d ms before trying to get a lock..."
         waitingLock: "Waiting for config file lock to be released (%d seconds passed)... "
         waitingLockFinished: "Lock was released after %d seconds."
-        waitingLockTimeout: "Timeout was reached after %d seconds, force-releasing lock..."
+        -- waitingLockTimeout: "Timeout was reached after %d seconds, force-releasing lock..."
     }
 
     new: (@file, @defaults = {}, @section = {}, noLoad, @logger = Logger fileBaseName: @@__name) =>
@@ -196,12 +197,13 @@ class ConfigHandler
             @hasLock = true
             return timePassed
         else
-            @logger\trace traceMsgs.waitingLockTimeout, waitTimeout/1000
-            success, err = @releaseLock true
-            unless success
-                return false, errors.forceReleaseFailed\format err
-            @hasLock = true
-            return waitTimeout
+            -- @logger\trace traceMsgs.waitingLockTimeout, waitTimeout/1000
+            -- success, err = @releaseLock true
+            -- unless success
+                -- return false, errors.forceReleaseFailed\format err
+            -- @hasLock = true
+            --return waitTimeout
+            return false, errors.lockTimeout
 
     releaseLock: (force) =>
         if @hasLock or force
