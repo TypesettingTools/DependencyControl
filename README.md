@@ -25,9 +25,10 @@ __Requirements__:
 
  1. [DependencyControl for Users](#dependency-control-for-users)
  2. [Usage for Automation Scripts](#usage-for-automation-scripts)
- 3. [Reference](#reference)
- 4. [The Anatomy of an Updater Feed](#FIXME) (tbd)
- 5. [Ancillary Components: Logger and ConfigHandler](#FIXME) (tbd)
+ 3. [File and Folder Structure](#FIXME) (tbd)
+ 4. [Reference](#reference)
+ 5. [The Anatomy of an Updater Feed](#FIXME) (tbd)
+ 6. [Ancillary Components: Logger and ConfigHandler](#FIXME) (tbd)
 
 ----------------------------------
 
