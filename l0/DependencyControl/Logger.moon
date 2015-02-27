@@ -4,7 +4,7 @@ ffi = require "ffi"
 class Logger
     levels = {"fatal", "error", "warning", "hint", "debug", "trace"}
     defaultLevel: 2
-    maxToFileLevel: 4
+    maxToFileLevel: 5
     fileBaseName: script_namespace
     fileSubName: ""
     logDir: "?user/log"
