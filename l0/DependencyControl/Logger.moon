@@ -1,4 +1,4 @@
-PreciseTimer = require "PreciseTimer.PreciseTimer"
+PreciseTimer = require "PT.PreciseTimer"
 ffi = require "ffi"
 
 class Logger
@@ -24,7 +24,7 @@ class Logger
 
         -- scripts are loaded simultaneously, so we need to avoid seeding the rng with the same time
         unless seeded
-            Timer\sleep 10 for i=1,50
+            Timer.sleep 10 for i=1,50
             math.randomseed(Timer\timeElapsed!*1000000)
             math.random, math.random, math.random
             seeded = true

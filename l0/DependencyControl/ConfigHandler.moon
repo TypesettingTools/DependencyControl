@@ -1,5 +1,5 @@
 lfs = require "aegisub.lfs"
-PreciseTimer = require "PreciseTimer.PreciseTimer"
+PreciseTimer = require "PT.PreciseTimer"
 util = require "aegisub.util"
 
 class ConfigHandler
@@ -127,7 +127,7 @@ class ConfigHandler
 
         -- avoid concurrent config file access
         -- TODO: better and actually safe implementation
-        PreciseTimer\sleep math.random!*(waitWriteTime/2) for i=1,2
+        PreciseTimer.sleep math.random!*(waitWriteTime/2) for i=1,2
         @getLock waitLockTime
 
         config, err = @readFile!
@@ -163,7 +163,7 @@ class ConfigHandler
     waitLock: (timeout = 5000, interval = 100) =>
         locked = lfs.attributes @lockFile, "mode"
         while locked and timeout > 0
-            PreciseTimer\sleep interval
+            PreciseTimer.sleep interval
             locked = lfs.attributes @lockFile, "mode"
             timeout -= interval
         return timeout>0 and true or @releaseLock true

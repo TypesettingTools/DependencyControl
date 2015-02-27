@@ -4,8 +4,8 @@ re = require "aegisub.re"
 ffi = require "ffi"
 Logger = require "l0.DependencyControl.Logger"
 ConfigHandler = require "l0.DependencyControl.ConfigHandler"
-PreciseTimer = require "PreciseTimer.PreciseTimer"
-DownloadManager = require "DownloadManager.DownloadManager"
+PreciseTimer = require "PT.PreciseTimer"
+DownloadManager = require "DM.DownloadManager"
 
 class DependencyControl
     semParts = {{"major", 16}, {"minor", 8}, {"patch", 0}}
@@ -535,7 +535,7 @@ class DependencyControl
                 logger\log msgs.updateInfo.waiting, otherHost
                 timeout = waitTimeout
                 while running and timeout > 0
-                    PreciseTimer\sleep 1000
+                    PreciseTimer.sleep 1000
                     timeout -= 1
                     @@config\load!
                     running = @@config.c.updaterRunning
