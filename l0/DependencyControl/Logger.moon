@@ -49,7 +49,7 @@ class Logger
         show = aegisub.log and @toWindow
         if @toFile and level <= @maxToFileLevel
             @handle = io.open(@fileName, "a") unless @handle
-            linePre = @lastHadLineFeed and "#{indentStr}[#{levels[level]\upper!}] #{os.date '%H:%M:%S'} #{show and '+' or '•'} " or ""
+            linePre = @lastHadLineFeed and "#{indentStr}[#{levels[level+1]\upper!}] #{os.date '%H:%M:%S'} #{show and '+' or '•'} " or ""
             line = table.concat({linePre, prefix, msg, lineFeed})\format ...
             @handle\write(line)\flush!
 
