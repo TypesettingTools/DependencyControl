@@ -19,6 +19,7 @@ class DependencyControl
             badNamespace: "Namespace '%s' failed validation. Namespace rules: must contain 1+ single dots, but not start or end with a dot; all other characters must be in [A-Za-z0-9-_]."
             badModuleTable: "Invalid required module table #%d (%s)."
         }
+        configWriteError: "An error occured while writing the #{@@__name} config file: %s"
         missingModules: "Error: one or more of the modules required by %s could not be found on your system:\n%s\n%s"
         missingOptionalModules: "Error: a %s feature you're trying to use requires additional modules that were not found on your system:\n%s\n%s"
         missingModulesDownloadHint: "Please download the modules in question manually, put them in your %s folder and reload your automation scripts."
@@ -98,10 +99,8 @@ class DependencyControl
         globalDefaults: {updaterEnabled:true, updateInterval:302400, traceLevel:3, extraFeeds:{},
                          tryAllFeeds:false, dumpFeeds:true, configDir:"?user/config",
                          logMaxFiles: 200, logMaxAge: 604800, logMaxSize:10*(10^6),
-                         updateWaitTimeout: 130, updateOrphanTimeout: 600,
+                         updateWaitTimeout: 60, updateOrphanTimeout: 600,
                          logDir: "?user/log", writeLogs: true}
-        initWaitTime: 800
-        firstInitWaitTime: 5000
     }
 
     templateData = {
@@ -182,12 +181,15 @@ class DependencyControl
                     @requiredModules[i] = {moduleName: mdl}
                 else error msgs.badRecordError\format msgs.badRecord.badModuleTable\format i, tostring mdl
 
-        shouldWriteConfig, firstInit = @loadConfig!
+        shouldWriteConfig = @loadConfig!
 
         logger or= Logger { fileBaseName: "DepCtrl", fileSubName: script_namespace, prefix: "[#{@@__name}] ",
                             toFile: @@config.c.writeLogs, defaultLevel: @@config.c.traceLevel,
                             maxAge: @@config.c.logMaxAge,maxSize: @@config.c.logMaxSize, maxFiles: @@config.c.logMaxFiles,
                             logDir: @@config.c.logDir }
+
+        -- attach our logger to the ConfigHandlers
+        @@config.logger, @config.logger = logger, logger
 
         feedsHaveBeenTrimmed or= Logger({fileMatchTemplate: "l0.#{@@__name}_feed_%x%x%x%x.*%.json",
                                          logDir: @@config.c.dumpFeeds and "?user" or "?temp",
@@ -198,20 +200,15 @@ class DependencyControl
         -- we can't really profit from write concerting here because we don't know which module loads last
 
         @configDir = @@config.c.configDir
-        @writeConfig shouldWriteConfig, false, false,
-                     firstInit and depConf.firstInitWaitTime or depConf.initWaitTime
+        @writeConfig shouldWriteConfig, false, false
 
         configDirExists or= @createDir @configDir
         logsHaveBeenTrimmed or= logger\trimFiles!
 
     loadConfig: (importRecord = false, forceReloadGlobal = false) =>
         -- load global config
-        local firstInit
-        if @@config
-            @@config\load! if forceReloadGlobal
-        else
-            @@config = ConfigHandler depConf.file, depConf.globalDefaults, {"config"}, true
-            firstInit = not @@config\load!
+        @@config\load! if forceReloadGlobal and @@config
+        @@config or= ConfigHandler depConf.file, depConf.globalDefaults, {"config"}
 
         -- load per-script config
         -- virtual modules are not yet present on the user's system and have no persistent configuration
@@ -238,18 +235,23 @@ class DependencyControl
             --  copy script information to the config
             @config\load!
             shouldWriteConfig = @config\import @, depConf.scriptFields
-            return shouldWriteConfig, firstInit
+            return shouldWriteConfig
 
-        return false, firstInit
+        return false
 
-    writeConfig: (writeLocal = true, writeGlobal = true, concert = false, waitTime) =>
+    writeConfig: (writeLocal = true, writeGlobal = true, concert = false) =>
+        success, errMsg = true
         unless @virtual or @config.file
             @config.setFile depConf.file
         if concert
-            @@config\write true, waitTime
+            success, errMsg = @@config\write true
         else
-            @@config\write false, waitTime if writeGlobal
-            @config\write false, waitTime if writeLocal
+            if writeGlobal
+                success, errMsg = @@config\write false
+            if success and writeLocal
+                success, errMsg = @config\write false
+
+        assert success, msgs.configWriteError\format errMsg
 
     getVersionNumber: (value) =>
         switch type value
