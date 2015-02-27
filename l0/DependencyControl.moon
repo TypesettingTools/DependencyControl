@@ -242,7 +242,8 @@ class DependencyControl
     writeConfig: (writeLocal = true, writeGlobal = true, concert = false) =>
         success, errMsg = true
         unless @virtual or @config.file
-            @config.setFile depConf.file
+            @config\setFile depConf.file
+
         if concert
             success, errMsg = @@config\write true
         else
