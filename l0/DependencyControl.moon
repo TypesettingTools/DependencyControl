@@ -23,7 +23,7 @@ class DependencyControl
         missingModules: "Error: one or more of the modules required by %s could not be found on your system:\n%s\n%s"
         missingOptionalModules: "Error: a %s feature you're trying to use requires additional modules that were not found on your system:\n%s\n%s"
         missingModulesDownloadHint: "Please download the modules in question manually, put them in your %s folder and reload your automation scripts."
-        missingTemplate: "— %s (v%s+)%s\n—— Reason: %s"
+        missingTemplate: "— %s %s%s\n—— Reason: %s"
         outdatedModules: "Error: one or more of the modules required by %s are outdated on your system:
 %s\nPlease update the modules in question manually and reload your automation scripts."
         outdatedTemplate: "— %s (Installed: v%s; Required: v%s)%s\n—— Reason: %s"
@@ -302,12 +302,11 @@ class DependencyControl
 
     checkOptionalModules: (modules) =>
         modules = type(modules)=="string" and {[modules]:true} or {mdl,true for mdl in *modules}
-        missing = [msgs.missingTemplate\format mdl.moduleName, mdl.version, mdl.url and ": #{mdl.url}" or "",
-            mdl._reason or "" for mdl in *@requiredModules when mdl.optional and mdl._missing and modules[mdl.name]]
+        missing = [@formatVersionErrorTemplate mdl.moduleName, mdl.version, msl.url, mdl._reason for mdl in *@requiredModules when mdl.optional and mdl._missing and modules[mdl.name]]
 
         if #missing>0
             downloadHint = msgs.missingModulesDownloadHint\format aegisub.decode_path "?user/automation/include"
-            errorMsg = msgs.missingOptionalModules\format @name, table.concat(missing), downloadHint
+            errorMsg = msgs.missingOptionalModules\format @name, table.concat(missing, "\n"), downloadHint
             return false, errorMsg
         return true
 
@@ -386,22 +385,30 @@ class DependencyControl
         @releaseUpdaterLock!
 
         errorMsg = ""
-        missing = [msgs.missingTemplate\format mdl.moduleName, mdl.version, mdl.url and ": #{mdl.url}" or "",
-                   mdl._reason for mdl in *modules when mdl._missing and not mdl.optional]
+        missing = [@formatVersionErrorTemplate mdl.moduleName, mdl.version, mdl.url, mdl._reason for mdl in *modules when mdl._missing and not mdl.optional]
         if #missing>0
             downloadHint = msgs.missingModulesDownloadHint\format aegisub.decode_path "?user/automation/include"
-            errorMsg ..= msgs.missingModules\format @name, table.concat(missing), downloadHint
+            errorMsg ..= msgs.missingModules\format @name, table.concat(missing, "\n"), downloadHint
 
-        outdated = [msgs.outdatedTemplate\format mdl.moduleName, mdl._loaded\getVersionString!, mdl.version, mdl.url and ": #{mdl.url}" or "",
-                    mdl._reason for mdl in *modules when mdl._outdated]
+        outdated = [@formatVersionErrorTemplate mdl.moduleName, mdl.version, mdl.url, mdl._reason, mdl._loaded for mdl in *modules when mdl._outdated]
         if #outdated>0
-            errorMsg ..= msgs.outdatedModules\format @name, table.concat outdated
+            errorMsg ..= msgs.outdatedModules\format @name, table.concat outdated, "\n"
 
         if updateMode
             return #errorMsg == 0, errorMsg
         elseif #errorMsg > 0
             logger\error errorMsg
         return unpack [mdl._ref for mdl in *modules when mdl._loaded or mdl.optional]
+
+    -- TODO: make this private
+    formatVersionErrorTemplate: (name, reqVersion, url, reason, haveVersion) =>
+        url = url and ": #{url}" or ""
+        if haveVersion
+            return msgs.outdatedTemplate\format name, haveVersion\getVersionString!, reqVersion, reason
+        else
+            reqVersion = reqVersion and " (v#{reqVersion})" or ""
+            return msgs.missingTemplate\format name, reqVersion, url, reason
+
 
     register: (selfRef) =>
         -- replace dummy refs with real refs to own module
