@@ -1,4 +1,4 @@
-lfs = require "aegisub.lfs"
+lfs = require "lfs"
 util = require "aegisub.util"
 PreciseTimer = require "PT.PreciseTimer"
 Logger = require "l0.DependencyControl.Logger"

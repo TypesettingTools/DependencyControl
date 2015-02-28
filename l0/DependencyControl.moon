@@ -1,5 +1,5 @@
 json = require "json"
-lfs = require "aegisub.lfs"
+lfs = require "lfs"
 re = require "aegisub.re"
 ffi = require "ffi"
 Logger = require "l0.DependencyControl.Logger"
