@@ -75,9 +75,9 @@ class DependencyControl
         updateError: {
             [0]: "Couldn't %s %s '%s' because of a paradox: module not found but updater says up-to-date (%s)"
             [1]: "Couldn't %s %s '%s' because the updater is disabled.",
-            [2]: "Skipping %s of unmanaged %s '%s'.",
-            [3]: "No feed available to %s %s '%s' from.",
-            [4]: "Skipping %s of %s '%s': Another update initiated by %s is already running."
+            [2]: "Skipping %s of %s '%s': namespace '%s' doesn't conform to rules."
+            [3]: "Skipping %s of unmanaged %s '%s'.",
+            [4]: "No feed available to %s %s '%s' from.",
             [7]: "Couldn't %s %s '%s': error parsing feed %s.",
             [8]: "The specified feed doesn't have the required data to %s the %s '%s'.",
             [9]: "Couldn't %s %s '%s' because the specified channel '%s' wasn't present in the feed.",
@@ -164,7 +164,10 @@ class DependencyControl
             assert @namespace, msgs.badRecordError\format msgs.badRecord.missingNamespace
             @type = "macros"
 
-        assert #namespaceValidation\find(@namespace) > 0, msgs.badRecord.badNamespace\format @namespace
+        unless @virtual
+            -- virtual records (any module not found on the user's system) don't need to conform to namespace rules
+            assert namespaceValidation\match(@namespace), msgs.badRecord.badNamespace\format @namespace
+
         @name = @namespace unless @name
         @configFile = configFile or "#{@namespace}.json"
         @version, err = @getVersionNumber @version
@@ -757,10 +760,14 @@ class DependencyControl
             logger\log @getUpdaterErrorMsg -1, @name, @moduleName, @virtual
             return -1
 
-        -- don't do regular update checks for unmanaged modules because it's a waste of time
-        if @unmanaged and not force
+        if @virtual and not namespaceValidation\match(@namespace)
             logger\log @getUpdaterErrorMsg -2, @name, @moduleName, @virtual
             return -2
+
+        -- don't do regular update checks for unmanaged modules because it's a waste of time
+        if @unmanaged and not force
+            logger\log @getUpdaterErrorMsg -3, @name, @moduleName, @virtual
+            return -3
 
         if @config.c.lastUpdateCheck and (@config.c.lastUpdateCheck + @@config.c.updateInterval > os.time!) and not force
             return 0  -- the update interval has not yet been passed since the last update check
@@ -780,8 +787,8 @@ class DependencyControl
             feeds[#feeds+1] = feed for feed in *@@config.c.extraFeeds
 
         if #feeds==0
-            logger\log @getUpdaterErrorMsg -3, @name, @moduleName, @virtual
-            return -3
+            logger\log @getUpdaterErrorMsg -4, @name, @moduleName, @virtual
+            return -4
 
         -- reload important module version information from configuration
         -- because another updater instance might have updated them in the meantime
