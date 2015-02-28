@@ -92,7 +92,8 @@ class Logger
         elseif progress
             unless @progressStep
                 @progressStep = 0
-                @logEx nil, "[", false, @prefix..msg, ...
+                msg ..= " " if #msg>0
+                @logEx nil, "#{msg}[", false, nil, ...
             step = math.floor(progress * 0.01 + 0.5) / 0.1
             @logEx nil, "■"\rep(step-@progressStep), false, ""
             @progressStep = step
