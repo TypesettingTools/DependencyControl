@@ -40,26 +40,31 @@ class Logger
 
         prefix = "" unless @usePrefix
         lineFeed, indentStr = insertLineFeed and "\n" or "", ""
-        if @indent>0 and @lastHadLineFeed
-            indentRep = @indentStr\rep(@indent)
-            indentStr = indentRep .. " "
-            -- connect indentation supplied in the user message
-            msg = msg\gsub("\n", "\n"..indentStr)\gsub "\n#{indentStr}(#{@indentStr})", "\n#{indentRep}%1"
+        msg = @lastHadLineFeed and @format(msg, ...) or msg\format ...
 
         show = aegisub.log and @toWindow
         if @toFile and level <= @maxToFileLevel
             @handle = io.open(@fileName, "a") unless @handle
             linePre = @lastHadLineFeed and "#{indentStr}[#{levels[level+1]\upper!}] #{os.date '%H:%M:%S'} #{show and '+' or '•'} " or ""
-            line = table.concat({linePre, prefix, msg, lineFeed})\format ...
+            line = table.concat({linePre, prefix, msg, lineFeed})
             @handle\write(line)\flush!
 
         if level<2
-            error "#{indentStr}Error: #{prefix}#{msg}"\format ...
+            error "#{indentStr}Error: #{prefix}#{msg}"
         elseif show
-            aegisub.log level, table.concat({indentStr, prefix, msg, lineFeed})\format ...
+            aegisub.log level, table.concat({indentStr, prefix, msg, lineFeed})
 
         @lastHadLineFeed = insertLineFeed
         return true
+
+    format: (msg, ...) =>
+        msg = msg\format ...
+        return msg unless @indent>0
+
+        indentRep = @indentStr\rep(@indent)
+        indentStr = indentRep .. " "
+         -- indent after line breaks and connect indentation supplied in the user message
+        return msg\gsub("\n", "\n"..indentStr)\gsub "\n#{indentStr}(#{@indentStr})", "\n#{indentRep}%1"
 
     log: (level, msg, ...) =>
         return false unless level or msg
