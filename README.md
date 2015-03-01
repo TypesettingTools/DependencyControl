@@ -26,8 +26,8 @@ __Requirements__:
  1. [DependencyControl for Users](#dependency-control-for-users)
  2. [Usage for Automation Scripts](#usage-for-automation-scripts)
  3. [Namespaces and Paths](#namespaces-and-paths)
- 4. [Reference](#reference)
- 5. [The Anatomy of an Updater Feed](#the-anatomy-of-an-updater-feed) (tbd)
+ 4. [The Anatomy of an Updater Feed](#the-anatomy-of-an-updater-feed)
+ 5. [Reference](#reference)
  6. [Ancillary Components: Logger and ConfigHandler](#FIXME) (tbd)
 
 ----------------------------------
