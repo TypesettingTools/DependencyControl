@@ -25,7 +25,7 @@ __Requirements__:
 
  1. [DependencyControl for Users](#dependency-control-for-users)
  2. [Usage for Automation Scripts](#usage-for-automation-scripts)
- 3. [File and Folder Structure](#FIXME) (tbd)
+ 3. [Namespaces and Paths](#FIXME)
  4. [Reference](#reference)
  5. [The Anatomy of an Updater Feed](#FIXME) (tbd)
  6. [Ancillary Components: Logger and ConfigHandler](#FIXME) (tbd)
@@ -90,7 +90,7 @@ Load DependencyControl at the start of your macro and create a version record. S
 
 Here's an example of a macro that requires several modules - some of which have a version record as well as some that don't.
 
-```Lua
+```lua
 script_name = "Move Along Path"
 script_description = "Moves text along a path specified in a \\clip. Currently only works on fbf lines."
 script_version = "0.1.2"
@@ -139,7 +139,7 @@ Using this method for macro registration is a requirement for the __custom subme
 
 Creating a record for a module is very similar to how it does for macros, with the key difference being that name and version information is passed to DependencyControl correctly and a *moduleName* is required.
 
-```Lua
+```lua
 
 local DependencyControl = require("l0.DependencyControl")
 local version = DependencyControl{
@@ -169,7 +169,7 @@ local createASSClass, re, util, unicode, Common, LineCollection, Line, Log, ASSI
 A reference to the version record must be added as the *.version* field of your returned module for version control to work.
 A module should also register itself to enable circular dependency support. The *:register()* method returns your module, so the last lines of your module should look like this:
 
-```Lua
+```lua
 
 MyModule.version = version
 
@@ -177,6 +177,188 @@ return version:register(MyModule)
 
 ```
 ---------------------------------------------
+
+### Namespaces and Paths ###
+
+DependencyControl strictly enforces a **namespace-based file structure** for modules as well as automation macros in order to ensure there are no conflicts between scripts that happen to have the same name. 
+
+Automation scripts must define their namespace in the version record whereas for modules the module name (as you would use in a `require` statement) defines the namespace. 
+
+#### Rules for a valid namespace: ####
+
+ 1. contains _at least_ one dot
+ 2. must **not** start or end with a dot
+ 3. must **not** contain series of two or more dots
+ 4. the character set is restricted to: `A-Z`, `a-z`, `0-9`, `.`, `_`, `-` 
+ 5. *should* be descriptive (this is more of a guideline)
+
+__Examples__:
+ * l0.ASSFoundation
+ * l0.ASSFoundation.Common (for a separately version-controlled 'submodule')
+ * l0.ASSWipe
+ * a-mo.LineCollection
+
+#### File and Folder Structure ####
+
+The namespace of your script translates into a subtree of the **user**automation directory you can use to store your files in. DepedencyControl will _not_ refuse to work with scripts that ignore this restriction, however it's designed in such a way that downloading to locations outside of your tree is **impossible** (which means your macro/module be able to use the auto-updater).
+
+__Automation Scripts__ use the `?user/automation/autoload`, which has a flat file structure. You may **not** use subdirectories and your **file names must start with the namespace of your script**.
+
+__Examples__:
+ * l0.ASSWipe.lua
+ * l0.ASSWipe.Addon.moon
+
+__Modules__ use the `?user/automation/include` folder, which has a nested file structure. To determine your _subdirectory/file base name_, the dots in your namespace are replaced with `/` (`\` in Windows terms). 
+
+Our example module ASSFoundation with namespace __l0.ASSFoundation__ writes (among others) the following files:
+ * __?user/automation/include/l0/ASSFoundation__.lua
+ * __?user/automation/include/l0/ASSFoundation__/ClassFactory.lua
+ * __?user/automation/include/l0/ASSFoundation__/Draw/Bezier.lua
+
+---------------------------------------------
+
+### The Anatomy of an Updater Feed ###
+
+If you want DepedencyControl auto-update your script on the user's system, you'll need to supply update information in an updater feed, which is a _JSON_ file with a simple basic layout:
+
+*(`//` denotes a comment explaining the property above)*
+
+`````javascript
+{
+  "dependencyControlFeedFormatVersion": "0.1.0", 
+  // The version of the feed format. The current version is 0.1.0, don't touch this until further notice.
+  "name": "line0's Aegisub Scripts",
+  "description": "Main repository for all of line0's automation macros.",
+  "maintainer": "line0",
+  // The title and description of your repository as well as the name of the maintainer. May be used by GUI-driven management tools, package managers, etc...
+  "baseUrl": "https://github.com/TypesettingCartel/line0-Aegisub-Scripts",
+  // baseUrl is a template variable that can be referenced in other string fields of the template. It's useful when you have several scripts which all have their documentation hosted on the same site (so they start with the same URL). For more Information about templates, see the section below.
+  "url": "@{baseUrl}",
+  // The address where information about this repository can be found. In this case it references the baseUrl template variable and expands to "https://github.com/TypesettingCartel/line0-Aegisub-Scripts".
+  "fileBaseUrl": "https://raw.githubusercontent.com/TypesettingCartel/line0-Aegisub-Scripts/@{channel}/@{namespace}",
+  // A special rolling template variable. See the templates section below for more information.
+  
+  "macros": {
+    // the section where all automation scripts tracked by this feed go. The key for each value is the namespace of the respective script. Below this level, this namespace is available as the @{namespace} and @{namespacePath} template variable
+    "l0.ASSWipe": { ... },
+    "l0.Nudge": { ... }
+   },
+  "modules": {
+    // Your modules go here. If your feed doesn't track any modules, you may omit this section (same goes for the macros object) 
+    "l0.ASSFoundation": { ... }
+  }  
+
+`````
+
+An automation script or module object looks like this:
+
+````javascript
+"l0.ASSWipe": {
+      "url": "@{baseUrl}#@{namespace}",
+      "author": "line0",
+      "name": "ASSWipe",
+      "description": "Performs script cleanup, removes unnecessary tags and lines.",
+      // These script information fields should be identical to the values defined in your DepedencyControl version record.
+      "channels": {
+      // a list of update channels available for your script (think release, beta and alpha). The key is a channel name of your choice, but should make sense to the user picking one.
+        "master": {
+        // This example only defines one channel, which is set up to track the the HEAD of a GitHub repository.
+          "version": "0.1.3",
+          // The current script version served in this channel. Must be identical to the one in the version record.
+          "released": "2015-02-26",
+          // Release date of the current script version (UTC/ISO 8601 format)
+          "default": true,
+          // Marks this channel as the default channel in case the user doesn't have picked a specific one. Must be set to true for **exactly** one channel in the list. 
+          "platforms": ["Windows-x86", "Windows-x64", "OSX-x64"]
+          // Optional: A list of platforms you serve builds for. You should omit this property for regular scripts and modules that use only Lua/Moonscript and no binaries. If this property is absent, the platform check will be skipped. The platform names are derived from the output of ffi.os()-ffi.arch() in luajit. 
+          "files": [
+          // A list of files installed by your script.
+            {
+              "name": ".lua",
+              // the file name relative to the path assigned to the script by your namespace choice (see 3. Namespaces and Paths for more information). Available as the @{fileName} template variable for use in the url field below.
+              "url": "@{fileBaseUrl}@{fileName}",
+              // URL from which the **raw** file can be downloaded from (no archives, no javascript redirects, etc...). In this case the templates expand to "https://raw.githubusercontent.com/TypesettingCartel/line0-Aegisub-Scripts/master/l0.ASSWipe.lua"
+              "sha1": "A7BD1C7F0E776BA3010B1448F22DE6528F73B077"
+              // The SHA-1 hash of the file being currently served under that url. Will be checked against the downloaded file, so it must always be present and valid or the update process will fail on the user's end.
+            },
+            {
+              "name": ".Helper.dll",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "0B4E0511116355D4A11C2EC75DF7EEAD0E14DE9F"
+              "platform": "Windows-x86"
+              // Optional. When this property is present, the file will only be downloaded to the users computer if his platform matches to this value.
+            }
+          ],
+          "requiredModules": [
+          // an exhaustive list of modules required by this script. Must be identical to the required module entries in your DepdencyControl record, but you may not use short style here. (see 2. Usage for Automation Scripts for more information)
+            {
+              "moduleName": "a-mo.LineCollection",
+              "name": "Aegisub-Motion (LineCollection)",
+              "url": "https://github.com/torque/Aegisub-Motion",
+              "version": "1.0.1"
+            }, 
+            {
+              "moduleName": "l0.ASSFoundation",
+              "name": "ASSFoundation",
+              "url": "https://github.com/TypesettingCartel/ASSFoundation",
+              "version": "0.1.1",
+              "feed": "https://raw.githubusercontent.com/TypesettingCartel/ASSFoundation/master/DependencyControl.json"
+            },
+            {
+              "moduleName": "aegisub.util"
+            },
+          ]
+        }
+      },
+      "changelog": {
+      // a change log that allows users to see what's new in this and previous versions. The changelog is shared between all channels. Only the entries with a version number equal or below the version the user just updated to will be displayed.
+        "0.1.0": [
+          "Sync with ASSFoundation changes",
+          // one entry for each line
+          "Start versioning with DependencyControl"
+        ],
+        "0.1.3": [
+          "Enabled auto-update using DependencyControl",
+          "Changed config file to \\config\\l0.ASSWipe.json (rename ASSWipe.json to restore your existing configuration)",
+          "DependencyControl compatibility fixes"
+        ]
+      }
+    }
+````
+
+#### Template Variables ####
+
+To make maintaining an update feed easier, you can use several template variables that will be expanded when used inside string values (but **not** Keys).
+
+__Regular Variables:__ These reference a specific key or value and are available at the same depth and further down the tree from the point on where they were created. 
+
+Variables extracted at the **same depth** are expanded in a specific order. As a consequence only references to variables of lower order are expanded in values that are assigned to a variable themselves.
+
+_Depth 1:_ Feed Information
+ 1. __feedName__: The name of the feed
+ 2. __baseUrl__: The baseUrl field 
+
+_Depth 3:_ Script Information
+ 1. __namespace__: the script namespace
+ 2. __namepspacePath__: the script namespace with all `.` replaced by `/`
+ 3. scriptName: the script name
+
+_Depth 5:_ Version Information
+ 1. __channel__: the channel name of this version record
+ 2. __version__: the version number as a SemVer string
+
+_Depth 7:_ File Information
+ 1. __platform__: the platform defined for this file, otherwise an empty string
+ 2. __fileName__: the file name
+
+__"Rolling" Variables:__ These variables can be defined at any depth in the JSON tree and are continuously expanded using the variables available. You can reference a rolling variable in itself, which will substitute the template for the contents the variable had at the parent-level. 
+
+Right now there's only one such variable: __fileBaseUrl__, which you can use to construct the URL to a file using the template variables available. 
+
+For an example to serve updates from the HEAD of a GitHub repository, see [here](https://github.com/TypesettingCartel/line0-Aegisub-Scripts/blob/master/DependencyControl.json). An example that shows a feed making use of tagged releases is [also available](https://github.com/TypesettingCartel/ASSFoundation/blob/master/DependencyControl.json)
+
+ ---------------------------------------------
+
 ### Reference ###
 
 __DependencyControl{*tbl* [requiredModules]={}, *str* :name=script_name, *str* :description=script_description, *str* :author=script_author, *str* :url, *str* :version, *str* :moduleName, *str* [:configFile], *string* [:namespace]} --> *obj* DependecyControlRecord__
