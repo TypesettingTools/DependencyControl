@@ -25,9 +25,9 @@ __Requirements__:
 
  1. [DependencyControl for Users](#dependency-control-for-users)
  2. [Usage for Automation Scripts](#usage-for-automation-scripts)
- 3. [Namespaces and Paths](#FIXME)
+ 3. [Namespaces and Paths](#namespaces-and-paths)
  4. [Reference](#reference)
- 5. [The Anatomy of an Updater Feed](#FIXME) (tbd)
+ 5. [The Anatomy of an Updater Feed](#the-anatomy-of-an-updater-feed) (tbd)
  6. [Ancillary Components: Logger and ConfigHandler](#FIXME) (tbd)
 
 ----------------------------------
@@ -204,7 +204,7 @@ The namespace of your script translates into a subtree of the **user**automation
 
 __Automation Scripts__ use the `?user/automation/autoload`, which has a flat file structure. You may **not** use subdirectories and your **file names must start with the namespace of your script**.
 
-__Examples__:
+Examples:
  * l0.ASSWipe.lua
  * l0.ASSWipe.Addon.moon
 
@@ -258,39 +258,56 @@ An automation script or module object looks like this:
       "author": "line0",
       "name": "ASSWipe",
       "description": "Performs script cleanup, removes unnecessary tags and lines.",
-      // These script information fields should be identical to the values defined in your DepedencyControl version record.
+      // These script information fields should be identical to the values defined in your 
+      // DepedencyControl version record.
       "channels": {
-      // a list of update channels available for your script (think release, beta and alpha). The key is a channel name of your choice, but should make sense to the user picking one.
+      // a list of update channels available for your script (think release, beta and alpha). 
+      // The key is a channel name of your choice, but should make sense to the user picking one.
         "master": {
-        // This example only defines one channel, which is set up to track the the HEAD of a GitHub repository.
+        // This example only defines one channel, which is set up to track
+        // the HEAD of a GitHub repository.
           "version": "0.1.3",
-          // The current script version served in this channel. Must be identical to the one in the version record.
+          // The current script version served in this channel.
+          // Must be identical to the one in the version record.
           "released": "2015-02-26",
           // Release date of the current script version (UTC/ISO 8601 format)
           "default": true,
-          // Marks this channel as the default channel in case the user doesn't have picked a specific one. Must be set to true for **exactly** one channel in the list. 
+          // Marks this channel as the default channel in case the user doesn't have picked a specific one. 
+          // Must be set to true for **exactly** one channel in the list. 
           "platforms": ["Windows-x86", "Windows-x64", "OSX-x64"]
-          // Optional: A list of platforms you serve builds for. You should omit this property for regular scripts and modules that use only Lua/Moonscript and no binaries. If this property is absent, the platform check will be skipped. The platform names are derived from the output of ffi.os()-ffi.arch() in luajit. 
+          // Optional: A list of platforms you serve builds for. You should omit this property for regular scripts 
+          // and modules that use only Lua/Moonscript and no binaries. If this property is absent, 
+          // the platform check will be skipped. The platform names are derived from the output of 
+          // ffi.os()-ffi.arch() in luajit. 
           "files": [
           // A list of files installed by your script.
             {
               "name": ".lua",
-              // the file name relative to the path assigned to the script by your namespace choice (see 3. Namespaces and Paths for more information). Available as the @{fileName} template variable for use in the url field below.
+              // the file name relative to the path assigned to the script by your namespace choice 
+              // (see 3. Namespaces and Paths for more information). Available as the @{fileName} template variable 
+              // for use in the url field below.
               "url": "@{fileBaseUrl}@{fileName}",
-              // URL from which the **raw** file can be downloaded from (no archives, no javascript redirects, etc...). In this case the templates expand to "https://raw.githubusercontent.com/TypesettingCartel/line0-Aegisub-Scripts/master/l0.ASSWipe.lua"
+              // URL from which the **raw** file can be downloaded from (no archives, no javascript 
+              // redirects, etc...). In this case the templates expand to         
+              // "https://raw.githubusercontent.com/TypesettingCartel/line0-Aegisub-Scripts/master/l0.ASSWipe.lua"
               "sha1": "A7BD1C7F0E776BA3010B1448F22DE6528F73B077"
-              // The SHA-1 hash of the file being currently served under that url. Will be checked against the downloaded file, so it must always be present and valid or the update process will fail on the user's end.
+              // The SHA-1 hash of the file being currently served under that url. Will be checked 
+              // against the downloaded file, so it must always be present and valid or the update process
+              // will fail on the user's end.
             },
             {
               "name": ".Helper.dll",
               "url": "@{fileBaseUrl}@{fileName}",
               "sha1": "0B4E0511116355D4A11C2EC75DF7EEAD0E14DE9F"
               "platform": "Windows-x86"
-              // Optional. When this property is present, the file will only be downloaded to the users computer if his platform matches to this value.
+              // Optional. When this property is present, the file will only be downloaded to the users 
+              // computer if his platform matches to this value.
             }
           ],
           "requiredModules": [
-          // an exhaustive list of modules required by this script. Must be identical to the required module entries in your DepdencyControl record, but you may not use short style here. (see 2. Usage for Automation Scripts for more information)
+          // an exhaustive list of modules required by this script. Must be identical to the required 
+          // module entries in your DepdencyControl record, but you may not use short style here. 
+          // (see 2. Usage for Automation Scripts for more information)
             {
               "moduleName": "a-mo.LineCollection",
               "name": "Aegisub-Motion (LineCollection)",
@@ -311,7 +328,9 @@ An automation script or module object looks like this:
         }
       },
       "changelog": {
-      // a change log that allows users to see what's new in this and previous versions. The changelog is shared between all channels. Only the entries with a version number equal or below the version the user just updated to will be displayed.
+      // a change log that allows users to see what's new in this and previous versions. The changelog 
+      // is shared between all channels. Only the entries with a version number equal or below 
+      // the version the user just updated to will be displayed.
         "0.1.0": [
           "Sync with ASSFoundation changes",
           // one entry for each line
@@ -351,11 +370,12 @@ _Depth 7:_ File Information
  1. __platform__: the platform defined for this file, otherwise an empty string
  2. __fileName__: the file name
 
+
 __"Rolling" Variables:__ These variables can be defined at any depth in the JSON tree and are continuously expanded using the variables available. You can reference a rolling variable in itself, which will substitute the template for the contents the variable had at the parent-level. 
 
 Right now there's only one such variable: __fileBaseUrl__, which you can use to construct the URL to a file using the template variables available. 
 
-For an example to serve updates from the HEAD of a GitHub repository, see [here](https://github.com/TypesettingCartel/line0-Aegisub-Scripts/blob/master/DependencyControl.json). An example that shows a feed making use of tagged releases is [also available](https://github.com/TypesettingCartel/ASSFoundation/blob/master/DependencyControl.json)
+For an example to serve updates from the HEAD of a GitHub repository, see [here](https://github.com/TypesettingCartel/line0-Aegisub-Scripts/blob/master/DependencyControl.json). An example that shows a feed making use of tagged releases is [also available](https://github.com/TypesettingCartel/ASSFoundation/blob/master/DependencyControl.json).
 
  ---------------------------------------------
 
