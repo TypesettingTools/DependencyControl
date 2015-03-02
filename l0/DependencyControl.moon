@@ -390,7 +390,7 @@ class DependencyControl
             downloadHint = msgs.missingModulesDownloadHint\format aegisub.decode_path "?user/automation/include"
             errorMsg ..= msgs.missingModules\format @name, table.concat(missing, "\n"), downloadHint
 
-        outdated = [@formatVersionErrorTemplate mdl.moduleName, mdl.version, mdl.url, mdl._reason, mdl._loaded for mdl in *modules when mdl._outdated]
+        outdated = [@formatVersionErrorTemplate mdl.moduleName, mdl.version, mdl.url, mdl._reason, mdl._ref for mdl in *modules when mdl._outdated]
         if #outdated>0
             errorMsg ..= msgs.outdatedModules\format @name, table.concat outdated, "\n"
 
@@ -401,10 +401,10 @@ class DependencyControl
         return unpack [mdl._ref for mdl in *modules when mdl._loaded or mdl.optional]
 
     -- TODO: make this private
-    formatVersionErrorTemplate: (name, reqVersion, url, reason, haveVersion) =>
+    formatVersionErrorTemplate: (name, reqVersion, url, reason, ref) =>
         url = url and ": #{url}" or ""
-        if haveVersion
-            return msgs.outdatedTemplate\format name, haveVersion\getVersionString!, reqVersion, reason
+        if ref
+            return msgs.outdatedTemplate\format name, ref.version\getVersionString!, reqVersion, url, reason
         else
             reqVersion = reqVersion and " (v#{reqVersion})" or ""
             return msgs.missingTemplate\format name, reqVersion, url, reason
