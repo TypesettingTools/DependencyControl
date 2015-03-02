@@ -669,8 +669,8 @@ class DependencyControl
         -- check hashes before download, only update changed files
 
         tmpDir = aegisub.decode_path "?temp/l0.#{@@__name}_#{'%04X'\format math.random 0, 16^4-1}"
-        res, err = lfs.mkdir tmpDir
-        if res or err
+        res, err = @createDir tmpDir
+        unless res
             extErr = "#{tmpDir} (#{err})"
             logger\log @getUpdaterErrorMsg -30, @name, @moduleName, @virtual, extErr
             return -30, extErr
@@ -824,7 +824,7 @@ class DependencyControl
 
 DependencyControl.__class.version = DependencyControl{
     name: "DependencyControl",
-    version: "0.2.3",
+    version: "0.2.4",
     description: "Provides script management and auto-updating for Aegisub macros and modules.",
     author: "line0",
     url: "http://github.com/TypesettingCartel/DependencyControl",
