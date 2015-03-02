@@ -113,8 +113,8 @@ class DependencyControl
             scriptName:    {depth: 3, order: 3, key: "name"                                                  }
             channel:       {depth: 5, order: 1, parentKeys: {channels:true}                                  }
             version:       {depth: 5, order: 2, key: "version"                                               }
-            arch:          {depth: 5, order: 3, key: "arch"                                                  }
-            fileName:      {depth: 7, order: 1, key: "name"                                                  }
+            platform:      {depth: 7, order: 1, key: "platform"                                                  }
+            fileName:      {depth: 7, order: 2, key: "name"                                                  }
             -- rolling templates
             fileBaseUrl:   {key: "fileBaseUrl", rolling: true                                                }
         }
