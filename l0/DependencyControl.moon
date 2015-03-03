@@ -276,8 +276,12 @@ class DependencyControl
 
             else return false, msgs.badVersionType\format type value
 
-    getVersionString: (version = @version) =>
-        parts = [bit.rshift(version, part[2])%256 for part in *semParts]
+    getVersionString: (version = @version, precision = "patch") =>
+        parts = {0, 0, 0}
+        for i, part in ipairs semParts
+            parts[i] = bit.rshift(version, part[2])%256
+            break if precision == part[1]
+
         return "%d.%d.%d"\format unpack parts
 
     getConfigFileName: () =>
@@ -294,10 +298,18 @@ class DependencyControl
 
         return Logger args
 
-    checkVersion: (value) =>
+    checkVersion: (value, precision = "patch") =>
+        if type(value) == "table" and value.__class == @@
+            value = value.version
         if type(value) != "number"
             value, err = @getVersionNumber value
             return nil, err unless value
+        mask = 0
+        for part in *semParts
+            mask += 0xFF * 2^part[2]
+            break if precision == part[1]
+
+        value = bit.band value, mask
         return @version >= value
 
     checkOptionalModules: (modules) =>
