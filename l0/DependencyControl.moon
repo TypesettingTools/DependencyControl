@@ -28,7 +28,7 @@ class DependencyControl
 %s\nPlease update the modules in question manually and reload your automation scripts."
         outdatedTemplate: "— %s (Installed: v%s; Required: v%s)%s\n—— Reason: %s"
         missingRecord: "Error: module '%s' is missing a version record."
-        moduleError: "Error in module %s:\n%s"
+        moduleError: "Error in required module %s:\n%s"
         badVersionString: "Can't parse version string '%s'. Make sure it conforms to semantic versioning standards."
         badVersionType: "Argument had the wrong type: expected string or number, got '%s'"
         versionOverflow: "Error: %s version must be an integer < 255, got %s."
@@ -42,13 +42,18 @@ class DependencyControl
         updReloadNotice: "Please rescan your autoload directory for the changes to take effect."
         moveExistsNoFile: "Couldn't move file '%s' to '%s' because a %s of the same name is already present."
         moveGenericError: "An error occured while moving file '%s' to '%s':\n%s"
-        moveCreateDirError: "Failed moving '%s' to '%s' (%s).",
-        cantRemoveFile: "Couldn't overwrite file '%s': %s"
+        moveCreateDirError: "Failed moving '%s' to '%s' (%s)."
+        cantRemoveFile: "Couldn't overwrite file '%s': %s. Attempts at renaming the existing target file failed."
         cantRenameFile: "Couldn't move file '%s' to '%s': %s"
         createDir: {
             genericError: "Can't retrieve attributes: %s."
             createError: "Error creating directory: %s."
             otherExists: "Couldn't create directory because a %s of the same name is already present."
+        }
+        moveFile: {
+            inUseTryingRename: "Target file '%s' already exists and appears to be in use. Trying to rename..."
+            overwritingFile: "File '%s' already exists, overwriting..."
+            createdDir: "Created target directory '%s'."
         }
         updateInfo: {
             starting: "Starting %supdate of %s '%s' (v%s)... "
@@ -63,8 +68,7 @@ class DependencyControl
             updateReady: "Update ready. Using temporary directory '%s'."
             movingFiles: "Downloads complete. Now moving files to Aegisub automation directory '%s'..."
             movedFile: "Moved '%s' ==> '%s'."
-            overwritingFile: "File '%s' already exists, overwriting..."
-            createdDir: "Created target directory '%s'."
+            moveFileFailed: "Failed to move '%s' ==> '%s': %s"
             changelog: "Changelog for %s v%s (released %s):"
             waiting: "Waiting for update intiated by %s to finish..."
             abortWait: "Timeout reached after %d seconds."
