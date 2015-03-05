@@ -18,17 +18,19 @@ class Logger
     indentStr: "—"
     maxFiles: 200, maxAge: 604800, maxSize:10*(10^6)
 
-    Timer, seeded = PreciseTimer!, false
+    timer, seeded = PreciseTimer!, false
 
     new: (args) =>
         @[k] = v for k, v in pairs args
 
         -- scripts are loaded simultaneously, so we need to avoid seeding the rng with the same time
         unless seeded
-            Timer.sleep 10 for i=1,50
-            math.randomseed(Timer\timeElapsed!*1000000)
+            timer.sleep 10 for i=1,50
+            math.randomseed(timer\timeElapsed!*1000000)
             math.random, math.random, math.random
             seeded = true
+            -- timer gets freed on garbage collection
+            timer = nil
 
         @lastHadLineFeed = true
         escaped = @fileBaseName\gsub("([%%%(%)%[%]%.%*%-%+%?%$%^])","%%%1")
