@@ -327,7 +327,7 @@ class DependencyControl
         name = "#{mdl.name or mdl.moduleName}#{usePrivate and ' (Private Copy)' or ''}"
 
         -- pass already loaded modules as reference
-        if LOADED_MODULES[moduleName]
+        if LOADED_MODULES[moduleName] and not mdl._outdated
             mdl._ref, mdl._missing = LOADED_MODULES[moduleName], false
             return mdl._ref
 
