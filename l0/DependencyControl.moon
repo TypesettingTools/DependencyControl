@@ -739,13 +739,17 @@ class DependencyControl
             res, err = @moveFile dl.outfile, dl.targetFile
             -- don't immediately error out if moving of a single file failed
             -- try to move as many files as possible and let the user handle the rest
-            moveErrors[#moveErrors+1] = err unless res
+            if res
+                logger\log msgs.updateInfo.movedFile, dl.outfile, dl.targetFile
+            else
+                logger\log msgs.updateInfo.movedFileFailed, dl.outfile, dl.targetFile, err
+                moveErrors[#moveErrors+1] = err
         logger.indent -= 1
 
         if #moveErrors>0
             extErr = table.concat moveErrors, "\n— "
             logger\log @getUpdaterErrorMsg -50, @name, @moduleName, @virtual, extErr
-            return -50, err
+            return -50, extErr
 
         -- Update complete, refresh script information/configuration
         {url:@url, author:@author, name:@name, description:@description} = scriptData
