@@ -335,7 +335,7 @@ class DependencyControl
         mdl._missing = not loaded and res\match "^module '.+' not found:"
         -- check for module errors
         unless loaded or mdl._missing
-            logger\error msgs.moduleError, name, res
+            mdl._error = res
 
         if loaded
             mdl._ref, LOADED_MODULES[moduleName] = res, res
@@ -364,7 +364,7 @@ class DependencyControl
                         LOADED_MODULES[.moduleName] = nil
 
                 -- check version
-                if .version and not ._missing
+                if .version and not (._missing or ._error)
                     loadedVer = assert loaded.version, msgs.missingRecord\format(.moduleName)
                     if type(loadedVer)~="table" or loadedVer.__class~=@@
                         loadedVer = @@ moduleName:.moduleName, version:loadedVer, unmanaged:true
@@ -400,6 +400,8 @@ class DependencyControl
         @releaseUpdaterLock!
 
         errorMsg = ""
+        moduleErrors = [msgs.moduleError\format mdl.name, mdl._error for mdl in *modules when mdl._error]
+        errorMsg ..= table.concat moduleErrors, "\n"
         missing = [@formatVersionErrorTemplate mdl.moduleName, mdl.version, mdl.url, mdl._reason for mdl in *modules when mdl._missing and not mdl.optional]
         if #missing>0
             downloadHint = msgs.missingModulesDownloadHint\format aegisub.decode_path "?user/automation/include"
