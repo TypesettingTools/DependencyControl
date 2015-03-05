@@ -378,7 +378,10 @@ class DependencyControl
 
                         haveUpdaterLock or= @getUpdaterLock true
                         res, err, isPrivate = loadedVer\update true, addFeeds, true
-                        if res > 0  -- TODO: fix (unload, reload accept 0 res or just return current information along with update result)
+                        if res > 0
+                            -- clear and refresh module caches
+                            package.loaded[.moduleName], loaded = nil, @loadModule mdl, isPrivate
+                            loadedVer = loaded.version
                             if loadedVer\checkVersion .version
                                 ._ref, ._outdated, ._reason = loadedVer._ref, false, nil
                         elseif res < 0 -- update failed, settle for the regular outdated message
