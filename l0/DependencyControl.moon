@@ -528,10 +528,15 @@ class DependencyControl
     moveFile: (source, target) =>
         mode, err = lfs.attributes target, "mode"
         if mode == "file"
-            logger\log msgs.updateInfo.overwritingFile, target
+            logger\trace msgs.moveFile.overwritingFile, target
             res, err = os.remove target
-            unless res -- can't remove old target file, probably locked or lack of permissions
-                return false, msgs.cantRemoveFile\format target, err
+            unless res -- can't remove old target file, probably in use or lack of permissions
+                logger\debug msgs.moveFile.inUseTryingRename, target
+                junkName = "#{target}.depCtrlRemoved"
+                os.remove junkName
+                res = os.rename target, junkName
+                unless res
+                    return false, msgs.cantRemoveFile\format target, err
         elseif mode -- a directory (or something else) of the same name as the target file is already present
             return false, msgs.moveExistsNoFile\format source, target, mode
         elseif err  -- if retrieving the attributes of a file fails, something is probably wrong
@@ -541,14 +546,13 @@ class DependencyControl
             dir, err = @createDir target, true
             unless dir
                 return false, msgs.moveCreateDirError\format source, target, err
-            logger\log msgs.updateInfo.createdDir, dir
+            logger\trace msgs.moveFile.createdDir, dir
 
         -- at this point the target directory exists and the target file doesn't, move the file
         res, err = os.rename source, target
         unless res -- renaming the file failed, probably a permission issue
             return false, msgs.cantRenameFile, source, target, err
 
-        logger\log msgs.updateInfo.movedFile, source, target
         return true
 
     getUpdaterLock: (doWait, waitTimeout = @@config.c.updateWaitTimeout) =>
