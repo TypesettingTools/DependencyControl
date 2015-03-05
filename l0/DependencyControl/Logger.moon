@@ -42,7 +42,8 @@ class Logger
         return false if msg == ""
 
         prefix = "" unless @usePrefix
-        lineFeed, indentStr = insertLineFeed and "\n" or "", ""
+        lineFeed = insertLineFeed and "\n" or ""
+        indentStr = @indent==0 and "" or @indentStr\rep(@indent) .. " "
         msg = @lastHadLineFeed and @format(msg, ...) or msg\format ...
 
         show = aegisub.log and @toWindow
