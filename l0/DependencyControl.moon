@@ -670,6 +670,7 @@ class DependencyControl
             extErr = table.concat moveErrors, "\n— "
             logger\log @getUpdaterErrorMsg -50, @name, @moduleName, @virtual, extErr
             return -50, extErr
+        else lfs.rmdir tmpDir
 
         -- Update complete, refresh script information/configuration
         oldVer = @version
