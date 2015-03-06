@@ -688,9 +688,6 @@ class DependencyControl
         logger\log msgs.updReloadNotice
 
 
-        -- TODO: additional variable: this feed url
-        -- TODO: add config file migration
-        -- TODO: reload self: update global registry, return a new ref
         -- TODO: check handling of private module copies (need extra return value?)
 
         return 1, @getVersionString!
@@ -736,7 +733,6 @@ class DependencyControl
         @loadConfig true
         if wasVirtual and not @virtual
             logger\log msgs.updateInfo.unsetVirtual, @moduleName and "module" or "macro", @name
-            error "dbg" if @name == "l0.ASSFoundation"
 
         minRes, maxRes, minErr, res = 0, -1
         logger\log msgs.updateInfo.feedCandidates, #feeds, tryAllFeeds and "exhaustive" or "normal"
