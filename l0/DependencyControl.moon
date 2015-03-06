@@ -3,6 +3,7 @@ lfs = require "lfs"
 re = require "aegisub.re"
 ffi = require "ffi"
 Logger = require "l0.DependencyControl.Logger"
+UpdateFeed = require "l0.DependencyControl.UpdateFeed"
 ConfigHandler = require "l0.DependencyControl.ConfigHandler"
 PreciseTimer = require "PT.PreciseTimer"
 DownloadManager = require "DM.DownloadManager"
@@ -36,8 +37,6 @@ class DependencyControl
         updNoSuitableVersion: "The version of '%s' downloaded (v%s) did not satisfy the %s requirements (v%s)."
         updNoSuitableUpdate: "The installed version of '%s'(v%s) did not satisfy the %s requirements (v%s), but no update could be found."
         updNoNewVersion: "%s '%s' (v%s) is up-to-date."
-        updUsingCached: "Using cached feed."
-        updFetchingFeed: "Downloading feed to %s "
         updSuccess: "%s of %s '%s' (v%s) complete."
         updReloadNotice: "Please rescan your autoload directory for the changes to take effect."
         moveExistsNoFile: "Couldn't move file '%s' to '%s' because a %s of the same name is already present."
@@ -69,7 +68,6 @@ class DependencyControl
             movingFiles: "Downloads complete. Now moving files to Aegisub automation directory '%s'..."
             movedFile: "Moved '%s' ==> '%s'."
             moveFileFailed: "Failed to move '%s' ==> '%s': %s"
-            changelog: "Changelog for %s v%s (released %s):"
             waiting: "Waiting for update intiated by %s to finish..."
             abortWait: "Timeout reached after %d seconds."
             waitFinished: "Waited %d seconds."
@@ -82,7 +80,7 @@ class DependencyControl
             [2]: "Skipping %s of %s '%s': namespace '%s' doesn't conform to rules."
             [3]: "Skipping %s of unmanaged %s '%s'.",
             [4]: "No feed available to %s %s '%s' from.",
-            [7]: "Couldn't %s %s '%s': error parsing feed %s.",
+            [7]: "Download of update feed required to %s %s '%s' failed: %s.",
             [8]: "The specified feed doesn't have the required data to %s the %s '%s'.",
             [9]: "Couldn't %s %s '%s' because the specified channel '%s' wasn't present in the feed.",
             [13]: "Couldn't %s %s '%s': feed contains an inalid version record (%s)."
@@ -137,7 +135,6 @@ class DependencyControl
             table.sort .sourceAt[i], (a,b) -> return .templates[a].order < .templates[b].order
 
     dlm = DownloadManager!
-    feedCache = {}
     platform = "#{ffi.os}-#{ffi.arch}"
 
     configDirExists, reloadPending, updaterLockingInstance, logger = nil
@@ -195,12 +192,14 @@ class DependencyControl
                             maxAge: @@config.c.logMaxAge,maxSize: @@config.c.logMaxSize, maxFiles: @@config.c.logMaxFiles,
                             logDir: @@config.c.logDir }
 
-        -- attach our logger to the ConfigHandlers
-        @@config.logger, @config.logger = logger, logger
+        -- attach our logger to the required objects and classes
+        @@config.logger, @config.logger, UpdateFeed.logger = logger, logger, logger
 
-        feedsHaveBeenTrimmed or= Logger({fileMatchTemplate: "l0.#{@@__name}_feed_%x%x%x%x.*%.json",
-                                         logDir: @@config.c.dumpFeeds and "?user" or "?temp",
-                                         maxFiles:20})\trimFiles!
+        -- set UpdateFeed settings
+        if @@config.c.dumpFeeds
+            UpdateFeed.downloadPath = aegisub.decode_path "?user/"
+            UpdateFeed.dumpExpanded = true
+
 
         -- write config file if contents are missing or are out of sync with the script version record
         -- ramp up the random wait time on first initialization (many scripts may want to write configuration data)
@@ -474,47 +473,6 @@ class DependencyControl
                                                   args[1] and "module" or "macro",
                                                   name, args[3]
 
-    expandFeed: (feed) =>
-        {:templates, :maxDepth, :sourceAt, :rolling, :sourceKeys} = templateData
-        vars, rvars = {}, {i, {} for i=0, maxDepth}
-
-        expandTemplates = (str, depth, rOff=0) ->
-            return str\gsub "@{(.-)}", (name) ->
-                return vars[name] or rvars[depth+rOff][name]
-
-        recurse = (obj, depth = 1, parentKey = "", upKey = "") ->
-            -- collect regular template variables first
-            for name in *sourceAt[depth]
-                with templates[name]
-                    if not .key
-                         -- template variables are not expanded if they are keys
-                        vars[name] = parentKey if .parentKeys[upKey]
-                    elseif .key and obj[.key]
-                        -- expand other templates used in template variable
-                        obj[.key] = expandTemplates obj[.key], depth
-                        vars[name] = obj[.key]
-                    vars[name] = vars[name]\gsub(.repl, .to) if .repl
-
-            -- update rolling template variables last
-            for name,_ in pairs rolling
-                rvars[depth][name] = obj[templates[name].key] or rvars[depth-1][name] or ""
-                rvars[depth][name] = expandTemplates rvars[depth][name], depth, -1
-                obj[templates[name].key] and= rvars[depth][name]
-
-            -- expand variables in non-template strings and recurse tables
-            for k,v in pairs obj
-                if sourceKeys[k] ~= depth and not rolling[k]
-                    switch type v
-                        when "string"
-                            obj[k] = expandTemplates obj[k], depth
-                        when "table"
-                            recurse v, depth+1, k, parentKey
-                            -- invalidate template variables created at depth+1
-                            vars[name] = nil for name in *sourceAt[depth+1]
-                            rvars[depth+1] = {}
-
-        recurse feed
-        return feed
 
     createDir: (path, isFile) =>
         dir = isFile and path\match("^(.+)[/\\].-$") or path
@@ -597,68 +555,29 @@ class DependencyControl
         @@config.c.updaterRunning = false
         @@config\write!
 
-    processUpdate: (feed, force = false) =>
-        local feedData, feedFile
-        if feedCache[feed]
-            logger\log msgs.updUsingCached
-            feedData = feedCache[feed]
-        else
-            feedFile = {aegisub.decode_path(@@config.c.dumpFeeds and "?user/" or "?temp/"),
-                        "l0.#{@@__name}_feed_", "%04X"\format(math.random 0, 16^4-1), ".json"}
-            feedFilePath = table.concat feedFile
+    processUpdate: (feedUrl, force = false) =>
+        -- get feed contents
+        feed = UpdateFeed feedUrl, false
+        unless feed.data -- no cached data available, perform download
+            success, err = feed\fetch!
+            unless success
+                logger\log @getUpdaterErrorMsg -7, @name, @moduleName, @virtual, err
+                return -7, err
 
-            dl, err = dlm\addDownload feed, feedFilePath
-            unless dl
-                logger\log @getUpdaterErrorMsg -105, @name, @moduleName, @virtual, err
-                return -105, err
-
-            dlm\waitForFinish (progress) ->
-                logger\progress progress, msgs.updFetchingFeed, table.concat feedFile, "", 2
-                return true
-            logger\progress!
-            if dl.error
-                logger\log @getUpdaterErrorMsg -206, @name, @moduleName, @virtual, dl.error
-                return -206, dl.error
-
-            handle = io.open feedFilePath
-            decoded, feedData = pcall json.decode, handle\read "*a"
-
-            unless decoded and feedData
-                logger\log @getUpdaterErrorMsg -7, @name, @moduleName, @virtual, feed
-                return -7, feed
-            else feedCache[feed] = @expandFeed feedData
-
-            if @@config.c.dumpFeeds
-                handle = io.open table.concat(feedFile, "", 1, 3)..".exp.json", "w"
-                handle\write(json.encode feedData)\close!
-
-
-        -- TODO: always check modules from own feed first
-        -- TODO: for modules first look for private modules
-        -- TODO: special handling for virtual versions
-
-        scriptData = feedData[@type] and feedData[@type][@namespace]
-        unless scriptData
+        -- select our script and update channel
+        updateRecord = feed\getScript @namespace, @moduleName, @config, false
+        unless updateRecord
             logger\log @getUpdaterErrorMsg -8, @name, @moduleName, @virtual
             return -8
+        success, currentChannel = updateRecord\setChannel!
+        unless success
+            logger\log @getUpdaterErrorMsg -9, @name, @moduleName, @virtual, currentChannel
+            return -9, currentChannel
 
-        -- pick an update channel: user choice or the channel defined as default in the feed
-        local data
-        with @config.c
-            .lastChannel, .channels = .activeChannel, {}
-            for name, channel in pairs scriptData.channels
-                .channels[#.channels+1] = name
-                unless .lastChannel
-                    .lastChannel = channel.default and name
-            data = scriptData.channels[.lastChannel]
-
-            unless data
-                logger\log @getUpdaterErrorMsg -9, @name, @moduleName, @virtual, .lastChannel
-                return -9, .lastChannel
-
-        res, err = @checkVersion data.version
+        -- check if an update is available
+        res, err = @checkVersion updateRecord.version
         if res == nil
-            extErr = "#{@config.c.lastChannel}/#{tostring(data.version)}"
+            extErr = "#{currentChannel}/#{tostring(updateRecord.version)}"
             logger\log @getUpdaterErrorMsg -13, @name, @moduleName, @virtual, extErr
             return -13, extErr
         elseif res
@@ -668,7 +587,7 @@ class DependencyControl
         -- force version check required modules first
         logger\log msgs.updateInfo.updateReqs
         logger.indent += 1
-        success, err = @requireModules data.requiredModules or {}, true, true
+        success, err = @requireModules updateRecord.requiredModules or {}, true, true
         logger.indent -= 1
         unless success
             logger\log @getUpdaterErrorMsg -15, @name, @moduleName, @virtual
@@ -677,15 +596,12 @@ class DependencyControl
             logger.indent -= 1
             return -15, err
 
-        platformExtErr = "#{platform};#{@config.c.lastChannel}"
-        -- check if our platform is supported
-        if data.platforms and not ({p,true for p in *data.platforms})[platform]
+        -- check if our platform is supported/files are available to download
+        platformExtErr = "#{platform};#{currentChannel}"
+        unless updateRecord\checkPlatform!
             logger\log @getUpdaterErrorMsg -20, @name, @moduleName, @virtual, platformExtErr
             return -20, platformExtErr
-
-        -- check if any files are available for download
-        files = data.files and [file for file in *data.files when not file.platform or file.platform == platform]
-        unless files and #files>0
+        if #updateRecord.files == 0
             logger\log @getUpdaterErrorMsg -25, @name, @moduleName, @virtual, platformExtErr
             return -25, platformExtErr
 
@@ -707,7 +623,7 @@ class DependencyControl
         tmpBaseName = "#{tmpDir}/#{scriptSubDir}"
 
         dlm\clear!
-        for file in *files
+        for file in *updateRecord.files
             tmpName, name, prettyName = tmpBaseName..file.name, baseName..file.name, scriptSubDir..file.name
 
             unless type(file.sha1)=="string" and #file.sha1 == 40 and tonumber(file.sha1, 16)
@@ -756,9 +672,8 @@ class DependencyControl
             return -50, extErr
 
         -- Update complete, refresh script information/configuration
-        {url:@url, author:@author, name:@name, description:@description} = scriptData
-        @version = @getVersionNumber data.version
-        @requiredModules = data.requiredModules
+        oldVer = @version
+        {url:@url, author:@author, name:@name, description:@description, version:@version, requiredModules:@requiredModules} = updateRecord
 
         -- TODO: only set this flag if a reload is actually required
         reloadPending = true
@@ -769,18 +684,7 @@ class DependencyControl
         @virtual = false
         @writeConfig!
 
-        -- display changelog
-        if type(scriptData.changelog)=="table"
-            changes = [{@getVersionNumber(ver), entry} for ver, entry in pairs scriptData.changelog when @checkVersion ver]
-            table.sort changes, (a,b) -> a[1]>b[1]
-            if #changes>0
-                logger\log msgs.updateInfo.changelog, @name, @getVersionString!, data.released or "<no date>"
-                logger.indent += 1
-                for chg in *changes
-                    msg = type(chg[2]) ~= "table" and tostring(chg[2]) or table.concat chg[2], "\n • "
-                    logger\logEx nil, "%s:\n • #{msg}", true, "", @getVersionString(chg[1])
-                logger.indent -= 1
-
+        logger\log updateRecord\getChangelog @, (@getVersionNumber oldVer) + 1
         logger\log msgs.updReloadNotice
 
 
