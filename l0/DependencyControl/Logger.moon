@@ -44,7 +44,7 @@ class Logger
         prefix = "" unless @usePrefix
         lineFeed = insertLineFeed and "\n" or ""
         indentStr = @indent==0 and "" or @indentStr\rep(@indent) .. " "
-        msg = @lastHadLineFeed and @format(msg, ...) or msg\format ...
+        msg = @lastHadLineFeed and @format(msg, @indent, ...) or msg\format ...
 
         show = aegisub.log and @toWindow
         if @toFile and level <= @maxToFileLevel
@@ -61,11 +61,11 @@ class Logger
         @lastHadLineFeed = insertLineFeed
         return true
 
-    format: (msg, ...) =>
+    format: (msg, indent, ...) =>
         msg = msg\format ...
-        return msg unless @indent>0
+        return msg unless indent>0
 
-        indentRep = @indentStr\rep(@indent)
+        indentRep = @indentStr\rep(indent)
         indentStr = indentRep .. " "
          -- indent after line breaks and connect indentation supplied in the user message
         return msg\gsub("\n", "\n"..indentStr)\gsub "\n#{indentStr}(#{@indentStr})", "\n#{indentRep}%1"
