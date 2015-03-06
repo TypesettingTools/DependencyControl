@@ -280,6 +280,8 @@ class DependencyControl
             else return false, msgs.badVersionType\format type value
 
     getVersionString: (version = @version, precision = "patch") =>
+        if type(version) == "string"
+            version = @getVersionNumber version
         parts = {0, 0, 0}
         for i, part in ipairs semParts
             parts[i] = bit.rshift(version, part[2])%256
