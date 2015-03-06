@@ -105,40 +105,11 @@ class DependencyControl
                          logDir: "?user/log", writeLogs: true}
     }
 
-    templateData = {
-        maxDepth: 7,
-        templates: {
-            feedName:      {depth: 1, order: 1, key: "name"                                                  }
-            baseUrl:       {depth: 1, order: 2, key: "baseUrl"                                               }
-            namespace:     {depth: 3, order: 1, parentKeys: {macros:true, modules:true}                      }
-            namespacePath: {depth: 3, order: 2, parentKeys: {macros:true, modules:true}, repl:"%.", to: "/"  }
-            scriptName:    {depth: 3, order: 3, key: "name"                                                  }
-            channel:       {depth: 5, order: 1, parentKeys: {channels:true}                                  }
-            version:       {depth: 5, order: 2, key: "version"                                               }
-            platform:      {depth: 7, order: 1, key: "platform"                                                  }
-            fileName:      {depth: 7, order: 2, key: "name"                                                  }
-            -- rolling templates
-            fileBaseUrl:   {key: "fileBaseUrl", rolling: true                                                }
-        }
-        sourceAt: {}
-    }
-    -- precalculate some tables for the templater
-    templateData.rolling = {n, true for n,t in pairs templateData.templates when t.rolling}
-    templateData.sourceKeys = {t.key, t.depth for n,t in pairs templateData.templates when t.key}
-    with templateData
-        for i=1,.maxDepth
-            .sourceAt[i], j = {}, 1
-            for name, tmpl in pairs .templates
-                if tmpl.depth==i and not tmpl.rolling
-                    .sourceAt[i][j] = name
-                    j += 1
-            table.sort .sourceAt[i], (a,b) -> return .templates[a].order < .templates[b].order
-
     dlm = DownloadManager!
     platform = "#{ffi.os}-#{ffi.arch}"
 
     configDirExists, reloadPending, updaterLockingInstance, logger = nil
-    logsHaveBeenTrimmed, feedsHaveBeenTrimmed = nil
+    logsHaveBeenTrimmed = nil
     @createDir depConf.file, true
 
     new: (args)=>
