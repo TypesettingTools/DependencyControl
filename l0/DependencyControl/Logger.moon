@@ -21,6 +21,7 @@ class Logger
     timer, seeded = PreciseTimer!, false
 
     new: (args) =>
+        if args
         @[k] = v for k, v in pairs args
 
         -- scripts are loaded simultaneously, so we need to avoid seeding the rng with the same time
