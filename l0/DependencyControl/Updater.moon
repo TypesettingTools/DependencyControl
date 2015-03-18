@@ -13,7 +13,7 @@ class UpdaterBase
             [2]: "Skipping %s of %s '%s': namespace '%s' doesn't conform to rules."
             [3]: "Skipping %s of unmanaged %s '%s'."
             [4]: "No remaining feed available to %s %s '%s' from."
-            [6]: "None of the available feeds could be used to %s %s '%s' to the required version %s."
+            [6]: "Couldn't retrieve data required to %s %s '%s'. Required version: %s."
             [5]: "Skipped %s of %s '%s': Another update initiated by %s is already running."
             [15]: "Couldn't %s %s '%s' because its requirements could not be satisfied:"
             [30]: "Couldn't %s %s '%s': failed to create temporary download directory %s"
@@ -171,6 +171,7 @@ class UpdateTask extends UpdaterBase
                     break unless exhaustive
 
         local code, res
+        wasVirtual = @record.virtual
         unless updateRecord
             -- for a script to be marked up-to-date it has to installed on the user's system
             -- and the version must at least be that returned by at least one feed
@@ -184,12 +185,11 @@ class UpdateTask extends UpdaterBase
                                                  maxVer<1 and "none" or @record\getVersionString maxVer
             code = -6
 
-        unless res
-            wasVirtual = @record.virtual
+        unless code
             code, res = @performUpdate updateRecord
 
         if code < 1
-            @@logger\log @getUpdaterErrorMsg code, @record.name, @record.moduleName, @record.wasVirtual, res
+            @@logger\log @getUpdaterErrorMsg code, @record.name, @record.moduleName, wasVirtual, res
         return code, res
 
 
@@ -341,8 +341,7 @@ class Updater extends UpdaterBase
     require: (record, ...) =>
         @@logger\assert record.moduleName, msgs.require, record.name or record.namespace
         task, code = @addTask record, ...
-        if task
-            code, res = task\run true
+        code, res = task\run true if task
 
         if code >= 1
             return task.ref

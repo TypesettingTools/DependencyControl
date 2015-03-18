@@ -323,7 +323,7 @@ class DependencyControl
                         ._ref, code, extErr = @@updater\require record, .version, addFeeds
                         unless ._ref
                             ._outdated = true
-                            ._reason = @@updater\getUpdaterErrorMsg code, .name or .moduleName, false, true, extErr
+                            ._reason = @@updater\getUpdaterErrorMsg code, .name or .moduleName, true, false, extErr
                     else
                         -- perform regular update check if we can get a lock without waiting
                         -- right now we don't care about the result and don't reload the module
