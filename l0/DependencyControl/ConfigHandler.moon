@@ -2,6 +2,7 @@ lfs = require "lfs"
 util = require "aegisub.util"
 PreciseTimer = require "PT.PreciseTimer"
 Logger = require "l0.DependencyControl.Logger"
+fileOps = require "l0.DependencyControl.FileOps"
 mutex = require "BM.BadMutex"
 
 class ConfigHandler
@@ -84,9 +85,11 @@ class ConfigHandler
         return true
 
     readFile: (file = @file) =>
-        mode, err = lfs.attributes @file, "mode"
-        return false, err if err
-        return nil unless mode or err
+        mode, file = fileOps.attributes file, "mode"
+        if mode == nil
+            return false, file
+        elseif not mode
+            return nil
 
         handle, err = io.open @file, "r"
         unless handle
