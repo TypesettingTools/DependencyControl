@@ -63,6 +63,8 @@ class Logger
         return true
 
     format: (msg, indent, ...) =>
+        if type(msg) == "table"
+            msg = table.concat msg, "\n"
         msg = msg\format ...
         return msg unless indent>0
 
