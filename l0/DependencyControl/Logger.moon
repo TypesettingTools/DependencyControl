@@ -54,9 +54,8 @@ class Logger
             line = table.concat({linePre, prefix, msg, lineFeed})
             @handle\write(line)\flush!
 
-        if level<2
-            error "#{indentStr}Error: #{prefix}#{msg}"
-        elseif show
+        assert level > 1,"#{indentStr}Error: #{prefix}#{msg}"
+        if show
             aegisub.log level, table.concat({indentStr, prefix, msg, lineFeed})
 
         @lastHadLineFeed = insertLineFeed
