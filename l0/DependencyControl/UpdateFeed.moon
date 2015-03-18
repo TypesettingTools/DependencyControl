@@ -45,7 +45,7 @@ class ScriptUpdateRecord
 
     checkPlatform: =>
         @@logger\assert @activeChannel, msgs.errors.noActiveChannel
-        return not @platforms or ({p,true for p in *@platforms})[platform]
+        return not @platforms or ({p,true for p in *@platforms})[platform], platform
 
     getChangelog: (versionRecord, minVer = 0) =>
         return "" unless "table" == type @changelog
