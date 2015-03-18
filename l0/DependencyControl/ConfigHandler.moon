@@ -1,5 +1,6 @@
 lfs = require "lfs"
 util = require "aegisub.util"
+json = require "json"
 PreciseTimer = require "PT.PreciseTimer"
 Logger = require "l0.DependencyControl.Logger"
 fileOps = require "l0.DependencyControl.FileOps"
