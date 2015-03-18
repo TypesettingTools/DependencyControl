@@ -91,7 +91,7 @@ class ConfigHandler
         elseif not mode
             return nil
 
-        handle, err = io.open @file, "r"
+        handle, err = io.open file, "r"
         unless handle
             return false, err
 
