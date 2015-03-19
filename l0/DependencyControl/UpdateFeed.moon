@@ -54,20 +54,20 @@ class ScriptUpdateRecord
 
         changelog = {}
         for ver, entry in pairs @changelog
-            verNum = versionRecord\getVersionNumber ver
+            ver = versionRecord\getVersionNumber ver
             verStr = versionRecord\getVersionString ver
             if ver >= minVer and ver <= maxVer
-                changelog[#changelog+1] = {verNum, verStr, entry}
+                changelog[#changelog+1] = {ver, verStr, entry}
 
         return "" if #changelog == 0
         table.sort changelog, (a,b) -> a[1]>b[1]
 
-        msg = {msgs.changelog\format @name, versionRecord\getVersionString(@version), @released or "<no date>"}
+        msg = {msgs.changelog.header\format @name, versionRecord\getVersionString(@version), @released or "<no date>"}
         for chg in *changelog
             chg[3] = {chg[3]} if type(chg[3]) ~= "table"
             if #chg[3] > 0
-                msg[#msg+1] = @@logger\format 1, msgs.changelog.verTemplate, chg[2]
-                msg[#msg+1] = @@logger\format(1, msgs.changelog.msgTemplate, entry) for entry in *chg[3]
+                msg[#msg+1] = @@logger\format msgs.changelog.verTemplate, 1, chg[2]
+                msg[#msg+1] = @@logger\format(msgs.changelog.msgTemplate, 1, entry) for entry in *chg[3]
 
         return table.concat msg, "\n"
 

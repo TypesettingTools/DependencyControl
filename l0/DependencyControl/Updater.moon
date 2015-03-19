@@ -60,6 +60,7 @@ class UpdateTask extends UpdaterBase
             feedTrying: "Checking feed %d/%d (%s)..."
             upToDate: "%s '%s' is up-to-date (v%s)."
             noFeedAvailExt: "%s (installed: %s; available: %s)"
+            noUpdate: "Feed has no new update."
         }
 
         performUpdate: {
@@ -105,7 +106,7 @@ class UpdateTask extends UpdaterBase
         -- select our script and update channel
         updateRecord = feed\getScript @record.namespace, @record.moduleName, @record.config, false
         unless updateRecord
-            return nil, @@logger\log msgs.checkFeed.noData, @record.moduleName and "module" or "macro", @record.name
+            return nil, msgs.checkFeed.noData\format @record.moduleName and "module" or "macro", @record.name
 
         success, currentChannel = updateRecord\setChannel!
         unless success
@@ -135,14 +136,19 @@ class UpdateTask extends UpdaterBase
             return 2
 
         -- build feed list
-        userFeed, feeds = @record.config.c.userFeed
+        userFeed, haveFeeds, feeds = @record.config.c.userFeed, {}, {}
         if userFeed and not @triedFeeds[userFeed]
-            feeds = {userFeed}
+            feeds[1] = userFeed
         else
-            feeds = [feed for feed in *@addFeeds when not @triedFeeds[feed]]
+            unless @triedFeeds[@record.feed] or haveFeeds[@record.feed]
+                feeds[1] = @record.feed
+            for feed in *@addFeeds
+                unless @triedFeeds[feed] or haveFeeds[feed]
+                    feeds[#feeds+1] = feed
+
             for feed in *@@config.c.extraFeeds
-                feeds[#feeds+1] = feed if @triedFeeds[feed]
-            table.insert feeds, 1, @record.feed unless @triedFeeds[@feed]
+                unless @triedFeeds[feed] or haveFeeds[feed]
+                    feeds[#feeds+1] = feed
 
         return -4 if #feeds == 0
 
@@ -155,6 +161,7 @@ class UpdateTask extends UpdaterBase
         -- exhaustive mode: check all feeds for updates and pick the highest version
 
         @@logger\log msgs.run.feedCandidates, #feeds, exhaustive and "exhaustive" or "normal"
+        @@logger.indent += 1
 
         maxVer, updateRecord = 0
         for i, feed in ipairs feeds
@@ -169,6 +176,10 @@ class UpdateTask extends UpdaterBase
                 if res
                     updateRecord = rec
                     break unless exhaustive
+            else
+                @@logger\trace msgs.run.noUpdate
+
+        @@logger.indent -= 1
 
         local code, res
         wasVirtual = @record.virtual
@@ -200,7 +211,7 @@ class UpdateTask extends UpdaterBase
         if reqs and #reqs > 0
             @@logger\log msgs.performUpdate.updateReqs
             @@logger.indent += 1
-            success, err = @record\loadModules reqs, addFeeds
+            success, err = @record\loadModules reqs, {@record.feed}
             @@logger.indent -= 1
             unless success
                 @@logger.indent += 1
@@ -228,6 +239,7 @@ class UpdateTask extends UpdaterBase
 
         dlm\clear!
         for file in *update.files
+            continue if file.delete
             tmpName, name, prettyName = tmpBaseName..file.name, baseName..file.name, scriptSubDir..file.name
 
             unless type(file.sha1)=="string" and #file.sha1 == 40 and tonumber(file.sha1, 16)
@@ -271,39 +283,39 @@ class UpdateTask extends UpdaterBase
         if #moveErrors>0
             return -50, @@logger\format moveErrors, 1
         else lfs.rmdir tmpDir
+        os.remove baseName..file.name for file in *update.files when file.delete
 
+        -- Nuke old module refs and reload
+        oldVer, wasVirtual = @record.version, @record.virtual
+        ref = @record\loadModule @record
+        unless ref
+            if ref._error
+                return -56, @@logger\format ref._error, 1
+            else return -55
 
-        with @record
-            -- Nuke old module refs, reload, and get a fresh version record
-            oldVer, wasVirtual = .version, .virtual
-            ref = \loadModule @record
-            unless ref
-                if ref._error
-                    return -56, @@logger\format ref._error, 1
-                else return -55
+        return -57 unless ref.version.__class == DependencyControl
+        @ref, @updated = ref, true
 
-            return -57 unless ref.version.__class == DependencyControl
-            @record, @ref, @updated = ref.version, ref, true
-
+        -- get a fresh version record
+        with @record = ref.version
             -- Update complete, refresh script information/configuration
             @@logger\log msgs.performUpdate.updSuccess, wasVirtual and "Download" or "Update",
                                                         .moduleName and "module" or "macro",
                                                         .name, \getVersionString!
-            .writeConfig!
+            \writeConfig!
 
         -- Diplay changelog
-        @@logger\log record\getChangelog @record, (@record.getVersionNumber oldVer) + 1
+        @@logger\log update\getChangelog @record, (@record.getVersionNumber oldVer) + 1
         @@logger\log msgs.performUpdate.reloadNotice
 
-
         -- TODO: check handling of private module copies (need extra return value?)
-        return 1, @record.getVersionString!
+        return 1, @record\getVersionString!
 
 
     refreshRecord: =>
         with @record
             wasVirtual = .virtual
-            .loadConfig true
+            \loadConfig true
             if wasVirtual and not .virtual
                 @@logger\log msgs.refreshRecord.unsetVirtual, .moduleName and "module" or "macro", .name
 
@@ -340,6 +352,7 @@ class Updater extends UpdaterBase
 
     require: (record, ...) =>
         @@logger\assert record.moduleName, msgs.require, record.name or record.namespace
+        @@logger\log "%s module '%s'...", record.virtual and "Fetching required" or "Updating outdated", record.name
         task, code = @addTask record, ...
         code, res = task\run true if task
 
