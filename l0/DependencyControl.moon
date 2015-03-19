@@ -395,7 +395,7 @@ class DependencyControl
 
 DependencyControl.__class.version = DependencyControl{
     name: "DependencyControl",
-    version: "0.2.4",
+    version: "0.3.0",
     description: "Provides script management and auto-updating for Aegisub macros and modules.",
     author: "line0",
     url: "http://github.com/TypesettingCartel/DependencyControl",
