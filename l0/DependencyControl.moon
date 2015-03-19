@@ -259,14 +259,12 @@ class DependencyControl
             elseif ._ref = LOADED_MODULES[moduleName]
                 return ._ref
 
-            unless usePrivate
-                require moduleName
             loaded, res = pcall require, moduleName
             unless loaded
                 LOADED_MODULES[moduleName] = nil
                 res or= "unknown error"
                 ._missing = res\match "module '.+' not found:"
-                ._error = res
+                ._error = res unless ._missing
                 return nil
 
             -- set new references
