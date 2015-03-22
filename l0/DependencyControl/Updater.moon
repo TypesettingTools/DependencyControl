@@ -154,7 +154,7 @@ class UpdateTask extends UpdaterBase
         return -4 if #feeds == 0
 
         -- get a lock on the updater
-        success, otherHost = @updater\getLock!
+        success, otherHost = @updater\getLock waitLock
         return -5, otherHost unless success
 
         -- check feeds for update until we find and update or run out of feeds to check
