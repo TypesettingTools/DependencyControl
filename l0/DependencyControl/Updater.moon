@@ -406,7 +406,7 @@ class Updater extends UpdaterBase
                     PreciseTimer.sleep 1000
                     timeout -= 1
                     @@config\load!
-                    running = @config.c.updaterRunning
+                    running = @@config.c.updaterRunning
                 @@logger\log timeout <= 0 and msgs.getLock.abortWait or msgs.getLock.waitFinished,
                            waitTimeout - timeout
 
