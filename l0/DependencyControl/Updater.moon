@@ -288,22 +288,28 @@ class UpdateTask extends UpdaterBase
 
         -- Nuke old module refs and reload
         oldVer, wasVirtual = @record.version, @record.virtual
-        ref = @record\loadModule @record
-        unless ref
-            if ref._error
-                return -56, @@logger\format ref._error, 1
-            else return -55
 
-        return -57 unless ref.version.__class == DependencyControl
-        @ref, @updated = ref, true
+        if @record.moduleName
+            ref = @record\loadModule @record
+            unless ref
+                if ref._error
+                    return -56, @@logger\format ref._error, 1
+                else return -55
 
-        -- get a fresh version record
-        with @record = ref.version
-            -- Update complete, refresh script information/configuration
-            @@logger\log msgs.performUpdate.updSuccess, wasVirtual and "Download" or "Update",
-                                                        .moduleName and "module" or "macro",
-                                                        .name, \getVersionString!
-            \writeConfig!
+            return -57 unless ref.version.__class == DependencyControl
+            -- get a fresh version record
+            @ref, @record = ref, ref.version
+            -- Update complete, refresh module information/configuration
+            -- For automation scripts/macros this will be done on reload
+            @record\writeConfig!
+        else
+            @record.version, @record.virtual, @record.unmanaged = @record\getVersionNumber update.version
+
+
+        @updated = true
+        @@logger\log msgs.performUpdate.updSuccess, wasVirtual and "Download" or "Update",
+                                                    @record.moduleName and "module" or "macro",
+                                                    @record.name, @record\getVersionString!
 
         -- Diplay changelog
         @@logger\log update\getChangelog @record, (@record.getVersionNumber oldVer) + 1
