@@ -59,7 +59,7 @@ class DependencyControl
 
     new: (args)=>
         {@requiredModules, moduleName:@moduleName, configFile:configFile, virtual:@virtual, name:@name,
-         description:@description, url:@url, feed:@feed, unmanaged:@unmanaged,
+         description:@description, url:@url, feed:@feed, unmanaged:@unmanaged, namespace:namespace,
          author:@author, version:@version, configFile:@configFile} = args
 
         if @moduleName
@@ -77,6 +77,7 @@ class DependencyControl
 
         else
             @name, @description, @author, @version = script_name, script_description, script_author, script_version
+            script_namespace or= namespace
             @namespace = script_namespace
             assert not unmanaged, msgs.badRecordError\format msgs.badRecord.noUnmanagedMacros
             assert @namespace, msgs.badRecordError\format msgs.badRecord.missingNamespace
