@@ -7,7 +7,6 @@ UpdateFeed = require "l0.DependencyControl.UpdateFeed"
 ConfigHandler = require "l0.DependencyControl.ConfigHandler"
 fileOps = require "l0.DependencyControl.FileOps"
 Updater = require "l0.DependencyControl.Updater"
-PreciseTimer = require "PT.PreciseTimer"
 DownloadManager = require "DM.DownloadManager"
 
 
