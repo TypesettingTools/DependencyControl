@@ -291,7 +291,7 @@ class UpdateTask extends UpdaterBase
         oldVer, wasVirtual = @record.version, @record.virtual
 
         if @record.moduleName
-            ref = @record\loadModule @record
+            ref = @record\loadModule @record, false, true
             unless ref
                 if ref._error
                     return -56, @@logger\format ref._error, 1
