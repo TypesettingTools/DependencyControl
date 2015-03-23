@@ -247,7 +247,7 @@ class UpdateTask extends UpdaterBase
                 return -35, "#{prettyName} (#{tostring(file.sha1)\lower!})"
 
             if dlm\checkFileSHA1 name, file.sha1
-                @@logger\log msgs.updateInfo.fileUnchanged, prettyName
+                @@logger\log msgs.performUpdate.fileUnchanged, prettyName
                 continue
 
             dl, err = dlm\addDownload file.url, tmpName, file.sha1
