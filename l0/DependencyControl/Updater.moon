@@ -369,16 +369,15 @@ class Updater extends UpdaterBase
         task, code = @addTask record, ...
         code, res = task\run true if task
 
-        if code >= 1
-            return task.ref
-        elseif code == 0
+        if code == 0 and not task.updated
             -- usually we know in advance if a module is up to date so there's no reason to block other updaters
             -- but we'll make sure to handle this case gracefully, anyway
             @@logger\debug msgs.require.upToDate, task.record.name or task.record.moduleName
-            return task.record.loadModule task.record.moduleName
-
-        -- pass on update errors
-        return nil, code, res
+            return task.record\loadModule task.record.moduleName
+        elseif code >= 0
+            return task.ref
+        else -- pass on update errors
+            return nil, code, res
 
     scheduleUpdate: (record) =>
         unless @@config.c.updaterEnabled
