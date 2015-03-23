@@ -78,6 +78,7 @@ class UpdateTask extends UpdaterBase
         }
         refreshRecord: {
             unsetVirtual: "Update initated by another macro already fetched %s '%s', switching to update mode."
+            otherUpdate: "Update initated by another macro already updated %s '%s' to v%s."
         }
     }
 
@@ -321,10 +322,15 @@ class UpdateTask extends UpdaterBase
 
     refreshRecord: =>
         with @record
-            wasVirtual = .virtual
+            wasVirtual, oldVersion = .virtual, .version
             \loadConfig true
-            if wasVirtual and not .virtual
-                @@logger\log msgs.refreshRecord.unsetVirtual, .moduleName and "module" or "macro", .name
+            if wasVirtual and not .virtual or .version > oldVersion
+                @updated = true
+                @ref = \loadModule @record, false, true if .moduleName
+                if wasVirtual
+                    @@logger\log msgs.refreshRecord.unsetVirtual, .moduleName and "module" or "macro", .name
+                else
+                    @@logger\log msgs.refreshRecord.otherUpdate, .moduleName and "module" or "macro", .name, \getVersionString!
 
 class Updater extends UpdaterBase
     msgs = {
