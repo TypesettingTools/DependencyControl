@@ -404,7 +404,7 @@ class Updater extends UpdaterBase
         return true if @hasLock
 
         @@config\load!
-        running = @@config.c.updaterRunning
+        running, didWait = @@config.c.updaterRunning
         if running and running.host != @host
             otherHost = running.host
 
@@ -412,7 +412,7 @@ class Updater extends UpdaterBase
                 @@logger\log msgs.getLock.orphaned, running.host
             elseif doWait
                 @@logger\log msgs.getLock.waiting, running.host
-                timeout = waitTimeout
+                timeout, didWait = waitTimeout, true
                 while running and timeout > 0
                     PreciseTimer.sleep 1000
                     timeout -= 1
@@ -432,7 +432,8 @@ class Updater extends UpdaterBase
 
         -- reload important module version information from configuration
         -- because another updater instance might have updated them in the meantime
-        task.refreshRecord! for task in *@tasks.modules
+        if didWait
+            task\refreshRecord! for _,task in pairs @tasks.modules
 
         return true
 
