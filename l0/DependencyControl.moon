@@ -318,8 +318,10 @@ class DependencyControl
 
                     -- force an update for outdated modules
                     if not record\checkVersion .version
-                        ._ref, code, extErr = @@updater\require record, .version, addFeeds
-                        unless ._ref
+                        ref, code, extErr = @@updater\require record, .version, addFeeds
+                        if ref
+                            ._ref = ref
+                        else
                             ._outdated = true
                             ._reason = @@updater\getUpdaterErrorMsg code, .name or .moduleName, true, false, extErr
                     else
