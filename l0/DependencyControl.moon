@@ -268,8 +268,8 @@ class DependencyControl
                 return nil
 
             -- set new references
-            if reload and ._ref.__depCtrlDummy
-                setmetatable oldRef, res
+            if reload and ._ref and ._ref.__depCtrlDummy
+                setmetatable ._ref, res
             ._ref, LOADED_MODULES[moduleName] = res, res
 
         return mdl._ref  -- having this in the with block breaks moonscript
