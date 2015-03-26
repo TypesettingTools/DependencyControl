@@ -248,13 +248,13 @@ class UpdateTask extends UpdaterBase
                 return -35, "#{prettyName} (#{tostring(file.sha1)\lower!})"
 
             if dlm\checkFileSHA1 name, file.sha1
-                @@logger\log msgs.performUpdate.fileUnchanged, prettyName
+                @@logger\trace msgs.performUpdate.fileUnchanged, prettyName
                 continue
 
             dl, err = dlm\addDownload file.url, tmpName, file.sha1
             return -140, err unless dl
             dl.targetFile = name
-            @@logger\log msgs.performUpdate.fileAddDownload, file.url, prettyName
+            @@logger\trace msgs.performUpdate.fileAddDownload, file.url, prettyName
 
         dlm\waitForFinish (progress) ->
             @@logger\progress progress, msgs.performUpdate.filesDownloading, dlm.downloadCount
@@ -276,7 +276,7 @@ class UpdateTask extends UpdaterBase
             -- don't immediately error out if moving of a single file failed
             -- try to move as many files as possible and let the user handle the rest
             if res
-                @@logger\log msgs.performUpdate.movedFile, dl.outfile, dl.targetFile
+                @@logger\trace msgs.performUpdate.movedFile, dl.outfile, dl.targetFile
             else
                 @@logger\log msgs.performUpdate.moveFileFailed, dl.outfile, dl.targetFile, err
                 moveErrors[#moveErrors+1] = err
