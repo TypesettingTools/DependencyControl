@@ -410,6 +410,13 @@ class DependencyControl
             macro[useSubmenu] = useSubmenuDefault if macro[useSubmenu]==nil
             @registerMacro unpack(macro, 1, 6)
 
+    setVersion: (version) =>
+        version, err = @getVersionNumber version
+        if version
+            @version = version
+            return version
+        else return nil, err
+
     validateNamespace: (namespace = @namespace, isVirtual = @virtual) =>
         return isVirtual or namespaceValidation\match @namespace
 
