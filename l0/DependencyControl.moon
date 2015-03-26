@@ -271,7 +271,7 @@ class DependencyControl
 
             if .outdated or reload
                 -- clear old references
-                package.loaded[.moduleName], LOADED_MODULES[.moduleName] = nil
+                package.loaded[moduleName], LOADED_MODULES[moduleName] = nil
             elseif ._ref = LOADED_MODULES[moduleName]
                 return ._ref
 
