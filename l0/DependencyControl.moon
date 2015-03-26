@@ -288,7 +288,7 @@ class DependencyControl
             @@logger\error err
         return unpack [mdl._ref for mdl in *modules]
 
-    loadModules: (modules, addFeeds) =>
+    loadModules: (modules, addFeeds = {@feed}) =>
         for mdl in *modules
             with mdl
                 ._ref, ._updated, ._missing, ._outdated, ._reason, ._error = nil
