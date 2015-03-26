@@ -16,6 +16,7 @@ class UpdaterBase
             [4]: "No remaining feed available to %s %s '%s' from."
             [6]: "Couldn't retrieve data required to %s %s '%s'. Required version: %s."
             [5]: "Skipped %s of %s '%s': Another update initiated by %s is already running."
+            [10]: "Skipped %s of %s '%s': the update task is already running."
             [15]: "Couldn't %s %s '%s' because its requirements could not be satisfied:"
             [30]: "Couldn't %s %s '%s': failed to create temporary download directory %s"
             [35]: "Aborted %s of %s '%s' because the feed contained a missing or malformed SHA-1 hash for file %s."
@@ -134,6 +135,14 @@ class UpdateTask extends UpdaterBase
 
 
     run: (waitLock, exhaustive = @@config.c.tryAllFeeds or @@exhaustive) =>
+        logUpdateError = (code, extErr, virtual = @virtual) ->
+            if code < 0
+                @@logger\log @getUpdaterErrorMsg code, @record.name, @record.moduleName, wasVirtual, extErr
+            return code, extErr
+
+        -- don't perform update of a script when another one is already running for the same script
+        return logUpdateError -10 if @running
+
         -- check if the script was already updated
         if @updated and not exhaustive and @record\checkVersion @targetVersion
             return 2
@@ -153,11 +162,11 @@ class UpdateTask extends UpdaterBase
                 unless @triedFeeds[feed] or haveFeeds[feed]
                     feeds[#feeds+1] = feed
 
-        return -4 if #feeds == 0
+        return logUpdateError -4 if #feeds == 0
 
         -- get a lock on the updater
         success, otherHost = @updater\getLock waitLock
-        return -5, otherHost unless success
+        return logUpdateError -5, otherHost unless success
 
         -- check feeds for update until we find and update or run out of feeds to check
         -- normal mode:     check feeds until an update matching the required version is found
@@ -197,17 +206,20 @@ class UpdateTask extends UpdaterBase
             res = msgs.run.noFeedAvailExt\format @record\getVersionString(@targetVersion),
                                                  @record.virtual and "no" or @record\getVersionString!,
                                                  maxVer<1 and "none" or @record\getVersionString maxVer
-            code = -6
+            return logUpdateError -6
 
-        unless code
-            code, res = @performUpdate updateRecord
-
-        if code < 1
-            @@logger\log @getUpdaterErrorMsg code, @record.name, @record.moduleName, wasVirtual, res
-        return code, res
-
+        code, res = @performUpdate updateRecord
+        return logUpdateError code, res, wasVirtual
 
     performUpdate: (update) =>
+        finish = (...) ->
+            @running = false
+            return ...
+
+        -- don't perform update of a script when another one is already running for the same script
+        return finish -10 if @running
+        @running = true
+
         -- try to load required modules first to see if all dependencies are satisfied
         -- this may trigger more updates
         reqs = update.requiredModules
@@ -220,11 +232,11 @@ class UpdateTask extends UpdaterBase
                 @@logger.indent += 1
                 @@logger\log err
                 @@logger.indent -= 1
-                return -15, err
+                return finish -15, err
 
             -- since circular dependencies are possible, our task may have completed in the meantime
             -- so check again if we still need to update
-            return 2 if  @updated and @record\checkVersion update.version
+            return finish 2 if @updated and @record\checkVersion update.version
 
 
         -- download updated scripts to temp directory
@@ -232,7 +244,7 @@ class UpdateTask extends UpdaterBase
 
         tmpDir = aegisub.decode_path "?temp/l0.#{DependencyControl.__name}_#{'%04X'\format math.random 0, 16^4-1}"
         res, err = fileOps.createDir tmpDir
-        return -30, "#{tmpDir} (#{err})" unless res
+        return finish -30, "#{tmpDir} (#{err})" unless res
 
         @@logger\log msgs.performUpdate.updateReady, tmpDir
 
@@ -246,14 +258,14 @@ class UpdateTask extends UpdaterBase
             tmpName, name, prettyName = tmpBaseName..file.name, baseName..file.name, scriptSubDir..file.name
 
             unless type(file.sha1)=="string" and #file.sha1 == 40 and tonumber(file.sha1, 16)
-                return -35, "#{prettyName} (#{tostring(file.sha1)\lower!})"
+                return finish -35, "#{prettyName} (#{tostring(file.sha1)\lower!})"
 
             if dlm\checkFileSHA1 name, file.sha1
                 @@logger\trace msgs.performUpdate.fileUnchanged, prettyName
                 continue
 
             dl, err = dlm\addDownload file.url, tmpName, file.sha1
-            return -140, err unless dl
+            return finish -140, err unless dl
             dl.targetFile = name
             @@logger\trace msgs.performUpdate.fileAddDownload, file.url, prettyName
 
@@ -264,7 +276,7 @@ class UpdateTask extends UpdaterBase
 
         if dlm.failedCount>0
             err = @@logger\format ["#{dl.url}: #{dl.error}" for dl in *dlm.failedDownloads], 1
-            return -245, err
+            return finish -245, err
 
 
         -- move files to their destination directory and clean up
@@ -284,7 +296,7 @@ class UpdateTask extends UpdaterBase
         @@logger.indent -= 1
 
         if #moveErrors>0
-            return -50, @@logger\format moveErrors, 1
+            return finish -50, @@logger\format moveErrors, 1
         else lfs.rmdir tmpDir
         os.remove baseName..file.name for file in *update.files when file.delete
 
@@ -295,16 +307,16 @@ class UpdateTask extends UpdaterBase
             ref = @record\loadModule @record, false, true
             unless ref
                 if ref._error
-                    return -56, @@logger\format ref._error, 1
-                else return -55
+                    return finish -56, @@logger\format ref._error, 1
+                else return finish -55
 
             -- get a fresh version record
             if ref.version.__class == DependencyControl
                 @record = ref.version
             else
-                return -57 unless ref.version
+                return finish -57 unless ref.version
                 success, rec = pcall DependencyControl, {moduleName: @record.moduleName, version: ref.version, unmanaged: true, name: @record.name}
-                return -58, rec unless success
+                return finish -58, rec unless success
                 @record = rec
             @ref = ref
             -- Update complete, refresh module information/configuration
@@ -324,7 +336,7 @@ class UpdateTask extends UpdaterBase
         @@logger\log msgs.performUpdate.reloadNotice
 
         -- TODO: check handling of private module copies (need extra return value?)
-        return 1, @record\getVersionString!
+        return finish 1, @record\getVersionString!
 
 
     refreshRecord: =>
