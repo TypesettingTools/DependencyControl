@@ -160,6 +160,8 @@ class UpdateFeed
             -- luajson errors are useless dumps of whatever, no use to pass them on to the user
             return false, msgs.errors.parse
 
+        data.macros or= {}
+        data.modules or= {}
         @data, @@cache[@url] = data, data
         @expand!
         return @data
@@ -213,7 +215,7 @@ class UpdateFeed
 
     getScript: (namespace, isModule, config, autoChannel) =>
         section = isModule and "modules" or "macros"
-        scriptData = @data[section] and @data[section][namespace]
+        scriptData = @data[section][namespace]
         return false unless scriptData
         ScriptUpdateRecord namespace, scriptData, config, isModule, autoChannel
 
