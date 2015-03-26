@@ -54,13 +54,13 @@ class DependencyControl
     fileOps.createDir depConf.file, true
 
     new: (args)=>
-        {@requiredModules, moduleName:@moduleName, configFile:configFile, virtual:@virtual, name:@name,
-         description:@description, url:@url, feed:@feed, unmanaged:@unmanaged, namespace:namespace,
-         author:@author, version:@version, configFile:@configFile} = args
+        {@requiredModules, moduleName:@moduleName, configFile:configFile, virtual:@virtual, :name,
+         description:@description, url:@url, feed:@feed, unmanaged:@unmanaged, :namespace,
+         author:@author, :version, configFile:@configFile} = args
 
         if @moduleName
             @namespace = @moduleName
-            @name or= @moduleName
+            @name = name or @moduleName
             @type = "modules"
 
             -- global module registry allows for circular dependencies:
@@ -72,19 +72,26 @@ class DependencyControl
                 LOADED_MODULES[@moduleName] = setmetatable {__depCtrlDummy: true}, @ref
 
         else
-            @name, @description, @author, @version = script_name, script_description, script_author, script_version
-            script_namespace or= namespace
-            @namespace = script_namespace
-            assert not unmanaged, msgs.badRecordError\format msgs.badRecord.noUnmanagedMacros
+            @name or= script_name
+            @description or= script_description
+            @author or= script_author
+            @version or= script_version
+
+            @namespace = namespace or script_namespace
+            assert not @unmanaged, msgs.badRecordError\format msgs.badRecord.noUnmanagedMacros
             assert @namespace, msgs.badRecordError\format msgs.badRecord.missingNamespace
             @type = "macros"
+
+        -- if the hosting macro doesn't have a namespace defined, define it for
+        -- the first DepCtrled module loaded by the macro or its required modules
+        unless script_namespace
+            export script_namespace = @namespace
 
         -- non-depctrl record don't need to conform to namespace rules
         assert @virtual or @unmanaged or @validateNamespace!, msgs.badRecord.badNamespace\format @namespace
 
-        @name = @namespace unless @name
         @configFile = configFile or "#{@namespace}.json"
-        @version, err = @getVersionNumber @version
+        @version, err = @getVersionNumber version or @virtual and -1
         assert @version, msgs.badRecordError\format msgs.badRecord.badVersion\format err
 
         @requiredModules or= {}
