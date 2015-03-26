@@ -22,7 +22,8 @@ class UpdaterBase
             [50]: "Couldn't finish %s of %s '%s' because some files couldn't be moved to their target location:\n"
             [55]: "%s of %s '%s' succeeded, couldn't be located by the module loader."
             [56]: "%s of %s '%s' succeeded, but an error occured while loading the module:\n%s"
-            [57]: "%s of %s '%s' succeeded, but it's missing a DependencyControl version record."
+            [57]: "%s of %s '%s' succeeded, but it's missing a version record."
+            [58]: "%s of unmanaged %s '%s' succeeded, but an error occured while creating a DependencyControl record: %s"
             [100]: "Error (%d) in component %s during %s of %s '%s':\n— %s"
         }
         updaterErrorComponent: {"DownloadManager (adding download)", "DownloadManager"}
@@ -297,9 +298,15 @@ class UpdateTask extends UpdaterBase
                     return -56, @@logger\format ref._error, 1
                 else return -55
 
-            return -57 unless ref.version.__class == DependencyControl
             -- get a fresh version record
-            @ref, @record = ref, ref.version
+            if ref.version.__class == DependencyControl
+                @record = ref.version
+            else
+                return -57 unless ref.version
+                success, rec = pcall DependencyControl, {moduleName: @record.moduleName, version: ref.version, unmanaged: true, name: @record.name}
+                return -58, rec unless success
+                @record = rec
+            @ref = ref
             -- Update complete, refresh module information/configuration
             -- For automation scripts/macros this will be done on reload
             @record\writeConfig!
