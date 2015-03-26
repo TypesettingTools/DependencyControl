@@ -214,11 +214,19 @@ class UpdateTask extends UpdaterBase
     performUpdate: (update) =>
         finish = (...) ->
             @running = false
+            if @record.virtual or @record.unmanaged
+                @record\removeDummyRef!
             return ...
 
         -- don't perform update of a script when another one is already running for the same script
         return finish -10 if @running
         @running = true
+
+        -- set a dummy ref (which hasn't yet been set for virtual and unmanaged modules)
+        -- and record version to allow resolving circular dependencies
+        if @record.virtual or @record.unmanaged
+            @record\createDummyRef!
+            @record\setVersion update.version
 
         -- try to load required modules first to see if all dependencies are satisfied
         -- this may trigger more updates
@@ -323,7 +331,7 @@ class UpdateTask extends UpdaterBase
             -- For automation scripts/macros this will be done on reload
             @record\writeConfig!
         else
-            @record.version, @record.virtual, @record.unmanaged = @record\getVersionNumber update.version
+            @record.virtual, @record.unmanaged = nil
 
 
         @updated = true
