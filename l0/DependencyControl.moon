@@ -373,7 +373,8 @@ class DependencyControl
     formatVersionErrorTemplate: (name, reqVersion, url, reason, ref) =>
         url = url and ": #{url}" or ""
         if ref
-            return msgs.outdatedTemplate\format name, ref.version\getVersionString!, reqVersion, url, reason
+            version = type(ref.version) == "table" and ref.version.__class == @@ and ref.version\getVersionString! or @getVersionString ref.version
+            return msgs.outdatedTemplate\format name, version, reqVersion, url, reason
         else
             reqVersion = reqVersion and " (v#{reqVersion})" or ""
             return msgs.missingTemplate\format name, reqVersion, url, reason
