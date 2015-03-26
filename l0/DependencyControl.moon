@@ -107,13 +107,13 @@ class DependencyControl
 
         shouldWriteConfig = @loadConfig!
 
-        logger or= Logger { fileBaseName: "DepCtrl", fileSubName: script_namespace, prefix: "[#{@@__name}] ",
-                            toFile: @@config.c.writeLogs, defaultLevel: @@config.c.traceLevel,
-                            maxAge: @@config.c.logMaxAge,maxSize: @@config.c.logMaxSize, maxFiles: @@config.c.logMaxFiles,
-                            logDir: @@config.c.logDir }
+        @@logger or= Logger { fileBaseName: "DepCtrl", fileSubName: script_namespace, prefix: "[#{@@__name}] ",
+                              toFile: @@config.c.writeLogs, defaultLevel: @@config.c.traceLevel,
+                              maxAge: @@config.c.logMaxAge,maxSize: @@config.c.logMaxSize, maxFiles: @@config.c.logMaxFiles,
+                              logDir: @@config.c.logDir }
 
         -- attach our logger to the required objects and classes
-        obj.logger = logger for obj in *{@@config, @config, UpdateFeed, fileOps}
+        obj.logger = @@logger for obj in *{@@config, @config, UpdateFeed, fileOps}
 
         -- set UpdateFeed settings
         if @@config.c.dumpFeeds
@@ -132,7 +132,7 @@ class DependencyControl
         @writeConfig shouldWriteConfig, false, false
 
         configDirExists or= fileOps.createDir aegisub.decode_path @configDir
-        logsHaveBeenTrimmed or= logger\trimFiles!
+        logsHaveBeenTrimmed or= @@logger\trimFiles!
 
     loadConfig: (importRecord = false, forceReloadGlobal = false) =>
         -- load global config
@@ -285,7 +285,7 @@ class DependencyControl
             -- if we failed loading our required modules
             -- then that means we also failed to load
             LOADED_MODULES[@namespace] = nil
-            logger\error err
+            @@logger\error err
         return unpack [mdl._ref for mdl in *modules]
 
     loadModules: (modules, addFeeds) =>
