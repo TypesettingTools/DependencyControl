@@ -62,14 +62,7 @@ class DependencyControl
             @namespace = @moduleName
             @name = name or @moduleName
             @type = "modules"
-
-            -- global module registry allows for circular dependencies:
-            -- set a dummy reference to this module since this module is not ready
-            -- when the other one tries to load it (and vice versa)
-            export LOADED_MODULES = {} unless LOADED_MODULES
-            unless LOADED_MODULES[@moduleName] or @virtual or @unmanaged
-                @ref = {}
-                LOADED_MODULES[@moduleName] = setmetatable {__depCtrlDummy: true}, @ref
+            @createDummyRef! unless @virtual or @unmanaged
 
         else
             @name or= script_name
@@ -133,6 +126,25 @@ class DependencyControl
 
         configDirExists or= fileOps.createDir aegisub.decode_path @configDir
         logsHaveBeenTrimmed or= @@logger\trimFiles!
+
+    createDummyRef: =>
+        return nil unless @moduleName
+        -- global module registry allows for circular dependencies:
+        -- set a dummy reference to this module since this module is not ready
+        -- when the other one tries to load it (and vice versa)
+        export LOADED_MODULES = {} unless LOADED_MODULES
+        unless LOADED_MODULES[@moduleName]
+            @ref = {}
+            LOADED_MODULES[@moduleName] = setmetatable {__depCtrlDummy: true, version: @}, @ref
+            return true
+        return false
+
+    removeDummyRef: =>
+        return nil unless @moduleName
+        if LOADED_MODULES[@moduleName] and LOADED_MODULES[@moduleName].__depCtrlDummy
+            LOADED_MODULES[@moduleName] = nil
+            return true
+        return  false
 
     loadConfig: (importRecord = false, forceReloadGlobal = false) =>
         -- load global config
