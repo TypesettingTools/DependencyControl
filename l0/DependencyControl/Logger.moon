@@ -14,7 +14,8 @@ class Logger
     prefix: ""
     toFile: false, toWindow: true
     indent: 0
-    usePrefix: true
+    usePrefixFile: true
+    usePrefixWindow: true
     indentStr: "—"
     maxFiles: 200, maxAge: 604800, maxSize:10*(10^6)
 
@@ -23,6 +24,8 @@ class Logger
     new: (args) =>
         if args
             @[k] = v for k, v in pairs args
+            if args.usePrefix ~= nil
+                @usePrefixFile, @usePrefixWindow = args.usePrefix
 
         -- scripts are loaded simultaneously, so we need to avoid seeding the rng with the same time
         unless seeded
@@ -42,7 +45,7 @@ class Logger
     logEx: (level = @defaultLevel, msg = "", insertLineFeed = true, prefix = @prefix,  ...) =>
         return false if msg == ""
 
-        prefix = "" unless @usePrefix
+        prefixWin = @usePrefixWindow and prefix or ""
         lineFeed = insertLineFeed and "\n" or ""
         indentStr = @indent==0 and "" or @indentStr\rep(@indent) .. " "
         msg = @lastHadLineFeed and @format(msg, @indent, ...) or msg\format ...
@@ -51,12 +54,12 @@ class Logger
         if @toFile and level <= @maxToFileLevel
             @handle = io.open(@fileName, "a") unless @handle
             linePre = @lastHadLineFeed and "#{indentStr}[#{levels[level+1]\upper!}] #{os.date '%H:%M:%S'} #{show and '+' or '•'} " or ""
-            line = table.concat({linePre, prefix, msg, lineFeed})
+            line = table.concat({linePre, @usePrefixFile and prefix or "", msg, lineFeed})
             @handle\write(line)\flush!
 
-        assert level > 1,"#{indentStr}Error: #{prefix}#{msg}"
+        assert level > 1,"#{indentStr}Error: #{prefixWin}#{msg}"
         if show
-            aegisub.log level, table.concat({indentStr, prefix, msg, lineFeed})
+            aegisub.log level, table.concat({indentStr, prefixWin, msg, lineFeed})
 
         @lastHadLineFeed = insertLineFeed
         return true
