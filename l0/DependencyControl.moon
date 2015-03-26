@@ -121,7 +121,7 @@ class DependencyControl
             UpdateFeed.dumpExpanded = true
 
         -- create an updater unless one already exists
-        @@updater or= Updater script_namespace, @@config, logger
+        @@updater or= Updater script_namespace, @@config, @@logger
 
 
         -- write config file if contents are missing or are out of sync with the script version record
@@ -218,7 +218,7 @@ class DependencyControl
     getConfigHandler: (defaults, section, noLoad) =>
         return ConfigHandler @getConfigFileName, default, section, noLoad
 
-    getLogger: (args) =>
+    getLogger: (args = {}) =>
         args.fileBaseName or= @namespace
         args.toFile = @config.c.logToFile if args.toFile == nil
         args.defaultLevel or= @config.c.logLevel
