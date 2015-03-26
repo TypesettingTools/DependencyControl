@@ -50,10 +50,7 @@ class DependencyControl
     }
 
     dlm = DownloadManager!
-    platform = "#{ffi.os}-#{ffi.arch}"
-
-    configDirExists, reloadPending, updaterLockingInstance, logger = nil
-    logsHaveBeenTrimmed = nil
+    platform, configDirExists, logsHaveBeenTrimmed = "#{ffi.os}-#{ffi.arch}"
     fileOps.createDir depConf.file, true
 
     new: (args)=>
