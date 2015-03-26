@@ -291,7 +291,7 @@ class DependencyControl
         return mdl._ref  -- having this in the with block breaks moonscript
 
     requireModules: (modules = @requiredModules, addFeeds = {@feed}) =>
-        success, err = @loadModules modules, addFeeds, true
+        success, err = @loadModules modules, addFeeds
         @@updater\releaseLock!
         unless success
             -- if we failed loading our required modules
@@ -300,8 +300,9 @@ class DependencyControl
             @@logger\error err
         return unpack [mdl._ref for mdl in *modules]
 
-    loadModules: (modules, addFeeds = {@feed}) =>
+    loadModules: (modules, addFeeds = {@feed}, skip = @moduleName and {[@moduleName]: true} or {}) =>
         for mdl in *modules
+            continue if skip[mdl]
             with mdl
                 ._ref, ._updated, ._missing, ._outdated, ._reason, ._error = nil
 
