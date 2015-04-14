@@ -223,4 +223,4 @@ class UpdateFeed
         @getScript namespace, false, config, autoChannel
 
     getModule: (namespace, config, autoChannel) =>
-        @getScript, namespace, true, config, autoChannel
+        @getScript namespace, true, config, autoChannel
