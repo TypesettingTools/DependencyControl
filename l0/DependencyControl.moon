@@ -68,7 +68,7 @@ class DependencyControl
             @name or= script_name
             @description or= script_description
             @author or= script_author
-            @version or= script_version
+            version or= script_version
 
             @namespace = namespace or script_namespace
             assert not @unmanaged, msgs.badRecordError\format msgs.badRecord.noUnmanagedMacros
