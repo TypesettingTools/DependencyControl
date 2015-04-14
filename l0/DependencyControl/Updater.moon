@@ -57,11 +57,12 @@ class UpdateTask extends UpdaterBase
             noFiles: "No files available to download for your platform '%s' (channel: %s)."
         }
         run: {
-            starting: "Starting %supdate of %s '%s' (v%s)... "
+            starting: "Starting %s of %s '%s'... "
             fetching: "Trying to %sfetch missing %s '%s'..."
             feedCandidates: "Trying %d candidate feeds (%s mode)..."
             feedTrying: "Checking feed %d/%d (%s)..."
             upToDate: "%s '%s' is up-to-date (v%s)."
+            alreadyUpdated: "%s v%s has already been installed."
             noFeedAvailExt: "%s (installed: %s; available: %s)"
             noUpdate: "Feed has no new update."
         }
@@ -137,14 +138,18 @@ class UpdateTask extends UpdaterBase
     run: (waitLock, exhaustive = @@config.c.tryAllFeeds or @@exhaustive) =>
         logUpdateError = (code, extErr, virtual = @virtual) ->
             if code < 0
-                @@logger\log @getUpdaterErrorMsg code, @record.name, @record.moduleName, wasVirtual, extErr
+                @@logger\log @getUpdaterErrorMsg code, @record.name, @record.moduleName, virtual, extErr
             return code, extErr
+
+        with @record do @@logger\log msgs.run.starting, .virtual and "download" or "update",
+                                                        .moduleName and "module" or "macro", .name
 
         -- don't perform update of a script when another one is already running for the same script
         return logUpdateError -10 if @running
 
         -- check if the script was already updated
         if @updated and not exhaustive and @record\checkVersion @targetVersion
+            @@logger\log msgs.run.alreadyUpdated, @record.name, @record\getVersionString!
             return 2
 
         -- build feed list
