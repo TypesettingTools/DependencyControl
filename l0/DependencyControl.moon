@@ -65,7 +65,7 @@ class DependencyControl
             @createDummyRef! unless @virtual or @unmanaged
 
         else
-            @name or= script_name
+            @name or= @virtual and namespace or script_name
             @description or= script_description
             @author or= script_author
             version or= script_version
