@@ -190,7 +190,8 @@ class DependencyControl
         else
             if writeGlobal
                 success, errMsg = @@config\write false
-            if success and writeLocal
+            if writeLocal and (success or not writeGlobal)
+                @config\import @, depConf.scriptFields
                 success, errMsg = @config\write false
 
         assert success, msgs.configWriteError\format errMsg
