@@ -84,7 +84,7 @@ class UpdateTask extends UpdaterBase
         }
     }
 
-    new: (@record, targetVersion = 0, @addFeeds, @exhaustive, @updater) =>
+    new: (@record, targetVersion = 0, @addFeeds, @exhaustive, @channel, @updater) =>
         DependencyControl or= require "l0.DependencyControl"
         assert @record.__class == DependencyControl, "First parameter must be a #{DependencyControl.__name} object."
 
@@ -95,7 +95,7 @@ class UpdateTask extends UpdaterBase
         return nil, -1 unless @@config.c.updaterEnabled
         return nil, -2 unless @record\validateNamespace!
 
-    set: (targetVersion, @addFeeds, @exhaustive) =>
+    set: (targetVersion, @addFeeds, @exhaustive, @channel) =>
         @targetVersion = @record\getVersionNumber targetVersion
         return @
 
@@ -112,7 +112,7 @@ class UpdateTask extends UpdaterBase
         unless updateRecord
             return nil, msgs.checkFeed.noData\format @record.moduleName and "module" or "macro", @record.name
 
-        success, currentChannel = updateRecord\setChannel!
+        success, currentChannel = updateRecord\setChannel @channel
         unless success
             return nil, msgs.checkFeed.badChannel\format currentChannel
 
@@ -381,12 +381,12 @@ class Updater extends UpdaterBase
         super.config = globalConfig
         super.logger = logger if logger
 
-    addTask: (record, targetVersion, addFeeds = {}, exhaustive) =>
+    addTask: (record, targetVersion, addFeeds = {}, exhaustive, channel) =>
         task = @tasks[record.type][record.namespace]
         if task
-            return task\set targetVersion, addFeeds, exhaustive
+            return task\set targetVersion, addFeeds, exhaustive, channel
         else
-            task = UpdateTask record, targetVersion, addFeeds, exhaustive, @
+            task = UpdateTask record, targetVersion, addFeeds, exhaustive, channel, @
             @tasks[record.type][record.namespace] = task
             return task, err
 
