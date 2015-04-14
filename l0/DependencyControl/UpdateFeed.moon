@@ -132,7 +132,7 @@ class UpdateFeed
 
         @fileName = fileName or table.concat {@@downloadPath, @@fileBaseName, "%04X"\format(math.random 0, 16^4-1), ".json"}
         if @@cache[@url]
-            @@logger\log msgs.trace.usingCached
+            @@logger\trace msgs.trace.usingCached
             @data = @@cache[@url]
         elseif autoFetch
             @fetch!
