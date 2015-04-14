@@ -311,6 +311,7 @@ class UpdateTask extends UpdaterBase
         -- Nuke old module refs and reload
         oldVer, wasVirtual = @record.version, @record.virtual
 
+        -- Update complete, refresh module information/configuration
         if @record.moduleName
             ref = @record\loadModule @record, false, true
             unless ref
@@ -327,12 +328,10 @@ class UpdateTask extends UpdaterBase
                 return finish -58, rec unless success
                 @record = rec
             @ref = ref
-            -- Update complete, refresh module information/configuration
-            -- For automation scripts/macros this will be done on reload
-            @record\writeConfig!
-        else
-            @record.virtual, @record.unmanaged = nil
 
+        else with @record
+            .name, .version, .virtual, .unmanaged = @record.name, @record\getVersionNumber update.version
+            @record\writeConfig true, false
 
         @updated = true
         @@logger\log msgs.performUpdate.updSuccess, wasVirtual and "Download" or "Update",
