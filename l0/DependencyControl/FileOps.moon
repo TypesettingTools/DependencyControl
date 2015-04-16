@@ -132,17 +132,20 @@ class FileOps
         return dir
 
     attributes: (path, key) ->
-        path, dev, dir, file = FileOps.validateFullPath path
-        unless path
-            return nil, msgs.attributes.badPath\format dev
+        fullPath, dev, dir, file = FileOps.validateFullPath path
+        unless fullPath
+            path = "#{lfs.currentdir!}/#{path}"
+            fullPath, dev, dir, file = FileOps.validateFullPath path
+            unless path
+                return nil, msgs.attributes.badPath\format dev
 
-        attr, err = lfs.attributes path, key
+        attr, err = lfs.attributes fullPath, key
         if err
             return nil, msgs.attributes.genericError\format err
         elseif not attr
-            return false, path, dev, dir, file
+            return false, fullPath, dev, dir, file
 
-        return attr, path, dev, dir, file
+        return attr, fullPath, dev, dir, file
 
     validateFullPath: (path, checkFileExt) ->
         if type(path) != "string"
