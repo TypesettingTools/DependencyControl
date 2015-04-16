@@ -262,8 +262,7 @@ class UpdateTask extends UpdaterBase
         @@logger\log msgs.performUpdate.updateReady, tmpDir
 
         scriptSubDir = @record.moduleName and @record.moduleName\gsub("%.","/") or @record.namespace
-        scriptDir = aegisub.decode_path "?user/automation/#{@record.moduleName and 'include' or 'autoload'}"
-        baseName, tmpBaseName = "#{scriptDir}/#{scriptSubDir}", "#{tmpDir}/#{scriptSubDir}"
+        baseName, tmpBaseName = "#{@record.automationDir}/#{scriptSubDir}", "#{tmpDir}/#{scriptSubDir}"
 
         dlm\clear!
         for file in *update.files
@@ -294,7 +293,7 @@ class UpdateTask extends UpdaterBase
 
         -- move files to their destination directory and clean up
 
-        @@logger\log msgs.performUpdate.movingFiles, scriptDir
+        @@logger\log msgs.performUpdate.movingFiles, @record.automationDir
         moveErrors = {}
         @@logger.indent += 1
         for dl in *dlm.downloads

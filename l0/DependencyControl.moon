@@ -52,6 +52,8 @@ class DependencyControl
     dlm = DownloadManager!
     platform, configDirExists, logsHaveBeenTrimmed = "#{ffi.os}-#{ffi.arch}"
     fileOps.createDir depConf.file, true
+    automationDir: {macros: aegisub.decode_path "?user/automation/autoload"
+                    modules: aegisub.decode_path "?user/automation/include"}
 
     new: (args)=>
         {@requiredModules, moduleName:@moduleName, configFile:configFile, virtual:@virtual, :name,
@@ -84,6 +86,7 @@ class DependencyControl
         assert @virtual or @unmanaged or @validateNamespace!, msgs.badRecord.badNamespace\format @namespace
 
         @configFile = configFile or "#{@namespace}.json"
+        @automationDir = @@automationDir[@type]
         @version, err = @getVersionNumber version or @virtual and -1
         assert @version, msgs.badRecordError\format msgs.badRecord.badVersion\format err
 
