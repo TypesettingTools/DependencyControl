@@ -36,6 +36,9 @@ class DependencyControl
         badVersionType: "Argument had the wrong type: expected string or number, got '%s'"
         versionOverflow: "Error: %s version must be an integer < 255, got %s."
         updNoNewVersion: "%s '%s' (v%s) is up-to-date." -- orphaned
+        uninstall: {
+            noVirtualOrUnmanaged: "Can't uninstall %s %s '%s'. (Only installed scripts managed by #{@@_name} can be uninstalled)."
+        }
     }
 
     depConf = {
@@ -429,6 +432,37 @@ class DependencyControl
 
     validateNamespace: (namespace = @namespace, isVirtual = @virtual) =>
         return isVirtual or namespaceValidation\match @namespace
+
+    uninstall: (removeConfig = true) =>
+        if @virtual or @unmanaged
+            return nil, msgs.uninstall.noVirtualOrUnmanaged\format @virtual and "virtual" or "unmanaged",
+                                                                   @moduleName and "module" or "macro",
+                                                                   @name
+        @config\delete!
+        subModules, mdlConfig = @getSubmodules!
+        -- uninstalling a module also removes all submodules
+        if subModules and #subModules > 0
+            mdlConfig.c[mdl] = nil for mdl in *subModules
+            mdlConfig\write!
+
+        toDelete, pattern, dir = {}
+        if @moduleName
+            nsp, name = @namespace\match "(.+)%.(.+)"
+            pattern = "^#{name}"
+            dir = "#{@automationDir}/#{nsp\gsub '%.', '/'}"
+        else
+            pattern = "^#{@namespace}"\gsub "%.", "%%."
+            dir = @automationDir
+
+        lfs.chdir dir
+        for file in lfs.dir dir
+            mode, path = fileOps.attributes file, "mode"
+            -- parent level module files must be <last part of namespace>.ext
+            currPattern = @moduleName and mode == "file" and pattern.."%." or pattern
+            -- automation scripts don't use any subdirectories
+            if (@moduleName or mode == "file") and file\match currPattern
+                toDelete[#toDelete+1] = path
+        return fileOps.delete toDelete
 
 DependencyControl.__class.version = DependencyControl{
     name: "DependencyControl",
