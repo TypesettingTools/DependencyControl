@@ -1,6 +1,7 @@
 ffi = require "ffi"
 re = require "aegisub.re"
 Logger = require "l0.DependencyControl.Logger"
+local ConfigHandler, DependencyControl
 
 class FileOps
     msgs = {
@@ -44,6 +45,43 @@ class FileOps
         maxLen: 255
     }
     @logger = Logger!
+
+    createConfig = (noLoad) ->
+        ConfigHandler or= require "l0.DependencyControl.ConfigHandler"
+        DependencyControl or= require "l0.DependencyControl"
+        FileOps.config or= ConfigHandler "#{DependencyControl.version.configDir}/l0.#{FileOps.__name}.json",
+                           {toDelete: {}}, nil, noLoad, FileOps.logger
+        return FileOps.config
+
+    delete: (paths, reSchedule = true) ->
+        config = createConfig true
+        configLoaded, res = false, {}
+        paths = {paths} unless type(paths) == "table"
+
+        for path in *paths
+            mode, path = FileOps.attributes path, "mode"
+            if mode
+                rmFunc = mode == "file" and os.remove or lfs.rmdir
+                success, err = rmFunc path
+                if not success
+                    unless configLoaded
+                        FileOps.config\load!
+                        configLoaded = true
+                    config.c.toDelete[path] = os.time!
+                    res[#res+1] = {false, err}
+                else res[#res+1] = {true}
+            else res[#res+1] = {nil, path}
+
+        config\write! if configLoaded
+        return res, configLoaded
+
+    runScheduledDeletion: ->
+        config = createConfig!
+        paths = [path for path, _ in pairs config.c.toDelete]
+        if #paths > 0
+            FileOps.delete paths, false
+            config.c.toDelete = {}
+            config\write!
 
     moveFile: (source, target) ->
         mode, err = FileOps.attributes target, "mode"
