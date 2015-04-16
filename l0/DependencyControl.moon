@@ -266,6 +266,12 @@ class DependencyControl
             return false, errorMsg
         return true
 
+    getSubmodules: =>
+        return nil if @virtual or @unmanaged or not @moduleName
+        mdlConfig = @@config\getSectionHandler "modules"
+        pattern = "^#{@moduleName}."\gsub "%.", "%%."
+        return [mdl for mdl, _ in pairs mdlConfig.c when mdl\match pattern], mdlConfig
+
     loadModule: (mdl, usePrivate, reload) =>
         with mdl
             ._missing, ._error = nil
