@@ -25,6 +25,12 @@ class FileOps
                 cantRemove: "Couldn't overwrite file '%s': %s. Attempts at renaming the existing target file failed."
                 cantRename: "Couldn't move file '%s' to '%s': %s"
             }
+            rmdir: {
+                emptyPath: "Argument #1 (path) must not be an empty string."
+                couldntDeleteFiles: "The specified directory contains files and folders that couldn't be deleted."
+                couldntDeleteDir: "Error deleting empty directory: %s."
+
+            }
             validateFullPath: {
                 badType: "Argument #1 (path) had the wrong type. Expected 'string', got '%s'."
                 tooLong: "The specified path exceeded the maximum length limit (%d > %d)."
@@ -61,7 +67,7 @@ class FileOps
         for path in *paths
             mode, path = FileOps.attributes path, "mode"
             if mode
-                rmFunc = mode == "file" and os.remove or lfs.rmdir
+                rmFunc = mode == "file" and os.remove or FileOps.rmdir
                 success, err = rmFunc path
                 if not success
                     unless configLoaded
@@ -113,6 +119,23 @@ class FileOps
 
         return true
 
+    rmdir: (path) ->
+        return nil, msgs.rmdir.emptyPath if path == ""
+        mode, path = FileOps.attributes path, "mode"
+        return nil, msgs.rmdir.notPath unless mode == "directory"
+
+        -- recursively delete contained files and directories
+        toDelete = ["#{path}/#{file}" for file in lfs.dir path]
+        res, err = FileOps.delete toDelete, false
+        if err
+            return nil, msgs.rmdir.couldntDeleteFiles, res
+
+        -- remove empty directory
+        success, err = lfs.rmdir path
+        unless success
+            return nil, msgs.rmdir.couldntDeleteDir\format err
+
+        return true
 
     createDir: (path, isFile) ->
         path, dev, dir, file = FileOps.validateFullPath path
