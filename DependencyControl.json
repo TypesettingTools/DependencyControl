@@ -17,9 +17,9 @@
       "author": "line0",
       "name": "DependencyControl Toolbox",
       "description": "Provides DependencyControl maintenance and configuration utilities.",
-      "fileBaseUrl": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v@{version}-@{channel}/@{namespace}",
+      "fileBaseUrl": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/macros-v@{version}-@{channel}/macros/@{namespace}",
       "channels": {
-        "master": {
+        "alpha": {
           "version": "0.1.0",
           "released": "2015-04-17",
           "default": true,
@@ -27,7 +27,7 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": ""
+              "sha1": "647BC5737824823401F7ACAB5DF4ABA2CFADAD1F"
             }
           ]
         }
