@@ -103,16 +103,16 @@ class UpdateFeed
         }
     }
 
-    @cache = {}
-    dlm = DownloadManager!
-    feedsHaveBeenTrimmed = false
-
     -- default settings
     @logger = Logger fileBaseName: @@__name
-    @downloadPath = aegisub.decode_path "?temp/"
+    @downloadPath = aegisub.decode_path "?temp/l0.#{@@__name}_feedCache"
     @fileBaseName = "l0.#{@@__name}_"
     @fileMatchTemplate = "l0.#{@@__name}_%x%x%x%x.*%.json"
     @dumpExpanded = false
+
+    @cache = {}
+    dlm = DownloadManager aegisub.decode_path @downloadPath
+    feedsHaveBeenTrimmed = false
 
     -- precalculate some tables for the templater
     templateData.rolling = {n, true for n,t in pairs templateData.templates when t.rolling}
@@ -145,7 +145,7 @@ class UpdateFeed
     fetch: (fileName) =>
         @fileName = fileName if fileName
 
-        dl, err = dlm\addDownload @url, @fileName
+        dl, err = dlm\addDownload @url, @fileName, nil, ""
         unless dl
             return false, msgs.errors.downloadAdd\format @url, @fileName, err
 

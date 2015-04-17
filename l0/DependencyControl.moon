@@ -127,7 +127,7 @@ class DependencyControl
 
         -- set UpdateFeed settings
         if @@config.c.dumpFeeds
-            UpdateFeed.downloadPath = aegisub.decode_path "?user/"
+            UpdateFeed.downloadPath = aegisub.decode_path "?user/feedDump/"
             UpdateFeed.dumpExpanded = true
 
         -- create an updater unless one already exists
