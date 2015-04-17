@@ -14,30 +14,41 @@ class DependencyControl
     semParts = {{"major", 16}, {"minor", 8}, {"patch", 0}}
     namespaceValidation = re.compile "^(?:[-\\w]+\\.)+[-\\w]+$"
     msgs = {
-        badRecordError: "Error: Bad {#@@__name} record (%s)."
-        badRecord: {
-            noUnmanagedMacros: "Creating unmanaged version records for macros is not allowed"
-            missingNamespace: "No namespace defined"
-            badVersion: "Couldn't parse version number: %s"
-            badNamespace: "Namespace '%s' failed validation. Namespace rules: must contain 1+ single dots, but not start or end with a dot; all other characters must be in [A-Za-z0-9-_]."
-            badModuleTable: "Invalid required module table #%d (%s)."
+        checkOptionalModules: {
+            downloadHint: "Please download the modules in question manually, put them in your %s folder and reload your automation scripts."
+            missing: "Error: a %s feature you're trying to use requires additional modules that were not found on your system:\n%s\n%s"
         }
-        configWriteError: "An error occured while writing the #{@@__name} config file: %s"
-        missingModules: "Error: one or more of the modules required by %s could not be found on your system:\n%s\n%s"
-        missingOptionalModules: "Error: a %s feature you're trying to use requires additional modules that were not found on your system:\n%s\n%s"
-        missingModulesDownloadHint: "Please download the modules in question manually, put them in your %s folder and reload your automation scripts."
-        missingTemplate: "— %s %s%s\n—— Reason: %s"
-        outdatedModules: "Error: one or more of the modules required by %s are outdated on your system:
-%s\nPlease update the modules in question manually and reload your automation scripts."
-        outdatedTemplate: "— %s (Installed: v%s; Required: v%s)%s\n—— Reason: %s"
-        missingRecord: "Error: module '%s' is missing a version record."
-        moduleError: "Error in required module %s:\n%s"
-        badVersionString: "Can't parse version string '%s'. Make sure it conforms to semantic versioning standards."
-        badVersionType: "Argument had the wrong type: expected string or number, got '%s'"
-        versionOverflow: "Error: %s version must be an integer < 255, got %s."
-        updNoNewVersion: "%s '%s' (v%s) is up-to-date." -- orphaned
+        formatVersionErrorTemplate: {
+            missing: "— %s %s%s\n—— Reason: %s"
+            outdated: "— %s (Installed: v%s; Required: v%s)%s\n—— Reason: %s"
+        }
+        getVersionNumber: {
+            badString: "Can't parse version string '%s'. Make sure it conforms to semantic versioning standards."
+            badType: "Argument had the wrong type: expected string or number, got '%s'"
+            overflow: "Error: %s version must be an integer < 255, got %s."
+        }
+        loadModules: {
+            missing: "Error: one or more of the modules required by %s could not be found on your system:\n%s\n%s"
+            missingRecord: "Error: module '%s' is missing a version record."
+            moduleError: "Error in required module %s:\n%s"
+            outdated: [[Error: one or more of the modules required by %s are outdated on your system:
+%s\nPlease update the modules in question manually and reload your automation scripts.]]
+        }
+        new: {
+            badRecordError: "Error: Bad {#@@__name} record (%s)."
+            badRecord: {
+                noUnmanagedMacros: "Creating unmanaged version records for macros is not allowed"
+                missingNamespace: "No namespace defined"
+                badVersion: "Couldn't parse version number: %s"
+                badNamespace: "Namespace '%s' failed validation. Namespace rules: must contain 1+ single dots, but not start or end with a dot; all other characters must be in [A-Za-z0-9-_]."
+                badModuleTable: "Invalid required module table #%d (%s)."
+            }
+        }
         uninstall: {
             noVirtualOrUnmanaged: "Can't uninstall %s %s '%s'. (Only installed scripts managed by #{@@_name} can be uninstalled)."
+        }
+        writeConfig: {
+            error: "An error occured while writing the #{@@__name} config file: %s"
         }
     }
 
@@ -76,8 +87,8 @@ class DependencyControl
             version or= script_version
 
             @namespace = namespace or script_namespace
-            assert not @unmanaged, msgs.badRecordError\format msgs.badRecord.noUnmanagedMacros
-            assert @namespace, msgs.badRecordError\format msgs.badRecord.missingNamespace
+            assert not @unmanaged, msgs.new.badRecordError\format msgs.new.badRecord.noUnmanagedMacros
+            assert @namespace, msgs.new.badRecordError\format msgs.new.badRecord.missingNamespace
             @type = "macros"
 
         -- if the hosting macro doesn't have a namespace defined, define it for
@@ -86,12 +97,12 @@ class DependencyControl
             export script_namespace = @namespace
 
         -- non-depctrl record don't need to conform to namespace rules
-        assert @virtual or @unmanaged or @validateNamespace!, msgs.badRecord.badNamespace\format @namespace
+        assert @virtual or @unmanaged or @validateNamespace!, msgs.new.badRecord.badNamespace\format @namespace
 
         @configFile = configFile or "#{@namespace}.json"
         @automationDir = @@automationDir[@type]
         @version, err = @getVersionNumber version or @virtual and -1
-        assert @version, msgs.badRecordError\format msgs.badRecord.badVersion\format err
+        assert @version, msgs.new.badRecordError\format msgs.new.badRecord.badVersion\format err
 
         @requiredModules or= {}
         -- normalize short format module tables
@@ -102,7 +113,7 @@ class DependencyControl
                     mdl[1] = nil
                 when "string"
                     @requiredModules[i] = {moduleName: mdl}
-                else error msgs.badRecordError\format msgs.badRecord.badModuleTable\format i, tostring mdl
+                else error msgs.new.badRecordError\format msgs.new.badRecord.badModuleTable\format i, tostring mdl
 
         shouldWriteConfig = @loadConfig!
 
@@ -201,7 +212,7 @@ class DependencyControl
                 @config\import @, depConf.scriptFields
                 success, errMsg = @config\write false
 
-        assert success, msgs.configWriteError\format errMsg
+        assert success, msgs.writeConfig.error\format errMsg
 
     getVersionNumber: (value) =>
         switch type value
@@ -210,17 +221,17 @@ class DependencyControl
             when "string"
                 matches = {value\match "^(%d+).(%d+).(%d+)$"}
                 if #matches!=3
-                    return false, msgs.badVersionString\format value
+                    return false, msgs.getVersionNumber.badString\format value
 
                 version = 0
                 for i, part in ipairs semParts
                     value = tonumber(matches[i])
                     if type(value) != "number" or value>256
-                        return false, msgs.versionOverflow\format part[1], tostring value
+                        return false, msgs.getVersionNumber.overflow\format part[1], tostring value
                     version += bit.lshift value, part[2]
                 return version
 
-            else return false, msgs.badVersionType\format type value
+            else return false, msgs.getVersionNumber.badType\format type value
 
     getVersionString: (version = @version, precision = "patch") =>
         if type(version) == "string"
@@ -265,8 +276,8 @@ class DependencyControl
         missing = [@formatVersionErrorTemplate mdl.moduleName, mdl.version, msl.url, mdl._reason for mdl in *@requiredModules when mdl.optional and mdl._missing and modules[mdl.name]]
 
         if #missing>0
-            downloadHint = msgs.missingModulesDownloadHint\format aegisub.decode_path "?user/automation/include"
-            errorMsg = msgs.missingOptionalModules\format @name, table.concat(missing, "\n"), downloadHint
+            downloadHint = msgs.checkOptionalModules.downloadHint\format @@automationDir.modules
+            errorMsg = msgs.checkOptionalModules.missing\format @name, table.concat(missing, "\n"), downloadHint
             return false, errorMsg
         return true
 
@@ -341,7 +352,7 @@ class DependencyControl
                 if .version and ._ref and not ._updated
                     record = ._ref.version
                     unless record
-                        ._error = msgs.missingRecord\format .moduleName
+                        ._error = msgs.loadModules.missingRecord\format .moduleName
                         continue
 
                     if type(record) != "table" or record.__class != @@
@@ -371,15 +382,15 @@ class DependencyControl
                 elseif ._outdated
                     outdated[#outdated+1] = @formatVersionErrorTemplate name, .version, .url, ._reason, ._ref
                 elseif ._error
-                    moduleError[#moduleError+1] = msgs.moduleError\format name, ._error
+                    moduleError[#moduleError+1] = msgs.loadModules.moduleError\format name, ._error
 
         errorMsg = {}
         if #moduleError > 0
             errorMsg[1] = table.concat moduleError, "\n"
         if #outdated > 0
-            errorMsg[#errorMsg+1] = msgs.outdatedModules\format @name, table.concat outdated, "\n"
+            errorMsg[#errorMsg+1] = msgs.loadModules.outdated\format @name, table.concat outdated, "\n"
         if #missing > 0
-            errorMsg[#errorMsg+1] = msgs.missingModules\format @name, table.concat(missing, "\n"), downloadHint
+            errorMsg[#errorMsg+1] = msgs.loadModules.missing\format @name, table.concat(missing, "\n"), downloadHint
 
         return #errorMsg == 0, table.concat(errorMsg, "\n\n")
 
@@ -388,10 +399,10 @@ class DependencyControl
         url = url and ": #{url}" or ""
         if ref
             version = type(ref.version) == "table" and ref.version.__class == @@ and ref.version\getVersionString! or @getVersionString ref.version
-            return msgs.outdatedTemplate\format name, version, reqVersion, url, reason
+            return msgs.formatVersionErrorTemplate.outdated\format name, version, reqVersion, url, reason
         else
             reqVersion = reqVersion and " (v#{reqVersion})" or ""
-            return msgs.missingTemplate\format name, reqVersion, url, reason
+            return msgs.formatVersionErrorTemplate.missing\format name, reqVersion, url, reason
 
 
     register: (selfRef) =>
