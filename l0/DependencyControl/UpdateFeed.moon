@@ -139,7 +139,7 @@ class UpdateFeed
 
     getKnownFeeds: =>
         return {} unless @data
-        return {url, true for _, url in pairs @data.knownFeeds}
+        return [url for _, url in pairs @data.knownFeeds]
         -- TODO: maybe also search all requirements for feed URLs
 
     fetch: (fileName) =>
