@@ -55,8 +55,8 @@ class DependencyControl
     dlm = DownloadManager!
     platform, configDirExists, logsHaveBeenTrimmed, scheduledDeletionHasRun = "#{ffi.os}-#{ffi.arch}"
     fileOps.createDir depConf.file, true
-    automationDir: {macros: aegisub.decode_path "?user/automation/autoload"
-                    modules: aegisub.decode_path "?user/automation/include"}
+    automationDir: {macros:  aegisub.decode_path("?user/automation/autoload"),
+                    modules: aegisub.decode_path("?user/automation/include")}
 
     new: (args)=>
         {@requiredModules, moduleName:@moduleName, configFile:configFile, virtual:@virtual, :name,
