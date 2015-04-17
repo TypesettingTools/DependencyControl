@@ -59,7 +59,7 @@ class FileOps
                            {toDelete: {}}, nil, noLoad, FileOps.logger
         return FileOps.config
 
-    delete: (paths, reSchedule = true) ->
+    delete: (paths, reSchedule = false) ->
         config = createConfig true
         configLoaded, res = false, {}
         paths = {paths} unless type(paths) == "table"
@@ -70,6 +70,9 @@ class FileOps
                 rmFunc = mode == "file" and os.remove or FileOps.rmdir
                 success, err = rmFunc path
                 if not success
+                    unless reSchedule
+                        res[#res+1] = {nil, err}
+                        continue
                     unless configLoaded
                         FileOps.config\load!
                         configLoaded = true
