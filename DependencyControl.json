@@ -1,0 +1,42 @@
+{
+  "dependencyControlFeedFormatVersion": "0.1.0",
+  "name": "DependencyControl",
+  "description": "The official DependencyControl repository.",
+  "baseUrl": "https://github.com/TypesettingTools/DependencyControl",
+  "url": "@{baseUrl}",
+  "maintainer": "line0",
+  "knownFeeds": {
+    "line0scripts": "https://raw.githubusercontent.com/TypesettingTools/line0-Aegisub-Scripts/master/DependencyControl.json",
+    "a-mo": "https://raw.githubusercontent.com/TypesettingTools/Aegisub-Motion/master/DependencyControl.json",
+    "SubInspector": "https://raw.githubusercontent.com/TypesettingTools/SubInspector/master/DependencyControl.json",
+    "ASSFoundation": "https://raw.githubusercontent.com/TypesettingTools/ASSFoundation/master/DependencyControl.json"
+  },
+  "macros": {
+    "l0.DependencyControl.Toolbox": {
+      "url": "@{baseUrl}#@{namespace}",
+      "author": "line0",
+      "name": "DependencyControl Toolbox",
+      "description": "Provides DependencyControl maintenance and configuration utilities.",
+      "fileBaseUrl": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v@{version}-@{channel}/@{namespace}",
+      "channels": {
+        "master": {
+          "version": "0.1.0",
+          "released": "2015-04-17",
+          "default": true,
+          "files": [
+            {
+              "name": ".moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": ""
+            }
+          ]
+        }
+      },
+      "changelog": {
+        "0.1.0": [
+          "initial commit"
+        ]
+      }
+    }
+  }
+}
