@@ -53,7 +53,7 @@ class DependencyControl
     }
 
     dlm = DownloadManager!
-    platform, configDirExists, logsHaveBeenTrimmed = "#{ffi.os}-#{ffi.arch}"
+    platform, configDirExists, logsHaveBeenTrimmed, scheduledDeletionHasRun = "#{ffi.os}-#{ffi.arch}"
     fileOps.createDir depConf.file, true
     automationDir: {macros: aegisub.decode_path "?user/automation/autoload"
                     modules: aegisub.decode_path "?user/automation/include"}
@@ -132,6 +132,7 @@ class DependencyControl
 
         configDirExists or= fileOps.createDir aegisub.decode_path @configDir
         logsHaveBeenTrimmed or= @@logger\trimFiles!
+        scheduledDeletionHasRun or= fileOps.runScheduledDeletion @configDir
 
     createDummyRef: =>
         return nil unless @moduleName

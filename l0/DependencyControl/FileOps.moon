@@ -1,7 +1,7 @@
 ffi = require "ffi"
 re = require "aegisub.re"
 Logger = require "l0.DependencyControl.Logger"
-local ConfigHandler, DependencyControl
+local ConfigHandler
 
 class FileOps
     msgs = {
@@ -52,10 +52,10 @@ class FileOps
     }
     @logger = Logger!
 
-    createConfig = (noLoad) ->
+    createConfig = (noLoad, configDir) ->
+        FileOps.configDir = configDir if configDir
         ConfigHandler or= require "l0.DependencyControl.ConfigHandler"
-        DependencyControl or= require "l0.DependencyControl"
-        FileOps.config or= ConfigHandler "#{DependencyControl.version.configDir}/l0.#{FileOps.__name}.json",
+        FileOps.config or= ConfigHandler "#{FileOps.configDir}/l0.#{FileOps.__name}.json",
                            {toDelete: {}}, nil, noLoad, FileOps.logger
         return FileOps.config
 
@@ -84,13 +84,15 @@ class FileOps
         config\write! if configLoaded
         return res, configLoaded
 
-    runScheduledDeletion: ->
-        config = createConfig!
+    runScheduledDeletion: (configDir) ->
+        config = createConfig false, configDir
         paths = [path for path, _ in pairs config.c.toDelete]
         if #paths > 0
-            FileOps.delete paths, false
+            -- rescheduled deletions will not be rescheduled another time
+            FileOps.delete paths
             config.c.toDelete = {}
             config\write!
+        return true
 
     moveFile: (source, target) ->
         mode, err = FileOps.attributes target, "mode"
