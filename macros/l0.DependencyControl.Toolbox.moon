@@ -88,8 +88,8 @@ install = ->
             for channel in *channels
                 record = scriptData.data.channels[channel]
                 verNum = depRec\getVersionNumber record.version
-                unless config.c[scriptType][namespace] or (tbl[namespace][channel] and verNum < tbl[namespace][channel].version)
-                    tbl[namespace][channel] = { name: scriptData.name, version: record.version, feed: feed.url,
+                unless config.c[scriptType][namespace] or (tbl[namespace][channel] and verNum < tbl[namespace][channel].verNum)
+                    tbl[namespace][channel] = { name: scriptData.name, version: record.version, verNum: verNum, feed: feed.url,
                                                 default: defaultChannel == channel, moduleName: scriptType == "modules" and namespace }
         return tbl
 
