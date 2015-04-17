@@ -137,6 +137,10 @@ class UpdateFeed
         elseif autoFetch
             @fetch!
 
+    getKnownFeeds: =>
+        return {} unless @data
+        return {url, true for _, url in pairs @data.knownFeeds}
+        -- TODO: maybe also search all requirements for feed URLs
 
     fetch: (fileName) =>
         @fileName = fileName if fileName
@@ -160,8 +164,7 @@ class UpdateFeed
             -- luajson errors are useless dumps of whatever, no use to pass them on to the user
             return false, msgs.errors.parse
 
-        data.macros or= {}
-        data.modules or= {}
+        data[key] = {} for key in *{"macros", "modules", "knownFeeds"} when not data[key]
         @data, @@cache[@url] = data, data
         @expand!
         return @data
