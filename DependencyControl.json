@@ -7,7 +7,7 @@
   "maintainer": "line0",
   "knownFeeds": {
     "line0scripts": "https://raw.githubusercontent.com/TypesettingTools/line0-Aegisub-Scripts/master/DependencyControl.json",
-    "a-mo": "https://raw.githubusercontent.com/TypesettingTools/Aegisub-Motion/master/DependencyControl.json",
+    "a-mo": "https://raw.githubusercontent.com/TypesettingCartel/Aegisub-Motion/DepCtrl/DependencyControl.json",
     "SubInspector": "https://raw.githubusercontent.com/TypesettingTools/SubInspector/master/DependencyControl.json",
     "ASSFoundation": "https://raw.githubusercontent.com/TypesettingTools/ASSFoundation/master/DependencyControl.json"
   },
