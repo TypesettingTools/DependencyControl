@@ -22,6 +22,12 @@ msgs = {
         lockedFiles: "%s Some script files are still in use and will be deleted during the next restart/reload."
         error: "Error: %s"
     }
+    macroConfig: {
+        hints: {
+            customMenu: "Lets you sort your automation macros into submenus. Use / to denote submenu levels."
+            userFeed: "When set the updater will use this feed exclusively to update the script in question."
+        }
+    }
 }
 
 -- Shared Functions
@@ -167,9 +173,36 @@ update = ->
     runUpdaterTask mdl, res.exhaustive
     runUpdaterTask macro, res.exhaustive
 
+macroConfig = ->
+    config = getConfig "macros"
+
+    dlg, i = {}, 1
+    for nsp, macro in pairs config.userConfig
+        dlg[i*5+t-1] = tbl for t, tbl in ipairs {
+            {label: macro.name,              class: "label",  x: 0, y: i, width: 1,  height: 1  },
+            {label: "Menu Group: ",          class: "label",  x: 1, y: i, width: 1,  height: 1  },
+            {name:  "#{nsp}.customMenu",     class: "edit",   x: 2, y: i, width: 1,  height: 1,
+             text: macro.customMenu or "",    hint: msgs.macroConfig.hints.customMenu           },
+            {label: "Custom Update Feed: ",  class: "label",  x: 3, y: i, width: 1,  height: 1  },
+            {name:  "#{nsp}.userFeed",       class: "edit",   x: 4, y: i, width: 1,  height: 1,
+             text: macro.userFeed or "",      hint: msgs.macroConfig.hints.userFeed             }
+        }
+        i += 1
+    btn, res = aegisub.dialog.display dlg
+    return unless btn
+
+    for k, v in pairs res
+        nsp, prop = k\match "(.+)%.(.+)"
+        if config.c[nsp][prop] and v == ""
+            config.c[nsp][prop] = nil
+        elseif v != ""
+            config.c[nsp][prop] = v
+
+    config\write!
 
 depRec\registerMacros{
     {"Install Script", "Installs an automation script or module on your system.", install},
     {"Update Script", "Manually check and perform updates to any installed script.", update},
     {"Uninstall Script", "Removes an automation script or module from your system.", uninstall},
+    {"Macro Configuration", "Lets you change per-automation script settings.", macroConfig},
 }
