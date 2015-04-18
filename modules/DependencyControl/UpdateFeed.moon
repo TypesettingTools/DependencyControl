@@ -145,7 +145,7 @@ class UpdateFeed
     fetch: (fileName) =>
         @fileName = fileName if fileName
 
-        dl, err = dlm\addDownload @url, @fileName, nil, ""
+        dl, err = dlm\addDownload @url, @fileName
         unless dl
             return false, msgs.errors.downloadAdd\format @url, @fileName, err
 
