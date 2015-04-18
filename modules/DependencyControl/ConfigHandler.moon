@@ -225,6 +225,9 @@ class ConfigHandler
             --return waitTimeout
             return false, errors.lockTimeout
 
+    getSectionHandler: (section, defaults, noLoad) =>
+        return @@ @file, defaults, section, noLoad, @logger
+
     releaseLock: (force) =>
         if @hasLock or force
             @hasLock = false
