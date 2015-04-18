@@ -72,7 +72,7 @@ class DependencyControl
     new: (args)=>
         {@requiredModules, moduleName:@moduleName, configFile:configFile, virtual:@virtual, :name,
          description:@description, url:@url, feed:@feed, unmanaged:@unmanaged, :namespace,
-         author:@author, :version, configFile:@configFile} = args
+         author:@author, :version, configFile:@configFile, :noReadGlobalScriptVars} = args
 
         if @moduleName
             @namespace = @moduleName
@@ -81,10 +81,15 @@ class DependencyControl
             @createDummyRef! unless @virtual or @unmanaged
 
         else
-            @name or= @virtual and namespace or script_name
-            @description or= script_description
-            @author or= script_author
-            version or= script_version
+            if @virtual or noReadGlobalScriptVars
+                @name = name or namespace
+                @namespace = namespace
+                version or= 0
+            else
+                @name = name or script_name
+                @description or= script_description
+                @author or= script_author
+                version or= script_version
 
             @namespace = namespace or script_namespace
             assert not @unmanaged, msgs.new.badRecordError\format msgs.new.badRecord.noUnmanagedMacros
@@ -101,7 +106,7 @@ class DependencyControl
 
         @configFile = configFile or "#{@namespace}.json"
         @automationDir = @@automationDir[@type]
-        @version, err = @getVersionNumber version or @virtual and -1
+        @version, err = @getVersionNumber version
         assert @version, msgs.new.badRecordError\format msgs.new.badRecord.badVersion\format err
 
         @requiredModules or= {}

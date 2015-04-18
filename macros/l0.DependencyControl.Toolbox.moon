@@ -99,7 +99,8 @@ install = ->
             for channel, rec in pairs channels
                 item = "%s v%s%s"\format rec.name, rec.version, rec.default and "" or " [#{channel}]"
                 list[#list+1] = item
-                map[item] = :namespace, :channel, feed: rec.feed, name: rec.name, virtual: true, moduleName: rec.moduleName
+                map[item] = { :namespace, :channel, feed: rec.feed, name: rec.name, virtual: true,
+                              moduleName: rec.moduleName, noReadGlobalScriptVars: true }
 
         return list, map
 
