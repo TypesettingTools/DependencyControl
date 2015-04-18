@@ -209,10 +209,10 @@ class UpdateTask extends UpdaterBase
                                                 @record.name, @record\getVersionString!
                 return 0
 
-            res = msgs.run.noFeedAvailExt\format @record\getVersionString(@targetVersion),
+            res = msgs.run.noFeedAvailExt\format @targetVersion == 0 and "any" or @record\getVersionString(@targetVersion),
                                                  @record.virtual and "no" or @record\getVersionString!,
                                                  maxVer<1 and "none" or @record\getVersionString maxVer
-            return logUpdateError -6
+            return logUpdateError -6, res
 
         code, res = @performUpdate updateRecord
         return logUpdateError code, res, wasVirtual
