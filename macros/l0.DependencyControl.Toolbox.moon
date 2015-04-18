@@ -128,12 +128,13 @@ install = ->
 uninstall = ->
     doUninstall = (script) ->
         return unless script
-        scriptType = script.moduleName and "module" or "macro"
+        scriptType = script.moduleName and "Module" or "Macro"
         logger\log msgs.uninstall.running, scriptType, script.name
         success, lockedFiles = DepCtrl(script)\uninstall!
         if success
-            logger\log msgs.uninstall[lockedFiles and "lockedFiles" or "success"],
-                       scriptType, script.name
+            msg = msgs.uninstall.success\format scriptType, script.name
+            logger\log lockedFiles and msgs.uninstall.lockedFiles\format(msg) or msg
+
         else logger\log msgs.uninstall.error, lockedFiles
 
     config = getConfig!
