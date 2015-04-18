@@ -73,12 +73,14 @@ class ConfigHandler
         recurse @defaults
         @load! unless noLoad
 
-    setFile: (file) =>
-        return false unless file
-        if @@handlers[file]
-            table.insert @@handlers[file], @
-        else @@handlers[file] = {@}
-        @file = file
+    setFile: (path) =>
+        return false unless path
+        if @@handlers[path]
+            table.insert @@handlers[path], @
+        else @@handlers[path] = {@}
+        path, err = fileOps.validateFullPath path, true
+        return nil, err unless path
+        @file = path
         return true
 
     unsetFile: =>
