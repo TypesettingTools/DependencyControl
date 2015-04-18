@@ -35,9 +35,12 @@ class ConfigHandler
         @userConfig = {}
         @config = setmetatable {}, {
             __index: (_, k) ->
-                if @userConfig[k] ~= nil return @userConfig[k]
+                if @userConfig and @userConfig[k] ~= nil
+                    return @userConfig[k]
                 else return @defaults[k]
-            __newindex: (_, k, v) -> @userConfig[k] = v
+            __newindex: (_, k, v) ->
+                @userConfig or= {}
+                @userConfig[k] = v
         }
         @c = @config -- shortcut
 
@@ -57,6 +60,7 @@ class ConfigHandler
                             parent = tbl.__parent
 
                         -- deep copy whole defaults entry (without copying attached metatables)
+                        @userConfig or= {}
                         @userConfig[tbl.__key] = util.deep_copy @defaults[tbl.__key]
                         -- set specific property originally requested on copy
                         tbl = @userConfig[tbl.__key]
@@ -122,23 +126,35 @@ class ConfigHandler
                     break
                 else return false, errors.badKey\format "retrive", i, tostring(@section[i]),type config
 
+        @userConfig or= {}
         @userConfig[k] = v for k,v in pairs config
         return sectionExists
 
     mergeSection: (config) =>
-        section = config
+        section, sectionExists = config, true
         -- create missing parent sections
         for i=1, #@section
             childSection = section[@section[i]]
             if childSection == nil
+                -- don't create parent sections if this section is going to be deleted
+                unless @userConfig
+                    sectionExists = false
+                    break
                 section[@section[i]] = {}
                 childSection = section[@section[i]]
             elseif "table" != type childSection
                 return false, errors.badKey\format "update", i, tostring(@section[i]),type childSection
-            section = childSection
+            section = childSection if @userConfig or i < #@section
         -- merge our values into our section
-        section[k] = v for k,v in pairs @userConfig
+        if @userConfig
+            section[k] = v for k,v in pairs @userConfig
+        elseif sectionExists
+            section[@section[#@section]] = nil
         return config
+
+    delete: (concertWrite, waitLockTime) =>
+        @userConfig = nil
+        return @write concertWrite, waitLockTime
 
     write: (concertWrite, waitLockTime = 5000) =>
         return false, errors.noFile unless @file
@@ -228,6 +244,7 @@ class ConfigHandler
 
     import: (tbl = {}, keys) =>
         changesMade = false
+        @userConfig or= {}
         keys = {key, true for key in *keys} if keys
 
         for k,v in pairs tbl
