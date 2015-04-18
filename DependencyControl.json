@@ -21,20 +21,20 @@
       "channels": {
         "alpha": {
           "version": "0.1.0",
-          "released": "2015-04-17",
+          "released": "2015-04-19",
           "default": true,
           "files": [
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "647BC5737824823401F7ACAB5DF4ABA2CFADAD1F"
+              "sha1": "2F79FAFBCC93F24130193BF1B9066D5D6E00F631"
             }
           ]
         }
       },
       "changelog": {
         "0.1.0": [
-          "initial commit"
+          "initial release"
         ]
       }
     }
