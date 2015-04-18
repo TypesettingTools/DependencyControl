@@ -54,7 +54,7 @@ class ConfigHandler
                     __newindex: (tbl, k, v) ->
                         upKeys, parent = {}, tbl.__parent
                         -- trace back to defaults entry, pick up the keys along the path
-                        while parent
+                        while parent.__parent
                             tbl = parent
                             upKeys[#upKeys+1] = tbl.__key
                             parent = tbl.__parent
