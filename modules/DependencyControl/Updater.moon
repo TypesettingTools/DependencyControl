@@ -257,7 +257,7 @@ class UpdateTask extends UpdaterBase
         -- check hashes before download, only update changed files
 
         tmpDir = aegisub.decode_path "?temp/l0.#{DependencyControl.__name}_#{'%04X'\format math.random 0, 16^4-1}"
-        res, err = fileOps.createDir tmpDir
+        res, err = fileOps.mkdir tmpDir
         return finish -30, "#{tmpDir} (#{err})" unless res
 
         @@logger\log msgs.performUpdate.updateReady, tmpDir
@@ -298,7 +298,7 @@ class UpdateTask extends UpdaterBase
         moveErrors = {}
         @@logger.indent += 1
         for dl in *dlm.downloads
-            res, err = fileOps.moveFile dl.outfile, dl.targetFile
+            res, err = fileOps.move dl.outfile, dl.targetFile
             -- don't immediately error out if moving of a single file failed
             -- try to move as many files as possible and let the user handle the rest
             if res

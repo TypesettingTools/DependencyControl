@@ -11,11 +11,11 @@ class FileOps
                 noAttribute: "Can't find attriubte with name '%s'."
             }
 
-            createDir: {
+            mkdir: {
                 createError: "Error creating directory: %s."
                 otherExists: "Couldn't create directory because a %s of the same name is already present."
             }
-            moveFile: {
+            move: {
                 inUseTryingRename: "Target file '%s' already exists and appears to be in use. Trying to rename..."
                 overwritingFile: "File '%s' already exists, overwriting..."
                 createdDir: "Created target directory '%s'."
@@ -27,8 +27,8 @@ class FileOps
             }
             rmdir: {
                 emptyPath: "Argument #1 (path) must not be an empty string."
-                couldntDeleteFiles: "The specified directory contains files and folders that couldn't be deleted."
-                couldntDeleteDir: "Error deleting empty directory: %s."
+                couldntRemoveFiles: "The specified directory contains files and folders that couldn't be removed."
+                couldntRemoveDir: "Error removing empty directory: %s."
 
             }
             validateFullPath: {
@@ -56,10 +56,10 @@ class FileOps
         FileOps.configDir = configDir if configDir
         ConfigHandler or= require "l0.DependencyControl.ConfigHandler"
         FileOps.config or= ConfigHandler "#{FileOps.configDir}/l0.#{FileOps.__name}.json",
-                           {toDelete: {}}, nil, noLoad, FileOps.logger
+                           {toRemove: {}}, nil, noLoad, FileOps.logger
         return FileOps.config
 
-    delete: (paths, reSchedule = false) ->
+    remove: (paths, reSchedule = false) ->
         config = createConfig true
         configLoaded, res = false, {}
         paths = {paths} unless type(paths) == "table"
@@ -76,7 +76,7 @@ class FileOps
                     unless configLoaded
                         FileOps.config\load!
                         configLoaded = true
-                    config.c.toDelete[path] = os.time!
+                    config.c.toRemove[path] = os.time!
                     res[#res+1] = {false, err}
                 else res[#res+1] = {true}
             else res[#res+1] = {nil, path}
@@ -84,43 +84,43 @@ class FileOps
         config\write! if configLoaded
         return res, configLoaded
 
-    runScheduledDeletion: (configDir) ->
+    runScheduledRemoval: (configDir) ->
         config = createConfig false, configDir
-        paths = [path for path, _ in pairs config.c.toDelete]
+        paths = [path for path, _ in pairs config.c.toRemove]
         if #paths > 0
-            -- rescheduled deletions will not be rescheduled another time
-            FileOps.delete paths
-            config.c.toDelete = {}
+            -- rescheduled removals will not be rescheduled another time
+            FileOps.remove paths
+            config.c.toRemove = {}
             config\write!
         return true
 
-    moveFile: (source, target) ->
+    move: (source, target) ->
         mode, err = FileOps.attributes target, "mode"
         if mode == "file"
-            FileOps.logger\trace msgs.moveFile.overwritingFile, target
+            FileOps.logger\trace msgs.move.overwritingFile, target
             res, err = os.remove target
             unless res -- can't remove old target file, probably in use or lack of permissions
-                FileOps.logger\debug msgs.moveFile.inUseTryingRename, target
+                FileOps.logger\debug msgs.move.inUseTryingRename, target
                 junkName = "#{target}.depCtrlRemoved"
                 os.remove junkName
                 res = os.rename target, junkName
                 unless res
-                    return false, msgs.moveFile.cantRemove\format target, err
+                    return false, msgs.move.cantRemove\format target, err
         elseif mode -- a directory (or something else) of the same name as the target file is already present
-            return false, msgs.moveFile.existsNoFile\format source, target, mode
+            return false, msgs.move.existsNoFile\format source, target, mode
         elseif mode == nil  -- if retrieving the attributes of a file fails, something is probably wrong
-            return false, msgs.moveFile.genericError\format source, target, err
+            return false, msgs.move.genericError\format source, target, err
 
         else -- target file not found, check directory
-            dir, err = FileOps.createDir target, true
+            dir, err = FileOps.mkdir target, true
             unless dir
-                return false, msgs.moveFile.createDirError\format source, target, err
-            FileOps.logger\trace msgs.moveFile.createdDir, dir
+                return false, msgs.move.createDirError\format source, target, err
+            FileOps.logger\trace msgs.move.createdDir, dir
 
         -- at this point the target directory exists and the target file doesn't, move the file
         res, err = os.rename source, target
         unless res -- renaming the file failed, probably a permission issue
-            return false, msgs.moveFile.cantRename, source, target, err
+            return false, msgs.move.cantRename, source, target, err
 
         return true
 
@@ -129,20 +129,20 @@ class FileOps
         mode, path = FileOps.attributes path, "mode"
         return nil, msgs.rmdir.notPath unless mode == "directory"
 
-        -- recursively delete contained files and directories
-        toDelete = ["#{path}/#{file}" for file in lfs.dir path]
-        res, err = FileOps.delete toDelete, false
+        -- recursively remove contained files and directories
+        toRemove = ["#{path}/#{file}" for file in lfs.dir path]
+        res, err = FileOps.remove toRemove, false
         if err
-            return nil, msgs.rmdir.couldntDeleteFiles, res
+            return nil, msgs.rmdir.couldntRemoveFiles, res
 
         -- remove empty directory
         success, err = lfs.rmdir path
         unless success
-            return nil, msgs.rmdir.couldntDeleteDir\format err
+            return nil, msgs.rmdir.couldntRemoveDir\format err
 
         return true
 
-    createDir: (path, isFile) ->
+    mkdir: (path, isFile) ->
         path, dev, dir, file = FileOps.validateFullPath path
         unless path
             return false, msgs.attributes.badPath\format dev
@@ -154,9 +154,9 @@ class FileOps
         elseif not mode
             res, err = lfs.mkdir dir
             if err -- can't create directory (possibly a permission error)
-                return false, msgs.createDir.createError\format err
+                return false, msgs.mkdir.createError\format err
         elseif mode != "directory" -- a file of the same name as the target directory is already present
-            return false, msgs.createDir.otherExists\format mode
+            return false, msgs.mkdir.otherExists\format mode
         return dir
 
     attributes: (path, key) ->

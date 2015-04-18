@@ -64,8 +64,8 @@ class DependencyControl
     }
 
     dlm = DownloadManager!
-    platform, configDirExists, logsHaveBeenTrimmed, scheduledDeletionHasRun = "#{ffi.os}-#{ffi.arch}"
-    fileOps.createDir depConf.file, true
+    platform, configDirExists, logsHaveBeenTrimmed, scheduledRemovalHasRun = "#{ffi.os}-#{ffi.arch}"
+    fileOps.mkdir depConf.file, true
     automationDir: {macros:  aegisub.decode_path("?user/automation/autoload"),
                     modules: aegisub.decode_path("?user/automation/include")}
 
@@ -146,9 +146,9 @@ class DependencyControl
         @configDir = @@config.c.configDir
         @writeConfig shouldWriteConfig, false, false
 
-        configDirExists or= fileOps.createDir aegisub.decode_path @configDir
+        configDirExists or= fileOps.mkdir aegisub.decode_path @configDir
         logsHaveBeenTrimmed or= @@logger\trimFiles!
-        scheduledDeletionHasRun or= fileOps.runScheduledDeletion @configDir
+        scheduledRemovalHasRun or= fileOps.runScheduledRemoval @configDir
 
     createDummyRef: =>
         return nil unless @moduleName
@@ -462,7 +462,7 @@ class DependencyControl
             mdlConfig.c[mdl] = nil for mdl in *subModules
             mdlConfig\write!
 
-        toDelete, pattern, dir = {}
+        toRemove, pattern, dir = {}
         if @moduleName
             nsp, name = @namespace\match "(.+)%.(.+)"
             pattern = "^#{name}"
@@ -478,8 +478,8 @@ class DependencyControl
             currPattern = @moduleName and mode == "file" and pattern.."%." or pattern
             -- automation scripts don't use any subdirectories
             if (@moduleName or mode == "file") and file\match currPattern
-                toDelete[#toDelete+1] = path
-        return fileOps.delete toDelete, true
+                toRemove[#toRemove+1] = path
+        return fileOps.remove toRemove, true
 
 DependencyControl.__class.version = DependencyControl{
     name: "DependencyControl",
