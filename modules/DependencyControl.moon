@@ -479,7 +479,7 @@ class DependencyControl
             -- automation scripts don't use any subdirectories
             if (@moduleName or mode == "file") and file\match currPattern
                 toRemove[#toRemove+1] = path
-        return fileOps.remove toRemove, true
+        return fileOps.remove toRemove, true, true
 
 DependencyControl.__class.version = DependencyControl{
     name: "DependencyControl",

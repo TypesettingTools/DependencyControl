@@ -59,7 +59,7 @@ class FileOps
                            {toRemove: {}}, nil, noLoad, FileOps.logger
         return FileOps.config
 
-    remove: (paths, reSchedule = false) ->
+    remove: (paths, recurse, reSchedule) ->
         config = createConfig true
         configLoaded, res = false, {}
         paths = {paths} unless type(paths) == "table"
@@ -68,7 +68,7 @@ class FileOps
             mode, path = FileOps.attributes path, "mode"
             if mode
                 rmFunc = mode == "file" and os.remove or FileOps.rmdir
-                success, err = rmFunc path
+                success, err = rmFunc path, recurse
                 if not success
                     unless reSchedule
                         res[#res+1] = {nil, err}
@@ -89,7 +89,7 @@ class FileOps
         paths = [path for path, _ in pairs config.c.toRemove]
         if #paths > 0
             -- rescheduled removals will not be rescheduled another time
-            FileOps.remove paths
+            FileOps.remove paths, true
             config.c.toRemove = {}
             config\write!
         return true
@@ -120,20 +120,21 @@ class FileOps
         -- at this point the target directory exists and the target file doesn't, move the file
         res, err = os.rename source, target
         unless res -- renaming the file failed, probably a permission issue
-            return false, msgs.move.cantRename, source, target, err
+            return false, msgs.move.cantRename\format source, target, err
 
         return true
 
-    rmdir: (path) ->
+    rmdir: (path, recurse = true) ->
         return nil, msgs.rmdir.emptyPath if path == ""
         mode, path = FileOps.attributes path, "mode"
         return nil, msgs.rmdir.notPath unless mode == "directory"
 
-        -- recursively remove contained files and directories
-        toRemove = ["#{path}/#{file}" for file in lfs.dir path]
-        res, err = FileOps.remove toRemove, false
-        if err
-            return nil, msgs.rmdir.couldntRemoveFiles, res
+        if recurse
+            -- recursively remove contained files and directories
+            toRemove = ["#{path}/#{file}" for file in lfs.dir path]
+            res, err = FileOps.remove toRemove, true
+            if err
+                return nil, msgs.rmdir.couldntRemoveFiles, res
 
         -- remove empty directory
         success, err = lfs.rmdir path
