@@ -193,6 +193,7 @@ class UpdateTask extends UpdaterBase
                 if res
                     updateRecord = rec
                     break unless exhaustive
+                else @@logger\trace msgs.run.noUpdate
             else
                 @@logger\trace msgs.run.noUpdate
 
