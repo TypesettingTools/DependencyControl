@@ -27,7 +27,8 @@ class ConfigHandler
         -- waitingLockTimeout: "Timeout was reached after %d seconds, force-releasing lock..."
     }
 
-    new: (@file, @defaults = {}, @section = {}, noLoad, @logger = Logger fileBaseName: @@__name) =>
+    new: (@file, @defaults = {}, @section, noLoad, @logger = Logger fileBaseName: @@__name) =>
+        @section = {@section} if "table" != type @section
         -- register all handlers for concerted writing
         @setFile @file
 
