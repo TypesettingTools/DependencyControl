@@ -27,8 +27,9 @@ class ConfigHandler
         -- waitingLockTimeout: "Timeout was reached after %d seconds, force-releasing lock..."
     }
 
-    new: (@file, @defaults = {}, @section, noLoad, @logger = Logger fileBaseName: @@__name) =>
+    new: (@file, defaults, @section, noLoad, @logger = Logger fileBaseName: @@__name) =>
         @section = {@section} if "table" != type @section
+        @defaults = defaults and util.deep_copy(defaults) or {}
         -- register all handlers for concerted writing
         @setFile @file
 
@@ -49,9 +50,12 @@ class ConfigHandler
         -- into the user configuration and sets the requested property there
         recurse = (tbl) ->
             for k,v in pairs tbl
-                continue if type(v)~="table"
-                setmetatable v, {
-                    __index: {__key: k, __parent: tbl}
+                continue if type(v)~="table" or type(k)=="string" and k\match "^__"
+                -- replace every table reference with an empty proxy table
+                -- this ensures all writes to the table get intercepted
+                tbl[k] = setmetatable {__key: k, __parent: tbl, __tbl: v}, {
+                    -- make the original table the index of the proxy so that defaults can be read
+                    __index: v
                     __newindex: (tbl, k, v) ->
                         upKeys, parent = {}, tbl.__parent
                         -- trace back to defaults entry, pick up the keys along the path
@@ -60,16 +64,18 @@ class ConfigHandler
                             upKeys[#upKeys+1] = tbl.__key
                             parent = tbl.__parent
 
-                        -- deep copy whole defaults entry (without copying attached metatables)
+                        -- deep copy the whole defaults node into the user configuration
+                        -- (util.deep_copy does not copy attached metatable references)
+                        -- make sure we copy the actual table, not the proxy
                         @userConfig or= {}
-                        @userConfig[tbl.__key] = util.deep_copy @defaults[tbl.__key]
-                        -- set specific property originally requested on copy
+                        @userConfig[tbl.__key] = util.deep_copy @defaults[tbl.__key].__tbl
+                        -- finally perform requested write on userdata
                         tbl = @userConfig[tbl.__key]
                         for i = #upKeys-1, 1, -1
                             tbl = tbl[upKeys[i]]
-                        tbl[k] =v
+                        tbl[k] = v
                 }
-                recurse v
+                recurse tbl[k]
 
         recurse @defaults
         @load! unless noLoad
