@@ -176,6 +176,7 @@ class ConfigHandler
         -- read the config file
         config, err = @readFile!
         if err
+            @releaseLock!
             return false, errors.writeFailedRead\format err
         config or= {}
 
@@ -185,7 +186,9 @@ class ConfigHandler
         handlers = concertWrite and @@handlers[@file] or {@}
         for handler in *handlers
             config, err = handler\mergeSection config
-            return false, err unless config
+            unless config
+                @releaseLock!
+                return false, err
 
         -- write the whole config file in one go
         handle, err = io.open(@file, "w")
