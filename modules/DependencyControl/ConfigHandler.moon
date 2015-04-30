@@ -43,6 +43,12 @@ class ConfigHandler
             __newindex: (_, k, v) ->
                 @userConfig or= {}
                 @userConfig[k] = v
+            __len: (tbl) -> return 0
+            __ipairs: (tbl) -> error "numerically indexed config hive keys are not supported"
+            __pairs: (tbl) ->
+                merged = util.copy @defaults
+                merged[k] = v for k, v in pairs @userConfig
+                return next, merged
         }
         @c = @config -- shortcut
 
@@ -56,6 +62,7 @@ class ConfigHandler
                 tbl[k] = setmetatable {__key: k, __parent: tbl, __tbl: v}, {
                     -- make the original table the index of the proxy so that defaults can be read
                     __index: v
+                    __len: (tbl) -> return #tbl.__tbl
                     __newindex: (tbl, k, v) ->
                         upKeys, parent = {}, tbl.__parent
                         -- trace back to defaults entry, pick up the keys along the path
@@ -74,6 +81,12 @@ class ConfigHandler
                         for i = #upKeys-1, 1, -1
                             tbl = tbl[upKeys[i]]
                         tbl[k] = v
+                    __pairs: (tbl) -> return next, tbl.__tbl
+                    __ipairs: (tbl) ->
+                        i, n, orgTbl = 0, #tbl.__tbl, tbl.__tbl
+                        ->
+                            i += 1
+                            return i, orgTbl[i] if i <= n
                 }
                 recurse tbl[k]
 
