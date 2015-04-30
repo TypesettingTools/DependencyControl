@@ -252,7 +252,7 @@ class DependencyControl
         return aegisub.decode_path "#{@@config.c.configDir}/#{@configFile}"
 
     getConfigHandler: (defaults, section, noLoad) =>
-        return ConfigHandler @getConfigFileName, default, section, noLoad
+        return ConfigHandler @getConfigFileName!, defaults, section, noLoad
 
     getLogger: (args = {}) =>
         args.fileBaseName or= @namespace
