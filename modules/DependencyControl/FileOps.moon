@@ -165,7 +165,7 @@ class FileOps
         unless fullPath
             path = "#{lfs.currentdir!}/#{path}"
             fullPath, dev, dir, file = FileOps.validateFullPath path
-            unless path
+            unless fullPath
                 return nil, msgs.attributes.badPath\format dev
 
         attr, err = lfs.attributes fullPath, key
