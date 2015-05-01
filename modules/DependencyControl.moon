@@ -69,6 +69,12 @@ class DependencyControl
     automationDir: {macros:  aegisub.decode_path("?user/automation/autoload"),
                     modules: aegisub.decode_path("?user/automation/include")}
 
+    ConfigHandler: ConfigHandler
+    UpdateFeed: UpdateFeed
+    Logger: Logger
+    Updater: Updater
+    FileOps: fileOps
+
     new: (args)=>
         {@requiredModules, moduleName:@moduleName, configFile:configFile, virtual:@virtual, :name,
          description:@description, url:@url, feed:@feed, unmanaged:@unmanaged, :namespace,
