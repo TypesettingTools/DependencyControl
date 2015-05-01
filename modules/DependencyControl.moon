@@ -432,7 +432,7 @@ class DependencyControl
             @@updater\releaseLock!
             return process sub, sel
 
-        aegisub.register_macro table.concat(menuName, "/"), script_description, processHooked, validate, isActive
+        aegisub.register_macro table.concat(menuName, "/"), description, processHooked, validate, isActive
 
     registerMacros: (macros = {}, useSubmenuDefault = true) =>
         for macro in *macros
