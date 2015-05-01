@@ -270,16 +270,19 @@ class ConfigHandler
             {k, copy(v) for k, v in pairs val when type(k) != "string" or k\sub(1,1) != "_"}
         copy tbl
 
-    import: (tbl = {}, keys) =>
+    import: (tbl = {}, keys, updateOnly, skipSameLengthTables) =>
+        tbl = tbl.userConfig if tbl.__class == @@
         changesMade = false
         @userConfig or= {}
         keys = {key, true for key in *keys} if keys
 
         for k,v in pairs tbl
             continue if keys and not keys[k] or @userConfig[k] == v
+            continue if updateOnly and @c[k] == nil
             -- TODO: deep-compare tables
             isTable = type(v) == "table"
-            continue if isTable and type(@userConfig[k]) == "table" and #v == #@userConfig[k]
+            if isTable and skipSameLengthTables and type(@userConfig[k]) == "table" and #v == #@userConfig[k]
+                continue
             continue if type(k) == "string" and k\sub(1,1) == "_"
             @userConfig[k] = isTable and @deepCopy(v) or v
             changesMade = true

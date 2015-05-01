@@ -198,7 +198,7 @@ class DependencyControl
         elseif not @virtual
             --  copy script information to the config
             @config\load!
-            shouldWriteConfig = @config\import @, depConf.scriptFields
+            shouldWriteConfig = @config\import @, depConf.scriptFields, false, true
             return shouldWriteConfig
 
         return false
@@ -214,7 +214,7 @@ class DependencyControl
             if writeGlobal
                 success, errMsg = @@config\write false
             if writeLocal and (success or not writeGlobal)
-                @config\import @, depConf.scriptFields
+                @config\import @, depConf.scriptFields, false, true
                 success, errMsg = @config\write false
 
         assert success, msgs.writeConfig.error\format errMsg
