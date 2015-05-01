@@ -78,7 +78,7 @@ class DependencyControl
     new: (args)=>
         {@requiredModules, moduleName:@moduleName, configFile:configFile, virtual:@virtual, :name,
          description:@description, url:@url, feed:@feed, unmanaged:@unmanaged, :namespace,
-         author:@author, :version, configFile:@configFile, :noReadGlobalScriptVars} = args
+         author:@author, :version, configFile:@configFile, :noReadGlobalScriptVars, initFunc:@initFunc} = args
 
         if @moduleName
             @namespace = @moduleName
@@ -324,6 +324,9 @@ class DependencyControl
                 setmetatable ._ref, res
             ._ref, LOADED_MODULES[moduleName] = res, res
 
+            -- run initialization function if one was specified
+            res[mdl.initFunc] @@ if mdl.initFunc
+
         return mdl._ref  -- having this in the with block breaks moonscript
 
     requireModules: (modules = @requiredModules, addFeeds = {@feed}) =>
@@ -487,13 +490,22 @@ class DependencyControl
                 toRemove[#toRemove+1] = path
         return fileOps.remove toRemove, true, true
 
-DependencyControl.__class.version = DependencyControl{
+rec = DependencyControl{
     name: "DependencyControl",
     version: "0.4.0",
     description: "Provides script management and auto-updating for Aegisub macros and modules.",
     author: "line0",
     url: "http://github.com/TypesettingCartel/DependencyControl",
-    moduleName: "l0.DependencyControl"
+    moduleName: "l0.DependencyControl",
+    {
+        {"DM.DownloadManager", version: "0.2.1", initFunc: "attachDepctrl"},
+        {"BM.BadMutex", version: "0.1.2", initFunc: "attachDepctrl"},
+        {"PT.PreciseTimer", version: "0.1.4", initFunc: "attachDepctrl"},
+        {"requireffi.requireffi", version: "0.1.0", initFunc: "attachDepctrl"},
+    }
 }
+DependencyControl.__class.version = rec
+LOADED_MODULES[rec.moduleName], package.loaded[rec.moduleName] = DependencyControl, DependencyControl
+rec\requireModules!
 
 return DependencyControl
