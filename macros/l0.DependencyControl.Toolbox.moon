@@ -35,6 +35,7 @@ buildInstalledDlgList = (scriptType, config) ->
         item = "%s v%s%s"\format script.name, depRec\getVersionString(script.version),
                                  script.activeChannel and " [#{script.activeChannel}]" or ""
         list[#list+1] = item
+        table.sort list, (a, b) -> a\lower! < b\lower!
         map[item] = script
     return list, map
 
@@ -102,6 +103,7 @@ install = ->
             for channel, rec in pairs channels
                 item = "%s v%s%s"\format rec.name, rec.version, rec.default and "" or " [#{channel}]"
                 list[#list+1] = item
+                table.sort list, (a, b) -> a\lower! < b\lower!
                 map[item] = { :namespace, :channel, feed: rec.feed, name: rec.name, virtual: true,
                               moduleName: rec.moduleName }
 
