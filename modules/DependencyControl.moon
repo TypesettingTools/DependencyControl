@@ -507,6 +507,7 @@ rec = DependencyControl{
 }
 DependencyControl.__class.version = rec
 LOADED_MODULES[rec.moduleName], package.loaded[rec.moduleName] = DependencyControl, DependencyControl
+DependencyControl.updater\scheduleUpdate rec
 rec\requireModules!
 
 return DependencyControl
