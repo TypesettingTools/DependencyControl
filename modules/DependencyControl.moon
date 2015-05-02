@@ -498,6 +498,7 @@ rec = DependencyControl{
     author: "line0",
     url: "http://github.com/TypesettingCartel/DependencyControl",
     moduleName: "l0.DependencyControl",
+    feed: "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/master/DependencyControl.json",
     {
         {"DM.DownloadManager", version: "0.2.1", initFunc: "attachDepctrl"},
         {"BM.BadMutex", version: "0.1.2", initFunc: "attachDepctrl"},
