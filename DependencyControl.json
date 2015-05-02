@@ -1,5 +1,5 @@
 {
-  "dependencyControlFeedFormatVersion": "0.1.0",
+  "dependencyControlFeedFormatVersion": "0.2.0",
   "name": "DependencyControl",
   "description": "The official DependencyControl repository.",
   "baseUrl": "https://github.com/TypesettingTools/DependencyControl",
@@ -9,7 +9,8 @@
     "line0scripts": "https://raw.githubusercontent.com/TypesettingTools/line0-Aegisub-Scripts/master/DependencyControl.json",
     "a-mo": "https://raw.githubusercontent.com/TypesettingCartel/Aegisub-Motion/DepCtrl/DependencyControl.json",
     "SubInspector": "https://raw.githubusercontent.com/TypesettingTools/SubInspector/master/DependencyControl.json",
-    "ASSFoundation": "https://raw.githubusercontent.com/TypesettingTools/ASSFoundation/master/DependencyControl.json"
+    "ASSFoundation": "https://raw.githubusercontent.com/TypesettingTools/ASSFoundation/master/DependencyControl.json",
+    "ffi-experiments": "https://raw.githubusercontent.com/torque/ffi-experiments/master/DependencyControl.json"
   },
   "macros": {
     "l0.DependencyControl.Toolbox": {
@@ -37,6 +38,77 @@
           "initial release"
         ]
       }
+    }
+  },
+  "modules": {
+    "l0.DependencyControl": {
+      "url": "@{baseUrl}#@{namespace}",
+      "author": "line0",
+      "name": "DependencyControl",
+      "description": "Dependency manager and automatic script updater for Aegisub macros and modules.",
+      "fileBaseUrl": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v@{version}-@{channel}/modules/@{scriptName}",
+      "channels": {
+        "alpha": {
+          "version": "0.4.0",
+          "released": "2015-04-19",
+          "default": true,
+          "files": [
+            {
+              "name": ".moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "3F67B3FCF41BCC064114BBAF0442EDEA5AFD591E"
+            },
+            {
+              "name": "/ConfigHandler.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "BA90EDFBBB69D4FC9B8892117A5F52A7778EF7AF"
+            },
+            {
+              "name": "/FileOps.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "BB059D28E3BAF59A253DCADF348D69597346B7FE"
+            },
+            {
+              "name": "/Logger.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "E74238386E3C77549256667C951619FC457B5E89"
+            },
+            {
+              "name": "/UpdateFeed.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "7E17E2C15F12FB2CC1F17FFB8F0861B6BEF0190C"
+            },
+            {
+              "name": "/Updater.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "99BB9D94581679E73012D54CD35C6A971EB11615"
+            }
+          ],
+          "requiredModules": [
+            {
+              "moduleName": "requireffi.requireffi",
+              "version": "0.1.0",
+              "feed": "@{feed:ffi-experiments}"
+            },
+            {
+              "moduleName": "DM.DownloadManager",
+              "version": "0.2.1",
+              "feed": "@{feed:ffi-experiments}"
+            },
+            {
+              "moduleName": "BM.BadMutex",
+              "version": "0.1.2",
+              "feed": "@{feed:ffi-experiments}"
+            },
+            {
+              "moduleName": "PT.PreciseTimer",
+              "version": "0.1.4",
+              "feed": "@{feed:ffi-experiments}"
+            }
+          ]
+        }
+      },
+      "changelog": {}
     }
   }
 }
