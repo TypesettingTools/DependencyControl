@@ -77,6 +77,7 @@ class UpdateFeed
         templates: {
             feedName:      {depth: 1, order: 1, key: "name"                                                  }
             baseUrl:       {depth: 1, order: 2, key: "baseUrl"                                               }
+            feed:          {depth: 1, order: 3, key: "knownFeeds", isHashTable: true                         }
             namespace:     {depth: 3, order: 1, parentKeys: {macros:true, modules:true}                      }
             namespacePath: {depth: 3, order: 2, parentKeys: {macros:true, modules:true}, repl:"%.", to: "/"  }
             scriptName:    {depth: 3, order: 3, key: "name"                                                  }
@@ -173,9 +174,17 @@ class UpdateFeed
         {:templates, :maxDepth, :sourceAt, :rolling, :sourceKeys} = templateData
         vars, rvars = {}, {i, {} for i=0, maxDepth}
 
-        expandTemplates = (str, depth, rOff=0) ->
-            return str\gsub "@{(.-)}", (name) ->
-                return vars[name] or rvars[depth+rOff][name]
+        expandTemplates = (val, depth, rOff=0) ->
+            return switch type val
+                when "string"
+                    val = val\gsub "@{(.-):(.-)}", (name, key) ->
+                        if type(vars[name]) == "table" or type(rvars[depth+rOff]) == "table"
+                            vars[name][key] or rvars[depth+rOff][name][key]
+                    val\gsub "@{(.-)}", (name) -> vars[name] or rvars[depth+rOff][name]
+                when "table"
+                    {k, expandTemplates v, depth, rOff for k, v in pairs val}
+                else val
+
 
         recurse = (obj, depth = 1, parentKey = "", upKey = "") ->
             -- collect regular template variables first
