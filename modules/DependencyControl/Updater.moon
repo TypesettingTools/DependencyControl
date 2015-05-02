@@ -364,6 +364,7 @@ class UpdateTask extends UpdaterBase
                     @@logger\log msgs.refreshRecord.otherUpdate, .moduleName and "module" or "macro", .name, \getVersionString!
 
 class Updater extends UpdaterBase
+    DependencyControl = nil
     msgs = {
         getLock: {
             orphaned: "Ignoring orphaned in-progress update started by %s."
@@ -386,6 +387,12 @@ class Updater extends UpdaterBase
         super.logger = logger if logger
 
     addTask: (record, targetVersion, addFeeds = {}, exhaustive, channel) =>
+        DependencyControl or= require "l0.DependencyControl"
+        if record.__class != DependencyControl
+            depRec = {saveRecordToConfig: false, readGlobalScriptVars: false}
+            depRec[k] = v for k, v in pairs record
+            record = DependencyControl depRec
+
         task = @tasks[record.type][record.namespace]
         if task
             return task\set targetVersion, addFeeds, exhaustive, channel
