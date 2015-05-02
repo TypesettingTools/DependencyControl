@@ -76,10 +76,17 @@ class DependencyControl
     automationDir: {macros:  aegisub.decode_path("?user/automation/autoload"),
                     modules: aegisub.decode_path("?user/automation/include")}
 
-    new: (args)=>
+    new: (args) =>
+        -- defaults
+        args[k] = v for k, v in pairs {
+            readGlobalScriptVars: true
+            saveRecordToConfig: true
+        } when args[k] == nil
+
         {@requiredModules, moduleName:@moduleName, configFile:configFile, virtual:@virtual, :name,
          description:@description, url:@url, feed:@feed, unmanaged:@unmanaged, :namespace,
-         author:@author, :version, configFile:@configFile, :noReadGlobalScriptVars, initFunc:@initFunc} = args
+         author:@author, :version, configFile:@configFile, initFunc:@initFunc,
+         :readGlobalScriptVars, :saveRecordToConfig} = args
 
         if @moduleName
             @namespace = @moduleName
@@ -88,7 +95,7 @@ class DependencyControl
             @createDummyRef! unless @virtual or @unmanaged
 
         else
-            if @virtual or noReadGlobalScriptVars
+            if @virtual or not readGlobalScriptVars
                 @name = name or namespace
                 @namespace = namespace
                 version or= 0
@@ -151,7 +158,7 @@ class DependencyControl
         -- we can't really profit from write concerting here because we don't know which module loads last
 
         @configDir = @@config.c.configDir
-        @writeConfig shouldWriteConfig, false, false
+        @writeConfig shouldWriteConfig and saveRecordToConfig, false, false
 
         configDirExists or= fileOps.mkdir aegisub.decode_path @configDir
         logsHaveBeenTrimmed or= @@logger\trimFiles!
