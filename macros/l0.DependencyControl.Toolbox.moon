@@ -29,9 +29,14 @@ msgs = {
 
 -- Shared Functions
 
-buildInstalledDlgList = (scriptType, config) ->
-    list, map = {}, {}
+buildInstalledDlgList = (scriptType, config, isUninstall) ->
+    list, map, protectedModules = {}, {}, {}
+    if isUninstall
+        protectedModules[mdl.moduleName] = true for mdl in *DepCtrl.version.requiredModules
+        protectedModules[DepCtrl.version.moduleName] = true
+
     for namespace, script in pairs config.c[scriptType]
+        continue if protectedModules[namespace]
         item = "%s v%s%s"\format script.name, depRec\getVersionString(script.version),
                                  script.activeChannel and " [#{script.activeChannel}]" or ""
         list[#list+1] = item
@@ -145,8 +150,8 @@ uninstall = ->
     config = getConfig!
 
     -- build macro and module lists as well as reverse mappings
-    moduleList, moduleMap = buildInstalledDlgList "modules", config
-    macroList, macroMap = buildInstalledDlgList "macros", config
+    moduleList, moduleMap = buildInstalledDlgList "modules", config, true
+    macroList, macroMap = buildInstalledDlgList "macros", config, true
 
     btn, res = aegisub.dialog.display getScriptListDlg macroList, moduleList
     return unless btn
