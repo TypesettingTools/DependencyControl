@@ -1,6 +1,6 @@
 export script_name = "DependencyControl Toolbox"
 export script_description = "Provides DependencyControl maintenance and configuration tools."
-export script_version = "0.1.0"
+export script_version = "0.1.1"
 export script_author = "line0"
 export script_namespace = "l0.DependencyControl.Toolbox"
 

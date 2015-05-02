@@ -4,6 +4,7 @@
   "description": "The official DependencyControl repository.",
   "baseUrl": "https://github.com/TypesettingTools/DependencyControl",
   "url": "@{baseUrl}",
+  "fileBaseUrl": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/",
   "maintainer": "line0",
   "knownFeeds": {
     "line0scripts": "https://raw.githubusercontent.com/TypesettingTools/line0-Aegisub-Scripts/master/DependencyControl.json",
@@ -18,17 +19,23 @@
       "author": "line0",
       "name": "DependencyControl Toolbox",
       "description": "Provides DependencyControl maintenance and configuration utilities.",
-      "fileBaseUrl": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/macros-v@{version}-@{channel}/macros/@{namespace}",
+      "fileBaseUrl": "@{fileBaseUrl}macros-v@{version}-@{channel}/macros/@{namespace}",
       "channels": {
         "alpha": {
-          "version": "0.1.0",
-          "released": "2015-04-19",
+          "version": "0.1.1",
+          "released": "2015-05-02",
           "default": true,
           "files": [
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "2F79FAFBCC93F24130193BF1B9066D5D6E00F631"
+              "sha1": "7E71D50092C2A36B772C873600488491766BA2DF"
+            }
+          ],
+          "requiredModules": [
+            {
+              "moduleName": "l0.DependencyControl",
+              "version": "0.5.0"
             }
           ]
         }
@@ -36,6 +43,10 @@
       "changelog": {
         "0.1.0": [
           "initial release"
+        ],
+        "0.1.1": [
+          "The Install/Uninstall/Update dialogs now sort scripts by name.",
+          "DependencyControl and its requirements no longer appear in the uninstall menu."
         ]
       }
     }
@@ -46,17 +57,17 @@
       "author": "line0",
       "name": "DependencyControl",
       "description": "Dependency manager and automatic script updater for Aegisub macros and modules.",
-      "fileBaseUrl": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v@{version}-@{channel}/modules/@{scriptName}",
+      "fileBaseUrl": "@{fileBaseUrl}v@{version}-@{channel}/modules/@{scriptName}",
       "channels": {
         "alpha": {
-          "version": "0.4.0",
-          "released": "2015-04-19",
+          "version": "0.5.0",
+          "released": "2015-05-02",
           "default": true,
           "files": [
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "3F67B3FCF41BCC064114BBAF0442EDEA5AFD591E"
+              "sha1": "61A135DBA47384DE1240726E1C9844CBA9BBB5E5"
             },
             {
               "name": "/ConfigHandler.moon",
@@ -76,12 +87,12 @@
             {
               "name": "/UpdateFeed.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "7E17E2C15F12FB2CC1F17FFB8F0861B6BEF0190C"
+              "sha1": "B9F44CBB60BBADD5E002B6A43AE3229635A8207E"
             },
             {
               "name": "/Updater.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "99BB9D94581679E73012D54CD35C6A971EB11615"
+              "sha1": "706B7D61A53C270C841D2A434044028F461DAD49"
             }
           ],
           "requiredModules": [
@@ -108,7 +119,19 @@
           ]
         }
       },
-      "changelog": {}
+      "changelog": {
+        "0.5.0": [
+          "DependencyControl does now auto-update itself and its dependencies.",
+          "Provided Sub-Modules (Logger, ConfigHandler, ...) can now easily be accessed as class properties of the main DependencyControl module.",
+          "A bug was fixed that caused macros always being registered with the overall script description, ignoring specific descriptions for the macro menu entries.",
+          "The \\getConfigHandler() method no longer ignores the defaults parameter.",
+          "Fixed a FileOps bug that would cause path validation to fail on paths relative to the working directory.",
+          "ConfigHandler: writes to the configuration table are no longer accidentally routed to the defaults table when a value is updated that only exists in the Defaults.",
+          "ConfigHandler: Looping over the configuration table is now completely transparent wrt which fields are user configuration or defaults.",
+          "ConfigHandler: fixed a bug that prevented a global lock on the config file from being released on certain error conditions.",
+          "The update feed format has been updated to v0.2.0 and introduces a new template variable to reference knownFeeds specifed at the top level."
+        ]
+      }
     }
   }
 }

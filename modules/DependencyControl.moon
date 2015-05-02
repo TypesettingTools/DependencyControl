@@ -503,7 +503,7 @@ class DependencyControl
 
 rec = DependencyControl{
     name: "DependencyControl",
-    version: "0.4.0",
+    version: "0.5.0",
     description: "Provides script management and auto-updating for Aegisub macros and modules.",
     author: "line0",
     url: "http://github.com/TypesettingCartel/DependencyControl",
