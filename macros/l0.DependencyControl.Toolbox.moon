@@ -73,7 +73,7 @@ getScriptListDlg = (macros, modules) ->
 
 runUpdaterTask = (scriptData, exhaustive) ->
     return unless scriptData
-    task, err = DepCtrl.updater\addTask DepCtrl(scriptData), nil, nil, exhaustive, scriptData.channel
+    task, err = DepCtrl.updater\addTask scriptData, nil, nil, exhaustive, scriptData.channel
     if task then task\run!
     else logger\log err
 
@@ -103,7 +103,7 @@ install = ->
                 item = "%s v%s%s"\format rec.name, rec.version, rec.default and "" or " [#{channel}]"
                 list[#list+1] = item
                 map[item] = { :namespace, :channel, feed: rec.feed, name: rec.name, virtual: true,
-                              moduleName: rec.moduleName, noReadGlobalScriptVars: true }
+                              moduleName: rec.moduleName }
 
         return list, map
 
