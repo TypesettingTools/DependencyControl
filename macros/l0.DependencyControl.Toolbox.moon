@@ -5,10 +5,7 @@ export script_author = "line0"
 export script_namespace = "l0.DependencyControl.Toolbox"
 
 DepCtrl = require "l0.DependencyControl"
-UpdateFeed = require "l0.DependencyControl.UpdateFeed"
-depRec = DepCtrl{
-    feed: "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/master/DependencyControl.json"
-}
+depRec = DepCtrl feed: "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/master/DependencyControl.json"
 logger = DepCtrl.logger
 logger.usePrefixWindow = false
 
@@ -52,7 +49,7 @@ getKnownFeeds = (config) ->
     -- fetch all feeds and look for further known feeds
     recurse = (feeds, knownFeeds = {}, feedList = {}) ->
         for url in *feeds
-            feed = UpdateFeed url
+            feed = DepCtrl.UpdateFeed url
             continue if knownFeeds[url] or not feed.data
             feedList[#feedList+1], knownFeeds[url] = feed, true
             recurse feed\getKnownFeeds!, knownFeeds, feedList
