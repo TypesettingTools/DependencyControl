@@ -88,6 +88,9 @@ class DependencyControl
          author:@author, :version, configFile:@configFile, initFunc:@initFunc,
          :readGlobalScriptVars, :saveRecordToConfig} = args
 
+        -- also support name key (as used in configuration) for required modules
+        @requiredModules or= args.requiredModules
+
         if @moduleName
             @namespace = @moduleName
             @name = name or @moduleName
