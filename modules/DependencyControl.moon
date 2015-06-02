@@ -447,10 +447,10 @@ class DependencyControl
         menuName[#menuName+1] = name
 
         -- check for updates before running a macro
-        processHooked = (sub, sel) ->
+        processHooked = (sub, sel, act) ->
             @@updater\scheduleUpdate @
             @@updater\releaseLock!
-            return process sub, sel
+            return process sub, sel, act
 
         aegisub.register_macro table.concat(menuName, "/"), description, processHooked, validate, isActive
 
