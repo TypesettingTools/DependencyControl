@@ -320,8 +320,8 @@ class UpdateTask extends UpdaterBase
         if @record.moduleName
             ref = @record\loadModule @record, false, true
             unless ref
-                if ref._error
-                    return finish -56, @@logger\format ref._error, 1
+                if @record._error
+                    return finish -56, @@logger\format @record._error, 1
                 else return finish -55
 
             -- get a fresh version record
