@@ -62,14 +62,14 @@
       "fileBaseUrl": "@{fileBaseUrl}v@{version}-@{channel}/modules/@{scriptName}",
       "channels": {
         "alpha": {
-          "version": "0.5.0",
-          "released": "2015-05-02",
+          "version": "0.5.1",
+          "released": "2015-06-02",
           "default": true,
           "files": [
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "61A135DBA47384DE1240726E1C9844CBA9BBB5E5"
+              "sha1": "84FDFA9FE38B28FDC0E8E662A2D6DB3DCE5B8936"
             },
             {
               "name": "/ConfigHandler.moon",
@@ -94,7 +94,7 @@
             {
               "name": "/Updater.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "706B7D61A53C270C841D2A434044028F461DAD49"
+              "sha1": "9C53BBCBD0334C7D868D00773386A4A23CB3B4F9"
             }
           ],
           "requiredModules": [
@@ -122,6 +122,10 @@
         }
       },
       "changelog": {
+        "0.5.1": [
+          "Macros registered using DependencyControl now get passed the previously missing 'active_line' paramter.",
+          "Fixed a bug that would cause an unrelated error to be thrown in place of the real error message when an updated module failed to load."
+        ],
         "0.5.0": [
           "DependencyControl does now auto-update itself and its dependencies.",
           "Provided Sub-Modules (Logger, ConfigHandler, ...) can now easily be accessed as class properties of the main DependencyControl module.",
