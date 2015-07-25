@@ -14,7 +14,7 @@ class UpdaterBase
             [2]: "Skipping %s of %s '%s': namespace '%s' doesn't conform to rules."
             [3]: "Skipping %s of unmanaged %s '%s'."
             [4]: "No remaining feed available to %s %s '%s' from."
-            [6]: "Couldn't retrieve data required to %s %s '%s'. Required version: %s."
+            [6]: "The %s of %s '%s' failed because no suitable package could be found %s."
             [5]: "Skipped %s of %s '%s': Another update initiated by %s is already running."
             [10]: "Skipped %s of %s '%s': the update task is already running."
             [15]: "Couldn't %s %s '%s' because its requirements could not be satisfied:"
@@ -63,8 +63,11 @@ class UpdateTask extends UpdaterBase
             feedTrying: "Checking feed %d/%d (%s)..."
             upToDate: "%s '%s' is up-to-date (v%s)."
             alreadyUpdated: "%s v%s has already been installed."
-            noFeedAvailExt: "%s (installed: %s; available: %s)"
+            noFeedAvailExt: "(required: %s; installed: %s; available: %s)"
             noUpdate: "Feed has no new update."
+            skippedOptional: "Skipped %s of optional dependency '%s': %s"
+            optionalNoFeed: "No feed available to download module from."
+            optionalNoUpdate: "No suitable download could be found %s."
         }
 
         performUpdate: {
@@ -85,7 +88,7 @@ class UpdateTask extends UpdaterBase
         }
     }
 
-    new: (@record, targetVersion = 0, @addFeeds, @exhaustive, @channel, @updater) =>
+    new: (@record, targetVersion = 0, @addFeeds, @exhaustive, @channel, @optional, @updater) =>
         DependencyControl or= require "l0.DependencyControl"
         assert @record.__class == DependencyControl, "First parameter must be a #{DependencyControl.__name} object."
 
@@ -96,7 +99,7 @@ class UpdateTask extends UpdaterBase
         return nil, -1 unless @@config.c.updaterEnabled
         return nil, -2 unless @record\validateNamespace!
 
-    set: (targetVersion, @addFeeds, @exhaustive, @channel) =>
+    set: (targetVersion, @addFeeds, @exhaustive, @channel, @optional) =>
         @targetVersion = @record\getVersionNumber targetVersion
         return @
 
@@ -167,7 +170,13 @@ class UpdateTask extends UpdaterBase
                 unless @triedFeeds[feed] or haveFeeds[feed]
                     feeds[#feeds+1] = feed
 
-        return logUpdateError -4 if #feeds == 0
+        if #feeds == 0
+            if @optional
+                @@logger\log msgs.run.skippedOptional, @record.name,
+                             @record.virtual and "download" or "update", msgs.run.optionalNoFeed
+                return 3
+
+            return logUpdateError -4
 
         -- get a lock on the updater
         success, otherHost = @updater\getLock waitLock
@@ -212,6 +221,12 @@ class UpdateTask extends UpdaterBase
             res = msgs.run.noFeedAvailExt\format @targetVersion == 0 and "any" or @record\getVersionString(@targetVersion),
                                                  @record.virtual and "no" or @record\getVersionString!,
                                                  maxVer<1 and "none" or @record\getVersionString maxVer
+
+            if @optional
+                @@logger\log msgs.run.skippedOptional, @record.name, @record.virtual and "download" or "update",
+                                                       msgs.run.optionalNoUpdate\format res
+                return 3
+
             return logUpdateError -6, res
 
         code, res = @performUpdate updateRecord
@@ -386,7 +401,7 @@ class Updater extends UpdaterBase
         super.config = globalConfig
         super.logger = logger if logger
 
-    addTask: (record, targetVersion, addFeeds = {}, exhaustive, channel) =>
+    addTask: (record, targetVersion, addFeeds = {}, exhaustive, channel, optional) =>
         DependencyControl or= require "l0.DependencyControl"
         if record.__class != DependencyControl
             depRec = {saveRecordToConfig: false, readGlobalScriptVars: false}
@@ -395,9 +410,9 @@ class Updater extends UpdaterBase
 
         task = @tasks[record.type][record.namespace]
         if task
-            return task\set targetVersion, addFeeds, exhaustive, channel
+            return task\set targetVersion, addFeeds, exhaustive, channel, optional
         else
-            task = UpdateTask record, targetVersion, addFeeds, exhaustive, channel, @
+            task = UpdateTask record, targetVersion, addFeeds, exhaustive, channel, optional, @
             @tasks[record.type][record.namespace] = task
             return task, err
 

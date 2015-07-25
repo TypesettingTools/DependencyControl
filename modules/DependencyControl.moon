@@ -364,8 +364,8 @@ class DependencyControl
                 if ._missing
                     record = @@{moduleName:.moduleName, name:.name or .moduleName,
                                 version:-1, url:.url, feed:.feed, virtual:true}
-                    ._ref, code, extErr = @@updater\require record, .version, addFeeds
-                    if ._ref
+                    ._ref, code, extErr = @@updater\require record, .version, addFeeds, .optional
+                    if ._ref or .optional
                         ._updated, ._missing = true, false
                     else
                         ._reason = @@updater\getUpdaterErrorMsg code, .name or .moduleName, true, true, extErr
@@ -388,7 +388,7 @@ class DependencyControl
                         ref, code, extErr = @@updater\require record, .version, addFeeds
                         if ref
                             ._ref = ref
-                        else
+                        elseif not .optional
                             ._outdated = true
                             ._reason = @@updater\getUpdaterErrorMsg code, .name or .moduleName, true, false, extErr
                     else
