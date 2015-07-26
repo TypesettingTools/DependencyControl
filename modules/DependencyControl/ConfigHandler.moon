@@ -9,7 +9,10 @@ mutex = require "BM.BadMutex"
 class ConfigHandler
     @handlers = {}
     errors = {
-        jsonDecode: "Failed decoding JSON (%s)."
+        jsonDecode: "JSON parse error: %s"
+        configCorrupted: [[An error occured while parsing the JSON config file.
+A backup of the corrupted configuration has been written to '%s'.
+Reload your automation scripts to generate a new configuration file.]]
         badKey: "Can't %s section because the key #%d (%s) leads to a %s."
         jsonRoot: "JSON root element must be an array or a hashtable, got a %s."
         noFile: "No config file defined."
@@ -125,7 +128,16 @@ class ConfigHandler
         data = handle\read "*a"
         success, result = pcall json.decode, data
         unless success
-            return false, errors.jsonDecode\format result
+            -- JSON parse error usually points to a corrupted config file
+            -- Rename the broken file to allow generating a new one
+            -- so the user can continue his work
+            handle\close!
+            @logger\trace errors.jsonDecode, result
+            backup = @file .. ".corrupted"
+            fileOps.copy @file, backup
+            fileOps.remove @file, false, true
+            return false, errors.configCorrupted\format backup
+
         if "table" != type result
             return false, errors.jsonRoot\format type result
 
