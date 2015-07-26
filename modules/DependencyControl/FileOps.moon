@@ -15,6 +15,13 @@ class FileOps
                 createError: "Error creating directory: %s."
                 otherExists: "Couldn't create directory because a %s of the same name is already present."
             }
+            copy: {
+                targetExists: "Target file '%s' already exists"
+                genericError: "An error occured while copying file '%s' to '%s':\n%s"
+                dirCopyUnsupported: "Copying directories is currently not supported."
+                missingSource: "Couldn't find source file '%s'."
+                openError: "Couldn't open %s file '%s' for reading: \n%s"
+            }
             move: {
                 inUseTryingRename: "Target file '%s' already exists and appears to be in use. Trying to rename..."
                 overwritingFile: "File '%s' already exists, overwriting..."
@@ -93,6 +100,52 @@ class FileOps
             config.c.toRemove = {}
             config\write!
         return true
+
+    copy: ( source, target ) ->
+        -- source check
+        mode, sourceFullPath, _, _, fileName = FileOps.attributes source, "mode"
+        switch mode
+            when "directory"
+                return false, msgs.copy.dirCopyUnsupported
+            when nil
+                return false, msgs.copy.genericError\format source, target, sourceFullPath
+            when false
+                return false, msgs.copy.missingSource\format source
+
+        -- target check
+        checkTarget = (target) ->
+            mode, targetFullPath = FileOps.attributes target, "mode"
+            switch mode
+                when "file"
+                    return false, msgs.copy.targetExists\format target
+                when nil
+                    return false, msgs.copy.genericError\format source, target, targetFullPath
+                when "directory"
+                    target ..= "/#{fileName}"
+                    return checkTarget target
+            return true, targetFullPath
+
+        success, targetFullPath = checkTarget target
+        return false, targetFullPath unless success
+
+        input, msg = io.open sourceFullPath, "rb"
+        unless input
+            return false, msgs.copy.openError\format "source", sourceFullPath, msg
+
+        output, msg = io.open targetFullPath, "wb"
+        unless output
+            input\close!
+            return false, msgs.copy.openError\format "target", targetFullPath, msg
+
+        success, msg = output\write input\read "*a"
+        input\close!
+        output\close!
+
+        if success
+            return true
+        else
+            return false, msgs.copy.genericError\format sourceFullPath, targetFullPath, msg
+
 
     move: (source, target) ->
         mode, err = FileOps.attributes target, "mode"
