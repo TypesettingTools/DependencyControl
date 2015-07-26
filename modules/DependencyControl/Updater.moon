@@ -16,6 +16,7 @@ class UpdaterBase
             [4]: "No remaining feed available to %s %s '%s' from."
             [6]: "The %s of %s '%s' failed because no suitable package could be found %s."
             [5]: "Skipped %s of %s '%s': Another update initiated by %s is already running."
+            [7]: "Skipped %s of %s '%s': An internet connection is currently not available."
             [10]: "Skipped %s of %s '%s': the update task is already running."
             [15]: "Couldn't %s %s '%s' because its requirements could not be satisfied:"
             [30]: "Couldn't %s %s '%s': failed to create temporary download directory %s"
@@ -177,6 +178,9 @@ class UpdateTask extends UpdaterBase
                 return 3
 
             return logUpdateError -4
+
+        -- check internet connection
+        return logUpdateError -7 unless dlm\isInternetConnected!
 
         -- get a lock on the updater
         success, otherHost = @updater\getLock waitLock
