@@ -506,17 +506,17 @@ class DependencyControl
 
 rec = DependencyControl{
     name: "DependencyControl",
-    version: "0.5.1",
+    version: "0.5.2",
     description: "Provides script management and auto-updating for Aegisub macros and modules.",
     author: "line0",
     url: "http://github.com/TypesettingCartel/DependencyControl",
     moduleName: "l0.DependencyControl",
     feed: "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/master/DependencyControl.json",
     {
-        {"DM.DownloadManager", version: "0.2.1"},
-        {"BM.BadMutex", version: "0.1.2"},
-        {"PT.PreciseTimer", version: "0.1.4"},
-        {"requireffi.requireffi", version: "0.1.0"},
+        {"DM.DownloadManager", version: "0.3.1", feed: "https://raw.githubusercontent.com/torque/ffi-experiments/master/DependencyControl.json"},
+        {"BM.BadMutex", version: "0.1.3", feed: "https://raw.githubusercontent.com/torque/ffi-experiments/master/DependencyControl.json"},
+        {"PT.PreciseTimer", version: "0.1.5", feed: "https://raw.githubusercontent.com/torque/ffi-experiments/master/DependencyControl.json"},
+        {"requireffi.requireffi", version: "0.1.1", feed: "https://raw.githubusercontent.com/torque/ffi-experiments/master/DependencyControl.json"},
     }
 }
 DependencyControl.__class.version = rec
