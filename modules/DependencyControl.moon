@@ -86,7 +86,7 @@ class DependencyControl
 
         {@requiredModules, moduleName:@moduleName, configFile:configFile, virtual:@virtual, :name,
          description:@description, url:@url, feed:@feed, unmanaged:@unmanaged, :namespace,
-         author:@author, :version, configFile:@configFile, initFunc:@initFunc,
+         author:@author, :version, configFile:@configFile,
          :readGlobalScriptVars, :saveRecordToConfig} = args
 
         -- also support name key (as used in configuration) for required modules
@@ -338,7 +338,8 @@ class DependencyControl
             ._ref, LOADED_MODULES[moduleName] = res, res
 
             -- run initialization function if one was specified
-            res[mdl.initFunc] @@ if mdl.initFunc
+            if "table" == type(res) and "function" == type res.__depCtrlInit
+                res.__depCtrlInit @@
 
         return mdl._ref  -- having this in the with block breaks moonscript
 
@@ -512,10 +513,10 @@ rec = DependencyControl{
     moduleName: "l0.DependencyControl",
     feed: "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/master/DependencyControl.json",
     {
-        {"DM.DownloadManager", version: "0.2.1", initFunc: "attachDepctrl"},
-        {"BM.BadMutex", version: "0.1.2", initFunc: "attachDepctrl"},
-        {"PT.PreciseTimer", version: "0.1.4", initFunc: "attachDepctrl"},
-        {"requireffi.requireffi", version: "0.1.0", initFunc: "attachDepctrl"},
+        {"DM.DownloadManager", version: "0.2.1"},
+        {"BM.BadMutex", version: "0.1.2"},
+        {"PT.PreciseTimer", version: "0.1.4"},
+        {"requireffi.requireffi", version: "0.1.0"},
     }
 }
 DependencyControl.__class.version = rec
