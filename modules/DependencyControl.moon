@@ -49,6 +49,7 @@ class DependencyControl
         }
         writeConfig: {
             error: "An error occured while writing the #{@@__name} config file: %s"
+            writingLocal: "Writing updated %s data to config file..."
         }
     }
 
@@ -231,6 +232,7 @@ class DependencyControl
             if writeGlobal
                 success, errMsg = @@config\write false
             if writeLocal and (success or not writeGlobal)
+                @@logger\trace msgs.writeConfig.writingLocal, @moduleName and "module" or "macro"
                 @config\import @, depConf.scriptFields, false, true
                 success, errMsg = @config\write false
 
