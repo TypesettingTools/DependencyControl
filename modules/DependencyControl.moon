@@ -7,6 +7,7 @@ UpdateFeed = require "l0.DependencyControl.UpdateFeed"
 ConfigHandler = require "l0.DependencyControl.ConfigHandler"
 fileOps = require "l0.DependencyControl.FileOps"
 Updater = require "l0.DependencyControl.Updater"
+UnitTestSuite = require "l0.DependencyControl.UnitTestSuite"
 DownloadManager = require "DM.DownloadManager"
 PreciseTimer = require "PT.PreciseTimer"
 
@@ -75,6 +76,7 @@ class DependencyControl
     @UpdateFeed = UpdateFeed
     @Logger = Logger
     @Updater = Updater
+    @UnitTestSuite = UnitTestSuite
     @FileOps = fileOps
 
     automationDir: {macros:  aegisub.decode_path("?user/automation/autoload"),
@@ -443,6 +445,15 @@ class DependencyControl
     register: (selfRef) =>
         -- replace dummy refs with real refs to own module
         @ref.__index, @ref, LOADED_MODULES[@moduleName] = selfRef, selfRef, selfRef
+
+        -- load external tests
+        haveTests, tests = pcall require, @namespace .. ".Tests"
+
+        if haveTests
+            @tests, tests.name = tests, @name
+            @tests\import selfRef, @requireModules!
+            @tests\registerMacro!
+
         return selfRef
 
     registerMacro: (name=@name, description=@description, process, validate, isActive, useSubmenu) =>
