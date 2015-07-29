@@ -331,7 +331,7 @@ class DependencyControl
             elseif ._ref = LOADED_MODULES[moduleName]
                 return ._ref
 
-            loaded, res = pcall require, moduleName
+            loaded, res = xpcall require, debug.traceback, moduleName
             unless loaded
                 LOADED_MODULES[moduleName] = nil
                 res or= "unknown error"
