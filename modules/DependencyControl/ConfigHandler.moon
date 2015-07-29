@@ -114,34 +114,48 @@ Reload your automation scripts to generate a new configuration file.]]
         @file = nil
         return true
 
-    readFile: (file = @file) =>
+    readFile: (file = @file, useLock = true, waitLockTime) =>
+        if useLock
+            time, err = @getLock waitLockTime
+            unless time
+                -- handle\close!
+                return false, errors.failedLock\format "reading", err
+
         mode, file = fileOps.attributes file, "mode"
         if mode == nil
+            @releaseLock! if useLock
             return false, file
         elseif not mode
+            @releaseLock! if useLock
+            @logger\trace traceMsgs.fileNotFound, @file
             return nil
 
         handle, err = io.open file, "r"
         unless handle
+            @releaseLock! if useLock
             return false, err
 
         data = handle\read "*a"
         success, result = pcall json.decode, data
         unless success
+            handle\close!
             -- JSON parse error usually points to a corrupted config file
             -- Rename the broken file to allow generating a new one
             -- so the user can continue his work
-            handle\close!
             @logger\trace errors.jsonDecode, result
             backup = @file .. ".corrupted"
             fileOps.copy @file, backup
             fileOps.remove @file, false, true
+
+            @releaseLock! if useLock
             return false, errors.configCorrupted\format backup
+
+        handle\close!
+        @releaseLock! if useLock
 
         if "table" != type result
             return false, errors.jsonRoot\format type result
 
-        handle\close!
         return result
 
     load: =>
@@ -190,7 +204,7 @@ Reload your automation scripts to generate a new configuration file.]]
         @userConfig = nil
         return @write concertWrite, waitLockTime
 
-    write: (concertWrite, waitLockTime = 5000) =>
+    write: (concertWrite, waitLockTime) =>
         return false, errors.noFile unless @file
 
         -- get a lock to avoid concurrent config file access
@@ -199,8 +213,8 @@ Reload your automation scripts to generate a new configuration file.]]
             return false, errors.failedLockWrite\format err
 
         -- read the config file
-        config, err = @readFile!
-        if err
+        config, err = @readFile @file, false
+        if config == false
             @releaseLock!
             return false, errors.writeFailedRead\format err
         config or= {}
@@ -235,7 +249,7 @@ Reload your automation scripts to generate a new configuration file.]]
 
         return true
 
-    getLock: (waitTimeout, checkInterval = 100) =>
+    getLock: (waitTimeout = 5000, checkInterval = 50) =>
         return 0 if @hasLock
         success = mutex.tryLock!
         if success
