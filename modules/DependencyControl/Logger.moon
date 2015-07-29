@@ -57,7 +57,8 @@ class Logger
             line = table.concat({linePre, @usePrefixFile and prefix or "", msg, lineFeed})
             @handle\write(line)\flush!
 
-        assert level > 1,"#{indentStr}Error: #{prefixWin}#{msg}"
+        -- for some reason the stack trace gets swallowed when not doing the replace
+        assert level > 1,"#{indentStr}Error: #{prefixWin}#{msg\gsub ':', ': '}"
         if show
             aegisub.log level, table.concat({indentStr, prefixWin, msg, lineFeed})
 
