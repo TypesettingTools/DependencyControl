@@ -8,6 +8,7 @@ ConfigHandler = require "l0.DependencyControl.ConfigHandler"
 fileOps = require "l0.DependencyControl.FileOps"
 Updater = require "l0.DependencyControl.Updater"
 DownloadManager = require "DM.DownloadManager"
+PreciseTimer = require "PT.PreciseTimer"
 
 
 class DependencyControl
@@ -43,6 +44,7 @@ class DependencyControl
                 badNamespace: "Namespace '%s' failed validation. Namespace rules: must contain 1+ single dots, but not start or end with a dot; all other characters must be in [A-Za-z0-9-_]."
                 badModuleTable: "Invalid required module table #%d (%s)."
             }
+            timer: "DependencyControl initialization took %f seconds so far..."
         }
         uninstall: {
             noVirtualOrUnmanaged: "Can't uninstall %s %s '%s'. (Only installed scripts managed by #{@@_name} can be uninstalled)."
@@ -66,6 +68,7 @@ class DependencyControl
 
     dlm = DownloadManager!
     platform, configDirExists, logsHaveBeenTrimmed, scheduledRemovalHasRun = "#{ffi.os}-#{ffi.arch}"
+    cumInitTime = 0
     fileOps.mkdir depConf.file, true
 
     @ConfigHandler = ConfigHandler
@@ -78,6 +81,7 @@ class DependencyControl
                     modules: aegisub.decode_path("?user/automation/include")}
 
     new: (args) =>
+        timer = PreciseTimer!
         -- defaults
         args[k] = v for k, v in pairs {
             readGlobalScriptVars: true
@@ -167,6 +171,9 @@ class DependencyControl
         configDirExists or= fileOps.mkdir aegisub.decode_path @configDir
         logsHaveBeenTrimmed or= @@logger\trimFiles!
         scheduledRemovalHasRun or= fileOps.runScheduledRemoval @configDir
+
+        cumInitTime += timer\timeElapsed!
+        @@logger\trace msgs.new.timer, cumInitTime
 
     createDummyRef: =>
         return nil unless @moduleName
