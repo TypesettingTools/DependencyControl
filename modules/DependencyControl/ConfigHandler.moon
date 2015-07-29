@@ -229,16 +229,17 @@ Reload your automation scripts to generate a new configuration file.]]
                 @releaseLock!
                 return false, err
 
+        -- create JSON
+        success, res = pcall json.encode, config
+        unless success
+            @releaseLock!
+            return false, res
+
         -- write the whole config file in one go
         handle, err = io.open(@file, "w")
         unless handle
             @releaseLock!
             return false, err
-
-        success, res = pcall json.encode, config
-        unless success
-            @releaseLock!
-            return false, res
 
 
         handle\setvbuf "full"
