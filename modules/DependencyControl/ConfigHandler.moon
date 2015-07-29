@@ -16,7 +16,7 @@ Reload your automation scripts to generate a new configuration file.]]
         badKey: "Can't %s section because the key #%d (%s) leads to a %s."
         jsonRoot: "JSON root element must be an array or a hashtable, got a %s."
         noFile: "No config file defined."
-        failedLockWrite: "Failed to lock config file for writing: %s"
+        failedLock: "Failed to lock config file for %s: %s"
         waitLockFailed: "Error waiting for existing lock to be released: %s"
         forceReleaseFailed: "Failed to force-release existing lock after timeout had passed (%s)"
         noLock: "#{@@__name} doesn't have a lock"
@@ -24,9 +24,14 @@ Reload your automation scripts to generate a new configuration file.]]
         lockTimeout: "Timeout reached while waiting for write lock."
     }
     traceMsgs = {
-        waitingLock: "Waiting %d ms before trying to get a lock..."
-        waitingLock: "Waiting for config file lock to be released (%d seconds passed)... "
-        waitingLockFinished: "Lock was released after %d seconds."
+        -- waitingLockPre: "Waiting %d ms before trying to get a lock..."
+        waitingLock: "Waiting for config file lock to be released (%d ms passed)... "
+        waitingLockFinished: "Lock was released after %d ms."
+        mergeSectionStart: "Merging own section into configuration. Own Section: %s\nConfiguration: %s"
+        mergeSectionResult: "Merge completed with result: %s"
+        fileNotFound: "Couldn't find config file '%s'."
+        fileCreate: "Config file '%s' doesn't exist, yet. Will write a fresh copy containing the current configuration section."
+        writing: "Writing config file '%s'..."
         -- waitingLockTimeout: "Timeout was reached after %d seconds, force-releasing lock..."
     }
 
@@ -179,6 +184,9 @@ Reload your automation scripts to generate a new configuration file.]]
         return sectionExists
 
     mergeSection: (config) =>
+        --@logger\trace traceMsgs.mergeSectionStart, @logger\dumpToString(@section),
+        --                                           @logger\dumpToString config
+
         section, sectionExists = config, true
         -- create missing parent sections
         for i=1, #@section
@@ -198,6 +206,8 @@ Reload your automation scripts to generate a new configuration file.]]
             section[k] = v for k,v in pairs @userConfig
         elseif sectionExists
             section[@section[#@section]] = nil
+
+        -- @logger\trace traceMsgs.mergeSectionResult, @logger\dumpToString config
         return config
 
     delete: (concertWrite, waitLockTime) =>
@@ -210,13 +220,14 @@ Reload your automation scripts to generate a new configuration file.]]
         -- get a lock to avoid concurrent config file access
         time, err = @getLock waitLockTime
         unless time
-            return false, errors.failedLockWrite\format err
+            return false, errors.failedLock\format "writing", err
 
         -- read the config file
         config, err = @readFile @file, false
         if config == false
             @releaseLock!
             return false, errors.writeFailedRead\format err
+        @logger\trace traceMsgs.fileCreate, @file unless config
         config or= {}
 
         -- merge in our section
@@ -241,8 +252,8 @@ Reload your automation scripts to generate a new configuration file.]]
             @releaseLock!
             return false, err
 
-
-        handle\setvbuf "full"
+        @logger\trace traceMsgs.writing, @file
+        handle\setvbuf "full", 10e6
         handle\write res
         handle\flush!
         handle\close!
@@ -263,9 +274,11 @@ Reload your automation scripts to generate a new configuration file.]]
             success = mutex.tryLock!
             timeout -= checkInterval
             timePassed = waitTimeout - timeout
-            @logger\trace traceMsgs.waitingLock, timePassed/1000
-        if timeout > 0
-            @logger\trace traceMsgs.waitingLockFinished, timePassed/1000
+            if timePassed % (checkInterval*5) == 0
+                @logger\trace traceMsgs.waitingLock, timePassed
+
+        if success
+            @logger\trace traceMsgs.waitingLockFinished, timePassed
             @hasLock = true
             return timePassed
         else
