@@ -36,7 +36,7 @@ class DependencyControl
 %s\nPlease update the modules in question manually and reload your automation scripts.]]
         }
         new: {
-            badRecordError: "Error: Bad {#@@__name} record (%s)."
+             badRecordError: "Error: Bad #{@@__name} record (%s)."
             badRecord: {
                 noUnmanagedMacros: "Creating unmanaged version records for macros is not allowed"
                 missingNamespace: "No namespace defined"
