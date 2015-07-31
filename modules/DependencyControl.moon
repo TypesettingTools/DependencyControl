@@ -345,7 +345,7 @@ class DependencyControl
             ._ref, LOADED_MODULES[moduleName] = res, res
 
             -- run initialization function if one was specified
-            if "table" == type(res) and "function" == type res.__depCtrlInit
+            if "table" == type(res) and "function" == type res.__depCtrlInit and (type(res.version) != "table" or res.version.__name != @@__name)
                 res.__depCtrlInit @@
 
         return mdl._ref  -- having this in the with block breaks moonscript
