@@ -63,19 +63,19 @@
       "fileBaseUrl": "@{fileBaseUrl}v@{version}-@{channel}/modules/@{scriptName}",
       "channels": {
         "alpha": {
-          "version": "0.5.2",
-          "released": "2015-07-27",
+          "version": "0.5.3",
+          "released": "2015-08-01",
           "default": true,
           "files": [
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "B05F938D4569FB8D2361DF266C3482DC24DC6024"
+              "sha1": "C8550E4E5AED94DD9604949126498ABCF3DAAD16"
             },
             {
               "name": "/ConfigHandler.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "AC080CE7250E7529B1A8209A1336F01DFCD91D1D"
+              "sha1": "61478FA441574001982C50D619C231B0CEB23121"
             },
             {
               "name": "/FileOps.moon",
@@ -85,7 +85,7 @@
             {
               "name": "/Logger.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "E74238386E3C77549256667C951619FC457B5E89"
+              "sha1": "1E08BB34295CDC8D1F77E2811BF464763ACBBE69"
             },
             {
               "name": "/UpdateFeed.moon",
@@ -95,7 +95,7 @@
             {
               "name": "/Updater.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "BF4B380D2F2AAB58F7A3CEFF8ECA7DF994F0F11A"
+              "sha1": "476B7AC47F42E5B21C4BBA1ECB95605CADC8AD4F"
             }
           ],
           "requiredModules": [
@@ -123,6 +123,12 @@
         }
       },
       "changelog": {
+        "0.5.3": [
+          "ConfigHandler: A host of longstanding issues related to config file corruption and concurrent access to config files from multiple DepCtrl-hosting automation scripts have been fixed.",
+          "Error Reports of required modules loaded by DependencyControl now actually provide semi-useful stack traces.",
+          "A bug was fixed that could cause DepCtrl to rerun the __depCtrlInit method on modules even though a prior DependencyControl record had already been initialized.",
+          "The DependencyControl self-update now runs through properly without throwing an error at the end of the process."
+        ],
         "0.5.2": [
           "Updates and installations no longer fail when no suitable version of a module marked as an optional dependency can be found.",
           "ConfigHandlers now recover gracefully when a corrupted config is encountered.",
