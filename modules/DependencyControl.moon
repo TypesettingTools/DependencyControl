@@ -25,7 +25,7 @@ class DependencyControl
         }
         getVersionNumber: {
             badString: "Can't parse version string '%s'. Make sure it conforms to semantic versioning standards."
-            badType: "Argument had the wrong type: expected string or number, got '%s'"
+            badType: "Argument had the wrong type: expected a string or number, got a %s. Content %s"
             overflow: "Error: %s version must be an integer < 255, got %s."
         }
         loadModules: {
@@ -262,7 +262,7 @@ class DependencyControl
                     version += bit.lshift value, part[2]
                 return version
 
-            else return false, msgs.getVersionNumber.badType\format type value
+            else return false, msgs.getVersionNumber.badType\format type(value), @@logger\dumpToString value
 
     getVersionString: (version = @version, precision = "patch") =>
         if type(version) == "string"
