@@ -344,7 +344,7 @@ class UpdateTask extends UpdaterBase
                 else return finish -55
 
             -- get a fresh version record
-            if type(ref.version) == "table" and ref.version.__class == DependencyControl
+            if type(ref.version) == "table" and ref.version.__class.__name == DependencyControl.__name
                 @record = ref.version
             else
                 return finish -57 unless ref.version
