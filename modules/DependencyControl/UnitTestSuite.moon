@@ -73,11 +73,13 @@ class UnitTest
 
     logResult: (errMsg = @errMsg) =>
         if @success
-            @logger\log @@msgs.run.ok
+            @logger\logEx nil, @@msgs.run.ok, nil, nil, 0
         else
             @errMsg = errMsg
-            @logger\log @@msgs.run.failed
+            @logger\logEx nil, @@msgs.run.failed, nil, nil, 0
+            @logger.indent += 1
             @logger\log @@msgs.run.reason, @errMsg
+            @logger.indent -= 1
 
     format: (tmpl, ...) =>
         inArgs = table.pack ...
