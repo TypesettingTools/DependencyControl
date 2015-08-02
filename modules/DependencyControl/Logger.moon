@@ -42,13 +42,13 @@ class Logger
         @fileName = @fileTemplate\format aegisub.decode_path(@logDir), os.date("%Y-%m-%d-%H-%M-%S"),
                                           math.random(0, 16^4-1), @fileBaseName, @fileSubName
 
-    logEx: (level = @defaultLevel, msg = "", insertLineFeed = true, prefix = @prefix,  ...) =>
+    logEx: (level = @defaultLevel, msg = "", insertLineFeed = true, prefix = @prefix, indent = @indent, ...) =>
         return false if msg == ""
 
         prefixWin = @usePrefixWindow and prefix or ""
         lineFeed = insertLineFeed and "\n" or ""
-        indentStr = @indent==0 and "" or @indentStr\rep(@indent) .. " "
-        msg = @lastHadLineFeed and @format(msg, @indent, ...) or msg\format ...
+        indentStr = indent==0 and "" or @indentStr\rep(indent) .. " "
+        msg = @lastHadLineFeed and @format(msg, indent, ...) or msg\format ...
 
         show = aegisub.log and @toWindow
         if @toFile and level <= @maxToFileLevel
@@ -80,8 +80,8 @@ class Logger
         return false unless level or msg
 
         if "number" != type level
-            return @logEx @defaultLevel, level, true, nil, msg, ...
-        else return @logEx level, msg, true, nil, ...
+            return @logEx @defaultLevel, level, true, nil, nil, msg, ...
+        else return @logEx level, msg, true, nil, nil, ...
 
     fatal: (...) => @log 0, ...
     error: (...) => @log 1, ...
@@ -103,7 +103,7 @@ class Logger
             unless @progressStep
                 @progressStep = 0
                 msg ..= " " if #msg>0
-                @logEx nil, "#{msg}[", false, nil, ...
+                @logEx nil, "#{msg}[", false, nil, nil, ...
             step = math.floor(progress * 0.01 + 0.5) / 0.1
             @logEx nil, "■"\rep(step-@progressStep), false, ""
             @progressStep = step

@@ -69,7 +69,7 @@ class UnitTest
         return @success, @errMsg
 
     logStart: =>
-        @logger\logEx nil, @@msgs.run.test, false, nil, @name
+        @logger\logEx nil, @@msgs.run.test, false, nil, nil, @name
 
     logResult: (errMsg = @errMsg) =>
         if @success
