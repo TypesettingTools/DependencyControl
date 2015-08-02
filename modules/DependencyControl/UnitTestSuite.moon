@@ -60,11 +60,10 @@ class UnitTest
         @logger\assert type(@name) == "string", @@msgs.new.badTestName, type @name
 
     run: (...) =>
+        @assertFailed = false
         @logStart!
         @success, res = xpcall @f, debug.traceback, @, ...
         @logResult res
-        unless success
-            @logger\warn stackTrace
 
         return @success, @errMsg
 
@@ -75,6 +74,10 @@ class UnitTest
         if @success
             @logger\logEx nil, @@msgs.run.ok, nil, nil, 0
         else
+            if @assertFailed
+                -- scrub useless stack trace from asserts provided by this module
+                errMsg = errMsg\gsub "%[%w+ \".-\"%]:%d+:", ""
+                errMsg = errMsg\gsub "stack traceback:.*", ""
             @errMsg = errMsg
             @logger\logEx nil, @@msgs.run.failed, nil, nil, 0
             @logger.indent += 1
@@ -202,14 +205,21 @@ class UnitTest
 
     -- type asserts
 
+    assert: (cond, ...) =>
+        args = table.pack ...
+        msg = table.remove args, 1
+        unless cond
+            @assertFailed = true
+            @logger\logEx 1, msg, nil, nil, 0, unpack args
+
     assertType: (val, expected) =>
         @checkArgTypes val: {val, "_any"}, expected: {expected, "string"}
         actual = type val
-        @logger\assert actual == expected, @@msgs.assert.type, expected, actual
+        @assert actual == expected, @@msgs.assert.type, expected, actual
 
     assertSameType: (actual, expected) =>
         actualType, expectedType = type(actual), type expected
-        @logger\assert actualType == expectedType, @@msgs.assert.sameType, expectedType, actualType
+        @assert actualType == expectedType, @@msgs.assert.sameType, expectedType, actualType
 
     assertBool: (val) => @assertType val, "boolean"
     assertBoolean: (val) => @assertType val, "boolean"
@@ -231,104 +241,104 @@ class UnitTest
     -- boolean asserts
 
     assertTrue: (val) =>
-        @logger\assert val == true, @@msgs.assert.true, @format "type", val
+        @assert val == true, @@msgs.assert.true, @format "type", val
 
     assertTruthy: (val) =>
-        @logger\assert val, @@msgs.assert.truthy, @format "type", val
+        @assert val, @@msgs.assert.truthy, @format "type", val
 
     assertFalse: (val) =>
-        @logger\assert val == false, @@msgs.assert.false, @format "type", val
+        @assert val == false, @@msgs.assert.false, @format "type", val
 
     assertFalsy: (val) =>
-        @logger\assert not val, @@msgs.assert.falsy, @format "type", val
+        @assert not val, @@msgs.assert.falsy, @format "type", val
 
     assertNil: (val) =>
-        @logger\assert val == nil, @@msgs.assert.nil, @format "type", val
+        @assert val == nil, @@msgs.assert.nil, @format "type", val
 
     assertNotNil: (val) =>
-        @logger\assert val != nil, @@msgs.assert.notNil, @format "type", val
+        @assert val != nil, @@msgs.assert.notNil, @format "type", val
 
 
     -- numerical asserts
 
     assertInRange: (actual, min = -math.huge, max = math.huge) =>
         @checkArgTypes actual: {actual, "number"}, min: {min, "number"}, max: {max, "number"}
-        @logger\assert actual >= min, @@msgs.assert.inRange, min, max, actual, "<", min
-        @logger\assert actual <= max, @@msgs.assert.inRange, min, max, actual, ">", max
+        @assert actual >= min, @@msgs.assert.inRange, min, max, actual, "<", min
+        @assert actual <= max, @@msgs.assert.inRange, min, max, actual, ">", max
 
     assertLessThan: (actual, limit) =>
         @checkArgTypes actual: {actual, "number"}, limit: {limit, "number"}
-        @logger\assert actual < max, @@msgs.assert.compare, "<", limit, actual
+        @assert actual < max, @@msgs.assert.compare, "<", limit, actual
 
     assertLessThanOrEquals: (actual, limit) =>
         @checkArgTypes actual: {actual, "number"}, limit: {limit, "number"}
-        @logger\assert actual <= max, @@msgs.assert.compare, "<=", limit, actual
+        @assert actual <= max, @@msgs.assert.compare, "<=", limit, actual
 
     assertGreaterThan: (actual, limit) =>
         @checkArgTypes actual: {actual, "number"}, limit: {limit, "number"}
-        @logger\assert actual > max, @@msgs.assert.compare, ">", limit, actual
+        @assert actual > max, @@msgs.assert.compare, ">", limit, actual
 
     assertGreaterThanOrEquals: (actual, limit) =>
         @checkArgTypes actual: {actual, "number"}, limit: {limit, "number"}
-        @logger\assert actual >= max, @@msgs.assert.compare, ">=", limit, actual
+        @assert actual >= max, @@msgs.assert.compare, ">=", limit, actual
 
     assertAlmostEquals: (actual, expected, margin = 1e-8) =>
         @checkArgTypes actual: {actual, "number"}, min: {expected, "number"}, max: {margin, "number"}
 
         margin = math.abs margin
-        @logger\assert math.abs(actual-expected) <= margin, @@msgs.assert.almostEquals,
+        @assert math.abs(actual-expected) <= margin, @@msgs.assert.almostEquals,
                                                             expected, margin, actual
 
     assertNotAlmostEquals: (actual, value, margin = 1e-8) =>
         @checkArgTypes actual: {actual, "number"}, value: {value, "number"}, max: {margin, "number"}
 
         margin = math.abs margin
-        @logger\assert math.abs(actual-expected) > margin, @@msgs.assert.almostEquals,
+        @assert math.abs(actual-expected) > margin, @@msgs.assert.almostEquals,
                                                            expected, margin, actual
 
     assertZero: (actual) =>
         @checkArgTypes actual: {actual, "number"}
-        @logger\assert actual == 0, @@msgs.assert.zero, actual
+        @assert actual == 0, @@msgs.assert.zero, actual
 
     assertNotZero: (actual) =>
         @checkArgTypes actual: {actual, "number"}
-        @logger\assert actual != 0, @@msgs.assert.notZero
+        @assert actual != 0, @@msgs.assert.notZero
 
     assertInteger: (actual) =>
         @checkArgTypes actual: {actual, "number"}
-        @logger\assert math.floor(actual) == actual, @@msgs.assert.integer, actual
+        @assert math.floor(actual) == actual, @@msgs.assert.integer, actual
 
     assertPositive: (actual, includeZero = false) =>
         @checkArgTypes actual: {actual, "number"}
         res = includeZero and actual >= 0 or actual > 0
         @checkArgTypes actual: {actual, "number"}, includeZero: {includeZero, "boolean"}
-        @logger\assert res, @@msgs.assert.positiveNegative, "positive",
+        @assert res, @@msgs.assert.positiveNegative, "positive",
                        includeZero and "included" or "excluded"
 
     assertNegative: (actual, includeZero = false) =>
         @checkArgTypes actual: {actual, "number"}
         res = includeZero and actual <= 0 or actual < 0
         @checkArgTypes actual: {actual, "number"}, includeZero: {includeZero, "boolean"}
-        @logger\assert res, @@msgs.assert.positiveNegative, "positive",
+        @assert res, @@msgs.assert.positiveNegative, "positive",
                        includeZero and "included" or "excluded"
 
 
     -- generic asserts
 
     assertEquals: (actual, expected) =>
-        @logger\assert self.equals(actual, expected), @@msgs.assert.equals, type(actual),
+        @assert self.equals(actual, expected), @@msgs.assert.equals, type(actual),
                        @logger\dumpToString(actual), type(expected), @logger\dumpToString expected
 
     assertNotEquals: (actual, expected) =>
-        @logger\assert not self.equals(actual, expected), @@msgs.assert.notEquals,
+        @assert not self.equals(actual, expected), @@msgs.assert.notEquals,
                        type(actual), @logger\dumpToString expected
 
     assertIs: (actual, expected) =>
-        @logger\assert actual == expected, @@msgs.assert.is, @format("type", expected),
+        @assert actual == expected, @@msgs.assert.is, @format("type", expected),
                                                              @format "type", actual
 
     assertIsNot: (actual, expected) =>
-        @logger\assert actual != expected, @@msgs.assert.isNot, @format "type", expected
+        @assert actual != expected, @@msgs.assert.isNot, @format "type", expected
 
 
     -- table asserts
@@ -338,7 +348,7 @@ class UnitTest
                          onlyNumKeys: {onlyNumKeys, "boolean"}
                        }
 
-        @logger\assert self.itemsEqual actual, expected, onlyNumKeys, "equal",
+        @assert self.itemsEqual actual, expected, onlyNumKeys, "equal",
                        msgs.assert[onlyNumKeys and "itemsEqualNumericKeys" or "itemsEqualAllKeys"],
                        @logger\dumpToString(actual), @logger\dumpToString expected
 
@@ -348,7 +358,7 @@ class UnitTest
                          onlyNumKeys: {onlyNumKeys, "boolean"}
                        }
 
-        @logger\assert self.itemsEqual actual, expected, onlyNumKeys, "identical",
+        @assert self.itemsEqual actual, expected, onlyNumKeys, "identical",
                        msgs.assert[onlyNumKeys and "itemsEqualNumericKeys" or "itemsEqualAllKeys"],
                        @logger\dumpToString(actual), @logger\dumpToString expected
 
@@ -360,7 +370,7 @@ class UnitTest
             if type(v) == "number" and math.floor(v) == v
                 realCnt += 1
 
-        @logger\assert realCnt == contCnt, msgs.assert.continuous, contCnt+1, realCnt
+        @assert realCnt == contCnt, msgs.assert.continuous, contCnt+1, realCnt
 
     -- string asserts
 
@@ -370,7 +380,7 @@ class UnitTest
                        }
 
         match = useRegex and re.match(str, pattern, ...) or str\match pattern, ...
-        @logger\assert msgs.assert.matches, str, useRegex and "regex" or "Lua", pattern
+        @assert msgs.assert.matches, str, useRegex and "regex" or "Lua", pattern
 
     assertContains: (str, needle, caseSensitive = true, init = 1) =>
         @checkArgTypes { str: {str, "string"}, needle: {needle, "string"},
@@ -380,7 +390,7 @@ class UnitTest
         _str, _needle = if caseSensitive
             str\lower!, needle\lower!
         else str, needle
-        @logger\assert str\find(needle, init, true), str, needle,
+        @assert str\find(needle, init, true), str, needle,
                        caseSensitive and "sensitive" or "insensitive"
 
     -- function asserts
@@ -390,7 +400,7 @@ class UnitTest
         res = table.pack pcall func, ...
         retCnt, success = res.n, table.remove res, 1
         res.n = nil
-        @logger\assert success == false, msgs.assert.error, retCnt, @logger\dumpToString res
+        @assert success == false, msgs.assert.error, retCnt, @logger\dumpToString res
         return res[1]
 
     assertErrorMsgMatches: (func, params = {}, pattern, useRegex = false, ...) =>
@@ -400,7 +410,7 @@ class UnitTest
         msg = @assertError func, unpack params
 
         match = useRegex and re.match(msg, pattern, ...) or msg\match pattern, ...
-        @logger\assert msgs.assert.errorMsgMatches, msg, useRegex and "regex" or "Lua", pattern
+        @assert msgs.assert.errorMsgMatches, msg, useRegex and "regex" or "Lua", pattern
 
 
 
