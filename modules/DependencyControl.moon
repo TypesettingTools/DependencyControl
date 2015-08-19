@@ -452,7 +452,7 @@ class DependencyControl
         if haveTests
             @tests, tests.name = tests, @name
             @tests\import selfRef, @requireModules!
-            @tests\registerMacro!
+            @tests\registerMacros!
 
         return selfRef
 

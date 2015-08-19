@@ -450,6 +450,7 @@ class UnitTestClass
         @logger = @testSuite.logger
         @setup = UnitTestSetup "setup", args._setup, @
         @teardown = UnitTestTeardown "teardown", args._teardown, @
+        @description = args._description
         @order = args._order
         @tests = [UnitTest(name, f, @) for name, f in pairs args when "_" != name\sub 1,1]
 
@@ -501,7 +502,7 @@ class UnitTestSuite
             success: "All tests completed successfully."
             classNotFound: "Couldn't find requested test class '%s'."
         }
-        registerMacro: {
+        registerMacros: {
             allDesc: "Runs the whole test suite."
         }
         new: {
@@ -533,9 +534,13 @@ class UnitTestSuite
         @addClasses classes
         @importFunc = nil
 
-    registerMacro: =>
-        aegisub.register_macro table.concat({"DependencyControl", "Run Tests", @name or @namespace, "[All]"}, "/"),
-                               msgs.registerMacro.allDesc, -> @run!
+    registerMacros: =>
+        menuItem = {"DependencyControl", "Run Tests", @name or @namespace, "[All]"}
+        aegisub.register_macro table.concat(menuItem, "/"), msgs.registerMacros.allDesc, -> @run!
+        for cls in *@classes
+            menuItem[4] = cls.name
+            aegisub.register_macro table.concat(menuItem, "/"), cls.description, -> cls\run!
+
 
     run: (abortOnFail, order = @order) =>
         classes = @classes
