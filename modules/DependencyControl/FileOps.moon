@@ -30,7 +30,7 @@ class FileOps
                 renamedDeletionFailed: "The existing file was successfully renamed to '%s', but couldn't be deleted (%s).\n%s"
                 overwritingFile: "File '%s' already exists, overwriting..."
                 createdDir: "Created target directory '%s'."
-                existsNoFile: "Couldn't move file '%s' to '%s' because a %s of the same name is already present."
+                exists: "Couldn't move file '%s' to '%s' because a %s of the same name is already present."
                 genericError: "An error occured while moving file '%s' to '%s':\n%s"
                 createDirError: "Moving '%s' to '%s' failed (%s)."
                 cantRemove: "Couldn't overwrite file '%s': %s. Attempts at renaming the existing target file failed."
@@ -162,9 +162,11 @@ class FileOps
             return false, msgs.copy.genericError\format sourceFullPath, targetFullPath, msg
 
 
-    move: (source, target) ->
+    move: (source, target, overwrite) ->
         mode, err = FileOps.attributes target, "mode"
         if mode == "file"
+            unless overwrite
+                return false, msg.move.exists\format source, target, mode
             FileOps.logger\trace msgs.move.overwritingFile, target
             res, _, err = FileOps.remove target
             unless res
@@ -183,7 +185,7 @@ class FileOps
                     FileOps.logger\debug msgs.move.renamedDeletionFailed, junkName, err, msgs.generic.deletionRescheduled
 
         elseif mode -- a directory (or something else) of the same name as the target file is already present
-            return false, msgs.move.existsNoFile\format source, target, mode
+            return false, msgs.move.exists\format source, target, mode
         elseif mode == nil  -- if retrieving the attributes of a file fails, something is probably wrong
             return false, msgs.move.genericError\format source, target, err
 

@@ -317,7 +317,7 @@ class UpdateTask extends UpdaterBase
         moveErrors = {}
         @@logger.indent += 1
         for dl in *dlm.downloads
-            res, err = fileOps.move dl.outfile, dl.targetFile
+            res, err = fileOps.move dl.outfile, dl.targetFile, true
             -- don't immediately error out if moving of a single file failed
             -- try to move as many files as possible and let the user handle the rest
             if res
