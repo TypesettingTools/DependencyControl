@@ -165,10 +165,11 @@ class FileOps
             return false, msgs.move.genericError\format source, target, err
 
         else -- target file not found, check directory
-            dir, err = FileOps.mkdir target, true
-            unless dir
+            res, dir = FileOps.mkdir target, true
+            if res == nil
                 return false, msgs.move.createDirError\format source, target, err
-            FileOps.logger\trace msgs.move.createdDir, dir
+            elseif res
+                FileOps.logger\trace msgs.move.createdDir, dir
 
         -- at this point the target directory exists and the target file doesn't, move the file
         res, err = os.rename source, target
@@ -199,19 +200,20 @@ class FileOps
     mkdir: (path, isFile) ->
         path, dev, dir, file = FileOps.validateFullPath path
         unless path
-            return false, msgs.attributes.badPath\format dev
+            return nil, msgs.attributes.badPath\format dev
         dir = isFile and table.concat({dev,dir or file}) or path
 
         mode, err = lfs.attributes dir, "mode"
         if err
-            return false, msgs.attributes.genericError\format err
+            return nil, msgs.attributes.genericError\format err
         elseif not mode
             res, err = lfs.mkdir dir
             if err -- can't create directory (possibly a permission error)
-                return false, msgs.mkdir.createError\format err
+                return nil, msgs.mkdir.createError\format err
+            return true, dir
         elseif mode != "directory" -- a file of the same name as the target directory is already present
-            return false, msgs.mkdir.otherExists\format mode
-        return dir
+            return nil, msgs.mkdir.otherExists\format mode
+        return false, dir
 
     attributes: (path, key) ->
         fullPath, dev, dir, file = FileOps.validateFullPath path

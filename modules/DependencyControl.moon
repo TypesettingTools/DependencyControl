@@ -67,7 +67,7 @@ class DependencyControl
     }
 
     dlm = DownloadManager!
-    platform, configDirExists, logsHaveBeenTrimmed, scheduledRemovalHasRun = "#{ffi.os}-#{ffi.arch}"
+    platform, logsHaveBeenTrimmed, scheduledRemovalHasRun = "#{ffi.os}-#{ffi.arch}"
     cumInitTime = 0
     fileOps.mkdir depConf.file, true
 
@@ -168,7 +168,7 @@ class DependencyControl
         @configDir = @@config.c.configDir
         @writeConfig shouldWriteConfig and saveRecordToConfig, false, false
 
-        configDirExists or= fileOps.mkdir aegisub.decode_path @configDir
+        fileOps.mkdir aegisub.decode_path @configDir
         logsHaveBeenTrimmed or= @@logger\trimFiles!
         scheduledRemovalHasRun or= fileOps.runScheduledRemoval @configDir
 
