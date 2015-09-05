@@ -26,7 +26,8 @@ class FileOps
                 openError: "Couldn't open %s file '%s' for reading: \n%s"
             }
             move: {
-                inUseTryingRename: "Target file '%s' already exists and appears to be in use. Trying to rename..."
+                inUseTryingRename: "Target file '%s' already exists and appears to be in use. Trying to rename and delete existing file..."
+                renamedDeletionFailed: "The existing file was successfully renamed to '%s', but couldn't be deleted (%s).\n%s"
                 overwritingFile: "File '%s' already exists, overwriting..."
                 createdDir: "Created target directory '%s'."
                 existsNoFile: "Couldn't move file '%s' to '%s' because a %s of the same name is already present."
@@ -163,14 +164,22 @@ class FileOps
         mode, err = FileOps.attributes target, "mode"
         if mode == "file"
             FileOps.logger\trace msgs.move.overwritingFile, target
-            res, err = os.remove target
-            unless res -- can't remove old target file, probably in use or lack of permissions
+            res, _, err = FileOps.remove target
+            unless res
+                -- can't remove old target file, probably in use or lack of permissions
+                -- try to rename and then delete it
                 FileOps.logger\debug msgs.move.inUseTryingRename, target
                 junkName = "#{target}.depCtrlRemoved"
-                os.remove junkName
+                -- There might be an old removed file we couldn't delete before
+                FileOps.remove junkName
                 res = os.rename target, junkName
                 unless res
                     return false, msgs.move.cantRemove\format target, err
+                -- rename succeeded, now clean up after ourselves
+                res, _, err = FileOps.remove junkName, false, true
+                unless res
+                    FileOps.logger\debug msgs.move.renamedDeletionFailed, junkName, err, msgs.generic.deletionRescheduled
+
         elseif mode -- a directory (or something else) of the same name as the target file is already present
             return false, msgs.move.existsNoFile\format source, target, mode
         elseif mode == nil  -- if retrieving the attributes of a file fails, something is probably wrong
