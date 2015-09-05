@@ -16,7 +16,7 @@ msgs = {
     uninstall: {
         running: "Uninstalling %s '%s'..."
         success: "%s '%s' was removed sucessfully. Reload your automation scripts or restart Aegisub for the changes to take effect."
-        lockedFiles: "%s Some script files are still in use and will be deleted during the next restart/reload."
+        lockedFiles: "%s Some script files are still in use and will be deleted during the next restart/reload:\n%s"
         error: "Error: %s"
     }
     macroConfig: {
@@ -140,12 +140,19 @@ uninstall = ->
         return unless script
         scriptType = script.moduleName and "Module" or "Macro"
         logger\log msgs.uninstall.running, scriptType, script.name
-        success, lockedFiles = DepCtrl(script)\uninstall!
-        if success
+        success, details = DepCtrl(script)\uninstall!
+        if success == nil
+            fileList = table.concat ["#{path}: #{res[2]}" for path, res in pairs details when res[1] == nil], "\n"
+            logger\log msgs.uninstall.error, fileList
+        else
             msg = msgs.uninstall.success\format scriptType, script.name
-            logger\log lockedFiles and msgs.uninstall.lockedFiles\format(msg) or msg
+            logger\log if success
+                msg
+            else
+                fileList = table.concat ["#{path} (#{res[2]})" for path, res in pairs details when res[1] != true], "\n"
+                msgs.uninstall.lockedFiles\format msg, fileList
 
-        else logger\log msgs.uninstall.error, lockedFiles
+        return success
 
     config = getConfig!
 

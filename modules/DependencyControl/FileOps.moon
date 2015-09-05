@@ -5,6 +5,9 @@ local ConfigHandler
 
 class FileOps
     msgs = {
+            generic: {
+                deletionRescheduled: "Another deletion attempt has been rescheduled for the next restart."
+            }
             attributes: {
                 badPath: "Path failed verification: %s."
                 genericError: "Can't retrieve attributes: %s."
@@ -34,7 +37,7 @@ class FileOps
             }
             rmdir: {
                 emptyPath: "Argument #1 (path) must not be an empty string."
-                couldntRemoveFiles: "The specified directory contains files and folders that couldn't be removed."
+                couldntRemoveFiles: "Some of the files and folders in the specified directory couldn't be removed:\n%s"
                 couldntRemoveDir: "Error removing empty directory: %s."
 
             }
@@ -68,28 +71,37 @@ class FileOps
 
     remove: (paths, recurse, reSchedule) ->
         config = createConfig true
-        configLoaded, res = false, {}
+        configLoaded, overallSuccess, details, firstErr = false, true, {}
         paths = {paths} unless type(paths) == "table"
 
         for path in *paths
             mode, path = FileOps.attributes path, "mode"
             if mode
                 rmFunc = mode == "file" and os.remove or FileOps.rmdir
-                success, err = rmFunc path, recurse
-                if not success
-                    unless reSchedule
-                        res[#res+1] = {nil, err}
+                res, err = rmFunc path, recurse
+                unless res
+                    firstErr or= err
+                    unless reSchedule -- delete operation failed entirely
+                        details[path] = {nil, err}
+                        overallSuccess = nil
                         continue
+
+                    -- load the FileOps configuration file and reschedule deletions
                     unless configLoaded
                         FileOps.config\load!
                         configLoaded = true
                     config.c.toRemove[path] = os.time!
-                    res[#res+1] = {false, err}
-                else res[#res+1] = {true}
-            else res[#res+1] = {nil, path}
+                    -- mark the operations as failed "for now", indicating a second attempt has been scheduled
+                    details[path] = {false, err}
+                    overallSuccess = false
+
+                -- delete operation succeeded
+                else details[path] = {true}
+            -- file not found or permission issue
+            else details[path] = {nil, err}
 
         config\write! if configLoaded
-        return res, configLoaded
+        return overallSuccess, details, firstErr
 
     runScheduledRemoval: (configDir) ->
         config = createConfig false, configDir
@@ -186,9 +198,10 @@ class FileOps
         if recurse
             -- recursively remove contained files and directories
             toRemove = ["#{path}/#{file}" for file in lfs.dir path]
-            res, err = FileOps.remove toRemove, true
-            if err
-                return nil, msgs.rmdir.couldntRemoveFiles, res
+            res, details = FileOps.remove toRemove, true
+            unless res
+                fileList = table.concat ["#{path}: #{res[2]}" for path, res in pairs details when not res[1]], "\n"
+                return nil, msgs.rmdir.couldntRemoveFiles\format fileList
 
         -- remove empty directory
         success, err = lfs.rmdir path
