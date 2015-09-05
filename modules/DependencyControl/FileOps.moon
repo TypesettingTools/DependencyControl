@@ -34,7 +34,9 @@ class FileOps
                 genericError: "An error occured while moving file '%s' to '%s':\n%s"
                 createDirError: "Moving '%s' to '%s' failed (%s)."
                 cantRemove: "Couldn't overwrite file '%s': %s. Attempts at renaming the existing target file failed."
-                cantRename: "Couldn't move file '%s' to '%s': %s"
+                cantRenameTryingCopy: "Move operation failed to rename '%s' to '%s' (%s), trying copy+remove instead..."
+                couldntRemoveFiles: "Move operation suceeded to copied the file(s) to the target location, but some of the source files couldn't be removed:\n%s\n%s"
+                cantCopy: "Move operation failed to copy '%s' to '%s' (%s) after a failed rename attempt (%s)."
             }
             rmdir: {
                 emptyPath: "Argument #1 (path) must not be an empty string."
@@ -194,8 +196,19 @@ class FileOps
 
         -- at this point the target directory exists and the target file doesn't, move the file
         res, err = os.rename source, target
-        unless res -- renaming the file failed, probably a permission issue
-            return false, msgs.move.cantRename\format source, target, err
+        unless res
+            -- renaming the file failed, could be because of a permission issue
+            -- but me might a well be trying to rename over file system boundaries on *nix
+            -- so we should try copy + remove before giving up
+            FileOps.logger\debug msgs.move.cantRenameTryingCopy, source, target, err
+            renErr, res, err = err, FileOps.copy source, target
+            unless res
+                return false, msgs.move.cantCopy\format source, target, err, renErr
+            res, details = FileOps.remove source, false, true  -- TODO: also support directories/recursion, but also require copy to support it
+
+            unless res
+                fileList = table.concat ["#{path}: #{res[2]}" for path, res in pairs details when not res[1]], "\n"
+                FileOps.logger\debug msgs.move.couldntRemoveFiles, fileList, msgs.generic.deletionRescheduled
 
         return true
 
