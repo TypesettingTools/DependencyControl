@@ -282,7 +282,7 @@ class FileOps
         if #path > pathMatch.maxLen
             return false, msgs.validateFullPath.tooLong\format #path, maxLen
         -- check for invalid characters
-        invChar = path\match pathMatch.invalidChars, ffi.os == "Windows" and 3
+        invChar = path\match pathMatch.invalidChars, ffi.os == "Windows" and 3 or nil
         if invChar
             return false, msgs.validateFullPath.invalidChars\format invChar
         -- check for reserved file names
