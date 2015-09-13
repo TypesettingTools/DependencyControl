@@ -235,14 +235,11 @@ class FileOps
         return true
 
     mkdir: (path, isFile) ->
-        path, dev, dir, file = FileOps.validateFullPath path
-        unless path
-            return nil, msgs.attributes.badPath\format dev
-        dir = isFile and table.concat({dev,dir or file}) or path
+        mode, fullPath, dev, dir, file = FileOps.attributes path, "mode"
+        dir = isFile and table.concat({dev,dir or file}) or fullPath
 
-        mode, err = lfs.attributes dir, "mode"
-        if err
-            return nil, msgs.attributes.genericError\format err
+        if mode == nil
+            return nil, msgs.attributes.genericError\format fullPath
         elseif not mode
             res, err = lfs.mkdir dir
             if err -- can't create directory (possibly a permission error)
