@@ -517,7 +517,7 @@ class UnitTest
                          onlyNumKeys: {onlyNumKeys, "boolean"}
                        }
 
-        @assert self.itemsEqual actual, expected, onlyNumKeys, "equal",
+        @assert self.itemsEqual(actual, expected, onlyNumKeys),
                        msgs.assert[onlyNumKeys and "itemsEqualNumericKeys" or "itemsEqualAllKeys"],
                        @logger\dumpToString(actual), @logger\dumpToString expected
 
@@ -533,7 +533,7 @@ class UnitTest
                          onlyNumKeys: {onlyNumKeys, "boolean"}
                        }
 
-        @assert self.itemsEqual actual, expected, onlyNumKeys, "identical",
+        @assert self.itemsEqual(actual, expected, onlyNumKeys, nil, true),
                        msgs.assert[onlyNumKeys and "itemsEqualNumericKeys" or "itemsEqualAllKeys"],
                        @logger\dumpToString(actual), @logger\dumpToString expected
 
