@@ -453,9 +453,8 @@ class UnitTest
     -- @tparam number actual the value
     -- @tparam[opt=false] boolean includeZero makes the assertion consider 0 to be positive
     assertPositive: (actual, includeZero = false) =>
-        @checkArgTypes actual: {actual, "number"}
-        res = includeZero and actual >= 0 or actual > 0
         @checkArgTypes actual: {actual, "number"}, includeZero: {includeZero, "boolean"}
+        res = includeZero and actual >= 0 or actual > 0
         @assert res, @@msgs.assert.positiveNegative, "positive",
                        includeZero and "included" or "excluded"
 
@@ -463,9 +462,8 @@ class UnitTest
     -- @tparam number actual the value
     -- @tparam[opt=false] boolean includeZero makes the assertion not fail when a 0 is encountered
     assertNegative: (actual, includeZero = false) =>
-        @checkArgTypes actual: {actual, "number"}
-        res = includeZero and actual <= 0 or actual < 0
         @checkArgTypes actual: {actual, "number"}, includeZero: {includeZero, "boolean"}
+        res = includeZero and actual <= 0 or actual < 0
         @assert res, @@msgs.assert.positiveNegative, "positive",
                        includeZero and "included" or "excluded"
 
