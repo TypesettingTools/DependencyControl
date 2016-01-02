@@ -82,6 +82,7 @@ class UpdateTask extends UpdaterBase
             moveFileFailed: "Failed to move '%s' ==> '%s': %s"
             updSuccess: "%s of %s '%s' (v%s) complete."
             reloadNotice: "Please rescan your autoload directory for the changes to take effect."
+            unknownType: "Skipping file '%s': unknown type '%s'."
         }
         refreshRecord: {
             unsetVirtual: "Update initated by another macro already fetched %s '%s', switching to update mode."
@@ -282,23 +283,35 @@ class UpdateTask extends UpdaterBase
         @@logger\log msgs.performUpdate.updateReady, tmpDir
 
         scriptSubDir = @record.moduleName and @record.moduleName\gsub("%.","/") or @record.namespace
-        baseName, tmpBaseName = "#{@record.automationDir}/#{scriptSubDir}", "#{tmpDir}/#{scriptSubDir}"
 
         dlm\clear!
         for file in *update.files
+            file.type or= "script"
+
             continue if file.delete
-            tmpName, name, prettyName = tmpBaseName..file.name, baseName..file.name, scriptSubDir..file.name
+            baseName = scriptSubDir .. file.name
+            tmpName, prettyName = "#{tmpDir}/#{file.type}/#{baseName}", baseName
+            switch file.type
+                when "script"
+                    file.fullName = "#{@record.automationDir}/#{baseName}"
+                when "test"
+                    file.fullName = "#{@record.testDir}/#{baseName}"
+                    prettyName ..= " (Unit Test)"
+                else
+                    file.unknown = true
+                    @@logger\log msgs.performUpdate.unknownType, file.name, file.type
+                    continue
 
             unless type(file.sha1)=="string" and #file.sha1 == 40 and tonumber(file.sha1, 16)
                 return finish -35, "#{prettyName} (#{tostring(file.sha1)\lower!})"
 
-            if dlm\checkFileSHA1 name, file.sha1
+            if dlm\checkFileSHA1 file.fullName, file.sha1
                 @@logger\trace msgs.performUpdate.fileUnchanged, prettyName
                 continue
 
             dl, err = dlm\addDownload file.url, tmpName, file.sha1
             return finish -140, err unless dl
-            dl.targetFile = name
+            dl.targetFile = file.fullName
             @@logger\trace msgs.performUpdate.fileAddDownload, file.url, prettyName
 
         dlm\waitForFinish (progress) ->
@@ -330,7 +343,7 @@ class UpdateTask extends UpdaterBase
         if #moveErrors>0
             return finish -50, @@logger\format moveErrors, 1
         else lfs.rmdir tmpDir
-        os.remove baseName..file.name for file in *update.files when file.delete
+        os.remove file.fullName for file in *update.files when file.delete and not file.unknown
 
         -- Nuke old module refs and reload
         oldVer, wasVirtual = @record.version, @record.virtual

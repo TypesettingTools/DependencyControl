@@ -130,6 +130,7 @@ class DependencyControl
 
         @configFile = configFile or "#{@namespace}.json"
         @automationDir = @@automationDir[@type]
+        @testDir = UnitTestSuite.testDir[@type]
         @version, err = @getVersionNumber version
         assert @version, msgs.new.badRecordError\format msgs.new.badRecord.badVersion\format err
 
