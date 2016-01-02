@@ -1,3 +1,4 @@
+
 Logger = require "l0.DependencyControl.Logger"
 re = require "aegisub.re"
 -- make sure tests can be loaded from the test directory
@@ -207,29 +208,30 @@ class UnitTest
     -- @tparam[opt=false] bool ignoreExtraAItems Enable this option to make the comparison one-sided,
     --                                           ignoring additional items present in a but not in b.
     -- @tparam[opt=false] bool requireIdenticalItems Enable this option if you require table items to be identical,
-    --  
-    itemsEqual: (actual, expected, onlyNumKeys = true, allowAdditionalItems, requireIdenticalItems) ->
-        seen, actualTables, seenCnt, actualTablesCnt, expectedCnt = {}, {}, 0, 0, 0
+    --                                               i.e. compared by reference, rather than by equality.
+    itemsEqual: (a, b, onlyNumKeys = true, ignoreExtraAItems, requireIdenticalItems) ->
+        seen, aTbls = {}, {}
+        aCnt, aTblCnt, bCnt = 0, 0, 0
 
-        findEqualTable = (expectedTbl) ->
-            for i, actualTbl in ipairs actualTables
-                if UnitTest.equals tbl, v
-                    table.remove actualTables, i
-                    seen[tbl] = nil
+        findEqualTable = (bTbl) ->
+            for i, aTbl in ipairs aTbls
+                if UnitTest.equals aTbl, bTbl
+                    table.remove aTbls, i
+                    seen[aTbl] = nil
                     return true
             return false
 
         if onlyNumKeys
-            seenCnt, expectedCnt = #actual, #expected
-            return false if not allowAdditionalItems and seenCnt != expectedCnt
+            aCnt, bCnt = #a, #b
+            return false if not ignoreExtraAItems and aCnt != bCnt
 
-            for v in *actual
+            for v in *a
                 seen[v] = true
                 if "table" == type v
-                    actualTablesCnt += 1
-                    actualTables[actualTablesCnt] = v
+                    aTblCnt += 1
+                    aTbls[aTblCnt] = v
 
-            for v in *expected
+            for v in *b
                 -- identical values
                 if seen[v]
                     seen[v] = nil
@@ -241,15 +243,15 @@ class UnitTest
 
 
         else
-            for _, v in pairs actual
-                seenCnt += 1
-                seen[b] = true
+            for _, v in pairs a
+                aCnt += 1
+                seen[v] = true
                 if "table" == type v
-                    actualTablesCnt += 1
-                    actualTables[actualTablesCnt] = v
+                    aTblCnt += 1
+                    aTbls[aTblCnt] = v
 
-            for _, v in pairs expected
-                expectedCnt += 1
+            for _, v in pairs b
+                bCnt += 1
                 -- identical values
                 if seen[v]
                     seen[v] = nil
@@ -259,7 +261,7 @@ class UnitTest
                 if type(v) != "table" or requireIdenticalItems or not findEqualTable v
                     return false
 
-            return false if not allowAdditionalItems and seenCnt != expectedCnt
+            return false if not ignoreExtraAItems and aCnt != bCnt
 
         return true
 
@@ -268,10 +270,10 @@ class UnitTest
     -- @param condition passing in a falsy value causes the assertion to fail
     -- @tparam string message error message (may contain format string templates)
     -- @param[opt] args any arguments required for formatting the message
-    assert: (cond, ...) =>
+    assert: (condition, ...) =>
         args = table.pack ...
         msg = table.remove args, 1
-        unless cond
+        unless condition
             @assertFailed = true
             @logger\logEx 1, msg, nil, nil, 0, unpack args
 
