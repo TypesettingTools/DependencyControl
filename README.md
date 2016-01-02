@@ -5,19 +5,21 @@ DependencyControl provides versioning, automatic script update, dependency manag
 
 __Features__:
 
- * Loads modules used by an automation script, pulls missing requirements from the internet and informs the user about missing and outdated modules that could not be updated automatically.
+ * A lightweight package manager lets users conveniently install scripts right from inside Aegisub
+ * Loads modules used by an automation script, pulls missing requirements from the internet and informs the user about missing and outdated modules that could not be updated automatically
  * Checks scripts and modules for updates and automatically installs them
  * Offers convenient macro registration with user-customizable submenus
- * Provides configuration and logging services for your script
+ * Provides configuration, logging services, file operations and a unit test framework for your scripts
  * Supports optional modules and private module copies for cases where an older or custom version of a module is required
  * Resolves circular dependencies (limitations apply)
 
 __Requirements__:
 
- * Aegisub 3.2.0+
+ * Aegisub > 3.2.0 (e.g. [Plorkyeran's](http://plorkyeran.com/aegisub/) r8792+ or [my](http://files.line0.eu/builds/Aegisub/) git builds)
  * [LuaJSON](https://github.com/harningt/luajson)
- * [DownloadManager](https://github.com/torque/ffi-experiments/releases) v0.1.2
- * [PreciseTimer](https://github.com/torque/ffi-experiments/releases) v0.1.2
+ * [DownloadManager](https://github.com/torque/ffi-experiments/releases) v0.3.0
+ * [BadMutex](https://github.com/torque/ffi-experiments/releases) v0.1.2
+ * [PreciseTimer](https://github.com/torque/ffi-experiments/releases) v0.1.4
 
 ----------------------------------
 
@@ -28,7 +30,11 @@ __Requirements__:
  3. [Namespaces and Paths](#namespaces-and-paths)
  4. [The Anatomy of an Updater Feed](#the-anatomy-of-an-updater-feed)
  5. [Reference](#reference)
- 6. [Ancillary Components: Logger and ConfigHandler](#FIXME) (tbd)
+   1. [DependencyControl](#FIXME)
+   2. [Updater](#FIXME)
+   3. [Logger](#FIXME)
+   4. [ConfigHandler](#FIXME)
+   5. [FileOps](#FIXME)
 
 ----------------------------------
 
@@ -38,6 +44,7 @@ As an end-user you don't get to decide whether your scripts use DependencyContro
 
 #### Install Instructions ####
  1. Download the latest DependencyControl release for your platform and unpack its contents to your Aegisub **user** automation directory.
+ Alternatively use one of the [provided Aegisub builds](http://files.line0.eu/builds/Aegisub/) with built-in DependencyControl.
 
  _It is essential DependencyControl and all scripts it's used reside in the **user** automation directory, **NOT** the the automation directory in the Aegisub application folder._
 
@@ -115,7 +122,8 @@ local version = DependencyControl{
 local util, LineCollection, Line, Log, ASS, Common, YUtils = version:requireModules()
 ```
 
-Specifying a feed in your own version record provides DepedencyControl with a source to download updates to your script from. Specifying feeds for required modules managed by DependencyControl allows the Updater to discover those modules and fetch them when they're missing from the user's computer.
+Specifying a feed in your own version record provides DepedencyControl with a source to download updates to your script from. 
+Specifying feeds for required modules managed by DependencyControl allows the Updater to discover those modules and fetch them when they're missing from the user's computer. However, you can omit the feed URLs for required modules when your own feed already has references to them.
 
 
 To __register your macros__ use the following code snippets instead of the usual *aegisub.register_macro()* calls:
@@ -208,12 +216,15 @@ Examples:
  * l0.ASSWipe.lua
  * l0.ASSWipe.Addon.moon
 
-__Modules__ use the `?user/automation/include` folder, which has a nested file structure. To determine your _subdirectory/file base name_, the dots in your namespace are replaced with `/` (`\` in Windows terms). 
+__Modules__ use the `?user/automation/include` folder, which has a nested file structure. To determine your _subdirectory/file base name_, the dots in your namespace are replaced with `/` (`\` in Windows terms).
+
+__Tests__ use the `?user/automation/tests/DepUnit/modules` or `?user/automation/tests/DepUnit/macros` folder depending on whether a macro or automation is being tested and mirror the directory structure of the respective `include` and `autoload` folders.
 
 Our example module ASSFoundation with namespace __l0.ASSFoundation__ writes (among others) the following files:
  * __?user/automation/include/l0/ASSFoundation__.lua
  * __?user/automation/include/l0/ASSFoundation__/ClassFactory.lua
  * __?user/automation/include/l0/ASSFoundation__/Draw/Bezier.lua
+ * __?user/automation/tests/modules/l0/ASSFoundation__.lua
 
 ---------------------------------------------
 
@@ -225,12 +236,17 @@ If you want DepedencyControl auto-update your script on the user's system, you'l
 
 `````javascript
 {
-  "dependencyControlFeedFormatVersion": "0.1.0", 
-  // The version of the feed format. The current version is 0.1.0, don't touch this until further notice.
+  "dependencyControlFeedFormatVersion": "0.3.0", 
+  // The version of the feed format. The current version is 0.3.0, don't touch this until further notice.
   "name": "line0's Aegisub Scripts",
   "description": "Main repository for all of line0's automation macros.",
   "maintainer": "line0",
   // The title and description of your repository as well as the name of the maintainer. May be used by GUI-driven management tools, package managers, etc...
+  "knownFeeds": {
+    "a-mo": "https://raw.githubusercontent.com/TypesettingCartel/Aegisub-Motion/DepCtrl/DependencyControl.json",
+    "ASSFoundation": "https://raw.githubusercontent.com/TypesettingTools/ASSFoundation/master/DependencyControl.json"
+  },
+  // A hashtable of known feed URLs. Can be referenced with @{feed:name} and will be used to discover other repositories the user can install automation scripts and modules from. At the very least this should contain the repo URLs for the required modules in your repo, but may be used to adverise other unrelated repos you trust.
   "baseUrl": "https://github.com/TypesettingCartel/line0-Aegisub-Scripts",
   // baseUrl is a template variable that can be referenced in other string fields of the template. It's useful when you have several scripts which all have their documentation hosted on the same site (so they start with the same URL). For more Information about templates, see the section below.
   "url": "@{baseUrl}",
@@ -296,6 +312,14 @@ An automation script or module object looks like this:
               // will fail on the user's end.
             },
             {
+              "name": ".lua",
+              "type": "test",
+              // Optional, defaults to "script". Specify "test" to denote a unit test.
+              // Currently only "script" and "test" are available, unknown script types will be skipped.
+              "url": "@{fileBaseUrl}.Tests.lua",
+              "sha1": "27745AB9CF04A840CF3454050CA9D38FA345CEBB"
+            },
+            {
               "name": ".Helper.dll",
               "url": "@{fileBaseUrl}@{fileName}",
               "sha1": "0B4E0511116355D4A11C2EC75DF7EEAD0E14DE9F"
@@ -312,14 +336,15 @@ An automation script or module object looks like this:
               "moduleName": "a-mo.LineCollection",
               "name": "Aegisub-Motion (LineCollection)",
               "url": "https://github.com/torque/Aegisub-Motion",
-              "version": "1.0.1"
+              "version": "1.0.1",
+              "feed": "@{feed:a-mo}"
             }, 
             {
               "moduleName": "l0.ASSFoundation",
               "name": "ASSFoundation",
               "url": "https://github.com/TypesettingCartel/ASSFoundation",
               "version": "0.1.1",
-              "feed": "https://raw.githubusercontent.com/TypesettingCartel/ASSFoundation/master/DependencyControl.json"
+              "feed": "@{feed:ASSFoundation}"
             },
             {
               "moduleName": "aegisub.util"
@@ -355,7 +380,8 @@ Variables extracted at the **same depth** are expanded in a specific order. As a
 
 _Depth 1:_ Feed Information
  1. __feedName__: The name of the feed
- 2. __baseUrl__: The baseUrl field 
+ 2. __baseUrl__: The baseUrl field
+ 3. __feed:###__: A reference to a feed URL in the knownFeeds table
 
 _Depth 3:_ Script Information
  1. __namespace__: the script namespace
@@ -381,6 +407,10 @@ For an example to serve updates from the HEAD of a GitHub repository, see [here]
 
 ### Reference ###
 
+This section is currently both incomplete and outdated. Sorry about that.
+
+#### DependencyControl ####
+
 __DependencyControl{*tbl* [requiredModules]={}, *str* :name=script_name, *str* :description=script_description, *str* :author=script_author, *str* :url, *str* :version, *str* :moduleName, *str* [:configFile], *string* [:namespace]} --> *obj* DependecyControlRecord__
 
 The constructor for a DepedencyControl record. Uses the table-based signature.
@@ -401,22 +431,14 @@ __Arguments:__
 * _feed_: The update feed for your script.
 * _configFile_: Configuration file base name used by the script. Defaults to the namespace. Used for configuration services and script management purposes.
 
-#### Methods ####
-__:checkVersion(*str/num* version) --> *bool* moduleUpToDate, *str* error__
+##### Methods #####
+__:checkVersion(*str/num* version, *str* [precision = "patch"]) --> *bool* moduleUpToDate, *str* error__
 
-Returns true if the version number of the record is greater than or equal to __version__. If the version can't be parsed it returns nil and and error message.
+Returns true if the version number of the record is greater than or equal to __version__. Reduce the __precision__ to `minor` or `major` to also return true for lower patch or minor versions respecitively. If the version can't be parsed it returns nil and and error message.
 
 __:checkOptionalModules(*tbl* modules) --> *bool* result, *str* errorMessage__
 
 Returns true if the optional __modules__ have been loaded, where __modules__ is a list of module names. If one or more of the modules are missing it returns false and an error message.
-
-__:createDir(*str* path, *bool* [isFile]) --> *bool* result, *str* error__
-
-Creates a directory. Returns _true_ on success or if the directory already exists or _false_ and an error message on failure. Use __isFile__ to indicate the __path__ points to a file, in which case its parent will be created.
-
-__:expandFeed(*tbl* feed) --> *tbl* feed__
-
-Expands template variables in downloaded update feeds **in-place** and returns the expanded feed. _Intended for internal use._
 
 __:getConfigFileName() --> *str* fileName__
 
@@ -431,23 +453,6 @@ Returns a ConfigHandler (see [ConfigHandler Documentation](#FIXME)) attached to 
 __:getLogger(*tbl* args) => *obj* Logger__
 
 Returns a Logger (see [Logger Documentation](#FIXME)) preconfigured for this script. Trace level and config file preference default to user-configurable values. Log file name and prefix are based on namespace and script name.
-
-__:getUpdaterErrorMsg(*int* [code], *str* targetName, ...) --> *str* errorMsg__
-
-Used to turn an updater return __code__ into a human-readable error message. The __name__ of the updated component and other format string parameters are passed into the function.
-
-VarArgs:
-
- 1. __*bool* isModule__: True when component is a  module, false when it is an automation script/macro
- 2. __*bool* isFetch__: True when we are fetching a missing module, false when updating
- 3. __extError__: Extended error information as returned by the _:update()_ method
-
-__:getUpdaterLock(*bool* [doWait], *int* [waitTimeout=(user config)]) --> *bool* result, *str* runningHost__
-
-Locks the updater to the current macro/environment. Since all automation scripts load in parallel we have to make sure multiple automation scripts don't all update/fetch the same depedencies at once multiple times. The solution is to only let one updater operate at a time. The others will wait their turn and recheck if their required modules were fetched in the meantime.
-
-If __doWait__ is true, the function will wait until the updater is unlocked or __waitTimeout__ has passed. It will then get the lock and return true. If __doWait__ is false, the function will return immediately (true on success, false if another updater has the lock). _Intendend for internal use_.
-
 
 __:getVersionNumber(*str/num* versionString) --> *int/bool* version, *str* error__
 
@@ -476,9 +481,10 @@ __:moveFile(*str* src, *str* dest) --> *bool* success, *str* error__
 
 Moves a file from __source__ to __destiantion__ (where both are full file names). Returns true on success or false and error message on failure.
 
-__:register(*tbl* selfRef) --> *tbl* selfRef__
+__:register(*tbl* selfRef, extraUnitTestArgs...) --> *tbl* selfRef__
 
 Replaces dummy reference written to the global LOADED_MODULES table at DependencyControl object creation time with a reference to this module.
+Also automatically registers unit tests for this module, passing in any __extraUnitTestArgs__
 
 The purpose of this construct is to allow circular references between modules. Limitations apply: the modules in question may not use each other during construction/setup of each module (for obvious reasons).
 
@@ -502,9 +508,9 @@ __:registerMacros(*tbl* macros, *bool* [useSubmenuDefault=true])__
 Registers multiple macros, where __macros__ is a list of tables containing the arguments to a __:registerMacro()__ call for each automation menu entry.  a single macro using script name and description by default.
 If __useSubmenuDefault__ is set to true, the macros will be placed in a submenu using the script name unless overriden by per-macro settings.
 
-__:releaseUpdaterLock()__
+__:registerTests(unitTestArgs...)__
 
-Makes an updater host (macro) release its lock on the Updater if it has one. See _:getUpdaterLock_ for more information
+Registers unit tests for automation modules, passing in any of specified __unitTestArgs__. Registration of modules is done automatically upon calling __:register__
 
 __:requireModules([modules=@requiredModules], *bool* [forceUpdate], *bool* [updateMode], *tbl* [addFeeds={@feed})] --> ...__
 
@@ -514,6 +520,34 @@ The updater will try to download copies of modules that are missing or outdated 
 
 Use __forceUpdate__ to override update intervals and perform update checks for all required modules, even if requirements are satisfied.
 
+__:writeConfig(*bool* [writeLocal=true], *bool* [writeGlobal=true], *bool* [concert]]__
+
+Writes __global__ and per-module __local__ configuration. If __concert__ is true, concerted writing will be used to update the configuration of all DependencyControl hosted by any given macro/environment at once. See ConfigHandler documentation for more information. _Intended for internal use._
+
+#### Updater #####
+
+##### Methods #####
+
+__:getUpdaterErrorMsg(*int* [code], *str* targetName, ...) --> *str* errorMsg__
+
+Used to turn an updater return __code__ into a human-readable error message. The __name__ of the updated component and other format string parameters are passed into the function.
+
+VarArgs:
+
+ 1. __*bool* isModule__: True when component is a  module, false when it is an automation script/macro
+ 2. __*bool* isFetch__: True when we are fetching a missing module, false when updating
+ 3. __extError__: Extended error information as returned by the _:update()_ method
+
+__:getUpdaterLock(*bool* [doWait], *int* [waitTimeout=(user config)]) --> *bool* result, *str* runningHost__
+
+Locks the updater to the current macro/environment. Since all automation scripts load in parallel we have to make sure multiple automation scripts don't all update/fetch the same depedencies at once multiple times. The solution is to only let one updater operate at a time. The others will wait their turn and recheck if their required modules were fetched in the meantime.
+
+If __doWait__ is true, the function will wait until the updater is unlocked or __waitTimeout__ has passed. It will then get the lock and return true. If __doWait__ is false, the function will return immediately (true on success, false if another updater has the lock). _Intendend for internal use_.
+
+__:releaseUpdaterLock()__
+
+Makes an updater host (macro) release its lock on the Updater if it has one. See _:getUpdaterLock_ for more information
+
 __:update(*bool* [force], *tbl* [addFeeds], *bool* [tryAllFeeds=auto]) --> *int* resultCode, *str* extError__
 
 Runs the updater on this automation script or module. This includes recursicely updating all required modules. When __force__ is true, required modules will skip their update interval check.
@@ -522,6 +556,22 @@ By default, the updater will process all suitable feeds until one feed confirms 
 
 Returns a result code (0: up-to-date, 1: update performed, <=-1: error) and extendend error information which can be fed into _:getUpdaterErrorMsg()_ to get a descriptive error message.
 
-__:writeConfig(*bool* [writeLocal=true], *bool* [writeGlobal=true], *bool* [concert]]__
+#### Logger ####
 
-Writes __global__ and per-module __local__ configuration. If __concert__ is true, concerted writing will be used to update the configuration of all DependencyControl hosted by any given macro/environment at once. See ConfigHandler documentation for more information. _Intended for internal use._
+tbd
+
+#### ConfigHandler ####
+
+tbd
+
+#### FileOps ####
+
+tbd
+
+#### UnitTestSuite ####
+
+Reference documentation for the UnitTestSuite module is available in the [source code](https://github.com/TypesettingTools/DependencyControl/blob/master/modules/DependencyControl/UnitTestSuite.moon#L760)
+
+#### UpdateFeed ####
+
+tbd
