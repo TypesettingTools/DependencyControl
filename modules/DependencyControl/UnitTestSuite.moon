@@ -677,12 +677,12 @@ class UnitTestClass
     -- @tparam [opt=nil (unordered)] {string, ...} An list of test names in the desired execution order.
     -- Only tests mentioned in this table will be performed when running the whole test class.
     -- If unspecified, all tests will be run in random order.
-    new: (@name, args = {}, @testSuite) =>
+    new: (@name, args = {}, @order, @testSuite) =>
         @logger = @testSuite.logger
         @setup = UnitTestSetup "setup", args._setup, @
         @teardown = UnitTestTeardown "teardown", args._teardown, @
         @description = args._description
-        @order = args._order
+        @order or= args._order
         @tests = [UnitTest(name, f, @) for name, f in pairs args when "_" != name\sub 1,1]
 
     --- Runs all tests in the unit test class in the specified order.
@@ -692,7 +692,7 @@ class UnitTestClass
     -- @treturn[2] boolean false (test class failed)
     -- @treturn[2] {@{UnitTest}, ...} a list of unit test that failed
     run: (abortOnFail, order = @order) =>
-        tests = @tests
+        tests, failed = @tests, {}
         if order
             tests, mappings = {}, {test.name, test for test in *@tests}
             for i, name in ipairs order
@@ -763,19 +763,19 @@ class UnitTestSuite
     -- @tparam [opt=nil (unordered)] {string, ...} An list of test class names in the desired execution order.
     -- Only test classes mentioned in this table will be performed when running the whole test suite.
     -- If unspecified, all test classes will be run in random order.
-    new: (@namespace, args) =>
+    new: (@namespace, classes, @order) =>
         @logger = Logger defaultLevel: 3, fileBaseName: @namespace, fileSubName: "UnitTests", toFile: true
         @classes = {}
-        switch type args
-            when "table" then @addClasses args
-            when "function" then @importFunc = args
-            else @logger\error msgs.new.badClassesType, type args
+        switch type classes
+            when "table" then @addClasses classes
+            when "function" then @importFunc = classes
+            else @logger\error msgs.new.badClassesType, type classes
 
     --- Constructs test classes and adds them to the suite.
     -- Use this if you need to add additional test classes to an existing @{UnitTestSuite} object.
     -- @tparam {[string] = table, ...} args a hashtable of @{UnitTestClass} constructor tables by name.
     addClasses: (classes) =>
-        @classes[#@classes+1] = UnitTestClass(name, args, @) for name, args in pairs classes when "_" != name\sub 1,1
+        @classes[#@classes+1] = UnitTestClass(name, args, args._order, @) for name, args in pairs classes when "_" != name\sub 1,1
         if classes._order
             @order or= {}
             @order[#@order+1] = clsName for clsName in *classes._order
