@@ -7,6 +7,7 @@ UpdateFeed = require "l0.DependencyControl.UpdateFeed"
 ConfigHandler = require "l0.DependencyControl.ConfigHandler"
 fileOps = require "l0.DependencyControl.FileOps"
 Updater = require "l0.DependencyControl.Updater"
+UnitTestSuite = require "l0.DependencyControl.UnitTestSuite"
 DownloadManager = require "DM.DownloadManager"
 PreciseTimer = require "PT.PreciseTimer"
 
@@ -75,6 +76,7 @@ class DependencyControl
     @UpdateFeed = UpdateFeed
     @Logger = Logger
     @Updater = Updater
+    @UnitTestSuite = UnitTestSuite
     @FileOps = fileOps
 
     automationDir: {macros:  aegisub.decode_path("?user/automation/autoload"),
@@ -128,6 +130,7 @@ class DependencyControl
 
         @configFile = configFile or "#{@namespace}.json"
         @automationDir = @@automationDir[@type]
+        @testDir = UnitTestSuite.testDir[@type]
         @version, err = @getVersionNumber version
         assert @version, msgs.new.badRecordError\format msgs.new.badRecord.badVersion\format err
 
@@ -439,10 +442,24 @@ class DependencyControl
             reqVersion = reqVersion and " (v#{reqVersion})" or ""
             return msgs.formatVersionErrorTemplate.missing\format name, reqVersion, url, reason
 
+    registerTests: (...) =>
+        -- load external tests
+        haveTests, tests = pcall require, "DepUnit.#{@type}.#{@namespace}"
 
-    register: (selfRef) =>
+        if haveTests and not @testsLoaded
+            @tests, tests.name = tests, @name
+            modules =  table.pack @requireModules!
+            if @moduleName
+                @tests\import @ref, modules, ...
+            else @tests\import modules, ...
+
+            @tests\registerMacros!
+            @testsLoaded = true
+
+    register: (selfRef, ...) =>
         -- replace dummy refs with real refs to own module
         @ref.__index, @ref, LOADED_MODULES[@moduleName] = selfRef, selfRef, selfRef
+        @registerTests selfRef, ...
         return selfRef
 
     registerMacro: (name=@name, description=@description, process, validate, isActive, useSubmenu) =>
