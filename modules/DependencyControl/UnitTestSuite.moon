@@ -713,10 +713,11 @@ class UnitTestClass
         for i, test in pairs tests
             unless test\run unpack res
                 failedCnt += 1
+                failed[#failed+1] = test
                 if abortOnFail
                     @logger.indent -= 1
                     @logger\warn msgs.run.abort, @name, i
-                    return false, i
+                    return false, failed
 
         @logger.indent -= 1
         @success = failedCnt == 0
@@ -726,8 +727,7 @@ class UnitTestClass
             return true
 
         @logger\log msgs.run.testsFailed, @name, failedCnt, testCnt
-        return false, failedCnt
-
+        return false, failed
 
 
 --- A DependencyControl unit test suite.
@@ -807,7 +807,7 @@ class UnitTestSuite
     -- @treturn[2] boolean false (test class failed)
     -- @treturn[2] {@{UnitTest}, ...} a list of unit test that failed
     run: (abortOnFail, order = @order) =>
-        classes = @classes
+        classes, allFailed = @classes, {}
         if order
             classes, mappings = {}, {cls.name, cls for cls in *@classes}
             for i, name in ipairs order
@@ -819,12 +819,14 @@ class UnitTestSuite
         @logger.indent += 1
 
         for i, cls in pairs classes
-            unless cls\run abortOnFail
+            success, failed = cls\run abortOnFail
+            unless success
                 failedCnt += 1
+                allFailed[#allFailed+1] = test for test in *failed
                 if abortOnFail
                     @logger.indent -= 1
                     @logger\warn msgs.run.abort, i
-                    return false, i
+                    return false, allFailed
 
         @logger.indent -= 1
         @success = failedCnt == 0
@@ -832,4 +834,4 @@ class UnitTestSuite
             @logger\log msgs.run.success
         else @logger\log msgs.run.classesFailed, failedCnt, classCnt
 
-        return @success, failedCnt
+        return @success, failedCnt > 0 and allFailed or nil
