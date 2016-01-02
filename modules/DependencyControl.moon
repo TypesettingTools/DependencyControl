@@ -441,19 +441,19 @@ class DependencyControl
             reqVersion = reqVersion and " (v#{reqVersion})" or ""
             return msgs.formatVersionErrorTemplate.missing\format name, reqVersion, url, reason
 
-
-    register: (selfRef) =>
-        -- replace dummy refs with real refs to own module
-        @ref.__index, @ref, LOADED_MODULES[@moduleName] = selfRef, selfRef, selfRef
-
+    loadTests: (ref) =>
         -- load external tests
-        haveTests, tests = pcall require, @namespace .. ".Tests"
+        haveTests, tests = pcall require, "DepUnit.#{@type}.#{@namespace}"
 
         if haveTests
             @tests, tests.name = tests, @name
-            @tests\import selfRef, @requireModules!
+            @tests\import ref, @requireModules!
             @tests\registerMacros!
 
+    register: (selfRef) =>
+        -- replace dummy refs with real refs to own module
+        @loadTests selfRef
+        @ref.__index, @ref, LOADED_MODULES[@moduleName] = selfRef, selfRef, selfRef
         return selfRef
 
     registerMacro: (name=@name, description=@description, process, validate, isActive, useSubmenu) =>

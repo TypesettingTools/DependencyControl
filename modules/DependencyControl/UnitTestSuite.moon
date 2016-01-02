@@ -1,7 +1,7 @@
 Logger = require "l0.DependencyControl.Logger"
 re = require "aegisub.re"
 -- make sure tests can be loaded from the test directory
-package.path ..= aegisub.decode_path("?user/automation/tests/") .. "/?.lua;"
+package.path ..= aegisub.decode_path("?user/automation/tests") .. "/?.lua;"
 
 --- A class for all single unit tests.
 -- Provides useful assertion and logging methods for a user-specified test function.
