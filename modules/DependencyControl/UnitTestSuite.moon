@@ -760,9 +760,13 @@ class UnitTestSuite
     --- Creates a complete unit test suite for a module or automation script.
     -- Using this constructor will create all test classes and tests automatically.
     -- @tparam string namespace the namespace of the module or automation script to test.
-    -- @tparam {[string] = table, ...}|function(module1, module2, ...) args To create a UnitTest suite,
+    -- @tparam {[string] = table, ...}|function(self, dependencies, args...) args To create a UnitTest suite,
     -- you must supply a hashtable of @{UnitTestClass} constructor tables by name. You can either do so directly,
-    -- or wrap it in a function that takes the modules required by the tested script/module as inputs.
+    -- or wrap it in a function that takes a number of arguments depending on how the tests are registered:
+    -- * self: the module being testsed (skipped for automation scripts)
+    -- * dependencies: a numerically keyed table of all the modules required by the tested script/module (in order)
+    -- * args: any additional arguments passed into the @{DependencyControl\registerTests} function.
+    --         Doing so is required to test automation scripts as well as module functions not exposed by its API.
     -- indexes starting with "_" have special meaning and are not added as regular tests:
     -- * _order: alternative syntax to the order parameter (see below)
     -- @tparam [opt=nil (unordered)] {string, ...} An list of test class names in the desired execution order.
