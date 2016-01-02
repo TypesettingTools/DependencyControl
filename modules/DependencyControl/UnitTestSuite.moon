@@ -752,6 +752,9 @@ class UnitTestSuite
         }
     }
 
+    @UnitTest = UnitTest
+    @UnitTestClass = UnitTestClass
+
     --- Creates a complete unit test suite for a module or automation script.
     -- Using this constructor will create all test classes and tests automatically.
     -- @tparam string namespace the namespace of the module or automation script to test.
