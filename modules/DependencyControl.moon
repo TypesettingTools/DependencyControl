@@ -462,15 +462,17 @@ class DependencyControl
         @registerTests selfRef, ...
         return selfRef
 
-    registerMacro: (name=@name, description=@description, process, validate, isActive, useSubmenu) =>
-        -- alternative signature
+    registerMacro: (name=@name, description=@description, process, validate, isActive, submenu) =>
+        -- alternative signature takes name and description from script
         if type(name)=="function"
-            process, validate, isActive, useSubmenu = name, description, process, validate
+            process, validate, isActive, submenu = name, description, process, validate
             name, description = @name, @description
 
-        menuName = {}
-        menuName[1] = @config.c.customMenu if @config.c.customMenu
-        menuName[#menuName+1] = @name if useSubmenu
+        -- use automation script name for submenu by default
+        submenu = @name if submenu == true
+
+        menuName = { @config.c.customMenu }
+        menuName[#menuName+1] = submenu if submenu
         menuName[#menuName+1] = name
 
         -- check for updates before running a macro
@@ -481,10 +483,11 @@ class DependencyControl
 
         aegisub.register_macro table.concat(menuName, "/"), description, processHooked, validate, isActive
 
-    registerMacros: (macros = {}, useSubmenuDefault = true) =>
+    registerMacros: (macros = {}, submenuDefault = true) =>
         for macro in *macros
-            useSubmenu = type(macro[1])=="function" and 4 or 6
-            macro[useSubmenu] = useSubmenuDefault if macro[useSubmenu]==nil
+            -- allow macro table to omit name and description
+            submenuIdx = type(macro[1])=="function" and 4 or 6
+            macro[submenuIdx] = submenuDefault if macro[submenuIdx] == nil
             @registerMacro unpack(macro, 1, 6)
 
     setVersion: (version) =>

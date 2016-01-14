@@ -490,23 +490,23 @@ The purpose of this construct is to allow circular references between modules. L
 
 Call this method as replacement for returning your module.
 
-__:registerMacro(*str* [name=@name], *str* [description=@description], *func* processing_function, *func* [validation_function], *func* is_active_function, *bool* [useSubmenu=false])__
+__:registerMacro(*str* [name=@name], *str* [description=@description], *func* processing_function, *func* [validation_function], *func* is_active_function, *bool|string* [submenu=false])__
 
 Alternative Signature:
 
-__:registerMacro(*func* processing_function, *func* [validation_function], *func* is_active_function, *bool* [useSubmenu=false])__
+__:registerMacro(*func* processing_function, *func* [validation_function], *func* is_active_function, *bool|string* [submenu=false])__
 
 Registers a single macro using script name and description by default.
-If __useSubmenu__ is set to true, the macro will be placed in a submenu using the script name.
+Use __submenu__ to specify a submenu name to use for this macro or set it to `true` to use the automation script name.
 
 If the script entry in the DependencyControl configuration file contains a __customMenu__ property, the macro will be placed in the specified menu. Do note that that this setting is for *user customization* and not to be changed without the user's consent.
 
 For the other arguments, please refer to the [aegisub.register_macro](http://docs.aegisub.org/latest/Automation/Lua/Registration/#aegisub.register_macro) API documentation.
 
-__:registerMacros(*tbl* macros, *bool* [useSubmenuDefault=true])__
+__:registerMacros(*tbl* macros, *bool|string* [submenuDefault=true])__
 
 Registers multiple macros, where __macros__ is a list of tables containing the arguments to a __:registerMacro()__ call for each automation menu entry.  a single macro using script name and description by default.
-If __useSubmenuDefault__ is set to true, the macros will be placed in a submenu using the script name unless overriden by per-macro settings.
+Use __submenuDefault__ to specify a submenu all macros will be placed in unless overriden on a per-macro basis. Defaults to `true` which causes the automation script name to be used as the submenu name.
 
 __:registerTests(unitTestArgs...)__
 
