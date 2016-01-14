@@ -1,5 +1,5 @@
 {
-  "dependencyControlFeedFormatVersion": "0.2.0",
+  "dependencyControlFeedFormatVersion": "0.3.0",
   "name": "DependencyControl",
   "description": "The official DependencyControl repository.",
   "baseUrl": "https://github.com/TypesettingTools/DependencyControl",
@@ -25,20 +25,20 @@
       "fileBaseUrl": "@{fileBaseUrl}macros-v@{version}-@{channel}/macros/@{namespace}",
       "channels": {
         "alpha": {
-          "version": "0.1.1",
-          "released": "2015-05-02",
+          "version": "0.1.2",
+          "released": "2016-01-14",
           "default": true,
           "files": [
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "7E71D50092C2A36B772C873600488491766BA2DF"
+              "sha1": "B4895869AF5F3EC5D858E043D2E24E3E32D5701E"
             }
           ],
           "requiredModules": [
             {
               "moduleName": "l0.DependencyControl",
-              "version": "0.5.0"
+              "version": "0.6.0"
             }
           ]
         }
@@ -50,6 +50,9 @@
         "0.1.1": [
           "The Install/Uninstall/Update dialogs now sort scripts by name.",
           "DependencyControl and its requirements no longer appear in the uninstall menu."
+        ],
+        "0.1.2": [
+          "All DependencyControl macros are now available under the common 'DependencyControl' automation submenu."
         ]
       }
     }
@@ -63,39 +66,44 @@
       "fileBaseUrl": "@{fileBaseUrl}v@{version}-@{channel}/modules/@{scriptName}",
       "channels": {
         "alpha": {
-          "version": "0.5.3",
-          "released": "2015-08-01",
+          "version": "0.6.0",
+          "released": "2016-01-14",
           "default": true,
           "files": [
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "C8550E4E5AED94DD9604949126498ABCF3DAAD16"
+              "sha1": "7680A45DD0744DD1C1049690752842307250BA03"
             },
             {
               "name": "/ConfigHandler.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "61478FA441574001982C50D619C231B0CEB23121"
+              "sha1": "A14D9C4691E72E67766A71F36E5411BAA38A0697"
             },
             {
               "name": "/FileOps.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "610D69DBF1AD285D32F552FAB52394738C293C6E"
+              "sha1": "02A5CE4691490985C9492D2FD997906C9C934616"
             },
             {
               "name": "/Logger.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "1E08BB34295CDC8D1F77E2811BF464763ACBBE69"
+              "sha1": "1932A55299F340BECD7CB27B133015118FA21D8D"
+            },
+            {
+              "name": "/UnitTestSuite.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "BE622B5307153CB81C960FA565906AE1DC9D3C27"
             },
             {
               "name": "/UpdateFeed.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "B9F44CBB60BBADD5E002B6A43AE3229635A8207E"
+              "sha1": "6B2A2CF54A17484CA4423B42AD97B7936145938E"
             },
             {
               "name": "/Updater.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "E0391E8E6C65AEBD935FC8577DC7EA1DBFE667E7"
+              "sha1": "DDBF34B685AB36C99DEA979270A9E219BD8E55EE"
             }
           ],
           "requiredModules": [
@@ -123,6 +131,16 @@
         }
       },
       "changelog": {
+        "0.6.0": [
+          "The __UnitTestSuite__ framework for automatically testing automation scripts and modules has been added.",
+          "Macros can now be registered with custom submenu name.",
+          "Logger:logEx() now takes an additional optional `indent` parameter to specify a custom indentation level.",
+          "FileOps.move() no longer overwrites existing files by default.",
+          "FileOps.mkdir() can now take paths relative to the current working directory as input and returns `true` on success, `false` when the directory already exists or `nil` if the operation failed.",
+          "FileOps.remove() now returns detailed results for every path specified in addition to overall success information.",
+          "FileOps.move() no longer fails to move files across file systems on *nix operating systems and properly cleans up after itself if files could not be overwritten and were renamed instead.",
+          "FileOps: path validation is no longer broken on non-windows systems"
+        ],
         "0.5.3": [
           "ConfigHandler: A host of longstanding issues related to config file corruption and concurrent access to config files from multiple DepCtrl-hosting automation scripts have been fixed.",
           "Error Reports of required modules loaded by DependencyControl now actually provide semi-useful stack traces.",
