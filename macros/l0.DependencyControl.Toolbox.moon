@@ -216,4 +216,4 @@ depRec\registerMacros{
     {"Update Script", "Manually check and perform updates to any installed script.", update},
     {"Uninstall Script", "Removes an automation script or module from your system.", uninstall},
     {"Macro Configuration", "Lets you change per-automation script settings.", macroConfig},
-}
+}, "DependencyControl"
