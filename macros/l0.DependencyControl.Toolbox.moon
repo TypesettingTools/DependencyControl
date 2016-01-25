@@ -142,8 +142,10 @@ uninstall = ->
         logger\log msgs.uninstall.running, scriptType, script.name
         success, details = DepCtrl(script)\uninstall!
         if success == nil
-            fileList = table.concat ["#{path}: #{res[2]}" for path, res in pairs details when res[1] == nil], "\n"
-            logger\log msgs.uninstall.error, fileList
+            if "table" == type details
+                -- error may be a string or a file list
+                details = table.concat ["#{path}: #{res[2]}" for path, res in pairs details when res[1] == nil], "\n"
+            logger\log msgs.uninstall.error, details
         else
             msg = msgs.uninstall.success\format scriptType, script.name
             logger\log if success
