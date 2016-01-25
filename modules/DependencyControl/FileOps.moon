@@ -245,6 +245,8 @@ class FileOps
             if err -- can't create directory (possibly a permission error)
                 return nil, msgs.mkdir.createError\format err
             return true, dir
+        elseif isFile and mode == "file" -- if the file already exists, so does the directory
+            return false, dir
         elseif mode != "directory" -- a file of the same name as the target directory is already present
             return nil, msgs.mkdir.otherExists\format mode
         return false, dir
