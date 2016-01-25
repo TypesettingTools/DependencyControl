@@ -288,7 +288,6 @@ class UpdateTask extends UpdaterBase
         for file in *update.files
             file.type or= "script"
 
-            continue if file.delete
             baseName = scriptSubDir .. file.name
             tmpName, prettyName = "#{tmpDir}/#{file.type}/#{baseName}", baseName
             switch file.type
@@ -301,6 +300,7 @@ class UpdateTask extends UpdaterBase
                     file.unknown = true
                     @@logger\log msgs.performUpdate.unknownType, file.name, file.type
                     continue
+            continue if file.delete
 
             unless type(file.sha1)=="string" and #file.sha1 == 40 and tonumber(file.sha1, 16)
                 return finish -35, "#{prettyName} (#{tostring(file.sha1)\lower!})"
