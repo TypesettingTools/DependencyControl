@@ -48,7 +48,7 @@ class DependencyControl
             timer: "DependencyControl initialization took %f seconds so far..."
         }
         uninstall: {
-            noVirtualOrUnmanaged: "Can't uninstall %s %s '%s'. (Only installed scripts managed by #{@@_name} can be uninstalled)."
+            noVirtualOrUnmanaged: "Can't uninstall %s %s '%s'. (Only installed scripts managed by #{@@__name} can be uninstalled)."
         }
         writeConfig: {
             error: "An error occured while writing the #{@@__name} config file: %s"
