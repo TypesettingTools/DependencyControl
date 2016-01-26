@@ -315,11 +315,11 @@ class UpdateTask extends UpdaterBase
             @@logger\trace msgs.performUpdate.fileAddDownload, file.url, prettyName
 
         dlm\waitForFinish (progress) ->
-            @@logger\progress progress, msgs.performUpdate.filesDownloading, dlm.downloadCount
+            @@logger\progress progress, msgs.performUpdate.filesDownloading, #dlm.downloads
             return true
         @@logger\progress!
 
-        if dlm.failedCount>0
+        if #dlm.failedDownloads>0
             err = @@logger\format ["#{dl.url}: #{dl.error}" for dl in *dlm.failedDownloads], 1
             return finish -245, err
 
