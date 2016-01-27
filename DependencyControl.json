@@ -25,20 +25,20 @@
       "fileBaseUrl": "@{fileBaseUrl}macros-v@{version}-@{channel}/macros/@{namespace}",
       "channels": {
         "alpha": {
-          "version": "0.1.2",
-          "released": "2016-01-14",
+          "version": "0.1.3",
+          "released": "2016-01-27",
           "default": true,
           "files": [
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "B4895869AF5F3EC5D858E043D2E24E3E32D5701E"
+              "sha1": "3677B2817C3D1FFE86981C8ABCC092B3D2CCEE7B"
             }
           ],
           "requiredModules": [
             {
               "moduleName": "l0.DependencyControl",
-              "version": "0.6.0"
+              "version": "0.6.1"
             }
           ]
         }
@@ -53,6 +53,9 @@
         ],
         "0.1.2": [
           "All DependencyControl macros are now available under the common 'DependencyControl' automation submenu."
+        ],
+        "0.1.3": [
+          "Fixed an issue where trying to uninstall an unmanaged script resulted in an error unrelated to the intended error message."
         ]
       }
     }
@@ -66,14 +69,14 @@
       "fileBaseUrl": "@{fileBaseUrl}v@{version}-@{channel}/modules/@{scriptName}",
       "channels": {
         "alpha": {
-          "version": "0.6.0",
-          "released": "2016-01-14",
+          "version": "0.6.1",
+          "released": "2016-01-27",
           "default": true,
           "files": [
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "7680A45DD0744DD1C1049690752842307250BA03"
+              "sha1": "41E62F59ABD0FD230F34A300A6A11375018051EC"
             },
             {
               "name": "/ConfigHandler.moon",
@@ -83,7 +86,7 @@
             {
               "name": "/FileOps.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "02A5CE4691490985C9492D2FD997906C9C934616"
+              "sha1": "17F1211F163835F80E14DD7E49EBFE887DEBFC46"
             },
             {
               "name": "/Logger.moon",
@@ -103,7 +106,7 @@
             {
               "name": "/Updater.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "DDBF34B685AB36C99DEA979270A9E219BD8E55EE"
+              "sha1": "EABAB6C84320F5A656AAB4CB699E05F54D3BEC5B"
             }
           ],
           "requiredModules": [
@@ -114,7 +117,7 @@
             },
             {
               "moduleName": "DM.DownloadManager",
-              "version": "0.3.1",
+              "version": "0.4.0",
               "feed": "@{feed:ffi-experiments}"
             },
             {
@@ -131,8 +134,13 @@
         }
       },
       "changelog": {
+        "0.6.1": [
+          "The Updater component now supports the DownloadManager v0.4.0 API changes.",
+          "Updater: A regression introduced in v0.6.0 was fixed that caused update or installation processes to fail when the feed contained deletion records.",
+          "FileOps.mkdir() no longer falsely retuns an error state when a path to an existing file is passed with the `isFile` flag set."
+        ],
         "0.6.0": [
-          "The __UnitTestSuite__ framework for automatically testing automation scripts and modules has been added.",
+          "The UnitTestSuite framework for automatically testing automation scripts and modules has been added.",
           "Macros can now be registered with custom submenu name.",
           "Logger:logEx() now takes an additional optional `indent` parameter to specify a custom indentation level.",
           "FileOps.move() no longer overwrites existing files by default.",
