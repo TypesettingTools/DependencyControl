@@ -99,7 +99,7 @@ class UpdateTask extends UpdaterBase
         @status = nil
         @targetVersion = @record\getVersionNumber targetVersion
 
-        return nil, -1 unless @@config.c.updaterEnabled
+        return nil, -1 unless @@config.c.updaterEnabled -- TODO: check if this even works
         return nil, -2 unless @record\validateNamespace!
 
     set: (targetVersion, @addFeeds, @exhaustive, @channel, @optional) =>
@@ -430,7 +430,7 @@ class Updater extends UpdaterBase
         if task
             return task\set targetVersion, addFeeds, exhaustive, channel, optional
         else
-            task = UpdateTask record, targetVersion, addFeeds, exhaustive, channel, optional, @
+            task, err = UpdateTask record, targetVersion, addFeeds, exhaustive, channel, optional, @
             @tasks[record.type][record.namespace] = task
             return task, err
 
