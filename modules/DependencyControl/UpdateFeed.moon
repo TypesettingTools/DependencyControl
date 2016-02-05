@@ -1,5 +1,6 @@
 Logger = require "l0.DependencyControl.Logger"
 ffi = require "ffi"
+json = require "json"
 DownloadManager = require "DM.DownloadManager"
 
 class ScriptUpdateRecord
