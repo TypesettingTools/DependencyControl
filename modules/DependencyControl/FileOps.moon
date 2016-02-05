@@ -103,7 +103,7 @@ class FileOps
                 -- delete operation succeeded
                 else details[path] = {true}
             -- file not found or permission issue
-            else details[path] = {nil, err}
+            else details[path] = {nil, path}
 
         config\write! if configLoaded
         return overallSuccess, details, firstErr
