@@ -517,7 +517,7 @@ class UnitTest
                        }
 
         @assert self.itemsEqual(actual, expected, onlyNumKeys),
-                       msgs.assert[onlyNumKeys and "itemsEqualNumericKeys" or "itemsEqualAllKeys"],
+                       @@msgs.assert[onlyNumKeys and "itemsEqualNumericKeys" or "itemsEqualAllKeys"],
                        @logger\dumpToString(actual), @logger\dumpToString expected
 
 
@@ -533,7 +533,7 @@ class UnitTest
                        }
 
         @assert self.itemsEqual(actual, expected, onlyNumKeys, nil, true),
-                       msgs.assert[onlyNumKeys and "itemsEqualNumericKeys" or "itemsEqualAllKeys"],
+                       @@msgs.assert[onlyNumKeys and "itemsEqualNumericKeys" or "itemsEqualAllKeys"],
                        @logger\dumpToString(actual), @logger\dumpToString expected
 
     --- Fails the assertion if the numerically-keyed items of a table aren't continuous.
@@ -549,7 +549,7 @@ class UnitTest
             if type(v) == "number" and math.floor(v) == v
                 realCnt += 1
 
-        @assert realCnt == contCnt, msgs.assert.continuous, contCnt+1, realCnt
+        @assert realCnt == contCnt, @@msgs.assert.continuous, contCnt+1, realCnt
 
     -- string asserts
 
@@ -597,7 +597,7 @@ class UnitTest
         res = table.pack pcall func, ...
         retCnt, success = res.n, table.remove res, 1
         res.n = nil
-        @assert success == false, msgs.assert.error, retCnt, @logger\dumpToString res
+        @assert success == false, @@msgs.assert.error, retCnt, @logger\dumpToString res
         return res[1]
 
     --- Fails the assertion if a function call doesn't cause an error message that matches the specified pattern.
