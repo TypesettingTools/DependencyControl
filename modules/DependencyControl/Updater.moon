@@ -476,9 +476,8 @@ class Updater extends UpdaterBase
 
         @@config\load!
         running, didWait = @@config.c.updaterRunning
-        if running and running.host != @host
-            otherHost = running.host
 
+        if running and running.host != @host
             if running.time + @@config.c.updateOrphanTimeout < os.time!
                 @@logger\log msgs.getLock.orphaned, running.host
             elseif doWait
