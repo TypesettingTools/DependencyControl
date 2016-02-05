@@ -322,6 +322,11 @@ class DependencyControl
         return [mdl for mdl, _ in pairs mdlConfig.c when mdl\match pattern], mdlConfig
 
     loadModule: (mdl, usePrivate, reload) =>
+        runInitializer = (rec) ->
+            return unless type(rec) == "table" and rec.__depCtrlInit
+            if type(rec.version) != "table" or rec.version.__class != @@
+                rec.__depCtrlInit @@
+
         with mdl
             ._missing, ._error = nil
 
@@ -332,6 +337,9 @@ class DependencyControl
                 -- clear old references
                 package.loaded[moduleName], LOADED_MODULES[moduleName] = nil
             elseif ._ref = LOADED_MODULES[moduleName]
+                -- module is already loaded, however it may or may not have been loaded by DepCtrl
+                -- so we have to call any DepCtrl initializer if it hasn't been called yet
+                runInitializer ._ref
                 return ._ref
 
             loaded, res = xpcall require, debug.traceback, moduleName
@@ -347,9 +355,8 @@ class DependencyControl
                 setmetatable ._ref, res
             ._ref, LOADED_MODULES[moduleName] = res, res
 
-            -- run initialization function if one was specified
-            if "table" == type(res) and "function" == type res.__depCtrlInit and (type(res.version) != "table" or res.version.__name != @@__name)
-                res.__depCtrlInit @@
+            -- run DepCtrl initializer if one was specified
+            runInitializer res
 
         return mdl._ref  -- having this in the with block breaks moonscript
 
