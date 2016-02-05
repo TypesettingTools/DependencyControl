@@ -1,4 +1,3 @@
-lfs = require "lfs"
 util = require "aegisub.util"
 json = require "json"
 PreciseTimer = require "PT.PreciseTimer"

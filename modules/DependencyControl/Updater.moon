@@ -1,3 +1,4 @@
+lfs = require "lfs"
 UpdateFeed = require "l0.DependencyControl.UpdateFeed"
 fileOps = require "l0.DependencyControl.FileOps"
 Logger = require "l0.DependencyControl.Logger"

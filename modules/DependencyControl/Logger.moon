@@ -1,5 +1,4 @@
 PreciseTimer = require "PT.PreciseTimer"
-ffi = require "ffi"
 lfs = require "lfs"
 
 class Logger

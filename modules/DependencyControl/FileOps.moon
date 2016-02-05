@@ -1,5 +1,7 @@
 ffi = require "ffi"
-re = require "aegisub.re"
+re =  require "aegisub.re"
+lfs = require "lfs"
+
 Logger = require "l0.DependencyControl.Logger"
 local ConfigHandler
 
