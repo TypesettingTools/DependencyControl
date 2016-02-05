@@ -168,10 +168,12 @@ class UpdateTask extends UpdaterBase
             for feed in *@addFeeds
                 unless @triedFeeds[feed] or haveFeeds[feed]
                     feeds[#feeds+1] = feed
+                    haveFeeds[feed] = true
 
             for feed in *@@config.c.extraFeeds
                 unless @triedFeeds[feed] or haveFeeds[feed]
                     feeds[#feeds+1] = feed
+                    haveFeeds[feed] = true
 
         if #feeds == 0
             if @optional
