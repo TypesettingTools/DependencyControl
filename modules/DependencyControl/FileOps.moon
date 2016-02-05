@@ -168,7 +168,7 @@ class FileOps
         mode, err = FileOps.attributes target, "mode"
         if mode == "file"
             unless overwrite
-                return false, msg.move.exists\format source, target, mode
+                return false, msgs.move.exists\format source, target, mode
             FileOps.logger\trace msgs.move.overwritingFile, target
             res, _, err = FileOps.remove target
             unless res
@@ -281,7 +281,7 @@ class FileOps
         path = path\gsub "[\\/]+", pathMatch.sep
         -- check length
         if #path > pathMatch.maxLen
-            return false, msgs.validateFullPath.tooLong\format #path, maxLen
+            return false, msgs.validateFullPath.tooLong\format #path, pathMatch.maxLen
         -- check for invalid characters
         invChar = path\match pathMatch.invalidChars, ffi.os == "Windows" and 3 or nil
         if invChar
