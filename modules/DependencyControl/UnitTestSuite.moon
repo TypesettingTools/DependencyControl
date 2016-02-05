@@ -566,7 +566,7 @@ class UnitTest
                        }
 
         match = useRegex and re.match(str, pattern, ...) or str\match pattern, ...
-        @assert msgs.assert.matches, str, useRegex and "regex" or "Lua", pattern
+        @assert match, @@msgs.assert.matches, str, useRegex and "regex" or "Lua", pattern
 
     --- Fails the assertion if a string doesn't contain a specified substring.
     -- Search is case-sensitive by default.
@@ -615,7 +615,7 @@ class UnitTest
         msg = @assertError func, unpack params
 
         match = useRegex and re.match(msg, pattern, ...) or msg\match pattern, ...
-        @assert msgs.assert.errorMsgMatches, msg, useRegex and "regex" or "Lua", pattern
+        @assert match, @@msgs.assert.errorMsgMatches, msg, useRegex and "regex" or "Lua", pattern
 
 
 --- A special case of the UnitTest class for a setup routine
