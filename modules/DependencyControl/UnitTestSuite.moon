@@ -382,28 +382,28 @@ class UnitTest
     -- @tparam number limit the lower limit (exclusive)
     assertLessThan: (actual, limit) =>
         @checkArgTypes actual: {actual, "number"}, limit: {limit, "number"}
-        @assert actual < max, @@msgs.assert.compare, "<", limit, actual
+        @assert actual < limit, @@msgs.assert.compare, "<", limit, actual
 
     --- Fails the assertion if a number is not lower than or equal to the specified value.
     -- @tparam number actual the number to compare
     -- @tparam number limit the lower limit (inclusive)
     assertLessThanOrEquals: (actual, limit) =>
         @checkArgTypes actual: {actual, "number"}, limit: {limit, "number"}
-        @assert actual <= max, @@msgs.assert.compare, "<=", limit, actual
+        @assert actual <= limit, @@msgs.assert.compare, "<=", limit, actual
 
     --- Fails the assertion if a number is not greater than the specified value.
     -- @tparam number actual the number to compare
     -- @tparam number limit the upper limit (exclusive)
     assertGreaterThan: (actual, limit) =>
         @checkArgTypes actual: {actual, "number"}, limit: {limit, "number"}
-        @assert actual > max, @@msgs.assert.compare, ">", limit, actual
+        @assert actual > limit, @@msgs.assert.compare, ">", limit, actual
 
     --- Fails the assertion if a number is not greater than or equal to the specified value.
     -- @tparam number actual the number to compare
     -- @tparam number limit the upper limit (inclusive)
     assertGreaterThanOrEquals: (actual, limit) =>
         @checkArgTypes actual: {actual, "number"}, limit: {limit, "number"}
-        @assert actual >= max, @@msgs.assert.compare, ">=", limit, actual
+        @assert actual >= limit, @@msgs.assert.compare, ">=", limit, actual
 
     --- Fails the assertion if a number is not in range of an expected value +/- a specified margin.
     -- @tparam number actual the actual value
@@ -425,8 +425,7 @@ class UnitTest
         @checkArgTypes actual: {actual, "number"}, value: {value, "number"}, max: {margin, "number"}
 
         margin = math.abs margin
-        @assert math.abs(actual-expected) > margin, @@msgs.assert.almostEquals,
-                                                           expected, margin, actual
+        @assert math.abs(actual-value) > margin, @@msgs.assert.almostEquals, value, margin, actual
 
     --- Fails the assertion if a number is not equal to 0 (zero).
     -- @tparam number actual the value
