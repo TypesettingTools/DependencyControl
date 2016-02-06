@@ -8,7 +8,7 @@
   "maintainer": "line0",
   "knownFeeds": {
     "line0scripts": "https://raw.githubusercontent.com/TypesettingTools/line0-Aegisub-Scripts/master/DependencyControl.json",
-    "a-mo": "https://raw.githubusercontent.com/TypesettingCartel/Aegisub-Motion/DepCtrl/DependencyControl.json",
+    "a-mo": "https://raw.githubusercontent.com/TypesettingTools/Aegisub-Motion/DepCtrl/DependencyControl.json",
     "SubInspector": "https://raw.githubusercontent.com/TypesettingTools/SubInspector/master/DependencyControl.json",
     "ASSFoundation": "https://raw.githubusercontent.com/TypesettingTools/ASSFoundation/master/DependencyControl.json",
     "ffi-experiments": "https://raw.githubusercontent.com/torque/ffi-experiments/master/DependencyControl.json",
@@ -69,44 +69,44 @@
       "fileBaseUrl": "@{fileBaseUrl}v@{version}-@{channel}/modules/@{scriptName}",
       "channels": {
         "alpha": {
-          "version": "0.6.1",
-          "released": "2016-01-27",
+          "version": "0.6.2",
+          "released": "2016-02-06",
           "default": true,
           "files": [
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "96DC55D2390603CF8F752B9451F995F76827839B"
+              "sha1": "0135ADCF023F2150B7324C5BABE72F0F26E412F1"
             },
             {
               "name": "/ConfigHandler.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "A14D9C4691E72E67766A71F36E5411BAA38A0697"
+              "sha1": "97BCD3207FE8158261FA7851057464535FCEFBC6"
             },
             {
               "name": "/FileOps.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "17F1211F163835F80E14DD7E49EBFE887DEBFC46"
+              "sha1": "D999D34DB93BA76EF0E991CEB1CD63F5CC5F8E68"
             },
             {
               "name": "/Logger.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "1932A55299F340BECD7CB27B133015118FA21D8D"
+              "sha1": "1E479FE95F0DFBEE8B098302AB589F32D0C40A00"
             },
             {
               "name": "/UnitTestSuite.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "BE622B5307153CB81C960FA565906AE1DC9D3C27"
+              "sha1": "ADAB6EFB05E08A7828DCA01BC1FC43D6482979A1"
             },
             {
               "name": "/UpdateFeed.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "6B2A2CF54A17484CA4423B42AD97B7936145938E"
+              "sha1": "1EE16D9D551FF82C2D7E448F2CD980E528874108"
             },
             {
               "name": "/Updater.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "EABAB6C84320F5A656AAB4CB699E05F54D3BEC5B"
+              "sha1": "A4AE061724E68B2EFBB7495A477263E1746E228A"
             }
           ],
           "requiredModules": [
@@ -134,6 +134,12 @@
         }
       },
       "changelog": {
+        "0.6.2": [
+          "An issue was fixed that would cause DepCtrl initializer code in modules previously loaded with regular Lua loading mechanisms to be skipped when requested in a _DependencyControl_- context. This kept the [requireffi](https://github.com/torque/ffi-experiments/tree/master/requireffi) _DependencyControl_ record from being established, preventing any updates from taking place.",
+          "UnitTestSuite: Fixed several broken assertions and related error messages, among them the `assertMatches` and `assertErrorMatches` assertions always returning `true`. Please make sure to rerun your tests after upgrading to confirm your tested actually return values whatever they were supposed to match.",
+          "Updater: Identical or duplicate feeds from different sources (user configuration, feeds and API use) are no longer being checked for updates multiple times.",
+          "Updater / FileOps: Fixed several broken error messages and return values."
+        ],
         "0.6.1": [
           "The Updater component now supports the DownloadManager v0.4.0 API changes.",
           "Updater: A regression introduced in v0.6.0 was fixed that caused update or installation processes to fail when the feed contained deletion records.",
