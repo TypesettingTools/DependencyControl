@@ -69,14 +69,14 @@
       "fileBaseUrl": "@{fileBaseUrl}v@{version}-@{channel}/modules/@{scriptName}",
       "channels": {
         "alpha": {
-          "version": "0.6.2",
+          "version": "0.6.3",
           "released": "2016-02-06",
           "default": true,
           "files": [
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "0135ADCF023F2150B7324C5BABE72F0F26E412F1"
+              "sha1": "76C22149258CB1189265A367C1B28046F54F8FB3"
             },
             {
               "name": "/ConfigHandler.moon",
@@ -134,6 +134,9 @@
         }
       },
       "changelog": {
+        "0.6.3": [
+          "Fixed a v0.6.2 regression that caused DependencyControl to fail loading the first time after a scheduled self-update."
+        ],
         "0.6.2": [
           "An issue was fixed that would cause DepCtrl initializer code in modules previously loaded with regular Lua loading mechanisms to be skipped when requested in a _DependencyControl_- context. This kept the [requireffi](https://github.com/torque/ffi-experiments/tree/master/requireffi) _DependencyControl_ record from being established, preventing any updates from taking place.",
           "UnitTestSuite: Fixed several broken assertions and related error messages, among them the `assertMatches` and `assertErrorMatches` assertions always returning `true`. Please make sure to rerun your tests after upgrading to confirm your tested actually return values whatever they were supposed to match.",

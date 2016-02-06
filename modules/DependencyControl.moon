@@ -322,10 +322,12 @@ class DependencyControl
         return [mdl for mdl, _ in pairs mdlConfig.c when mdl\match pattern], mdlConfig
 
     loadModule: (mdl, usePrivate, reload) =>
-        runInitializer = (rec) ->
-            return unless type(rec) == "table" and rec.__depCtrlInit
-            if type(rec.version) != "table" or rec.version.__class != @@
-                rec.__depCtrlInit @@
+        runInitializer = (ref) ->
+            return unless type(ref) == "table" and ref.__depCtrlInit
+            -- Note to future self: don't change this to a class check! When DepCtrl self-updates
+            -- any managed module initialized before will still use the same instance
+            if type(ref.version) != "table" or ref.version.__name != @@__name
+                ref.__depCtrlInit @@
 
         with mdl
             ._missing, ._error = nil
@@ -540,7 +542,7 @@ class DependencyControl
 
 rec = DependencyControl{
     name: "DependencyControl",
-    version: "0.6.2",
+    version: "0.6.3",
     description: "Provides script management and auto-updating for Aegisub macros and modules.",
     author: "line0",
     url: "http://github.com/TypesettingTools/DependencyControl",
