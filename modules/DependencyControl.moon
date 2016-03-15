@@ -1,18 +1,20 @@
 json = require "json"
-lfs = require "lfs"
-re = require "aegisub.re"
-ffi = require "ffi"
-Logger = require "l0.DependencyControl.Logger"
-UpdateFeed = require "l0.DependencyControl.UpdateFeed"
-ConfigHandler = require "l0.DependencyControl.ConfigHandler"
-fileOps = require "l0.DependencyControl.FileOps"
-Updater = require "l0.DependencyControl.Updater"
-UnitTestSuite = require "l0.DependencyControl.UnitTestSuite"
+lfs =  require "lfs"
+re =   require "aegisub.re"
+
+Common =         require "l0.DependencyControl.Common"
+Logger =         require "l0.DependencyControl.Logger"
+UpdateFeed =     require "l0.DependencyControl.UpdateFeed"
+ConfigHandler =  require "l0.DependencyControl.ConfigHandler"
+fileOps =        require "l0.DependencyControl.FileOps"
+Updater =        require "l0.DependencyControl.Updater"
+UnitTestSuite =  require "l0.DependencyControl.UnitTestSuite"
+
 DownloadManager = require "DM.DownloadManager"
-PreciseTimer = require "PT.PreciseTimer"
+PreciseTimer =    require "PT.PreciseTimer"
 
 
-class DependencyControl
+class DependencyControl extends Common
     semParts = {{"major", 16}, {"minor", 8}, {"patch", 0}}
     namespaceValidation = re.compile "^(?:[-\\w]+\\.)+[-\\w]+$"
     msgs = {
@@ -68,8 +70,7 @@ class DependencyControl
     }
 
     dlm = DownloadManager!
-    platform, logsHaveBeenTrimmed, scheduledRemovalHasRun = "#{ffi.os}-#{ffi.arch}"
-    cumInitTime = 0
+    cumInitTime, logsHaveBeenTrimmed, scheduledRemovalHasRun = 0
     fileOps.mkdir depConf.file, true
 
     @ConfigHandler = ConfigHandler
@@ -78,9 +79,6 @@ class DependencyControl
     @Updater = Updater
     @UnitTestSuite = UnitTestSuite
     @FileOps = fileOps
-
-    automationDir: {macros:  aegisub.decode_path("?user/automation/autoload"),
-                    modules: aegisub.decode_path("?user/automation/include")}
 
     new: (args) =>
         timer = PreciseTimer!
@@ -91,18 +89,19 @@ class DependencyControl
         } when args[k] == nil
 
         {@requiredModules, moduleName:@moduleName, configFile:configFile, virtual:@virtual, :name,
-         description:@description, url:@url, feed:@feed, unmanaged:@unmanaged, :namespace,
+         description:@description, url:@url, feed:@feed, recordType:@recordType, :namespace,
          author:@author, :version, configFile:@configFile,
          :readGlobalScriptVars, :saveRecordToConfig} = args
 
+        @recordType or= @@RecordType.Managed
         -- also support name key (as used in configuration) for required modules
         @requiredModules or= args.requiredModules
 
         if @moduleName
             @namespace = @moduleName
             @name = name or @moduleName
-            @type = "modules"
-            @createDummyRef! unless @virtual or @unmanaged
+            @scriptType = @@ScriptType.Module
+            @createDummyRef! unless @virtual or @recordType == @@RecordType.Unmanaged
 
         else
             if @virtual or not readGlobalScriptVars
@@ -116,9 +115,9 @@ class DependencyControl
                 version or= script_version
 
             @namespace = namespace or script_namespace
-            assert not @unmanaged, msgs.new.badRecordError\format msgs.new.badRecord.noUnmanagedMacros
+            assert @recordType == @@RecordType.Managed, msgs.new.badRecordError\format msgs.new.badRecord.noUnmanagedMacros
             assert @namespace, msgs.new.badRecordError\format msgs.new.badRecord.missingNamespace
-            @type = "macros"
+            @scriptType = @@ScriptType.Automation
 
         -- if the hosting macro doesn't have a namespace defined, define it for
         -- the first DepCtrled module loaded by the macro or its required modules
@@ -126,11 +125,12 @@ class DependencyControl
             export script_namespace = @namespace
 
         -- non-depctrl record don't need to conform to namespace rules
-        assert @virtual or @unmanaged or @validateNamespace!, msgs.new.badRecord.badNamespace\format @namespace
+        assert @virtual or @recordType == @@RecordType.Unmanaged or @validateNamespace!,
+               msgs.new.badRecord.badNamespace\format @namespace
 
         @configFile = configFile or "#{@namespace}.json"
-        @automationDir = @@automationDir[@type]
-        @testDir = UnitTestSuite.testDir[@type]
+        @automationDir = @@automationDir[@scriptType]
+        @testDir = @@testDir[@scriptType]
         @version, err = @getVersionNumber version
         assert @version, msgs.new.badRecordError\format msgs.new.badRecord.badVersion\format err
 
@@ -179,21 +179,21 @@ class DependencyControl
         @@logger\trace msgs.new.timer, cumInitTime
 
     createDummyRef: =>
-        return nil unless @moduleName
+        return nil if @scriptType != @@ScriptType.Module
         -- global module registry allows for circular dependencies:
         -- set a dummy reference to this module since this module is not ready
         -- when the other one tries to load it (and vice versa)
         export LOADED_MODULES = {} unless LOADED_MODULES
-        unless LOADED_MODULES[@moduleName]
+        unless LOADED_MODULES[@namespace]
             @ref = {}
-            LOADED_MODULES[@moduleName] = setmetatable {__depCtrlDummy: true, version: @}, @ref
+            LOADED_MODULES[@namespace] = setmetatable {__depCtrlDummy: true, version: @}, @ref
             return true
         return false
 
     removeDummyRef: =>
-        return nil unless @moduleName
-        if LOADED_MODULES[@moduleName] and LOADED_MODULES[@moduleName].__depCtrlDummy
-            LOADED_MODULES[@moduleName] = nil
+        return nil if @scriptType != @@ScriptType.Module
+        if LOADED_MODULES[@namespace] and LOADED_MODULES[@namespace].__depCtrlDummy
+            LOADED_MODULES[@namespace] = nil
             return true
         return  false
 
@@ -204,7 +204,8 @@ class DependencyControl
 
         -- load per-script config
         -- virtual modules are not yet present on the user's system and have no persistent configuration
-        @config or= ConfigHandler not @virtual and depConf.file, {}, {@type, @namespace}, true
+        @config or= ConfigHandler not @virtual and depConf.file, {},
+                    { @@ScriptType.name.legacy[@scriptType], @namespace }, true
 
         -- import and overwrites version record from the configuration
         if importRecord
@@ -242,7 +243,7 @@ class DependencyControl
             if writeGlobal
                 success, errMsg = @@config\write false
             if writeLocal and (success or not writeGlobal)
-                @@logger\trace msgs.writeConfig.writingLocal, @moduleName and "module" or "macro"
+                @@logger\trace msgs.writeConfig.writingLocal, @@terms.scriptType.singular[@scriptType]
                 @config\import @, depConf.scriptFields, false, true
                 success, errMsg = @config\write false
 
@@ -316,9 +317,9 @@ class DependencyControl
         return true
 
     getSubmodules: =>
-        return nil if @virtual or @unmanaged or not @moduleName
-        mdlConfig = @@config\getSectionHandler "modules"
-        pattern = "^#{@moduleName}."\gsub "%.", "%%."
+        return nil if @virtual or @recordType == @@RecordType.Unmanaged or @scriptType != @@ScriptType.Module
+        mdlConfig = @@config\getSectionHandler @@ScriptType.name.legacy[@@ScriptType.Module]
+        pattern = "^#{@namespace}."\gsub "%.", "%%."
         return [mdl for mdl, _ in pairs mdlConfig.c when mdl\match pattern], mdlConfig
 
     loadModule: (mdl, usePrivate, reload) =>
@@ -403,7 +404,7 @@ class DependencyControl
                         continue
 
                     if type(record) != "table" or record.__class != @@
-                        record = @@ moduleName:.moduleName, version:record, unmanaged:true
+                        record = @@ moduleName: .moduleName, version: record, recordType: @@RecordType.Unmanaged
 
                     -- force an update for outdated modules
                     if not record\checkVersion .version
@@ -453,7 +454,7 @@ class DependencyControl
 
     registerTests: (...) =>
         -- load external tests
-        haveTests, tests = pcall require, "DepUnit.#{@type}.#{@namespace}"
+        haveTests, tests = pcall require, "DepUnit.#{@@ScriptType.name.legacy[@scriptType]}.#{@namespace}"
 
         if haveTests and not @testsLoaded
             @tests, tests.name = tests, @name
@@ -510,9 +511,9 @@ class DependencyControl
         return isVirtual or namespaceValidation\match @namespace
 
     uninstall: (removeConfig = true) =>
-        if @virtual or @unmanaged
+        if @virtual or @recordType == @@RecordType.Unmanaged
             return nil, msgs.uninstall.noVirtualOrUnmanaged\format @virtual and "virtual" or "unmanaged",
-                                                                   @moduleName and "module" or "macro",
+                                                                   @@terms.scriptType.singular[@scriptType],
                                                                    @name
         @config\delete!
         subModules, mdlConfig = @getSubmodules!

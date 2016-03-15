@@ -1,11 +1,14 @@
 lfs = require "lfs"
-UpdateFeed = require "l0.DependencyControl.UpdateFeed"
-fileOps = require "l0.DependencyControl.FileOps"
-Logger = require "l0.DependencyControl.Logger"
 DownloadManager = require "DM.DownloadManager"
 PreciseTimer = require "PT.PreciseTimer"
 
-class UpdaterBase
+UpdateFeed = require "l0.DependencyControl.UpdateFeed"
+fileOps =    require "l0.DependencyControl.FileOps"
+Logger =     require "l0.DependencyControl.Logger"
+Common =     require "l0.DependencyControl.Common"
+DependencyControl = nil
+
+class UpdaterBase extends Common
     @logger = Logger fileBaseName: @@__name
     @config = nil  -- set on creation of the Updater
     msgs = {
@@ -32,22 +35,18 @@ class UpdaterBase
         updaterErrorComponent: {"DownloadManager (adding download)", "DownloadManager"}
     }
 
-    getUpdaterErrorMsg: (code, name, ...) =>
-        args = {...}
+    getUpdaterErrorMsg: (code, name, scriptType, isInstall, detailMsg) =>
         if code <= -100
             -- Generic downstream error
-            -- VarArgs: 1: isModule, 2: isFetch, 3: error msg
             return msgs.updateError[100]\format -code, msgs.updaterErrorComponent[math.floor(-code/100)],
-                   args[2] and "fetch" or "update", args[1] and "module" or "macro", name, args[3]
+                   @@terms.isInstall[isInstall], @@terms.scriptType.singular[scriptType], name, detailMsg
         else
             -- Updater error:
-            -- VarArgs: 1: isModule, 2: isFetch, 3: additional information
-            return msgs.updateError[-code]\format args[2] and "fetch" or "update",
-                                                  args[1] and "module" or "macro",
-                                                  name, args[3]
+            return msgs.updateError[-code]\format @@terms.isInstall[isInstall],
+                                                  @@terms.scriptType.singular[scriptType],
+                                                  name, detailMsg
 
 class UpdateTask extends UpdaterBase
-    DependencyControl = nil
     dlm = DownloadManager!
     msgs = {
         checkFeed: {
@@ -63,7 +62,7 @@ class UpdateTask extends UpdaterBase
             fetching: "Trying to %sfetch missing %s '%s'..."
             feedCandidates: "Trying %d candidate feeds (%s mode)..."
             feedTrying: "Checking feed %d/%d (%s)..."
-            upToDate: "%s '%s' is up-to-date (v%s)."
+            upToDate: "The %s '%s' is up-to-date (v%s)."
             alreadyUpdated: "%s v%s has already been installed."
             noFeedAvailExt: "(required: %s; installed: %s; available: %s)"
             noUpdate: "Feed has no new update."
@@ -115,9 +114,9 @@ class UpdateTask extends UpdaterBase
                 return nil, msgs.checkFeed.downloadFailed\format err
 
         -- select our script and update channel
-        updateRecord = feed\getScript @record.namespace, @record.moduleName, @record.config, false
+        updateRecord = feed\getScript @record.namespace, @record.scriptType, @record.config, false
         unless updateRecord
-            return nil, msgs.checkFeed.noData\format @record.moduleName and "module" or "macro", @record.name
+            return nil, msgs.checkFeed.noData\format @@terms.scriptType.singular[@record.scriptType], @record.name
 
         success, currentChannel = updateRecord\setChannel @channel
         unless success
@@ -126,7 +125,7 @@ class UpdateTask extends UpdaterBase
         -- check if an update is available and satisfies our requirements
         res, version = @record\checkVersion updateRecord.version
         if res == nil
-            return nil, msgs.checkFeed.invalidVersion\format @record.moduleName and "module" or "macro",
+            return nil, msgs.checkFeed.invalidVersion\format @@terms.scriptType.singular[@record.scriptType],
                                                              @record.name, currentChannel, tostring updateRecord.version
         elseif res or @targetVersion > version
             return false, nil, version
@@ -144,11 +143,11 @@ class UpdateTask extends UpdaterBase
     run: (waitLock, exhaustive = @@config.c.tryAllFeeds or @@exhaustive) =>
         logUpdateError = (code, extErr, virtual = @virtual) ->
             if code < 0
-                @@logger\log @getUpdaterErrorMsg code, @record.name, @record.moduleName, virtual, extErr
+                @@logger\log @getUpdaterErrorMsg code, @record.name, @record.scriptType, virtual, extErr
             return code, extErr
 
-        with @record do @@logger\log msgs.run.starting, .virtual and "download" or "update",
-                                                        .moduleName and "module" or "macro", .name
+        with @record do @@logger\log msgs.run.starting, @@terms.isInstall[.virtual],
+                                                        @@terms.scriptType.singular[.scriptType], .name
 
         -- don't perform update of a script when another one is already running for the same script
         return logUpdateError -10 if @running
@@ -178,7 +177,7 @@ class UpdateTask extends UpdaterBase
         if #feeds == 0
             if @optional
                 @@logger\log msgs.run.skippedOptional, @record.name,
-                             @record.virtual and "download" or "update", msgs.run.optionalNoFeed
+                             @@terms.isInstall[@record.virtual], msgs.run.optionalNoFeed
                 return 3
 
             return logUpdateError -4
@@ -222,7 +221,7 @@ class UpdateTask extends UpdaterBase
             -- for a script to be marked up-to-date it has to installed on the user's system
             -- and the version must at least be that returned by at least one feed
             if maxVer>0 and not @record.virtual and @targetVersion <= @record.version
-                @@logger\log msgs.run.upToDate, @record.moduleName and "Module" or "Macro",
+                @@logger\log msgs.run.upToDate, @@terms.scriptType.singular[@record.scriptType],
                                                 @record.name, @record\getVersionString!
                 return 0
 
@@ -231,7 +230,7 @@ class UpdateTask extends UpdaterBase
                                                  maxVer<1 and "none" or @record\getVersionString maxVer
 
             if @optional
-                @@logger\log msgs.run.skippedOptional, @record.name, @record.virtual and "download" or "update",
+                @@logger\log msgs.run.skippedOptional, @record.name, @@terms.isInstall[@record.virtual],
                                                        msgs.run.optionalNoUpdate\format res
                 return 3
 
@@ -243,7 +242,7 @@ class UpdateTask extends UpdaterBase
     performUpdate: (update) =>
         finish = (...) ->
             @running = false
-            if @record.virtual or @record.unmanaged
+            if @record.virtual or @record.recordType == @@RecordType.Unmanaged
                 @record\removeDummyRef!
             return ...
 
@@ -253,7 +252,7 @@ class UpdateTask extends UpdaterBase
 
         -- set a dummy ref (which hasn't yet been set for virtual and unmanaged modules)
         -- and record version to allow resolving circular dependencies
-        if @record.virtual or @record.unmanaged
+        if @record.virtual or @record.recordType == @@RecordType.Unmanaged
             @record\createDummyRef!
             @record\setVersion update.version
 
@@ -285,7 +284,8 @@ class UpdateTask extends UpdaterBase
 
         @@logger\log msgs.performUpdate.updateReady, tmpDir
 
-        scriptSubDir = @record.moduleName and @record.moduleName\gsub("%.","/") or @record.namespace
+        scriptSubDir = @record.namespace
+        scriptSubDir = scriptSubDir\gsub "%.","/" if @record.scriptType == @@ScriptType.Module
 
         dlm\clear!
         for file in *update.files
@@ -352,7 +352,7 @@ class UpdateTask extends UpdaterBase
         oldVer, wasVirtual = @record.version, @record.virtual
 
         -- Update complete, refresh module information/configuration
-        if @record.moduleName
+        if @record.scriptType == @@ScriptType.Module
             ref = @record\loadModule @record, false, true
             unless ref
                 if @record._error
@@ -363,19 +363,21 @@ class UpdateTask extends UpdaterBase
             if type(ref.version) == "table" and ref.version.__class.__name == DependencyControl.__name
                 @record = ref.version
             else
+                -- look for any compatible non-DepCtrl version records and create an unmanaged record
                 return finish -57 unless ref.version
-                success, rec = pcall DependencyControl, {moduleName: @record.moduleName, version: ref.version, unmanaged: true, name: @record.name}
+                success, rec = pcall DependencyControl, { moduleName: @record.moduleName, version: ref.version,
+                                                          recordType: @@RecordType.Unmanaged, name: @record.name }
                 return finish -58, rec unless success
                 @record = rec
             @ref = ref
 
         else with @record
-            .name, .version, .virtual, .unmanaged = @record.name, @record\getVersionNumber update.version
+            .name, .version, .virtual = @record.name, @record\getVersionNumber update.version
             @record\writeConfig true, false
 
         @updated = true
-        @@logger\log msgs.performUpdate.updSuccess, wasVirtual and "Download" or "Update",
-                                                    @record.moduleName and "module" or "macro",
+        @@logger\log msgs.performUpdate.updSuccess, @@terms.capitalize(@@terms.isInstall[wasVirtual]),
+                                                    @@terms.scriptType.singular[@record.scriptType],
                                                     @record.name, @record\getVersionString!
 
         -- Diplay changelog
@@ -392,14 +394,13 @@ class UpdateTask extends UpdaterBase
             \loadConfig true
             if wasVirtual and not .virtual or .version > oldVersion
                 @updated = true
-                @ref = \loadModule @record, false, true if .moduleName
+                @ref = \loadModule @record, false, true if .scriptType == @@ScriptType.Module
                 if wasVirtual
-                    @@logger\log msgs.refreshRecord.unsetVirtual, .moduleName and "module" or "macro", .name
+                    @@logger\log msgs.refreshRecord.unsetVirtual, @@terms.scriptType.singular[.scriptType], .name
                 else
-                    @@logger\log msgs.refreshRecord.otherUpdate, .moduleName and "module" or "macro", .name, \getVersionString!
+                    @@logger\log msgs.refreshRecord.otherUpdate, @@terms.scriptType.singular[.scriptType], .name, \getVersionString!
 
 class Updater extends UpdaterBase
-    DependencyControl = nil
     msgs = {
         getLock: {
             orphaned: "Ignoring orphaned in-progress update started by %s."
@@ -417,7 +418,7 @@ class Updater extends UpdaterBase
         }
     }
     new: (@host = script_namespace, globalConfig, logger) =>
-        @tasks = macros: {}, modules: {}
+        @tasks = {scriptType, {} for _, scriptType in pairs @@ScriptType when "number" == type scriptType}
         super.config = globalConfig
         super.logger = logger if logger
 
@@ -428,25 +429,25 @@ class Updater extends UpdaterBase
             depRec[k] = v for k, v in pairs record
             record = DependencyControl depRec
 
-        task = @tasks[record.type][record.namespace]
+        task = @tasks[record.scriptType][record.namespace]
         if task
             return task\set targetVersion, addFeeds, exhaustive, channel, optional
         else
             task, err = UpdateTask record, targetVersion, addFeeds, exhaustive, channel, optional, @
-            @tasks[record.type][record.namespace] = task
+            @tasks[record.scriptType][record.namespace] = task
             return task, err
 
     require: (record, ...) =>
-        @@logger\assert record.moduleName, msgs.require, record.name or record.namespace
-        @@logger\log "%s module '%s'...", record.virtual and "Fetching required" or "Updating outdated", record.name
+        @@logger\assert record.scriptType == @@ScriptType.Module, msgs.require, record.name or record.namespace
+        @@logger\log "%s module '%s'...", record.virtual and "Installing required" or "Updating outdated", record.name
         task, code = @addTask record, ...
         code, res = task\run true if task
 
         if code == 0 and not task.updated
             -- usually we know in advance if a module is up to date so there's no reason to block other updaters
             -- but we'll make sure to handle this case gracefully, anyway
-            @@logger\debug msgs.require.upToDate, task.record.name or task.record.moduleName
-            return task.record\loadModule task.record.moduleName
+            @@logger\debug msgs.require.upToDate, task.record.name or task.record.namespace
+            return task.record\loadModule task.record.namespace
         elseif code >= 0
             return task.ref
         else -- pass on update errors
@@ -458,7 +459,7 @@ class Updater extends UpdaterBase
             return -1
 
         -- no regular updates for non-existing or unmanaged modules
-        if record.virtual or record.unmanaged
+        if record.virtual or record.recordType == @@RecordType.Unmanaged
             return -3
 
         -- the update interval has not yet been passed since the last update check
@@ -469,7 +470,7 @@ class Updater extends UpdaterBase
         record.config\write!
 
         task = @addTask record -- no need to check for errors, because we've already accounted for those case
-        @@logger\trace msgs.scheduleUpdate.runningUpdate, record.moduleName and "module" or "macro", record.name
+        @@logger\trace msgs.scheduleUpdate.runningUpdate, @@terms.scriptType.singular[record.scriptType], record.name
         return task\run!
 
 
@@ -505,7 +506,7 @@ class Updater extends UpdaterBase
         -- reload important module version information from configuration
         -- because another updater instance might have updated them in the meantime
         if didWait
-            task\refreshRecord! for _,task in pairs @tasks.modules
+            task\refreshRecord! for _,task in pairs @tasks[@@ScriptType.Module]
 
         return true
 

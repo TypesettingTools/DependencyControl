@@ -1,10 +1,11 @@
-Logger = require "l0.DependencyControl.Logger"
-ffi = require "ffi"
 json = require "json"
 DownloadManager = require "DM.DownloadManager"
 
-class ScriptUpdateRecord
-    platform = "#{ffi.os}-#{ffi.arch}"
+DependencyControl = nil
+Logger            = require "l0.DependencyControl.Logger"
+Common            = require "l0.DependencyControl.Common"
+
+class ScriptUpdateRecord extends Common
     msgs = {
         errors: {
             noActiveChannel: "No active channel."
@@ -17,8 +18,8 @@ class ScriptUpdateRecord
     }
     @logger = Logger fileBaseName: @@__name
 
-    new: (@namespace, @data, @config = {c:{}}, isModule, autoChannel = true, @@logger = @@logger) =>
-        @moduleName = isModule and @namespace
+    new: (@namespace, @data, @config = {c:{}}, scriptType, autoChannel = true, @@logger = @@logger) =>
+        @moduleName = scriptType == @@ScriptType.Module and @namespace
         @[k] = v for k, v in pairs data
         @setChannel! if autoChannel
 
@@ -41,12 +42,12 @@ class ScriptUpdateRecord
             return false, @activeChannel unless channelData
             @[k] = v for k, v in pairs channelData
 
-        @files = @files and [file for file in *@files when not file.platform or file.platform == platform] or {}
+        @files = @files and [file for file in *@files when not file.platform or file.platform == @@platform] or {}
         return true, @activeChannel
 
     checkPlatform: =>
         @@logger\assert @activeChannel, msgs.errors.noActiveChannel
-        return not @platforms or ({p,true for p in *@platforms})[platform], platform
+        return not @platforms or ({p,true for p in *@platforms})[@@platform], @@platform
 
     getChangelog: (versionRecord, minVer = 0) =>
         return "" unless "table" == type @changelog
@@ -72,7 +73,7 @@ class ScriptUpdateRecord
 
         return table.concat msg, "\n"
 
-class UpdateFeed
+class UpdateFeed extends Common
     templateData = {
         maxDepth: 7,
         templates: {
@@ -129,6 +130,8 @@ class UpdateFeed
             table.sort .sourceAt[i], (a,b) -> return .templates[a].order < .templates[b].order
 
     new: (@url, autoFetch = true, fileName) =>
+        DependencyControl or= require "l0.DependencyControl"
+
         -- delete old feeds
         feedsHaveBeenTrimmed or= Logger(fileMatchTemplate: @@fileMatchTemplate, logDir: @@downloadPath, maxFiles: 20)\trimFiles!
 
@@ -166,7 +169,9 @@ class UpdateFeed
             -- luajson errors are useless dumps of whatever, no use to pass them on to the user
             return false, msgs.errors.parse
 
-        data[key] = {} for key in *{"macros", "modules", "knownFeeds"} when not data[key]
+        data[key] = {} for key in *{ @@ScriptType.name.legacy[@@ScriptType.Automation],
+                                     @@ScriptType.name.legacy[@@ScriptType.Module],
+                                     "knownFeeds"} when not data[key]
         @data, @@cache[@url] = data, data
         @expand!
         return @data
@@ -226,11 +231,11 @@ class UpdateFeed
 
         return @data
 
-    getScript: (namespace, isModule, config, autoChannel) =>
-        section = isModule and "modules" or "macros"
+    getScript: (namespace, scriptType, config, autoChannel) =>
+        section = @@ScriptType.name.legacy[scriptType]
         scriptData = @data[section][namespace]
         return false unless scriptData
-        ScriptUpdateRecord namespace, scriptData, config, isModule, autoChannel
+        ScriptUpdateRecord namespace, scriptData, config, scriptType, autoChannel
 
     getMacro: (namespace, config, autoChannel) =>
         @getScript namespace, false, config, autoChannel

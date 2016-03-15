@@ -753,8 +753,6 @@ class UnitTestSuite
 
     @UnitTest = UnitTest
     @UnitTestClass = UnitTestClass
-    @testDir =  {macros:  aegisub.decode_path("?user/automation/tests/DepUnit/macros"),
-                 modules: aegisub.decode_path("?user/automation/tests/DepUnit/modules")}
 
     --- Creates a complete unit test suite for a module or automation script.
     -- Using this constructor will create all test classes and tests automatically.

@@ -1,9 +1,10 @@
 util = require "aegisub.util"
 json = require "json"
 PreciseTimer = require "PT.PreciseTimer"
-Logger = require "l0.DependencyControl.Logger"
-fileOps = require "l0.DependencyControl.FileOps"
 mutex = require "BM.BadMutex"
+
+fileOps = require "l0.DependencyControl.FileOps"
+Logger  = require "l0.DependencyControl.Logger"
 
 class ConfigHandler
     @handlers = {}
