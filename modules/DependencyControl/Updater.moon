@@ -379,7 +379,7 @@ class UpdateTask extends UpdaterBase
 
         else with @record
             .name, .version, .virtual = @record.name, @record\getVersionNumber update.version
-            @record\writeConfig true, false
+            @record\writeConfig!
 
         @updated = true
         @logger\log msgs.performUpdate.updSuccess, @@terms.capitalize(@@terms.isInstall[wasVirtual]),
