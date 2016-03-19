@@ -5,6 +5,8 @@ DependencyControl = nil
 Logger            = require "l0.DependencyControl.Logger"
 Common            = require "l0.DependencyControl.Common"
 
+defaultLogger = Logger fileBaseName: "DepCtrl.UpdateFeed"
+
 class ScriptUpdateRecord extends Common
     msgs = {
         errors: {
@@ -16,9 +18,8 @@ class ScriptUpdateRecord extends Common
             msgTemplate: "  • %s"
         }
     }
-    @logger = Logger fileBaseName: @@__name
 
-    new: (@namespace, @data, @config = {c:{}}, scriptType, autoChannel = true, @@logger = @@logger) =>
+    new: (@namespace, @data, @config = {c:{}}, scriptType, autoChannel = true, @logger = defaultLogger) =>
         @moduleName = scriptType == @@ScriptType.Module and @namespace
         @[k] = v for k, v in pairs data
         @setChannel! if autoChannel
@@ -46,7 +47,7 @@ class ScriptUpdateRecord extends Common
         return true, @activeChannel
 
     checkPlatform: =>
-        @@logger\assert @activeChannel, msgs.errors.noActiveChannel
+        @logger\assert @activeChannel, msgs.errors.noActiveChannel
         return not @platforms or ({p,true for p in *@platforms})[@@platform], @@platform
 
     getChangelog: (versionRecord, minVer = 0) =>
@@ -68,8 +69,8 @@ class ScriptUpdateRecord extends Common
         for chg in *changelog
             chg[3] = {chg[3]} if type(chg[3]) ~= "table"
             if #chg[3] > 0
-                msg[#msg+1] = @@logger\format msgs.changelog.verTemplate, 1, chg[2]
-                msg[#msg+1] = @@logger\format(msgs.changelog.msgTemplate, 1, entry) for entry in *chg[3]
+                msg[#msg+1] = @logger\format msgs.changelog.verTemplate, 1, chg[2]
+                msg[#msg+1] = @logger\format(msgs.changelog.msgTemplate, 1, entry) for entry in *chg[3]
 
         return table.concat msg, "\n"
 
@@ -106,15 +107,14 @@ class UpdateFeed extends Common
         }
     }
 
-    -- default settings
-    @logger = Logger fileBaseName: @@__name
-    @downloadPath = aegisub.decode_path "?temp/l0.#{@@__name}_feedCache"
-    @fileBaseName = "l0.#{@@__name}_"
-    @fileMatchTemplate = "l0.#{@@__name}_%x%x%x%x.*%.json"
-    @dumpExpanded = false
-
+    @defaultConfig = {
+        downloadPath: aegisub.decode_path "?temp/l0.#{@@__name}_feedCache"
+        dumpExpanded: false
+    }
     @cache = {}
-    dlm = DownloadManager aegisub.decode_path @downloadPath
+
+    fileBaseName = "l0.#{@@__name}_"
+    fileMatchTemplate = "l0.#{@@__name}_%x%x%x%x.*%.json"
     feedsHaveBeenTrimmed = false
 
     -- precalculate some tables for the templater
@@ -129,18 +129,23 @@ class UpdateFeed extends Common
                     j += 1
             table.sort .sourceAt[i], (a,b) -> return .templates[a].order < .templates[b].order
 
-    new: (@url, autoFetch = true, fileName) =>
+    new: (@url, autoFetch = true, fileName, @config = {}, @logger = defaultLogger) =>
         DependencyControl or= require "l0.DependencyControl"
 
-        -- delete old feeds
-        feedsHaveBeenTrimmed or= Logger(fileMatchTemplate: @@fileMatchTemplate, logDir: @@downloadPath, maxFiles: 20)\trimFiles!
+        -- fill in missing config values
+        @config[k] = v for k, v in pairs @@defaultConfig when @config[k] == nil
 
-        @fileName = fileName or table.concat {@@downloadPath, @@fileBaseName, "%04X"\format(math.random 0, 16^4-1), ".json"}
+        -- delete old feeds
+        feedsHaveBeenTrimmed or= Logger(fileMatchTemplate: fileMatchTemplate, logDir: @config.downloadPath, maxFiles: 20)\trimFiles!
+
+        @fileName = fileName or table.concat {@config.downloadPath, fileBaseName, "%04X"\format(math.random 0, 16^4-1), ".json"}
         if @@cache[@url]
-            @@logger\trace msgs.trace.usingCached
+            @logger\trace msgs.trace.usingCached
             @data = @@cache[@url]
         elseif autoFetch
             @fetch!
+
+        @downloadManager = DownloadManager aegisub.decode_path @config.downloadPath
 
     getKnownFeeds: =>
         return {} unless @data
@@ -150,15 +155,15 @@ class UpdateFeed extends Common
     fetch: (fileName) =>
         @fileName = fileName if fileName
 
-        dl, err = dlm\addDownload @url, @fileName
+        dl, err = @downloadManager\addDownload @url, @fileName
         unless dl
             return false, msgs.errors.downloadAdd\format @url, @fileName, err
 
-        dlm\waitForFinish -> true
+        @downloadManager\waitForFinish -> true
         if dl.error
             return false,  msgs.errors.downloadFailed\format @url, @fileName, dl.error
 
-        @@logger\trace msgs.trace.downloaded, @fileName
+        @logger\trace msgs.trace.downloaded, @fileName
 
         handle, err = io.open @fileName
         unless handle
@@ -225,7 +230,7 @@ class UpdateFeed extends Common
 
         recurse @data
 
-        if @@dumpExpanded
+        if @dumpExpanded
             handle = io.open @fileName\gsub(".json$", ".exp.json"), "w"
             handle\write(json.encode @data)\close!
 
@@ -235,7 +240,7 @@ class UpdateFeed extends Common
         section = @@ScriptType.name.legacy[scriptType]
         scriptData = @data[section][namespace]
         return false unless scriptData
-        ScriptUpdateRecord namespace, scriptData, config, scriptType, autoChannel
+        ScriptUpdateRecord namespace, scriptData, config, scriptType, autoChannel, @logger
 
     getMacro: (namespace, config, autoChannel) =>
         @getScript namespace, false, config, autoChannel

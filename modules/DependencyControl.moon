@@ -6,7 +6,7 @@ Common =         require "l0.DependencyControl.Common"
 Logger =         require "l0.DependencyControl.Logger"
 UpdateFeed =     require "l0.DependencyControl.UpdateFeed"
 ConfigHandler =  require "l0.DependencyControl.ConfigHandler"
-fileOps =        require "l0.DependencyControl.FileOps"
+FileOps =        require "l0.DependencyControl.FileOps"
 Updater =        require "l0.DependencyControl.Updater"
 UnitTestSuite =  require "l0.DependencyControl.UnitTestSuite"
 
@@ -69,19 +69,35 @@ class DependencyControl extends Common
                          logDir: "?user/log", writeLogs: true}
     }
 
-    dlm = DownloadManager!
-    cumInitTime, logsHaveBeenTrimmed, scheduledRemovalHasRun = 0
-    fileOps.mkdir depConf.file, true
-
     @ConfigHandler = ConfigHandler
     @UpdateFeed = UpdateFeed
     @Logger = Logger
     @Updater = Updater
     @UnitTestSuite = UnitTestSuite
-    @FileOps = fileOps
+    @FileOps = FileOps
+
+    depCtrlIsInitialized = false
+    init = =>
+        FileOps.mkdir depConf.file, true
+        @loadConfig!
+        @logger = Logger { fileBaseName: "DepCtrl", fileSubName: script_namespace, prefix: "[#{@@__name}] ",
+                             toFile: @config.c.writeLogs, defaultLevel: @config.c.traceLevel,
+                             maxAge: @config.c.logMaxAge,maxSize: @config.c.logMaxSize, maxFiles: @config.c.logMaxFiles,
+                             logDir: @config.c.logDir }
+
+        @updater = Updater script_namespace, @config, @logger
+        @configDir = @config.c.configDir
+
+        FileOps.mkdir aegisub.decode_path @configDir
+        logsHaveBeenTrimmed or= @logger\trimFiles!
+        FileOps.runScheduledRemoval @configDir
+
+        return true
+
 
     new: (args) =>
-        timer = PreciseTimer!
+        depCtrlIsInitialized or= init DependencyControl
+
         -- defaults
         args[k] = v for k, v in pairs {
             readGlobalScriptVars: true
@@ -147,36 +163,10 @@ class DependencyControl extends Common
 
         shouldWriteConfig = @loadConfig!
 
-        @@logger or= Logger { fileBaseName: "DepCtrl", fileSubName: script_namespace, prefix: "[#{@@__name}] ",
-                              toFile: @@config.c.writeLogs, defaultLevel: @@config.c.traceLevel,
-                              maxAge: @@config.c.logMaxAge,maxSize: @@config.c.logMaxSize, maxFiles: @@config.c.logMaxFiles,
-                              logDir: @@config.c.logDir }
-
-        -- attach our logger to the required objects and classes
-        obj.logger = @@logger for obj in *{@@config, @config, UpdateFeed, fileOps}
-
-        -- set UpdateFeed settings
-        if @@config.c.dumpFeeds
-            UpdateFeed.downloadPath = aegisub.decode_path "?user/feedDump/"
-            UpdateFeed.dumpExpanded = true
-
-        -- create an updater unless one already exists
-        @@updater or= Updater script_namespace, @@config, @@logger
-
-
         -- write config file if contents are missing or are out of sync with the script version record
         -- ramp up the random wait time on first initialization (many scripts may want to write configuration data)
         -- we can't really profit from write concerting here because we don't know which module loads last
-
-        @configDir = @@config.c.configDir
         @writeConfig shouldWriteConfig and saveRecordToConfig, false, false
-
-        fileOps.mkdir aegisub.decode_path @configDir
-        logsHaveBeenTrimmed or= @@logger\trimFiles!
-        scheduledRemovalHasRun or= fileOps.runScheduledRemoval @configDir
-
-        cumInitTime += timer\timeElapsed!
-        @@logger\trace msgs.new.timer, cumInitTime
 
     createDummyRef: =>
         return nil if @scriptType != @@ScriptType.Module
@@ -197,15 +187,17 @@ class DependencyControl extends Common
             return true
         return  false
 
-    loadConfig: (importRecord = false, forceReloadGlobal = false) =>
-        -- load global config
-        @@config\load! if forceReloadGlobal and @@config
-        @@config or= ConfigHandler depConf.file, depConf.globalDefaults, {"config"}
+    -- loads the DependencyControl global configuration
+    @loadConfig = =>
+        if @config
+            @config\load!
+        else @config = ConfigHandler depConf.file, depConf.globalDefaults, {"config"}, nil, @logger
 
-        -- load per-script config
+    -- loads the script configuration
+    loadConfig: (importRecord = false, forceReloadGlobal = false) =>
         -- virtual modules are not yet present on the user's system and have no persistent configuration
         @config or= ConfigHandler not @virtual and depConf.file, {},
-                    { @@ScriptType.name.legacy[@scriptType], @namespace }, true
+                    { @@ScriptType.name.legacy[@scriptType], @namespace }, true, @@logger
 
         -- import and overwrites version record from the configuration
         if importRecord
@@ -279,7 +271,7 @@ class DependencyControl extends Common
         return "%d.%d.%d"\format unpack parts
 
     getConfigFileName: () =>
-        return aegisub.decode_path "#{@@config.c.configDir}/#{@configFile}"
+        return aegisub.decode_path "#{@@configDir}/#{@configFile}"
 
     getConfigHandler: (defaults, section, noLoad) =>
         return ConfigHandler @getConfigFileName!, defaults, section, noLoad
@@ -533,13 +525,13 @@ class DependencyControl extends Common
 
         lfs.chdir dir
         for file in lfs.dir dir
-            mode, path = fileOps.attributes file, "mode"
+            mode, path = FileOps.attributes file, "mode"
             -- parent level module files must be <last part of namespace>.ext
             currPattern = @moduleName and mode == "file" and pattern.."%." or pattern
             -- automation scripts don't use any subdirectories
             if (@moduleName or mode == "file") and file\match currPattern
                 toRemove[#toRemove+1] = path
-        return fileOps.remove toRemove, true, true
+        return FileOps.remove toRemove, true, true
 
 rec = DependencyControl{
     name: "DependencyControl",

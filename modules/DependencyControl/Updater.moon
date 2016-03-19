@@ -9,8 +9,7 @@ Common =     require "l0.DependencyControl.Common"
 DependencyControl = nil
 
 class UpdaterBase extends Common
-    @logger = Logger fileBaseName: @@__name
-    @config = nil  -- set on creation of the Updater
+    @logger = Logger fileBaseName: "DependencyControl.Updater"
     msgs = {
         updateError: {
             [0]: "Couldn't %s %s '%s' because of a paradox: module not found but updater says up-to-date (%s)"
@@ -94,11 +93,18 @@ class UpdateTask extends UpdaterBase
         DependencyControl or= require "l0.DependencyControl"
         assert @record.__class == DependencyControl, "First parameter must be a #{DependencyControl.__name} object."
 
+        @logger = @updater.logger
         @triedFeeds = {}
         @status = nil
         @targetVersion = @record\getVersionNumber targetVersion
 
-        return nil, -1 unless @@config.c.updaterEnabled -- TODO: check if this even works
+        -- set UpdateFeed settings
+        @feedConfig = {
+            downloadPath: aegisub.decode_path "?user/feedDump/"
+            dumpExpanded: true
+        } if @updater.config.c.dumpFeeds
+
+        return nil, -1 unless @updater.config.c.updaterEnabled -- TODO: check if this even works
         return nil, -2 unless @record\validateNamespace!
 
     set: (targetVersion, @addFeeds, @exhaustive, @channel, @optional) =>
@@ -107,7 +113,7 @@ class UpdateTask extends UpdaterBase
 
     checkFeed: (feedUrl) =>
         -- get feed contents
-        feed = UpdateFeed feedUrl, false
+        feed = UpdateFeed feedUrl, false, nil, @feedConfig, @logger
         unless feed.data -- no cached data available, perform download
             success, err = feed\fetch!
             unless success
@@ -140,21 +146,21 @@ class UpdateTask extends UpdaterBase
         return true, updateRecord, version
 
 
-    run: (waitLock, exhaustive = @@config.c.tryAllFeeds or @@exhaustive) =>
+    run: (waitLock, exhaustive = @updater.config.c.tryAllFeeds or @@exhaustive) =>
         logUpdateError = (code, extErr, virtual = @virtual) ->
             if code < 0
-                @@logger\log @getUpdaterErrorMsg code, @record.name, @record.scriptType, virtual, extErr
+                @logger\log @getUpdaterErrorMsg code, @record.name, @record.scriptType, virtual, extErr
             return code, extErr
 
-        with @record do @@logger\log msgs.run.starting, @@terms.isInstall[.virtual],
-                                                        @@terms.scriptType.singular[.scriptType], .name
+        with @record do @logger\log msgs.run.starting, @@terms.isInstall[.virtual],
+                                                       @@terms.scriptType.singular[.scriptType], .name
 
         -- don't perform update of a script when another one is already running for the same script
         return logUpdateError -10 if @running
 
         -- check if the script was already updated
         if @updated and not exhaustive and @record\checkVersion @targetVersion
-            @@logger\log msgs.run.alreadyUpdated, @record.name, @record\getVersionString!
+            @logger\log msgs.run.alreadyUpdated, @record.name, @record\getVersionString!
             return 2
 
         -- build feed list
@@ -169,15 +175,15 @@ class UpdateTask extends UpdaterBase
                     feeds[#feeds+1] = feed
                     haveFeeds[feed] = true
 
-            for feed in *@@config.c.extraFeeds
+            for feed in *@updater.config.c.extraFeeds
                 unless @triedFeeds[feed] or haveFeeds[feed]
                     feeds[#feeds+1] = feed
                     haveFeeds[feed] = true
 
         if #feeds == 0
             if @optional
-                @@logger\log msgs.run.skippedOptional, @record.name,
-                             @@terms.isInstall[@record.virtual], msgs.run.optionalNoFeed
+                @logger\log msgs.run.skippedOptional, @record.name,
+                            @@terms.isInstall[@record.virtual], msgs.run.optionalNoFeed
                 return 3
 
             return logUpdateError -4
@@ -193,27 +199,27 @@ class UpdateTask extends UpdaterBase
         -- normal mode:     check feeds until an update matching the required version is found
         -- exhaustive mode: check all feeds for updates and pick the highest version
 
-        @@logger\log msgs.run.feedCandidates, #feeds, exhaustive and "exhaustive" or "normal"
-        @@logger.indent += 1
+        @logger\log msgs.run.feedCandidates, #feeds, exhaustive and "exhaustive" or "normal"
+        @logger.indent += 1
 
         maxVer, updateRecord = 0
         for i, feed in ipairs feeds
-            @@logger\log msgs.run.feedTrying, i, #feeds, feed
+            @logger\log msgs.run.feedTrying, i, #feeds, feed
 
             res, rec, version = @checkFeed feed
             @triedFeeds[feed] = true
             if res == nil
-                @@logger\log rec
+                @logger\log rec
             elseif version > maxVer
                 maxVer = version
                 if res
                     updateRecord = rec
                     break unless exhaustive
-                else @@logger\trace msgs.run.noUpdate
+                else @logger\trace msgs.run.noUpdate
             else
-                @@logger\trace msgs.run.noUpdate
+                @logger\trace msgs.run.noUpdate
 
-        @@logger.indent -= 1
+        @logger.indent -= 1
 
         local code, res
         wasVirtual = @record.virtual
@@ -221,8 +227,8 @@ class UpdateTask extends UpdaterBase
             -- for a script to be marked up-to-date it has to installed on the user's system
             -- and the version must at least be that returned by at least one feed
             if maxVer>0 and not @record.virtual and @targetVersion <= @record.version
-                @@logger\log msgs.run.upToDate, @@terms.scriptType.singular[@record.scriptType],
-                                                @record.name, @record\getVersionString!
+                @logger\log msgs.run.upToDate, @@terms.scriptType.singular[@record.scriptType],
+                                               @record.name, @record\getVersionString!
                 return 0
 
             res = msgs.run.noFeedAvailExt\format @targetVersion == 0 and "any" or @record\getVersionString(@targetVersion),
@@ -230,8 +236,8 @@ class UpdateTask extends UpdaterBase
                                                  maxVer<1 and "none" or @record\getVersionString maxVer
 
             if @optional
-                @@logger\log msgs.run.skippedOptional, @record.name, @@terms.isInstall[@record.virtual],
-                                                       msgs.run.optionalNoUpdate\format res
+                @logger\log msgs.run.skippedOptional, @record.name, @@terms.isInstall[@record.virtual],
+                                                      msgs.run.optionalNoUpdate\format res
                 return 3
 
             return logUpdateError -6, res
@@ -260,14 +266,14 @@ class UpdateTask extends UpdaterBase
         -- this may trigger more updates
         reqs = update.requiredModules
         if reqs and #reqs > 0
-            @@logger\log msgs.performUpdate.updateReqs
-            @@logger.indent += 1
+            @logger\log msgs.performUpdate.updateReqs
+            @logger.indent += 1
             success, err = @record\loadModules reqs, {@record.feed}
-            @@logger.indent -= 1
+            @logger.indent -= 1
             unless success
-                @@logger.indent += 1
-                @@logger\log err
-                @@logger.indent -= 1
+                @logger.indent += 1
+                @logger\log err
+                @logger.indent -= 1
                 return finish -15, err
 
             -- since circular dependencies are possible, our task may have completed in the meantime
@@ -282,7 +288,7 @@ class UpdateTask extends UpdaterBase
         res, dir = fileOps.mkdir tmpDir
         return finish -30, "#{tmpDir} (#{dir})" if res == nil
 
-        @@logger\log msgs.performUpdate.updateReady, tmpDir
+        @logger\log msgs.performUpdate.updateReady, tmpDir
 
         scriptSubDir = @record.namespace
         scriptSubDir = scriptSubDir\gsub "%.","/" if @record.scriptType == @@ScriptType.Module
@@ -301,7 +307,7 @@ class UpdateTask extends UpdaterBase
                     prettyName ..= " (Unit Test)"
                 else
                     file.unknown = true
-                    @@logger\log msgs.performUpdate.unknownType, file.name, file.type
+                    @logger\log msgs.performUpdate.unknownType, file.name, file.type
                     continue
             continue if file.delete
 
@@ -309,42 +315,42 @@ class UpdateTask extends UpdaterBase
                 return finish -35, "#{prettyName} (#{tostring(file.sha1)\lower!})"
 
             if dlm\checkFileSHA1 file.fullName, file.sha1
-                @@logger\trace msgs.performUpdate.fileUnchanged, prettyName
+                @logger\trace msgs.performUpdate.fileUnchanged, prettyName
                 continue
 
             dl, err = dlm\addDownload file.url, tmpName, file.sha1
             return finish -140, err unless dl
             dl.targetFile = file.fullName
-            @@logger\trace msgs.performUpdate.fileAddDownload, file.url, prettyName
+            @logger\trace msgs.performUpdate.fileAddDownload, file.url, prettyName
 
         dlm\waitForFinish (progress) ->
-            @@logger\progress progress, msgs.performUpdate.filesDownloading, #dlm.downloads
+            @logger\progress progress, msgs.performUpdate.filesDownloading, #dlm.downloads
             return true
-        @@logger\progress!
+        @logger\progress!
 
         if #dlm.failedDownloads>0
-            err = @@logger\format ["#{dl.url}: #{dl.error}" for dl in *dlm.failedDownloads], 1
+            err = @logger\format ["#{dl.url}: #{dl.error}" for dl in *dlm.failedDownloads], 1
             return finish -245, err
 
 
         -- move files to their destination directory and clean up
 
-        @@logger\log msgs.performUpdate.movingFiles, @record.automationDir
+        @logger\log msgs.performUpdate.movingFiles, @record.automationDir
         moveErrors = {}
-        @@logger.indent += 1
+        @logger.indent += 1
         for dl in *dlm.downloads
             res, err = fileOps.move dl.outfile, dl.targetFile, true
             -- don't immediately error out if moving of a single file failed
             -- try to move as many files as possible and let the user handle the rest
             if res
-                @@logger\trace msgs.performUpdate.movedFile, dl.outfile, dl.targetFile
+                @logger\trace msgs.performUpdate.movedFile, dl.outfile, dl.targetFile
             else
-                @@logger\log msgs.performUpdate.moveFileFailed, dl.outfile, dl.targetFile, err
+                @logger\log msgs.performUpdate.moveFileFailed, dl.outfile, dl.targetFile, err
                 moveErrors[#moveErrors+1] = err
-        @@logger.indent -= 1
+        @logger.indent -= 1
 
         if #moveErrors>0
-            return finish -50, @@logger\format moveErrors, 1
+            return finish -50, @logger\format moveErrors, 1
         else lfs.rmdir tmpDir
         os.remove file.fullName for file in *update.files when file.delete and not file.unknown
 
@@ -356,7 +362,7 @@ class UpdateTask extends UpdaterBase
             ref = @record\loadModule @record, false, true
             unless ref
                 if @record._error
-                    return finish -56, @@logger\format @record._error, 1
+                    return finish -56, @logger\format @record._error, 1
                 else return finish -55
 
             -- get a fresh version record
@@ -376,13 +382,13 @@ class UpdateTask extends UpdaterBase
             @record\writeConfig true, false
 
         @updated = true
-        @@logger\log msgs.performUpdate.updSuccess, @@terms.capitalize(@@terms.isInstall[wasVirtual]),
-                                                    @@terms.scriptType.singular[@record.scriptType],
-                                                    @record.name, @record\getVersionString!
+        @logger\log msgs.performUpdate.updSuccess, @@terms.capitalize(@@terms.isInstall[wasVirtual]),
+                                                   @@terms.scriptType.singular[@record.scriptType],
+                                                   @record.name, @record\getVersionString!
 
         -- Diplay changelog
-        @@logger\log update\getChangelog @record, (@record.getVersionNumber oldVer) + 1
-        @@logger\log msgs.performUpdate.reloadNotice
+        @logger\log update\getChangelog @record, (@record.getVersionNumber oldVer) + 1
+        @logger\log msgs.performUpdate.reloadNotice
 
         -- TODO: check handling of private module copies (need extra return value?)
         return finish 1, @record\getVersionString!
@@ -396,9 +402,9 @@ class UpdateTask extends UpdaterBase
                 @updated = true
                 @ref = \loadModule @record, false, true if .scriptType == @@ScriptType.Module
                 if wasVirtual
-                    @@logger\log msgs.refreshRecord.unsetVirtual, @@terms.scriptType.singular[.scriptType], .name
+                    @logger\log msgs.refreshRecord.unsetVirtual, @@terms.scriptType.singular[.scriptType], .name
                 else
-                    @@logger\log msgs.refreshRecord.otherUpdate, @@terms.scriptType.singular[.scriptType], .name, \getVersionString!
+                    @logger\log msgs.refreshRecord.otherUpdate, @@terms.scriptType.singular[.scriptType], .name, \getVersionString!
 
 class Updater extends UpdaterBase
     msgs = {
@@ -417,10 +423,8 @@ class Updater extends UpdaterBase
             runningUpdate: "Running scheduled update for %s '%s'..."
         }
     }
-    new: (@host = script_namespace, globalConfig, logger) =>
+    new: (@host = script_namespace, @config, @logger = @@logger) =>
         @tasks = {scriptType, {} for _, scriptType in pairs @@ScriptType when "number" == type scriptType}
-        super.config = globalConfig
-        super.logger = logger if logger
 
     addTask: (record, targetVersion, addFeeds = {}, exhaustive, channel, optional) =>
         DependencyControl or= require "l0.DependencyControl"
@@ -438,15 +442,15 @@ class Updater extends UpdaterBase
             return task, err
 
     require: (record, ...) =>
-        @@logger\assert record.scriptType == @@ScriptType.Module, msgs.require, record.name or record.namespace
-        @@logger\log "%s module '%s'...", record.virtual and "Installing required" or "Updating outdated", record.name
+        @logger\assert record.scriptType == @@ScriptType.Module, msgs.require, record.name or record.namespace
+        @logger\log "%s module '%s'...", record.virtual and "Installing required" or "Updating outdated", record.name
         task, code = @addTask record, ...
         code, res = task\run true if task
 
         if code == 0 and not task.updated
             -- usually we know in advance if a module is up to date so there's no reason to block other updaters
             -- but we'll make sure to handle this case gracefully, anyway
-            @@logger\debug msgs.require.upToDate, task.record.name or task.record.namespace
+            @logger\debug msgs.require.upToDate, task.record.name or task.record.namespace
             return task.record\loadModule task.record.namespace
         elseif code >= 0
             return task.ref
@@ -454,8 +458,8 @@ class Updater extends UpdaterBase
             return nil, code, res
 
     scheduleUpdate: (record) =>
-        unless @@config.c.updaterEnabled
-            @@logger\trace msgs.scheduleUpdate.updaterDisabled, record.name or record.namespace
+        unless @config.c.updaterEnabled
+            @logger\trace msgs.scheduleUpdate.updaterDisabled, record.name or record.namespace
             return -1
 
         -- no regular updates for non-existing or unmanaged modules
@@ -463,44 +467,45 @@ class Updater extends UpdaterBase
             return -3
 
         -- the update interval has not yet been passed since the last update check
-        if record.config.c.lastUpdateCheck and (record.config.c.lastUpdateCheck + @@config.c.updateInterval > os.time!)
+        if record.config.c.lastUpdateCheck and (record.config.c.lastUpdateCheck + @config.c.updateInterval > os.time!)
             return false
 
         record.config.c.lastUpdateCheck = os.time!
         record.config\write!
 
         task = @addTask record -- no need to check for errors, because we've already accounted for those case
-        @@logger\trace msgs.scheduleUpdate.runningUpdate, @@terms.scriptType.singular[record.scriptType], record.name
+        @logger\trace msgs.scheduleUpdate.runningUpdate, @@terms.scriptType.singular[record.scriptType], record.name
         return task\run!
 
 
-    getLock: (doWait, waitTimeout = @@config.c.updateWaitTimeout) =>
+    getLock: (doWait, waitTimeout = @config.c.updateWaitTimeout) =>
         return true if @hasLock
 
-        @@config\load!
-        running, didWait = @@config.c.updaterRunning
+        @config\load!
+        running, didWait = @config.c.updaterRunning
 
         if running and running.host != @host
-            if running.time + @@config.c.updateOrphanTimeout < os.time!
-                @@logger\log msgs.getLock.orphaned, running.host
+            if running.time + @config.c.updateOrphanTimeout < os.time!
+                @logger\log msgs.getLock.orphaned, running.host
             elseif doWait
-                @@logger\log msgs.getLock.waiting, running.host
+                @logger\log msgs.getLock.waiting, running.host
                 timeout, didWait = waitTimeout, true
                 while running and timeout > 0
                     PreciseTimer.sleep 1000
                     timeout -= 1
-                    @@config\load!
-                    running = @@config.c.updaterRunning
-                @@logger\log timeout <= 0 and msgs.getLock.abortWait or msgs.getLock.waitFinished,
+                    @config\load!
+                    running = @config.c.updaterRunning
+                @logger\log timeout <= 0 and msgs.getLock.abortWait or msgs.getLock.waitFinished,
                            waitTimeout - timeout
 
             else return false, running.host
 
         -- register the running update in the config file to prevent collisions
         -- with other scripts trying to update the same modules
+        -- TODO: store this flag in the db
 
-        @@config.c.updaterRunning = host: @host, time: os.time!
-        @@config\write!
+        @config.c.updaterRunning = host: @host, time: os.time!
+        @config\write!
         @hasLock = true
 
         -- reload important module version information from configuration
@@ -513,5 +518,5 @@ class Updater extends UpdaterBase
     releaseLock: =>
         return false unless @hasLock
         @hasLock = false
-        @@config.c.updaterRunning = false
-        @@config\write!
+        @config.c.updaterRunning = false
+        @config\write!
