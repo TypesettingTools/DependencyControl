@@ -673,7 +673,7 @@ class UnitTestClass
     -- * _setup: a @{UnitTestSetup} routine
     -- * _teardown: a @{UnitTestTeardown} routine
     -- * _order: alternative syntax to the order parameter (see below)
-    -- @tparam [opt=nil (unordered)] {string, ...} An list of test names in the desired execution order.
+    -- @tparam [opt=nil (unordered)] {string, ...} A list of test names in the desired execution order.
     -- Only tests mentioned in this table will be performed when running the whole test class.
     -- If unspecified, all tests will be run in random order.
     new: (@name, args = {}, @order, @testSuite) =>
@@ -730,7 +730,7 @@ class UnitTestClass
 
 
 --- A DependencyControl unit test suite.
--- Your test file/module must reteturn a UnitTestSuite object in order to be recognized as a test suite.
+-- Your test file/module must return a UnitTestSuite object in order to be recognized as a test suite.
 class UnitTestSuite
     msgs = {
         run: {
