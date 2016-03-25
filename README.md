@@ -385,7 +385,7 @@ _Depth 1:_ Feed Information
 
 _Depth 3:_ Script Information
  1. __namespace__: the script namespace
- 2. __namepspacePath__: the script namespace with all `.` replaced by `/`
+ 2. __namepacePath__: the script namespace with all `.` replaced by `/`
  3. scriptName: the script name
 
 _Depth 5:_ Version Information
