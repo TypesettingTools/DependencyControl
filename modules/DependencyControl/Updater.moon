@@ -6,6 +6,7 @@ UpdateFeed = require "l0.DependencyControl.UpdateFeed"
 fileOps =    require "l0.DependencyControl.FileOps"
 Logger =     require "l0.DependencyControl.Logger"
 Common =     require "l0.DependencyControl.Common"
+ModuleLoader = require "l0.DependencyControl.ModuleLoader"
 DependencyControl = nil
 
 class UpdaterBase extends Common
@@ -96,7 +97,7 @@ class UpdateTask extends UpdaterBase
         @logger = @updater.logger
         @triedFeeds = {}
         @status = nil
-        @targetVersion = @record\getVersionNumber targetVersion
+        @targetVersion = DependencyControl\parseVersion targetVersion
 
         -- set UpdateFeed settings
         @feedConfig = {
@@ -108,7 +109,7 @@ class UpdateTask extends UpdaterBase
         return nil, -2 unless @record\validateNamespace!
 
     set: (targetVersion, @addFeeds, @exhaustive, @channel, @optional) =>
-        @targetVersion = @record\getVersionNumber targetVersion
+        @targetVersion = DependencyControl\parseVersion targetVersion
         return @
 
     checkFeed: (feedUrl) =>
@@ -160,7 +161,7 @@ class UpdateTask extends UpdaterBase
 
         -- check if the script was already updated
         if @updated and not exhaustive and @record\checkVersion @targetVersion
-            @logger\log msgs.run.alreadyUpdated, @record.name, @record\getVersionString!
+            @logger\log msgs.run.alreadyUpdated, @record.name, DependencyControl\getVersionString @record.version
             return 2
 
         -- build feed list
@@ -228,12 +229,12 @@ class UpdateTask extends UpdaterBase
             -- and the version must at least be that returned by at least one feed
             if maxVer>0 and not @record.virtual and @targetVersion <= @record.version
                 @logger\log msgs.run.upToDate, @@terms.scriptType.singular[@record.scriptType],
-                                               @record.name, @record\getVersionString!
+                                               @record.name, DependencyControl\getVersionString @record.version
                 return 0
 
-            res = msgs.run.noFeedAvailExt\format @targetVersion == 0 and "any" or @record\getVersionString(@targetVersion),
-                                                 @record.virtual and "no" or @record\getVersionString!,
-                                                 maxVer<1 and "none" or @record\getVersionString maxVer
+            res = msgs.run.noFeedAvailExt\format @targetVersion == 0 and "any" or DependencyControl\getVersionString(@targetVersion),
+                                                 @record.virtual and "no" or DependencyControl\getVersionString(@record.version),
+                                                 maxVer<1 and "none" or DependencyControl\getVersionString maxVer
 
             if @optional
                 @logger\log msgs.run.skippedOptional, @record.name, @@terms.isInstall[@record.virtual],
@@ -249,7 +250,7 @@ class UpdateTask extends UpdaterBase
         finish = (...) ->
             @running = false
             if @record.virtual or @record.recordType == @@RecordType.Unmanaged
-                @record\removeDummyRef!
+                ModuleLoader.removeDummyRef @record
             return ...
 
         -- don't perform update of a script when another one is already running for the same script
@@ -259,7 +260,7 @@ class UpdateTask extends UpdaterBase
         -- set a dummy ref (which hasn't yet been set for virtual and unmanaged modules)
         -- and record version to allow resolving circular dependencies
         if @record.virtual or @record.recordType == @@RecordType.Unmanaged
-            @record\createDummyRef!
+            ModuleLoader.createDummyRef @record
             @record\setVersion update.version
 
         -- try to load required modules first to see if all dependencies are satisfied
@@ -268,7 +269,7 @@ class UpdateTask extends UpdaterBase
         if reqs and #reqs > 0
             @logger\log msgs.performUpdate.updateReqs
             @logger.indent += 1
-            success, err = @record\loadModules reqs, {@record.feed}
+            success, err = ModuleLoader.loadModules @record, reqs, {@record.feed}
             @logger.indent -= 1
             unless success
                 @logger.indent += 1
@@ -359,7 +360,7 @@ class UpdateTask extends UpdaterBase
 
         -- Update complete, refresh module information/configuration
         if @record.scriptType == @@ScriptType.Module
-            ref = @record\loadModule @record, false, true
+            ref = ModuleLoader.loadModule @record, @record, false, true
             unless ref
                 if @record._error
                     return finish -56, @logger\format @record._error, 1
@@ -378,20 +379,20 @@ class UpdateTask extends UpdaterBase
             @ref = ref
 
         else with @record
-            .name, .version, .virtual = @record.name, @record\getVersionNumber update.version
+            .name, .version, .virtual = @record.name, DependencyControl\parseVersion update.version
             @record\writeConfig!
 
         @updated = true
         @logger\log msgs.performUpdate.updSuccess, @@terms.capitalize(@@terms.isInstall[wasVirtual]),
                                                    @@terms.scriptType.singular[@record.scriptType],
-                                                   @record.name, @record\getVersionString!
+                                                   @record.name, DependencyControl\getVersionString @record.version
 
         -- Diplay changelog
-        @logger\log update\getChangelog @record, (@record.getVersionNumber oldVer) + 1
+        @logger\log update\getChangelog @record, (DependencyControl\parseVersion oldVer) + 1
         @logger\log msgs.performUpdate.reloadNotice
 
         -- TODO: check handling of private module copies (need extra return value?)
-        return finish 1, @record\getVersionString!
+        return finish 1, DependencyControl\getVersionString @record.version
 
 
     refreshRecord: =>
@@ -400,11 +401,12 @@ class UpdateTask extends UpdaterBase
             \loadConfig true
             if wasVirtual and not .virtual or .version > oldVersion
                 @updated = true
-                @ref = \loadModule @record, false, true if .scriptType == @@ScriptType.Module
+                @ref = ModuleLoader.loadModule @record, @record, false, true if .scriptType == @@ScriptType.Module
                 if wasVirtual
                     @logger\log msgs.refreshRecord.unsetVirtual, @@terms.scriptType.singular[.scriptType], .name
                 else
-                    @logger\log msgs.refreshRecord.otherUpdate, @@terms.scriptType.singular[.scriptType], .name, \getVersionString!
+                    @logger\log msgs.refreshRecord.otherUpdate, @@terms.scriptType.singular[.scriptType], .name,
+                                DependencyControl\getVersionString @record.version
 
 class Updater extends UpdaterBase
     msgs = {
@@ -451,7 +453,7 @@ class Updater extends UpdaterBase
             -- usually we know in advance if a module is up to date so there's no reason to block other updaters
             -- but we'll make sure to handle this case gracefully, anyway
             @logger\debug msgs.require.upToDate, task.record.name or task.record.namespace
-            return task.record\loadModule task.record.namespace
+            return ModuleLoader.loadModule task.record, task.record.namespace
         elseif code >= 0
             return task.ref
         else -- pass on update errors

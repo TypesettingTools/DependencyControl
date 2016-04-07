@@ -20,6 +20,7 @@ class ScriptUpdateRecord extends Common
     }
 
     new: (@namespace, @data, @config = {c:{}}, scriptType, autoChannel = true, @logger = defaultLogger) =>
+        DependencyControl or= require "l0.DependencyControl"
         @moduleName = scriptType == @@ScriptType.Module and @namespace
         @[k] = v for k, v in pairs data
         @setChannel! if autoChannel
@@ -52,20 +53,20 @@ class ScriptUpdateRecord extends Common
 
     getChangelog: (versionRecord, minVer = 0) =>
         return "" unless "table" == type @changelog
-        maxVer = versionRecord\getVersionNumber @version
-        minVer = versionRecord\getVersionNumber minVer
+        maxVer = DependencyControl\parseVersion @version
+        minVer = DependencyControl\parseVersion minVer
 
         changelog = {}
         for ver, entry in pairs @changelog
-            ver = versionRecord\getVersionNumber ver
-            verStr = versionRecord\getVersionString ver
+            ver = DependencyControl\parseVersion ver
+            verStr = DependencyControl\getVersionString ver
             if ver >= minVer and ver <= maxVer
                 changelog[#changelog+1] = {ver, verStr, entry}
 
         return "" if #changelog == 0
         table.sort changelog, (a,b) -> a[1]>b[1]
 
-        msg = {msgs.changelog.header\format @name, versionRecord\getVersionString(@version), @released or "<no date>"}
+        msg = {msgs.changelog.header\format @name, DependencyControl\getVersionString(@version), @released or "<no date>"}
         for chg in *changelog
             chg[3] = {chg[3]} if type(chg[3]) ~= "table"
             if #chg[3] > 0
