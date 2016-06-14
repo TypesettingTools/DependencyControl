@@ -92,7 +92,12 @@ class Logger
     assert: (cond, ...) =>
         if not cond
             @log 1, ...
-        else return cond
+        else return cond, ...
+
+    assertNotNil: (cond, ...) =>
+         if cond == nil
+            @log 1, ...
+        else return cond, ...
 
     progress: (progress=false, msg = "", ...) =>
         if @progressStep and not progress
