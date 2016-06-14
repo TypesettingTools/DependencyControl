@@ -191,7 +191,7 @@ class UpdateFeed extends Common
                 when "string"
                     val = val\gsub "@{(.-):(.-)}", (name, key) ->
                         if type(vars[name]) == "table" or type(rvars[depth+rOff]) == "table"
-                            vars[name][key] or rvars[depth+rOff][name][key]
+                            vars[name][key] or rvars[depth+rOff][name] and rvars[depth+rOff][name][key]
                     val\gsub "@{(.-)}", (name) -> vars[name] or rvars[depth+rOff][name]
                 when "table"
                     {k, expandTemplates v, depth, rOff for k, v in pairs val}
