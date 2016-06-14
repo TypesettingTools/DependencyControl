@@ -3,6 +3,8 @@ re =  require "aegisub.re"
 lfs = require "lfs"
 
 Logger = require "l0.DependencyControl.Logger"
+Common = require "l0.DependencyControl.Common"
+
 local ConfigHandler
 
 class FileOps
@@ -55,6 +57,10 @@ class FileOps
                 notFullPath: "The specified path is not a valid full path."
                 missingExt: "The specified path is missing a file extension."
         }
+            getNamespacedPath: {
+                badBasePath: "Provided base path '%s' is not a valid full path (%s)."
+                badPath: "Generated namespaced path '%s' is not a valid full path (%s)."
+            }
     }
 
     devPattern = ffi.os == "Windows" and "[A-Za-z]:" or "/[^\\\\/]+"
@@ -305,3 +311,16 @@ class FileOps
         path = table.concat({dev, dir, file and pathMatch.sep, file})
 
         return path, dev, dir, file
+
+    getNamespacedPath: (basePath, namespace, ext, useSubfolders = true) ->
+        res, msg = Common.validateNamespace namespace
+        return nil, msg unless res
+
+        res, msg = FileOps.validateFullPath basePath
+        return nil, msgs.getNamespacedPath.badBasePath\format basePath, msg unless res
+
+        path = "#{basePath}/#{useSubfolders and namespace\gsub("%.", "/") or namespace}#{ext}"
+        path, msg = FileOps.validateFullPath path
+        return nil, msgs.getNamespacedPath.badPath\format path, msg unless res
+
+        return path
