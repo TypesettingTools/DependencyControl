@@ -113,10 +113,10 @@ class Logger
             @progressStep = step
 
     -- taken from https://github.com/TypesettingCartel/Aegisub-Motion/blob/master/src/Log.moon
-    dump: ( item, ignore, level = @defaultLevel ) =>
-        @log level, @dumpToString item, ignore
+    dump: ( item, ignore, level = @defaultLevel, maxDepth ) =>
+        @log level, @dumpToString item, ignore, maxDepth
 
-    dumpToString: ( item, ignore ) =>
+    dumpToString: ( item, ignore, maxDepth ) =>
         if "table" != type item
             return tostring item
 
@@ -124,7 +124,14 @@ class Logger
 
         result = { "{ @#{tablecount}" }
         seen   = { [item]: tablecount }
-        recurse = ( item, space ) ->
+        recurse = ( item, space, depth = 0 ) ->
+            if maxDepth and depth > maxDepth
+                count += 1
+                result[count] = space .. "<...>"
+                return
+
+            depth += 1
+
             for key, value in pairs item
                 unless key == ignore
                     if "number" == type key
@@ -135,7 +142,7 @@ class Logger
                             seen[value] = tablecount
                             count += 1
                             result[count] = space .. "#{key}: { @#{tablecount}"
-                            recurse value, space .. "    "
+                            recurse value, space .. "    ", depth
                             count += 1
                             result[count] = space .. "}"
                         else
