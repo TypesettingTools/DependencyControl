@@ -11,7 +11,6 @@ ModuleLoader =   require "l0.DependencyControl.ModuleLoader"
 
 class Record extends Common
     semParts = {{"major", 16}, {"minor", 8}, {"patch", 0}}
-    namespaceValidation = re.compile "^(?:[-\\w]+\\.)+[-\\w]+$"
 
     msgs = {
         parseVersion: {
@@ -25,7 +24,6 @@ class Record extends Common
                 noUnmanagedMacros: "Creating unmanaged version records for macros is not allowed"
                 missingNamespace: "No namespace defined"
                 badVersion: "Couldn't parse version number: %s"
-                badNamespace: "Namespace '%s' failed validation. Namespace rules: must contain 1+ single dots, but not start or end with a dot; all other characters must be in [A-Za-z0-9-_]."
                 badModuleTable: "Invalid required module table #%d (%s)."
             }
         }
@@ -314,9 +312,6 @@ class Record extends Common
             @version = version
             return version
         else return nil, err
-
-    validateNamespace: (namespace = @namespace, isVirtual = @virtual) =>
-        return isVirtual or namespaceValidation\match @namespace
 
     uninstall: (removeConfig = true) =>
         if @virtual or @recordType == @@RecordType.Unmanaged
