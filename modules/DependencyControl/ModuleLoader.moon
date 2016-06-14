@@ -12,6 +12,10 @@ class ModuleLoader
       missing: "— %s %s%s\n—— Reason: %s"
       outdated: "— %s (Installed: v%s; Required: v%s)%s\n—— Reason: %s"
     }
+    loadModule: {
+      moduleMissing: "Module '%s' was reported as missing by package '%s'."
+      loadFailed: "Package '%s' failed to load module '%s': %s"
+    }
     loadModules: {
       missing: "Error: one or more of the modules required by %s could not be found on your system:\n%s\n%s"
       missingRecord: "Error: module '%s' is missing a version record."
@@ -77,8 +81,13 @@ class ModuleLoader
       unless loaded
         LOADED_MODULES[moduleName] = nil
         res or= "unknown error"
-        ._missing = res\match "module '.+' not found:"
-        ._error = res unless ._missing
+        ._missing = nil != res\find "module '#{moduleName}' not found:", nil, true
+        if not ._missing
+          @@logger\debug msgs.loadModule.loadFailed, @namespace, moduleName, res
+          ._error = res
+        elseif not usePrivate
+          @@logger\debug msgs.loadModule.moduleMissing, moduleName, @namespace
+
         return nil
 
       -- set new references
