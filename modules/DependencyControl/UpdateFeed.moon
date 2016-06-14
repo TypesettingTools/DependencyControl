@@ -138,6 +138,7 @@ class UpdateFeed extends Common
 
         -- delete old feeds
         feedsHaveBeenTrimmed or= Logger(fileMatchTemplate: fileMatchTemplate, logDir: @config.downloadPath, maxFiles: 20)\trimFiles!
+        @downloadManager = DownloadManager aegisub.decode_path @config.downloadPath
 
         @fileName = fileName or table.concat {@config.downloadPath, fileBaseName, "%04X"\format(math.random 0, 16^4-1), ".json"}
         if @@cache[@url]
@@ -146,7 +147,6 @@ class UpdateFeed extends Common
         elseif autoFetch
             @fetch!
 
-        @downloadManager = DownloadManager aegisub.decode_path @config.downloadPath
 
     getKnownFeeds: =>
         return {} unless @data
