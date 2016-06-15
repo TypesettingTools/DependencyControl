@@ -19,11 +19,11 @@ class ScriptUpdateRecord extends Common
         }
     }
 
-    new: (@namespace, @data, @config = {c:{}}, scriptType, autoChannel = true, @logger = defaultLogger) =>
+    new: (@namespace, @data, scriptType, @logger = defaultLogger) =>
         DependencyControl or= require "l0.DependencyControl"
         @moduleName = scriptType == @@ScriptType.Module and @namespace
         @[k] = v for k, v in pairs data
-        @setChannel! if autoChannel
+        @setChannel!
 
 
     getChannels: =>
@@ -35,12 +35,10 @@ class ScriptUpdateRecord extends Common
 
         return channels, default
 
-    setChannel: (channelName = @config.c.activeChannel) =>
-        with @config.c
-            .channels, default = @getChannels!
-            .lastChannel or= channelName or default
-            channelData = @data.channels[.lastChannel]
-            @activeChannel = .lastChannel
+    setChannel: (channel) =>
+        channels, defaultChannel = @getChannels!
+        @activeChannel = channel or defaultChannel
+        channelData = @data.channels[@activeChannel]
             return false, @activeChannel unless channelData
             @[k] = v for k, v in pairs channelData
 
@@ -237,14 +235,14 @@ class UpdateFeed extends Common
 
         return @data
 
-    getScript: (namespace, scriptType, config, autoChannel) =>
+    getScript: (namespace, scriptType) =>
         section = @@ScriptType.name.legacy[scriptType]
         scriptData = @data[section][namespace]
         return false unless scriptData
-        ScriptUpdateRecord namespace, scriptData, config, scriptType, autoChannel, @logger
+        ScriptUpdateRecord namespace, scriptData, scriptType, @logger
 
-    getMacro: (namespace, config, autoChannel) =>
-        @getScript namespace, false, config, autoChannel
+    getMacro: (namespace) =>
+        @getScript namespace, @@ScriptType.Automation
 
-    getModule: (namespace, config, autoChannel) =>
-        @getScript namespace, true, config, autoChannel
+    getModule: (namespace) =>
+        @getScript namespace, @@ScriptType.Module
