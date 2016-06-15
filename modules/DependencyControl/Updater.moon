@@ -191,9 +191,13 @@ class UpdateTask extends UpdaterBase
             return 2
 
         -- build feed list
-        userFeed, haveFeeds, feeds = @record.config.c.userFeed, {}, {}
-        if userFeed and not @triedFeeds[userFeed]
-            feeds[1] = userFeed
+        haveFeeds, feeds = {}, {}
+
+        -- if the user specified an override feed, only ever consider that one
+        overrideFeed = not isInstall and @record.config.c.overrideFeed
+        if overrideFeed and not @triedFeeds[overrideFeed]
+            feeds[1] = overrideFeed
+
         else
             unless @triedFeeds[@record.feed] or haveFeeds[@record.feed]
                 feeds[1] = @record.feed
