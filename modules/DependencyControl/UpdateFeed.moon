@@ -39,8 +39,8 @@ class ScriptUpdateRecord extends Common
         channels, defaultChannel = @getChannels!
         @activeChannel = channel or defaultChannel
         channelData = @data.channels[@activeChannel]
-            return false, @activeChannel unless channelData
-            @[k] = v for k, v in pairs channelData
+        return false, @activeChannel unless channelData
+        @[k] = v for k, v in pairs channelData
 
         @files = @files and [file for file in *@files when not file.platform or file.platform == @@platform] or {}
         return true, @activeChannel
@@ -49,7 +49,7 @@ class ScriptUpdateRecord extends Common
         @logger\assert @activeChannel, msgs.errors.noActiveChannel
         return not @platforms or ({p,true for p in *@platforms})[@@platform], @@platform
 
-    getChangelog: (versionRecord, minVer = 0) =>
+    getChangelog: (minVer = 0) =>
         return "" unless "table" == type @changelog
         maxVer = DependencyControl\parseVersion @version
         minVer = DependencyControl\parseVersion minVer
