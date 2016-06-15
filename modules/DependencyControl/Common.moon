@@ -1,5 +1,6 @@
 ffi = require "ffi"
 re = require "re"
+Logger = require "l0.DependencyControl.Logger"
 
 class DependencyControlCommon
     -- Some terms are shared across components
@@ -11,6 +12,25 @@ class DependencyControlCommon
 
     @logger =  Logger fileBaseName: "DepCtrl.Common"
     @platform = "#{ffi.os}-#{ffi.arch}"
+    @globalConfig = {
+        file: aegisub.decode_path "?user/config/l0.DependencyControl.json",
+        defaults: {
+            updaterEnabled: true
+            updateInterval: 302400
+            traceLevel: 3
+            extraFeeds: {}
+            tryAllFeeds: false
+            dumpFeeds: true
+            configDir:"?user/config"
+            logMaxFiles: 200
+            logMaxAge: 604800
+            logMaxSize: 10*(10^6)
+            updateWaitTimeout: 60
+            updateOrphanTimeout: 600
+            logDir: "?user/log"
+            writeLogs: true
+        }
+    }
 
     @terms = {
         scriptType: {
@@ -39,6 +59,13 @@ class DependencyControlCommon
             legacy: { "macros", "modules" }
             canonical: {"automation", "modules"}
         }
+    }
+
+    @InstallState = {
+        Orphaned: -1
+        Pending: 0
+        Downloaded: 1
+        Installed: 2
     }
 
     automationDir: {

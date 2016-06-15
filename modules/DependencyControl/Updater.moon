@@ -2,11 +2,15 @@ lfs = require "lfs"
 DownloadManager = require "DM.DownloadManager"
 PreciseTimer = require "PT.PreciseTimer"
 
-UpdateFeed = require "l0.DependencyControl.UpdateFeed"
-fileOps =    require "l0.DependencyControl.FileOps"
-Logger =     require "l0.DependencyControl.Logger"
-Common =     require "l0.DependencyControl.Common"
-ModuleLoader = require "l0.DependencyControl.ModuleLoader"
+UpdateFeed =       require "l0.DependencyControl.UpdateFeed"
+fileOps =          require "l0.DependencyControl.FileOps"
+Logger =           require "l0.DependencyControl.Logger"
+Common =           require "l0.DependencyControl.Common"
+ModuleLoader =     require "l0.DependencyControl.ModuleLoader"
+InstalledPackage = require "l0.DependencyControl.InstalledPackage"
+VersionRecord =    require "l0.DependencyControl.VersionRecord"
+DummyRecord =      require "l0.DependencyControl.DummyRecord"
+
 DependencyControl = nil
 
 class UpdaterBase extends Common
@@ -21,6 +25,8 @@ class UpdaterBase extends Common
             [6]: "The %s of %s '%s' failed because no suitable package could be found %s."
             [5]: "Skipped %s of %s '%s': Another update initiated by %s is already running."
             [7]: "Skipped %s of %s '%s': An internet connection is currently not available."
+            [8]: "Failed to load install information required to %s %s '%s': %s"
+            [9]: "Couldn't create update task: no valid DependencyControl version record was supplied."
             [10]: "Skipped %s of %s '%s': the update task is already running."
             [15]: "Couldn't %s %s '%s' because its requirements could not be satisfied:"
             [30]: "Couldn't %s %s '%s': failed to create temporary download directory %s"
@@ -30,15 +36,21 @@ class UpdaterBase extends Common
             [56]: "%s of %s '%s' succeeded, but an error occured while loading the module:\n%s"
             [57]: "%s of %s '%s' succeeded, but it's missing a version record."
             [58]: "%s of unmanaged %s '%s' succeeded, but an error occured while creating a DependencyControl record: %s"
-            [100]: "Error (%d) in component %s during %s of %s '%s':\n— %s"
+            [59]: "%s of %s '%s' succeeded, but an error occured while registering the package: %s"
+            [60]: "%s of %s '%s' succeeded, but an error occured while updating the install state: %s"
+            [100]: "%s Error (%d) during %s of %s '%s':\n— %s"
         }
-        updaterErrorComponent: {"DownloadManager (adding download)", "DownloadManager"}
+        updaterErrorComponent: {
+            [1]: "DownloadManager (adding download)",
+            [2]: "DownloadManager"
+            [9]: "Generic"
+        }
     }
 
     getUpdaterErrorMsg: (code, name, scriptType, isInstall, detailMsg) =>
         if code <= -100
             -- Generic downstream error
-            return msgs.updateError[100]\format -code, msgs.updaterErrorComponent[math.floor(-code/100)],
+            return msgs.updateError[100]\format msgs.updaterErrorComponent[math.floor(-code/100)], -code,
                    @@terms.isInstall[isInstall], @@terms.scriptType.singular[scriptType], name, detailMsg
         else
             -- Updater error:
@@ -56,6 +68,9 @@ class UpdateTask extends UpdaterBase
             invalidVersion: "The feed contains an invalid version record for %s '%s' (channel: %s): %s."
             unsupportedPlatform: "No download available for your platform '%s' (channel: %s)."
             noFiles: "No files available to download for your platform '%s' (channel: %s)."
+        }
+        new: {
+            badRecord: "Can't create update task: invalid DependencyControl version record."
         }
         run: {
             starting: "Starting %s of %s '%s'... "
@@ -84,20 +99,19 @@ class UpdateTask extends UpdaterBase
             reloadNotice: "Please rescan your autoload directory for the changes to take effect."
             unknownType: "Skipping file '%s': unknown type '%s'."
         }
-        refreshRecord: {
-            unsetVirtual: "Update initated by another macro already fetched %s '%s', switching to update mode."
-            otherUpdate: "Update initated by another macro already updated %s '%s' to v%s."
+        importUpdatedRegistryState: {
+            alreadyInstalled: "An update initated by another script already installed %s '%s' v%s, switching to update mode."
+            alreadyUpdated: "An update initated by another script already updated %s '%s' to v%s."
         }
     }
 
     new: (@record, targetVersion = 0, @addFeeds, @exhaustive, @channel, @optional, @updater) =>
-        DependencyControl or= require "l0.DependencyControl"
-        assert @record.__class == DependencyControl, "First parameter must be a #{DependencyControl.__name} object."
+        @logger or= @updater.logger
+        @logger\assert VersionRecord\isVersionRecord record, msgs.new.badRecord
 
-        @logger = @updater.logger
         @triedFeeds = {}
         @status = nil
-        @targetVersion = DependencyControl\parseVersion targetVersion
+        @set targetVersion, @addFeeds, @exhaustive, @channel, @optional
 
         -- set UpdateFeed settings
         @feedConfig = {
@@ -105,11 +119,19 @@ class UpdateTask extends UpdaterBase
             dumpExpanded: true
         } if @updater.config.c.dumpFeeds
 
-        return nil, -1 unless @updater.config.c.updaterEnabled -- TODO: check if this even works
-        return nil, -2 unless @record\validateNamespace!
+        isInstall = @record.__class == DummyRecord
+        @logger\assert @updater.config.c.updaterEnabled,
+                       @getUpdaterErrorMsg -1, @record.name, @record.scriptType, isInstall
+
+        @logger\assert Common.validateNamespace @record.namespace,
+                       @getUpdaterErrorMsg -2, @record.name, @record.scriptType, isInstall
 
     set: (targetVersion, @addFeeds, @exhaustive, @channel, @optional) =>
-        @targetVersion = DependencyControl\parseVersion targetVersion
+        if @record.__class != DummyRecord
+            @record = @record.package if @record.__class != InstalledPackage
+            @channel or= @record.config.c.activeChannel
+
+        @targetVersion = VersionRecord\parseVersion targetVersion
         return @
 
     checkFeed: (feedUrl) =>
@@ -121,7 +143,7 @@ class UpdateTask extends UpdaterBase
                 return nil, msgs.checkFeed.downloadFailed\format err
 
         -- select our script and update channel
-        updateRecord = feed\getScript @record.namespace, @record.scriptType, @record.config, false
+        updateRecord = feed\getScript @record.namespace, @record.scriptType, false
         unless updateRecord
             return nil, msgs.checkFeed.noData\format @@terms.scriptType.singular[@record.scriptType], @record.name
 
@@ -148,12 +170,16 @@ class UpdateTask extends UpdaterBase
 
 
     run: (waitLock, exhaustive = @updater.config.c.tryAllFeeds or @@exhaustive) =>
-        logUpdateError = (code, extErr, virtual = @virtual) ->
+        isInstall = @record.__class == DummyRecord
+
+        logUpdateError = (code, extErr) ->
             if code < 0
-                @logger\log @getUpdaterErrorMsg code, @record.name, @record.scriptType, virtual, extErr
+                @logger\log @getUpdaterErrorMsg code, @record.name, @record.scriptType,
+                            isInstall, extErr
             return code, extErr
 
-        with @record do @logger\log msgs.run.starting, @@terms.isInstall[.virtual],
+
+        with @record do @logger\log msgs.run.starting, @@terms.isInstall[isInstall],
                                                        @@terms.scriptType.singular[.scriptType], .name
 
         -- don't perform update of a script when another one is already running for the same script
@@ -161,7 +187,7 @@ class UpdateTask extends UpdaterBase
 
         -- check if the script was already updated
         if @updated and not exhaustive and @record\checkVersion @targetVersion
-            @logger\log msgs.run.alreadyUpdated, @record.name, DependencyControl\getVersionString @record.version
+            @logger\log msgs.run.alreadyUpdated, @record.name, VersionRecord\getVersionString @record.version
             return 2
 
         -- build feed list
@@ -184,7 +210,7 @@ class UpdateTask extends UpdaterBase
         if #feeds == 0
             if @optional
                 @logger\log msgs.run.skippedOptional, @record.name,
-                            @@terms.isInstall[@record.virtual], msgs.run.optionalNoFeed
+                            @@terms.isInstall[isInstall], msgs.run.optionalNoFeed
                 return 3
 
             return logUpdateError -4
@@ -193,8 +219,14 @@ class UpdateTask extends UpdaterBase
         return logUpdateError -7 unless dlm\isInternetConnected!
 
         -- get a lock on the updater
-        success, otherHost = @updater\getLock waitLock
-        return logUpdateError -5, otherHost unless success
+        didWait, otherHost = @updater\getLock waitLock
+        return logUpdateError -5, otherHost if didWait == nil
+
+        -- reload important module version information from configuration
+        -- because another updater instance might have updated them in the meantime
+        if didWait
+            -- TODO: make method of updater
+            task\importUpdatedRegistryState! for _,task in pairs @updater.tasks[@@ScriptType.Module]
 
         -- check feeds for update until we find and update or run out of feeds to check
         -- normal mode:     check feeds until an update matching the required version is found
@@ -223,33 +255,35 @@ class UpdateTask extends UpdaterBase
         @logger.indent -= 1
 
         local code, res
-        wasVirtual = @record.virtual
         unless updateRecord
             -- for a script to be marked up-to-date it has to installed on the user's system
             -- and the version must at least be that returned by at least one feed
-            if maxVer>0 and not @record.virtual and @targetVersion <= @record.version
+            if maxVer>0 and not isInstall and @targetVersion <= @record.version
                 @logger\log msgs.run.upToDate, @@terms.scriptType.singular[@record.scriptType],
-                                               @record.name, DependencyControl\getVersionString @record.version
+                                               @record.name, VersionRecord\getVersionString @record.version
                 return 0
 
-            res = msgs.run.noFeedAvailExt\format @targetVersion == 0 and "any" or DependencyControl\getVersionString(@targetVersion),
-                                                 @record.virtual and "no" or DependencyControl\getVersionString(@record.version),
-                                                 maxVer<1 and "none" or DependencyControl\getVersionString maxVer
+            res = msgs.run.noFeedAvailExt\format @targetVersion == 0 and "any" or VersionRecord\getVersionString(@targetVersion),
+                                                 isInstall and "no" or VersionRecord\getVersionString(@record.version),
+                                                 maxVer<1 and "none" or VersionRecord\getVersionString maxVer
 
             if @optional
-                @logger\log msgs.run.skippedOptional, @record.name, @@terms.isInstall[@record.virtual],
+                @logger\log msgs.run.skippedOptional, @record.name, @@terms.isInstall[isInstall],
                                                       msgs.run.optionalNoUpdate\format res
                 return 3
 
             return logUpdateError -6, res
 
         code, res = @performUpdate updateRecord
-        return logUpdateError code, res, wasVirtual
+        return logUpdateError code, res, isInstall
 
     performUpdate: (update) =>
+        DependencyControl or= require "l0.DependencyControl"
+        isInstall = @record.__class == DummyRecord
+
         finish = (...) ->
             @running = false
-            if @record.virtual or @record.recordType == @@RecordType.Unmanaged
+            if isInstall or @record.recordType == @@RecordType.Unmanaged
                 ModuleLoader.removeDummyRef @record
             return ...
 
@@ -257,9 +291,9 @@ class UpdateTask extends UpdaterBase
         return finish -10 if @running
         @running = true
 
-        -- set a dummy ref (which hasn't yet been set for virtual and unmanaged modules)
+        -- set a dummy ref for not-yet-installed and unmanaged modules
         -- and record version to allow resolving circular dependencies
-        if @record.virtual or @record.recordType == @@RecordType.Unmanaged
+        if isInstall or @record.recordType == @@RecordType.Unmanaged
             ModuleLoader.createDummyRef @record
             @record\setVersion update.version
 
@@ -269,7 +303,7 @@ class UpdateTask extends UpdaterBase
         if reqs and #reqs > 0
             @logger\log msgs.performUpdate.updateReqs
             @logger.indent += 1
-            success, err = ModuleLoader.loadModules @record, reqs, {@record.feed}
+            success, err = ModuleLoader.loadModules @record, @record, reqs, {@record.feed}
             @logger.indent -= 1
             unless success
                 @logger.indent += 1
@@ -356,9 +390,13 @@ class UpdateTask extends UpdaterBase
         os.remove file.fullName for file in *update.files when file.delete and not file.unknown
 
         -- Nuke old module refs and reload
-        oldVer, wasVirtual = @record.version, @record.virtual
+        oldVer = @record.version
+
 
         -- Update complete, refresh module information/configuration
+
+        -- modules can be (re)loaded instantly
+        -- no matter if we're installing or updating
         if @record.scriptType == @@ScriptType.Module
             ref = ModuleLoader.loadModule @record, @record, false, true
             unless ref
@@ -378,35 +416,50 @@ class UpdateTask extends UpdaterBase
                 @record = rec
             @ref = ref
 
-        else with @record
-            .name, .version, .virtual = @record.name, DependencyControl\parseVersion update.version
-            @record\writeConfig!
+        -- newly installed macros will only be available after the next script reload
+        -- so we don't treat them as fully installed until they register themselves
+        elseif isInstall
+            success, rec = pcall InstalledPackage, @record, nil, InstalledPackage.InstallState.Downloaded
+            return finish -59, rec unless success
+            @record = rec
+
+        -- updated automation scripts have their install record updated
+        -- with version information and metadata provided by the update feed
+        else
+            @record.version = VersionRecord\parseVersion update.version
+            @record\import update, {"version"}
 
         @updated = true
-        @logger\log msgs.performUpdate.updSuccess, @@terms.capitalize(@@terms.isInstall[wasVirtual]),
+        @logger\log msgs.performUpdate.updSuccess, @@terms.capitalize(@@terms.isInstall[isInstall]),
                                                    @@terms.scriptType.singular[@record.scriptType],
-                                                   @record.name, DependencyControl\getVersionString @record.version
+                                                   @record.name, VersionRecord\getVersionString @record.version
 
-        -- Diplay changelog
-        @logger\log update\getChangelog @record, (DependencyControl\parseVersion oldVer) + 1
+        -- Display changelog
+        @logger\log update\getChangelog 1 + VersionRecord\parseVersion oldVer
         @logger\log msgs.performUpdate.reloadNotice
 
         -- TODO: check handling of private module copies (need extra return value?)
-        return finish 1, DependencyControl\getVersionString @record.version
+        return finish 1, VersionRecord\getVersionString @record.version
 
 
-    refreshRecord: =>
-        with @record
-            wasVirtual, oldVersion = .virtual, .version
-            \loadConfig true
-            if wasVirtual and not .virtual or .version > oldVersion
-                @updated = true
-                @ref = ModuleLoader.loadModule @record, @record, false, true if .scriptType == @@ScriptType.Module
-                if wasVirtual
-                    @logger\log msgs.refreshRecord.unsetVirtual, @@terms.scriptType.singular[.scriptType], .name
-                else
-                    @logger\log msgs.refreshRecord.otherUpdate, @@terms.scriptType.singular[.scriptType], .name,
-                                DependencyControl\getVersionString @record.version
+    importUpdatedRegistryState: =>
+        @updated, oldVersion, msg = false, @record.version
+        if @record.__class == DummyRecord
+            installState = InstalledPackage\getInstallState @record.namespace
+            if installState >= InstalledPackage.InstallState.Downloaded
+                @record = InstalledPackage @record
+                @updated, msg = true, msgs.importUpdatedRegistryState.alreadyInstalled
+
+        elseif @record\sync InstalledPackage.SyncMode.Read and @record.version > oldVersion
+            @updated = true, msgs.importUpdatedRegistryState.alreadyUpdated
+
+        if @updated
+            @logger\log msg, @@terms.scriptType.singular[@record.scriptType],
+                        @record.name, VersionRecord\getVersionString @record.version
+
+            if @record.scriptType == @@ScriptType.Module
+                @ref = ModuleLoader.loadModule @record, @record, false, true
+
 
 class Updater extends UpdaterBase
     msgs = {
@@ -417,74 +470,72 @@ class Updater extends UpdaterBase
             waiting: "Waiting for update intiated by %s to finish..."
         }
         require: {
-            macroPassed: "%s is not a module."
+            notAModule: "Can only require a module, but supplied record for '%s' indicates type %s."
             upToDate: "Tried to require an update for up-to-date module '%s'."
-        }
-        scheduleUpdate: {
-            updaterDisabled: "Skipping update check for %s (Updater disabled)."
-            runningUpdate: "Running scheduled update for %s '%s'..."
+            installingRequired: "Installing required module '%s'..."
+            updatingOutdated: "Updating outdated moudle '%s'..."
         }
     }
     new: (@host = script_namespace, @config, @logger = @@logger) =>
         @tasks = {scriptType, {} for _, scriptType in pairs @@ScriptType when "number" == type scriptType}
 
     addTask: (record, targetVersion, addFeeds = {}, exhaustive, channel, optional) =>
-        DependencyControl or= require "l0.DependencyControl"
-        if record.__class != DependencyControl
-            depRec = {saveRecordToConfig: false, readGlobalScriptVars: false}
-            depRec[k] = v for k, v in pairs record
-            record = DependencyControl depRec
+        return nil, -9 unless VersionRecord\isVersionRecord record
 
         task = @tasks[record.scriptType][record.namespace]
         if task
             return task\set targetVersion, addFeeds, exhaustive, channel, optional
-        else
-            task, err = UpdateTask record, targetVersion, addFeeds, exhaustive, channel, optional, @
-            @tasks[record.scriptType][record.namespace] = task
-            return task, err
+
+        return nil, -1 unless @config.c.updaterEnabled
+        return nil, -2 unless Common.validateNamespace record.namespace
+
+        success, task = pcall UpdateTask, record,
+                              targetVersion, addFeeds, exhaustive, channel, optional, @
+        return nil, -999, task unless success
+
+        @tasks[record.scriptType][record.namespace] = task
+        return task, err
 
     require: (record, ...) =>
-        @logger\assert record.scriptType == @@ScriptType.Module, msgs.require, record.name or record.namespace
-        @logger\log "%s module '%s'...", record.virtual and "Installing required" or "Updating outdated", record.name
+        return nil, -9 unless VersionRecord\isVersionRecord record
+
+        @logger\assert record.scriptType == @@ScriptType.Module,
+                       msgs.require.notAModule, record.name or record.namespace,
+                       @@terms.scriptType.singular[record.scriptType]
+
+        @logger\log msgs.require[record.__class == DummyRecord and "installingRequired" or "updatingOutdated"],
+                    record.name
         task, code = @addTask record, ...
         code, res = task\run true if task
 
-        if code == 0 and not task.updated
+        return if code == 0 and not task.updated
             -- usually we know in advance if a module is up to date so there's no reason to block other updaters
             -- but we'll make sure to handle this case gracefully, anyway
             @logger\debug msgs.require.upToDate, task.record.name or task.record.namespace
-            return ModuleLoader.loadModule task.record, task.record.namespace
+            ModuleLoader.loadModule task.record, task.record.namespace
         elseif code >= 0
-            return task.ref
-        else -- pass on update errors
-            return nil, code, res
+            task.ref
+        else nil, code, res -- pass on update errors
 
     scheduleUpdate: (record) =>
-        unless @config.c.updaterEnabled
-            @logger\trace msgs.scheduleUpdate.updaterDisabled, record.name or record.namespace
-            return -1
+        return nil, -9 unless VersionRecord\isVersionRecord record
 
         -- no regular updates for non-existing or unmanaged modules
-        if record.virtual or record.recordType == @@RecordType.Unmanaged
+        if record.__class == DummyRecord or record.recordType == @@RecordType.Unmanaged
             return -3
 
-        -- the update interval has not yet been passed since the last update check
-        if record.config.c.lastUpdateCheck and (record.config.c.lastUpdateCheck + @config.c.updateInterval > os.time!)
-            return false
+        -- need an installed script to perform update checks
+        if record.__class != InstalledPackage
+            success, record = pcall InstalledPackage, record
+            return -8, record unless success
 
-        record.config.c.lastUpdateCheck = os.time!
-        record.config\write!
-
-        task = @addTask record -- no need to check for errors, because we've already accounted for those case
-        @logger\trace msgs.scheduleUpdate.runningUpdate, @@terms.scriptType.singular[record.scriptType], record.name
-        return task\run!
-
+        return record\update!
 
     getLock: (doWait, waitTimeout = @config.c.updateWaitTimeout) =>
         return true if @hasLock
 
         @config\load!
-        running, didWait = @config.c.updaterRunning
+        running, didWait = @config.c.updaterRunning, false
 
         if running and running.host != @host
             if running.time + @config.c.updateOrphanTimeout < os.time!
@@ -500,7 +551,7 @@ class Updater extends UpdaterBase
                 @logger\log timeout <= 0 and msgs.getLock.abortWait or msgs.getLock.waitFinished,
                            waitTimeout - timeout
 
-            else return false, running.host
+            else return nil, running.host
 
         -- register the running update in the config file to prevent collisions
         -- with other scripts trying to update the same modules
@@ -510,12 +561,7 @@ class Updater extends UpdaterBase
         @config\write!
         @hasLock = true
 
-        -- reload important module version information from configuration
-        -- because another updater instance might have updated them in the meantime
-        if didWait
-            task\refreshRecord! for _,task in pairs @tasks[@@ScriptType.Module]
-
-        return true
+        return didWait
 
     releaseLock: =>
         return false unless @hasLock

@@ -1,6 +1,7 @@
 -- Note: this is a private API intended to be exclusively for internal DependenyControl use
 -- Everyting in this class can and will change without any prior notice
--- and calling any method is guaranteed to interfere with DepdencyControl operation
+-- and calling any method is guaranteed to interfere with DependencyControl operation
+DummyRecord = require "l0.DependencyControl.DummyRecord"
 
 class ModuleLoader
   msgs = {
@@ -112,8 +113,7 @@ class ModuleLoader
 
         -- try to fetch and load a missing module from the web
         if ._missing
-          record = @@{moduleName:.moduleName, name:.name or .moduleName,
-                version:-1, url:.url, feed:.feed, virtual:true}
+          record = DummyRecord moduleName: .moduleName, name: .name, url: .url, feed: .feed
           ._ref, code, extErr = @@updater\require record, .version, addFeeds, .optional
           if ._ref or .optional
             ._updated, ._missing = true, false
