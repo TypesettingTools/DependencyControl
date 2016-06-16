@@ -200,7 +200,8 @@ class InstalledPackage extends VersionRecord
         -- register new installed package
         @logger\trace msgs.sync.creatingRecord, @namespace
         @timestamp = os.time!
-        res, msg = db\insert "InstalledPackages", map @, {SyncTime: @timestamp}, recordMappings, true
+        res, msg = db\insert "InstalledPackages", map(@, {SyncTime: @timestamp}, recordMappings, true),
+                              nil, "IGNORE"
         return nil, msg unless res
         return true, @@SyncMode.Write
 
