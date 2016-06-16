@@ -42,6 +42,11 @@ class FileOps
                 couldntRemoveFiles: "Move operation suceeded to copied the file(s) to the target location, but some of the source files couldn't be removed:\n%s\n%s"
                 cantCopy: "Move operation failed to copy '%s' to '%s' (%s) after a failed rename attempt (%s)."
             }
+            readFile: {
+                cantOpen: "Couldn't open file '%s' for reading: %s"
+                cantRead: "An error occured while trying to read from file '%s': %s"
+                notAFile: "Can only read files but supplied path '%s' points to a %s."
+            }
             rmdir: {
                 emptyPath: "Argument #1 (path) must not be an empty string."
                 couldntRemoveFiles: "Some of the files and folders in the specified directory couldn't be removed:\n%s"
@@ -56,7 +61,7 @@ class FileOps
                 parentPath: "Accessing parent directories is not allowed."
                 notFullPath: "The specified path is not a valid full path."
                 missingExt: "The specified path is missing a file extension."
-        }
+            }
             getNamespacedPath: {
                 badBasePath: "Provided base path '%s' is not a valid full path (%s)."
                 badPath: "Generated namespaced path '%s' is not a valid full path (%s)."
@@ -221,6 +226,22 @@ class FileOps
                 FileOps.logger\debug msgs.move.couldntRemoveFiles, fileList, msgs.generic.deletionRescheduled
 
         return true
+
+    readFile: (path) ->
+        mode, fullPath = FileOps.attributes path, "mode"
+        return nil, msgs.readFile.cantOpen\format path, fullPath unless mode
+        return nil, msgs.readFile.notAFile\format path, mode if mode != "file"
+
+        handle, msg = io.open fullPath, "rb"
+        return nil, msgs.readFile.cantOpen\format fullPath, msg unless handle
+
+        data, msg = handle\read "*a"
+        handle\close!
+
+        if data
+            return data
+        else return nil, msgs.readFile.cantRead\format path, msg
+
 
     rmdir: (path, recurse = true) ->
         return nil, msgs.rmdir.emptyPath if path == ""
