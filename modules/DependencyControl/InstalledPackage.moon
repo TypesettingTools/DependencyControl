@@ -119,7 +119,9 @@ class InstalledPackage extends VersionRecord
 
 
     new: (record, @logger = @@logger, dummyInitState) =>
-        db or= SQLiteDatabase "l0.DependencyControl", nil, 200, @logger
+        db, msg = getDatabase @@, "l0.DependencyControl", true,
+                                  @@ScriptType.Module, @logger, 200 unless db
+        @logger\assert db, msgs.new.dbConnectFailed, msg
         @package = @
         @timestamp = os.time!
 
