@@ -257,8 +257,8 @@ class SQLiteDatabase
         return rows[1] or false
 
 
-    insertTemplate = "INSERT INTO '%s' (%s) VALUES (%s);"
-    insert: (tblName, tbl, fields) =>
+    insertTemplate = "INSERT%s INTO '%s' (%s) VALUES (%s);"
+    insert: (tblName, tbl, fields, altAction) =>
         fields or= [k for k, v in pairs tbl]
         values, v = {}, 1
 
@@ -267,7 +267,10 @@ class SQLiteDatabase
             return nil, msg unless value
             values[v] = value
             v += 1
-        query = insertTemplate\format tblName, table.concat(fields, ","), table.concat values, ","
+
+        altClause = altAction and " OR #{altAction}" or ""
+        query = insertTemplate\format altClause, tblName, table.concat(fields, ","),
+                                      table.concat values, ","
         return @exec query
 
     updateTemplate = "UPDATE '%s' SET %s WHERE %s"
