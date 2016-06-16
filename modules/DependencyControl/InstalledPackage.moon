@@ -4,6 +4,7 @@ Logger         = require "l0.DependencyControl.Logger"
 VersionRecord  = require "l0.DependencyControl.VersionRecord"
 ConfigHandler  = require "l0.DependencyControl.ConfigHandler"
 DummyRecord    = require "l0.DependencyControl.DummyRecord"
+fileOps        = require "l0.DependencyControl.FileOps"
 
 selectPackageTemplate = "SELECT * FROM 'InstalledPackages' WHERE Namespace = '%s'"
 recordMappings = {
@@ -42,6 +43,10 @@ class InstalledPackage extends VersionRecord
             badRecord: "Record must be either a namespace or a DependencyControl record, got a %s."
             noDummyRecord: "Can't create #{@@__name} for '%s' because a dummy record was supplied."
             syncFailed: "Couldn't sync package record with registry: %s"
+            dbConnectFailed: "Failed to connect to the DependencyControl database (%s)."
+        }
+        getDatabase: {
+            foundDefaultSchema: "Found schema for database '%s' at '%s'..."
         }
         getInstallState: {
             retrieveFailed: "Couldn't retrieve install state for %s from package registry: %s"
@@ -97,6 +102,22 @@ class InstalledPackage extends VersionRecord
                 @@InstallState.Absent
             else packageInfo.InstallState, packageInfo
 
+    getDatabase = (namespace, init = true, scriptType, logger = @logger, retryCount) =>
+        if init == true
+            defaultSchemaPath = fileOps.getNamespacedPath @@automationDir[scriptType],
+                                namespace, ".sql", scriptType == @@ScriptType.Module
+            mode = fileOps.attributes defaultSchemaPath, "mode"
+            if mode == "file"
+                logger\trace msgs.getDatabase.foundDefaultSchema, namespace, defaultSchemaPath
+                init = defaultSchemaPath
+            else init = nil
+
+        success, db = pcall SQLiteDatabase, namespace, init, retryCount, logger
+        if success
+            return db
+        else return nil, db
+
+
     new: (record, @logger = @@logger, dummyInitState) =>
         db or= SQLiteDatabase "l0.DependencyControl", nil, 200, @logger
         @package = @
@@ -127,6 +148,13 @@ class InstalledPackage extends VersionRecord
 
         record.package = @ if record.__class == DummyRecord
         @loadConfig!
+
+
+    getDatabase: (namespaceExtension = "", init = true) =>
+        namespace = @namespace
+        namespace ..= ".#{namespaceExtension}" if namespaceExtension
+        return getDatabase @@, namespace, init, @scriptType, @logger
+
 
     import: (source, sourceIgnore = {"installState", "namespace"}) =>
         -- TODO: sanity checks for namespace, version rules
