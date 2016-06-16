@@ -320,7 +320,7 @@ class SQLiteDatabase
         @lastStatement = statement
         @logger\trace msgs.traceCallback.runningStatement\format statement, @name
 
-    open: (initializer = true) =>
+    open: (initializer) =>
         return false if @isOpen!
 
         -- check if the db path is accessible and points to a file
