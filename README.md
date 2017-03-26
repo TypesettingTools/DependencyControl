@@ -1,7 +1,7 @@
 DependencyControl - Enterprise Aegisub Script Management
 --------------------------------------------------------
 
-DependencyControl provides versioning, automatic script update, dependency managment and script management services to Aegisub macros and modules.
+DependencyControl provides versioning, automatic script update, dependency management and script management services to Aegisub macros and modules.
 
 __Features__:
 
@@ -74,7 +74,7 @@ __Available Fields__:
 * *str* __writeLogs [true]:__ When enabled, DependencyControl log messages will be written to a file in the Aegisub log folder. This is a valuable resource for debugging, especially since the Aegisub log window is not available during script initalization.
 * *int* __logMaxFiles [200]:__ DepedencyControl will purge old updater log files when any of the limits for log file count, log age and cumulative file size is exceeded.
 * *int* __logMaxAge [1 Week]:__ Logs with a last modified date that exceeds this limit will be deleted. Takes a duration in seconds.
-* *int* __logMaxSize [10 MB]:__ Cumlative file size limit for all log files in bytes.
+* *int* __logMaxSize [10 MB]:__ Cumulative file size limit for all log files in bytes.
 
 ##### 1. Per-script Configuration #####
 Changes made in the `macros` and `modules` sections of the configuration file affect only the script or module in question.
@@ -85,7 +85,7 @@ __Available Fields__:
 * *str* __userFeed:__ When set the updater will use this feed exclusively to update the script in question (instead of other feeds)
 * *int* __lastUpdateCheck [auto]:__ This field is used to store the (epoch) time of the last update check.
 * *int* __logLevel [3]:__ sets the default trace level for log messages from this script (only applies to messages sent through a Logger instance provided by DepedencyControl to the script)
-* *bool* __logToFile [false]:__ set the user preference wrt/ whether log messages of this script should be written to disk or not (same restrictions as above apply, may be overriden by the script)
+* *bool* __logToFile [false]:__ set the user preference wrt/ whether log messages of this script should be written to disk or not (same restrictions as above apply, may be overridden by the script)
 * author, configFile, feed, moduleName, name, namespace, url, requiredModules, version, unmanaged: These fields hold aspects of the script's version record. Don't change them (they will be reset anyway)
 
 -----------------------------------------
@@ -106,16 +106,16 @@ script_namespace = "l0.MoveAlongPath"
 
 local DependencyControl = require("l0.DependencyControl")
 local version = DependencyControl{
-    feed = "https://raw.githubusercontent.com/TypesettingCartel/line0-Aegisub-Scripts/master/DependencyControl.json",
+    feed = "https://raw.githubusercontent.com/TypesettingTools/line0-Aegisub-Scripts/master/DependencyControl.json",
     {
         "aegisub.util",
         {"a-mo.LineCollection", version="1.0.1", url="https://github.com/torque/Aegisub-Motion"},
-        {"a-mo.Line", version="1.0.0", url="https://github.com/TypesettingCartel/Aegisub-Motion"},
+        {"a-mo.Line", version="1.0.0", url="https://github.com/TypesettingTools/Aegisub-Motion"},
         {"a-mo.Log", url="https://github.com/torque/Aegisub-Motion"},
-        {"l0.ASSFoundation", version="0.1.1", url="https://github.com/TypesettingCartel/ASSFoundation",
-         feed = "https://raw.githubusercontent.com/TypesettingCartel/ASSFoundation/master/DependencyControl.json"},
-        {"l0.ASSFoundation.Common", version="0.1.1", url="https://github.com/TypesettingCartel/ASSFoundation",
-         feed = "https://raw.githubusercontent.com/TypesettingCartel/ASSFoundation/master/DependencyControl.json"},
+        {"l0.ASSFoundation", version="0.1.1", url="https://github.com/TypesettingTools/ASSFoundation",
+         feed = "https://raw.githubusercontent.com/TypesettingTools/ASSFoundation/master/DependencyControl.json"},
+        {"l0.ASSFoundation.Common", version="0.1.1", url="https://github.com/TypesettingTools/ASSFoundation",
+         feed = "https://raw.githubusercontent.com/TypesettingTools/ASSFoundation/master/DependencyControl.json"},
         "YUtils"
     }
 }
@@ -155,17 +155,17 @@ local version = DependencyControl{
     version = "0.1.1",
     description = "General purpose ASS processing library",
     author = "line0",
-    url = "http://github.com/TypesettingCartel/ASSFoundation",
+    url = "http://github.com/TypesettingTools/ASSFoundation",
     moduleName = "l0.ASSFoundation",
-    feed = "https://raw.githubusercontent.com/TypesettingCartel/ASSFoundation/master/DependencyControl.json",
+    feed = "https://raw.githubusercontent.com/TypesettingTools/ASSFoundation/master/DependencyControl.json",
     {
         "l0.ASSFoundation.ClassFactory",
         "aegisub.re", "aegisub.util", "aegisub.unicode",
-        {"l0.ASSFoundation.Common", version="0.1.1", url="https://github.com/TypesettingCartel/ASSFoundation",
-         feed = "https://raw.githubusercontent.com/TypesettingCartel/ASSFoundation/master/DependencyControl.json"},
-        {"a-mo.LineCollection", version="1.0.1", url="https://github.com/TypesettingCartel/Aegisub-Motion"},
-        {"a-mo.Line", version="1.0.0", url="https://github.com/TypesettingCartel/Aegisub-Motion"},
-        {"a-mo.Log", url="https://github.com/TypesettingCartel/Aegisub-Motion"},
+        {"l0.ASSFoundation.Common", version="0.1.1", url="https://github.com/TypesettingTools/ASSFoundation",
+         feed = "https://raw.githubusercontent.com/TypesettingTools/ASSFoundation/master/DependencyControl.json"},
+        {"a-mo.LineCollection", version="1.0.1", url="https://github.com/TypesettingTools/Aegisub-Motion"},
+        {"a-mo.Line", version="1.0.0", url="https://github.com/TypesettingTools/Aegisub-Motion"},
+        {"a-mo.Log", url="https://github.com/TypesettingTools/Aegisub-Motion"},
         "ASSInspector.Inspector",
         {"YUtils", optional=true},
     }
@@ -243,15 +243,15 @@ If you want DepedencyControl auto-update your script on the user's system, you'l
   "maintainer": "line0",
   // The title and description of your repository as well as the name of the maintainer. May be used by GUI-driven management tools, package managers, etc...
   "knownFeeds": {
-    "a-mo": "https://raw.githubusercontent.com/TypesettingCartel/Aegisub-Motion/DepCtrl/DependencyControl.json",
+    "a-mo": "https://raw.githubusercontent.com/TypesettingTools/Aegisub-Motion/DepCtrl/DependencyControl.json",
     "ASSFoundation": "https://raw.githubusercontent.com/TypesettingTools/ASSFoundation/master/DependencyControl.json"
   },
-  // A hashtable of known feed URLs. Can be referenced with @{feed:name} and will be used to discover other repositories the user can install automation scripts and modules from. At the very least this should contain the repo URLs for the required modules in your repo, but may be used to adverise other unrelated repos you trust.
-  "baseUrl": "https://github.com/TypesettingCartel/line0-Aegisub-Scripts",
+  // A hashtable of known feed URLs. Can be referenced with @{feed:name} and will be used to discover other repositories the user can install automation scripts and modules from. At the very least this should contain the repo URLs for the required modules in your repo, but may be used to advertise other unrelated repos you trust.
+  "baseUrl": "https://github.com/TypesettingTools/line0-Aegisub-Scripts",
   // baseUrl is a template variable that can be referenced in other string fields of the template. It's useful when you have several scripts which all have their documentation hosted on the same site (so they start with the same URL). For more Information about templates, see the section below.
   "url": "@{baseUrl}",
-  // The address where information about this repository can be found. In this case it references the baseUrl template variable and expands to "https://github.com/TypesettingCartel/line0-Aegisub-Scripts".
-  "fileBaseUrl": "https://raw.githubusercontent.com/TypesettingCartel/line0-Aegisub-Scripts/@{channel}/@{namespace}",
+  // The address where information about this repository can be found. In this case it references the baseUrl template variable and expands to "https://github.com/TypesettingTools/line0-Aegisub-Scripts".
+  "fileBaseUrl": "https://raw.githubusercontent.com/TypesettingTools/line0-Aegisub-Scripts/@{channel}/@{namespace}",
   // A special rolling template variable. See the templates section below for more information.
   
   "macros": {
@@ -305,7 +305,7 @@ An automation script or module object looks like this:
               "url": "@{fileBaseUrl}@{fileName}",
               // URL from which the **raw** file can be downloaded from (no archives, no javascript 
               // redirects, etc...). In this case the templates expand to         
-              // "https://raw.githubusercontent.com/TypesettingCartel/line0-Aegisub-Scripts/master/l0.ASSWipe.lua"
+              // "https://raw.githubusercontent.com/TypesettingTools/line0-Aegisub-Scripts/master/l0.ASSWipe.lua"
               "sha1": "A7BD1C7F0E776BA3010B1448F22DE6528F73B077"
               // The SHA-1 hash of the file being currently served under that url. Will be checked 
               // against the downloaded file, so it must always be present and valid or the update process
@@ -342,7 +342,7 @@ An automation script or module object looks like this:
             {
               "moduleName": "l0.ASSFoundation",
               "name": "ASSFoundation",
-              "url": "https://github.com/TypesettingCartel/ASSFoundation",
+              "url": "https://github.com/TypesettingTools/ASSFoundation",
               "version": "0.1.1",
               "feed": "@{feed:ASSFoundation}"
             },
@@ -385,7 +385,7 @@ _Depth 1:_ Feed Information
 
 _Depth 3:_ Script Information
  1. __namespace__: the script namespace
- 2. __namepacePath__: the script namespace with all `.` replaced by `/`
+ 2. __namespacePath__: the script namespace with all `.` replaced by `/`
  3. scriptName: the script name
 
 _Depth 5:_ Version Information
@@ -401,7 +401,7 @@ __"Rolling" Variables:__ These variables can be defined at any depth in the JSON
 
 Right now there's only one such variable: __fileBaseUrl__, which you can use to construct the URL to a file using the template variables available. 
 
-For an example to serve updates from the HEAD of a GitHub repository, see [here](https://github.com/TypesettingCartel/line0-Aegisub-Scripts/blob/master/DependencyControl.json). An example that shows a feed making use of tagged releases is [also available](https://github.com/TypesettingCartel/ASSFoundation/blob/master/DependencyControl.json).
+For an example to serve updates from the HEAD of a GitHub repository, see [here](https://github.com/TypesettingTools/line0-Aegisub-Scripts/blob/master/DependencyControl.json). An example that shows a feed making use of tagged releases is [also available](https://github.com/TypesettingTools/ASSFoundation/blob/master/DependencyControl.json).
 
  ---------------------------------------------
 
@@ -418,7 +418,7 @@ __Arguments:__
 
  * _requiredModules_: the first and only unnamed argument. Contains all required modules, which may be either a single string for a non-version-controlled requirement or a table with the following fields:
     * __*str* [moduleName/[1]]:__ the module name
-    * __*str* [version]:__ The mininum required version of the module. Must conform to Semantic Versioning standards. The module in question must contain a DependencyControl version record or otherwise compatible version number.
+    * __*str* [version]:__ The minimum required version of the module. Must conform to Semantic Versioning standards. The module in question must contain a DependencyControl version record or otherwise compatible version number.
     * __*str* [url]__: The URL of the site where the module can be downloaded from (will be shown to the user in error methods).
     * __*str* [feed]__: The update feed used to fetch a copy of the required module when it is missing from the user's system.
     * __*bool* [optional=false]__: Marks the module as an optional requirement. If the module is missing on the user's system, no error will be thrown. However, version requirements *will* be checked if the module was found.
@@ -434,7 +434,7 @@ __Arguments:__
 ##### Methods #####
 __:checkVersion(*str/num* version, *str* [precision = "patch"]) --> *bool* moduleUpToDate, *str* error__
 
-Returns true if the version number of the record is greater than or equal to __version__. Reduce the __precision__ to `minor` or `major` to also return true for lower patch or minor versions respecitively. If the version can't be parsed it returns nil and and error message.
+Returns true if the version number of the record is greater than or equal to __version__. Reduce the __precision__ to `minor` or `major` to also return true for lower patch or minor versions respectively. If the version can't be parsed it returns nil and and error message.
 
 __:checkOptionalModules(*tbl* modules) --> *bool* result, *str* errorMessage__
 
@@ -540,7 +540,7 @@ VarArgs:
 
 __:getUpdaterLock(*bool* [doWait], *int* [waitTimeout=(user config)]) --> *bool* result, *str* runningHost__
 
-Locks the updater to the current macro/environment. Since all automation scripts load in parallel we have to make sure multiple automation scripts don't all update/fetch the same depedencies at once multiple times. The solution is to only let one updater operate at a time. The others will wait their turn and recheck if their required modules were fetched in the meantime.
+Locks the updater to the current macro/environment. Since all automation scripts load in parallel we have to make sure multiple automation scripts don't all update/fetch the same dependencies at once multiple times. The solution is to only let one updater operate at a time. The others will wait their turn and recheck if their required modules were fetched in the meantime.
 
 If __doWait__ is true, the function will wait until the updater is unlocked or __waitTimeout__ has passed. It will then get the lock and return true. If __doWait__ is false, the function will return immediately (true on success, false if another updater has the lock). _Intendend for internal use_.
 
@@ -550,11 +550,11 @@ Makes an updater host (macro) release its lock on the Updater if it has one. See
 
 __:update(*bool* [force], *tbl* [addFeeds], *bool* [tryAllFeeds=auto]) --> *int* resultCode, *str* extError__
 
-Runs the updater on this automation script or module. This includes recursicely updating all required modules. When __force__ is true, required modules will skip their update interval check.
+Runs the updater on this automation script or module. This includes recursively updating all required modules. When __force__ is true, required modules will skip their update interval check.
 
 By default, the updater will process all suitable feeds until one feed confirms the script to be up-to-date (unless configured otherwise by the user or if we are looking for updates to an outdated component). Set __tryAllFeeds__ to true to check all feeds until an update is found. You can also supply __additional candidate feeds__.
 
-Returns a result code (0: up-to-date, 1: update performed, <=-1: error) and extendend error information which can be fed into _:getUpdaterErrorMsg()_ to get a descriptive error message.
+Returns a result code (0: up-to-date, 1: update performed, <=-1: error) and extended error information which can be fed into _:getUpdaterErrorMsg()_ to get a descriptive error message.
 
 #### Logger ####
 
