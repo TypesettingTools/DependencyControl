@@ -1,4 +1,5 @@
 SQLiteDatabase = require "l0.DependencyControl.SQLiteDatabase"
+SQLiteMapper   = require "l0.DependencyControl.SQLiteMapper"
 Common         = require "l0.DependencyControl.Common"
 Logger         = require "l0.DependencyControl.Logger"
 VersionRecord  = require "l0.DependencyControl.VersionRecord"
@@ -6,43 +7,30 @@ ConfigHandler  = require "l0.DependencyControl.ConfigHandler"
 DummyRecord    = require "l0.DependencyControl.DummyRecord"
 fileOps        = require "l0.DependencyControl.FileOps"
 
-selectPackageTemplate = "SELECT * FROM 'InstalledPackages' WHERE Namespace = '%s'"
 recordMappings = {
-    Namespace: "namespace"
-    Name: "name"
-    Version: "version"
-    ScriptType: "scriptType"
-    RecordType: "recordType"
-    Author: "author"
-    Description: "description"
-    WebURL: "url"
-    FeedURL: "feed"
-    InstallState: "installState"
+    namespace: "Namespace"
+    name: "Name"
+    version: "Version"
+    scriptType: "ScriptType"
+    recordType: "RecordType"
+    author: "Author"
+    description: "Description"
+    url: "WebURL"
+    feed: "FeedURL"
+    installState: "InstallState"
+    timestamp: "Timestamp"
 }
 
-map = (source, target, mappings, reverse) ->
-    mappings = {v, k for k, v in pairs mappings} if reverse
-    target[v] = source[k] for k, v in pairs mappings
-    return target
+packageFields = {"timestamp", "installState"}
+packageFieldSet = {field, true for field in *packageFields}
+recordFieldSet = {field, true for field, _ in pairs recordMappings when not packageFieldSet[field]}
 
-diff = (left, right, mappings, reverse) ->
-    diffed, d = {}, 0
-    for k, v in pairs mappings
-        k, v = v, k if reverse
-        if left[k] != right[v]
-            d += 1
-            diffed[k] = right[v]
-
-    return diffed, d
-
-
-class InstalledPackage extends VersionRecord
+class InstalledPackage extends Common
     msgs = {
         new: {
-            noSuchPackage: "No installed package found with name '%s'"
             badRecord: "Record must be either a namespace or a DependencyControl record, got a %s."
-            noDummyRecord: "Can't create #{@@__name} for '%s' because a dummy record was supplied."
-            syncFailed: "Couldn't sync package record with registry: %s"
+            noUninitializedDummyRecord: "Couldn't retrieve #{@@__name} for #{DummyRecord.__name} '%s' because it is not installed and no initial install state was supplied."
+            syncFailed: "Couldn't sync record '%s' with package registry: %s"
             dbConnectFailed: "Failed to connect to the DependencyControl database (%s)."
         }
         getDatabase: {
@@ -52,11 +40,8 @@ class InstalledPackage extends VersionRecord
             retrieveFailed: "Couldn't retrieve install state for %s from package registry: %s"
         }
         sync: {
-            dbRecordUpToDate: "Install record for '%s' is already up-to-date"
-            writingRecord: "Writing updated install record for '%s' to the package registry (%s mode)..."
-            retrievingRecord: "Retrieving updated install record for '%s' from the package registry (%s mode)..."
-            creatingRecord: "Creating new install record for '%s'..."
-            modes: {"auto", "read", "force read", "write", "force write"}
+            modes: {"auto", "prefer read", "force read", "prefer write", "force write"}
+            conflicted: "Version record for '%s' is conflicted with its install information in the package registry. Resolving in '%s' mode..."
         }
         writeConfig: {
             error: "An error occured while writing the #{@@__name} config file: %s"
@@ -70,7 +55,6 @@ class InstalledPackage extends VersionRecord
             updaterDisabled: "Skipping update check for %s (Updater disabled)."
             runningUpdate: "Running scheduled update for %s '%s'..."
         }
-
     }
     DependencyControl, db = nil
     @logger = Logger fileBaseName: "DependencyControl.InstalledPackage"
@@ -85,9 +69,9 @@ class InstalledPackage extends VersionRecord
 
     @SyncMode = {
         Auto: 0
-        Read: 1
+        PreferRead: 1
         ForceRead: 2
-        Write: 3
+        PreferWrite: 3
         ForceWrite: 4
     }
 
@@ -118,37 +102,58 @@ class InstalledPackage extends VersionRecord
         else return nil, db
 
 
+    __newindex: (k, v) =>
+        if recordFieldSet[k]
+            @record[k] = v 
+        else rawset @, k, v
+
     new: (record, @logger = @@logger, dummyInitState) =>
         db, msg = getDatabase @@, "l0.DependencyControl", true,
                                   @@ScriptType.Module, @logger, 200 unless db
         @logger\assert db, msgs.new.dbConnectFailed, msg
-        @package = @
-        @timestamp = os.time!
 
-        if type(record) == "string" or @@isVersionRecord record, DummyRecord
-            -- getting a package record by namespace means we have to pull it from the db
-            namespace = type(record) == "string" and record or record.namespace
+        meta = getmetatable @
+        clsIdx = meta.__index
+        meta.__index = (key) => 
+            if recordFieldSet[key]
+                @record[key]
+            else switch type clsIdx
+                when "function" then clsIdx @, key
+                when "table" then clsIdx[key]
 
-            installState, packageInfo = @logger\assert @@getInstallState namespace
-            @logger\assert installState > @@InstallState.Absent, msgs.new.noSuchPackage, namespace
+        @@logger\assert VersionRecord\isVersionRecord(record), msgs.new.badRecord, 
+                        Logger\describeType record
+        @record = record
 
-            -- import script information properties from db
-            map packageInfo, @, recordMappings
+        -- hack to allow DepCtrl to update itself
+        DependencyControl or= record.__class if record.__class.__name == "DependencyControl"
 
-        elseif @@isVersionRecord record
-            DependencyControl or= record.__class if record.__class.__name == "DependencyControl"
+        @mapper = SQLiteMapper {
+            object: @
+            mappings: recordMappings
+            :db
+            table: "InstalledPackages"
+            name: @record.namespace
+            selectorColumn: "Namespace"
+            selectorValue: @record.namespace
+            timestampKey: "timestamp"
+            logger: @logger
+        }
 
-            @logger\assert record.__class != DummyRecord or acceptDummyRecords,
-                           msgs.new.noDummyRecord, record.namespace
+        @mapper\refreshSyncState!
 
-            -- import script information properties from DependencyControl record
-            @[v] = record[v] for _, v in pairs recordMappings
-            res, msg = @sync nil, record.__class == DummyRecord and dummyInitState or nil
-            @logger\assertNotNil res, msgs.new.syncFailed, msg
+        -- only allow dummy records specifically marked as downloaded to become an installed package
+        if VersionRecord\isVersionRecord record, DummyRecord
+            @logger\assert @mapper.syncState != SQLiteMapper.SyncState.New or dummyInitState == @@InstallState.Downloaded, 
+                           msgs.new.noUninitializedDummyRecord, @record.namespace
+        
+            @timestamp = dummyInitState == @@InstallState.Downloaded and os.time! or -1
 
-        else @logger\error msgs.new.badRecord, type record
+        else @timestamp = os.time!
 
-        record.package = @ if record.__class == DummyRecord
+        res, msg = @sync nil, record.__class == DummyRecord and dummyInitState or nil
+        @logger\assertNotNil res, msgs.new.syncFailed, @record.namespace, msg
+
         @loadConfig!
 
 
@@ -158,54 +163,20 @@ class InstalledPackage extends VersionRecord
         return getDatabase @@, namespace, init, @scriptType, @logger
 
 
-    import: (source, sourceIgnore = {"installState", "namespace"}) =>
-        -- TODO: sanity checks for namespace, version rules
-        sourceIgnoreSet = {v, true for v in *sourceIgnore}
-        @[v] = source[v] for _, v in pairs @recordMappings when not sourceIgnoreSet[v]
-
-
     sync: (mode = @@SyncMode.Auto, installState) =>
         @installState or= installState or @@InstallState.Installed
-        mode = @@SyncMode.Write if installState and mode < @@SyncMode.Write
 
-        -- check if the package registry entry needs to be updated with current record information
-        packageInfo, msg = db\selectFirst "InstalledPackages", nil, "Namespace", @namespace
-        return nil, msg if packageInfo == nil
+        -- TODO: reintroduce force read and write support
+        mode = @@SyncMode.Write if installState and mode < @@SyncMode.PreferWrite
 
-        -- sync existing records
-        if packageInfo
-            changes, c = diff packageInfo, @, recordMappings
+        res, msg = @mapper\sync (dbValues, objectValues) ->
+            mode = @@SyncMode.PreferWrite if mode == @@SyncMode.Auto
+            
+            @logger\warn msgs.sync.conflicted, @record.namespace, msgs.sync.modes[mode-1]
+            return mode == @@SyncMode.PreferWrite and objectValues or dbValues
 
-            if c == 0  -- records are already in sync
-                @logger\trace msgs.sync.dbRecordUpToDate, @namespace
-                return false
-
-            -- package registry entry if it is out-of-date or a write is being forced
-            registryNeedsUpdate = packageInfo.SyncTime < @timestamp
-            if registryNeedsUpdate and mode >= @@SyncMode.Write or mode == @@SyncMode.ForceWrite
-                @logger\trace msgs.sync.writingRecord, @namespace, msgs.sync.mode[mode-1]
-                @timestamp = os.time!
-                changes.SyncTime = @timestamp
-                db\update "InstalledPackages", changes, nil, "Namespace", @namespace -- TODO: error handling
-                return true, registryNeedsUpdate and @@SyncMode.Write or @@SyncMode.ForceWrite
-
-            -- this record is out out-of-date or a read is being forced
-            recordNeedsUpdate = @timestamp < packageInfo.SyncTime
-            if recordNeedsUpdate and mode < @@SyncMode.Write or mode == @@SyncMode.ForceRead
-                @logger\trace msgs.sync.retrievingRecord, @namespace, msgs.sync.mode[mode-1]
-                @[k] = v for k, v in pairs changes
-                @timestamp = packageInfo.SyncTime
-                return true, recordNeedsUpdate and @@SyncMode.Read or @@SyncMode.ForceRead
-
-            else return false
-
-        -- register new installed package
-        @logger\trace msgs.sync.creatingRecord, @namespace
-        @timestamp = os.time!
-        res, msg = db\insert "InstalledPackages", map(@, {SyncTime: @timestamp}, recordMappings, true),
-                              nil, "IGNORE"
-        return nil, msg unless res
-        return true, @@SyncMode.Write
+        @logger\debug msgs.new.syncFailed, @record.namespace, msg unless res
+        return res, msg
 
 
     update: (ignoreInterval) =>
@@ -229,9 +200,9 @@ class InstalledPackage extends VersionRecord
         else db\update "UpdateChecks", {Time: os.time!, TotalCount: lastCheck.TotalCount + 1},
                         nil, "Namespace", @namespace
 
-        task = DependencyControl.updater\addTask record -- no need to check for errors, as we've already accounted for those case
+        task = DependencyControl.updater\addTask @record -- no need to check for errors, as we've already accounted for those case
         @logger\trace msgs.update.runningUpdate,
-                      @@terms.scriptType.singular[record.scriptType], record.name
+                      @@terms.scriptType.singular[@record.scriptType], @record.name
         return task\run!
 
 
@@ -281,19 +252,3 @@ class InstalledPackage extends VersionRecord
 
         assert success, msgs.writeConfig.error\format errMsg
 
-
-    [[
-    writeRecord: (@record) =>
-        -- creates or updates a record
-
-    deleteRecord: (namespace) =>
-        -- removes a script record
-
-    uninstall: (namespace) =>
-        -- uninstalls a script: removes files, records
-
-    registerMacro: (name) ->
-        -- checks registered macros on db, purges all oder than n seconds
-        -- if macro with name already present -> return false
-        -- else add row with name, @record and timestamp -> return true
-    ]]

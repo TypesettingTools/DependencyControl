@@ -128,8 +128,7 @@ class UpdateTask extends UpdaterBase
 
     set: (targetVersion, @addFeeds, @exhaustive, @channel, @optional) =>
         if @record.__class != DummyRecord
-            @record = @record.package if @record.__class != InstalledPackage
-            @channel or= @record.config.c.activeChannel
+            @channel or= @record.package.config.c.activeChannel
 
         @targetVersion = VersionRecord\parseVersion targetVersion
         return @
@@ -451,10 +450,10 @@ class UpdateTask extends UpdaterBase
         if @record.__class == DummyRecord
             installState = InstalledPackage\getInstallState @record.namespace
             if installState >= InstalledPackage.InstallState.Downloaded
-                @record = InstalledPackage @record
+                @record.package = InstalledPackage @record
                 @updated, msg = true, msgs.importUpdatedRegistryState.alreadyInstalled
 
-        elseif @record\sync InstalledPackage.SyncMode.Read and @record.version > oldVersion
+        elseif @record.package\sync InstalledPackage.SyncMode.PreferRead and @record.version > oldVersion
             @updated = true, msgs.importUpdatedRegistryState.alreadyUpdated
 
         if @updated
@@ -528,12 +527,13 @@ class Updater extends UpdaterBase
         if record.__class == DummyRecord or record.recordType == @@RecordType.Unmanaged
             return -3
 
+        package = record.package
         -- need an installed script to perform update checks
-        if record.__class != InstalledPackage
-            success, record = pcall InstalledPackage, record
+        unless package
+            success, package = pcall InstalledPackage, record
             return -8, record unless success
 
-        return record\update!
+        return package\update!
 
     getLock: (doWait, waitTimeout = @config.c.updateWaitTimeout) =>
         return true if @hasLock
