@@ -188,3 +188,11 @@ class Logger
             else
                 kept += 1
         return total-kept, deletedSize, total, totalSize
+
+    @describeType = (val) =>
+        _type = type val
+        return _type unless _type == "table"
+
+        return if val.__class
+            return "#{val.__class.__name} object"
+        else _type
