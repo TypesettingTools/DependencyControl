@@ -1,3 +1,7 @@
+----
+-- SQLite database interface with some helper methods to craft statements
+-- @classmod SQLiteDatabase
+
 lsqlite3 =     require "lsqlite3"
 Logger =       require "l0.DependencyControl.Logger"
 fileOps =      require "l0.DependencyControl.FileOps"
@@ -153,8 +157,8 @@ class SQLiteDatabase
     -- @treturn[1] boolean true the database connection was closed successfully
     -- @treturn[2] boolean false the database connection as already closed or not yet open
     -- @treturn[3] nil an error occured while trying to close the database connection
-    -- @return[3] string an error message
-    -- @return[3] number an accompanying SQLite error code
+    -- @treturn[3] string an error message
+    -- @treturn[3] number an accompanying SQLite error code
     close: =>
         return false unless @isOpen!
         code = @db\close!
@@ -181,13 +185,26 @@ class SQLiteDatabase
         return @db\create_aggregate name, argCnt, rowCallback, finalCallback
 
     --- Deletes the database file.
-    --
+    -- @tparam string reSchedule Reschedule deletion on next script reload in case it failed due to the database file being locked by the Aegisub process
     drop: (reSchedule) =>
         res, errMsg = @close!
         if res == nil
             return nil, errMsg
         else return fileOps.remove @path, false, reSchedule
 
+
+
+    --- Runs an SQL query against the database request and calls the supplied callback for every row returned.
+    -- A row is represented as hash table of columen values keyed by column names 
+    -- If no callback is specified, all rows will be collected and returned in a list.
+    -- @tparam string sql a sequence of sql statements
+    -- @tparam[opt] function queryCallback(row, rowNumber) an optional callback to process every matching row
+    -- @treturn[1] boolean true The query was executed successfully
+    -- @treturn[1] {table, ...} An array of rows in case no queryCallback was specified
+    -- @treturn[2] boolean false The query was aborted while it was running
+    -- @treturn[2] string a message describing the abort reason
+    -- @treturn[3] nil an error occured while trying to run the query
+    -- @treturn[3] string an error message 
     exec: (sql, queryCallback) =>
         rows = {n: 0} unless queryCallback
 
@@ -231,7 +248,7 @@ class SQLiteDatabase
                 value and "0" or "1"
             when "nil"
                 "NULL"
-            else nil, msgs.insert.unsupportedType\format tblName, value, field, type value
+            else nil, msgs.insert.unsupportedType\format tblName, value, field, type value -- TODO: fix this
 
     formatCondition = (column, value) ->
         sqlValue, msg = formatValue value
