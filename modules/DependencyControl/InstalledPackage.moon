@@ -33,6 +33,9 @@ class InstalledPackage extends Common
             syncFailed: "Couldn't sync record '%s' with package registry: %s"
             dbConnectFailed: "Failed to connect to the DependencyControl database (%s)."
         }
+        find: {
+            noSuchPackage: "No installed package found with name '%s'"
+        }
         getDatabase: {
             foundDefaultSchema: "Found schema for database '%s' at '%s'..."
         }
@@ -74,6 +77,18 @@ class InstalledPackage extends Common
         PreferWrite: 3
         ForceWrite: 4
     }
+
+    @find = (namespace) =>
+        pkgState, pkgInfo = @getInstallState namespace
+        return nil, pkgInfo unless pkgState
+
+        if pkgState < @InstallState.Downloaded
+            return false, msgs.find.noSuchPackage, namespace
+
+        return if pkgInfo.scriptType == @@ScriptType.Module
+            @ moduleName: namespace
+        else @ :namespace
+
 
     @getInstallState = (namespace) =>
         db or= SQLiteDatabase "l0.DependencyControl", nil, 200, @logger
