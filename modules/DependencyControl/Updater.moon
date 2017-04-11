@@ -497,7 +497,7 @@ class Updater extends UpdaterBase
         return nil, -999, task unless success
 
         @tasks[record.scriptType][record.namespace] = task
-        return task, err
+        return task
 
     require: (record, ...) =>
         return nil, -9 unless VersionRecord\isVersionRecord record
