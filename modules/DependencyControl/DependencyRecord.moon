@@ -45,7 +45,7 @@ class DependencyRecord extends VersionRecord
         if @scriptType == @@ScriptType.Module and @recordType != @@RecordType.Unmanaged
             ModuleLoader.createDummyRef @
 
-        @configFile = configFile or "#{@namespace}.json"
+        @configFile = "#{@namespace}.json"
         @testDir = @@testDir[@scriptType]
 
         @package = InstalledPackage @, @@logger unless @virtual
