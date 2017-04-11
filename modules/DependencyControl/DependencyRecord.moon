@@ -18,6 +18,8 @@ class DependencyRecord extends VersionRecord
         }
     }
 
+    -- static initializer for common DependencyRecord infrastructure,
+    -- such as the global config file and the shared updater
     init = =>
         FileOps.mkdir @globalConfig.file, true
         @loadConfig!
