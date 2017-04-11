@@ -101,6 +101,9 @@ class InstalledPackage extends Common
                 @@InstallState.Absent
             else packageInfo.InstallState, packageInfo
 
+    
+    -- connects to an exisiting database or creates and inititalizes one in case it doesn't exist  
+    -- private method, as it allows unrestricted namespace choice
     getDatabase = (namespace, init = true, scriptType, logger = @logger, retryCount) =>
         if init == true
             defaultSchemaPath = fileOps.getNamespacedPath @@automationDir[scriptType],
@@ -116,6 +119,12 @@ class InstalledPackage extends Common
             return db
         else return nil, db
 
+    -- public version of the database provider
+    -- restricts a package to database names within its own namespace
+    getDatabase: (namespaceExtension = "", init = true) =>
+        namespace = @namespace
+        namespace ..= ".#{namespaceExtension}" if namespaceExtension
+        return getDatabase @@, namespace, init, @scriptType, @logger
 
     __newindex: (k, v) =>
         if recordFieldSet[k]
@@ -170,12 +179,6 @@ class InstalledPackage extends Common
         @logger\assertNotNil res, msgs.new.syncFailed, @record.namespace, msg
 
         @loadConfig!
-
-
-    getDatabase: (namespaceExtension = "", init = true) =>
-        namespace = @namespace
-        namespace ..= ".#{namespaceExtension}" if namespaceExtension
-        return getDatabase @@, namespace, init, @scriptType, @logger
 
 
     sync: (mode = @@SyncMode.Auto, installState) =>
