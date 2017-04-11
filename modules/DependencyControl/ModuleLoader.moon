@@ -169,13 +169,14 @@ class ModuleLoader
     if #outdated > 0
       errorMsg[#errorMsg+1] = msgs.loadModules.outdated\format @name, table.concat outdated, "\n"
     if #missing > 0
-      errorMsg[#errorMsg+1] = msgs.loadModules.missing\format @name, table.concat(missing, "\n"), downloadHint
+      errorMsg[#errorMsg+1] = msgs.loadModules.missing\format @name, table.concat(missing, "\n"), 
+                              msgs.checkOptionalModules.downloadHint
 
     return #errorMsg == 0, table.concat(errorMsg, "\n\n")
 
   @checkOptionalModules = (modules) =>
     modules = type(modules)=="string" and {[modules]:true} or {mdl,true for mdl in *modules}
-    missing = [ModuleLoader.formatVersionErrorTemplate @, mdl.moduleName, mdl.version, msl.url,
+    missing = [ModuleLoader.formatVersionErrorTemplate @, mdl.moduleName, mdl.version, mdl.url,
               mdl._reason for mdl in *@requiredModules when mdl.optional and mdl._missing and modules[mdl.name]]
 
     if #missing>0
