@@ -1,8 +1,10 @@
 -- Note: this is a private API intended to be exclusively for internal DependenyControl use
--- Everyting in this class can and will change without any prior notice
+-- Everything in this class can and will change without any prior notice
 -- and calling any method is guaranteed to interfere with DependencyControl operation
 DummyRecord = require "l0.DependencyControl.DummyRecord"
 
+-- ModuleLoader is a static extension class to VersionRecord
+-- As such all methods operate on VersionRecords, DummyRecords or DependencyRecords passed in by reference
 class ModuleLoader
   msgs = {
     checkOptionalModules: {
@@ -35,11 +37,13 @@ class ModuleLoader
       reqVersion = reqVersion and " (v#{reqVersion})" or ""
       return msgs.formatVersionErrorTemplate.missing\format name, reqVersion, url, reason
 
+  
+  -- Our global module registry allows for circular dependencies.
+  -- In order to resolve those, we set a dummy reference to not-yet-loaded modules
+  -- which allows them to find each other
   @createDummyRef = =>
     return nil if @scriptType != @@ScriptType.Module
-    -- global module registry allows for circular dependencies:
-    -- set a dummy reference to this module since this module is not ready
-    -- when the other one tries to load it (and vice versa)
+
     export LOADED_MODULES = {} unless LOADED_MODULES
     unless LOADED_MODULES[@namespace]
       @ref = {}
