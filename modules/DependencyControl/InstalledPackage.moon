@@ -76,11 +76,11 @@ class InstalledPackage extends VersionRecord
     @logger = Logger fileBaseName: "DependencyControl.InstalledPackage"
 
     @InstallState = {
-        Orphaned: -1
-        Absent: 0
-        Pending: 1
-        Downloaded: 2
-        Installed: 3
+        Orphaned: -1   -- Package is installed but DepCtrl hasn't seen it around in a while (not yet implemented)
+        Absent: 0      -- Package is not installed (not yet implemented)
+        Pending: 1     -- Package is scheduled for installation (not yet implemented)
+        Downloaded: 2  -- Package has been downloaded and is waiting for a script reload to finish installation
+        Installed: 3   -- Package has successfully loaded recently
     }
 
     @SyncMode = {

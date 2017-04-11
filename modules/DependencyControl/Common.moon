@@ -61,13 +61,6 @@ class DependencyControlCommon
         }
     }
 
-    @InstallState = {
-        Orphaned: -1
-        Pending: 0
-        Downloaded: 1
-        Installed: 2
-    }
-
     automationDir: {
         aegisub.decode_path("?user/automation/autoload"),
         aegisub.decode_path("?user/automation/include")
