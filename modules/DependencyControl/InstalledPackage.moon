@@ -248,13 +248,13 @@ class InstalledPackage extends Common
 
         lfs.chdir dir
         for file in lfs.dir dir
-            mode, path = FileOps.attributes file, "mode"
+            mode, path = fileOps.attributes file, "mode"
             -- parent level module files must be <last part of namespace>.ext
             currPattern = @scriptType == @@ScriptType.Module and mode == "file" and pattern.."%." or pattern
             -- automation scripts don't use any subdirectories
             if (@scriptType == @@ScriptType.Module or mode == "file") and file\match currPattern
                 toRemove[#toRemove+1] = path
-        return FileOps.remove toRemove, true, true
+        return fileOps.remove toRemove, true, true
 
     -- loads the script configuration
     loadConfig: =>
