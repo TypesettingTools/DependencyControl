@@ -24,6 +24,8 @@ class VersionRecord extends Common
     versionClasses[cls] or= true
 
 
+  -- Shared base constructor for all inheriting classes
+  -- Does not use the new keyword, as VersionRecord itself is an abstract class
   __import: (args, readGlobalScriptVars = true) =>
     { @requiredModules, moduleName: @moduleName, configFile: configFile, :name,
       description: @description, url: @url, feed: @feed, recordType: @recordType,
@@ -83,6 +85,8 @@ class VersionRecord extends Common
     return true
 
 
+  -- static method to check wether the supplied object is a member of a descendant of VersionRecord
+  -- optionally allows to check for specific class membership
   @isVersionRecord = (record, cls) =>
     return false if type(record) != "table" or not record.__class
     return false if cls and cls != record.__class
