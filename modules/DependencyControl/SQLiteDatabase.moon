@@ -317,6 +317,11 @@ class SQLiteDatabase
         return @exec query
 
 
+    deleteTemplate = "DELETE FROM '%s' %s"
+    delete: (tblName, conditions, conditionOperator = @@Operators.AND) =>
+        @exec deleteTemplate\format tblName, craftWhereStatement @@, conditions, conditionOperator
+
+
     init: (initializer) =>
         local data
         switch type initializer
