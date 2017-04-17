@@ -81,6 +81,9 @@ class SQLiteDatabase
             notAFile: "Path to database '%s' (%s) must point to a file, got a %s."
             initFailed: "Failed to initialize database structure: %s"
         }
+        select: {
+            conditionColumnValueCountMismatch: "Select conditions must have the sumber number of columns as "
+        }
         traceCallback: {
             runningStatement: "Running statement \"%s\" on database \"%s\"..."
         }
@@ -116,6 +119,11 @@ class SQLiteDatabase
         NOTADB: lsqlite3.NOTADB
         ROW: lsqlite3.ROW
         DONE: lsqlite3.DONE
+    }
+
+    @Operators = {
+        AND: 0
+        OR: 1
     }
 
     --- Translates an SQLite error code into a descriptive message.
@@ -255,21 +263,30 @@ class SQLiteDatabase
         return nil, msg unless sqlValue
         return "%s=%s"\format column, sqlValue
 
+    conditionalTemplate = "WHERE %s"
+    operatorStatements = {
+        [@@Operators.AND]: " AND "
+        [@@Operators.OR]: " OR "
+    }
 
-    selectTemplate = "SELECT %s from '%s'%s"
-    conditionalTemplate = " WHERE %s"
-    select: (tblName, fields, conditionColumn, conditionValue) =>
+    craftWhereStatement = (conditions, conditionOperator = @Operators.AND) =>
+        return "" unless conditions
+        fragments = [formatCondition col, val for col, val in pairs conditions]
+        return if #fragments > 0
+            conditionalTemplate\format table.concat fragments, operatorStatements[conditionOperator]
+        else ""  
+
+
+    selectTemplate = "SELECT %s from '%s' %s"
+    select: (tblName, fields, conditions, conditionOperator) =>
         fieldNames = fields == nil and "*" or table.concat fields, ","
-        condition = if conditionColumn != nil and conditionValue != nil
-            formatCondition conditionColumn, conditionValue
-        else conditionColumn
 
         return @getRows selectTemplate\format fieldNames, tblName,
-                        condition and conditionalTemplate\format(condition) or ""
+                        craftWhereStatement @@, conditions, conditionOperator 
 
 
-    selectFirst: (tblName, fields, conditionColumn, conditionValue) =>
-        rows, r = @select tblName, fields, conditionColumn, conditionValue
+    selectFirst: (...) =>
+        rows, r = @select ...
         return nil, r if rows == nil -- TODO: make this happen
         return rows[1] or false
 
@@ -290,15 +307,13 @@ class SQLiteDatabase
                                       table.concat values, ","
         return @exec query
 
-    updateTemplate = "UPDATE '%s' SET %s WHERE %s"
-    update: (tblName, tbl, fields, conditionColumn, conditionValue) =>
+    updateTemplate = "UPDATE '%s' SET %s %s"
+    update: (tblName, tbl, fields, conditions, conditionOperator) =>
         fields or= [k for k, v in pairs tbl]
-        condition = if conditionColumn != nil and conditionValue != nil
-            formatCondition conditionColumn, conditionValue
-        else conditionColumn
 
         keyValuePairs = ["#{field}=#{formatValue tbl[field]}" for field in *fields]
-        query = updateTemplate\format tblName, table.concat(keyValuePairs, ","), condition
+        query = updateTemplate\format tblName, table.concat(keyValuePairs, ","),
+                craftWhereStatement @@, conditions, conditionOperator
         return @exec query
 
 

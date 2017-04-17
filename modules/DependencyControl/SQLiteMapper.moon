@@ -121,7 +121,7 @@ class SQLiteMapper
 
 
   getDbState: =>
-    fields, msg = @db\selectFirst @table, nil, @selectorColumn, @selectorValue
+    fields, msg = @db\selectFirst @table, nil, @selectorColumn: @selectorValue
     return fields, msg unless fields
 
     if @dbToObjectTransforms

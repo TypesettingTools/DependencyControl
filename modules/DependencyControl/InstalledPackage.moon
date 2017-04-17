@@ -93,7 +93,7 @@ class InstalledPackage extends Common
     @getInstallState = (namespace) =>
         db or= SQLiteDatabase "l0.DependencyControl", nil, 200, @logger
 
-        packageInfo, msg = db\selectFirst "InstalledPackages", nil, "Namespace", namespace
+        packageInfo, msg = db\selectFirst "InstalledPackages", nil, Namespace: namespace
         return switch packageInfo
             when nil
                 nil, msgs.getInstallState.retrieveFailed\format namespace, msg
@@ -207,7 +207,7 @@ class InstalledPackage extends Common
             return nil, msgs.update.noUnmanaged\format @@terms.scriptType.singular[@scriptType], @name
 
         -- the update interval has not yet been passed since the last update check
-        lastCheck, msg = db\selectFirst "UpdateChecks", nil, "Namespace", @namespace
+        lastCheck, msg = db\selectFirst "UpdateChecks", nil, Namespace: @namespace
         return nil, msg if lastCheck == nil
 
         if lastCheck and lastCheck.Time + DependencyControl.config.c.updateInterval > os.time!
