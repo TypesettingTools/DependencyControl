@@ -10,7 +10,7 @@ class DependencyControlCommon
         }
     }
 
-    @logger =  Logger fileBaseName: "DepCtrl.Common"
+    @logger =  Logger fileBaseName: "DepCtrl.Common", toFile: true
     @platform = "#{ffi.os}-#{ffi.arch}"
     @globalConfig = {
         file: aegisub.decode_path "?user/config/l0.DependencyControl.json",

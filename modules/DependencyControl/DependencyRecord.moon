@@ -13,6 +13,10 @@ VersionRecord =    require "l0.DependencyControl.VersionRecord"
 
 class DependencyRecord extends VersionRecord
     msgs = {
+        init: {
+            initializing: "Initializing DependencyControl for automation script environment '%s'"
+            writeLogs: "Log writing is disabled in the DependencyControl configuration - end of file reached."
+        }
         new: {
             badRecordError: "Error: Bad #{@@__name} record (%s)."
         }
@@ -21,12 +25,21 @@ class DependencyRecord extends VersionRecord
     -- static initializer for common DependencyRecord infrastructure,
     -- such as the global config file and the shared updater
     init = =>
+        @logger = Logger fileBaseName: "DepCtrl", fileSubName: script_namespace, prefix: "[#{@@__name}] ", toFile: true
+        @logger\trace msgs.init.initializing, script_namespace
+
         FileOps.mkdir @globalConfig.file, true
         @loadConfig!
-        @logger = Logger { fileBaseName: "DepCtrl", fileSubName: script_namespace, prefix: "[#{@@__name}] ",
-                           toFile: @config.c.writeLogs, defaultLevel: @config.c.traceLevel,
-                           maxAge: @config.c.logMaxAge,maxSize: @config.c.logMaxSize, maxFiles: @config.c.logMaxFiles,
-                           logDir: @config.c.logDir }
+
+        @logger\hint msgs.init.writeLogs unless @config.c.writeLogs
+        @logger[k] = v for k, v in pairs {
+            toFile: @config.c.writeLogs
+            defaultLevel: @config.c.traceLevel
+            maxAge: @config.c.logMaxAge
+            maxSize: @config.c.logMaxSize
+            maxFiles: @config.c.logMaxFiles
+            logDir: @config.c.logDir
+        }
 
         @updater = Updater script_namespace, @config, @logger
         @configDir = @config.c.configDir
