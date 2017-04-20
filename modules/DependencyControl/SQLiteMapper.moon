@@ -29,8 +29,8 @@ class SQLiteMapper
       new: "SyncState: object %s has not yet been synced to the database"
       conflicted: "SyncState: Changes between object and database state for %s are conflicted due to timestamps being unavailable.\nObject state: %s\nDB state: %s"
       conflictedTimestamp: "SyncState: Changes between object and database state for %s are conflicted due to timestamps being identical.\nObject state: %s\nDB state: %s"
-      objectAhead: "SyncState: Database is ahead of object %s." 
-      dbAhead: "SyncState: Object %s is ahead of database."
+      dbAhead: "SyncState: Database is ahead of object %s." 
+      objectAhead: "SyncState: Object %s is ahead of database."
     }
     sync: {
       started: "Started sync for object %s ..."
