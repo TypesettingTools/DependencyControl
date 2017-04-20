@@ -1,10 +1,9 @@
 util = require "aegisub.util"
 json = require "json"
-PreciseTimer = require "PT.PreciseTimer"
-mutex = require "BM.BadMutex"
 
 fileOps = require "l0.DependencyControl.FileOps"
 Logger  = require "l0.DependencyControl.Logger"
+Lock    = require "l0.DependencyControl.Lock"
 
 class ConfigHandler
     @handlers = {}
@@ -17,22 +16,14 @@ Reload your automation scripts to generate a new configuration file.]]
         jsonRoot: "JSON root element must be an array or a hashtable, got a %s."
         noFile: "No config file defined."
         failedLock: "Failed to lock config file for %s: %s"
-        waitLockFailed: "Error waiting for existing lock to be released: %s"
-        forceReleaseFailed: "Failed to force-release existing lock after timeout had passed (%s)"
-        noLock: "#{@@__name} doesn't have a lock"
         writeFailedRead: "Failed reading config file: %s."
-        lockTimeout: "Timeout reached while waiting for write lock."
     }
     traceMsgs = {
-        -- waitingLockPre: "Waiting %d ms before trying to get a lock..."
-        waitingLock: "Waiting for config file lock to be released (%d ms passed)... "
-        waitingLockFinished: "Lock was released after %d ms."
         mergeSectionStart: "Merging own section into configuration. Own Section: %s\nConfiguration: %s"
         mergeSectionResult: "Merge completed with result: %s"
         fileNotFound: "Couldn't find config file '%s'."
         fileCreate: "Config file '%s' doesn't exist, yet. Will write a fresh copy containing the current configuration section."
         writing: "Writing config file '%s'..."
-        -- waitingLockTimeout: "Timeout was reached after %d seconds, force-releasing lock..."
     }
 
     new: (@file, defaults, @section, noLoad, @logger = Logger fileBaseName: @@__name) =>
@@ -40,6 +31,7 @@ Reload your automation scripts to generate a new configuration file.]]
         @defaults = defaults and util.deep_copy(defaults) or {}
         -- register all handlers for concerted writing
         @setFile @file
+        @lock = Lock namespace: "l0.DependencyControl.ConfigHandler", resource: @file, holderName: @@__name, logger: @logger
 
         -- set up user configuration and make defaults accessible
         @userConfig = {}
@@ -121,23 +113,22 @@ Reload your automation scripts to generate a new configuration file.]]
 
     readFile: (file = @file, useLock = true, waitLockTime) =>
         if useLock
-            time, err = @getLock waitLockTime
-            unless time
-                -- handle\close!
-                return false, errors.failedLock\format "reading", err
+            lockState, msg = @lock\lock waitLockTime
+            if lockState != Lock.LockState.Held
+                return false, errors.failedLock\format "reading", msg
 
         mode, file = fileOps.attributes file, "mode"
         if mode == nil
-            @releaseLock! if useLock
+            @lock\release! if useLock
             return false, file
         elseif not mode
-            @releaseLock! if useLock
+            @lock\release! if useLock
             @logger\trace traceMsgs.fileNotFound, @file
             return nil
 
         handle, err = io.open file, "r"
         unless handle
-            @releaseLock! if useLock
+            @lock\release! if useLock
             return false, err
 
         data = handle\read "*a"
@@ -152,11 +143,11 @@ Reload your automation scripts to generate a new configuration file.]]
             fileOps.copy @file, backup
             fileOps.remove @file, false, true
 
-            @releaseLock! if useLock
+            @lock\release! if useLock
             return false, errors.configCorrupted\format backup
 
         handle\close!
-        @releaseLock! if useLock
+        @lock\release! if useLock
 
         if "table" != type result
             return false, errors.jsonRoot\format type result
@@ -218,14 +209,14 @@ Reload your automation scripts to generate a new configuration file.]]
         return false, errors.noFile unless @file
 
         -- get a lock to avoid concurrent config file access
-        time, err = @getLock waitLockTime
-        unless time
-            return false, errors.failedLock\format "writing", err
+        lockState, msg = @lock\lock waitLockTime
+        if lockState != Lock.LockState.Held
+            return false, errors.failedLock\format "writing", msg
 
         -- read the config file
         config, err = @readFile @file, false
         if config == false
-            @releaseLock!
+            @lock\release!
             return false, errors.writeFailedRead\format err
         @logger\trace traceMsgs.fileCreate, @file unless config
         config or= {}
@@ -237,19 +228,19 @@ Reload your automation scripts to generate a new configuration file.]]
         for handler in *handlers
             config, err = handler\mergeSection config
             unless config
-                @releaseLock!
+                @lock\release!
                 return false, err
 
         -- create JSON
         success, res = pcall json.encode, config
         unless success
-            @releaseLock!
+            @lock\release!
             return false, res
 
         -- write the whole config file in one go
         handle, err = io.open(@file, "w")
         unless handle
-            @releaseLock!
+            @lock\release!
             return false, err
 
         @logger\trace traceMsgs.writing, @file
@@ -257,48 +248,14 @@ Reload your automation scripts to generate a new configuration file.]]
         handle\write res
         handle\flush!
         handle\close!
-        @releaseLock!
+        @lock\release!
 
         return true
 
-    getLock: (waitTimeout = 5000, checkInterval = 50) =>
-        return 0 if @hasLock
-        success = mutex.tryLock!
-        if success
-            @hasLock = true
-            return 0
-
-        timeout, timePassed = waitTimeout, 0
-        while not success and timeout > 0
-            PreciseTimer.sleep checkInterval
-            success = mutex.tryLock!
-            timeout -= checkInterval
-            timePassed = waitTimeout - timeout
-            if timePassed % (checkInterval*5) == 0
-                @logger\trace traceMsgs.waitingLock, timePassed
-
-        if success
-            @logger\trace traceMsgs.waitingLockFinished, timePassed
-            @hasLock = true
-            return timePassed
-        else
-            -- @logger\trace traceMsgs.waitingLockTimeout, waitTimeout/1000
-            -- success, err = @releaseLock true
-            -- unless success
-                -- return false, errors.forceReleaseFailed\format err
-            -- @hasLock = true
-            --return waitTimeout
-            return false, errors.lockTimeout
 
     getSectionHandler: (section, defaults, noLoad) =>
         return @@ @file, defaults, section, noLoad, @logger
 
-    releaseLock: (force) =>
-        if @hasLock or force
-            @hasLock = false
-            mutex.unlock!
-            return true
-        return false, errors.noLock
 
     -- copied from Aegisub util.moon, adjusted to skip private keys
     deepCopy: (tbl) =>
