@@ -17,7 +17,7 @@ CREATE TABLE "InstalledPackages" (
 	`WebURL`	TEXT,
 	`FeedURL`	TEXT,
 	`InstallState`	INTEGER NOT NULL,
-	`SyncTime`	INTEGER NOT NULL,
+	`Timestamp`	INTEGER NOT NULL,
 	PRIMARY KEY(Namespace)
 );
 COMMIT;
