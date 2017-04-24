@@ -136,9 +136,9 @@ class SQLiteDatabase
     @decodeResult = (code = -1, msg = "") =>
         if #msg > 0
             if msgs.decodeResult.results[code]
-                return "#{msgs.decodeResult.results[code]} (#{msg})", code
-            else return msgs.decodeResult.results.unknownDetail\format(code, msg), code
-        else return msgs.decodeResult.results[code] or msgs.decodeResult.results.unknown\format(code), code
+                return "#{msgs.decodeResult.results[code]} (#{msg})"
+            else return msgs.decodeResult.results.unknownDetail\format(code, msg)
+        else return msgs.decodeResult.results[code] or msgs.decodeResult.results.unknown\format(code)
 
     --- Checks whether or not a given comprises one or more complete SQL statements.
     -- @static
@@ -172,7 +172,7 @@ class SQLiteDatabase
         code = @db\close!
         if code == @@Result.OK
             return true
-        else return nil, @@decodeResult code
+        else return nil, @@decodeResult(code), code
 
     --- Creates a callback function that can be called by SQLite3 once for every row in a query.
     -- This is a straight wrapper around the LuaSQLite3 `db:create_function` interface.
@@ -230,8 +230,8 @@ class SQLiteDatabase
             when @@Result.OK
                 true, rows
             when @@Result.ABORT
-                false, @@decodeResult result, msgs.exec.errorDetail\format @lastStatement, @db\errmsg!
-            else nil, @@decodeResult result, msgs.exec.errorDetail\format @lastStatement, @db\errmsg!
+                false, @@decodeResult(result, msgs.exec.errorDetail\format @lastStatement, @db\errmsg!), result
+            else nil, @@decodeResult(result, msgs.exec.errorDetail\format @lastStatement, @db\errmsg!), result
 
     getRows: (sql) =>
         rows, r = {}, 0
