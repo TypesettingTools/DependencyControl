@@ -16,6 +16,7 @@ class DependencyRecord extends VersionRecord
         init: {
             initializing: "Initializing DependencyControl for automation script environment '%s'"
             writeLogs: "Log writing is disabled in the DependencyControl configuration - end of file reached."
+            globalConfigFailed: "Failed to load global config file (%s)."
         }
         new: {
             badRecordError: "Error: Bad #{@@__name} record (%s)."
@@ -29,7 +30,11 @@ class DependencyRecord extends VersionRecord
         @logger\trace msgs.init.initializing, script_namespace
 
         FileOps.mkdir @globalConfig.file, true
-        @loadConfig!
+        @configHandler, msg = ConfigHandler\get @globalConfig.file, @logger
+        @logger\assert @configHandler, msgs.init.globalConfigFailed, msg
+
+        @config, msg = @configHandler\getView {"config"}, @globalConfig.defaults
+        @logger\assert @config, msgs.init.globalConfigFailed, msg
 
         @logger\hint msgs.init.writeLogs unless @config.c.writeLogs
         @logger[k] = v for k, v in pairs {
@@ -50,7 +55,7 @@ class DependencyRecord extends VersionRecord
 
 
     new: (args) =>
-        init DependencyRecord unless @@config
+        init DependencyRecord unless @@configHandler
 
         success, errMsg = @__import args
         @@logger\assert success, msgs.new.badRecordError, errMsg
@@ -67,19 +72,17 @@ class DependencyRecord extends VersionRecord
     checkOptionalModules: ModuleLoader.checkOptionalModules
 
 
-    -- loads the DependencyControl global configuration
-    @loadConfig = =>
-        if @config
-            @config\load!
-        else @config = ConfigHandler @globalConfig.file, @globalConfig.defaults, {"config"}, nil, @logger
-
-
     getConfigFileName: =>
         return aegisub.decode_path "#{@@configDir}/#{@configFile}"
 
 
-    getConfigHandler: (defaults, section, noLoad) =>
-        return ConfigHandler @getConfigFileName!, defaults, section, noLoad
+    getConfigHandler: (defaults, hivePath) =>
+        handler, msg = ConfigHandler\get @getConfigFileName!
+        return nil, msg unless handler
+
+        view, msg = handler\getView hivePath, defaults
+        return nil, msg unless view
+        return view, handler
 
 
     getLogger: (args = {}) =>
@@ -91,9 +94,10 @@ class DependencyRecord extends VersionRecord
         return Logger args
 
 
+    -- TODO: completely broken, FIXME using db
     getSubmodules: =>
         return nil if @virtual or @recordType == @@RecordType.Unmanaged or @scriptType != @@ScriptType.Module
-        mdlConfig = @@config\getSectionHandler @@ScriptType.name.legacy[@@ScriptType.Module]
+        mdlConfig = @@configHandler\getView @@ScriptType.name.legacy[@@ScriptType.Module]
         pattern = "^#{@namespace}."\gsub "%.", "%%."
         return [mdl for mdl, _ in pairs mdlConfig.c when mdl\match pattern], mdlConfig
 

@@ -32,6 +32,7 @@ class InstalledPackage extends Common
             noUninitializedDummyRecord: "Couldn't retrieve #{@@__name} for #{DummyRecord.__name} '%s' because it is not installed and no initial install state was supplied."
             syncFailed: "Couldn't sync record '%s' with package registry: %s"
             dbConnectFailed: "Failed to connect to the DependencyControl database (%s)."
+            configFailed: "Couldn't get DependencyControl config for package '%s' (%s)."
         }
         find: {
             noSuchPackage: "No installed package found with name '%s'"
@@ -178,8 +179,8 @@ class InstalledPackage extends Common
         res, msg = @sync nil, record.__class == DummyRecord and dummyInitState or nil
         @logger\assertNotNil res, msgs.new.syncFailed, @record.namespace, msg
 
-        @loadConfig!
-
+        @config, msg = ConfigHandler\getView @@globalConfig.file, { @@ScriptType.name.legacy[@scriptType], @namespace }
+        @logger\assert @config, msgs.new.configFailed, @namespace, msg
 
     sync: (mode = @@SyncMode.Auto, installState) =>
         @installState or= installState or @@InstallState.Installed
@@ -257,16 +258,12 @@ class InstalledPackage extends Common
         return fileOps.remove toRemove, true, true
 
     -- loads the script configuration
-    loadConfig: =>
-        @config or= ConfigHandler @@globalConfig.file, {},
-                                  { @@ScriptType.name.legacy[@scriptType], @namespace }, true, @logger
-        return @config\load!
+    loadConfig: => @config\load!
 
 
-    writeConfig: =>
-        @loadConfig! unless @config
+    saveConfig: =>
         @@logger\trace msgs.writeConfig.writing, @@terms.scriptType.singular[@scriptType]
-        success, errMsg = @config\write false
+        success, errMsg = @config\save!
 
         assert success, msgs.writeConfig.error\format errMsg
 

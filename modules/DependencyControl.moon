@@ -1,6 +1,7 @@
 Logger =           require "l0.DependencyControl.Logger"
 UpdateFeed =       require "l0.DependencyControl.UpdateFeed"
 ConfigHandler =    require "l0.DependencyControl.ConfigHandler"
+ConfigView =       require "l0.DependencyControl.ConfigHandler"
 FileOps =          require "l0.DependencyControl.FileOps"
 Updater =          require "l0.DependencyControl.Updater"
 UnitTestSuite =    require "l0.DependencyControl.UnitTestSuite"
@@ -8,6 +9,7 @@ DependencyRecord = require "l0.DependencyControl.DependencyRecord"
 
 class DependencyControl extends DependencyRecord
     @ConfigHandler = ConfigHandler
+    @ConfigView = ConfigView
     @UpdateFeed = UpdateFeed
     @Logger = Logger
     @Updater = Updater

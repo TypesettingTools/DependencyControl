@@ -17,7 +17,9 @@ class FileOps
                 genericError: "Can't retrieve attributes: %s."
                 noAttribute: "Can't find attriubte with name '%s'."
             }
-
+            createConfig: {
+                handlerFailed: "Couldn't create ConfigHandler for the FileOps configuation file: %s"
+            }
             mkdir: {
                 createError: "Error creating directory: %s."
                 otherExists: "Couldn't create directory because a %s of the same name is already present."
@@ -47,11 +49,17 @@ class FileOps
                 cantRead: "An error occured while trying to read from file '%s': %s"
                 notAFile: "Can only read files but supplied path '%s' points to a %s."
             }
+            remove: {
+                noConfigReschedule: "Couldn't load the FileOps config file (%s) - deletions of %s cannot be rescheduled!"
+            }
             rmdir: {
                 emptyPath: "Argument #1 (path) must not be an empty string."
                 couldntRemoveFiles: "Some of the files and folders in the specified directory couldn't be removed:\n%s"
                 couldntRemoveDir: "Error removing empty directory: %s."
 
+            }
+            runScheduledRemoval: {
+                noConfigReschedule: "Couldn't load the FileOps config file (%s) - rescheduled deletions will not be performed!"
             }
             validateFullPath: {
                 badType: "Argument #1 (path) had the wrong type. Expected 'string', got '%s'."
@@ -81,12 +89,18 @@ class FileOps
     createConfig = (noLoad, configDir) ->
         FileOps.configDir = configDir if configDir
         ConfigHandler or= require "l0.DependencyControl.ConfigHandler"
-        FileOps.config or= ConfigHandler "#{FileOps.configDir}/l0.#{FileOps.__name}.json",
-                           {toRemove: {}}, nil, noLoad, FileOps.logger
+        unless FileOps.config
+            FileOps.config, msg = ConfigHandler\getView "#{FileOps.configDir}/l0.#{FileOps.__name}.json", nil, {toRemove: {}}
+            return nil, msgs.createConfig.handlerFailed\format msg
+
         return FileOps.config
 
     remove: (paths, recurse, reSchedule) ->
-        config = createConfig true
+        config, msg = createConfig true
+        unless config
+            FileOps.logger\warn msgs.remove.noConfigReschedule, msg, FileOps.logger\dumpToString paths
+            reSchedule = false
+
         configLoaded, overallSuccess, details, firstErr = false, true, {}
         paths = {paths} unless type(paths) == "table"
 
@@ -116,17 +130,22 @@ class FileOps
             -- file not found or permission issue
             else details[path] = {nil, path}
 
-        config\write! if configLoaded
+        config\save! if configLoaded
         return overallSuccess, details, firstErr
 
     runScheduledRemoval: (configDir) ->
-        config = createConfig false, configDir
+        config, msg = createConfig false, configDir
+        unless config
+            msg = msgs.runScheduledRemoval.noConfigReschedule\format msg
+            FileOps.logger\warn msg
+            return nil, msg
+
         paths = [path for path, _ in pairs config.c.toRemove]
         if #paths > 0
             -- rescheduled removals will not be rescheduled another time
             FileOps.remove paths, true
             config.c.toRemove = {}
-            config\write!
+            config\save!
         return true
 
     copy: ( source, target ) ->

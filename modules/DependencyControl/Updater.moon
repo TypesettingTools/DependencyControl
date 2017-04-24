@@ -562,7 +562,7 @@ class Updater extends UpdaterBase
         -- TODO: store this flag in the db
 
         @config.c.updaterRunning = host: @host, time: os.time!
-        @config\write!
+        @config\save!
         @hasLock = true
 
         return didWait
@@ -571,4 +571,4 @@ class Updater extends UpdaterBase
         return false unless @hasLock
         @hasLock = false
         @config.c.updaterRunning = false
-        @config\write!
+        @config\save!
