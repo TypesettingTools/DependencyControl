@@ -18,6 +18,7 @@ class DependencyControlCommon
             updaterEnabled: true
             updateInterval: 302400
             traceLevel: 3
+            traceToFileLevel: 4
             extraFeeds: {}
             tryAllFeeds: false
             dumpFeeds: true

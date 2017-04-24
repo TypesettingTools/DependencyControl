@@ -26,7 +26,8 @@ class DependencyRecord extends VersionRecord
     -- static initializer for common DependencyRecord infrastructure,
     -- such as the global config file and the shared updater
     init = =>
-        @logger = Logger fileBaseName: "DepCtrl", fileSubName: script_namespace, prefix: "[#{@@__name}] ", toFile: true
+        @logger = Logger {fileBaseName: "DepCtrl", fileSubName: script_namespace, prefix: "[#{@@__name}] ", 
+                         toFile: true, maxToFileLevel: 4}
         @logger\trace msgs.init.initializing, script_namespace
 
         FileOps.mkdir @globalConfig.file, true
@@ -44,6 +45,7 @@ class DependencyRecord extends VersionRecord
             maxSize: @config.c.logMaxSize
             maxFiles: @config.c.logMaxFiles
             logDir: @config.c.logDir
+            maxToFileLevel: @config.c.traceToFileLevel
         }
 
         @updater = Updater script_namespace, @config, @logger
