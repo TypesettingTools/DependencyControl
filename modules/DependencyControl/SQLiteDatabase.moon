@@ -90,7 +90,7 @@ class SQLiteDatabase
     }
 
     --- SQLite status code constants
-    @results = {
+    @Result = {
         OK: lsqlite3.OK
         ERROR: lsqlite3.ERROR
         INTERNAL: lsqlite3.INTERNAL
@@ -170,7 +170,7 @@ class SQLiteDatabase
     close: =>
         return false unless @isOpen!
         code = @db\close!
-        if code == @@results.OK
+        if code == @@Result.OK
             return true
         else return nil, @@decodeResult code
 
@@ -227,9 +227,9 @@ class SQLiteDatabase
             return 0 if false != queryCallback row, r
 
         return switch result
-            when @@results.OK
+            when @@Result.OK
                 true, rows
-            when @@results.ABORT
+            when @@Result.ABORT
                 false, @@decodeResult result, msgs.exec.errorDetail\format @lastStatement, @db\errmsg!
             else nil, @@decodeResult result, msgs.exec.errorDetail\format @lastStatement, @db\errmsg!
 
