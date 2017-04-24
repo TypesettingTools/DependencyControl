@@ -96,11 +96,6 @@ class FileOps
         return FileOps.config
 
     remove: (paths, recurse, reSchedule) ->
-        config, msg = createConfig true
-        unless config
-            FileOps.logger\warn msgs.remove.noConfigReschedule, msg, FileOps.logger\dumpToString paths
-            reSchedule = false
-
         configLoaded, overallSuccess, details, firstErr = false, true, {}
         paths = {paths} unless type(paths) == "table"
 
@@ -118,8 +113,15 @@ class FileOps
 
                     -- load the FileOps configuration file and reschedule deletions
                     unless configLoaded
-                        FileOps.config\load!
-                        configLoaded = true
+                        config, msg = createConfig true
+                        if config
+                            FileOps.config\load!
+                            configLoaded = true
+                        else
+                            FileOps.logger\warn msgs.remove.noConfigReschedule, msg, FileOps.logger\dumpToString paths
+                            reSchedule = false
+
+
                     config.c.toRemove[path] = os.time!
                     -- mark the operations as failed "for now", indicating a second attempt has been scheduled
                     details[path] = {false, err}
