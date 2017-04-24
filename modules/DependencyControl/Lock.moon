@@ -24,6 +24,7 @@ class Lock
       heldByOther: "Lock is currently held by '%s' (%s), retrying in %ims..."
       alreadyHeld: "'%s' (%s) is already holding the lock on resource '%s.%s'."
       attained: "'%s' (%s) attained the lock on resource '%s.%s'."
+      snatchedAway: "Someone else snatched away the lock on resourceu '%s.%s' before holder '%s' (%s) could acquire it."
       timeout: "Gave up trying to attain a lock on resource '%s.%s' for holder '%s' (%s) after timeout was reached."
     }
     release: {
@@ -122,7 +123,7 @@ class Lock
           return @@LockState.Held, timePassed
 
         when @@LockState.Available
-          res, msg = db\insert LOCKS_TABLE, {
+          res, msg, code = db\insert LOCKS_TABLE, {
             Namespace: @namespace
             Resource: @resource
             Holder: @holderName
@@ -130,10 +131,16 @@ class Lock
             Expires: os.time! + @expiresAfter
           }
 
-          return if res
+          if res
             @logger\trace msgs.lock.attained, @holderName, @instanceId, @namespace, @resource
-            @@LockState.Held, timePassed
-          else nil, msgs.lock.failed\format @namespace, @resource, @holderName, @instanceId, msg
+            return @@LockState.Held, timePassed
+          
+          -- someone else may have snatched the lock since we last refreshed the state
+          if code == SQLiteDatabase.Result.CONSTRAINT
+            @logger\trace msgs.lock.snatchedAway, @namespace, @resource, @holderName, @instaceId
+            continue
+
+          return nil, msgs.lock.failed\format @namespace, @resource, @holderName, @instanceId, msg
 
         when nil
           return nil, msgs.lock.failed\format @namespace, @resource, @holderName, @instanceId, holder
