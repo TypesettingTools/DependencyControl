@@ -14,6 +14,9 @@ class ConfigHandler
         getHive: {
             unexpected: "An unexpected error occured while trying to create hive '%s' on ConfigHandler for file '%s'"
         }
+        getOverlappingViews: {
+            differentHandler: "Other view on config file '%s' does not belong to this config handler of config file '%s'."
+        }
         getView: {
             failedView: "Failed to get #{ConfigView.__name} '%s' on ConfigHandler for file '%s': %s"
             failedHandler: "Failed to get ConfigHandler for file '%s' while trying to acquire a view on #{ConfigView.__name}: %s"
@@ -90,6 +93,7 @@ Reload your automation scripts to generate a new configuration file.]]
         path, msg = fileOps.validateFullPath filePath, true
         @logger\assert path, msgs.new.badPath, filePath, msg
         @filePath = path
+        @views = setmetatable {}, {__mode: 'k'}
 
         @lock = Lock namespace: "l0.DependencyControl.ConfigHandler", resource: @filePath, holderName: @@__name, logger: @logger
         success, msg = @load!
@@ -273,11 +277,23 @@ Reload your automation scripts to generate a new configuration file.]]
         return hive
 
 
+    getOverlappingViews: (targetView) =>
+        if targetView.__configHandler != @
+            return nil, msgs.getOverlappingViews.differentHandler\format targetView.__configHandler.filePath, @filePath
+        
+        return for view, _ in pairs @views
+            continue if view == targetView or not targetView\isOverlappingView view
+            view
+
+
     getView: (hivePath, defaults) =>
         success, view = pcall ConfigView, @, hivePath, defaults
-        return if success
-            view
-        else nil, msgs.getView.failedView\format hivePath, @filePath, view
+
+        unless success
+            return nil, msgs.getView.failedView\format hivePath, @filePath, view
+        
+        @views[view] = true
+        return view
 
 
     load: (views, waitLockTime) =>
@@ -292,10 +308,12 @@ Reload your automation scripts to generate a new configuration file.]]
         -- config file may not yet exist or have been reset due to corruption
         config or= {}
 
-        -- TODO: reassign views on this handler
         if views == nil or @config == nil
             @config = config
+            view\refresh! for view, _ in pairs @views
             return true
+
+        viewsToRefresh = {view, true for view in *views}
 
         for view in *views
             hiveConfig, msg = traverseHive view.__hivePath, config
@@ -306,8 +324,9 @@ Reload your automation scripts to generate a new configuration file.]]
                     mergeHive view.__hivePath, makeHive(view.__hivePath), @config
                 else mergeHive view.__hivePath, makeHive(view.__hivePath, hiveConfig), @config
 
-            -- TODO: replace userConfig references with some metatable magic
-            view.userConfig = @getHive view.__hivePath
+            viewsToRefresh[v] or= true for v in *@getOverlappingViews view
+
+        view\refresh! for view, _ in pairs viewsToRefresh
 
         return true
 

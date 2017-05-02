@@ -6,6 +6,9 @@ class ConfigView
         new: {
             failedRetrieveHive: "Failed to retrieve hive %s from ConfigHandler: %s"
         }
+        isOverlappingView: {
+            differentHandler: "Other view on config file '%s' does not belong to the same config handler as this view on config file '%s'."
+        }
     }
 
     @get = (filePath, hivePath, defaults, logger) =>
@@ -22,7 +25,7 @@ class ConfigView
         @section = @__hivePath
 
         -- set up user configuration and make defaults accessible
-        @userConfig, msg = configHandler\getHive @__hivePath
+        success, msg = @refresh!
         @__configHandler.logger\assert @userConfig, msgs.new.failedRetrieveHive, hivePath, msg
 
         setDefaults @, defaults
@@ -106,7 +109,28 @@ class ConfigView
         return changesMade
 
 
+    isOverlappingView: (otherView) =>        
+        if @__configHandler != otherView.__configHandler
+            return nil, msgs.isOverlappingView.differentHandler\format otherView.__configHandler.filePath,
+                                                                       @__configHandler.filePath
+
+        thisViewHivePathDepth, otherViewHivePathDepth = #@__hivePath, #otherView.__hivePath
+
+        return true if thisViewHivePathDepth == 0 or otherViewHivePathDepth == 0
+
+        for i, key in ipairs @__hivePath
+            return false if key != otherView.__hivePath[i]
+            return true if i == thisViewHivePathDepth or i == otherViewHivePathDepth
+
+
     load: (waitLockTime) => @__configHandler\load @, waitLockTime
+
+
+    refresh: =>
+        @userConfig, msg = @__configHandler\getHive @__hivePath
+        return if @userConfig
+            true
+        else nil, msg
 
 
     save: (waitLockTime) => @__configHandler\save @, waitLockTime
