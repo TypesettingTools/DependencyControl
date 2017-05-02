@@ -183,10 +183,10 @@ Reload your automation scripts to generate a new configuration file.]]
         recurse = (path, hive, depth, config) ->
             return if depth > #path 
             hive[path[depth]] = depth == #path and config or {}
-            return recurse path, hive[path[depth]], depth +1 
+            return recurse path, hive[path[depth]], depth +1, config
 
         hive = {}
-        recurse path, hive, 1
+        recurse path, hive, 1, config
         return hive
 
 
