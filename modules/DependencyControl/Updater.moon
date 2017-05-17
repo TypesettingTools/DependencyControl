@@ -47,7 +47,7 @@ class UpdaterBase extends Common
         }
     }
 
-    getUpdaterErrorMsg: (code, name, scriptType, isInstall, detailMsg) =>
+    @getUpdaterErrorMsg = (code, name, scriptType, isInstall, detailMsg) =>
         if code <= -100
             -- Generic downstream error
             return msgs.updateError[100]\format msgs.updaterErrorComponent[math.floor(-code/100)], -code,
@@ -121,10 +121,10 @@ class UpdateTask extends UpdaterBase
 
         isInstall = @record.__class == DummyRecord
         @logger\assert @updater.config.c.updaterEnabled,
-                       @getUpdaterErrorMsg -1, @record.name, @record.scriptType, isInstall
+                       @@getUpdaterErrorMsg -1, @record.name, @record.scriptType, isInstall
 
         @logger\assert Common.validateNamespace @record.namespace,
-                       @getUpdaterErrorMsg -2, @record.name, @record.scriptType, isInstall
+                       @@getUpdaterErrorMsg -2, @record.name, @record.scriptType, isInstall
 
     set: (targetVersion, @addFeeds, @exhaustive, @channel, @optional) =>
         if @record.__class != DummyRecord
@@ -173,7 +173,7 @@ class UpdateTask extends UpdaterBase
 
         logUpdateError = (code, extErr) ->
             if code < 0
-                @logger\log @getUpdaterErrorMsg code, @record.name, @record.scriptType,
+                @logger\log @@getUpdaterErrorMsg code, @record.name, @record.scriptType,
                             isInstall, extErr
             return code, extErr
 
