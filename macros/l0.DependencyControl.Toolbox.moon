@@ -31,43 +31,63 @@ msgs = {
 
 buildInstalledDlgList = (scriptType, config, isUninstall) ->
     list, map, protectedModules = {}, {}, {}
+    
+    -- do not allow uninstall DepCtrl or any of its required modules
     if isUninstall
         protectedModules[mdl.moduleName] = true for mdl in *DepCtrl.version.requiredModules
         protectedModules[DepCtrl.version.moduleName] = true
 
-    for namespace, script in pairs config.c[scriptType]
-        continue if protectedModules[namespace]
-        item = "%s v%s%s"\format script.name, depRec\getVersionString(script.version),
-                                 script.activeChannel and " [#{script.activeChannel}]" or ""
+    for pkg in *getInstalledPackages scriptType
+        continue if protectedModules[pkg.record.namespace] or pkg.config.c.updaterMode < DepCtrl.InstalledPackage.UpdaterMode.Manual
+        
+        item = "%s v%s%s"\format pkg.record.name, DepCtrl\getVersionString(pkg.record.version),
+                                 pkg.config.c.updateChannel and " [#{pkg.config.c.updateChannel}]" or ""
         list[#list+1] = item
         table.sort list, (a, b) -> a\lower! < b\lower!
-        map[item] = script
+        map[item] = pkg.record
+    
     return list, map
+
 
 getConfig = (section) ->
     config = DepCtrl.config\getSectionHandler section
     config.c.macros or= {} if not section or #section == 0
     return config
 
-getKnownFeeds = (config) ->
-    getScriptFeeds = (t) -> [v.userFeed or v.feed for _,v in pairs config.c[t] when v.feed or v.userFeed]
 
-    -- fetch all feeds and look for further known feeds
-    recurse = (feeds, knownFeeds = {}, feedList = {}) ->
-        for url in *feeds
+getScriptFeeds = (scriptType) -> 
+    [pkg.feed for pkg in *DepCtrl.InstalledPackage\getAll scriptType, logger when pkg.feed] 
+
+
+discoverFeeds = (feedUrls) ->
+    seenFeeds = {}
+
+    recurse = (feedUrls) ->
+        for url in *feedUrls
+            continue if seenFeeds[url]
             feed = DepCtrl.UpdateFeed url
-            continue if knownFeeds[url] or not feed.data
-            feedList[#feedList+1], knownFeeds[url] = feed, true
-            recurse feed\getKnownFeeds!, knownFeeds, feedList
-        return knownFeeds, feedList
+            seenFeeds[url] = feed
+            recurse feed\getKnownFeeds!
 
-    -- get additional feeds added by the user
-    knownFeeds, feedList = recurse DepCtrl.config.c.extraFeeds
-    -- collect feeds from all installed automation scripts and modules
-    recurse getScriptFeeds("modules"), knownFeeds, feedList
-    recurse getScriptFeeds("macros"), knownFeeds, feedList
+    recurse feedUrls
+    
+    return [feed for _, feed in pairs seenFeeds when feed.data]
 
-    return feedList
+
+getInstalledPackages = (scriptType, predicate = (pkg) -> pkg.installState > DepCtrl.InstalledPackage.InstallState.Pending) ->
+    pkgs = DepCtrl.InstalledPackage\getAll scriptType, logger
+    return for pkg in *pkgs
+        continue unless predicate pkg
+        pkg
+
+
+getKnownFeeds = ->
+    feedUrls = getScriptFeeds!
+    table.insert feedUrls, feedUrl for feedUrl in *DepCtrl.config.c.extraFeeds
+    feeds = discoverFeeds feedUrls
+
+    return feeds
+
 
 getScriptListDlg = (macros, modules) ->
     {
@@ -84,22 +104,34 @@ runUpdaterTask = (scriptData, exhaustive) ->
     else logger\log err
 
 
+
+
 -- Macros
 
 install = ->
     config = getConfig!
+    isScriptInstalled = {
+        [DepCtrl.ScriptType.Automation]: {pkg.namespace, true for pkg in *getInstalledPackages DepCtrl.ScriptType.Automation},
+        [DepCtrl.ScriptType.Module]: {pkg.namespace, true for pkg in *getInstalledPackages DepCtrl.ScriptType.Module}
+    }
 
     addAvailableToInstall = (tbl, feed, scriptType) ->
-        for namespace, data in pairs feed.data[scriptType]
-            scriptData = feed\getScript namespace, scriptType == "modules", nil, false
+        for namespace, data in pairs feed.data[DepCtrl.ScriptType.name.legacy[scriptType]]
+            continue if isScriptInstalled[scriptType][namespace]
+
+            scriptData = feed\getScript namespace, scriptType
             channels, defaultChannel = scriptData\getChannels!
             tbl[namespace] or= {}
             for channel in *channels
                 record = scriptData.data.channels[channel]
-                verNum = depRec\getVersionNumber record.version
-                unless config.c[scriptType][namespace] or (tbl[namespace][channel] and verNum < tbl[namespace][channel].verNum)
+                verNum = DepCtrl\parseVersion record.version
+                scriptConfig = DepCtrl\getScriptConfig namespace, scriptType
+                continue if scriptConfig.c.updaterMode < DepCtrl.InstalledPackage.UpdaterMode.Manual
+
+                unless tbl[namespace][channel] and verNum < tbl[namespace][channel].verNum
                     tbl[namespace][channel] = { name: scriptData.name, version: record.version, verNum: verNum, feed: feed.url,
                                                 default: defaultChannel == channel, moduleName: scriptType == "modules" and namespace }
+                                                
         return tbl
 
     buildDlgList = (tbl) ->
@@ -116,12 +148,13 @@ install = ->
 
     -- get a list of the highest versions of automation scripts and modules
     -- we can install but wich are not yet installed
-    macros, modules, feeds = {}, {}, getKnownFeeds config
+    macros, modules, feeds = {}, {}, getKnownFeeds!
 
     logger\log msgs.install.scanning, #feeds
+
     for feed in *feeds
-        macros = addAvailableToInstall macros, feed, "macros"
-        modules = addAvailableToInstall modules, feed, "modules"
+        macros = addAvailableToInstall macros, feed, DepCtrl.ScriptType.Automation
+        modules = addAvailableToInstall modules, feed, DepCtrl.ScriptType.Module
 
     -- build macro and module lists as well as reverse mappings
     moduleList, moduleMap = buildDlgList modules
@@ -159,8 +192,8 @@ uninstall = ->
     config = getConfig!
 
     -- build macro and module lists as well as reverse mappings
-    moduleList, moduleMap = buildInstalledDlgList "modules", config, true
-    macroList, macroMap = buildInstalledDlgList "macros", config, true
+    moduleList, moduleMap = buildInstalledDlgList DepCtrl.ScriptType.Module, config, true
+    macroList, macroMap = buildInstalledDlgList DepCtrl.ScriptType.Automation, config, true
 
     btn, res = aegisub.dialog.display getScriptListDlg macroList, moduleList
     return unless btn
@@ -173,8 +206,8 @@ update = ->
     config = getConfig!
 
     -- build macro and module lists as well as reverse mappings
-    moduleList, moduleMap = buildInstalledDlgList "modules", config
-    macroList, macroMap = buildInstalledDlgList "macros", config
+    moduleList, moduleMap = buildInstalledDlgList DepCtrl.ScriptType.Module, config
+    macroList, macroMap = buildInstalledDlgList DepCtrl.ScriptType.Automation, config
 
     dlg = getScriptListDlg macroList, moduleList
     dlg[5] = {name: "exhaustive", label: "Exhaustive Mode", class: "checkbox", x: 0, y: 2, width: 1, height: 1}
