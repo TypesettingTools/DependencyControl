@@ -1,7 +1,7 @@
 Common = require "l0.DependencyControl.Common"
+SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
 
 class VersionRecord extends Common
-  semParts = {{"major", 16}, {"minor", 8}, {"patch", 0}}
   versionClasses = {}
   msgs = {
     parseVersion: {
@@ -93,51 +93,17 @@ class VersionRecord extends Common
     return versionClasses[record.__class] or false
 
 
-  @getVersionString = (version, precision = "patch") =>
-    if type(version) == "string"
-      version = @parseVersion version
-    parts = {0, 0, 0}
-    for i, part in ipairs semParts
-      parts[i] = bit.rshift(version, part[2])%256
-      break if precision == part[1]
-
-    return "%d.%d.%d"\format unpack parts
+  @getVersionString = SemanticVersioning.getVersionString
 
 
   checkVersion: (value, precision = "patch") =>
     if @@isVersionRecord value
       value = value.version
-    else if type(value) != "number"
-      value, err = @@parseVersion value
-      return nil, err unless value
 
-    mask = 0
-    for part in *semParts
-      mask += 0xFF * 2^part[2]
-      break if precision == part[1]
-
-    value = bit.band value, mask
-    return @version >= value, value
+    return SemanticVersioning\check @version, value
 
 
-  @parseVersion = (value) =>
-    switch type value
-      when "number" then return math.max value, 0
-      when "nil" then return 0
-      when "string"
-        matches = {value\match "^(%d+).(%d+).(%d+)$"}
-        if #matches!=3
-          return false, msgs.parseVersion.badString\format value
-
-        version = 0
-        for i, part in ipairs semParts
-          value = tonumber(matches[i])
-          if type(value) != "number" or value>256
-            return false, msgs.parseVersion.overflow\format part[1], tostring value
-          version += bit.lshift value, part[2]
-        return version
-
-      else return false, msgs.parseVersion.badType\format type(value), @logger\dumpToString value
+  @parseVersion = SemanticVersioning.parse
 
 
   setVersion: (version) =>
