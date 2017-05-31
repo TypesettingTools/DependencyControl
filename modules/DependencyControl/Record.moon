@@ -8,17 +8,12 @@ ConfigHandler =  require "l0.DependencyControl.ConfigHandler"
 FileOps =        require "l0.DependencyControl.FileOps"
 Updater =        require "l0.DependencyControl.Updater"
 ModuleLoader =   require "l0.DependencyControl.ModuleLoader"
+SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
 
 class Record extends Common
-    semParts = {{"major", 16}, {"minor", 8}, {"patch", 0}}
     namespaceValidation = re.compile "^(?:[-\\w]+\\.)+[-\\w]+$"
 
     msgs = {
-        parseVersion: {
-            badString: "Can't parse version string '%s'. Make sure it conforms to semantic versioning standards."
-            badType: "Argument had the wrong type: expected a string or number, got a %s. Content %s"
-            overflow: "Error: %s version must be an integer < 255, got %s."
-        }
         new: {
             badRecordError: "Error: Bad #{@@__name} record (%s)."
             badRecord: {
@@ -187,34 +182,12 @@ class Record extends Common
 
         assert success, msgs.writeConfig.error\format errMsg
 
-    @parseVersion = (value) =>
-        switch type value
-            when "number" then return math.max value, 0
-            when "nil" then return 0
-            when "string"
-                matches = {value\match "^(%d+).(%d+).(%d+)$"}
-                if #matches!=3
-                    return false, msgs.parseVersion.badString\format value
 
-                version = 0
-                for i, part in ipairs semParts
-                    value = tonumber(matches[i])
-                    if type(value) != "number" or value>256
-                        return false, msgs.parseVersion.overflow\format part[1], tostring value
-                    version += bit.lshift value, part[2]
-                return version
+    @parseVersion = SemanticVersioning.parse
 
-            else return false, msgs.parseVersion.badType\format type(value), @logger\dumpToString value
 
-    @getVersionString = (version, precision = "patch") =>
-        if type(version) == "string"
-            version = @parseVersion version
-        parts = {0, 0, 0}
-        for i, part in ipairs semParts
-            parts[i] = bit.rshift(version, part[2])%256
-            break if precision == part[1]
+    @getVersionString = SemanticVersioning.toString
 
-        return "%d.%d.%d"\format unpack parts
 
     getConfigFileName: () =>
         return aegisub.decode_path "#{@@configDir}/#{@configFile}"
@@ -233,16 +206,8 @@ class Record extends Common
     checkVersion: (value, precision = "patch") =>
         if type(value) == "table" and value.__class == @@
             value = value.version
-        if type(value) != "number"
-            value, err = @@parseVersion value
-            return nil, err unless value
-        mask = 0
-        for part in *semParts
-            mask += 0xFF * 2^part[2]
-            break if precision == part[1]
+        return SemanticVersioning\check @version, value
 
-        value = bit.band value, mask
-        return @version >= value, value
 
     getSubmodules: =>
         return nil if @virtual or @recordType == @@RecordType.Unmanaged or @scriptType != @@ScriptType.Module
