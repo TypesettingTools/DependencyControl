@@ -72,16 +72,19 @@ class SQLiteMapper
 
     objectState or= @getObjectState!
 
-    objectValues, dbValues = {}, {}
+    objectValues, dbValues, diffKeys = {}, {}, {}
     diffCount = 0
 
     for o, _ in pairs @mappings
       if dbState[o] != objectState[o]
         objectValues[o] = objectState[o]
         dbValues[o] = dbState[o]
-        diffCount += 1 if o != @timestampKey or countTimestamp
+        if o != @timestampKey or countTimestamp
+          diffCount += 1 
+          diffKeys[diffCount] = o
+          
 
-    return diffCount, dbValues, objectValues
+    return diffKeys, dbValues, objectValues
 
 
   refreshSyncState: (dbState, objectState) =>
@@ -99,8 +102,8 @@ class SQLiteMapper
     if @timestampKey
       @dbTimestamp = dbState[@timestampKey]
 
-    diffCount, dbValues, objectValues = @getDiff dbState, objectState
-    if diffCount == 0
+    diffKeys, dbValues, objectValues = @getDiff dbState, objectState
+    if #diffKeys == 0
       @syncState = @@SyncState.Even
       @logger\debug msgs.refreshSyncState.even, getDescription @
       return @syncState
@@ -123,7 +126,7 @@ class SQLiteMapper
     @syncState = (@dbTimestamp or 0) < (objectTimestamp or 0) and @@SyncState.ObjectAhead or @@SyncState.DbAhead
     @logger\debug msgs.refreshSyncState[@syncState == @@SyncState.ObjectAhead and "objectAhead" or "dbAhead"],
                   getDescription @
-    return @syncState, objectValues, dbValues
+    return @syncState, objectValues, dbValues, diffKeys
 
 
   getDbState: =>
@@ -143,7 +146,7 @@ class SQLiteMapper
 
 
   sync: (reconciler, preprocessor, postprocessor, direction = @@SyncDirection.Both) =>
-    syncState, objectValues, dbValues = @refreshSyncState!
+    syncState, objectValues, dbValues, diffKeys = @refreshSyncState!
     @logger\trace msgs.sync.started, getDescription @
 
     switch syncState
@@ -159,7 +162,7 @@ class SQLiteMapper
       when @@SyncState.ObjectAhead
         if direction == @@SyncDirection.DbToObject
           @syncState = @@SyncState.ObjectAhead
-        if res = @updateDb objectValues, preprocessor
+        if res = @updateDb objectValues, diffKeys, preprocessor
           @logger\debug msgs.sync.dbWritten, getDescription @
           @syncState = @@SyncState.Even
         else return nil
@@ -167,7 +170,7 @@ class SQLiteMapper
       when @@SyncState.DbAhead
         if direction == @@SyncDirection.ObjectToDb
           @syncState = @@SyncState.DbAhead
-        if res = @updateObject dbValues, postprocessor
+        if res = @updateObject dbValues, diffKeys, postprocessor
           @logger\debug msgs.sync.objectWritten, getDescription @
           @syncState = @@SyncState.Even
         else return nil
@@ -176,10 +179,10 @@ class SQLiteMapper
         @logger\debug msgs.sync.conflicted, getDescription(@),
                       @logger\dumpToString(objectValues), @logger\dumpToString dbValues
 
-        reconciledValues, msg = reconciler dbValues, objectValues
+        reconciledValues, reconciledKeys = reconciler dbValues, objectValues, diffKeys
         unless reconciledValues
           @logger\debug msgs.sync.failedReconcilation, getDescription @
-        return nil, msg unless reconciledValues  -- todo add own msg part
+        return nil, reconciledKeys unless reconciledValues  -- todo add own msg part
 
         reconciledValues[@timestampKey] = os.time!
 
@@ -198,26 +201,29 @@ class SQLiteMapper
     return @syncState
 
 
-  transformObjectValuesToDbFields = (objectValues) =>
-    dbFields = {}
-    for o, d in pairs @mappings
+  transformObjectValuesToDbFields = (objectValues, keys = [o for o, _ in pairs @mappings]) =>
+    dbFields, dbFieldNames, f = {}, {}, 0
+    for o in *keys
+      d = @mappings[o]
+      f += 1
+      dbFieldNames[f] = d
       dbFields[d] = if @objectToDbTransforms
         @objectToDbTransforms[o] objectValues[o], o
       else objectValues[o] 
-    return dbFields
+    return dbFields, dbFieldNames
 
 
-  updateDb: (objectValues, preprocessor) =>
+  updateDb: (objectValues, keys = [o for o, _ in pairs @mappings], preprocessor) =>
     objectValues = objectValues and {o, objectValues[o] for o, _ in pairs @mappings} or @getObjectState!
 
     if @timestampKey
       objectValues[@timestampKey] or= @object[@timestampKey] 
 
     if preprocessor
-      objectValues = preprocessor objectValues
+      objectValues, keys = preprocessor objectValues, keys
 
-    res, msg = @db\update @table, transformObjectValuesToDbFields(@, objectValues), 
-                         nil, @selectorColumn, @selectorValue
+    fields, fieldNames = transformObjectValuesToDbFields @, objectValues, keys
+    res, msg = @db\update @table, fields, fieldNames, [@selectorColumn]: @selectorValue
     
     return res, msg unless res
 
@@ -227,14 +233,14 @@ class SQLiteMapper
     return true
 
 
-  updateObject: (dbValues, postprocessor) => 
+  updateObject: (dbValues, keys = [o for o, _ in pairs @mappings], postprocessor) => 
     dbValues = dbValues and {o, dbValues[o] for o, _ in pairs @mappings} or @getDbState!
 
     if @timestampKey
       dbValues[@timestampKey] or= @dbTimestamp
 
     if postprocessor
-      dbValues = postprocessor dbValues
+      dbValues, keys = postprocessor dbValues, keys
 
 
     @object[o] = dbValues[o] for o, _ in pairs @mappings
@@ -251,7 +257,7 @@ class SQLiteMapper
     if preprocessor
       objectValues = preprocessor objectValues
 
-    res, msg = @db\insert @table, transformObjectValuesToDbFields @, objectValues
+    res, msg = @db\insert @table, (transformObjectValuesToDbFields @, objectValues)
 
     return res, msg unless res
     return true
