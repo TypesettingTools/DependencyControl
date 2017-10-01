@@ -6,6 +6,7 @@ Logger = require "l0.DependencyControl.Logger"
 
 class SQLiteMapper
   @SyncState = {
+    Deleted: -1
     New: 0
     Even: 1,
     ObjectAhead: 2
