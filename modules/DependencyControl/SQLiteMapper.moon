@@ -243,8 +243,10 @@ class SQLiteMapper
     if postprocessor
       dbValues, keys = postprocessor dbValues, keys
 
-
-    @object[o] = dbValues[o] for o, _ in pairs @mappings
+    @object[o] = dbValues[o] for o in *keys when o != @timestampKey
+    -- make sure to write the timestamp last to overwrite any timestamps
+    -- automatically set by potential object metamethods
+    @object[@timestampKey] = dbValues[@timestampKey]
     
     return true
 
