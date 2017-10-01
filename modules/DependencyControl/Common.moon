@@ -12,10 +12,47 @@ class DependencyControlCommon
 
     @logger =  Logger fileBaseName: "DepCtrl.Common", toFile: true
     @platform = "#{ffi.os}-#{ffi.arch}"
+
+    @terms = {
+        scriptType: {
+            singular: { "automation script", "module" }
+            plural: { "automation scripts", "modules" }
+        }
+
+        isInstall: {
+            [true]: "install"
+            [false]: "update"
+        }
+
+        capitalize: (str) -> str[1]\upper! .. str\sub 2
+    }
+
+
+    @UpdaterMode = {
+        Disabled: 0
+        Manual: 1
+        Auto: 2
+    }
+
+    automationDir: {
+        aegisub.decode_path("?user/automation/autoload"),
+        aegisub.decode_path("?user/automation/include")
+    }
+
+    @testDir = {aegisub.decode_path("?user/automation/tests/DepUnit/macros"),
+                aegisub.decode_path("?user/automation/tests/DepUnit/modules")}
+
+    namespaceValidation = re.compile "^(?:[-\\w]+\\.)+[-\\w]+$"
+    @validateNamespace = (namespace) ->
+        return if namespaceValidation\match namespace
+            true
+        else false, msgs.validateNamespace.badNamespace\format namespace
+
+
     @globalConfig = {
         file: aegisub.decode_path "?user/config/l0.DependencyControl.json",
         defaults: {
-            updaterEnabled: true
+            updaterEnabled: false
             updateInterval: 302400
             traceLevel: 3
             traceToFileLevel: 4
@@ -33,45 +70,6 @@ class DependencyControlCommon
         }
     }
 
-    @terms = {
-        scriptType: {
-            singular: { "automation script", "module" }
-            plural: { "automation scripts", "modules" }
-        }
-
-        isInstall: {
-            [true]: "installation"
-            [false]: "update"
-        }
-
-        capitalize: (str) -> str[1]\upper! .. str\sub 2
+    @defaultScriptConfig = {
+        updaterMode: @UpdaterMode.Auto
     }
-
-    -- Common enums
-    @RecordType = {
-        Managed: 1
-        Unmanaged: 2
-    }
-
-    @ScriptType = {
-        Automation: 1
-        Module: 2
-        name: {
-            legacy: { "macros", "modules" }
-            canonical: {"automation", "modules"}
-        }
-    }
-
-    automationDir: {
-        aegisub.decode_path("?user/automation/autoload"),
-        aegisub.decode_path("?user/automation/include")
-    }
-
-    @testDir = {aegisub.decode_path("?user/automation/tests/DepUnit/macros"),
-                aegisub.decode_path("?user/automation/tests/DepUnit/modules")}
-
-    namespaceValidation = re.compile "^(?:[-\\w]+\\.)+[-\\w]+$"
-    @validateNamespace = (namespace) ->
-        return if namespaceValidation\match namespace
-            true
-        else false, msgs.validateNamespace.badNamespace\format namespace

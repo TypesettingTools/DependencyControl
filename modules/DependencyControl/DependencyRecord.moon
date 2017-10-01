@@ -1,167 +1,136 @@
-json = require "json"
-lfs =  require "lfs"
-re =   require "aegisub.re"
+Common = require "l0.DependencyControl.Common"
+SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
 
-Common =           require "l0.DependencyControl.Common"
-Logger =           require "l0.DependencyControl.Logger"
-ConfigHandler =    require "l0.DependencyControl.ConfigHandler"
-FileOps =          require "l0.DependencyControl.FileOps"
-Updater =          require "l0.DependencyControl.Updater"
-ModuleLoader =     require "l0.DependencyControl.ModuleLoader"
-InstalledPackage = require "l0.DependencyControl.InstalledPackage"
-VersionRecord =    require "l0.DependencyControl.VersionRecord"
-
-class DependencyRecord extends VersionRecord
-    msgs = {
-        init: {
-            initializing: "Initializing DependencyControl for automation script environment '%s'"
-            writeLogs: "Log writing is disabled in the DependencyControl configuration - end of file reached."
-            globalConfigFailed: "Failed to load global config file (%s)."
-        }
-        new: {
-            badRecordError: "Error: Bad #{@@__name} record (%s)."
-        }
+class DependencyRecord
+  msgs = {
+    new: {
+      badRecordError: "Error: Bad DependencyControl record (%s)."
     }
 
-    -- static initializer for common DependencyRecord infrastructure,
-    -- such as the global config file and the shared updater
-    init = =>
-        @logger = Logger {fileBaseName: "DepCtrl", fileSubName: script_namespace, prefix: "[#{@@__name}] ", 
-                         toFile: true, maxToFileLevel: 4}
-        @logger\trace msgs.init.initializing, script_namespace
+    parseVersion: {
+      badString: "Can't parse version string '%s'. Make sure it conforms to semantic versioning standards."
+      badType: "Argument had the wrong type: expected a string or number, got a %s. Content %s"
+      overflow: "Error: %s version must be an integer < 255, got %s."
+    }
 
-        FileOps.mkdir @globalConfig.file, true
-        @configHandler, msg = ConfigHandler\get @globalConfig.file, @logger
-        @logger\assert @configHandler, msgs.init.globalConfigFailed, msg
+    __import: {
+      noUnmanagedMacros: "Creating unmanaged version records for macros is not permitted"
+      missingNamespace: "No namespace defined"
+      badVersion: "Couldn't parse version number: %s"
+      badModuleTable: "Invalid required module table #%d (%s)."
+    }
+  }
 
-        @config, msg = @configHandler\getView {"config"}, @globalConfig.defaults
-        @logger\assert @config, msgs.init.globalConfigFailed, msg
+  @RecordType = {
+      Managed: 1
+      Unmanaged: 2
+  }
 
-        @logger\hint msgs.init.writeLogs unless @config.c.writeLogs
-        @logger[k] = v for k, v in pairs {
-            toFile: @config.c.writeLogs
-            defaultLevel: @config.c.traceLevel
-            maxAge: @config.c.logMaxAge
-            maxSize: @config.c.logMaxSize
-            maxFiles: @config.c.logMaxFiles
-            logDir: @config.c.logDir
-            maxToFileLevel: @config.c.traceToFileLevel
-        }
-
-        @updater = Updater script_namespace, @config, @logger
-        @configDir = @config.c.configDir
-
-        FileOps.mkdir aegisub.decode_path @configDir
-        logsHaveBeenTrimmed or= @logger\trimFiles!
-        FileOps.runScheduledRemoval @configDir
+  @ScriptType = {
+      Automation: 1
+      Module: 2
+      name: {
+          legacy: { "macros", "modules" }
+          canonical: {"automation", "modules"}
+      }
+  }
 
 
-    new: (args) =>
-        init DependencyRecord unless @@configHandler
-
-        success, errMsg = @__import args
-        @@logger\assert success, msgs.new.badRecordError, errMsg
-
-        if @scriptType == @@ScriptType.Module and @recordType != @@RecordType.Unmanaged
-            ModuleLoader.createDummyRef @
-
-        @configFile = "#{@namespace}.json"
-        @testDir = @@testDir[@scriptType]
-
-        @package = InstalledPackage @, @@logger unless @virtual
+  recordClasses = {
+    [@]: true
+  }
+  @__inherited = (cls) =>
+    recordClasses[cls] or= true
 
 
-    checkOptionalModules: ModuleLoader.checkOptionalModules
+  new: (args) =>
+    success, errMsg = @__import args
+    assert success, msgs.new.badRecordError\format errMsg
 
 
-    getConfigFileName: =>
-        return aegisub.decode_path "#{@@configDir}/#{@configFile}"
+  __import: (args, readGlobalScriptVars = true) =>
+    { @requiredModules, moduleName: @moduleName, configFile: configFile, :name,
+      description: @description, url: @url, feed: @feed, recordType: @recordType,
+      :namespace, author: @author, :version, configFile: @configFile } = args
+
+    @recordType or= @@RecordType.Managed
+    -- also support name key (as used in configuration) for required modules
+    @requiredModules or= args.requiredModules
+
+    if @moduleName
+      @namespace = @moduleName
+      @name = name or @moduleName
+      @scriptType = @@ScriptType.Module
+
+    else
+      if readGlobalScriptVars
+        @name = name or script_name
+        @description or= script_description
+        @author or= script_author
+        @namespace = namespace or script_namespace
+        version or= script_version
+      else
+        @name = name or namespace
+        @namespace = namespace
+        version or= 0
+
+      return nil, msgs.__import.noUnmanagedMacros if @recordType != @@RecordType.Managed
+      return nil, msgs.__import.missingNamespace unless @namespace
+      @scriptType = @@ScriptType.Automation
+
+    -- if the hosting macro doesn't have a namespace defined, define it for
+    -- the first DepCtrled module loaded by the macro or its required modules
+    unless script_namespace
+      export script_namespace = @namespace
+
+    -- non-depctrl record doesn't need to conform to namespace rules
+    unless @recordType == @@RecordType.Unmanaged
+      namespaceValid, errMsg = Common.validateNamespace @namespace
+      return nil, errMsg unless namespaceValid
+
+    @automationDir = Common.automationDir[@scriptType]
+    @version, errMsg = @@parseVersion version
+    unless @version
+      return nil, msgs.__import.badVersion\format errMsg
+
+    @requiredModules or= {}
+    -- normalize short format module tables
+    for i, mdl in pairs @requiredModules
+      switch type mdl
+        when "table"
+          mdl.moduleName or= mdl[1]
+          mdl[1] = nil
+        when "string"
+          @requiredModules[i] = {moduleName: mdl}
+        else return nil, msgs.__import.badModuleTable\format i, tostring mdl
+
+    return true
 
 
-    getConfigHandler: (defaults, hivePath) =>
-        handler, msg = ConfigHandler\get @getConfigFileName!
-        return nil, msg unless handler
-
-        view, msg = handler\getView hivePath, defaults
-        return nil, msg unless view
-        return view, handler
-
-
-    getLogger: (args = {}) =>
-        args.fileBaseName or= @namespace
-        args.toFile = @package.config.c.logToFile if args.toFile == nil
-        args.defaultLevel or= @package.config.c.logLevel
-        args.prefix or= @moduleName and "[#{@name}]"
-
-        return Logger args
+  -- static method to check wether the supplied object is a member of a descendant of VersionRecord
+  -- optionally allows to check for specific class membership
+  @isDependencyRecord = (record, cls) =>
+    return false if type(record) != "table" or not record.__class
+    return false if cls and cls != record.__class
+    return recordClasses[record.__class] or false
 
 
-    -- TODO: completely broken, FIXME using db
-    getSubmodules: =>
-        return nil if @virtual or @recordType == @@RecordType.Unmanaged or @scriptType != @@ScriptType.Module
-        mdlConfig = @@configHandler\getView @@ScriptType.name.legacy[@@ScriptType.Module]
-        pattern = "^#{@namespace}."\gsub "%.", "%%."
-        return [mdl for mdl, _ in pairs mdlConfig.c when mdl\match pattern], mdlConfig
+  @getVersionString = SemanticVersioning.toString
 
 
-    requireModules: (modules = @requiredModules, addFeeds = {@feed}) =>
-        success, err = ModuleLoader.loadModules @, modules, addFeeds
-        @@updater\releaseLock!
-        unless success
-            -- if we failed loading our required modules
-            -- then that means we also failed to load
-            LOADED_MODULES[@namespace] = nil
-            @@logger\error err
-        return unpack [mdl._ref for mdl in *modules]
+  checkVersion: (value, precision = "patch") =>
+    if @@isDependencyRecord value
+      value = value.version
+
+    return SemanticVersioning\check @version, value
 
 
-    registerTests: (...) =>
-        -- load external tests
-        haveTests, tests = pcall require, "DepUnit.#{@@ScriptType.name.legacy[@scriptType]}.#{@namespace}"
-
-        if haveTests and not @testsLoaded
-            @tests, tests.name = tests, @name
-            modules =  table.pack @requireModules!
-            if @moduleName
-                @tests\import @ref, modules, ...
-            else @tests\import modules, ...
-
-            @tests\registerMacros!
-            @testsLoaded = true
+  @parseVersion = SemanticVersioning.parse
 
 
-    register: (selfRef, ...) =>
-        -- replace dummy refs with real refs to own module
-        @ref.__index, @ref, LOADED_MODULES[@moduleName] = selfRef, selfRef, selfRef
-        @registerTests selfRef, ...
-        return selfRef
-
-
-    registerMacro: (name=@name, description=@description, process, validate, isActive, submenu) =>
-        -- alternative signature takes name and description from script
-        if type(name)=="function"
-            process, validate, isActive, submenu = name, description, process, validate
-            name, description = @name, @description
-
-        -- use automation script name for submenu by default
-        submenu = @name if submenu == true
-
-        menuName = { @package.config.c.customMenu }
-        menuName[#menuName+1] = submenu if submenu
-        menuName[#menuName+1] = name
-
-        -- check for updates before running a macro
-        processHooked = (sub, sel, act) ->
-            @@updater\scheduleUpdate @
-            @@updater\releaseLock!
-            return process sub, sel, act
-
-        aegisub.register_macro table.concat(menuName, "/"), description, processHooked, validate, isActive
-
-
-    registerMacros: (macros = {}, submenuDefault = true) =>
-        for macro in *macros
-            -- allow macro table to omit name and description
-            submenuIdx = type(macro[1])=="function" and 4 or 6
-            macro[submenuIdx] = submenuDefault if macro[submenuIdx] == nil
-            @registerMacro unpack(macro, 1, 6)
+  setVersion: (version) =>
+    version, err = @@parseVersion version
+    if version
+      @version = version
+      return version
+    else return nil, err

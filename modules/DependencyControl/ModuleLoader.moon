@@ -1,7 +1,8 @@
 -- Note: this is a private API intended to be exclusively for internal DependenyControl use
 -- Everything in this class can and will change without any prior notice
 -- and calling any method is guaranteed to interfere with DependencyControl operation
-DummyRecord = require "l0.DependencyControl.DummyRecord"
+DependencyRecord = require "l0.DependencyControl.DependencyRecord"
+Common = require "l0.DependencyControl.Common"
 
 -- ModuleLoader is a static extension class to VersionRecord
 -- As such all methods operate on VersionRecords, DummyRecords or DependencyRecords passed in by reference
@@ -42,19 +43,19 @@ class ModuleLoader
   -- In order to resolve those, we set a dummy reference to not-yet-loaded modules
   -- which allows them to find each other
   @createDummyRef = =>
-    return nil if @scriptType != @@ScriptType.Module
+    return nil if @record.scriptType != DependencyRecord.ScriptType.Module
 
     export LOADED_MODULES = {} unless LOADED_MODULES
-    unless LOADED_MODULES[@namespace]
+    unless LOADED_MODULES[@record.namespace]
       @ref = {}
-      LOADED_MODULES[@namespace] = setmetatable {__depCtrlDummy: true, version: @}, @ref
+      LOADED_MODULES[@record.namespace] = setmetatable {__depCtrlDummy: true, version: @}, @ref
       return true
     return false
 
   @removeDummyRef = =>
-    return nil if @scriptType != @@ScriptType.Module
-    if LOADED_MODULES[@namespace] and LOADED_MODULES[@namespace].__depCtrlDummy
-      LOADED_MODULES[@namespace] = nil
+    return nil if @record.scriptType != DependencyRecord.ScriptType.Module
+    if LOADED_MODULES[@record.namespace] and LOADED_MODULES[@record.namespace].__depCtrlDummy
+      LOADED_MODULES[@record.namespace] = nil
       return true
     return  false
 
@@ -69,7 +70,7 @@ class ModuleLoader
     with mdl
       ._missing, ._error = nil
 
-      moduleName = usePrivate and "#{@namespace}.#{mdl.moduleName}" or .moduleName
+      moduleName = usePrivate and "#{@record.namespace}.#{mdl.moduleName}" or .moduleName
       name = "#{mdl.name or mdl.moduleName}#{usePrivate and ' (Private Copy)' or ''}"
 
       if .outdated or reload
@@ -88,10 +89,10 @@ class ModuleLoader
         res or= "unknown error"
         ._missing = nil != res\find "module '#{moduleName}' not found:", nil, true
         if not ._missing
-          @@logger\debug msgs.loadModule.loadFailed, @namespace, moduleName, res
+          @@logger\debug msgs.loadModule.loadFailed, @record.namespace, moduleName, res
           ._error = res
         elseif not usePrivate
-          @@logger\debug msgs.loadModule.moduleMissing, moduleName, @namespace
+          @@logger\debug msgs.loadModule.moduleMissing, moduleName, @record.namespace
 
         return nil
 
@@ -105,7 +106,7 @@ class ModuleLoader
 
     return mdl._ref  -- having this in the with block breaks moonscript
 
-  @loadModules = (modules, addFeeds = {@feed}, skip = @moduleName and {[@moduleName]: true} or {}) =>
+  @loadModules = (modules, addFeeds = {@record.feed}, skip = @record.moduleName and {[@record.moduleName]: true} or {}) =>
     for mdl in *modules
       continue if skip[mdl]
       with mdl
@@ -117,7 +118,7 @@ class ModuleLoader
 
         -- try to fetch and load a missing module from the web
         if ._missing
-          record = DummyRecord moduleName: .moduleName, name: .name, url: .url, feed: .feed
+          record = DependencyRecord moduleName: .moduleName, name: .name, url: .url, feed: .feed
           ._ref, code, extErr = @@updater\require record, .version, addFeeds, .optional
           if ._ref or .optional
             ._updated, ._missing = true, false
@@ -129,13 +130,16 @@ class ModuleLoader
         -- check if the version requirements are satisfied
         -- which is guaranteed for modules updated with \require, so we don't need to check again
         if .version and ._ref and not ._updated
-          record = ._ref.version
-          unless record
+          version = ._ref.version
+          unless version
             ._error = msgs.loadModules.missingRecord\format .moduleName
             continue
 
-          if type(record) != "table" or record.__class != @@
-            record = @@ moduleName: .moduleName, version: record, recordType: @@RecordType.Unmanaged
+          -- if version field is not a DepCtrl instance, we need to create an unmanaged record
+          record = if type(version) == "table" and version.__class == @@
+            version.record
+          else DependencyRecord moduleName: .moduleName, version: version, 
+                                recordType: DependencyRecord.RecordType.Unmanaged
 
           -- force an update for outdated modules
           if not record\checkVersion .version
@@ -167,9 +171,9 @@ class ModuleLoader
     if #moduleError > 0
       errorMsg[1] = table.concat moduleError, "\n"
     if #outdated > 0
-      errorMsg[#errorMsg+1] = msgs.loadModules.outdated\format @name, table.concat outdated, "\n"
+      errorMsg[#errorMsg+1] = msgs.loadModules.outdated\format @record.name, table.concat outdated, "\n"
     if #missing > 0
-      errorMsg[#errorMsg+1] = msgs.loadModules.missing\format @name, table.concat(missing, "\n"), 
+      errorMsg[#errorMsg+1] = msgs.loadModules.missing\format @record.name, table.concat(missing, "\n"), 
                               msgs.checkOptionalModules.downloadHint
 
     return #errorMsg == 0, table.concat(errorMsg, "\n\n")
@@ -177,10 +181,10 @@ class ModuleLoader
   @checkOptionalModules = (modules) =>
     modules = type(modules)=="string" and {[modules]:true} or {mdl,true for mdl in *modules}
     missing = [ModuleLoader.formatVersionErrorTemplate @, mdl.moduleName, mdl.version, mdl.url,
-              mdl._reason for mdl in *@requiredModules when mdl.optional and mdl._missing and modules[mdl.name]]
+              mdl._reason for mdl in *@record.requiredModules when mdl.optional and mdl._missing and modules[mdl.name]]
 
     if #missing>0
-      downloadHint = msgs.checkOptionalModules.downloadHint\format @@automationDir.modules
-      errorMsg = msgs.checkOptionalModules.missing\format @name, table.concat(missing, "\n"), downloadHint
+      downloadHint = msgs.checkOptionalModules.downloadHint\format Common.automationDir.modules
+      errorMsg = msgs.checkOptionalModules.missing\format @record.name, table.concat(missing, "\n"), downloadHint
       return false, errorMsg
     return true

@@ -9,18 +9,23 @@ Update to a recent Aegisub build to resolve this issue.
 ]]\format MIN_MOONSCRIPT_VERSION, moonscript.version
 
 
-Logger =           require "l0.DependencyControl.Logger"
-UpdateFeed =       require "l0.DependencyControl.UpdateFeed"
-ConfigHandler =    require "l0.DependencyControl.ConfigHandler"
-ConfigView =       require "l0.DependencyControl.ConfigHandler"
-FileOps =          require "l0.DependencyControl.FileOps"
-Updater =          require "l0.DependencyControl.Updater"
-UnitTestSuite =    require "l0.DependencyControl.UnitTestSuite"
-DependencyRecord = require "l0.DependencyControl.DependencyRecord"
+Logger =                require "l0.DependencyControl.Logger"
+UpdateFeed =            require "l0.DependencyControl.UpdateFeed"
+ConfigHandler =         require "l0.DependencyControl.ConfigHandler"
+ConfigView =            require "l0.DependencyControl.ConfigView"
+FileOps =               require "l0.DependencyControl.FileOps"
+Package =               require "l0.DependencyControl.Package"
+Updater =               require "l0.DependencyControl.Updater"
+UnitTestSuite =         require "l0.DependencyControl.UnitTestSuite"
+DependencyRecord =      require "l0.DependencyControl.DependencyRecord"
+DependencyControlBase = require "l0.DependencyControl.DependencyControlBase"
 
-class DependencyControl extends DependencyRecord
+
+class DependencyControl extends DependencyControlBase
     @ConfigHandler = ConfigHandler
     @ConfigView = ConfigView
+    @DependencyRecord = DependencyRecord
+    @Package = Package
     @UpdateFeed = UpdateFeed
     @Logger = Logger
     @Updater = Updater
@@ -28,7 +33,9 @@ class DependencyControl extends DependencyRecord
     @FileOps = FileOps
 
 
-rec = DependencyControl{
+Package\__injectDependencyControl DependencyControl
+
+depCtrl = DependencyControl {
     name: "DependencyControl",
     version: "0.6.3",
     description: "Provides script management and auto-updating for Aegisub macros and modules.",
@@ -38,14 +45,13 @@ rec = DependencyControl{
     feed: "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/master/DependencyControl.json",
     {
         {"DM.DownloadManager", version: "0.3.1", feed: "https://raw.githubusercontent.com/torque/ffi-experiments/master/DependencyControl.json"},
-        {"BM.BadMutex", version: "0.1.3", feed: "https://raw.githubusercontent.com/torque/ffi-experiments/master/DependencyControl.json"},
         {"PT.PreciseTimer", version: "0.1.5", feed: "https://raw.githubusercontent.com/torque/ffi-experiments/master/DependencyControl.json"},
         {"requireffi.requireffi", version: "0.1.1", feed: "https://raw.githubusercontent.com/torque/ffi-experiments/master/DependencyControl.json"},
     }
 }
-DependencyControl.__class.version = rec
-LOADED_MODULES[rec.moduleName], package.loaded[rec.moduleName] = DependencyControl, DependencyControl
-DependencyControl.updater\scheduleUpdate rec
-rec\requireModules!
+DependencyControl.__class.version = depCtrl
+LOADED_MODULES[depCtrl.record.moduleName], package.loaded[depCtrl.record.moduleName] = DependencyControl, DependencyControl
+DependencyControl.updater\scheduleUpdate depCtrl.record.package
+depCtrl\requireModules!
 
 return DependencyControl

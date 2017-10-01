@@ -42,12 +42,12 @@ class ScriptUpdateRecord extends Common
         return false, @activeChannel unless channelData
         @[k] = v for k, v in pairs channelData
 
-        @files = @files and [file for file in *@files when not file.platform or file.platform == @@platform] or {}
+        @files = @files and [file for file in *@files when not file.platform or file.platform == Common.platform] or {}
         return true, @activeChannel
 
     checkPlatform: =>
         @logger\assert @activeChannel, msgs.errors.noActiveChannel
-        return not @platforms or ({p,true for p in *@platforms})[@@platform], @@platform
+        return not @platforms or ({p,true for p in *@platforms})[Common.platform], Common.platform
 
     getChangelog: (minVer = 0) =>
         return "" unless "table" == type @changelog
