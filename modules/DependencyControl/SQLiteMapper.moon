@@ -13,6 +13,12 @@ class SQLiteMapper
     Conflicted: 4
   }
 
+  @SyncDirection = {
+    Both: 0,
+    ObjectToDb: 1,
+    DbToObject: -1
+  }
+
   msgs = {
     new: {
       missingTimestampMapping: "Timestamp object key '%s' is missing its mapping to a table column."
@@ -136,12 +142,14 @@ class SQLiteMapper
     return {o, @object[o] for o, _ in pairs @mappings}
 
 
-  sync: (reconciler, preprocessor, postprocessor) =>
+  sync: (reconciler, preprocessor, postprocessor, direction = @@SyncDirection.Both) =>
     syncState, objectValues, dbValues = @refreshSyncState!
     @logger\trace msgs.sync.started, getDescription @
 
     switch syncState
       when @@SyncState.New
+        if direction == @@SyncDirection.DbToObject
+          @syncState = @@SyncState.New
         res, msg = @insertIntoDb preprocessor
         if res
           @logger\debug msgs.sync.created, getDescription @
@@ -149,12 +157,16 @@ class SQLiteMapper
         else return nil, msg
 
       when @@SyncState.ObjectAhead
+        if direction == @@SyncDirection.DbToObject
+          @syncState = @@SyncState.ObjectAhead
         if res = @updateDb objectValues, preprocessor
           @logger\debug msgs.sync.dbWritten, getDescription @
           @syncState = @@SyncState.Even
         else return nil
 
       when @@SyncState.DbAhead
+        if direction == @@SyncDirection.ObjectToDb
+          @syncState = @@SyncState.DbAhead
         if res = @updateObject dbValues, postprocessor
           @logger\debug msgs.sync.objectWritten, getDescription @
           @syncState = @@SyncState.Even
@@ -171,13 +183,17 @@ class SQLiteMapper
 
         reconciledValues[@timestampKey] = os.time!
 
-        res = @updateDb reconciledValues, preprocessor
-        return nil unless res
+        if direction >= @@SyncDirection.Both
+          res = @updateDb reconciledValues, reconciledKeys, preprocessor
+          return nil unless res
+        else @syncState = @@SyncState.ObjectAhead
 
-        if res = @updateObject reconciledValues, postprocessor
-          @logger\debug msgs.sync.reconciled, getDescription @
-          @syncState = @@SyncState.Even
-        else return nil
+        if direction <= @@SyncDirection.Both
+          if res = @updateObject reconciledValues, reconciledKeys, postprocessor
+            @logger\debug msgs.sync.reconciled, getDescription @
+            @syncState = @@SyncState.Even
+          else return nil
+        else @syncState = @@SyncState.DbAhead
 
     return @syncState
 
