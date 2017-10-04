@@ -58,7 +58,7 @@ class DependencyControlBase
 
 
     @getScriptConfig = (namespace, scriptType) =>
-        ConfigHandler\getView Common.globalConfig.file, { DependencyRecord.ScriptType.name.canonical[scriptType], @record.namespace },
+        ConfigHandler\getView Common.globalConfig.file, { Common.name.scriptType.canonical[scriptType], @record.namespace },
                               Common.defaultScriptConfig
 
 
@@ -116,7 +116,7 @@ class DependencyControlBase
 
     registerTests: (...) =>
         -- load external tests
-        haveTests, tests = pcall require, "DepUnit.#{DependencyRecord.ScriptType.name.legacy[@scriptType]}.#{@namespace}"
+        haveTests, tests = pcall require, "DepUnit.#{Common.name.scriptType.legacy[@scriptType]}.#{@namespace}"
 
         if haveTests and not @testsLoaded
             @tests, tests.name = tests, @record.name

@@ -6,6 +6,7 @@ lsqlite3 =     require "lsqlite3"
 Logger =       require "l0.DependencyControl.Logger"
 fileOps =      require "l0.DependencyControl.FileOps"
 PreciseTimer = require "PT.PreciseTimer"
+Enum =         require "l0.DependencyControl.Enum"
 
 [[
     scripts should be able to provide schemata in automation\schema
@@ -90,7 +91,7 @@ class SQLiteDatabase
     }
 
     --- SQLite status code constants
-    @Result = {
+    @Result = Enum "Result", {
         OK: lsqlite3.OK
         ERROR: lsqlite3.ERROR
         INTERNAL: lsqlite3.INTERNAL
@@ -121,7 +122,7 @@ class SQLiteDatabase
         DONE: lsqlite3.DONE
     }
 
-    @Operators = {
+    @Operators = Enum "Operators", {
         AND: 0
         OR: 1
     }

@@ -1,6 +1,7 @@
 SQLiteDatabase = require "l0.DependencyControl.SQLiteDatabase"
 Logger         = require "l0.DependencyControl.Logger"
 PreciseTimer   = require "PT.PreciseTimer"
+Enum           = require "l0.DependencyControl.Enum"
 
 LOCKS_TABLE = "Locks"
 DEFAULT_LOCK_WAIT_INTERVAL = 250
@@ -38,11 +39,11 @@ class Lock
   db = nil
   @logger = Logger fileBaseName: "DependencyControl.Lock"
 
-  @LockState = {
+  @LockState = Enum "LockState", {
     Unavailable: 0
     Available: 1
     Held: 2
-  }
+  }, @logger
   LockState or= @LockState
 
   @uuid = ->

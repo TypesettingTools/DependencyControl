@@ -173,8 +173,8 @@ class UpdateFeed extends Common
             -- luajson errors are useless dumps of whatever, no use to pass them on to the user
             return false, msgs.errors.parse
 
-        data[key] = {} for key in *{ @@ScriptType.name.legacy[@@ScriptType.Automation],
-                                     @@ScriptType.name.legacy[@@ScriptType.Module],
+        data[key] = {} for key in *{ Common.name.scriptType.legacy[@@ScriptType.Automation],
+                                     Common.name.scriptType.legacy[@@ScriptType.Module],
                                      "knownFeeds"} when not data[key]
         @data, @@cache[@url] = data, data
         @expand!
@@ -236,7 +236,7 @@ class UpdateFeed extends Common
         return @data
 
     getScript: (namespace, scriptType) =>
-        section = @@ScriptType.name.legacy[scriptType]
+        section = Common.name.scriptType.legacy[scriptType]
         scriptData = @data[section][namespace]
         return false unless scriptData
         ScriptUpdateRecord namespace, scriptData, scriptType, @logger

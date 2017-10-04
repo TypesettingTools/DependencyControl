@@ -3,9 +3,10 @@
 -- @classmod SQLiteMapper
 
 Logger = require "l0.DependencyControl.Logger"
+Enum   = require "l0.DependencyControl.Enum"
 
 class SQLiteMapper
-  @SyncState = {
+  @SyncState = Enum "SyncState", {
     Deleted: -1
     New: 0
     Even: 1,
@@ -14,7 +15,7 @@ class SQLiteMapper
     Conflicted: 4
   }
 
-  @SyncDirection = {
+  @SyncDirection = Enum "SyncDirection", {
     Both: 0,
     ObjectToDb: 1,
     DbToObject: -1

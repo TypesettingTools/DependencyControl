@@ -1,5 +1,6 @@
 Common = require "l0.DependencyControl.Common"
 SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
+Enum = require "l0.DependencyControl.Enum"
 
 class DependencyRecord
   msgs = {
@@ -21,18 +22,14 @@ class DependencyRecord
     }
   }
 
-  @RecordType = {
+  @RecordType = Enum "RecordType", {
       Managed: 1
       Unmanaged: 2
   }
 
-  @ScriptType = {
+  @ScriptType = Enum "ScriptType", {
       Automation: 1
       Module: 2
-      name: {
-          legacy: { "macros", "modules" }
-          canonical: {"automation", "modules"}
-      }
   }
 
 

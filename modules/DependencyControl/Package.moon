@@ -4,6 +4,7 @@ Common           = require "l0.DependencyControl.Common"
 Logger           = require "l0.DependencyControl.Logger"
 ConfigHandler    = require "l0.DependencyControl.ConfigHandler"
 DependencyRecord = require "l0.DependencyControl.DependencyRecord"
+Enum             = require "l0.DependencyControl.Enum"
 fileOps          = require "l0.DependencyControl.FileOps"
 
 INSTALLED_PACKAGES_TABLE = "InstalledPackages"
@@ -67,20 +68,20 @@ class Package
     DependencyControl, db = nil
     @logger = Logger fileBaseName: "DependencyControl.Package"
 
-    @InstallState = {
+    @InstallState = Enum "InstallState", {
         Orphaned: -1   -- Package is installed but DepCtrl hasn't seen it around in a while (not yet implemented)
         Absent: 0      -- Package is not installed (not yet implemented)
         Pending: 1     -- Package is scheduled for installation (not yet implemented)
         Downloaded: 2  -- Package has been downloaded and is waiting for a script reload to finish installation
         Installed: 3   -- Package has successfully loaded recently
-    }
+    }, @logger
 
-    @SyncMode = {
+    @SyncMode = Enum "SyncMode", {
         Auto: -1
         ReadOnly: 0
         PreferRead: 1
         PreferWrite: 2
-    }
+    }, @logger
 
     @__injectDependencyControl = (depCtrl) => 
         DependencyControl = depCtrl
@@ -205,7 +206,7 @@ class Package
         @logger\assert packageFieldStore.installState,
                        msgs.getInstallState.retrieveFailed, @namespace, msg
 
-        @config, msg = ConfigHandler\getView Common.globalConfig.file, { DependencyRecord.ScriptType.name.canonical[@scriptType], @namespace },
+        @config, msg = ConfigHandler\getView Common.globalConfig.file, { Common.name.scriptType.canonical[@scriptType], @namespace },
                                              Common.defaultScriptConfig
         @logger\assert @config, msgs.new.configFailed, @namespace, msg
 
@@ -216,7 +217,7 @@ class Package
 
 
     sync: (mode = @@SyncMode.Auto, installState) =>
-        @logger\trace msgs.sync.running, @namespace, @installState, installState or "(#{@installState})", mode
+        @logger\trace msgs.sync.running, @namespace, @@InstallState\describe(@installState), @@InstallState\describe(installState or @installState), mode
 
         if installState
             @installState = installState

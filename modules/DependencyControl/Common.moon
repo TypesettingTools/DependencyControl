@@ -1,6 +1,7 @@
 ffi = require "ffi"
 re = require "re"
 Logger = require "l0.DependencyControl.Logger"
+Enum = require "l0.DependencyControl.Enum"
 
 class DependencyControlCommon
     -- Some terms are shared across components
@@ -27,12 +28,18 @@ class DependencyControlCommon
         capitalize: (str) -> str[1]\upper! .. str\sub 2
     }
 
+    @name: {
+        scriptType: {
+            legacy: { "macros", "modules" }
+            canonical: {"automation", "modules"}
+        }
+    }
 
-    @UpdaterMode = {
+    @UpdaterMode = Enum "UpdaterMode", {
         Disabled: 0
         Manual: 1
         Auto: 2
-    }
+    }, @logger
 
     automationDir: {
         aegisub.decode_path("?user/automation/autoload"),
