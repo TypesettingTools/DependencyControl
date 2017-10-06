@@ -58,7 +58,7 @@ class Enum
 
     setmetatable @, setmetatable {
       __index: (k) =>
-        if @elements[k]
+        if @elements[k] != nil
           return @elements[k]
 
         v = switch type clsIdx
