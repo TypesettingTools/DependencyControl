@@ -167,24 +167,26 @@ class Package
         clsIdx = meta.__index
         packageFieldStore = timestamp: -1
 
-        meta.__index = (key) => 
-            if recordFieldSet[key]
-                @dependencyRecord[key]
-            elseif packageFieldSet[key]
-                packageFieldStore[key]
-            else switch type clsIdx
-                when "function" then clsIdx @, key
-                when "table" then clsIdx[key]
+        setmetatable @, setmetatable {
+            __index: (key) => 
+                if recordFieldSet[key]
+                    @dependencyRecord[key]
+                elseif packageFieldSet[key]
+                    packageFieldStore[key]
+                else switch type clsIdx
+                    when "function" then clsIdx @, key
+                    when "table" then clsIdx[key]
 
-        meta.__newindex = (k, v) =>
-            if recordFieldSet[k]
-                @dependencyRecord[k] = v
-                packageFieldStore.timestamp = os.time!
-            elseif packageFieldSet[k]
-                packageFieldStore[k] = v
-                packageFieldStore.timestamp = os.time! if k != 'timestamp'
-            else
-                rawset @, k, v
+            __newindex: (k, v) =>
+                if recordFieldSet[k]
+                    @dependencyRecord[k] = v
+                    packageFieldStore.timestamp = os.time!
+                elseif packageFieldSet[k]
+                    packageFieldStore[k] = v
+                    packageFieldStore.timestamp = os.time! if k != 'timestamp'
+                else
+                    rawset @, k, v
+        }, clsIdx
 
         @@logger\assert DependencyRecord\isDependencyRecord(dependencyRecord), msgs.new.badRecord, 
                         Logger\describeType dependencyRecord
