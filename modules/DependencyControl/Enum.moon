@@ -27,6 +27,10 @@ msgs = {
   describe: {
     valueNotDefined: "Value '%s' is not defined in enum '%s'."
   }
+  validate: {
+    argPrefix: "Argument %s: " 
+    invalidValue: "%sInvalid value '%s' for enum '%s'." 
+  }
 }
 
 class Enum
@@ -93,3 +97,11 @@ class Enum
       else key
 
     return join and table.concat(keys, join == true and ', ' or join) or keys
+
+
+  validate: (value, argName) =>
+    if value == nil or @__valuesToKeys[value] == nil
+      return nil, msgs.validate.invalidValue\format argName != nil and msgs.validate.argPrefix or "",
+                                                    value, @name
+
+    return true
