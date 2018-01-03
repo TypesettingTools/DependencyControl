@@ -346,7 +346,7 @@ class UpdateTask extends UpdaterBase
                 when "script"
                     file.fullName = "#{@package.dependencyRecord.automationDir}/#{baseName}"
                 when "test"
-                    file.fullName = "#{@pacakge.dependencyRecord.testDir}/#{baseName}"
+                    file.fullName = "#{@package.dependencyRecord.testDir}/#{baseName}"
                     prettyName ..= " (Unit Test)"
                 else
                     file.unknown = true
