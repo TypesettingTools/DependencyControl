@@ -397,12 +397,21 @@ class UpdateTask extends UpdaterBase
         else lfs.rmdir tmpDir
         os.remove file.fullName for file in *update.files when file.delete and not file.unknown
 
-        -- Nuke old module refs and reload
-        oldVer = @package.version
+        -- Run PostInstall or PostUpdate lifecycle hooks
+        oldVersion = @package.version
+        newVersion = DependencyRecord\parseVersion update.version
 
+        haveLifecycleHook, LifecycleHook = pcall require, table.concat {
+            Common.Directories.Lifecycle.Extension,
+            Common.name.scriptType.canonical[@scriptType],
+            @namespace
+        }, ','
+
+        if haveLifecycleHook
+            lifecycleHook = lifecycleHook @package, update, @logger
+            lifecycleHook[isInstall and "postInstall" or "postUpdate"] newVersion, oldVersion        
 
         -- Update complete, refresh module information/configuration
-
         -- modules can be (re)loaded instantly
         -- no matter if we're installing or updating
         if @package.scriptType == DependencyRecord.ScriptType.Module
@@ -435,7 +444,7 @@ class UpdateTask extends UpdaterBase
             -- updated automation scripts have their install record updated
             -- with version information and metadata provided by the update feed
             @package\apply update
-            @package.version = DependencyRecord\parseVersion update.version
+            @package.version = newVersion
 
             -- newly installed macros will only be available after the next script reload
             -- so we don't treat them as fully installed until they register themselves
