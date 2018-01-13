@@ -72,7 +72,6 @@ class DependencyControlBase
             ModuleLoader.createDummyRef @
 
         @configFile = "#{@namespace}.json"
-        @testDir = Common.testDir[@record.scriptType]
 
         @package = Package @record, @@logger
         @package\sync nil, Package.InstallState.Installed
@@ -116,7 +115,11 @@ class DependencyControlBase
 
     registerTests: (...) =>
         -- load external tests
-        haveTests, tests = pcall require, "DepUnit.#{Common.name.scriptType.legacy[@scriptType]}.#{@namespace}"
+        haveTests, tests = pcall require, table.concat {
+            Common.Directories.Test.Extension,
+            Common.name.scriptType.canonical[@scriptType],
+            @namespace
+        }, ','
 
         if haveTests and not @testsLoaded
             @tests, tests.name = tests, @record.name

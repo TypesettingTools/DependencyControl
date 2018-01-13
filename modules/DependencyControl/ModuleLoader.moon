@@ -184,7 +184,7 @@ class ModuleLoader
               mdl._reason for mdl in *@record.requiredModules when mdl.optional and mdl._missing and modules[mdl.name]]
 
     if #missing>0
-      downloadHint = msgs.checkOptionalModules.downloadHint\format Common.automationDir.modules
+      downloadHint = msgs.checkOptionalModules.downloadHint\format Common.Directories.Script[DependencyRecord.ScriptType.Module]
       errorMsg = msgs.checkOptionalModules.missing\format @record.name, table.concat(missing, "\n"), downloadHint
       return false, errorMsg
     return true

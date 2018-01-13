@@ -138,7 +138,7 @@ class Package
     -- private method, as it allows unrestricted namespace choice
     getDatabase = (namespace, init = true, scriptType, logger = @logger, retryCount) =>
         if init == true
-            defaultSchemaPath = fileOps.getNamespacedPath Common.automationDir[scriptType],
+            defaultSchemaPath = fileOps.getNamespacedPath Common.Directories.Script[scriptType],
                                 namespace, ".sql", scriptType == DependencyRecord.ScriptType.Module
             mode = fileOps.attributes defaultSchemaPath, "mode"
             if mode == "file"
@@ -291,10 +291,10 @@ class Package
         if @scriptType == DependencyRecord.ScriptType.Module
             nsp, name = @namespace\match "(.+)%.(.+)"
             pattern = "^#{name}"
-            dir = "#{@automationDir}/#{nsp\gsub '%.', '/'}"
+            dir = "#{@dependencyRecord.directories.script}/#{nsp\gsub '%.', '/'}"
         else
             pattern = "^#{@namespace}"\gsub "%.", "%%."
-            dir = @automationDir
+            dir = @dependencyRecord.directories.script
 
         lfs.chdir dir
         for file in lfs.dir dir

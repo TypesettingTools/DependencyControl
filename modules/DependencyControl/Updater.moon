@@ -342,16 +342,16 @@ class UpdateTask extends UpdaterBase
 
             baseName = scriptSubDir .. file.name
             tmpName, prettyName = "#{tmpDir}/#{file.type}/#{baseName}", baseName
-            switch file.type
-                when "script"
-                    file.fullName = "#{@package.dependencyRecord.automationDir}/#{baseName}"
-                when "test"
-                    file.fullName = "#{@package.dependencyRecord.testDir}/#{baseName}"
-                    prettyName ..= " (Unit Test)"
-                else
-                    file.unknown = true
-                    @logger\log msgs.performUpdate.unknownType, file.name, file.type
-                    continue
+
+            targetDir = @package.dependencyRecord.directories[file.type]
+            if !targetDir
+                file.unknown = true
+                @logger\log msgs.performUpdate.unknownType, file.name, file.type
+                continue
+
+            file.fullName = "#{targetDir}/#{baseName}"
+            prettyName ..= " (#{file.type})"
+
             continue if file.delete
 
             unless type(file.sha1)=="string" and #file.sha1 == 40 and tonumber(file.sha1, 16)
@@ -378,7 +378,7 @@ class UpdateTask extends UpdaterBase
 
         -- move files to their destination directory and clean up
 
-        @logger\log msgs.performUpdate.movingFiles, @package.dependencyRecord.automationDir
+        @logger\log msgs.performUpdate.movingFiles, @package.dependencyRecord.directories.script
         moveErrors = {}
         @logger.indent += 1
         for dl in *dlm.downloads
