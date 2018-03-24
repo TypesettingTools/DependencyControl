@@ -139,10 +139,10 @@ class Package
     -- private method, as it allows unrestricted namespace choice
     getDatabase = (namespace, init = true, scriptType, logger = @logger, retryCount) =>
         if init == true
-            baseSchemaPath = (LocationResolver namespace, scriptType, logger)\getPath '/base.sql',
-                LocationResolver.Category.SqliteSchema
+            locationResolver = LocationResolver namespace, scriptType, logger
+            baseSchemaPath = locationResolver\getPathPrefix LocationResolver.Category.SqliteSchema
 
-            mode = fileOps.attributes baseSchemaPath, "mode"
+            mode = fileOps.attributes locationResolver\getPath("/base.sql", LocationResolver.Category.SqliteSchema), "mode"
             if mode == "file"
                 logger\trace msgs.getDatabase.foundDefaultSchema, namespace, baseSchemaPath
                 init = baseSchemaPath

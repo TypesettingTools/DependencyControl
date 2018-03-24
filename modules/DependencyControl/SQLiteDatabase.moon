@@ -2,29 +2,12 @@
 -- SQLite database interface with some helper methods to craft statements
 -- @classmod SQLiteDatabase
 
+lfs = require "lfs"
 lsqlite3 =     require "lsqlite3"
 Logger =       require "l0.DependencyControl.Logger"
 fileOps =      require "l0.DependencyControl.FileOps"
 PreciseTimer = require "PT.PreciseTimer"
 Enum =         require "l0.DependencyControl.Enum"
-
-[[
-    scripts should be able to provide schemata in automation\schema
-        scripts can provide hooks for doing custom update/install steps
-            parameters passed: old and new script version, required modules, own dep rec
-    databases will be stored by namespace in automation\db
-
-    -----
-    --- name is relative to own namespace if it doesn't contain any dot, otherwise treated as namespace
-    --- init will be automatically run when database is opened and doesn't exist yet
-    --- init == true -> use default schema if available
-    --- init == false -> don't use default schema even if available
-    --- init is string -> treat as schema file name relative to db namespace
-    --- init is a table of strings -> run a bunch of of sql queries
-    --- init is a function -> run a custom init function, passing in the db handle
-    DepCtrl\openDatabase(name = "" , init = nil)
-    schemaPath = "?user/automation/schema"
-]]
 
 -- TODO: implement default, overridable progress callback
 class SQLiteDatabase
@@ -71,15 +54,27 @@ class SQLiteDatabase
         exec: {
             errorDetail: "In statement '%s': %s"
         }
+        getSchemaUpgrades: {
+            noSchemaDirectory: "No such schema directory: %s"
+            unrecognizedFile: "Skipped unrecognized schema file '%s'..."
+            failedReadFile: "Failed to read schema file '%s' (%s)."
+        }
+        getInitializerType: {
+            cantStatPath: "Can't access path to database initializer '%s': %s"
+            badPathMode: "Expected path to database initializer '%s' to be a file or directory, got a %s."
+        }
         init: {
             execFailed: "Could not initialize database: SQL execution failed with code %d (%s)."
+            noInitializer: "No database intializer specified."
         }
         insert: {
             unsupportedType: "Could not insert Lua table into database table '%s': value '%s' of field '%s' with type '%s' is not supported."
         }
-        open: {
-            cantStatFile: "Can't access path to database '%s' (%s): %s"
+        exists: {
+            cantStatPath: "Can't access path to database '%s' (%s): %s"
             notAFile: "Path to database '%s' (%s) must point to a file, got a %s."
+        }
+        open: {
             initFailed: "Failed to initialize database structure: %s"
         }
         select: {
@@ -87,6 +82,17 @@ class SQLiteDatabase
         }
         traceCallback: {
             runningStatement: "Running statement \"%s\" on database \"%s\"..."
+        }
+        common: {
+            notOpen: "No open database connection."
+            execFailed: "SQL execution failed with code %d (%s)."
+        }
+        upgradeSchema: {
+            currentVersion: "Database '%s' is at schema version %d"
+            noPathToNewerVersion: "An upgrade to database '%s' schema version %d exists, but no path to reach prerequisite version %d is available from highest reachable version %d."
+            targetNotReached: "Could not find an upgrade path to target schema version %d (current version: %d; highest reachable: %d)"
+            upgradeFailed: "Could not perform database upgrade from schema version %d to version %d: SQL execution failed with code %d (%s)."
+            noSchemaDirectory: "Could not find or access default or specified schema directory %s."
         }
     }
 
@@ -127,6 +133,14 @@ class SQLiteDatabase
         OR: 1
     }
 
+    @InitializerType = Enum "InitializerType", {
+        None: 0,
+        SchemaFile: 1,
+        SchemaDirectory: 2,
+        SqlSequence: 3,
+        Function: 4
+    }
+
     --- Translates an SQLite error code into a descriptive message.
     -- @static
     -- @tparam number code an error code returneed by @{SQLiteDatabase:exec}, @{SQLiteDatabase:init},
@@ -149,15 +163,42 @@ class SQLiteDatabase
     @isComplete = (sql) =>
         return lsqlite3.complete sql
 
+    getInitializerType = (initializer) ->
+        switch type initializer
+            when "string" -- use schema file or directory path
+                path, errMsg = fileOps.validateFullPath initializer
+                return nil, errMsg unless path
+
+                mode, errMsg = fileOps.attributes path, "mode"
+                if mode == nil
+                    return nil, msgs.getInitializerType.cantStatPath\format errMsg, @name, path, errMsg
+
+                if mode == "directory"
+                   return SQLiteDatabase.InitializerType.SchemaDirectory
+                else if mode != "file"
+                    return nil, msgs.getInitializerType.badPathMode\format path, mode
+
+                return SQLiteDatabase.InitializerType.SchemaFile
+
+            when "table" -- run a sequence of SQL statements
+                return SQLiteDatabase.InitializerType.SqlSequence
+            when "function" -- run a custom init function, passing in the db connection
+                return SQLiteDatabase.InitializerType.Function
+            when "nil"
+                return SQLiteDatabase.InitializerType.None
+
     -- name must be a valid namespace
-    new: (@name, initializer, @maxRetries = 20, @logger = Logger fileBaseName: @@__name, fileSubName: @name) =>
+    new: (@name, @initializer, @maxRetries = 20, @logger = Logger fileBaseName: @@__name, fileSubName: @name) =>
         @path, errMsg = fileOps.getNamespacedPath dbPath, @name, ".sqlite"
         assert @path, errMsg
 
         res, errMsg = fileOps.mkdir @path, true
         assert res != nil, errMsg
 
-        res, errMsg = @open initializer
+        @initializerType, errMsg = getInitializerType @initializer
+        assert @initializerType != nil, errMsg
+
+        res, errMsg = @open @initializer
         assert res != nil, errMsg
 
     --- Closes the database connection.
@@ -204,7 +245,7 @@ class SQLiteDatabase
 
 
     --- Runs an SQL query against the database request and calls the supplied callback for every row returned.
-    -- A row is represented as hash table of columen values keyed by column names 
+    -- A row is represented as hash table of columen values keyed by column names
     -- If no callback is specified, all rows will be collected and returned in a list.
     -- @tparam string sql a sequence of sql statements
     -- @tparam[opt] function queryCallback(row, rowNumber) an optional callback to process every matching row
@@ -213,7 +254,7 @@ class SQLiteDatabase
     -- @treturn[2] boolean false The query was aborted while it was running
     -- @treturn[2] string a message describing the abort reason
     -- @treturn[3] nil an error occured while trying to run the query
-    -- @treturn[3] string an error message 
+    -- @treturn[3] string an error message
     exec: (sql, queryCallback) =>
         rows = {n: 0} unless queryCallback
 
@@ -275,7 +316,7 @@ class SQLiteDatabase
         fragments = [formatCondition col, val for col, val in pairs conditions]
         return if #fragments > 0
             conditionalTemplate\format table.concat fragments, operatorStatements[conditionOperator]
-        else ""  
+        else ""
 
 
     selectTemplate = "SELECT %s from '%s' %s"
@@ -283,7 +324,7 @@ class SQLiteDatabase
         fieldNames = fields == nil and "*" or table.concat fields, ","
 
         return @getRows selectTemplate\format fieldNames, tblName,
-                        craftWhereStatement @@, conditions, conditionOperator 
+                        craftWhereStatement @@, conditions, conditionOperator
 
 
     selectFirst: (...) =>
@@ -322,25 +363,118 @@ class SQLiteDatabase
     delete: (tblName, conditions, conditionOperator = @@Operators.AND) =>
         @exec deleteTemplate\format tblName, craftWhereStatement @@, conditions, conditionOperator
 
+    init: (initializer = @initializer) =>
+        initializerType = getInitializerType @initializer
 
-    init: (initializer) =>
         local data
-        switch type initializer
-            when "string" -- use schema file path
-                path, errMsg = fileOps.validateFullPath initializer
-                return nil, errMsg unless path
-                data, errMsg = fileOps.readFile path
+        switch type initializerType
+            when @@InitializerType.SchemaFile
+                data, errMsg = fileOps.readFile initializer
                 unless data
                     return nil, errMsg
-            when "table" -- run a sequence of SQL statements
+
+            when @@InitializerType.SchemaDirectory
+                data, errMsg = fileOps.readFile "#{initializer}/base.sql"
+                unless data
+                    return nil, errMsg
+
+            when @@InitializerType.SqlSequence
                 data = table.concat initializer, "\n"
-            when "function" -- run a custom init function, passing in the db connection
+            when @@InitializerType.Function
                 return initializer @db
+            when @@InitializerType.None
+                return nil, msgs.init.noInitializer
 
         res, errMsg, code = @exec data
         if res
             return true
         else return nil, msgs.init.execFailed\format(code, errMsg), code
+
+    getSchemaVersion: =>
+        return nil, msgs.common.notOpen unless @isOpen!
+
+        res, rows, code = @exec "PRAGMA user_version"
+        return nil, msgs.common.execFailed\format(code, rows), code unless res
+
+        return tonumber rows[1].user_version
+
+    getSchemaUpgradeCandidates: (schemaPath = @initializerType == @@InitializerType.SchemaDirectory and @initializer or nil) =>
+        if schemaPath == nil
+            return false
+
+        if "directory" != fileOps.attributes schemaPath, "mode"
+            return nil, msgs.getSchemaUpgrades.noSchemaDirectory, schemaPath
+
+        upgrades = {}
+        for fileName in lfs.dir schemaPath
+            fromVer, toVer = fileName\match "(%d+)%-(%d+).sql"
+            if not fromVer or not toVer
+                @logger\warn msgs.getSchemaUpgrades.unrecognizedFile, fileName unless fileName == "base.sql"
+                continue
+
+            filePath = "#{schemaPath}/#{fileName}"
+            sql, err = fileOps.readFile filePath
+            return nil, msgs.getSchemaUpgrades.failedReadFile\format filePath, err unless sql
+
+            table.insert upgrades, {
+                fromVer: tonumber fromVer,
+                toVer: tonumber toVer,
+                :sql
+            }
+
+        return upgrades
+
+    upgradeSchema: (targetVersion, candidates) =>
+        if candidates == nil or "string" == type candidates
+            candidates, errMsg = @getSchemaUpgradeCandidates candidates
+            unless candidates
+                return nil, msgs.upgradeSchema.noSchemaDirectory\format errMsg and "(#{errMsg})" or ""
+
+        return nil, msgs.common.notOpen unless @isOpen!
+        currentVersion = @getSchemaVersion!
+        @logger\trace msgs.upgradeSchema.currentVersion, @name, currentVersion
+
+        trimCandidates = (minVer, maxVer = math.huge) ->
+            candidates = [cnd for cnd in *candidates when cnd.fromVer >= minVer and cnd.toVer <= maxVer]
+
+        trimCandidates currentVersion, targetVersion
+        table.sort candidates, (a, b) -> a.fromVer < b.fromVer or a.toVer > b.toVer
+
+        upgrades, upgradeVersion = {}, currentVersion
+        while #candidates > 0 do with candidates[1]
+            if .fromVer > upgradeVersion
+                @logger\warn msgs.upgradeSchema.noPathToNewerVersion, @name, .toVer, .fromVer, upgradeVersion
+                break
+
+            table.insert upgrades, candidates[1]
+            upgradeVersion = .toVer
+            trimCandidates upgradeVersion
+
+        if targetVersion and targetVersion > upgradeVersion
+            return nil, msgs.upgradeSchema.targetNotReached\format targetVersion, currentVersion, upgradeVersion
+
+        -- TODO: create a db backup and roll back if things go south here
+        for upgrade in *upgrades
+            res, errMsg, code = @exec upgrade.sql
+            if res
+                -- TODO: check whether or not user_version has actually been incremented as advertised because developers can't be trusted with anything
+                return true
+            else return nil, msgs.upgradeSchema.upgradeFailed\format(upgrade.fromVer, upgrade.toVer, code, errMsg), code
+
+        return upgradeVersion, upgrades
+
+    exists: =>
+        -- check if the db path is accessible and points to a file
+        mode, errMsg = fileOps.attributes @path, "mode"
+        switch mode
+            when nil
+                return nil, msgs.exists.cantStatPath\format errMsg, @name, @path, errMsg
+            when false
+                return false
+            when "file"
+                return true
+            else return nil, msgs.exists.notAFile\format @name, @path, mode
+
 
     isOpen: =>
         return @db and @db\isopen!
@@ -358,22 +492,21 @@ class SQLiteDatabase
         @lastStatement = statement
         @logger\trace msgs.traceCallback.runningStatement\format statement, @name
 
-    open: (initializer) =>
+    open: (initializer = @initializer) =>
         return false if @isOpen!
 
-        -- check if the db path is accessible and points to a file
-        mode, errMsg = fileOps.attributes @path, "mode"
-        if mode == nil
-            return nil, msgs.open.cantStatFile\format errMsg, @name, @path, errMsg
-        elseif mode and mode != "file"
-            return nil, msgs.open.notAFile\format @name, @path, mode
+        dbExists, errMsg = @exists!
+        return nil, errMsg if dbExists == nil
 
         -- open the database connection, will create db file automatically
         @db, errCode, errMsg = lsqlite3.open @path
         return nil, errMsg, errCode unless @db
 
-        -- initialize database on db file creation
-        if mode == false
+        initializerType, errMsg = getInitializerType initializer
+        return nil, errMsg unless initializerType
+
+        -- initialize database on db file creation or when schema version is zero
+        if initializerType != @@InitializerType.None and (not dbExists or 0 == @getSchemaVersion!)
             res, errMsg = @init initializer
             unless res
                 @drop! -- delete the db if init failed, so we can try again later
