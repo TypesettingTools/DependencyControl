@@ -41,35 +41,6 @@ class DependencyControlCommon
         Auto: 2
     }, @logger
 
-    automationBaseDir = aegisub.decode_path "?user/automation"
-    automationDirExt = ""
-
-    lifecycleBaseDir = aegisub.decode_path "?user/automation/lifecycle"
-    lifecycleDirExt = "DepLifecycle"
-
-    testBaseDir = aegisub.decode_path "?user/automation/tests"
-    testDirExt = "DepUnit"
-
-    @Directories = {
-        Script: {
-            "#{automationBaseDir}/autoload",
-            "#{automationBaseDir}/include",
-            Base: automationBaseDir,
-            Extension: automationDirExt
-        }
-        Test: {
-            "#{testBaseDir}/DepUnit/automation",
-            "#{testBaseDir}/DepUnit/modules",
-            Base: testBaseDir,
-            Extension: testDirExt
-        }
-        Lifecycle: {
-            "#{lifecycleBaseDir}/DepLifecycle/automation",
-            "#{lifecycleBaseDir}/DepLifecycle/modules",
-            Base: lifecycleBaseDir,
-            Extension: lifecycleDirExt
-        }
-    }
 
     namespaceValidation = re.compile "^(?:[-\\w]+\\.)+[-\\w]+$"
     @validateNamespace = (namespace) ->

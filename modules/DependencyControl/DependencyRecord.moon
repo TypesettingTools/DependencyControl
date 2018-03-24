@@ -85,8 +85,6 @@ class DependencyRecord
       namespaceValid, errMsg = Common.validateNamespace @namespace
       return nil, errMsg unless namespaceValid
 
-    @directories = {k\lower!, v[@scriptType] for k, v in pairs Common.Directories}
-
     @version, errMsg = @@parseVersion version
     unless @version
       return nil, msgs.__import.badVersion\format errMsg

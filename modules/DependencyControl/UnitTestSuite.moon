@@ -1,10 +1,10 @@
-
+LocationResolver = require "l0.DependencyControl.LocationResolver"
 Logger = require "l0.DependencyControl.Logger"
 Common = require "l0.DependencyControl.Common"
 re = require "aegisub.re"
 
 -- ensure tests can be loaded using require
-package.path ..= Common.Directories.Test.Base .. "/?.lua;"
+package.path ..= LocationResolver.Directories[LocationResolver.Category.Test].Base.. "/?.lua;"
 
 --- A class for all single unit tests.
 -- Provides useful assertion and logging methods for a user-specified test function.

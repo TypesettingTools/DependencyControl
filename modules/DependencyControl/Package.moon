@@ -6,6 +6,7 @@ ConfigHandler    = require "l0.DependencyControl.ConfigHandler"
 DependencyRecord = require "l0.DependencyControl.DependencyRecord"
 Enum             = require "l0.DependencyControl.Enum"
 fileOps          = require "l0.DependencyControl.FileOps"
+LocationResolver = require "l0.DependencyControl.LocationResolver"
 
 INSTALLED_PACKAGES_TABLE = "InstalledPackages"
 
@@ -83,7 +84,7 @@ class Package
         PreferWrite: 2
     }, @logger
 
-    @__injectDependencyControl = (depCtrl) => 
+    @__injectDependencyControl = (depCtrl) =>
         DependencyControl = depCtrl
 
     @find = (namespace, logger = @logger) =>
@@ -133,17 +134,18 @@ class Package
                 @@InstallState.Absent
             else packageInfo.InstallState, packageInfo
 
-    
-    -- connects to an exisiting database or creates and inititalizes one in case it doesn't exist  
+
+    -- connects to an exisiting database or creates and inititalizes one in case it doesn't exist
     -- private method, as it allows unrestricted namespace choice
     getDatabase = (namespace, init = true, scriptType, logger = @logger, retryCount) =>
         if init == true
-            defaultSchemaPath = fileOps.getNamespacedPath Common.Directories.Script[scriptType],
-                                namespace, ".sql", scriptType == DependencyRecord.ScriptType.Module
-            mode = fileOps.attributes defaultSchemaPath, "mode"
+            baseSchemaPath = (LocationResolver namespace, scriptType, logger)\getPath '/base.sql',
+                LocationResolver.Category.SqliteSchema
+
+            mode = fileOps.attributes baseSchemaPath, "mode"
             if mode == "file"
-                logger\trace msgs.getDatabase.foundDefaultSchema, namespace, defaultSchemaPath
-                init = defaultSchemaPath
+                logger\trace msgs.getDatabase.foundDefaultSchema, namespace, baseSchemaPath
+                init = baseSchemaPath
             else init = nil
 
         success, db = pcall SQLiteDatabase, namespace, init, retryCount, logger
@@ -153,7 +155,7 @@ class Package
 
     -- public version of the database provider
     -- restricts a package to database names within its own namespace
-    getDatabase: (namespaceExtension = "", init = true) =>
+    getDatabase: (namespaceExtension, init = true) =>
         namespace = @namespace
         namespace ..= ".#{namespaceExtension}" if namespaceExtension
         return getDatabase @@, namespace, init, @scriptType, @logger
@@ -168,7 +170,7 @@ class Package
         packageFieldStore = timestamp: -1
 
         setmetatable @, setmetatable {
-            __index: (key) => 
+            __index: (key) =>
                 if recordFieldSet[key]
                     @dependencyRecord[key]
                 elseif packageFieldSet[key]
@@ -188,7 +190,7 @@ class Package
                     rawset @, k, v
         }, clsIdx
 
-        @@logger\assert DependencyRecord\isDependencyRecord(dependencyRecord), msgs.new.badRecord, 
+        @logger\assert DependencyRecord\isDependencyRecord(dependencyRecord), msgs.new.badRecord,
                         Logger\describeType dependencyRecord
         @dependencyRecord = dependencyRecord
 
@@ -203,6 +205,8 @@ class Package
             timestampKey: "timestamp"
             logger: @logger
         }
+
+        @locationResolver = LocationResolver @dependencyRecord.namespace, @dependencyRecord.scriptType, @logger
 
         packageFieldStore.installState, msg = @@getInstallState @namespace, @scriptType
         @logger\assert packageFieldStore.installState,
@@ -240,7 +244,7 @@ class Package
             @logger\warn msgs.sync.conflicted, @dependencyRecord.namespace, msgs.sync.modes[mode-1]
             return mode >= @@SyncMode.PreferWrite and objectValues or dbValues, keys
 
-        res, msg = @mapper\sync reconciler, nil, nil, 
+        res, msg = @mapper\sync reconciler, nil, nil,
                                 @mode == @@SyncMode.ReadOnly and SQLiteMapper.SyncDirection.DbToObject or SQLiteMapper.SyncDirection.Both
 
         @logger\debug msgs.new.syncFailed, @dependencyRecord.namespace, msg unless res

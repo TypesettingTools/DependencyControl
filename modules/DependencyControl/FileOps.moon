@@ -354,14 +354,14 @@ class FileOps
 
         return path, dev, dir, file
 
-    getNamespacedPath: (basePath, namespace, ext, useSubfolders = true) ->
+    getNamespacedPath: (basePath, namespace, ext, nested = true) ->
         res, msg = Common.validateNamespace namespace
         return nil, msg unless res
 
         res, msg = FileOps.validateFullPath basePath
         return nil, msgs.getNamespacedPath.badBasePath\format basePath, msg unless res
 
-        path = "#{basePath}/#{useSubfolders and namespace\gsub("%.", "/") or namespace}#{ext}"
+        path = "#{basePath}/#{nested and namespace\gsub("%.", "/") or namespace}#{ext}"
         path, msg = FileOps.validateFullPath path
         return nil, msgs.getNamespacedPath.badPath\format path, msg unless res
 

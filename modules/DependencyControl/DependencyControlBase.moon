@@ -10,6 +10,7 @@ Updater =          require "l0.DependencyControl.Updater"
 ModuleLoader =     require "l0.DependencyControl.ModuleLoader"
 Package =          require "l0.DependencyControl.Package"
 DependencyRecord = require "l0.DependencyControl.DependencyRecord"
+LocationResolver = require "l0.DependencyControl.LocationResolver"
 
 class DependencyControlBase
     msgs = {
@@ -115,11 +116,8 @@ class DependencyControlBase
 
     registerTests: (...) =>
         -- load external tests
-        haveTests, tests = pcall require, table.concat {
-            Common.Directories.Test.Extension,
-            Common.name.scriptType.canonical[@scriptType],
-            @namespace
-        }, ','
+        resolver = LocationResolver @record.namespace, @record.scriptType, @@logger
+        haveTests, tests = resolver\require LocationResolver.Category.Test
 
         if haveTests and not @testsLoaded
             @tests, tests.name = tests, @record.name

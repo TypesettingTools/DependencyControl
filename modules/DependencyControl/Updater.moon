@@ -9,6 +9,7 @@ Common =           require "l0.DependencyControl.Common"
 ModuleLoader =     require "l0.DependencyControl.ModuleLoader"
 Package =          require "l0.DependencyControl.Package"
 DependencyRecord = require "l0.DependencyControl.DependencyRecord"
+LocationResolver = require "l0.DependencyControl.LocationResolver"
 
 import moon from require "moonscript.util"
 
@@ -333,21 +334,26 @@ class UpdateTask extends UpdaterBase
 
         @logger\log msgs.performUpdate.updateReady, tmpDir
 
-        scriptSubDir = @package.namespace
-        scriptSubDir = scriptSubDir\gsub "%.","/" if @package.scriptType == DependencyRecord.ScriptType.Module
-
         dlm\clear!
         for file in *update.files
             file.type or= "script"
 
-            baseName = scriptSubDir .. file.name
-            tmpName, prettyName = "#{tmpDir}/#{file.type}/#{baseName}", baseName
-
-            targetDir = @package.dependencyRecord.directories[file.type]
-            if !targetDir
+            targetDir = LocationResolver.Directories[file.type]
+            unless targetDir
                 file.unknown = true
                 @logger\log msgs.performUpdate.unknownType, file.name, file.type
                 continue
+
+            scriptSubDir = switch targetDir.Mode
+                when Common.DirectoryMode.FlatAutomation
+                    @package.namespace\gsub "%.","/" if @package.scriptType == DependencyRecord.ScriptType.Module
+                when Common.DirectoryMode.Flat
+                    @package.namespace
+                when Common.DirectoryMode.Nested
+                    @package.namespace\gsub "%.","/"
+
+            baseName = scriptSubDir .. file.name
+            tmpName, prettyName = "#{tmpDir}/#{file.type}/#{baseName}", baseName
 
             file.fullName = "#{targetDir}/#{baseName}"
             prettyName ..= " (#{file.type})"
@@ -378,7 +384,7 @@ class UpdateTask extends UpdaterBase
 
         -- move files to their destination directory and clean up
 
-        @logger\log msgs.performUpdate.movingFiles, @package.dependencyRecord.directories.script
+        @logger\log msgs.performUpdate.movingFiles, @package.locationResolver.directories.script
         moveErrors = {}
         @logger.indent += 1
         for dl in *dlm.downloads
@@ -401,15 +407,12 @@ class UpdateTask extends UpdaterBase
         oldVersion = @package.version
         newVersion = DependencyRecord\parseVersion update.version
 
-        haveLifecycleHook, LifecycleHook = pcall require, table.concat {
-            Common.Directories.Lifecycle.Extension,
-            Common.name.scriptType.canonical[@scriptType],
-            @namespace
-        }, ','
+        resolver = LocationResolver @namespace, @scriptType, @logger
+        haveLifecycleHook, LifecycleHook = resolver\require LocationResolver.Category.Lifecycle
 
         if haveLifecycleHook
             lifecycleHook = lifecycleHook @package, update, @logger
-            lifecycleHook[isInstall and "postInstall" or "postUpdate"] newVersion, oldVersion        
+            lifecycleHook[isInstall and "postInstall" or "postUpdate"] newVersion, oldVersion
 
         -- Update complete, refresh module information/configuration
         -- modules can be (re)loaded instantly
@@ -438,7 +441,7 @@ class UpdateTask extends UpdaterBase
             if isInstall
                 res, msg = @package\sync Package.SyncMode.ReadOnly
                 if @package.InstallState != Package.InstallState.Absent
-                    @logger\warn msgs.performUpdate.packageAlreadyRegistered, @package.namespace 
+                    @logger\warn msgs.performUpdate.packageAlreadyRegistered, @package.namespace
                 return finish -59, msg unless res
 
             -- updated automation scripts have their install record updated
@@ -448,7 +451,7 @@ class UpdateTask extends UpdaterBase
 
             -- newly installed macros will only be available after the next script reload
             -- so we don't treat them as fully installed until they register themselves
-            res, msg = @package\sync Package.SyncMode.PreferWrite, 
+            res, msg = @package\sync Package.SyncMode.PreferWrite,
                                      @package.InstallState == Package.InstallState.Absent and Package.InstallState.Downloaded or nil
             return finish -60, msg unless res
 
@@ -525,7 +528,7 @@ class Updater extends UpdaterBase
         success, task = pcall UpdateTask, package,
                               targetVersion, addFeeds, exhaustive, channel, optional, @
         unless success
-            return nil, -999, @@decodeError -999,  package.name or package.namespace, package.scriptType, isInstall, task 
+            return nil, -999, @@decodeError -999,  package.name or package.namespace, package.scriptType, isInstall, task
 
         @tasks[package.scriptType][package.namespace] = task
         return task
