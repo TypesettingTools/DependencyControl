@@ -47,11 +47,11 @@ class Logger
         prefixWin = @usePrefixWindow and prefix or ""
         lineFeed = insertLineFeed and "\n" or ""
         indentStr = indent==0 and "" or @indentStr\rep(indent) .. " "
-        
+
         msg = if @lastHadLineFeed
             @format msg, indent, ...
         elseif 0 < select "#", ...
-            msg\format ...
+            (tostring msg)\format ...
 
         show = aegisub.log and @toWindow
         if @toFile and level <= @maxToFileLevel
@@ -71,9 +71,9 @@ class Logger
     format: (msg, indent, ...) =>
         if type(msg) == "table"
             msg = table.concat msg, "\n"
-        
+
         if 0 < select "#", ...
-            msg = msg\format ...
+            msg = (tostring msg)\format ...
 
         return msg unless indent>0
 
