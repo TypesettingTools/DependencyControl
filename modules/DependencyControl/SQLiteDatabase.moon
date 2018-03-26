@@ -13,6 +13,11 @@ Enum =         require "l0.DependencyControl.Enum"
 class SQLiteDatabase
     dbPath = "?user/db"
     msgs = {
+        backup: {
+            copyFailed: "Failed to copy database to '%s': %s."
+            openFailed: "Failed to reopen database after backup: %s"
+            closeFailed: "Failed to close database for backup: %s"
+        }
         busyHandler: {
             retry: "Database '%s' is busy, retrying (%d/%d)..."
             abort: "Aborted transaction to database '%s': retry limit (%d) reached."
@@ -76,6 +81,14 @@ class SQLiteDatabase
         }
         open: {
             initFailed: "Failed to initialize database structure: %s"
+        }
+        restore: {
+            cantStatBackup: "Can't access database backup location '%s': %s"
+            backupNotFound: "Could not find database backup file at '%s'."
+            openFailed: "Failed to open database after restoring backup: %s"
+            closeFailed: "Failed to close database for restoring backup: %s"
+            deleteDbFailed: "Failed to delete database in order to restore backup: %s"
+            deleteBackupFailed: "Failed to delete database backup after restore: %s"
         }
         select: {
             conditionColumnValueCountMismatch: "Select conditions must have the sumber number of columns as "
@@ -200,6 +213,19 @@ class SQLiteDatabase
 
         res, errMsg = @open @initializer
         assert res != nil, errMsg
+
+    backup: (path = "#{@path}.bak") =>
+        wasOpen, errMsg = @close!
+        return msgs.backup.closeFailed\format errMsg if wasOpen == nil
+
+        success, errMsg = fileOps.copy @path, path
+        return msgs.backup.copyFailed\format path, errMsg unless success
+
+        if wasOpen
+            success, errMsg = @open!
+            return msgs.backup.openFailed\format errMsg unless success
+
+        return path
 
     --- Closes the database connection.
     -- This is usually not required as the connection is closed automatically
@@ -423,6 +449,31 @@ class SQLiteDatabase
             }
 
         return upgrades
+
+    restore: (path = "#{@path}.bak") =>
+        mode, errMsg = fileOps.attributes path, "mode"
+        return nil, msgs.exists.cantStatBackup\format path, errMsg if mode == nil
+        return nil, msgs.exists.backupNotFound\format path if mode != "file"
+
+        wasOpen, errMsg = @close!
+        return msgs.restore.closeFailed\format errMsg if wasOpen == nil
+
+        mode, errMsg = fileOps.attributes @path, "mode" -- don't really care about any errors here
+        if mode == "file"
+            success, _, errMsg = fileOps.remove @path
+            return msgs.restore.deleteDbFailed\format @path, errMsg unless success
+
+        success, errMsg = fileOps.copy path, @path
+        return msgs.restore.copyFailed\format path, errMsg unless success
+
+        if wasOpen
+            success, errMsg = @open!
+            return msgs.backup.openFailed\format errMsg unless success
+
+        success, _, errMsg = fileOps.remove path
+        return msgs.restore.deleteBackupFailed\format path, errMsg unless success
+
+        return path
 
     upgradeSchema: (targetVersion, candidates) =>
         if candidates == nil or "string" == type candidates
