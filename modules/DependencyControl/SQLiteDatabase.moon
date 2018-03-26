@@ -101,11 +101,16 @@ class SQLiteDatabase
             execFailed: "SQL execution failed with code %d (%s)."
         }
         upgradeSchema: {
-            currentVersion: "Database '%s' is at schema version %d"
-            noPathToNewerVersion: "An upgrade to database '%s' schema version %d exists, but no path to reach prerequisite version %d is available from highest reachable version %d."
-            targetNotReached: "Could not find an upgrade path to target schema version %d (current version: %d; highest reachable: %d)"
-            upgradeFailed: "Could not perform database upgrade from schema version %d to version %d: SQL execution failed with code %d (%s)."
+            currentVersion: "Database '%s' is at schema v%d"
+            noPathToNewerVersion: "An upgrade to database '%s' schema v%d exists, but no path to reach prerequisite v%d is available from highest reachable version %d."
+            targetNotReached: "Could not find an upgrade path to target schema v%d (current: v%d; highest reachable: v%d)"
+            upgradeFailedError: "Could not perform database upgrade from schema v%d to v%d: SQL execution failed with code %d (%s)."
+            upgradeFailedConsistency: "Could not complete upgrade: database is inconsistent after upgrade from schema v%d (supposed to be at v%d, reporting v%d)."
             noSchemaDirectory: "Could not find or access default or specified schema directory %s."
+            failedBackup: "Failed to create backup before schema upgrade: %s"
+            rollingBackError: "Failed to upgrade database '%s' schema from v%d to v%d (code %d), rolling back..."
+            rollingBackConsistency: "Database '%s' is inconsistent after upgrade from schema v%d (supposed to be at v%d, reporting v%d) , rolling back..."
+            rollbackFailed: "Failed to roll back database using backup file '%s' after failed upgrade from v%d to v%d: %s"
         }
     }
 
@@ -504,13 +509,28 @@ class SQLiteDatabase
         if targetVersion and targetVersion > upgradeVersion
             return nil, msgs.upgradeSchema.targetNotReached\format targetVersion, currentVersion, upgradeVersion
 
-        -- TODO: create a db backup and roll back if things go south here
+        backupPath, errMsg = @backup!
+        return nil, msgs.upgradeSchema.failedBackup\format errMsg unless backupPath
+
+        rollback = (fromVer, toVer) ->
+
         for upgrade in *upgrades
             res, errMsg, code = @exec upgrade.sql
+            newVer = @getSchemaVersion!
+            continue if res and newVer == upgrade.toVer
+
             if res
-                -- TODO: check whether or not user_version has actually been incremented as advertised because developers can't be trusted with anything
-                return true
-            else return nil, msgs.upgradeSchema.upgradeFailed\format(upgrade.fromVer, upgrade.toVer, code, errMsg), code
+                @logger\warn msgs.upgradeSchema.rollingBackConsistency, @name, upgrade.fromVer, upgrade.toVer, newVer
+            else
+                @logger\warn msgs.upgradeSchema.rollingBackError, @name, upgrade.fromVer, upgrade.toVer, code
+
+            success, errMsg = @restore backupPath
+            unless success
+                return nil, msgs.upgradeSchema.rollbackFailed\format backupPath, upgrade.fromVer, upgrade.toVer, errMsg
+
+            if res
+                return nil, msgs.upgradeSchema.upgradeFailedConsistency\format upgrade.fromVer, upgrade.toVer, newVer
+            return nil, msgs.upgradeSchema.upgradeFailed\format(upgrade.fromVer, upgrade.toVer, code, errMsg), code
 
         return upgradeVersion, upgrades
 
