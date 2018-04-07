@@ -106,8 +106,8 @@ class LocationResolver
     parts, haveExtension = {}, @@Directories[category].Extension != ""
 
     table.insert parts, @@Directories[category].Extension if haveExtension
-    table.insert parts, @namespace
     table.insert parts, Common.name.scriptType.canonical[@scriptType]
+    table.insert parts, @namespace
     table.insert parts, script if script
 
     return pcall require, table.concat parts, '.'
