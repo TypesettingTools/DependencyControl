@@ -4,8 +4,8 @@ reservedKeys = {
   "describe",
   "elements"
   "keys",
-  "name", 
-  "test", 
+  "name",
+  "test",
   "values"
 }
 
@@ -13,7 +13,7 @@ reservedKeySet = {v, true for v in *reservedKeys}
 
 msgs = {
   __index: {
-    invalidKeyAccess: "Cannot access invalid key '%s' on Enum '%s'" 
+    invalidKeyAccess: "Cannot access invalid key '%s' on Enum '%s'"
   }
   __newindex: {
     immutableError: "Cannot assign field '%s' to '%s' on immutable Enum '%s'."
@@ -28,15 +28,15 @@ msgs = {
     valueNotDefined: "Value '%s' is not defined in enum '%s'."
   }
   validate: {
-    argPrefix: "Argument %s: " 
-    invalidValue: "%sInvalid value '%s' for enum '%s'." 
+    argPrefix: "Argument %s: "
+    invalidValue: "%sInvalid value '%s' for enum '%s'."
   }
 }
 
 class Enum
   @logger = Logger fileBaseName: "DependencyControl.Enum"
   @reservedKeys = reservedKeys
-  @isReservedKey = (k) => 
+  @isReservedKey = (k) =>
     return type(k) == "string" and (k\sub(1,2) == "__" or reservedKeySet[k]) or false
 
 
@@ -69,9 +69,9 @@ class Enum
           when "function" then clsIdx @, k
           when "table" then clsIdx[k]
         return v if v != nil
-        
-        @__logger\error msgs.__index.invalidKeyAccess, k, @name 
-    
+
+        @__logger\error msgs.__index.invalidKeyAccess, k, @name
+
       __newindex: (k, v) =>
         @__logger\error msgs.__newindex.immutableError, k, v, @name
     }, clsIdx
@@ -93,7 +93,7 @@ class Enum
     keys = for v in *values
       key = @__valuesToKeys[v]
       if key == nil
-        join and '<invalid>' or nil 
+        join and '<invalid>' or nil
       else key
 
     return join and table.concat(keys, join == true and ', ' or join) or keys
