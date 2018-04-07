@@ -10,7 +10,7 @@ automationDirExt = ""
 lifecycleBaseDir = "#{automationBaseDir}/lifecycle"
 lifecycleDirExt = "DepLifecycle"
 
-testBaseDir = "#{automationBaseDir}/tests"
+testBaseDir = "#{automationBaseDir}/test"
 testDirExt = "DepUnit"
 
 sqliteSchemaBaseDir = "#{automationBaseDir}/schema"
