@@ -222,7 +222,8 @@ class UpdateFeed
 
         if @@dumpExpanded
             handle = io.open @fileName\gsub(".json$", ".exp.json"), "w"
-            handle\write(json.encode @data)\close!
+            handle\write(json.encode @data)
+            handle\close!
 
         return @data
 

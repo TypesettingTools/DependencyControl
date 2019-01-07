@@ -58,7 +58,8 @@ class Logger
             @handle = io.open(@fileName, "a") unless @handle
             linePre = @lastHadLineFeed and "#{indentStr}[#{levels[level+1]\upper!}] #{os.date '%H:%M:%S'} #{show and '+' or '•'} " or ""
             line = table.concat({linePre, @usePrefixFile and prefix or "", msg, lineFeed})
-            @handle\write(line)\flush!
+            @handle\write(line)
+            @handle\flush!
 
         -- for some reason the stack trace gets swallowed when not doing the replace
         assert level > 1,"#{indentStr}Error: #{prefixWin}#{msg\gsub ':', ': '}"
