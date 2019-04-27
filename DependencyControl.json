@@ -14,7 +14,8 @@
     "ffi-experiments": "https://raw.githubusercontent.com/torque/ffi-experiments/master/DependencyControl.json",
     "lyger-scripts": "https://raw.githubusercontent.com/TypesettingTools/lyger-Aegisub-Scripts/master/DependencyControl.json",
     "unanimated-scripts": "https://raw.githubusercontent.com/TypesettingTools/unanimated-Aegisub-Scripts/master/DependencyControl.json",
-    "coffeeflux-scripts": "https://raw.githubusercontent.com/TypesettingTools/CoffeeFlux-Aegisub-Scripts/master/DependencyControl.json"
+    "coffeeflux-scripts": "https://raw.githubusercontent.com/TypesettingTools/CoffeeFlux-Aegisub-Scripts/master/DependencyControl.json",
+    "myaamori-scripts": "https://raw.githubusercontent.com/TypesettingTools/Myaamori-Aegisub-Scripts/master/DependencyControl.json"
   },
   "macros": {
     "l0.DependencyControl.Toolbox": {
