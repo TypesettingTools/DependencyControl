@@ -29,7 +29,7 @@ class DependencyControl extends Record
 
 rec = DependencyControl{
     name: "DependencyControl",
-    version: "0.6.3",
+    version: "0.7.0",
     description: "Provides script management and auto-updating for Aegisub macros and modules.",
     author: "line0",
     url: "http://github.com/TypesettingTools/DependencyControl",
