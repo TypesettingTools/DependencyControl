@@ -381,15 +381,17 @@ class UpdateTask extends UpdaterBase
             @ref = ref
 
         else with @record
-            .name, .version, .virtual = @record.name, SemanticVersioning\toNumber update.version
+            .name = @record.name
+            .virtual = false
+            .version = SemanticVersioning\toNumber update.version
             @record\writeConfig!
 
         @updated = true
-        @logger\log msgs.performUpdate.updSuccess, @@terms.capitalize(@@terms.isInstall[wasVirtual]),
+        @logger\log msgs.performUpdate.updSuccess, @@terms.capitalize(@@terms.isInstall[wasVirtual or false]),
                                                    @@terms.scriptType.singular[@record.scriptType],
                                                    @record.name, SemanticVersioning\toString @record.version
 
-        -- Diplay changelog
+        -- Display changelog
         @logger\log update\getChangelog @record, (SemanticVersioning\toNumber oldVer) + 1
         @logger\log msgs.performUpdate.reloadNotice
 

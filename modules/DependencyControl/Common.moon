@@ -15,7 +15,7 @@ class DependencyControlCommon
             [false]: "update"
         }
 
-        capitalize: (str) -> str[1]\upper! .. str\sub 2
+        capitalize: (str) -> (str\sub 1, 1)\upper! .. str\sub 2
     }
 
     -- Common enums
