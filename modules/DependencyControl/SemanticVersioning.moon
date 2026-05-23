@@ -3,7 +3,7 @@ class SemanticVersioning
     toNumber: {
       badString: "Can't parse version string '%s'. Make sure it conforms to semantic versioning standards."
       badType: "Argument had the wrong type: expected a string or number, got a %s."
-      overflow: "Error: %s version must be an integer < 255, got %s."
+      overflow: "Error: %s version must be an integer <= 255, got %s."
     }
   }
 
@@ -26,14 +26,14 @@ class SemanticVersioning
       when "number" then math.max value, 0
       when "nil" then 0
       when "string"
-        matches = {value\match "^(%d+).(%d+).(%d+)$"}
+        matches = {value\match "^(%d+)%.(%d+)%.(%d+)$"}
         if #matches != 3
           return false, msgs.toNumber.badString\format value
 
         version = 0
         for i, part in ipairs semParts
           value = tonumber matches[i]
-          if type(value) != "number" or value > 256
+          if type(value) != "number" or value > 255
             return false, msgs.toNumber.overflow\format part[1], tostring value
 
           version += bit.lshift value, part[2]
