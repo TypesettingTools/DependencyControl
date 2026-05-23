@@ -164,7 +164,7 @@ class ModuleLoader
 
   @checkOptionalModules = (modules) =>
     modules = type(modules)=="string" and {[modules]:true} or {mdl,true for mdl in *modules}
-    missing = [ModuleLoader.formatVersionErrorTemplate @, mdl.moduleName, mdl.version, msl.url,
+    missing = [ModuleLoader.formatVersionErrorTemplate @, mdl.moduleName, mdl.version, mdl.url,
               mdl._reason for mdl in *@requiredModules when mdl.optional and mdl._missing and modules[mdl.name]]
 
     if #missing>0
