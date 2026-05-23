@@ -56,7 +56,7 @@ class ModuleLoader
       return unless type(ref) == "table" and ref.__depCtrlInit
       -- Note to future self: don't change this to a class check! When DepCtrl self-updates
       -- any managed module initialized before will still use the same instance
-      if type(ref.version) != "table" or ref.version.__name != @@__name
+      if type(ref.version) != "table" or not (ref.version.__class and ref.version.__class.__name == @@__name)
         ref.__depCtrlInit @@
 
     with mdl
