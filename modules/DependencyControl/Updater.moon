@@ -122,8 +122,9 @@ class UpdateTask extends UpdaterBase
                 return nil, msgs.checkFeed.downloadFailed\format err
 
         -- select our script and update channel
-        updateRecord = feed\getScript @record.namespace, @record.scriptType, @record.config, false
+        updateRecord, err = feed\getScript @record.namespace, @record.scriptType, @record.config, false
         unless updateRecord
+            return nil, err if err
             return nil, msgs.checkFeed.noData\format @@terms.scriptType.singular[@record.scriptType], @record.name
 
         success, currentChannel = updateRecord\setChannel @channel

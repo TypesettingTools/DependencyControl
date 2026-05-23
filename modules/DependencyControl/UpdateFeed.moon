@@ -106,6 +106,7 @@ class UpdateFeed extends Common
             downloadFailed:  "Download of feed %s to %s failed (%s)."
             cantOpen:        "Can't open downloaded feed for reading (%s)."
             parse:           "Error parsing feed."
+            invalidScriptType: "Invalid or unsupported script type: '%s'. Supported types: %s."
         }
     }
 
@@ -141,13 +142,12 @@ class UpdateFeed extends Common
         feedsHaveBeenTrimmed or= Logger(fileMatchTemplate: fileMatchTemplate, logDir: @config.downloadPath, maxFiles: 20)\trimFiles!
 
         @fileName = fileName or table.concat {@config.downloadPath, fileBaseName, "%04X"\format(math.random 0, 16^4-1), ".json"}
+        @downloadManager = DownloadManager aegisub.decode_path @config.downloadPath
         if @@cache[@url]
             @logger\trace msgs.trace.usingCached
             @data = @@cache[@url]
         elseif autoFetch
             @fetch!
-
-        @downloadManager = DownloadManager aegisub.decode_path @config.downloadPath
 
     getKnownFeeds: =>
         return {} unless @data
@@ -239,13 +239,22 @@ class UpdateFeed extends Common
         return @data
 
     getScript: (namespace, scriptType, config, autoChannel) =>
+        -- legacy compatibility for <= 0.6.3
+        if scriptType == true then scriptType = @@ScriptType.Module
+        elseif scriptType == false then scriptType = @@ScriptType.Automation
+
         section = @@ScriptType.name.legacy[scriptType]
+        unless section
+            err = msgs.errors.invalidScriptType\format scriptType, 
+                table.concat ["#{v} (#{@@ScriptType.name.canonical[v]})" for k, v in pairs @@ScriptType when k != "name"], ", "
+            return nil, err
+        
         scriptData = @data[section][namespace]
         return false unless scriptData
         ScriptUpdateRecord namespace, scriptData, config, scriptType, autoChannel, @logger
 
     getMacro: (namespace, config, autoChannel) =>
-        @getScript namespace, false, config, autoChannel
+        @getScript namespace, @@ScriptType.Automation, config, autoChannel
 
     getModule: (namespace, config, autoChannel) =>
-        @getScript namespace, true, config, autoChannel
+        @getScript namespace, @@ScriptType.Module, config, autoChannel

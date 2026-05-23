@@ -11,7 +11,8 @@ logger.usePrefixWindow = false
 
 msgs = {
     install: {
-        scanning: "Scanning %d available feeds..."
+        scanning: "Scanning %d available feeds...",
+        createScriptUpdateRecordFailed: "Failed to create an update record for %s '%s' from feed %s: %s"
     }
     uninstall: {
         running: "Uninstalling %s '%s'..."
@@ -90,16 +91,22 @@ install = ->
     config = getConfig!
 
     addAvailableToInstall = (tbl, feed, scriptType) ->
-        for namespace, data in pairs feed.data[scriptType]
-            scriptData = feed\getScript namespace, scriptType == "modules", nil, false
+        scriptTypeConfigAndFeedKeyName = DepCtrl.ScriptType.name.legacy[scriptType]
+
+        for namespace, data in pairs feed.data[scriptTypeConfigAndFeedKeyName]
+            scriptData, err = feed\getScript namespace, scriptType, nil, false
+            if err
+                logger\warn msgs.install.createScriptUpdateRecordFailed\format DepCtrl.terms.scriptType.singular[scriptType], namespace, feed.url, err
+                continue
+
             channels, defaultChannel = scriptData\getChannels!
             tbl[namespace] or= {}
             for channel in *channels
                 record = scriptData.data.channels[channel]
                 verNum = DepCtrl.SemanticVersioning\toNumber record.version
-                unless config.c[scriptType][namespace] or (tbl[namespace][channel] and verNum < tbl[namespace][channel].verNum)
+                unless config.c[scriptTypeConfigAndFeedKeyName][namespace] or (tbl[namespace][channel] and verNum < tbl[namespace][channel].verNum)
                     tbl[namespace][channel] = { name: scriptData.name, version: record.version, verNum: verNum, feed: feed.url,
-                                                default: defaultChannel == channel, moduleName: scriptType == "modules" and namespace }
+                                                default: defaultChannel == channel, moduleName: scriptType == DepCtrl.ScriptType.Module and namespace }
         return tbl
 
     buildDlgList = (tbl) ->
@@ -120,8 +127,8 @@ install = ->
 
     logger\log msgs.install.scanning, #feeds
     for feed in *feeds
-        macros = addAvailableToInstall macros, feed, "macros"
-        modules = addAvailableToInstall modules, feed, "modules"
+        macros = addAvailableToInstall macros, feed, DepCtrl.ScriptType.Automation
+        modules = addAvailableToInstall modules, feed, DepCtrl.ScriptType.Module
 
     -- build macro and module lists as well as reverse mappings
     moduleList, moduleMap = buildDlgList modules
