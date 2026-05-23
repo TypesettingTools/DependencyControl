@@ -220,6 +220,9 @@ macroConfig = ->
 
     config\write!
 
+-- required to register DepCtrl test suite
+DepCtrl.__class.version\register DepCtrl
+
 depRec\registerMacros{
     {"Install Script", "Installs an automation script or module on your system.", install},
     {"Update Script", "Manually check and perform updates to any installed script.", update},

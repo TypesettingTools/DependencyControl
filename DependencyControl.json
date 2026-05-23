@@ -76,8 +76,8 @@
       "fileBaseUrl": "@{fileBaseUrl}v@{version}-@{channel}/modules/@{scriptName}",
       "channels": {
         "alpha": {
-          "version": "0.6.3",
-          "released": "2016-02-06",
+          "version": "0.6.4",
+          "released": "2026-05-23",
           "default": true,
           "files": [
             {
@@ -114,6 +114,12 @@
               "name": "/Updater.moon",
               "url": "@{fileBaseUrl}@{fileName}",
               "sha1": "A4AE061724E68B2EFBB7495A477263E1746E228A"
+            },
+            {
+              "name": ".moon",
+              "type": "test",
+              "url": "@{fileBaseUrl}/Tests.moon",
+              "sha1": "1ED8961CAFCADA7E4C04778227EECDC18E509B8D"
             }
           ],
           "requiredModules": [
