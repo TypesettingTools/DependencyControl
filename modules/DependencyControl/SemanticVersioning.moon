@@ -11,7 +11,8 @@ class SemanticVersioning
 
   @toString = (version, precision = "patch") =>
     if type(version) == "string"
-      version = @toNumber version
+      version, err = @toNumber version
+      return nil, err unless version
     
     parts = {0, 0, 0}
     for i, part in ipairs semParts
