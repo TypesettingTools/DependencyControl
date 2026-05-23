@@ -78,12 +78,14 @@ getScriptListDlg = (macros, modules) ->
         {name:  "module",               class: "dropdown", x: 1, y: 1, width: 1,  height: 1, items: modules, value: ""    }
     }
 
-runUpdaterTask = (scriptData, exhaustive) ->
+runUpdaterTask = (scriptData, exhaustive, isInstall) ->
     return unless scriptData
-    task, err = DepCtrl.updater\addTask scriptData, nil, nil, exhaustive, scriptData.channel
-    if task then task\run!
-    else logger\log err
-
+    
+    task, code, extErr = DepCtrl.updater\addTask scriptData, nil, nil, exhaustive, scriptData.channel
+    return task\run! if task 
+    with scriptData
+         logger\log DepCtrl.updater\getUpdaterErrorMsg code, .moduleName or .name,
+            .moduleName and DepCtrl.ScriptType.Module or DepCtrl.ScriptType.Automation, isInstall, extErr
 
 -- Macros
 
@@ -139,8 +141,8 @@ install = ->
 
     -- create and run the update tasks
     macro, mdl = macroMap[res.macro], moduleMap[res.module]
-    runUpdaterTask mdl, false
-    runUpdaterTask macro, false
+    runUpdaterTask mdl, false, true
+    runUpdaterTask macro, false, true
 
 uninstall = ->
     doUninstall = (script) ->
@@ -190,8 +192,8 @@ update = ->
 
     -- create and run the update tasks
     macro, mdl = macroMap[res.macro], moduleMap[res.module]
-    runUpdaterTask mdl, res.exhaustive
-    runUpdaterTask macro, res.exhaustive
+    runUpdaterTask mdl, res.exhaustive, false
+    runUpdaterTask macro, res.exhaustive, false
 
 macroConfig = ->
     config = getConfig "macros"

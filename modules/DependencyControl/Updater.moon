@@ -22,6 +22,7 @@ class UpdaterBase extends Common
             [6]: "The %s of %s '%s' failed because no suitable package could be found %s."
             [5]: "Skipped %s of %s '%s': Another update initiated by %s is already running."
             [7]: "Skipped %s of %s '%s': An internet connection is currently not available."
+            [8]: "Couldn't %s %s '%s' because the requested version is invalid: %s"
             [10]: "Skipped %s of %s '%s': the update task is already running."
             [15]: "Couldn't %s %s '%s' because its requirements could not be satisfied:"
             [30]: "Couldn't %s %s '%s': failed to create temporary download directory %s"
@@ -91,14 +92,15 @@ class UpdateTask extends UpdaterBase
         }
     }
 
-    new: (@record, targetVersion = 0, @addFeeds, @exhaustive, @channel, @optional, @updater) =>
+    new: (@record, targetVersionNumber = 0, @addFeeds, @exhaustive, @channel, @optional, @updater) =>
         DependencyControl or= require "l0.DependencyControl"
         assert @record.__class == DependencyControl, "First parameter must be a #{DependencyControl.__name} object."
+        assert type(targetVersionNumber) == "number", "Second parameter must be a semantic version number in integer format."
 
         @logger = @updater.logger
         @triedFeeds = {}
         @status = nil
-        @targetVersion = SemanticVersioning\toNumber targetVersion
+        @targetVersion = targetVersionNumber
 
         -- set UpdateFeed settings
         @feedConfig = {
@@ -108,10 +110,6 @@ class UpdateTask extends UpdaterBase
 
         return nil, -1 unless @updater.config.c.updaterEnabled -- TODO: check if this even works
         return nil, -2 unless @record\validateNamespace!
-
-    set: (targetVersion, @addFeeds, @exhaustive, @channel, @optional) =>
-        @targetVersion = SemanticVersioning\toNumber targetVersion
-        return @
 
     checkFeed: (feedUrl) =>
         -- get feed contents
@@ -439,18 +437,22 @@ class Updater extends UpdaterBase
             depRec[k] = v for k, v in pairs record
             record = DependencyControl depRec
 
+        targetVersionNumber, err = SemanticVersioning\toNumber targetVersion
+        if (err) then return nil, -8, err
+
         task = @tasks[record.scriptType][record.namespace]
-        if task
-            return task\set targetVersion, addFeeds, exhaustive, channel, optional
-        else
-            task, err = UpdateTask record, targetVersion, addFeeds, exhaustive, channel, optional, @
+        return if task then with task
+            .targetVersion = targetVersionNumber
+            .addFeeds, .exhaustive, .channel, .optional = addFeeds, exhaustive, channel, optional
+
+        task, code = UpdateTask record, targetVersionNumber, addFeeds, exhaustive, channel, optional, @
             @tasks[record.scriptType][record.namespace] = task
-            return task, err
+        return task, code
 
     require: (record, ...) =>
         @logger\assert record.scriptType == @@ScriptType.Module, msgs.require, record.name or record.namespace
         @logger\log "%s module '%s'...", record.virtual and "Installing required" or "Updating outdated", record.name
-        task, code = @addTask record, ...
+        task, code, res = @addTask record, ...
         code, res = task\run true if task
 
         if code == 0 and not task.updated
