@@ -112,7 +112,7 @@ class Record extends Common
         @configFile = configFile or "#{@namespace}.json"
         @automationDir = @@automationDir[@scriptType]
         @testDir = @@testDir[@scriptType]
-        @version, err = @@parseVersion version
+        @version, err = SemanticVersioning\toNumber version
         assert @version, msgs.new.badRecordError\format msgs.new.badRecord.badVersion\format err
 
         @requiredModules or= {}
@@ -183,9 +183,9 @@ class Record extends Common
         assert success, msgs.writeConfig.error\format errMsg
 
 
-    @parseVersion = SemanticVersioning.parse
-
-
+    -- retained for compatibility with DepCtrl <= v0.6.3
+    -- TODO: deprecate w/ v0.7.0 and remove in next major release
+    @getVersionNumber = SemanticVersioning.toNumber
     @getVersionString = SemanticVersioning.toString
 
 
@@ -274,7 +274,7 @@ class Record extends Common
             @registerMacro unpack(macro, 1, 6)
 
     setVersion: (version) =>
-        version, err = @@parseVersion version
+        version, err = SemanticVersioning\toNumber version
         if version
             @version = version
             return version

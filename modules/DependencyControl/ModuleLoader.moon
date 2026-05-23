@@ -2,6 +2,8 @@
 -- Everyting in this class can and will change without any prior notice
 -- and calling any method is guaranteed to interfere with DepdencyControl operation
 
+SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
+
 class ModuleLoader
   msgs = {
     checkOptionalModules: {
@@ -24,7 +26,7 @@ class ModuleLoader
   @formatVersionErrorTemplate = (name, reqVersion, url, reason, ref) =>
     url = url and ": #{url}" or ""
     if ref
-      version = @@parseVersion ref.version
+      version = SemanticVersioning\toNumber ref.version
       return msgs.formatVersionErrorTemplate.outdated\format name, version, reqVersion, url, reason
     else
       reqVersion = reqVersion and " (v#{reqVersion})" or ""

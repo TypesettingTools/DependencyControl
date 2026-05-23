@@ -24,6 +24,7 @@ class DependencyControl extends Record
     @Updater = Updater
     @UnitTestSuite = UnitTestSuite
     @FileOps = FileOps
+    @SemanticVersioning = SemanticVersioning
 
 
 rec = DependencyControl{

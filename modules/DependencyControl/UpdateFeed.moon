@@ -4,6 +4,7 @@ DownloadManager = require "DM.DownloadManager"
 DependencyControl = nil
 Logger            = require "l0.DependencyControl.Logger"
 Common            = require "l0.DependencyControl.Common"
+SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
 
 defaultLogger = Logger fileBaseName: "DepCtrl.UpdateFeed"
 
@@ -53,20 +54,20 @@ class ScriptUpdateRecord extends Common
 
     getChangelog: (versionRecord, minVer = 0) =>
         return "" unless "table" == type @changelog
-        maxVer = DependencyControl\parseVersion @version
-        minVer = DependencyControl\parseVersion minVer
+        maxVer = SemanticVersioning\toNumber @version
+        minVer = SemanticVersioning\toNumber minVer
 
         changelog = {}
         for ver, entry in pairs @changelog
-            ver = DependencyControl\parseVersion ver
-            verStr = DependencyControl\getVersionString ver
+            ver = SemanticVersioning\toNumber ver
+            verStr = SemanticVersioning\toString ver
             if ver >= minVer and ver <= maxVer
                 changelog[#changelog+1] = {ver, verStr, entry}
 
         return "" if #changelog == 0
         table.sort changelog, (a,b) -> a[1]>b[1]
 
-        msg = {msgs.changelog.header\format @name, DependencyControl\getVersionString(@version), @released or "<no date>"}
+        msg = {msgs.changelog.header\format @name, SemanticVersioning\toString(@version), @released or "<no date>"}
         for chg in *changelog
             chg[3] = {chg[3]} if type(chg[3]) ~= "table"
             if #chg[3] > 0

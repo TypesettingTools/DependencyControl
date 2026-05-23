@@ -7,6 +7,7 @@ fileOps =    require "l0.DependencyControl.FileOps"
 Logger =     require "l0.DependencyControl.Logger"
 Common =     require "l0.DependencyControl.Common"
 ModuleLoader = require "l0.DependencyControl.ModuleLoader"
+SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
 DependencyControl = nil
 
 class UpdaterBase extends Common
@@ -97,7 +98,7 @@ class UpdateTask extends UpdaterBase
         @logger = @updater.logger
         @triedFeeds = {}
         @status = nil
-        @targetVersion = DependencyControl\parseVersion targetVersion
+        @targetVersion = SemanticVersioning\toNumber targetVersion
 
         -- set UpdateFeed settings
         @feedConfig = {
@@ -109,7 +110,7 @@ class UpdateTask extends UpdaterBase
         return nil, -2 unless @record\validateNamespace!
 
     set: (targetVersion, @addFeeds, @exhaustive, @channel, @optional) =>
-        @targetVersion = DependencyControl\parseVersion targetVersion
+        @targetVersion = SemanticVersioning\toNumber targetVersion
         return @
 
     checkFeed: (feedUrl) =>
@@ -161,7 +162,7 @@ class UpdateTask extends UpdaterBase
 
         -- check if the script was already updated
         if @updated and not exhaustive and @record\checkVersion @targetVersion
-            @logger\log msgs.run.alreadyUpdated, @record.name, DependencyControl\getVersionString @record.version
+            @logger\log msgs.run.alreadyUpdated, @record.name, SemanticVersioning\toString @record.version
             return 2
 
         -- build feed list
@@ -229,12 +230,12 @@ class UpdateTask extends UpdaterBase
             -- and the version must at least be that returned by at least one feed
             if maxVer>0 and not @record.virtual and @targetVersion <= @record.version
                 @logger\log msgs.run.upToDate, @@terms.scriptType.singular[@record.scriptType],
-                                               @record.name, DependencyControl\getVersionString @record.version
+                                               @record.name, SemanticVersioning\toString @record.version
                 return 0
 
-            res = msgs.run.noFeedAvailExt\format @targetVersion == 0 and "any" or DependencyControl\getVersionString(@targetVersion),
-                                                 @record.virtual and "no" or DependencyControl\getVersionString(@record.version),
-                                                 maxVer<1 and "none" or DependencyControl\getVersionString maxVer
+            res = msgs.run.noFeedAvailExt\format @targetVersion == 0 and "any" or SemanticVersioning\toString(@targetVersion),
+                                                 @record.virtual and "no" or SemanticVersioning\toString(@record.version),
+                                                 maxVer<1 and "none" or SemanticVersioning\toString maxVer
 
             if @optional
                 @logger\log msgs.run.skippedOptional, @record.name, @@terms.isInstall[@record.virtual],
@@ -379,20 +380,20 @@ class UpdateTask extends UpdaterBase
             @ref = ref
 
         else with @record
-            .name, .version, .virtual = @record.name, DependencyControl\parseVersion update.version
+            .name, .version, .virtual = @record.name, SemanticVersioning\toNumber update.version
             @record\writeConfig!
 
         @updated = true
         @logger\log msgs.performUpdate.updSuccess, @@terms.capitalize(@@terms.isInstall[wasVirtual]),
                                                    @@terms.scriptType.singular[@record.scriptType],
-                                                   @record.name, DependencyControl\getVersionString @record.version
+                                                   @record.name, SemanticVersioning\toString @record.version
 
         -- Diplay changelog
-        @logger\log update\getChangelog @record, (DependencyControl\parseVersion oldVer) + 1
+        @logger\log update\getChangelog @record, (SemanticVersioning\toNumber oldVer) + 1
         @logger\log msgs.performUpdate.reloadNotice
 
         -- TODO: check handling of private module copies (need extra return value?)
-        return finish 1, DependencyControl\getVersionString @record.version
+        return finish 1, SemanticVersioning\toString @record.version
 
 
     refreshRecord: =>
@@ -406,7 +407,7 @@ class UpdateTask extends UpdaterBase
                     @logger\log msgs.refreshRecord.unsetVirtual, @@terms.scriptType.singular[.scriptType], .name
                 else
                     @logger\log msgs.refreshRecord.otherUpdate, @@terms.scriptType.singular[.scriptType], .name,
-                                DependencyControl\getVersionString @record.version
+                                SemanticVersioning\toString @record.version
 
 class Updater extends UpdaterBase
     msgs = {
