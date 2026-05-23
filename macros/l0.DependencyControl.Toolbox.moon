@@ -16,7 +16,7 @@ msgs = {
     }
     uninstall: {
         running: "Uninstalling %s '%s'..."
-        success: "%s '%s' was removed sucessfully. Reload your automation scripts or restart Aegisub for the changes to take effect."
+        success: "%s '%s' was removed successfully. Reload your automation scripts or restart Aegisub for the changes to take effect."
         lockedFiles: "%s Some script files are still in use and will be deleted during the next restart/reload:\n%s"
         error: "Error: %s"
     }

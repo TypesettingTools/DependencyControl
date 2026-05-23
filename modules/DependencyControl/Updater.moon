@@ -29,9 +29,9 @@ class UpdaterBase extends Common
             [35]: "Aborted %s of %s '%s' because the feed contained a missing or malformed SHA-1 hash for file %s."
             [50]: "Couldn't finish %s of %s '%s' because some files couldn't be moved to their target location:\n"
             [55]: "%s of %s '%s' succeeded, couldn't be located by the module loader."
-            [56]: "%s of %s '%s' succeeded, but an error occured while loading the module:\n%s"
+            [56]: "%s of %s '%s' succeeded, but an error occurred while loading the module:\n%s"
             [57]: "%s of %s '%s' succeeded, but it's missing a version record."
-            [58]: "%s of unmanaged %s '%s' succeeded, but an error occured while creating a DependencyControl record: %s"
+            [58]: "%s of unmanaged %s '%s' succeeded, but an error occurred while creating a DependencyControl record: %s",
             [100]: "Error (%d) in component %s during %s of %s '%s':\n— %s"
         }
         updaterErrorComponent: {"DownloadManager (adding download)", "DownloadManager"}
@@ -87,8 +87,8 @@ class UpdateTask extends UpdaterBase
             unknownType: "Skipping file '%s': unknown type '%s'."
         }
         refreshRecord: {
-            unsetVirtual: "Update initated by another macro already fetched %s '%s', switching to update mode."
-            otherUpdate: "Update initated by another macro already updated %s '%s' to v%s."
+            unsetVirtual: "Update initiated by another macro already fetched %s '%s', switching to update mode."
+            otherUpdate: "Update initiated by another macro already updated %s '%s' to v%s."
         }
     }
 
@@ -446,7 +446,7 @@ class Updater extends UpdaterBase
             .addFeeds, .exhaustive, .channel, .optional = addFeeds, exhaustive, channel, optional
 
         task, code = UpdateTask record, targetVersionNumber, addFeeds, exhaustive, channel, optional, @
-            @tasks[record.scriptType][record.namespace] = task
+        @tasks[record.scriptType][record.namespace] = task
         return task, code
 
     require: (record, ...) =>

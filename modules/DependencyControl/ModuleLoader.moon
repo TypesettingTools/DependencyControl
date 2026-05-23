@@ -1,6 +1,6 @@
 -- Note: this is a private API intended to be exclusively for internal DependenyControl use
--- Everyting in this class can and will change without any prior notice
--- and calling any method is guaranteed to interfere with DepdencyControl operation
+-- Everything in this class can and will change without any prior notice
+-- and calling any method is guaranteed to interfere with DependencyControl operation
 
 SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
 
