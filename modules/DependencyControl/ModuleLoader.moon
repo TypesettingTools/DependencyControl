@@ -26,7 +26,8 @@ class ModuleLoader
   @formatVersionErrorTemplate = (name, reqVersion, url, reason, ref) =>
     url = url and ": #{url}" or ""
     if ref
-      version = SemanticVersioning\toNumber ref.version
+      -- unmanaged records have refs whose .version is a string instead of a DepCtrl record
+      version = SemanticVersioning\toString type(ref.version) == "table" and ref.version.version or ref.version
       return msgs.formatVersionErrorTemplate.outdated\format name, version, reqVersion, url, reason
     else
       reqVersion = reqVersion and " (v#{reqVersion})" or ""
