@@ -148,7 +148,7 @@ class UpdateTask extends UpdaterBase
 
 
     run: (waitLock, exhaustive = @updater.config.c.tryAllFeeds or @@exhaustive) =>
-        logUpdateError = (code, extErr, virtual = @virtual) ->
+        logUpdateError = (code, extErr, virtual = @record.virtual) ->
             if code < 0
                 @logger\log @getUpdaterErrorMsg code, @record.name, @record.scriptType, virtual, extErr
             return code, extErr
