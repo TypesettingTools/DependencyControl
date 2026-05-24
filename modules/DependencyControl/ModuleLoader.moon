@@ -96,7 +96,7 @@ class ModuleLoader
 
   @loadModules = (modules, addFeeds = {@feed}, skip = @moduleName and {[@moduleName]: true} or {}) =>
     for mdl in *modules
-      continue if skip[mdl]
+      continue if skip[mdl.moduleName]
       with mdl
         ._ref, ._updated, ._missing, ._outdated, ._reason, ._error = nil
 
