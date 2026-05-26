@@ -51,7 +51,7 @@ class Logger
         msg = if @lastHadLineFeed
             @format msg, indent, ...
         elseif 0 < select "#", ...
-            msg\format ...
+            (tostring msg)\format ...
 
         show = aegisub.log and @toWindow
         if @toFile and level <= @maxToFileLevel
@@ -73,7 +73,7 @@ class Logger
             msg = table.concat msg, "\n"
         
         if 0 < select "#", ...
-            msg = msg\format ...
+            msg = (tostring msg)\format ...
 
         return msg unless indent>0
 
@@ -99,7 +99,12 @@ class Logger
     assert: (cond, ...) =>
         if not cond
             @log 1, ...
-        else return cond
+        else return cond, ...
+
+    assertNotNil: (cond, ...) =>
+        if cond == nil
+            @log 1, ...
+        else return cond, ...
 
     progress: (progress=false, msg = "", ...) =>
         if @progressStep and not progress
@@ -115,10 +120,10 @@ class Logger
             @progressStep = step
 
     -- taken from https://github.com/TypesettingCartel/Aegisub-Motion/blob/master/src/Log.moon
-    dump: ( item, ignore, level = @defaultLevel ) =>
-        @log level, @dumpToString item, ignore
+    dump: ( item, ignore, level = @defaultLevel, maxDepth ) =>
+        @log level, @dumpToString item, ignore, maxDepth
 
-    dumpToString: ( item, ignore ) =>
+    dumpToString: ( item, ignore, maxDepth ) =>
         if "table" != type item
             return tostring item
 
@@ -126,7 +131,14 @@ class Logger
 
         result = { "{ @#{tablecount}" }
         seen   = { [item]: tablecount }
-        recurse = ( item, space ) ->
+        recurse = ( item, space, depth = 0 ) ->
+            if maxDepth and depth > maxDepth
+                count += 1
+                result[count] = space .. "<...>"
+                return
+
+            depth += 1
+
             for key, value in pairs item
                 unless key == ignore
                     if "number" == type key
@@ -137,7 +149,7 @@ class Logger
                             seen[value] = tablecount
                             count += 1
                             result[count] = space .. "#{key}: { @#{tablecount}"
-                            recurse value, space .. "    "
+                            recurse value, space .. "    ", depth
                             count += 1
                             result[count] = space .. "}"
                         else
@@ -183,3 +195,11 @@ class Logger
             else
                 kept += 1
         return total-kept, deletedSize, total, totalSize
+
+    @describeType = (val) =>
+        _type = type val
+        return _type unless _type == "table"
+
+        return if val.__class
+            "#{val.__class.__name} object"
+        else _type
