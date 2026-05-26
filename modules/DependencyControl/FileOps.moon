@@ -3,6 +3,7 @@ re =  require "aegisub.re"
 lfs = require "lfs"
 
 Logger = require "l0.DependencyControl.Logger"
+Common = require "l0.DependencyControl.Common"
 local ConfigHandler
 
 --- Filesystem utility helpers used by DependencyControl.
@@ -18,6 +19,9 @@ class FileOps
                 noAttribute: "Can't find attriubte with name '%s'."
             }
 
+            createConfig: {
+                handlerFailed: "Couldn't create ConfigHandler for the FileOps configuration file: %s"
+            }
             mkdir: {
                 createError: "Error creating directory: %s."
                 otherExists: "Couldn't create directory because a %s of the same name is already present."
@@ -42,11 +46,26 @@ class FileOps
                 couldntRemoveFiles: "Move operation suceeded to copied the file(s) to the target location, but some of the source files couldn't be removed:\n%s\n%s"
                 cantCopy: "Move operation failed to copy '%s' to '%s' (%s) after a failed rename attempt (%s)."
             }
+            readFile: {
+                cantOpen: "Couldn't open file '%s' for reading: %s"
+                cantRead: "An error occurred while trying to read from file '%s': %s"
+                notAFile: "Can only read files but supplied path '%s' points to a %s."
+            }
+            remove: {
+                noConfigReschedule: "Couldn't load the FileOps config file (%s) - deletions of %s cannot be rescheduled!"
+            }
             rmdir: {
                 emptyPath: "Argument #1 (path) must not be an empty string."
                 couldntRemoveFiles: "Some of the files and folders in the specified directory couldn't be removed:\n%s"
                 couldntRemoveDir: "Error removing empty directory: %s."
 
+            }
+            runScheduledRemoval: {
+                noConfigReschedule: "Couldn't load the FileOps config file (%s) - rescheduled deletions will not be performed!"
+            }
+            getNamespacedPath: {
+                badBasePath: "Provided base path '%s' is not a valid full path (%s)."
+                badPath: "Generated namespaced path '%s' is not a valid full path (%s)."
             }
             validateFullPath: {
                 badType: "Argument #1 (path) had the wrong type. Expected 'string', got '%s'."
@@ -72,8 +91,10 @@ class FileOps
     createConfig = (noLoad, configDir) ->
         FileOps.configDir = configDir if configDir
         ConfigHandler or= require "l0.DependencyControl.ConfigHandler"
-        FileOps.config or= ConfigHandler "#{FileOps.configDir}/l0.#{FileOps.__name}.json",
-                           {toRemove: {}}, nil, noLoad, FileOps.logger
+        unless FileOps.config
+            FileOps.config = ConfigHandler "#{FileOps.configDir}/l0.#{FileOps.__name}.json",
+                               {toRemove: {}}, nil, noLoad, FileOps.logger
+            return nil, msgs.createConfig.handlerFailed\format "constructor returned nil" unless FileOps.config
         return FileOps.config
 
     --- Removes one or more files/directories and optionally reschedules failed removals.
@@ -84,8 +105,7 @@ class FileOps
     -- @return table details
     -- @return string|nil firstErr
     remove: (paths, recurse, reSchedule) ->
-        config = createConfig true
-        configLoaded, overallSuccess, details, firstErr = false, true, {}
+        config, configLoaded, overallSuccess, details, firstErr = nil, false, true, {}
         paths = {paths} unless type(paths) == "table"
 
         for path in *paths
@@ -102,8 +122,16 @@ class FileOps
 
                     -- load the FileOps configuration file and reschedule deletions
                     unless configLoaded
-                        FileOps.config\load!
-                        configLoaded = true
+                        config, msg = createConfig true
+                        if config
+                            FileOps.config\load!
+                            configLoaded = true
+                        else
+                            FileOps.logger\warn msgs.remove.noConfigReschedule, msg, FileOps.logger\dumpToString paths
+                            details[path] = {nil, err}
+                            overallSuccess = nil
+                            continue
+
                     config.c.toRemove[path] = os.time!
                     -- mark the operations as failed "for now", indicating a second attempt has been scheduled
                     details[path] = {false, err}
@@ -120,8 +148,13 @@ class FileOps
     --- Replays removals previously scheduled by @{FileOps:remove}.
     -- @param[opt] configDir string
     -- @return boolean
+    -- @return string|nil err
     runScheduledRemoval: (configDir) ->
-        config = createConfig false, configDir
+        config, msg = createConfig false, configDir
+        unless config
+            msg = msgs.runScheduledRemoval.noConfigReschedule\format msg
+            FileOps.logger\warn msg
+            return nil, msg
         paths = [path for path, _ in pairs config.c.toRemove]
         if #paths > 0
             -- rescheduled removals will not be rescheduled another time
@@ -239,6 +272,25 @@ class FileOps
 
         return true
 
+    --- Reads and returns the full contents of a file.
+    -- @param path string
+    -- @return string|nil data
+    -- @return string|nil err
+    readFile: (path) ->
+        mode, fullPath = FileOps.attributes path, "mode"
+        return nil, msgs.readFile.cantOpen\format path, fullPath unless mode
+        return nil, msgs.readFile.notAFile\format path, mode if mode != "file"
+
+        handle, msg = io.open fullPath, "rb"
+        return nil, msgs.readFile.cantOpen\format fullPath, msg unless handle
+
+        data, msg = handle\read "*a"
+        handle\close!
+
+        if data
+            return data
+        else return nil, msgs.readFile.cantRead\format path, msg
+
     rmdir: (path, recurse = true) ->
         return nil, msgs.rmdir.emptyPath if path == ""
         mode, path = FileOps.attributes path, "mode"
@@ -336,3 +388,24 @@ class FileOps
         path = table.concat({dev, dir, file and pathMatch.sep, file})
 
         return path, dev, dir, file
+
+    --- Converts a base path and namespace into a namespaced filesystem path.
+    -- Dots in the namespace are converted to path separators when nested is true.
+    -- @param basePath string
+    -- @param namespace string
+    -- @param ext string
+    -- @param[opt=true] nested boolean
+    -- @return string|nil path
+    -- @return string|nil err
+    getNamespacedPath: (basePath, namespace, ext, nested = true) ->
+        res, msg = Common.validateNamespace namespace
+        return nil, msg unless res
+
+        res, msg = FileOps.validateFullPath basePath
+        return nil, msgs.getNamespacedPath.badBasePath\format basePath, msg unless res
+
+        path = "#{basePath}/#{nested and namespace\gsub("%.", "/") or namespace}#{ext}"
+        path, msg = FileOps.validateFullPath path
+        return nil, msgs.getNamespacedPath.badPath\format path, msg unless path
+
+        return path
