@@ -4,6 +4,8 @@
 
 SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
 
+--- Internal module loading helpers for DependencyControl-managed module dependencies.
+-- @class ModuleLoader
 class ModuleLoader
   msgs = {
     checkOptionalModules: {
@@ -94,6 +96,12 @@ class ModuleLoader
 
     return mdl._ref  -- having this in the with block breaks moonscript
 
+  --- Loads required modules, updates missing/outdated ones, and validates version constraints.
+  -- @param modules table[]
+  -- @param[opt] addFeeds string[]
+  -- @param[opt] skip table
+  -- @return boolean
+  -- @return string err
   @loadModules = (modules, addFeeds = {@feed}, skip = @moduleName and {[@moduleName]: true} or {}) =>
     for mdl in *modules
       continue if skip[mdl.moduleName]
@@ -163,6 +171,10 @@ class ModuleLoader
 
     return #errorMsg == 0, table.concat(errorMsg, "\n\n")
 
+  --- Validates optional module availability for the requested feature set.
+  -- @param modules string|string[]
+  -- @return boolean
+  -- @return string|nil err
   @checkOptionalModules = (modules) =>
     modules = type(modules)=="string" and {[modules]:true} or {mdl,true for mdl in *modules}
     missing = [ModuleLoader.formatVersionErrorTemplate @, mdl.moduleName, mdl.version, mdl.url,

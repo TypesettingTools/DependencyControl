@@ -8,6 +8,8 @@ SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
 
 defaultLogger = Logger fileBaseName: "DepCtrl.UpdateFeed"
 
+--- Feed-specific update information for a single script in a selected channel.
+-- @class ScriptUpdateRecord
 class ScriptUpdateRecord extends Common
     msgs = {
         errors: {
@@ -20,6 +22,13 @@ class ScriptUpdateRecord extends Common
         }
     }
 
+    --- Creates an update record for a single script entry in a feed.
+    -- @param namespace string
+    -- @param data table
+    -- @param[opt] config table
+    -- @param scriptType number
+    -- @param[opt=true] autoChannel boolean
+    -- @param[opt] logger Logger
     new: (@namespace, @data, @config = {c:{}}, scriptType, autoChannel = true, @logger = defaultLogger) =>
         DependencyControl or= require "l0.DependencyControl"
         @moduleName = scriptType == @@ScriptType.Module and @namespace
@@ -27,6 +36,9 @@ class ScriptUpdateRecord extends Common
         @setChannel! if autoChannel
 
 
+    --- Returns all available channel names for this script and the default channel.
+    -- @return string[] channels
+    -- @return string|nil defaultChannel
     getChannels: =>
         channels, default = {}
         for name, channel in pairs @data.channels
@@ -36,6 +48,10 @@ class ScriptUpdateRecord extends Common
 
         return channels, default
 
+    --- Selects the active update channel and exposes channel fields on this record.
+    -- @param[opt] channelName string
+    -- @return boolean
+    -- @return string activeChannel
     setChannel: (channelName = @config.c.activeChannel) =>
         with @config.c
             .channels, default = @getChannels!
@@ -48,10 +64,17 @@ class ScriptUpdateRecord extends Common
         @files = @files and [file for file in *@files when not file.platform or file.platform == @@platform] or {}
         return true, @activeChannel
 
+    --- Checks whether this script's active channel supports the current platform.
+    -- @return boolean supported
+    -- @return string platform
     checkPlatform: =>
         @logger\assert @activeChannel, msgs.errors.noActiveChannel
         return not @platforms or ({p,true for p in *@platforms})[@@platform], @@platform
 
+    --- Formats changelog entries between the current and a minimum version as a string.
+    -- @param versionRecord any
+    -- @param[opt=0] minVer number|string
+    -- @return string changelog
     getChangelog: (versionRecord, minVer = 0) =>
         return "" unless "table" == type @changelog
         maxVer = SemanticVersioning\toNumber @version
@@ -76,6 +99,8 @@ class ScriptUpdateRecord extends Common
 
         return table.concat msg, "\n"
 
+    --- Downloaded and expanded update feed data source.
+    -- @class UpdateFeed
 class UpdateFeed extends Common
     templateData = {
         maxDepth: 7,
@@ -132,6 +157,12 @@ class UpdateFeed extends Common
                     j += 1
             table.sort .sourceAt[i], (a,b) -> return .templates[a].order < .templates[b].order
 
+    --- Creates an update feed wrapper and optionally fetches feed data.
+    -- @param url string
+    -- @param[opt=true] autoFetch boolean
+    -- @param[opt] fileName string
+    -- @param[opt] config table
+    -- @param[opt] logger Logger
     new: (@url, autoFetch = true, fileName, @config = {}, @logger = defaultLogger) =>
         DependencyControl or= require "l0.DependencyControl"
 
@@ -149,11 +180,17 @@ class UpdateFeed extends Common
         elseif autoFetch
             @fetch!
 
+    --- Returns URLs of all feeds referenced in the knownFeeds section of this feed.
+    -- @return string[] urls
     getKnownFeeds: =>
         return {} unless @data
         return [url for _, url in pairs @data.knownFeeds]
         -- TODO: maybe also search all requirements for feed URLs
 
+    --- Downloads and parses feed JSON data.
+    -- @param[opt] fileName string
+    -- @return table|boolean dataOrSuccess
+    -- @return string|nil err
     fetch: (fileName) =>
         @fileName = fileName if fileName
 
@@ -183,6 +220,9 @@ class UpdateFeed extends Common
         @expand!
         return @data
 
+    --- Walks the parsed feed JSON and expands @{template} variables in-place.
+    -- Called automatically by @{fetch}; results are cached in @data.
+    -- @return table data
     expand: =>
         {:templates, :maxDepth, :sourceAt, :rolling, :sourceKeys} = templateData
         vars, rvars = {}, {i, {} for i=0, maxDepth}
@@ -238,6 +278,13 @@ class UpdateFeed extends Common
 
         return @data
 
+    --- Retrieves a script update record by namespace and type.
+    -- @param namespace string
+    -- @param scriptType number|boolean
+    -- @param[opt] config table
+    -- @param[opt] autoChannel boolean
+    -- @return ScriptUpdateRecord|boolean|nil
+    -- @return string|nil err
     getScript: (namespace, scriptType, config, autoChannel) =>
         -- legacy compatibility for <= 0.6.3
         if scriptType == true then scriptType = @@ScriptType.Module
@@ -253,8 +300,20 @@ class UpdateFeed extends Common
         return false unless scriptData
         ScriptUpdateRecord namespace, scriptData, config, scriptType, autoChannel, @logger
 
+    --- Retrieves an automation script update record by namespace.
+    -- @param namespace string
+    -- @param[opt] config table
+    -- @param[opt] autoChannel boolean
+    -- @return ScriptUpdateRecord|boolean|nil
+    -- @return string|nil err
     getMacro: (namespace, config, autoChannel) =>
         @getScript namespace, @@ScriptType.Automation, config, autoChannel
 
+    --- Retrieves a module update record by namespace.
+    -- @param namespace string
+    -- @param[opt] config table
+    -- @param[opt] autoChannel boolean
+    -- @return ScriptUpdateRecord|boolean|nil
+    -- @return string|nil err
     getModule: (namespace, config, autoChannel) =>
         @getScript namespace, @@ScriptType.Module, config, autoChannel

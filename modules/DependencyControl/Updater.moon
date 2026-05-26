@@ -10,6 +10,8 @@ ModuleLoader = require "l0.DependencyControl.ModuleLoader"
 SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
 DependencyControl = nil
 
+--- Shared updater error decoding and base behavior.
+-- @class UpdaterBase
 class UpdaterBase extends Common
     @logger = Logger fileBaseName: "DependencyControl.Updater"
     msgs = {
@@ -37,6 +39,13 @@ class UpdaterBase extends Common
         updaterErrorComponent: {"DownloadManager (adding download)", "DownloadManager"}
     }
 
+    --- Converts updater status/error codes into user-facing error messages.
+    -- @param code number
+    -- @param name string
+    -- @param scriptType number
+    -- @param isInstall boolean
+    -- @param[opt] detailMsg string
+    -- @return string
     getUpdaterErrorMsg: (code, name, scriptType, isInstall, detailMsg) =>
         if code <= -100
             -- Generic downstream error
@@ -48,6 +57,8 @@ class UpdaterBase extends Common
                                                   @@terms.scriptType.singular[scriptType],
                                                   name, detailMsg
 
+--- Mutable execution state for one install/update operation.
+-- @class UpdateTask
 class UpdateTask extends UpdaterBase
     dlm = DownloadManager!
     msgs = {
@@ -92,6 +103,14 @@ class UpdateTask extends UpdaterBase
         }
     }
 
+    --- Creates an update task for one record.
+    -- @param record Record
+    -- @param[opt=0] targetVersionNumber number
+    -- @param[opt] addFeeds string[]
+    -- @param[opt] exhaustive boolean
+    -- @param[opt] channel string
+    -- @param[opt] optional boolean
+    -- @param updater Updater
     new: (@record, targetVersionNumber = 0, @addFeeds, @exhaustive, @channel, @optional, @updater) =>
         DependencyControl or= require "l0.DependencyControl"
         assert @record.__class == DependencyControl, "First parameter must be a #{DependencyControl.__name} object."
@@ -111,6 +130,11 @@ class UpdateTask extends UpdaterBase
         return nil, -1 unless @updater.config.c.updaterEnabled -- TODO: check if this even works
         return nil, -2 unless @record\validateNamespace!
 
+    --- Loads and validates one feed candidate for the current update task.
+    -- @param feedUrl string
+    -- @return table|boolean|nil
+    -- @return string|number|nil
+    -- @return number|nil
     checkFeed: (feedUrl) =>
         -- get feed contents
         feed = UpdateFeed feedUrl, false, nil, @feedConfig, @logger
@@ -147,6 +171,11 @@ class UpdateTask extends UpdaterBase
         return true, updateRecord, version
 
 
+    --- Runs the full update/install flow for this task.
+    -- @param[opt] waitLock boolean
+    -- @param[opt] exhaustive boolean
+    -- @return number statusCode
+    -- @return any detail
     run: (waitLock, exhaustive = @updater.config.c.tryAllFeeds or @@exhaustive) =>
         logUpdateError = (code, extErr, virtual = @record.virtual) ->
             if code < 0
@@ -246,6 +275,10 @@ class UpdateTask extends UpdaterBase
         code, res = @performUpdate updateRecord
         return logUpdateError code, res, wasVirtual
 
+    --- Downloads and installs files for a selected update entry.
+    -- @param update ScriptUpdateRecord
+    -- @return number statusCode
+    -- @return table|string|nil detail
     performUpdate: (update) =>
         finish = (...) ->
             @running = false
@@ -410,6 +443,8 @@ class UpdateTask extends UpdaterBase
                     @logger\log msgs.refreshRecord.otherUpdate, @@terms.scriptType.singular[.scriptType], .name,
                                 SemanticVersioning\toString @record.version
 
+--- Coordinates background update checks and update task lifecycle.
+-- @class Updater
 class Updater extends UpdaterBase
     msgs = {
         getLock: {
@@ -427,9 +462,23 @@ class Updater extends UpdaterBase
             runningUpdate: "Running scheduled update for %s '%s'..."
         }
     }
+    --- Creates an updater coordinator for one host script context.
+    -- @param[opt] host string
+    -- @param config ConfigHandler
+    -- @param[opt] logger Logger
     new: (@host = script_namespace, @config, @logger = @@logger) =>
         @tasks = {scriptType, {} for _, scriptType in pairs @@ScriptType when "number" == type scriptType}
 
+    --- Creates or updates a queued update task for a record.
+    -- @param record Record|table
+    -- @param[opt] targetVersion number|string
+    -- @param[opt] addFeeds string[]
+    -- @param[opt] exhaustive boolean
+    -- @param[opt] channel string
+    -- @param[opt] optional boolean
+    -- @return UpdateTask|nil
+    -- @return number|nil code
+    -- @return string|nil detail
     addTask: (record, targetVersion, addFeeds = {}, exhaustive, channel, optional) =>
         DependencyControl or= require "l0.DependencyControl"
         if record.__class != DependencyControl
@@ -449,6 +498,12 @@ class Updater extends UpdaterBase
         @tasks[record.scriptType][record.namespace] = task
         return task, code
 
+    --- Ensures a module dependency is installed/updated and loadable.
+    -- @param record Record
+    -- @param[opt] ... any
+    -- @return any
+    -- @return number|nil code
+    -- @return string|nil detail
     require: (record, ...) =>
         @logger\assert record.scriptType == @@ScriptType.Module, msgs.require, record.name or record.namespace
         @logger\log "%s module '%s'...", record.virtual and "Installing required" or "Updating outdated", record.name
@@ -465,6 +520,9 @@ class Updater extends UpdaterBase
         else -- pass on update errors
             return nil, code, res
 
+    --- Performs a periodic non-blocking update check for a managed record.
+    -- @param record Record
+    -- @return number|boolean
     scheduleUpdate: (record) =>
         unless @config.c.updaterEnabled
             @logger\trace msgs.scheduleUpdate.updaterDisabled, record.name or record.namespace
@@ -486,6 +544,11 @@ class Updater extends UpdaterBase
         return task\run!
 
 
+    --- Acquires the global updater lock shared across scripts.
+    -- @param doWait boolean
+    -- @param[opt] waitTimeout number
+    -- @return boolean
+    -- @return string|nil lockOwner
     getLock: (doWait, waitTimeout = @config.c.updateWaitTimeout) =>
         return true if @hasLock
 
@@ -523,6 +586,8 @@ class Updater extends UpdaterBase
 
         return true
 
+    --- Releases the global updater lock.
+    -- @return boolean
     releaseLock: =>
         return false unless @hasLock
         @hasLock = false

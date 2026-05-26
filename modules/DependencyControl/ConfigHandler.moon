@@ -6,6 +6,8 @@ mutex = require "BM.BadMutex"
 fileOps = require "l0.DependencyControl.FileOps"
 Logger  = require "l0.DependencyControl.Logger"
 
+--- JSON-backed configuration manager with cooperative cross-script locking.
+-- @class ConfigHandler
 class ConfigHandler
     @handlers = {}
     errors = {
@@ -35,6 +37,12 @@ Reload your automation scripts to generate a new configuration file.]]
         -- waitingLockTimeout: "Timeout was reached after %d seconds, force-releasing lock..."
     }
 
+    --- Creates a configuration handler for a JSON file and optional nested section.
+    -- @param file string
+    -- @param[opt] defaults table
+    -- @param[opt] section string|string[]
+    -- @param[opt] noLoad boolean
+    -- @param[opt] logger Logger
     new: (@file, defaults, @section, noLoad, @logger = Logger fileBaseName: @@__name) =>
         @section = {@section} if "table" != type @section
         @defaults = defaults and util.deep_copy(defaults) or {}
@@ -101,6 +109,10 @@ Reload your automation scripts to generate a new configuration file.]]
         recurse @defaults
         @load! unless noLoad
 
+    --- Registers and validates the target config file path for this handler.
+    -- @param path string
+    -- @return boolean|nil
+    -- @return string|nil err
     setFile: (path) =>
         return false unless path
         if @@handlers[path]
@@ -111,6 +123,8 @@ Reload your automation scripts to generate a new configuration file.]]
         @file = path
         return true
 
+    --- Unregisters this handler from the shared file-handler registry.
+    -- @return boolean
     unsetFile: =>
         handlers = @@handlers[@file]
         if handlers and #handlers>1
@@ -119,6 +133,12 @@ Reload your automation scripts to generate a new configuration file.]]
         @file = nil
         return true
 
+    --- Reads and decodes a JSON config file.
+    -- @param[opt] file string
+    -- @param[opt=true] useLock boolean
+    -- @param[opt] waitLockTime number
+    -- @return table|boolean|nil
+    -- @return string|nil err
     readFile: (file = @file, useLock = true, waitLockTime) =>
         if useLock
             time, err = @getLock waitLockTime
@@ -163,6 +183,9 @@ Reload your automation scripts to generate a new configuration file.]]
 
         return result
 
+    --- Loads this handler's configured section into the local user configuration table.
+    -- @return boolean
+    -- @return string|nil err
     load: =>
         return false, errors.noFile unless @file
 
@@ -183,6 +206,10 @@ Reload your automation scripts to generate a new configuration file.]]
         @userConfig[k] = v for k,v in pairs config
         return sectionExists
 
+    --- Merges this handler's section into an in-memory root config table.
+    -- @param config table
+    -- @return table|boolean
+    -- @return string|nil err
     mergeSection: (config) =>
         --@logger\trace traceMsgs.mergeSectionStart, @logger\dumpToString(@section),
         --                                           @logger\dumpToString config
@@ -210,10 +237,20 @@ Reload your automation scripts to generate a new configuration file.]]
         -- @logger\trace traceMsgs.mergeSectionResult, @logger\dumpToString config
         return config
 
+    --- Deletes this handler's section from disk by clearing user config and writing.
+    -- @param[opt] concertWrite boolean
+    -- @param[opt] waitLockTime number
+    -- @return boolean
+    -- @return string|nil err
     delete: (concertWrite, waitLockTime) =>
         @userConfig = nil
         return @write concertWrite, waitLockTime
 
+    --- Writes current config state to disk, optionally coordinating all handlers sharing the same file.
+    -- @param[opt] concertWrite boolean
+    -- @param[opt] waitLockTime number
+    -- @return boolean
+    -- @return string|nil err
     write: (concertWrite, waitLockTime) =>
         return false, errors.noFile unless @file
 
@@ -261,6 +298,11 @@ Reload your automation scripts to generate a new configuration file.]]
 
         return true
 
+    --- Acquires the global config mutex lock.
+    -- @param[opt=5000] waitTimeout number
+    -- @param[opt=50] checkInterval number
+    -- @return number|boolean timePassedOrFalse
+    -- @return string|nil err
     getLock: (waitTimeout = 5000, checkInterval = 50) =>
         return 0 if @hasLock
         success = mutex.tryLock!
@@ -290,9 +332,18 @@ Reload your automation scripts to generate a new configuration file.]]
             --return waitTimeout
             return false, errors.lockTimeout
 
+    --- Creates a child handler bound to a subsection of the same config file.
+    -- @param section string|string[]
+    -- @param[opt] defaults table
+    -- @param[opt] noLoad boolean
+    -- @return ConfigHandler
     getSectionHandler: (section, defaults, noLoad) =>
         return @@ @file, defaults, section, noLoad, @logger
 
+    --- Releases the global config mutex lock.
+    -- @param[opt] force boolean
+    -- @return boolean
+    -- @return string|nil err
     releaseLock: (force) =>
         if @hasLock or force
             @hasLock = false
@@ -300,6 +351,9 @@ Reload your automation scripts to generate a new configuration file.]]
             return true
         return false, errors.noLock
 
+    --- Deep-copies a table while skipping private keys prefixed with "_".
+    -- @param tbl table
+    -- @return table
     -- copied from Aegisub util.moon, adjusted to skip private keys
     deepCopy: (tbl) =>
         seen = {}
@@ -310,6 +364,12 @@ Reload your automation scripts to generate a new configuration file.]]
             {k, copy(v) for k, v in pairs val when type(k) != "string" or k\sub(1,1) != "_"}
         copy tbl
 
+    --- Imports values into this handler's user configuration.
+    -- @param[opt] tbl table|ConfigHandler
+    -- @param[opt] keys string[]
+    -- @param[opt] updateOnly boolean
+    -- @param[opt] skipSameLengthTables boolean
+    -- @return boolean changesMade
     import: (tbl = {}, keys, updateOnly, skipSameLengthTables) =>
         tbl = tbl.userConfig if tbl.__class == @@
         changesMade = false

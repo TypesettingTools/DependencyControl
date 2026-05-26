@@ -1,6 +1,8 @@
 PreciseTimer = require "PT.PreciseTimer"
 lfs = require "lfs"
 
+--- Structured logger that writes to Aegisub's log window and optional log files.
+-- @class Logger
 class Logger
     levels = {"fatal", "error", "warning", "hint", "debug", "trace"}
     defaultLevel: 2
@@ -41,6 +43,14 @@ class Logger
         @fileName = @fileTemplate\format aegisub.decode_path(@logDir), os.date("%Y-%m-%d-%H-%M-%S"),
                                           math.random(0, 16^4-1), @fileBaseName, @fileSubName
 
+    --- Writes a log message with explicit rendering options.
+    -- @param[opt] level number
+    -- @param[opt] msg string|table
+    -- @param[opt=true] insertLineFeed boolean
+    -- @param[opt] prefix string
+    -- @param[opt] indent number
+    -- @param[opt] ... any
+    -- @return boolean
     logEx: (level = @defaultLevel, msg = "", insertLineFeed = true, prefix = @prefix, indent = @indent, ...) =>
         return false if msg == ""
 
@@ -96,11 +106,19 @@ class Logger
     debug: (...) => @log 4, ...
     trace: (...) => @log 5, ...
 
+    --- Logs an error message when the given condition is falsy.
+    -- @param cond any
+    -- @param[opt] ... any
+    -- @return any
     assert: (cond, ...) =>
         if not cond
             @log 1, ...
         else return cond, ...
 
+    --- Logs an error message when the given condition is nil.
+    -- @param cond any
+    -- @param[opt] ... any
+    -- @return any
     assertNotNil: (cond, ...) =>
         if cond == nil
             @log 1, ...
@@ -120,9 +138,19 @@ class Logger
             @progressStep = step
 
     -- taken from https://github.com/TypesettingCartel/Aegisub-Motion/blob/master/src/Log.moon
+    --- Logs a table dump (or scalar value) at the specified level.
+    -- @param item any
+    -- @param[opt] ignore any
+    -- @param[opt] level number
+    -- @param[opt] maxDepth number
     dump: ( item, ignore, level = @defaultLevel, maxDepth ) =>
         @log level, @dumpToString item, ignore, maxDepth
 
+    --- Converts a table dump (or scalar value) to a readable string.
+    -- @param item any
+    -- @param[opt] ignore any
+    -- @param[opt] maxDepth number
+    -- @return string
     dumpToString: ( item, ignore, maxDepth ) =>
         if "table" != type item
             return tostring item

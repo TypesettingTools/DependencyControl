@@ -10,6 +10,8 @@ Updater =        require "l0.DependencyControl.Updater"
 ModuleLoader =   require "l0.DependencyControl.ModuleLoader"
 SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
 
+--- DependencyControl record representing one managed or unmanaged script/module.
+-- @class Record
 class Record extends Common
     namespaceValidation = re.compile "^(?:[-\\w]+\\.)+[-\\w]+$"
 
@@ -60,6 +62,8 @@ class Record extends Common
         FileOps.runScheduledRemoval @configDir
 
 
+    --- Creates a DependencyControl record from explicit arguments and/or script globals.
+    -- @param args table
     new: (args) =>
         init Record unless @@logger
 
@@ -135,13 +139,16 @@ class Record extends Common
 
     checkOptionalModules: ModuleLoader.checkOptionalModules
 
-    -- loads the DependencyControl global configuration
+    --- Loads global DependencyControl configuration.
+    -- @return ConfigHandler
     @loadConfig = =>
         if @config
             @config\load!
         else @config = ConfigHandler @depConf.file, @depConf.globalDefaults, {"config"}, nil, @logger
 
-    -- loads the script configuration
+    --- Loads this record's script/module configuration hive.
+    -- @param[opt=false] importRecord boolean
+    -- @return boolean
     loadConfig: (importRecord = false) =>
         -- virtual modules are not yet present on the user's system and have no persistent configuration
         @config or= ConfigHandler not @virtual and @@depConf.file, {},
@@ -172,6 +179,8 @@ class Record extends Common
 
         return false
 
+    --- Writes this record's persisted fields to the shared config file.
+    -- @return nil
     writeConfig: =>
         unless @virtual or @config.file
             @config\setFile @@depConf.file
@@ -189,12 +198,22 @@ class Record extends Common
     @getVersionString = SemanticVersioning.toString
 
 
+    --- Resolves this record's external config file path.
+    -- @return string
     getConfigFileName: () =>
         return aegisub.decode_path "#{@@configDir}/#{@configFile}"
 
+    --- Creates a ConfigHandler for this record's script-specific config file.
+    -- @param[opt] defaults table
+    -- @param[opt] section string|string[]
+    -- @param[opt] noLoad boolean
+    -- @return ConfigHandler
     getConfigHandler: (defaults, section, noLoad) =>
         return ConfigHandler @getConfigFileName!, defaults, section, noLoad
 
+    --- Creates a logger preconfigured for this record.
+    -- @param[opt] args table
+    -- @return Logger
     getLogger: (args = {}) =>
         args.fileBaseName or= @namespace
         args.toFile = @config.c.logToFile if args.toFile == nil
@@ -203,18 +222,30 @@ class Record extends Common
 
         return Logger args
 
+    --- Checks whether this record's version satisfies a minimum version.
+    -- @param value number|string|Record
+    -- @param[opt="patch"] precision SemverPrecision
+    -- @return boolean|nil
+    -- @return number|string|nil
     checkVersion: (value, precision = "patch") =>
         if type(value) == "table" and value.__class == @@
             value = value.version
         return SemanticVersioning\check @version, value
 
 
+    --- Retrieves managed submodules registered under this module namespace.
+    -- @return string[]|nil
+    -- @return ConfigHandler|nil
     getSubmodules: =>
         return nil if @virtual or @recordType == @@RecordType.Unmanaged or @scriptType != @@ScriptType.Module
         mdlConfig = @@config\getSectionHandler @@ScriptType.name.legacy[@@ScriptType.Module]
         pattern = "^#{@namespace}."\gsub "%.", "%%."
         return [mdl for mdl, _ in pairs mdlConfig.c when mdl\match pattern], mdlConfig
 
+    --- Loads or updates required modules and returns their references.
+    -- @param[opt] modules table[]
+    -- @param[opt] addFeeds string[]
+    -- @return ... any
     requireModules: (modules = @requiredModules, addFeeds = {@feed}) =>
         success, err = ModuleLoader.loadModules @, modules, addFeeds
         @@updater\releaseLock!
@@ -225,6 +256,8 @@ class Record extends Common
             @@logger\error err
         return unpack [mdl._ref for mdl in *modules]
 
+    --- Registers DepUnit tests for this record if test modules are available.
+    -- @param[opt] ... any
     registerTests: (...) =>
         -- load external tests
         haveTests, tests = pcall require, "DepUnit.#{@@ScriptType.name.legacy[@scriptType]}.#{@namespace}"
@@ -239,12 +272,23 @@ class Record extends Common
             @tests\registerMacros!
             @testsLoaded = true
 
+    --- Finalizes module registration and swaps dummy module refs for real refs.
+    -- @param selfRef table
+    -- @param[opt] ... any
+    -- @return table
     register: (selfRef, ...) =>
         -- replace dummy refs with real refs to own module
         @ref.__index, @ref, LOADED_MODULES[@moduleName] = selfRef, selfRef, selfRef
         @registerTests selfRef, ...
         return selfRef
 
+    --- Registers a single Aegisub macro with DependencyControl update hooks.
+    -- @param[opt] name string|function
+    -- @param[opt] description string|function
+    -- @param process function
+    -- @param[opt] validate function
+    -- @param[opt] isActive function
+    -- @param[opt] submenu string|boolean
     registerMacro: (name=@name, description=@description, process, validate, isActive, submenu) =>
         -- alternative signature takes name and description from script
         if type(name)=="function"
@@ -266,6 +310,9 @@ class Record extends Common
 
         aegisub.register_macro table.concat(menuName, "/"), description, processHooked, validate, isActive
 
+    --- Registers multiple macros declared in table form.
+    -- @param[opt] macros table[]
+    -- @param[opt=true] submenuDefault boolean
     registerMacros: (macros = {}, submenuDefault = true) =>
         for macro in *macros
             -- allow macro table to omit name and description
@@ -273,6 +320,10 @@ class Record extends Common
             macro[submenuIdx] = submenuDefault if macro[submenuIdx] == nil
             @registerMacro unpack(macro, 1, 6)
 
+    --- Parses and sets this record's semantic version.
+    -- @param version number|string
+    -- @return number|nil
+    -- @return string|nil err
     setVersion: (version) =>
         version, err = SemanticVersioning\toNumber version
         if version
@@ -280,9 +331,17 @@ class Record extends Common
             return version
         else return nil, err
 
+    --- Validates a dependency namespace according to DependencyControl rules.
+    -- @param[opt] namespace string
+    -- @param[opt] isVirtual boolean
+    -- @return boolean
     validateNamespace: (namespace = @namespace, isVirtual = @virtual) =>
         return isVirtual or namespaceValidation\match @namespace
 
+    --- Uninstalls this managed record and removes matching files from automation paths.
+    -- @param[opt=true] removeConfig boolean
+    -- @return boolean|nil
+    -- @return table|string|nil
     uninstall: (removeConfig = true) =>
         if @virtual or @recordType == @@RecordType.Unmanaged
             return nil, msgs.uninstall.noVirtualOrUnmanaged\format @virtual and "virtual" or "unmanaged",

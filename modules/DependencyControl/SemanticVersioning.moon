@@ -1,3 +1,5 @@
+--- Semantic versioning utilities.
+-- @class SemanticVersioning
 class SemanticVersioning
   msgs = {
     toNumber: {
@@ -9,6 +11,11 @@ class SemanticVersioning
 
   semParts = {{"major", 16}, {"minor", 8}, {"patch", 0}}
 
+  --- Converts a version number or string to a semantic version string.
+  ---@param version number|string
+  ---@param precision? SemverPrecision
+  ---@return string|nil versionString
+  ---@return string|nil err
   @toString = (version, precision = "patch") =>
     if type(version) == "string"
       version, err = @toNumber version
@@ -22,6 +29,10 @@ class SemanticVersioning
     return "%d.%d.%d"\format unpack parts
 
 
+  --- Converts a semantic version string or number to an integer.
+  -- @param value string|number|nil The version as string (e.g. "1.2.3"), number, or nil.
+  -- @return number|false The integer version, or false on error.
+  -- @return string|nil Error message if conversion failed.
   @toNumber = (value) =>
     return switch type value
       when "number" then math.max value, 0
@@ -43,6 +54,12 @@ class SemanticVersioning
       else false, msgs.toNumber.badType\format type value
 
 
+  --- Checks if version a is greater than or equal to version b, up to the given precision.
+  -- @param a number|string The first version (number or string).
+  -- @param b number|string The second version (number or string).
+  -- @param[opt="patch"] precision string The precision to use ("major", "minor", or "patch").
+  -- @return boolean|nil True if a >= b, or nil on error.
+  -- @return number|nil The masked version of b, or error message if failed.
   @check: (a, b, precision = "patch") =>
     if type(a) != "number"
       a, err = @toNumber a

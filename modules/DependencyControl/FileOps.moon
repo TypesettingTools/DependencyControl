@@ -5,6 +5,8 @@ lfs = require "lfs"
 Logger = require "l0.DependencyControl.Logger"
 local ConfigHandler
 
+--- Filesystem utility helpers used by DependencyControl.
+-- @class FileOps
 class FileOps
     msgs = {
             generic: {
@@ -74,6 +76,13 @@ class FileOps
                            {toRemove: {}}, nil, noLoad, FileOps.logger
         return FileOps.config
 
+    --- Removes one or more files/directories and optionally reschedules failed removals.
+    -- @param paths string|string[]
+    -- @param[opt] recurse boolean
+    -- @param[opt] reSchedule boolean
+    -- @return boolean|nil overallSuccess
+    -- @return table details
+    -- @return string|nil firstErr
     remove: (paths, recurse, reSchedule) ->
         config = createConfig true
         configLoaded, overallSuccess, details, firstErr = false, true, {}
@@ -108,6 +117,9 @@ class FileOps
         config\write! if configLoaded
         return overallSuccess, details, firstErr
 
+    --- Replays removals previously scheduled by @{FileOps:remove}.
+    -- @param[opt] configDir string
+    -- @return boolean
     runScheduledRemoval: (configDir) ->
         config = createConfig false, configDir
         paths = [path for path, _ in pairs config.c.toRemove]
@@ -118,6 +130,11 @@ class FileOps
             config\write!
         return true
 
+    --- Copies a file to a target path.
+    -- @param source string
+    -- @param target string
+    -- @return boolean success
+    -- @return string|nil err
     copy: ( source, target ) ->
         -- source check
         mode, sourceFullPath, _, _, fileName = FileOps.attributes source, "mode"
@@ -164,6 +181,12 @@ class FileOps
             return false, msgs.copy.genericError\format sourceFullPath, targetFullPath, msg
 
 
+    --- Moves a file to a target path, optionally replacing existing targets.
+    -- @param source string
+    -- @param target string
+    -- @param[opt] overwrite boolean
+    -- @return boolean success
+    -- @return string|nil err
     move: (source, target, overwrite) ->
         mode, err = FileOps.attributes target, "mode"
         if mode == "file"
@@ -269,6 +292,14 @@ class FileOps
 
         return attr, fullPath, dev, dir, file
 
+    --- Validates and normalizes an absolute filesystem path.
+    -- @param path string
+    -- @param[opt] checkFileExt boolean
+    -- @return string|nil normalizedPath
+    -- @return string|nil err
+    -- @return string|nil device
+    -- @return string|nil dir
+    -- @return string|nil file
     validateFullPath: (path, checkFileExt) ->
         if type(path) != "string"
             return nil, msgs.validateFullPath.badType\format type(path)

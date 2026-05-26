@@ -731,6 +731,7 @@ class UnitTestClass
 
 --- A DependencyControl unit test suite.
 -- Your test file/module must return a UnitTestSuite object in order to be recognized as a test suite.
+-- @class UnitTestSuite
 class UnitTestSuite
     msgs = {
         run: {

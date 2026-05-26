@@ -1,5 +1,7 @@
 ffi = require "ffi"
 
+--- Shared constants, enums, and terminology used across DependencyControl modules.
+-- @class DependencyControlCommon
 class DependencyControlCommon
     -- Some terms are shared across components
     @platform = "#{ffi.os}-#{ffi.arch}"
