@@ -4,7 +4,7 @@ re =   require "aegisub.re"
 
 Common =         require "l0.DependencyControl.Common"
 Logger =         require "l0.DependencyControl.Logger"
-ConfigHandler =  require "l0.DependencyControl.ConfigHandler"
+ConfigView =     require "l0.DependencyControl.ConfigView"
 FileOps =        require "l0.DependencyControl.FileOps"
 Updater =        require "l0.DependencyControl.Updater"
 ModuleLoader =   require "l0.DependencyControl.ModuleLoader"
@@ -140,19 +140,19 @@ class Record extends Common
     checkOptionalModules: ModuleLoader.checkOptionalModules
 
     --- Loads global DependencyControl configuration.
-    -- @return ConfigHandler
+    -- @return ConfigView
     @loadConfig = =>
         if @config
             @config\load!
-        else @config = ConfigHandler @depConf.file, @depConf.globalDefaults, {"config"}, nil, @logger
+        else @config = ConfigView.get @depConf.file, {"config"}, @depConf.globalDefaults, @logger
 
     --- Loads this record's script/module configuration hive.
     -- @param[opt=false] importRecord boolean
     -- @return boolean
     loadConfig: (importRecord = false) =>
         -- virtual modules are not yet present on the user's system and have no persistent configuration
-        @config or= ConfigHandler not @virtual and @@depConf.file, {},
-                    { @@ScriptType.name.legacy[@scriptType], @namespace }, true, @@logger
+        @config or= ConfigView.get not @virtual and @@depConf.file,
+                    { @@ScriptType.name.legacy[@scriptType], @namespace }, {}, @@logger, true
 
         -- import and overwrites version record from the configuration
         if importRecord
@@ -187,7 +187,7 @@ class Record extends Common
 
         @@logger\trace msgs.writeConfig.writing, @@terms.scriptType.singular[@scriptType]
         @config\import @, @@depConf.scriptFields, false, true
-        success, errMsg = @config\write false
+        success, errMsg = @config\save!
 
         assert success, msgs.writeConfig.error\format errMsg
 
@@ -203,13 +203,13 @@ class Record extends Common
     getConfigFileName: () =>
         return aegisub.decode_path "#{@@configDir}/#{@configFile}"
 
-    --- Creates a ConfigHandler for this record's script-specific config file.
+    --- Creates a ConfigView for this record's script-specific config file.
     -- @param[opt] defaults table
     -- @param[opt] section string|string[]
     -- @param[opt] noLoad boolean
-    -- @return ConfigHandler
+    -- @return ConfigView
     getConfigHandler: (defaults, section, noLoad) =>
-        return ConfigHandler @getConfigFileName!, defaults, section, noLoad
+        return ConfigView.get @getConfigFileName!, section, defaults, nil, noLoad
 
     --- Creates a logger preconfigured for this record.
     -- @param[opt] args table
@@ -235,7 +235,7 @@ class Record extends Common
 
     --- Retrieves managed submodules registered under this module namespace.
     -- @return string[]|nil
-    -- @return ConfigHandler|nil
+    -- @return ConfigView|nil
     getSubmodules: =>
         return nil if @virtual or @recordType == @@RecordType.Unmanaged or @scriptType != @@ScriptType.Module
         mdlConfig = @@config\getSectionHandler @@ScriptType.name.legacy[@@ScriptType.Module]

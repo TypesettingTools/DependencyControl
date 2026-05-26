@@ -1,390 +1,434 @@
-util = require "aegisub.util"
 json = require "json"
-PreciseTimer = require "PT.PreciseTimer"
-mutex = require "BM.BadMutex"
 
-fileOps = require "l0.DependencyControl.FileOps"
-Logger  = require "l0.DependencyControl.Logger"
+fileOps    = require "l0.DependencyControl.FileOps"
+Logger     = require "l0.DependencyControl.Logger"
+Lock       = require "l0.DependencyControl.Lock"
+ConfigView = require "l0.DependencyControl.ConfigView"
 
 --- JSON-backed configuration manager with cooperative cross-script locking.
+-- Manages one JSON file per instance. Use ConfigView (via getView or ConfigView.get)
+-- to access specific hives (nested sections) of the config.
 -- @class ConfigHandler
 class ConfigHandler
-    @handlers = {}
-    errors = {
-        jsonDecode: "JSON parse error: %s"
-        configCorrupted: [[An error occured while parsing the JSON config file.
+    msgs = {
+        get: {
+            failedLoad:   "Could not provide a ConfigHandler because there was an issue loading the configuration file: %s"
+            failedCreate: "Failed to create ConfigHandler for file '%s': %s"
+        }
+        getHive: {
+            unexpected: "An unexpected error occurred while trying to create hive '%s' on ConfigHandler for file '%s'"
+        }
+        getOverlappingViews: {
+            differentHandler: "Other view on config file '%s' does not belong to this config handler of config file '%s'."
+        }
+        getView: {
+            failedView:    "Failed to get #{ConfigView.__name} '%s' on ConfigHandler for file '%s': %s"
+            failedHandler: "Failed to get ConfigHandler for file '%s' while trying to acquire a view on #{ConfigView.__name}: %s"
+        }
+        mergeHive: {
+            badKey: "Can't merge hive because the path key #%d (%s) points to a %s."
+        }
+        new: {
+            badPath:    "Couldn't validate specified config file path '%s': %s"
+            failedLoad: "Failed to load config file '%s': %s"
+        }
+        readFile: {
+            failedLock:       "Failed to lock config file for reading: %s"
+            fileNotFound:     "Couldn't find config file '%s'."
+            jsonDecodeError:  "JSON parse error: %s"
+            configCorrupted:  [[An error occurred while parsing the JSON config file.
 A backup of the corrupted configuration has been written to '%s'.
 Reload your automation scripts to generate a new configuration file.]]
-        badKey: "Can't %s section because the key #%d (%s) leads to a %s."
-        jsonRoot: "JSON root element must be an array or a hashtable, got a %s."
-        noFile: "No config file defined."
-        failedLock: "Failed to lock config file for %s: %s"
-        waitLockFailed: "Error waiting for existing lock to be released: %s"
-        forceReleaseFailed: "Failed to force-release existing lock after timeout had passed (%s)"
-        noLock: "#{@@__name} doesn't have a lock"
-        writeFailedRead: "Failed reading config file: %s."
-        lockTimeout: "Timeout reached while waiting for write lock."
-    }
-    traceMsgs = {
-        -- waitingLockPre: "Waiting %d ms before trying to get a lock..."
-        waitingLock: "Waiting for config file lock to be released (%d ms passed)... "
-        waitingLockFinished: "Lock was released after %d ms."
-        mergeSectionStart: "Merging own section into configuration. Own Section: %s\nConfiguration: %s"
-        mergeSectionResult: "Merge completed with result: %s"
-        fileNotFound: "Couldn't find config file '%s'."
-        fileCreate: "Config file '%s' doesn't exist, yet. Will write a fresh copy containing the current configuration section."
-        writing: "Writing config file '%s'..."
-        -- waitingLockTimeout: "Timeout was reached after %d seconds, force-releasing lock..."
-    }
-
-    --- Creates a configuration handler for a JSON file and optional nested section.
-    -- @param file string
-    -- @param[opt] defaults table
-    -- @param[opt] section string|string[]
-    -- @param[opt] noLoad boolean
-    -- @param[opt] logger Logger
-    new: (@file, defaults, @section, noLoad, @logger = Logger fileBaseName: @@__name) =>
-        @section = {@section} if "table" != type @section
-        @defaults = defaults and util.deep_copy(defaults) or {}
-        -- register all handlers for concerted writing
-        @setFile @file
-
-        -- set up user configuration and make defaults accessible
-        @userConfig = {}
-        @config = setmetatable {}, {
-            __index: (_, k) ->
-                if @userConfig and @userConfig[k] ~= nil
-                    return @userConfig[k]
-                else return @defaults[k]
-            __newindex: (_, k, v) ->
-                @userConfig or= {}
-                @userConfig[k] = v
-            __len: (tbl) -> return 0
-            __ipairs: (tbl) -> error "numerically indexed config hive keys are not supported"
-            __pairs: (tbl) ->
-                merged = util.copy @defaults
-                merged[k] = v for k, v in pairs @userConfig
-                return next, merged
+            failedHandle:     "Failed to acquire a handle for reading the config file: %s"
+            badJsonRoot:      "JSON root element must be an array or a hashtable, got a %s."
         }
-        @c = @config -- shortcut
+        load: {
+            noFilePath: "Can't load because no config file is set."
+            noFile:     "Starting with a fresh config because the config file '%s' is missing (%s)..."
+        }
+        save: {
+            failedWhole:  "Failed to save complete config to file '%s': %s"
+            failedHives:  "Failed to save hives %s into config file '%s': %s"
+            failedMerge:  "Failed to merge config hive %s into file '%s': %s"
+            failedClean:  "Failed to clean config hive %s in file '%s': %s"
+            failedLock:   "Failed to lock config file for saving: %s"
+            failedRead:   "Failed to read config file '%s': %s."
+            noFile:       "Can't save because no config file is set."
+            fileCreate:   "Config file '%s' doesn't exist, will write a fresh one..."
+        }
+        traverseHive: {
+            badKey: "Can't retrieve hive because the path key #%d (%s) points to a %s."
+        }
+        writeFile: {
+            writing:          "Writing config file '%s'..."
+            failedLock:       "Failed to lock config file for writing: %s"
+            failedSerialize:  "Failed to serialize configuration to JSON: %s"
+            failedHandle:     "Failed to acquire a handle for writing the config file: %s"
+        }
+    }
 
-        -- rig defaults in a way that writing to contained tables deep-copies the whole default
-        -- into the user configuration and sets the requested property there
-        recurse = (tbl) ->
-            for k,v in pairs tbl
-                continue if type(v)~="table" or type(k)=="string" and k\match "^__"
-                -- replace every table reference with an empty proxy table
-                -- this ensures all writes to the table get intercepted
-                tbl[k] = setmetatable {__key: k, __parent: tbl, __tbl: v}, {
-                    -- make the original table the index of the proxy so that defaults can be read
-                    __index: v
-                    __len: (tbl) -> return #tbl.__tbl
-                    __newindex: (tbl, k, v) ->
-                        upKeys, parent = {}, tbl.__parent
-                        -- trace back to defaults entry, pick up the keys along the path
-                        while parent.__parent
-                            tbl = parent
-                            upKeys[#upKeys+1] = tbl.__key
-                            parent = tbl.__parent
+    -- make references to provided handlers weak to allow for gc
+    @handlers = setmetatable {}, {__mode: 'v'}
+    @logger = Logger fileBaseName: "DepCtrl.ConfigHandler", fileSubName: script_namespace
 
-                        -- deep copy the whole defaults node into the user configuration
-                        -- (util.deep_copy does not copy attached metatable references)
-                        -- make sure we copy the actual table, not the proxy
-                        @userConfig or= {}
-                        @userConfig[tbl.__key] = util.deep_copy @defaults[tbl.__key].__tbl
-                        -- finally perform requested write on userdata
-                        tbl = @userConfig[tbl.__key]
-                        for i = #upKeys-1, 1, -1
-                            tbl = tbl[upKeys[i]]
-                        tbl[k] = v
-                    __pairs: (tbl) -> return next, tbl.__tbl
-                    __ipairs: (tbl) ->
-                        i, n, orgTbl = 0, #tbl.__tbl, tbl.__tbl
-                        ->
-                            i += 1
-                            return i, orgTbl[i] if i <= n
-                }
-                recurse tbl[k]
-
-        recurse @defaults
-        @load! unless noLoad
-
-    --- Registers and validates the target config file path for this handler.
-    -- @param path string
-    -- @return boolean|nil
+    --- Returns an existing handler for filePath, or creates and optionally loads one.
+    -- @param filePath string
+    -- @param[opt] logger Logger
+    -- @param[opt=false] noLoad boolean
+    -- @return ConfigHandler|nil
     -- @return string|nil err
-    setFile: (path) =>
-        return false unless path
-        if @@handlers[path]
-            table.insert @@handlers[path], @
-        else @@handlers[path] = {@}
-        path, err = fileOps.validateFullPath path, true
-        return nil, err unless path
-        @file = path
-        return true
+    @get = (filePath, logger = @logger, noLoad = false) =>
+        return handler for path, handler in pairs @@handlers when path == filePath
 
-    --- Unregisters this handler from the shared file-handler registry.
-    -- @return boolean
-    unsetFile: =>
-        handlers = @@handlers[@file]
-        if handlers and #handlers>1
-            @@handlers[@file] = [handler for handler in *handlers when handler != @]
-        else @@handlers[@file] = nil
-        @file = nil
-        return true
+        path, msg = fileOps.validateFullPath filePath, true
+        return nil, msgs.new.badPath\format filePath, msg unless path
 
-    --- Reads and decodes a JSON config file.
-    -- @param[opt] file string
-    -- @param[opt=true] useLock boolean
-    -- @param[opt] waitLockTime number
-    -- @return table|boolean|nil
+        success, handler = pcall ConfigHandler, path, logger
+        unless success
+            return nil, msgs.get.failedCreate\format filePath, handler
+
+        @@handlers[path] = handler
+
+        unless noLoad
+            success, msg = handler\load!
+            return nil, msgs.get.failedLoad\format filePath, msg unless success
+
+        return handler
+
+
+    --- Returns a ConfigView for the given file and hive path, creating a handler if needed.
+    -- @param filePath string
+    -- @param hivePath string|string[]
+    -- @param[opt] defaults table
+    -- @param[opt] logger Logger
+    -- @return ConfigView|nil
     -- @return string|nil err
-    readFile: (file = @file, useLock = true, waitLockTime) =>
-        if useLock
-            time, err = @getLock waitLockTime
-            unless time
-                -- handle\close!
-                return false, errors.failedLock\format "reading", err
+    @getView = (filePath, hivePath, defaults, logger) =>
+        handler, msg = @get filePath, logger
+        return nil, msgs.getView.failedHandler\format filePath, msg unless handler
 
-        mode, file = fileOps.attributes file, "mode"
+        return handler\getView hivePath, defaults
+
+
+    --- Creates a ConfigHandler for the given file. Does not load from disk.
+    -- @param[opt] filePath string
+    -- @param[opt] logger Logger
+    new: (filePath, @logger = Logger fileBaseName: @@__name) =>
+        @views = setmetatable {}, {__mode: 'k'}
+        @config = {}
+        if filePath
+            path, msg = fileOps.validateFullPath filePath, true
+            @logger\assert path, msgs.new.badPath, filePath, msg
+            @filePath = path
+            @lock = Lock namespace: "l0.DependencyControl.ConfigHandler", resource: @filePath,
+                         holderName: @@__name, logger: @logger
+
+
+    readFile = (waitLockTime, useLock = true) =>
+        mode, file = fileOps.attributes @filePath, "mode"
         if mode == nil
-            @releaseLock! if useLock
-            return false, file
-        elseif not mode
-            @releaseLock! if useLock
-            @logger\trace traceMsgs.fileNotFound, @file
-            return nil
+            return nil, file
 
-        handle, err = io.open file, "r"
+        elseif not mode
+            @logger\trace msgs.readFile.fileNotFound, @filePath
+            return false, msgs.readFile.fileNotFound\format @filePath
+
+        if useLock
+            lockState, msg = @lock\lock waitLockTime
+            if lockState != Lock.LockState.Held
+                return nil, msgs.readFile.failedLock\format msg
+
+        handle, msg = io.open file, "r"
         unless handle
-            @releaseLock! if useLock
-            return false, err
+            @lock\release! if useLock
+            return nil, msgs.readFile.failedHandle\format msg
 
         data = handle\read "*a"
-        success, result = pcall json.decode, data
+        handle\close!
+
+        @lock\release! if useLock
+
+        success, res = pcall json.decode, data
         unless success
-            handle\close!
             -- JSON parse error usually points to a corrupted config file
             -- Rename the broken file to allow generating a new one
-            -- so the user can continue his work
-            @logger\trace errors.jsonDecode, result
-            backup = @file .. ".corrupted"
-            fileOps.copy @file, backup
-            fileOps.remove @file, false, true
+            -- so the user can continue their work
+            @logger\debug msgs.readFile.jsonDecodeError, res
+            backup = @filePath .. ".corrupted"
+            fileOps.copy @filePath, backup
+            fileOps.remove @filePath, false, true
 
-            @releaseLock! if useLock
-            return false, errors.configCorrupted\format backup
+            @logger\warn msgs.readFile.configCorrupted, backup
+            return false, msgs.readFile.configCorrupted\format backup
 
-        handle\close!
-        @releaseLock! if useLock
+        if "table" != type res
+            return nil, msgs.readFile.badJsonRoot\format type res
 
-        if "table" != type result
-            return false, errors.jsonRoot\format type result
+        return res
 
-        return result
 
-    --- Loads this handler's configured section into the local user configuration table.
-    -- @return boolean
-    -- @return string|nil err
-    load: =>
-        return false, errors.noFile unless @file
-
-        config, err = @readFile!
-        return config, err unless config
-
-        sectionExists = true
-        for i=1, #@section
-            config = config[@section[i]]
-            switch type config
-                when "table" continue
-                when "nil"
-                    config, sectionExists = {}, false
-                    break
-                else return false, errors.badKey\format "retrive", i, tostring(@section[i]),type config
-
-        @userConfig or= {}
-        @userConfig[k] = v for k,v in pairs config
-        return sectionExists
-
-    --- Merges this handler's section into an in-memory root config table.
-    -- @param config table
-    -- @return table|boolean
-    -- @return string|nil err
-    mergeSection: (config) =>
-        --@logger\trace traceMsgs.mergeSectionStart, @logger\dumpToString(@section),
-        --                                           @logger\dumpToString config
-
-        section, sectionExists = config, true
-        -- create missing parent sections
-        for i=1, #@section
-            childSection = section[@section[i]]
-            if childSection == nil
-                -- don't create parent sections if this section is going to be deleted
-                unless @userConfig
-                    sectionExists = false
-                    break
-                section[@section[i]] = {}
-                childSection = section[@section[i]]
-            elseif "table" != type childSection
-                return false, errors.badKey\format "update", i, tostring(@section[i]),type childSection
-            section = childSection if @userConfig or i < #@section
-        -- merge our values into our section
-        if @userConfig
-            section[k] = v for k,v in pairs @userConfig
-        elseif sectionExists
-            section[@section[#@section]] = nil
-
-        -- @logger\trace traceMsgs.mergeSectionResult, @logger\dumpToString config
-        return config
-
-    --- Deletes this handler's section from disk by clearing user config and writing.
-    -- @param[opt] concertWrite boolean
-    -- @param[opt] waitLockTime number
-    -- @return boolean
-    -- @return string|nil err
-    delete: (concertWrite, waitLockTime) =>
-        @userConfig = nil
-        return @write concertWrite, waitLockTime
-
-    --- Writes current config state to disk, optionally coordinating all handlers sharing the same file.
-    -- @param[opt] concertWrite boolean
-    -- @param[opt] waitLockTime number
-    -- @return boolean
-    -- @return string|nil err
-    write: (concertWrite, waitLockTime) =>
-        return false, errors.noFile unless @file
-
-        -- get a lock to avoid concurrent config file access
-        time, err = @getLock waitLockTime
-        unless time
-            return false, errors.failedLock\format "writing", err
-
-        -- read the config file
-        config, err = @readFile @file, false
-        if config == false
-            @releaseLock!
-            return false, errors.writeFailedRead\format err
-        @logger\trace traceMsgs.fileCreate, @file unless config
-        config or= {}
-
-        -- merge in our section
-        -- concerted writing allows us to update a configuration file
-        -- shared by multiple handlers in the lua environment
-        handlers = concertWrite and @@handlers[@file] or {@}
-        for handler in *handlers
-            config, err = handler\mergeSection config
-            unless config
-                @releaseLock!
-                return false, err
-
-        -- create JSON
-        success, res = pcall json.encode, config
+    writeFile = (config, waitLockTime, haveLock = false) =>
+        success, res = pcall json.encode, ConfigHandler\getSerializableCopy config
         unless success
-            @releaseLock!
-            return false, res
+            return nil, msgs.writeFile.failedSerialize\format res
 
-        -- write the whole config file in one go
-        handle, err = io.open(@file, "w")
+        unless haveLock
+            lockState, msg = @lock\lock waitLockTime
+            if lockState != Lock.LockState.Held
+                return nil, msgs.writeFile.failedLock\format msg
+
+        handle, msg = io.open(@filePath, "w")
         unless handle
-            @releaseLock!
-            return false, err
+            @lock\release! unless haveLock
+            return nil, msgs.writeFile.failedHandle\format msg
 
-        @logger\trace traceMsgs.writing, @file
+        @logger\trace msgs.writeFile.writing, @filePath
         handle\setvbuf "full", 10e6
         handle\write res
         handle\flush!
         handle\close!
-        @releaseLock!
+
+        @lock\release! unless haveLock
+        return true
+
+
+    hasNonPrivateFields = (tbl) ->
+        for k, _ in pairs tbl
+            if k\sub(1, 1) == "_"
+                continue
+            else return true
+
+        return false
+
+
+    makeHive = (path, config) ->
+        return config if #path == 0
+        recurse = (path, hive, depth, config) ->
+            return if depth > #path
+            hive[path[depth]] = depth == #path and config or {}
+            return recurse path, hive[path[depth]], depth + 1, config
+
+        hive = {}
+        recurse path, hive, 1, config
+        return hive
+
+
+    traverseHive = (path, config, depth = #path) ->
+        for i, key in ipairs path
+            break if i > depth
+            switch type config
+                when "nil"
+                    return false
+                when "table"
+                    config = config[key]
+                else
+                    return nil, msgs.traverseHive.badKey\format i, key, type config
+
+        return config or false
+
+
+    mergeHive = (path, source, target, depth = 1) ->
+        -- merging in a root hive overwrites target with source
+        if #path == 0
+            target[k] = nil for k, _ in pairs target
+            target[k] = source[k] for k, _ in pairs source
+            return true
+
+        key = path[depth]
+
+        if depth == #path
+            target[key] = source[key]
+            return true
+
+        if target[key] != nil and "table" != type target[key]
+            return nil, msgs.mergeHive.badKey\format depth, key, type target[key]
+
+        target[key] or= {}
+        return mergeHive path, source[key], target[key], depth + 1
+
+
+    purgeHive = (path, config) ->
+        if #path == 0
+            config[k] = nil for k, _ in pairs config
+
+        for i = #path, 1, -1
+            parent, msg = traverseHive path, config, i-1
+            switch parent
+                when nil then return nil, msg
+                when false then continue
+
+            parent[path[i]] = nil
+            break if hasNonPrivateFields parent
 
         return true
 
-    --- Acquires the global config mutex lock.
-    -- @param[opt=5000] waitTimeout number
-    -- @param[opt=50] checkInterval number
-    -- @return number|boolean timePassedOrFalse
-    -- @return string|nil err
-    getLock: (waitTimeout = 5000, checkInterval = 50) =>
-        return 0 if @hasLock
-        success = mutex.tryLock!
-        if success
-            @hasLock = true
-            return 0
 
-        timeout, timePassed = waitTimeout, 0
-        while not success and timeout > 0
-            PreciseTimer.sleep checkInterval
-            success = mutex.tryLock!
-            timeout -= checkInterval
-            timePassed = waitTimeout - timeout
-            if timePassed % (checkInterval*5) == 0
-                @logger\trace traceMsgs.waitingLock, timePassed
+    cleanHive = (path, config) ->
+        hive, msg = traverseHive path, config
+        return hive, msg if hive == nil
 
-        if success
-            @logger\trace traceMsgs.waitingLockFinished, timePassed
-            @hasLock = true
-            return timePassed
-        else
-            -- @logger\trace traceMsgs.waitingLockTimeout, waitTimeout/1000
-            -- success, err = @releaseLock true
-            -- unless success
-                -- return false, errors.forceReleaseFailed\format err
-            -- @hasLock = true
-            --return waitTimeout
-            return false, errors.lockTimeout
+        return false if hasNonPrivateFields hive
+        return purgeHive path, config
 
-    --- Creates a child handler bound to a subsection of the same config file.
-    -- @param section string|string[]
-    -- @param[opt] defaults table
-    -- @param[opt] noLoad boolean
-    -- @return ConfigHandler
-    getSectionHandler: (section, defaults, noLoad) =>
-        return @@ @file, defaults, section, noLoad, @logger
 
-    --- Releases the global config mutex lock.
-    -- @param[opt] force boolean
-    -- @return boolean
-    -- @return string|nil err
-    releaseLock: (force) =>
-        if @hasLock or force
-            @hasLock = false
-            mutex.unlock!
-            return true
-        return false, errors.noLock
-
-    --- Deep-copies a table while skipping private keys prefixed with "_".
-    -- @param tbl table
-    -- @return table
+    --- Deep-copies a value while skipping private keys prefixed with "_".
+    -- @param val any
+    -- @return any
     -- copied from Aegisub util.moon, adjusted to skip private keys
-    deepCopy: (tbl) =>
+    @getSerializableCopy = (val) =>
         seen = {}
         copy = (val) ->
             return val if type(val) != 'table'
-            return seen[val] if seen[val]
+            return {} if seen[val]  -- nuke circular references which JSON doesn't support
             seen[val] = val
             {k, copy(v) for k, v in pairs val when type(k) != "string" or k\sub(1,1) != "_"}
-        copy tbl
+        copy val
 
-    --- Imports values into this handler's user configuration.
-    -- @param[opt] tbl table|ConfigHandler
-    -- @param[opt] keys string[]
-    -- @param[opt] updateOnly boolean
-    -- @param[opt] skipSameLengthTables boolean
-    -- @return boolean changesMade
-    import: (tbl = {}, keys, updateOnly, skipSameLengthTables) =>
-        tbl = tbl.userConfig if tbl.__class == @@
-        changesMade = false
-        @userConfig or= {}
-        keys = {key, true for key in *keys} if keys
 
-        for k,v in pairs tbl
-            continue if keys and not keys[k] or @userConfig[k] == v
-            continue if updateOnly and @c[k] == nil
-            -- TODO: deep-compare tables
-            isTable = type(v) == "table"
-            if isTable and skipSameLengthTables and type(@userConfig[k]) == "table" and #v == #@userConfig[k]
-                continue
-            continue if type(k) == "string" and k\sub(1,1) == "_"
-            @userConfig[k] = isTable and @deepCopy(v) or v
-            changesMade = true
+    --- Returns the config table at the given hive path, creating it if missing.
+    -- @param path string[]
+    -- @return table|nil hive
+    -- @return string|nil err
+    getHive: (path) =>
+        hive, msg = traverseHive path, @config
+        switch hive
+            when nil
+                return nil, msg
+            when false
+                res, msg = mergeHive path, makeHive(path), @config
+                return nil, msg unless res
 
-        return changesMade
+                hive, msg = traverseHive path, @config
+                unless hive
+                    @logger\warn msgs.getHive.unexpected, path, @filePath
+                    return nil, msgs.getHive.unexpected\format path, @filePath
+
+        return hive
+
+
+    --- Returns views on the same handler whose hive paths overlap with targetView.
+    -- @param targetView ConfigView
+    -- @return ConfigView[]|nil
+    -- @return string|nil err
+    getOverlappingViews: (targetView) =>
+        if targetView.__configHandler != @
+            return nil, msgs.getOverlappingViews.differentHandler\format targetView.__configHandler.filePath, @filePath
+
+        return for view, _ in pairs @views
+            continue if view == targetView or not targetView\isOverlappingView view
+            view
+
+
+    --- Creates and registers a ConfigView for the given hive path.
+    -- @param hivePath string|string[]
+    -- @param[opt] defaults table
+    -- @return ConfigView|nil
+    -- @return string|nil err
+    getView: (hivePath, defaults) =>
+        success, view = pcall ConfigView, @, hivePath, defaults
+
+        unless success
+            return nil, msgs.getView.failedView\format hivePath, @filePath, view
+
+        @views[view] = true
+        return view
+
+
+    --- Reads the config file and refreshes the in-memory config and all (or specified) views.
+    -- @param[opt] views ConfigView|ConfigView[]
+    -- @param[opt] waitLockTime number
+    -- @return boolean|nil
+    -- @return string|nil err
+    load: (views, waitLockTime) =>
+        return nil, msgs.load.noFilePath unless @filePath
+        if type(views) == "table" and views.__class == ConfigView
+            views = {views}
+
+        config, msg = readFile @, waitLockTime
+        return nil, msg if config == nil
+
+        @logger\debug msgs.load.noFile, @filePath, msg unless config
+        -- config file may not yet exist or have been reset due to corruption
+        config or= {}
+
+        if views == nil or @config == nil
+            @config = config
+            view\refresh! for view, _ in pairs @views
+            return true
+
+        viewsToRefresh = {view, true for view in *views}
+
+        for view in *views
+            hiveConfig, msg = traverseHive view.__hivePath, config
+            switch hiveConfig
+                when nil
+                    return nil, msg
+                when false
+                    mergeHive view.__hivePath, makeHive(view.__hivePath), @config
+                else mergeHive view.__hivePath, makeHive(view.__hivePath, hiveConfig), @config
+
+            viewsToRefresh[v] or= true for v in *@getOverlappingViews view
+
+        view\refresh! for view, _ in pairs viewsToRefresh
+
+        return true
+
+
+    --- Writes the config file, merging only the specified views (or the full config if nil).
+    -- @param[opt] views ConfigView|ConfigView[]
+    -- @param[opt] waitLockTime number
+    -- @return boolean|nil
+    -- @return string|nil err
+    save: (views, waitLockTime) =>
+        return nil, msgs.save.noFile unless @filePath
+        if type(views) == "table" and views.__class == ConfigView
+            views = {views}
+
+        -- get a lock to avoid concurrent config file access
+        lockState, msg = @lock\lock waitLockTime
+        if lockState != Lock.LockState.Held
+            return nil, msgs.save.failedLock\format msg
+
+        -- read the config file under the lock we already hold (useLock false, or readFile would release it)
+        config, err = readFile @, waitLockTime, false
+        if config == nil
+            @lock\release!
+            return nil, msgs.save.failedRead\format @filePath, err
+
+        @logger\trace msgs.save.fileCreate, @filePath unless config
+        config or= {}
+
+        -- save the whole config file if desired
+        if views == nil
+            success, msg = writeFile @, @config, nil, true
+            @lock\release!
+            return if success
+                true
+            else nil, msgs.save.failedWhole\format @filePath, msg
+
+        -- otherwise only merge in the specified views
+        for view in *views
+            success, msg = mergeHive view.__hivePath, @config, config
+            unless success
+                @lock\release!
+                return nil, msgs.save.failedMerge\format view.__hivePath, @filePath, msg
+
+            success, msg = cleanHive view.__hivePath, config
+            if success == nil
+                @lock\release!
+                return nil, msgs.save.failedClean\format view.__hivePath, @filePath, msg
+
+        success, msg = writeFile @, config, nil, true
+        @lock\release!
+        return if success
+            true
+        else nil, msgs.save.failedHives\format views, @filePath, msg
+
+
+    --- Removes a view's hive from the in-memory config and returns the fresh (empty) hive.
+    -- @param hive ConfigView
+    -- @return table|nil
+    -- @return string|nil err
+    purgeHive: (hive) =>
+        purgeHive hive.__hivePath, @config
+        return @getHive hive.__hivePath

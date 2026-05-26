@@ -4,7 +4,7 @@ lfs = require "lfs"
 
 Logger = require "l0.DependencyControl.Logger"
 Common = require "l0.DependencyControl.Common"
-local ConfigHandler
+local ConfigView
 
 --- Filesystem utility helpers used by DependencyControl.
 -- @class FileOps
@@ -90,10 +90,10 @@ class FileOps
 
     createConfig = (noLoad, configDir) ->
         FileOps.configDir = configDir if configDir
-        ConfigHandler or= require "l0.DependencyControl.ConfigHandler"
+        ConfigView or= require "l0.DependencyControl.ConfigView"
         unless FileOps.config
-            FileOps.config = ConfigHandler "#{FileOps.configDir}/l0.#{FileOps.__name}.json",
-                               {toRemove: {}}, nil, noLoad, FileOps.logger
+            FileOps.config = ConfigView.get "#{FileOps.configDir}/l0.#{FileOps.__name}.json",
+                               nil, {toRemove: {}}, FileOps.logger, noLoad
             return nil, msgs.createConfig.handlerFailed\format "constructor returned nil" unless FileOps.config
         return FileOps.config
 
