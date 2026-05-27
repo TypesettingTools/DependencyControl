@@ -54,7 +54,7 @@ class Lock
     --- Creates a lock for the given resource.
     -- @param args table
     new: (args) =>
-        {@namespace, @resource, @holderName, @logger, @expiresAfter} = args
+        {namespace: @namespace, resource: @resource, holderName: @holderName, logger: @logger, expiresAfter: @expiresAfter} = args
         @logger or= @@logger
         @expiresAfter or= DEFAULT_EXPIRY_DURATION
         @holderName or= DEFAULT_HOLDER_NAME

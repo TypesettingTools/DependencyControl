@@ -1,105 +1,14 @@
 json = require "json"
 DownloadManager = require "DM.DownloadManager"
 
-DependencyControl = nil
 Logger            = require "l0.DependencyControl.Logger"
 Common            = require "l0.DependencyControl.Common"
 SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
 
 defaultLogger = Logger fileBaseName: "DepCtrl.UpdateFeed"
+ScriptUpdateRecord = require "l0.DependencyControl.ScriptUpdateRecord"
 
---- Feed-specific update information for a single script in a selected channel.
--- @class ScriptUpdateRecord
-class ScriptUpdateRecord extends Common
-    msgs = {
-        errors: {
-            noActiveChannel: "No active channel."
-        }
-        changelog: {
-            header:      "Changelog for %s v%s (released %s):"
-            verTemplate: "v %s:"
-            msgTemplate: "  • %s"
-        }
-    }
-
-    --- Creates an update record for a single script entry in a feed.
-    -- @param namespace string
-    -- @param data table
-    -- @param[opt] config table
-    -- @param scriptType number
-    -- @param[opt=true] autoChannel boolean
-    -- @param[opt] logger Logger
-    new: (@namespace, @data, @config = {c:{}}, scriptType, autoChannel = true, @logger = defaultLogger) =>
-        DependencyControl or= require "l0.DependencyControl"
-        @moduleName = scriptType == @@ScriptType.Module and @namespace
-        @[k] = v for k, v in pairs data
-        @setChannel! if autoChannel
-
-
-    --- Returns all available channel names for this script and the default channel.
-    -- @return string[] channels
-    -- @return string|nil defaultChannel
-    getChannels: =>
-        channels, default = {}
-        for name, channel in pairs @data.channels
-            channels[#channels+1] = name
-            if channel.default and not default
-                default = name
-
-        return channels, default
-
-    --- Selects the active update channel and exposes channel fields on this record.
-    -- @param[opt] channelName string
-    -- @return boolean
-    -- @return string activeChannel
-    setChannel: (channelName = @config.c.activeChannel) =>
-        with @config.c
-            .channels, default = @getChannels!
-            .lastChannel or= channelName or default
-            channelData = @data.channels[.lastChannel]
-            @activeChannel = .lastChannel
-            return false, @activeChannel unless channelData
-            @[k] = v for k, v in pairs channelData
-
-        @files = @files and [file for file in *@files when not file.platform or file.platform == @@platform] or {}
-        return true, @activeChannel
-
-    --- Checks whether this script's active channel supports the current platform.
-    -- @return boolean supported
-    -- @return string platform
-    checkPlatform: =>
-        @logger\assert @activeChannel, msgs.errors.noActiveChannel
-        return not @platforms or ({p,true for p in *@platforms})[@@platform], @@platform
-
-    --- Formats changelog entries between the current and a minimum version as a string.
-    -- @param versionRecord any
-    -- @param[opt=0] minVer number|string
-    -- @return string changelog
-    getChangelog: (versionRecord, minVer = 0) =>
-        return "" unless "table" == type @changelog
-        maxVer = SemanticVersioning\toNumber @version
-        minVer = SemanticVersioning\toNumber minVer
-
-        changelog = {}
-        for ver, entry in pairs @changelog
-            ver = SemanticVersioning\toNumber ver
-            verStr = SemanticVersioning\toString ver
-            if ver >= minVer and ver <= maxVer
-                changelog[#changelog+1] = {ver, verStr, entry}
-
-        return "" if #changelog == 0
-        table.sort changelog, (a,b) -> a[1]>b[1]
-
-        msg = {msgs.changelog.header\format @name, SemanticVersioning\toString(@version), @released or "<no date>"}
-        for chg in *changelog
-            chg[3] = {chg[3]} if type(chg[3]) ~= "table"
-            if #chg[3] > 0
-                msg[#msg+1] = @logger\format msgs.changelog.verTemplate, 1, chg[2]
-                msg[#msg+1] = @logger\format(msgs.changelog.msgTemplate, 1, entry) for entry in *chg[3]
-
-        return table.concat msg, "\n"
-
-    --- Downloaded and expanded update feed data source.
+--- Downloaded and expanded update feed data source.
     -- @class UpdateFeed
 class UpdateFeed extends Common
     templateData = {
@@ -164,8 +73,6 @@ class UpdateFeed extends Common
     -- @param[opt] config table
     -- @param[opt] logger Logger
     new: (@url, autoFetch = true, fileName, @config = {}, @logger = defaultLogger) =>
-        DependencyControl or= require "l0.DependencyControl"
-
         -- fill in missing config values
         @config[k] = v for k, v in pairs @@defaultConfig when @config[k] == nil
 

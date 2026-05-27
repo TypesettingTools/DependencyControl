@@ -103,7 +103,7 @@ class Enum
       return key
 
     if "table" != type values
-      return nil, msgs.describe.valueNotDefined
+      return nil, msgs.describe.valueNotDefined\format values, @name
 
     keys = for v in *values
       key = @__valuesToKeys[v]
@@ -121,7 +121,7 @@ class Enum
   -- @return string|nil err
   validate: (value, argName) =>
     if value == nil or @__valuesToKeys[value] == nil
-      return nil, msgs.validate.invalidValue\format argName != nil and msgs.validate.argPrefix or "",
-                                                    value, @name
+      prefix = argName != nil and msgs.validate.argPrefix\format(argName) or ""
+      return nil, msgs.validate.invalidValue\format prefix, value, @name
 
     return true

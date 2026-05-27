@@ -318,8 +318,9 @@ class UpdateTask extends UpdaterBase
         -- download updated scripts to temp directory
         -- check hashes before download, only update changed files
 
-        tmpDir = aegisub.decode_path "?temp/l0.#{DependencyControl.__name}_#{'%04X'\format math.random 0, 16^4-1}"
+        tmpDir = fileOps.getTempDir!
         res, dir = fileOps.mkdir tmpDir
+        
         return finish -30, "#{tmpDir} (#{dir})" if res == nil
 
         @logger\log msgs.performUpdate.updateReady, tmpDir

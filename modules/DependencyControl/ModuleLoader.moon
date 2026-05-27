@@ -82,7 +82,7 @@ class ModuleLoader
       unless loaded
         LOADED_MODULES[moduleName] = nil
         res or= "unknown error"
-        ._missing = res\match "module '.+' not found:"
+        ._missing = nil != res\find "module '#{moduleName}' not found:", nil, true
         ._error = res unless ._missing
         return nil
 
@@ -167,6 +167,7 @@ class ModuleLoader
     if #outdated > 0
       errorMsg[#errorMsg+1] = msgs.loadModules.outdated\format @name, table.concat outdated, "\n"
     if #missing > 0
+      downloadHint = msgs.checkOptionalModules.downloadHint\format @@automationDir.modules
       errorMsg[#errorMsg+1] = msgs.loadModules.missing\format @name, table.concat(missing, "\n"), downloadHint
 
     return #errorMsg == 0, table.concat(errorMsg, "\n\n")

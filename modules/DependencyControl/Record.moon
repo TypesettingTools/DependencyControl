@@ -13,8 +13,6 @@ SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
 --- DependencyControl record representing one managed or unmanaged script/module.
 -- @class Record
 class Record extends Common
-    namespaceValidation = re.compile "^(?:[-\\w]+\\.)+[-\\w]+$"
-
     msgs = {
         new: {
             badRecordError: "Error: Bad #{@@__name} record (%s)."
@@ -144,14 +142,14 @@ class Record extends Common
     @loadConfig = =>
         if @config
             @config\load!
-        else @config = ConfigView.get @depConf.file, {"config"}, @depConf.globalDefaults, @logger
+        else @config = ConfigView\get @depConf.file, {"config"}, @depConf.globalDefaults, @logger
 
     --- Loads this record's script/module configuration hive.
     -- @param[opt=false] importRecord boolean
     -- @return boolean
     loadConfig: (importRecord = false) =>
         -- virtual modules are not yet present on the user's system and have no persistent configuration
-        @config or= ConfigView.get not @virtual and @@depConf.file,
+        @config or= ConfigView\get not @virtual and @@depConf.file,
                     { @@ScriptType.name.legacy[@scriptType], @namespace }, {}, @@logger, true
 
         -- import and overwrites version record from the configuration
@@ -209,7 +207,7 @@ class Record extends Common
     -- @param[opt] noLoad boolean
     -- @return ConfigView
     getConfigHandler: (defaults, section, noLoad) =>
-        return ConfigView.get @getConfigFileName!, section, defaults, nil, noLoad
+        return ConfigView\get @getConfigFileName!, section, defaults, nil, noLoad
 
     --- Creates a logger preconfigured for this record.
     -- @param[opt] args table
@@ -331,12 +329,11 @@ class Record extends Common
             return version
         else return nil, err
 
-    --- Validates a dependency namespace according to DependencyControl rules.
-    -- @param[opt] namespace string
-    -- @param[opt] isVirtual boolean
+    --- Validates this record's namespace, always passing for virtual records.
     -- @return boolean
-    validateNamespace: (namespace = @namespace, isVirtual = @virtual) =>
-        return isVirtual or namespaceValidation\match @namespace
+    validateNamespace: =>
+        return true if @virtual
+        return Common.validateNamespace @namespace
 
     --- Uninstalls this managed record and removes matching files from automation paths.
     -- @param[opt=true] removeConfig boolean

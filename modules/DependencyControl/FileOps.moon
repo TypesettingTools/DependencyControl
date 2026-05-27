@@ -1,7 +1,6 @@
 ffi = require "ffi"
 re =  require "aegisub.re"
 lfs = require "lfs"
-
 Logger = require "l0.DependencyControl.Logger"
 Common = require "l0.DependencyControl.Common"
 local ConfigView
@@ -21,6 +20,9 @@ class FileOps
 
             createConfig: {
                 handlerFailed: "Couldn't create ConfigHandler for the FileOps configuration file: %s"
+            },
+            createTempDir: {
+                failedCreate: "Failed to create temporary directory: %s"
             }
             mkdir: {
                 createError: "Error creating directory: %s."
@@ -87,18 +89,33 @@ class FileOps
         maxLen: 255
     }
     @logger = Logger!
+    @pathSep = pathMatch.sep
 
     createConfig = (noLoad, configDir) ->
         FileOps.configDir = configDir if configDir
-        ConfigView or= require "l0.DependencyControl.ConfigView"
+        ConfigView or= require "#{Common.moduleName}.ConfigView"
         unless FileOps.config
-            FileOps.config = ConfigView.get "#{FileOps.configDir}/l0.#{FileOps.__name}.json",
+            FileOps.config = ConfigView\get "#{FileOps.configDir}/l0.#{FileOps.__name}.json",
                                nil, {toRemove: {}}, FileOps.logger, noLoad
             return nil, msgs.createConfig.handlerFailed\format "constructor returned nil" unless FileOps.config
         return FileOps.config
 
+    --- Creates a unique temporary directory and returns its path.
+    -- @return string? tempDirPath absolute path to the created temporary directory or nil if the directory couldn't be created
+    -- @return string? err error message if the directory couldn't be created
+    createTempDir: () ->
+        tempDir = FileOps.getTempDir()
+        res, dir = FileOps.mkdir tempDir
+        return tempDir if res
+        return nil, msgs.createTempDir.failedCreate\format err 
+
+    --- Generates a unique temporary file path.
+    -- @return string tempFilePath absolute path to a unique temporary directory that does not exist yet
+    getTempDir: () ->
+        return aegisub.decode_path "?temp/#{Common.moduleName}_#{'%04X'\format math.random 0, 16^4-1}"
+
     --- Removes one or more files/directories and optionally reschedules failed removals.
-    -- @param paths string|string[]
+    -- @param paths string|(string|string)[] path or paths to the files/directories to remove. If an array of paths is provided, each path can be specified as a string or an array of path segments.
     -- @param[opt] recurse boolean
     -- @param[opt] reSchedule boolean
     -- @return boolean|nil overallSuccess
@@ -213,6 +230,13 @@ class FileOps
         else
             return false, msgs.copy.genericError\format sourceFullPath, targetFullPath, msg
 
+    --- Joins multiple path segments into a single path string.
+    -- @param ... string|string[] one or more path segments, or arrays of path segments
+    -- @return string joinedPath the path segments joined by os-specific path separators
+    joinPath: (...) ->
+        flatPathSegments = [x for v in *{...} for x in *(type(v) == "table" and v or {v})]
+
+        return table.concat flatPathSegments, FileOps.pathSep
 
     --- Moves a file to a target path, optionally replacing existing targets.
     -- @param source string
@@ -273,9 +297,9 @@ class FileOps
         return true
 
     --- Reads and returns the full contents of a file.
-    -- @param path string
-    -- @return string|nil data
-    -- @return string|nil err
+    -- @param path string|string[] path or path segments to the file to read
+    -- @return string? data the contents of the file, or nil if an error occurred
+    -- @return string? err an error message if an error occurred, or nil if the file was read successfully
     readFile: (path) ->
         mode, fullPath = FileOps.attributes path, "mode"
         return nil, msgs.readFile.cantOpen\format path, fullPath unless mode
@@ -311,6 +335,11 @@ class FileOps
 
         return true
 
+    --- Creates a directory.
+    -- @param path string|string[] path or path segments to the directory to create
+    -- @param isFile boolean whether the path is a file path (causes the last segment to be discarded when checking/creating the directory)
+    -- @return boolean true if the directory was created, false if it already existed, or nil if an error occurred
+    -- @return string dirPathOrError the path to the existing or created directory, or an error message if an error occurred
     mkdir: (path, isFile) ->
         mode, fullPath, dev, dir, file = FileOps.attributes path, "mode"
         dir = isFile and table.concat({dev,dir or file}) or fullPath
@@ -328,6 +357,14 @@ class FileOps
             return nil, msgs.mkdir.otherExists\format mode
         return false, dir
 
+    --- Retrieves file or directory attributes.
+    -- @param path string|string[] Either a path or an array of path segments
+    -- @param key string|nil attribute name to retrieve (e.g. "mode", "size", "modification"), or nil to retrieve the full attribute table
+    -- @return table|string|number|boolean|nil attr the requested attribute(s), or nil if an error occurred
+    -- @return string fullPath the validated full path to the file or directory, or an error message if the path was invalid
+    -- @return string? device the device component of the path, or nil if the path was invalid
+    -- @return string? dir the directory component of the path, or nil if the path was invalid
+    -- @return string? file the file name component of the path, or nil if the path was invalid or pointed to
     attributes: (path, key) ->
         fullPath, dev, dir, file = FileOps.validateFullPath path
         unless fullPath
@@ -345,7 +382,7 @@ class FileOps
         return attr, fullPath, dev, dir, file
 
     --- Validates and normalizes an absolute filesystem path.
-    -- @param path string
+    -- @param path string|string[] Either a path or an array of path segments
     -- @param[opt] checkFileExt boolean
     -- @return string|nil normalizedPath
     -- @return string|nil err
@@ -353,7 +390,9 @@ class FileOps
     -- @return string|nil dir
     -- @return string|nil file
     validateFullPath: (path, checkFileExt) ->
-        if type(path) != "string"
+        if type(path) == "table"
+            path = FileOps.joinPath path
+        elseif type(path) != "string"
             return nil, msgs.validateFullPath.badType\format type(path)
         -- expand aegisub path specifiers
         path = aegisub.decode_path path
@@ -391,9 +430,9 @@ class FileOps
 
     --- Converts a base path and namespace into a namespaced filesystem path.
     -- Dots in the namespace are converted to path separators when nested is true.
-    -- @param basePath string
+    -- @param basePath string|string[] base path or path segments to the directory under which the namespaced path should be created
     -- @param namespace string
-    -- @param ext string
+    -- @param ext string file extension (including dot)
     -- @param[opt=true] nested boolean
     -- @return string|nil path
     -- @return string|nil err
@@ -401,11 +440,12 @@ class FileOps
         res, msg = Common.validateNamespace namespace
         return nil, msg unless res
 
-        res, msg = FileOps.validateFullPath basePath
-        return nil, msgs.getNamespacedPath.badBasePath\format basePath, msg unless res
+        fullBasePath, msg = FileOps.validateFullPath basePath
+        return nil, msgs.getNamespacedPath.badBasePath\format basePath, msg unless fullBasePath
 
-        path = "#{basePath}/#{nested and namespace\gsub("%.", "/") or namespace}#{ext}"
-        path, msg = FileOps.validateFullPath path
-        return nil, msgs.getNamespacedPath.badPath\format path, msg unless path
+        namespacePath = nested and namespace\gsub("%.", FileOps.pathSep) or namespace
+        fullPath = FileOps.joinPath fullBasePath, "#{namespacePath}#{ext}"
+        normalizedFullPath, msg = FileOps.validateFullPath fullPath
+        return nil, msgs.getNamespacedPath.badPath\format fullPath, msg unless normalizedFullPath
 
-        return path
+        return normalizedFullPath

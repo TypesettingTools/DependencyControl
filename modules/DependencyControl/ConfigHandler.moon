@@ -266,6 +266,7 @@ Reload your automation scripts to generate a new configuration file.]]
     cleanHive = (path, config) ->
         hive, msg = traverseHive path, config
         return hive, msg if hive == nil
+        return true if hive == false  -- path absent in file config; nothing to purge
 
         return false if hasNonPrivateFields hive
         return purgeHive path, config

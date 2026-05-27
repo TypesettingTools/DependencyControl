@@ -83,30 +83,30 @@ class ConfigView
                 continue if type(v)~="table" or type(k)=="string" and k\match "^__"
                 -- replace every table reference with an empty proxy table
                 -- this ensures all writes to the table get intercepted
-                tbl[k] = setmetatable {__key: k, __parent: tbl, __tbl: v}, {
+                tbl[k] = setmetatable {__targetMethodKey: k, __parent: tbl, __targetTable: v}, {
                     -- make the original table the index of the proxy so that defaults can be read
                     __index: v
-                    __len: (tbl) -> return #tbl.__tbl
+                    __len: (tbl) -> return #tbl.__targetTable
                     __newindex: (tbl, k, v) ->
                         upKeys, parent = {}, tbl.__parent
                         -- trace back to defaults entry, pick up the keys along the path
                         while parent.__parent
                             tbl = parent
-                            upKeys[#upKeys+1] = tbl.__key
+                            upKeys[#upKeys+1] = tbl.__targetMethodKey
                             parent = tbl.__parent
 
                         -- deep copy the whole defaults node into the user configuration
                         -- (util.deep_copy does not copy attached metatable references)
                         -- make sure we copy the actual table, not the proxy
-                        @userConfig[tbl.__key] = util.deep_copy @defaults[tbl.__key].__tbl
+                        @userConfig[tbl.__targetMethodKey] = util.deep_copy @defaults[tbl.__targetMethodKey].__targetTable
                         -- finally perform requested write on userdata
-                        tbl = @userConfig[tbl.__key]
+                        tbl = @userConfig[tbl.__targetMethodKey]
                         for i = #upKeys-1, 1, -1
                             tbl = tbl[upKeys[i]]
                         tbl[k] = v
-                    __pairs: (tbl) -> return next, tbl.__tbl
+                    __pairs: (tbl) -> return next, tbl.__targetTable
                     __ipairs: (tbl) ->
-                        i, n, orgTbl = 0, #tbl.__tbl, tbl.__tbl
+                        i, n, orgTbl = 0, #tbl.__targetTable, tbl.__targetTable
                         ->
                             i += 1
                             return i, orgTbl[i] if i <= n

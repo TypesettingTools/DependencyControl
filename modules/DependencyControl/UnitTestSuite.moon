@@ -4,6 +4,9 @@ re = require "aegisub.re"
 -- make sure tests can be loaded from the test directory
 package.path ..= aegisub.decode_path("?user/automation/tests") .. "/?.lua;"
 
+Common = require "l0.DependencyControl.Common"
+Stub   = require "l0.DependencyControl.Stub"
+
 --- A class for all single unit tests.
 -- Provides useful assertion and logging methods for a user-specified test function.
 -- @classmod UnitTest
@@ -49,13 +52,14 @@ class UnitTest
             continuous: "Expected table to have continuous numerical keys, but value at index %d of %d was a nil."
             matches: "String value '%s' didn't match expected %s pattern '%s'."
             contains: "String value '%s' didn't contain expected substring '%s' (case-%s comparison)."
-            error: "Expected function to throw an error but it succesfully returned %d values: %s"
+            error: "Expected function to throw an error but it successfully returned %d values: %s"
             errorMsgMatches: "Error message '%s' didn't match expected %s pattern '%s'."
         }
 
         formatTemplate: {
             type: "'%s' of type %s"
         }
+
     }
 
     --- Creates a single unit test.
@@ -80,8 +84,11 @@ class UnitTest
     -- @treturn[2] string the error message describing how the test failed
     run: (...) =>
         @assertFailed = false
+        @stubs = {}
         @logStart!
         @success, res = xpcall @f, debug.traceback, @, ...
+        for i = #@stubs, 1, -1
+            @stubs[i]\restore!
         @logResult res
 
         return @success, @errMsg
@@ -140,59 +147,7 @@ class UnitTest
     --                           for a small performance benefit
     -- @tparam[opt] string bType the type of the second value
     -- @treturn boolean `true` if a and b are equal, otherwise `false`
-    equals: (a, b, aType, bType) ->
-        -- TODO: support equality comparison of tables used as keys
-        treeA, treeB, depth = {}, {}, 0
-
-        recurse = (a, b, aType = type a, bType) ->
-            -- identical values are equal
-            return true if a == b
-            -- only tables can be equal without also being identical
-            bType or= type b
-            return false if aType != bType or aType != "table"
-
-            -- perform table equality comparison
-            return false if #a != #b
-
-            aFieldCnt, bFieldCnt = 0, 0
-            local tablesSeenAtKeys
-
-            depth += 1
-            treeA[depth], treeB[depth] = a, b
-
-            for k, v in pairs a
-                vType = type v
-                if vType == "table"
-                    -- comparing tables is expensive so we should keep a list
-                    -- of keys we can skip checking when iterating table b
-                    tablesSeenAtKeys or= {}
-                    tablesSeenAtKeys[k] = true
-
-                -- detect synchronous circular references to prevent infinite recursion loops
-                for i = 1, depth
-                    return true if v == treeA[i] and b[k] == treeB[i]
-
-                unless recurse v, b[k], vType
-                    depth -= 1
-                    return false
-
-                aFieldCnt += 1
-
-            for k, v in pairs b
-                continue if tablesSeenAtKeys and tablesSeenAtKeys[k]
-                if bFieldCnt == aFieldCnt or not recurse v, a[k]
-                    -- no need to check further if the field count is not identical
-                    depth -= 1
-                    return false
-                bFieldCnt += 1
-
-            -- check metatables for equality
-            res = recurse getmetatable(a), getmetatable b
-            depth -= 1
-            return res
-
-        return recurse a, b, aType, bType
-
+    equals: Common.equals
 
     --- Compares equality of two specified tables ignoring table keys.
     -- The table comparison works much in the same way as @{UnitTest:equals},
@@ -209,61 +164,27 @@ class UnitTest
     --                                           ignoring additional items present in a but not in b.
     -- @tparam[opt=false] bool requireIdenticalItems Enable this option if you require table items to be identical,
     --                                               i.e. compared by reference, rather than by equality.
-    itemsEqual: (a, b, onlyNumKeys = true, ignoreExtraAItems, requireIdenticalItems) ->
-        seen, aTbls = {}, {}
-        aCnt, aTblCnt, bCnt = 0, 0, 0
+    itemsEqual: Common.itemsEqual
 
-        findEqualTable = (bTbl) ->
-            for i, aTbl in ipairs aTbls
-                if UnitTest.equals aTbl, bTbl
-                    table.remove aTbls, i
-                    seen[aTbl] = nil
-                    return true
-            return false
+    --- Replaces tbl[key] with a Stub and registers it for automatic cleanup after the test.
+    -- If tbl is a string, looks up the module in package.loaded.
+    -- @tparam table|string tbl the table (or module name) containing the value to replace
+    -- @tparam string key the field name to stub
+    -- @treturn Stub
+    stub: (tbl, key) =>
+        s = Stub tbl, key, @logger, @
+        @stubs[#@stubs+1] = s
+        return s
 
-        if onlyNumKeys
-            aCnt, bCnt = #a, #b
-            return false if not ignoreExtraAItems and aCnt != bCnt
-
-            for v in *a
-                seen[v] = true
-                if "table" == type v
-                    aTblCnt += 1
-                    aTbls[aTblCnt] = v
-
-            for v in *b
-                -- identical values
-                if seen[v]
-                    seen[v] = nil
-                    continue
-
-                -- equal values
-                if type(v) != "table" or requireIdenticalItems or not findEqualTable v
-                    return false
-
-
-        else
-            for _, v in pairs a
-                aCnt += 1
-                seen[v] = true
-                if "table" == type v
-                    aTblCnt += 1
-                    aTbls[aTblCnt] = v
-
-            for _, v in pairs b
-                bCnt += 1
-                -- identical values
-                if seen[v]
-                    seen[v] = nil
-                    continue
-
-                -- equal values
-                if type(v) != "table" or requireIdenticalItems or not findEqualTable v
-                    return false
-
-            return false if not ignoreExtraAItems and aCnt != bCnt
-
-        return true
+    --- Wraps tbl[key] with a Stub that forwards all calls to the original.
+    -- The original value is restored automatically (LIFO) after the test completes.
+    -- @tparam table|string tbl the table (or module name) containing the value to wrap
+    -- @tparam string key the field name to spy on
+    -- @treturn Stub
+    spy: (tbl, key) =>
+        s = Stub\spy tbl, key, @logger, @
+        @stubs[#@stubs+1] = s
+        return s
 
     --- Helper method to mark a test as failed by assertion and throw a specified error message.
     -- @local
@@ -322,12 +243,12 @@ class UnitTest
     -- @tparam {[string]={value, string}} args a hashtable of argument values and expected types
     --                                         indexed by the respective argument names
     checkArgTypes: (args) =>
-        i, expected, actual = 1
+        i = 1
         for name, types in pairs args
-            actual, expected = types[2], type types[1]
-            continue if expected == "_any"
-            @logger\assert actual == expected, @@msgs.assert.checkArgTypes, i, name,
-                                               expected, @format "type", types[1]
+            declared, actual = types[2], type types[1]
+            continue if declared == "_any"
+            @logger\assert declared == actual, @@msgs.assert.checkArgTypes, i, name,
+                                               declared, @format "type", types[1]
             i += 1
 
 
@@ -754,6 +675,7 @@ class UnitTestSuite
 
     @UnitTest = UnitTest
     @UnitTestClass = UnitTestClass
+    @Stub = Stub
 
     --- Creates a complete unit test suite for a module or automation script.
     -- Using this constructor will create all test classes and tests automatically.
@@ -761,7 +683,7 @@ class UnitTestSuite
     -- @tparam {[string] = table, ...}|function(self, dependencies, args...) args To create a UnitTest suite,
     -- you must supply a hashtable of @{UnitTestClass} constructor tables by name. You can either do so directly,
     -- or wrap it in a function that takes a number of arguments depending on how the tests are registered:
-    -- * self: the module being testsed (skipped for automation scripts)
+    -- * self: the module being tested (skipped for automation scripts)
     -- * dependencies: a numerically keyed table of all the modules required by the tested script/module (in order)
     -- * args: any additional arguments passed into the @{DependencyControl\registerTests} function.
     --         Doing so is required to test automation scripts as well as module functions not exposed by its API.
