@@ -1,5 +1,4 @@
 ffi = require "ffi"
-re =  require "aegisub.re"
 lfs = require "lfs"
 Logger = require "l0.DependencyControl.Logger"
 Common = require "l0.DependencyControl.Common"
@@ -80,12 +79,14 @@ class FileOps
         }
     }
 
-    devPattern = ffi.os == "Windows" and "[A-Za-z]:" or "/[^\\\\/]+"
+    windowsReservedNameSet = {n, true for n in *{
+        "CON", "PRN", "AUX", "NUL",
+        "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+        "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"
+    }}
     pathMatch = {
         sep: ffi.os == "Windows" and "\\" or "/"
-        pattern: re.compile "^(#{devPattern})((?:[\\\\/][^\\\\/]*[^\\\\/\\s\\.])*)[\\\\/]([^\\\\/]*[^\\\\/\\s\\.])?$"
         invalidChars: '[<>:"|%?%*%z%c;]'
-        reservedNames: re.compile "[\\\\/](CON|COM[1-9]|PRN|AUX|NUL|LPT[1-9])(?:[\\\\/].*?)?$", re.ICASE
         maxLen: 255
     }
     @logger = Logger!
@@ -237,6 +238,13 @@ class FileOps
         flatPathSegments = [x for v in *{...} for x in *(type(v) == "table" and v or {v})]
 
         return table.concat flatPathSegments, FileOps.pathSep
+
+    --- Returns an iterator over the non-empty components of a path, split on any separator.
+    -- Equivalent to collecting `path:gmatch("[^/\\]+")`.
+    -- To get an array instead: `[seg for seg in FileOps.pathSegments(path)]`
+    -- @tparam string path
+    -- @return iterator
+    pathSegments: (path) -> path\gmatch "[^/\\]+"
 
     --- Moves a file to a target path, optionally replacing existing targets.
     -- @param source string
@@ -408,24 +416,30 @@ class FileOps
         invChar = path\match pathMatch.invalidChars, ffi.os == "Windows" and 3 or nil
         if invChar
             return false, msgs.validateFullPath.invalidChars\format invChar
-        -- check for reserved file names
-        reserved = pathMatch.reservedNames\match path
-        if reserved
-            return false, msgs.validateFullPath.reservedNames\format reserved[2].str
         -- check for path escalation
         if path\match "%.%."
             return false, msgs.validateFullPath.parentPath
 
-        -- check if we got a valid full path
-        matches = pathMatch.pattern\match path
-        dev, dir, file = matches[2].str, matches[3].str, matches[4].str if matches
+        -- parse path structure
+        dev = if ffi.os == "Windows" then path\match "^[A-Za-z]:" else path\match "^/[^/\\]+"
         unless dev
             return false, msgs.validateFullPath.notFullPath
+        rest = path\sub #dev + 1
+        dir, file = rest\match "^(.*)[/\\]([^/\\]*)$"
+        unless dir
+            return false, msgs.validateFullPath.notFullPath
+        for segment in FileOps.pathSegments rest
+            if ffi.os == "Windows"
+                segmentWithoutExt = segment\match("^[^%.]+") or segment
+                if windowsReservedNameSet[segmentWithoutExt\upper!]
+                    return false, msgs.validateFullPath.reservedNames\format segmentWithoutExt
+            unless segment\match "[^%.%s]$"
+                return false, msgs.validateFullPath.notFullPath
+        file = file != "" and file or nil
         if checkFileExt and not (file and file\match ".+%.+")
             return false, msgs.validateFullPath.missingExt
 
-        path = table.concat({dev, dir, file and pathMatch.sep, file})
-
+        path = table.concat {dev, dir, file and pathMatch.sep, file}
         return path, dev, dir, file
 
     --- Converts a base path and namespace into a namespaced filesystem path.

@@ -1,5 +1,4 @@
 ffi = require "ffi"
-re  = require "aegisub.re"
 
 -- Compares two values for deep equality. Tables are compared recursively;
 -- other types use == except that two identical values always compare equal.
@@ -143,16 +142,16 @@ class DependencyControlCommon
         }
     }
 
-    namespaceValidation = re.compile "^(?:[-\\w]+\\.)+[-\\w]+$"
-
     --- Validates a DependencyControl namespace string.
     -- @param namespace string
     -- @return boolean|nil
     -- @return string|nil err
     @validateNamespace = (namespace) ->
-        return if namespaceValidation\match namespace
-            true
-        else false, msgs.validateNamespace.badNamespace\format namespace
+        segments = [seg for seg in namespace\gmatch "[^%.]+"]
+        _, dotCount = namespace\gsub "%.", ""
+        if #segments >= 2 and dotCount == #segments - 1 and not namespace\match "[^-._%w]"
+            return true
+        return false, msgs.validateNamespace.badNamespace\format namespace
 
     automationDir: {
         aegisub.decode_path("?user/automation/autoload"),
@@ -180,3 +179,20 @@ class DependencyControlCommon
     -- @tparam[opt=false] boolean requireIdenticalItems
     -- @treturn boolean
     @itemsEqual = _itemsEqual
+
+    --- Shallow-copies a table (no metatable).
+    -- @static
+    -- @param tbl table the table to copy
+    -- @return table the copied table
+    @copy = (tbl) -> {k, v for k, v in pairs tbl}
+
+    --- Deep-copies a table recursively (no metatables).
+    -- @param tbl table the table to deep copy
+    -- @return table the deep-copied table
+    deepCopy = (tbl) -> {k, (type(v) == "table" and deepCopy(v) or v) for k, v in pairs tbl}
+    
+    --- Deep-copies a table recursively (no metatables).
+    -- @static
+    -- @param tbl table the table to deep copy
+    -- @return table the deep-copied table
+    @deepCopy = deepCopy

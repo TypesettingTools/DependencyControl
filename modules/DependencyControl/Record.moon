@@ -1,6 +1,5 @@
 json = require "json"
 lfs =  require "lfs"
-re =   require "aegisub.re"
 
 Common =         require "l0.DependencyControl.Common"
 Logger =         require "l0.DependencyControl.Logger"

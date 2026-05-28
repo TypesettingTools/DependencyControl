@@ -1,4 +1,4 @@
-util = require "aegisub.util"
+Common = require "l0.DependencyControl.Common"
 local ConfigHandler
 
 --- A view into a hive (nested path) of a ConfigHandler's JSON config file.
@@ -67,7 +67,7 @@ class ConfigView
             __len: (tbl) -> return 0
             __ipairs: (tbl) -> error "numerically indexed config hive keys are not supported"
             __pairs: (tbl) ->
-                merged = util.copy @defaults
+                merged = Common.copy @defaults
                 merged[k] = v for k, v in pairs @userConfig
                 return next, merged
         }
@@ -75,7 +75,7 @@ class ConfigView
 
 
     setDefaults = (defaults) =>
-        @defaults = defaults and util.deep_copy(defaults) or {}
+        @defaults = defaults and Common.deepCopy(defaults) or {}
         -- rig defaults in a way that writing to contained tables deep-copies the whole default
         -- into the user configuration and sets the requested property there
         recurse = (tbl) ->
@@ -98,7 +98,7 @@ class ConfigView
                         -- deep copy the whole defaults node into the user configuration
                         -- (util.deep_copy does not copy attached metatable references)
                         -- make sure we copy the actual table, not the proxy
-                        @userConfig[tbl.__targetMethodKey] = util.deep_copy @defaults[tbl.__targetMethodKey].__targetTable
+                        @userConfig[tbl.__targetMethodKey] = Common.deepCopy @defaults[tbl.__targetMethodKey].__targetTable
                         -- finally perform requested write on userdata
                         tbl = @userConfig[tbl.__targetMethodKey]
                         for i = #upKeys-1, 1, -1

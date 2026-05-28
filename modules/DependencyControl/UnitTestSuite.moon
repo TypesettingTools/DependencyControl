@@ -1,6 +1,5 @@
 
 Logger = require "l0.DependencyControl.Logger"
-re = require "aegisub.re"
 -- make sure tests can be loaded from the test directory
 package.path ..= aegisub.decode_path("?user/automation/tests") .. "/?.lua;"
 
@@ -475,19 +474,14 @@ class UnitTest
     -- string asserts
 
     --- Fails the assertion if a string doesn't match the specified pattern.
-    -- Supports both Lua and Regex patterns.
+    -- Accepts a Lua string pattern or a compiled aegisub.re pattern object.
     -- @tparam string str the input string
-    -- @tparam string pattern the pattern to be matched against
-    -- @tparam[opt=false] boolean useRegex Enable this option to use Regex instead of Lua patterns
-    -- @tparam[optchain] re.Flags flags Any amount of regex flags as defined by the Aegisub re module
-    -- (see here for details: http://docs.aegisub.org/latest/Automation/Lua/Modules/re/#flags)
-    assertMatches: (str, pattern, useRegex = false, ...) =>
-        @checkArgTypes { str: {str, "string"}, pattern: {pattern, "string"},
-                          useRegex: {useRegex, "boolean"}
-                       }
-
-        match = useRegex and re.match(str, pattern, ...) or str\match pattern, ...
-        @assert match, @@msgs.assert.matches, str, useRegex and "regex" or "Lua", pattern
+    -- @param pattern string|userdata Lua pattern string or compiled aegisub.re pattern
+    assertMatches: (str, pattern) =>
+        @checkArgTypes { str: {str, "string"} }
+        isLuaPattern = type(pattern) == "string"
+        match = isLuaPattern and str\match(pattern) or pattern\match str
+        @assert match, @@msgs.assert.matches, str, (isLuaPattern and "Lua" or "regex"), tostring pattern
 
     --- Fails the assertion if a string doesn't contain a specified substring.
     -- Search is case-sensitive by default.
@@ -522,21 +516,16 @@ class UnitTest
         return res[1]
 
     --- Fails the assertion if a function call doesn't cause an error message that matches the specified pattern.
-    -- Supports both Lua and Regex patterns.
+    -- Accepts a Lua string pattern or a compiled aegisub.re pattern object.
     -- @tparam function func the function to be called
     -- @tparam[opt={}] table args a table of any number of arguments to be passed into the function
-    -- @tparam string pattern the pattern to be matched against
-    -- @tparam[opt=false] boolean useRegex Enable this option to use Regex instead of Lua patterns
-    -- @tparam[optchain] re.Flags flags Any amount of regex flags as defined by the Aegisub re module
-    -- (see here for details: http://docs.aegisub.org/latest/Automation/Lua/Modules/re/#flags)
-    assertErrorMsgMatches: (func, params = {}, pattern, useRegex = false, ...) =>
-        @checkArgTypes { func: {func, "function"}, params: {params, "table"},
-                         pattern: {pattern, "string"}, useRegex: {useRegex, "boolean"}
-                       }
+    -- @param pattern string|userdata Lua pattern string or compiled aegisub.re pattern
+    assertErrorMsgMatches: (func, params = {}, pattern) =>
+        @checkArgTypes { func: {func, "function"}, params: {params, "table"} }
         msg = @assertError func, unpack params
-
-        match = useRegex and re.match(msg, pattern, ...) or msg\match pattern, ...
-        @assert match, @@msgs.assert.errorMsgMatches, msg, useRegex and "regex" or "Lua", pattern
+        isString = type(pattern) == "string"
+        match = isString and msg\match(pattern) or pattern\match msg
+        @assert match, @@msgs.assert.errorMsgMatches, msg, (isString and "Lua" or "regex"), tostring pattern
 
 
 --- A special case of the UnitTest class for a setup routine
