@@ -1,4 +1,4 @@
-mutex        = require "BM.BadMutex"
+mutex        = require "l0.DependencyControl.TerribleMutex"
 Timer = require "l0.DependencyControl.Timer"
 Logger = require "l0.DependencyControl.Logger"
 Enum   = require "l0.DependencyControl.Enum"
