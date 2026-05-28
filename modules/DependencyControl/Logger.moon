@@ -1,4 +1,4 @@
-PreciseTimer = require "PT.PreciseTimer"
+Timer = require "l0.DependencyControl.Timer"
 lfs = require "lfs"
 
 --- Structured logger that writes to Aegisub's log window and optional log files.
@@ -20,7 +20,7 @@ class Logger
     indentStr: "—"
     maxFiles: 200, maxAge: 604800, maxSize:10*(10^6)
 
-    timer, seeded = PreciseTimer!, false
+    timer, seeded = Timer!, false
 
     new: (args) =>
         if args

@@ -15,9 +15,10 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl) ->
   Record             = require "l0.DependencyControl.Record"
   UpdateFeed         = require "l0.DependencyControl.UpdateFeed"
   ScriptUpdateRecord = require "l0.DependencyControl.ScriptUpdateRecord"
+  Timer              = require "l0.DependencyControl.Timer"
 
   BADMUTEX_MODULE_NAME     = "BM.BadMutex"
-  PRECISETIMER_MODULE_NAME = "PT.PreciseTimer"
+  TIMER_MODULE_NAME        = "l0.DependencyControl.Timer"
   FILEOPS_MODULE_NAME      = "l0.DependencyControl.FileOps"
   JSON_MODULE_NAME         = "json"
 
@@ -26,6 +27,50 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl) ->
   basePath = aegisub.decode_path "?temp/l0.#{DependencyControl.__name}.#{DependencyControl.UnitTestSuite.__name}_#{'%04X'\format math.random 0, 16^4-1}"
 
   {
+    Timer: {
+      _description: "Tests for the FFI-based Timer: monotonic timing and millisecond sleep."
+
+      -- timeElapsed
+
+      timeElapsed_nonNegative: (ut) ->
+        t = Timer!
+        ut\assertGreaterThanOrEquals t\timeElapsed!, 0
+
+      timeElapsed_monotonic: (ut) ->
+        t = Timer!
+        a = t\timeElapsed!
+        b = t\timeElapsed!
+        ut\assertGreaterThanOrEquals b, a
+
+      timeElapsed_advancesAfterSleep: (ut) ->
+        t = Timer!
+        Timer.sleep 20          -- 20 ms
+        -- Require at least 10 ms to pass; allows 50% margin for CI jitter.
+        ut\assertGreaterThan t\timeElapsed!, 0.010
+
+      -- sleep
+
+      sleep_isCallable: (ut) ->
+        -- Smoke test: sleep(0) must not error and must return.
+        Timer.sleep 0
+        ut\assertTrue true
+
+      sleep_onClass: (ut) ->
+        -- sleep is a static method accessible directly on the class.
+        ut\assertFunction Timer.sleep
+
+      sleep_onInstance: (ut) ->
+        -- sleep is also accessible through an instance (class method inheritance).
+        t = Timer!
+        ut\assertFunction t.sleep
+
+      _order: {
+        "timeElapsed_nonNegative", "timeElapsed_monotonic",
+        "timeElapsed_advancesAfterSleep",
+        "sleep_isCallable", "sleep_onClass", "sleep_onInstance"
+      }
+    }
+
     Common: {
       _description: "Tests for the Common base class providing shared utilities and enums across DependencyControl components."
 
@@ -684,7 +729,7 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl) ->
 
       lock_timeout: (ut) ->
         tryLockStub = (ut\stub BADMUTEX_MODULE_NAME, "tryLock")\returns false
-        sleepStub   = ut\stub PRECISETIMER_MODULE_NAME, "sleep"
+        sleepStub   = ut\stub TIMER_MODULE_NAME, "sleep"
         ut\stub Lock.logger, "trace"
         lock = Lock namespace: "ns", resource: "res"
         state, timePassed = lock\lock 0
@@ -697,7 +742,7 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl) ->
         tryLockStub = (ut\stub BADMUTEX_MODULE_NAME, "tryLock")\calls ->
           callCount += 1
           callCount >= 2                    -- fails first, succeeds second
-        sleepStub = ut\stub PRECISETIMER_MODULE_NAME, "sleep"
+        sleepStub = ut\stub TIMER_MODULE_NAME, "sleep"
         ut\stub BADMUTEX_MODULE_NAME, "unlock"
         ut\stub Lock.logger, "trace"
         lock = Lock namespace: "ns", resource: "res"
@@ -721,7 +766,7 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl) ->
 
       tryLock_fail: (ut) ->
         tryLockStub = (ut\stub BADMUTEX_MODULE_NAME, "tryLock")\returns false
-        ut\stub PRECISETIMER_MODULE_NAME, "sleep"
+        ut\stub TIMER_MODULE_NAME, "sleep"
         ut\stub Lock.logger, "trace"
         lock = Lock namespace: "ns", resource: "res"
         state, timePassed = lock\tryLock!

@@ -1,6 +1,5 @@
 mutex        = require "BM.BadMutex"
-PreciseTimer = require "PT.PreciseTimer"
-
+Timer = require "l0.DependencyControl.Timer"
 Logger = require "l0.DependencyControl.Logger"
 Enum   = require "l0.DependencyControl.Enum"
 
@@ -116,7 +115,7 @@ class Lock
                         return @@LockState.Held, timePassed
 
                     @logger\trace msgs.lock.heldByOther, @namespace, @resource, lockWaitInterval
-                    PreciseTimer.sleep lockWaitInterval unless timeout == 0
+                    Timer.sleep lockWaitInterval unless timeout == 0
                     timePassed += lockWaitInterval
 
         @logger\trace msgs.lock.timeout, @namespace, @resource, @holderName, @instanceId

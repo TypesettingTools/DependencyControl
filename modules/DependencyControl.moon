@@ -38,7 +38,6 @@ rec = DependencyControl{
     {
         {"DM.DownloadManager", version: "0.3.1", feed: "https://raw.githubusercontent.com/torque/ffi-experiments/master/DependencyControl.json"},
         {"BM.BadMutex", version: "0.1.3", feed: "https://raw.githubusercontent.com/torque/ffi-experiments/master/DependencyControl.json"},
-        {"PT.PreciseTimer", version: "0.1.5", feed: "https://raw.githubusercontent.com/torque/ffi-experiments/master/DependencyControl.json"},
         {"requireffi.requireffi", version: "0.1.1", feed: "https://raw.githubusercontent.com/torque/ffi-experiments/master/DependencyControl.json"},
     }
 }

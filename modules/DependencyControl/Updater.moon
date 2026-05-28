@@ -1,7 +1,6 @@
 lfs = require "lfs"
 DownloadManager = require "DM.DownloadManager"
-PreciseTimer = require "PT.PreciseTimer"
-
+Timer = require "l0.DependencyControl.Timer"
 UpdateFeed = require "l0.DependencyControl.UpdateFeed"
 fileOps =    require "l0.DependencyControl.FileOps"
 Logger =     require "l0.DependencyControl.Logger"
@@ -563,7 +562,7 @@ class Updater extends UpdaterBase
                 @logger\log msgs.getLock.waiting, running.host
                 timeout, didWait = waitTimeout, true
                 while running and timeout > 0
-                    PreciseTimer.sleep 1000
+                    Timer.sleep 1000
                     timeout -= 1
                     @config\load!
                     running = @config.c.updaterRunning
