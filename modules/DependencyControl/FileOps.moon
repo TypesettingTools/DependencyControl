@@ -2,6 +2,8 @@ ffi = require "ffi"
 lfs = require "lfs"
 Logger = require "l0.DependencyControl.Logger"
 Common = require "l0.DependencyControl.Common"
+Crypto = require "l0.DependencyControl.Crypto"
+Enum   = require "l0.DependencyControl.Enum"
 local ConfigView
 
 --- Filesystem utility helpers used by DependencyControl.
@@ -52,6 +54,10 @@ class FileOps
                 cantRead: "An error occurred while trying to read from file '%s': %s"
                 notAFile: "Can only read files but supplied path '%s' points to a %s."
             }
+            verifyHash: {
+                badHash: "Argument #2 (hash) must be a string, got '%s'."
+                mismatch: "Hash mismatch. Got %s, expected %s."
+            }
             remove: {
                 noConfigReschedule: "Couldn't load the FileOps config file (%s) - deletions of %s cannot be rescheduled!"
             }
@@ -89,6 +95,10 @@ class FileOps
         invalidChars: '[<>:"|%?%*%z%c;]'
         maxLen: 255
     }
+    -- supported file hash algorithms, keyed by HashType value
+    HashType = Enum "FileOpsHashType", { SHA1: "sha1" }
+    @HashType = HashType
+    hashAlgorithms = { [HashType.SHA1]: Crypto.sha1 }
     @logger = Logger!
     @pathSep = pathMatch.sep
 
@@ -322,6 +332,31 @@ class FileOps
         if data
             return data
         else return nil, msgs.readFile.cantRead\format path, msg
+
+    --- Computes the hash of a file's contents.
+    -- @param fileName string|string[] path or path segments to the file to hash
+    -- @param[opt=HashType.SHA1] hashType FileOps.HashType the hash algorithm to use
+    -- @return string? hexDigest the lowercase hex digest, or nil if an error occurred
+    -- @return string? err an error message if an error occurred
+    getHash: (fileName, hashType = HashType.SHA1) ->
+        valid, err = HashType\validate hashType, "hashType"
+        return nil, err unless valid
+        data, readErr = FileOps.readFile fileName
+        return nil, readErr unless data
+        return hashAlgorithms[hashType] data
+
+    --- Verifies that a file's contents match an expected hash.
+    -- @param fileName string|string[] path or path segments to the file to verify
+    -- @param hash string the expected hex digest (case-insensitive)
+    -- @param[opt=HashType.SHA1] hashType FileOps.HashType the hash algorithm to use
+    -- @return boolean? match true on match, false on mismatch, or nil on error
+    -- @return string? err the mismatch detail or error message
+    verifyHash: (fileName, hash, hashType = HashType.SHA1) ->
+        return nil, msgs.verifyHash.badHash\format type hash unless type(hash) == "string"
+        actual, err = FileOps.getHash fileName, hashType
+        return actual, err unless actual
+        return true if actual == hash\lower!
+        return false, msgs.verifyHash.mismatch\format actual, hash
 
     rmdir: (path, recurse = true) ->
         return nil, msgs.rmdir.emptyPath if path == ""

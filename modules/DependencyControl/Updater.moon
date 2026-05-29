@@ -1,5 +1,5 @@
 lfs = require "lfs"
-DownloadManager = require "DM.DownloadManager"
+DownloadManager = require "l0.DependencyControl.DownloadManager"
 Timer = require "l0.DependencyControl.Timer"
 UpdateFeed = require "l0.DependencyControl.UpdateFeed"
 fileOps =    require "l0.DependencyControl.FileOps"

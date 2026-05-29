@@ -36,7 +36,7 @@ rec = DependencyControl{
     moduleName: "l0.DependencyControl",
     feed: "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/master/DependencyControl.json",
     {
-        {"DM.DownloadManager", version: "0.3.1", feed: "https://raw.githubusercontent.com/torque/ffi-experiments/master/DependencyControl.json"},
+        {"DM.DownloadManager", version: "0.3.1", feed: "https://raw.githubusercontent.com/torque/ffi-experiments/master/DependencyControl.json", optional: true},
         {"BM.BadMutex", version: "0.1.3", feed: "https://raw.githubusercontent.com/torque/ffi-experiments/master/DependencyControl.json", optional: true},
         {"requireffi.requireffi", version: "0.1.1", feed: "https://raw.githubusercontent.com/torque/ffi-experiments/master/DependencyControl.json", optional: true},
     }

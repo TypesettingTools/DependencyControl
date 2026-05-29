@@ -17,6 +17,8 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl) ->
   ScriptUpdateRecord = require "l0.DependencyControl.ScriptUpdateRecord"
   Timer              = require "l0.DependencyControl.Timer"
   TerribleMutex      = require "l0.DependencyControl.TerribleMutex"
+  Downloader         = require "l0.DependencyControl.Downloader"
+  Crypto             = require "l0.DependencyControl.Crypto"
 
   TERRIBLE_MUTEX_MODULE_NAME = "l0.DependencyControl.TerribleMutex"
   TIMER_MODULE_NAME          = "l0.DependencyControl.Timer"
@@ -26,6 +28,29 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl) ->
   isWindows  = ffi.os == "Windows"
   pathSep = isWindows and "\\" or "/"
   basePath = aegisub.decode_path "?temp/l0.#{DependencyControl.__name}.#{DependencyControl.UnitTestSuite.__name}_#{'%04X'\format math.random 0, 16^4-1}"
+
+  -- Fake transfer driver for Downloader.multiplex: each download completes after
+  -- `steps` step() calls (1 byte each), recording the order step() is called so
+  -- tests can assert round-robin fairness without any real network I/O.
+  makeFakeDriver = (steps, order) ->
+    {
+      start: (dl) ->
+        dl.totalBytes = steps
+        dl.bytesReceived = 0
+        true
+      step: (dl) ->
+        order[#order + 1] = dl.id
+        dl.bytesReceived += 1
+        return "done" if dl.bytesReceived >= steps
+        "more"
+      finish: (dl) -> nil
+    }
+
+  -- builds a downloader whose runner drives multiplex with the given fake driver
+  fakeManager = (driver) ->
+    Downloader (mgr) -> Downloader.multiplex mgr, driver
+
+  Status = Downloader.Download.Status
 
   {
     Timer: {
@@ -116,6 +141,211 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl) ->
         "api_hasTryLock", "api_hasLock", "api_hasUnlock",
         "tryLock_acquires", "tryLock_failsWhenHeld", "unlock_releasesLock",
         "registered_asBadMutex"
+      }
+    }
+
+    Crypto: {
+      _description: "Tests for the pure-Lua Crypto utilities (SHA-1) against known vectors."
+
+      sha1_abc: (ut) ->
+        ut\assertEquals Crypto.sha1("abc"), "a9993e364706816aba3e25717850c26c9cd0d89d"
+
+      sha1_empty: (ut) ->
+        ut\assertEquals Crypto.sha1(""), "da39a3ee5e6b4b0d3255bfef95601890afd80709"
+
+      -- exercises multi-block padding (>55 bytes)
+      sha1_quickBrownFox: (ut) ->
+        ut\assertEquals Crypto.sha1("The quick brown fox jumps over the lazy dog"),
+                        "2fd4e1c67a2d28fced849ee1bb76e7391b93eb12"
+
+      -- binary payloads (embedded NUL and high bytes) hash without error
+      sha1_binaryData: (ut) ->
+        digest = Crypto.sha1 "\0\1\2\254\255"
+        ut\assertMatches digest, "^%x+$"
+        ut\assertEquals #digest, 40
+
+      sha1_rejectsNonString: (ut) ->
+        result, err = Crypto.sha1 42
+        ut\assertNil result
+        ut\assertString err
+
+      -- whichever backend is active (native or lua) must match the reference impl
+      sha1_backendMatchesReference: (ut) ->
+        for input in *{"", "abc", "The quick brown fox jumps over the lazy dog", "\0\1\2\254\255"}
+          ut\assertEquals Crypto.sha1(input), Crypto._sha1Lua(input)
+
+      _order: {
+        "sha1_abc", "sha1_empty", "sha1_quickBrownFox",
+        "sha1_binaryData", "sha1_rejectsNonString", "sha1_backendMatchesReference"
+      }
+    }
+
+    Downloader: {
+      _description: "Tests for the Downloader engine: round-robin scheduling and per-download callbacks (via a fake driver). (Offline — no network.)"
+
+      -- round-robin scheduling: the scheduler must step every active transfer once
+      -- per pass, so two downloads interleave rather than running one to completion first
+
+      roundRobin_interleaves: (ut) ->
+        order = {}
+        dm = fakeManager makeFakeDriver 3, order
+        dm\addDownload "http://x/1", "#{basePath}_rr1"
+        dm\addDownload "http://x/2", "#{basePath}_rr2"
+        dm\await!
+        -- 2 downloads × 3 steps; each pass touches both before re-stepping either
+        ut\assertEquals #order, 6
+        ut\assertNotEquals order[1], order[2]   -- first pass touched both
+        ut\assertNotEquals order[3], order[4]   -- second pass too
+        ut\assertEquals dl.status, Status.Finished for dl in *dm.downloads
+
+      -- the user-described scenario: start two slow downloads, detect (via the
+      -- progress callback) that both are in flight simultaneously, then abort early
+
+      roundRobin_detectsConcurrencyThenCancels: (ut) ->
+        order = {}
+        dm = fakeManager makeFakeDriver 1000, order   -- "slow": many steps to finish
+        dm\addDownload "http://x/1", "#{basePath}_c1"
+        dm\addDownload "http://x/2", "#{basePath}_c2"
+
+        maxConcurrent = 0
+        dm\on Downloader.Event.Progress, (downloader, percent) ->
+          inFlight = 0
+          for dl in *dm.downloads
+            inFlight += 1 if dl.status == Status.Active and (dl.bytesReceived or 0) > 0
+          maxConcurrent = math.max maxConcurrent, inFlight
+          dm\cancel! if maxConcurrent >= 2   -- proven concurrent → abort
+        dm\await!
+
+        ut\assertGreaterThanOrEquals maxConcurrent, 2
+        -- aborted after the first pass: neither 1000-step download finished
+        ut\assertEquals dl.status, Status.Cancelled for dl in *dm.downloads
+
+      -- Finish event listeners fire on completion and may mark the download failed
+      -- (the mechanism SHA-1 verification rides on)
+
+      finishEvent_canMarkFailed: (ut) ->
+        dm = fakeManager makeFakeDriver 1, {}
+        dl = dm\addDownload "http://x/1", "#{basePath}_fin"
+        fired = false
+        dl\on Downloader.Download.Event.Finish, (d) ->
+          fired = true
+          d\markFailed "verification failed"
+        dm\await!
+        ut\assertTrue fired
+        ut\assertEquals dl.error, "verification failed"
+        ut\assertEquals dl.status, Status.Failed
+
+      -- on/off: a removed listener no longer fires
+
+      on_off: (ut) ->
+        dl = Downloader.Download "http://x/1", "#{basePath}_o", 1
+        count = 0
+        cb = (d) -> count += 1
+        dl\on Downloader.Download.Event.Progress, cb
+        dl\_notifyProgress!
+        dl\off Downloader.Download.Event.Progress, cb
+        dl\_notifyProgress!
+        ut\assertEquals count, 1
+
+      on_rejectsUnknownEvent: (ut) ->
+        dl = Downloader.Download "http://x/1", "#{basePath}_u", 1
+        ut\assertError -> dl\on "notAnEvent", ->
+
+      -- addDownload sha1: a matching hash leaves no error; a mismatch records one
+
+      addDownload_sha1Verifies: (ut) ->
+        path = "#{basePath}_sha1ok.txt"
+        handle = io.open path, "wb"
+        handle\write "abc"
+        handle\close!
+        dm = fakeManager makeFakeDriver 1, {}
+        dl = dm\addDownload "http://x/1", path, "a9993e364706816aba3e25717850c26c9cd0d89d"
+        dm\await!
+        os.remove path
+        ut\assertNil dl.error
+        ut\assertEquals dl.status, Status.Finished
+
+      addDownload_sha1Mismatch: (ut) ->
+        path = "#{basePath}_sha1bad.txt"
+        handle = io.open path, "wb"
+        handle\write "abc"
+        handle\close!
+        dm = fakeManager makeFakeDriver 1, {}
+        dl = dm\addDownload "http://x/1", path, ("0")\rep 40
+        dm\await!
+        os.remove path
+        ut\assertString dl.error
+        ut\assertEquals dl.status, Status.Failed
+
+      -- Downloader-level events: Progress fires during, Finished fires after await
+
+      downloaderEvents: (ut) ->
+        dm = fakeManager makeFakeDriver 2, {}
+        dm\addDownload "http://x/1", "#{basePath}_de"
+        progressCount, finished = 0, false
+        dm\on Downloader.Event.Progress, (d, percent) -> progressCount += 1
+        dm\on Downloader.Event.Finished, (d) -> finished = true
+        dm\await!
+        ut\assertGreaterThan progressCount, 0
+        ut\assertTrue finished
+
+      -- a failed start marks the download Failed with the start error
+
+      runner_recordsStartFailure: (ut) ->
+        failingDriver = {
+          start: (dl) -> false, "boom"
+          step: (dl) -> "done"
+          finish: (dl) -> nil
+        }
+        dm = Downloader (mgr) -> Downloader.multiplex mgr, failingDriver
+        dm\addDownload "http://x/1", "#{basePath}_f1"
+        dm\await!
+        ut\assertEquals dm.downloads[1].error, "boom"
+        ut\assertEquals dm.downloads[1].status, Status.Failed
+
+      -- a single download can be cancelled mid-flight without affecting the others
+
+      individualCancel: (ut) ->
+        order = {}
+        dm = fakeManager makeFakeDriver 3, order
+        dl1 = dm\addDownload "http://x/1", "#{basePath}_ic1"
+        dl2 = dm\addDownload "http://x/2", "#{basePath}_ic2"
+        dm\on Downloader.Event.Progress, -> dl1\cancel!   -- cancel dl1 once it's underway
+        dm\await!
+        ut\assertEquals dl1.status, Status.Cancelled
+        ut\assertEquals dl2.status, Status.Finished
+
+      -- addDownload queueing and validation
+
+      addDownload_queues: (ut) ->
+        dm = Downloader!
+        dl = dm\addDownload "https://example.com/x", "#{basePath}_dl.txt"
+        ut\assertEquals dl.url, "https://example.com/x"
+        ut\assertEquals #dm.downloads, 1
+
+      addDownload_badArgs: (ut) ->
+        dl, err = Downloader!\addDownload nil, nil
+        ut\assertNil dl
+        ut\assertString err
+
+      -- clear empties the arrays in place (external references stay valid)
+
+      clear_emptiesInPlace: (ut) ->
+        dm = Downloader!
+        downloadsRef = dm.downloads
+        dm\addDownload "http://x/1", "#{basePath}_cl"
+        dm\clear!
+        ut\assertEquals #dm.downloads, 0
+        ut\assertIs dm.downloads, downloadsRef   -- same table, emptied in place
+
+      _order: {
+        "roundRobin_interleaves", "roundRobin_detectsConcurrencyThenCancels",
+        "finishEvent_canMarkFailed", "on_off", "on_rejectsUnknownEvent",
+        "addDownload_sha1Verifies", "addDownload_sha1Mismatch",
+        "downloaderEvents",
+        "runner_recordsStartFailure", "individualCancel",
+        "addDownload_queues", "addDownload_badArgs",
+        "clear_emptiesInPlace"
       }
     }
 
@@ -309,6 +539,38 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl) ->
         ut\assertNil data
         ut\assertString err
 
+      -- getHash / verifyHash: stub readFile so the hash is computed over known content
+
+      getHash_sha1: (ut) ->
+        (ut\stub FILEOPS_MODULE_NAME, "readFile")\returns "abc"
+        ut\assertEquals FileOps.getHash("/path/file", "sha1"),
+                        "a9993e364706816aba3e25717850c26c9cd0d89d"
+
+      getHash_defaultsToSha1: (ut) ->
+        (ut\stub FILEOPS_MODULE_NAME, "readFile")\returns "abc"
+        ut\assertEquals FileOps.getHash("/path/file"),
+                        "a9993e364706816aba3e25717850c26c9cd0d89d"
+
+      getHash_unsupportedType: (ut) ->
+        hash, err = FileOps.getHash "/path/file", "md5"
+        ut\assertNil hash
+        ut\assertString err
+
+      verifyHash_match: (ut) ->
+        (ut\stub FILEOPS_MODULE_NAME, "readFile")\returns "abc"
+        ut\assertTrue FileOps.verifyHash "/path/file", "A9993E364706816ABA3E25717850C26C9CD0D89D", "sha1"
+
+      verifyHash_mismatch: (ut) ->
+        (ut\stub FILEOPS_MODULE_NAME, "readFile")\returns "abc"
+        ok, err = FileOps.verifyHash "/path/file", ("0")\rep(40), "sha1"
+        ut\assertFalse ok
+        ut\assertString err
+
+      verifyHash_badArg: (ut) ->
+        ok, err = FileOps.verifyHash "/path/file", nil
+        ut\assertNil ok
+        ut\assertString err
+
       -- copy: stubs lfs.attributes + io.open
 
       copy_success: (ut) ->
@@ -379,6 +641,8 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl) ->
         "attributes_file", "attributes_notFound",
         "mkdir_new", "mkdir_exists",
         "readFile_success", "readFile_isDirectory",
+        "getHash_sha1", "getHash_defaultsToSha1", "getHash_unsupportedType",
+        "verifyHash_match", "verifyHash_mismatch", "verifyHash_badArg",
         "copy_success", "copy_targetExists",
         "move_overwrite",
         "remove_success", "remove_notFound"
