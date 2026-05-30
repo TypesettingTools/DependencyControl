@@ -16,10 +16,13 @@ __Features__:
 __Requirements__:
 
  * Aegisub > 3.2.0 (e.g. [Plorkyeran's](http://plorkyeran.com/aegisub/) r8792+ or [my](http://files.line0.eu/builds/Aegisub/) git builds)
- * [LuaJSON](https://github.com/harningt/luajson)
- * [DownloadManager](https://github.com/torque/ffi-experiments/releases) v0.3.0
- * [BadMutex](https://github.com/torque/ffi-experiments/releases) v0.1.2
- * [PreciseTimer](https://github.com/torque/ffi-experiments/releases) v0.1.4
+
+DependencyControl is self-contained: it bundles a JSON library (dkjson) and ships pure-FFI
+implementations of the timer, mutex and download manager it needs, so no extra modules have to be
+installed. If you do have the native [ffi-experiments](https://github.com/torque/ffi-experiments)
+modules ([DownloadManager](https://github.com/torque/ffi-experiments/releases),
+[BadMutex](https://github.com/torque/ffi-experiments/releases)) or another `json` module installed,
+those are used in preference to the bundled fallbacks automatically.
 
 ----------------------------------
 
@@ -184,6 +187,29 @@ MyModule.version = version
 return version:register(MyModule)
 
 ```
+
+##### Providing module aliases
+
+A module may declare additional names it can satisfy via a `provides` field. Once DependencyControl is loaded, any `require` for one of those names — including a bare, non-namespaced name — resolves to your module, *unless* a real module of that name is already available (yours is only a fallback). This lets a library stand in for a commonly-required dependency without every consuming script having to know your module's namespace.
+
+```lua
+local version = DependencyControl{
+  name = "dkjson",
+  version = "2.10.0",
+  moduleName = "l0.dkjson",
+  -- this module can satisfy `require("json")`:
+  provides = {"json"},
+}
+```
+
+Notes:
+
+* Each entry is a name string (or a table `{name = "json"}`, which may offer further customization options in the future).
+* Provided names may be bare/non-namespaced even though your own `moduleName` must be a valid
+  (dotted) namespace.
+* Resolution only applies after DependencyControl itself has been loaded, and always defers to a
+  genuinely installed module of that name — so users can still bring their own.
+
 ---------------------------------------------
 
 ### Namespaces and Paths ###

@@ -148,21 +148,6 @@
               "moduleName": "requireffi.requireffi",
               "version": "0.1.1",
               "feed": "@{feed:ffi-experiments}"
-            },
-            {
-              "moduleName": "DM.DownloadManager",
-              "version": "0.3.1",
-              "feed": "@{feed:ffi-experiments}"
-            },
-            {
-              "moduleName": "BM.BadMutex",
-              "version": "0.1.3",
-              "feed": "@{feed:ffi-experiments}"
-            },
-            {
-              "moduleName": "PT.PreciseTimer",
-              "version": "0.1.5",
-              "feed": "@{feed:ffi-experiments}"
             }
           ]
         }
@@ -236,6 +221,35 @@
           "ConfigHandler: fixed a bug that prevented a global lock on the config file from being released on certain error conditions.",
           "The update feed format has been updated to v0.2.0 and introduces a new template variable to reference knownFeeds specifed at the top level."
         ]
+      }
+    },
+    "l0.dkjson": {
+      "url": "http://dkolf.de/dkjson-lua/",
+      "author": "David Kolf",
+      "name": "dkjson",
+      "description": "David Kolf's JSON module for Lua, vendored with and managed by DependencyControl.",
+      "fileBaseUrl": "@{fileBaseUrl}v@{version}-@{channel}/modules/@{scriptName}",
+      "channels": {
+        "release": {
+          "version": "2.10.0",
+          "released": "2026-05-30",
+          "default": true,
+          "files": [
+            {
+              "name": ".moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "94DDD16A2B34530F50F664F6D0F7A4B6B962A886"
+            },
+            {
+              "name": "/vendor/dkjson.lua",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "A0597E1AEEB14D42DABB3A0E8C05129EB024EDCA"
+            }
+          ]
+        }
+      },
+      "changelog": {
+        "2.10.0": ["Vendored dkjson v2.10 with a DependencyControl version record and json/dkjson self-registration."]
       }
     }
   }

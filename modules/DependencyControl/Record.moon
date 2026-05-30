@@ -7,6 +7,7 @@ ConfigView =     require "l0.DependencyControl.ConfigView"
 FileOps =        require "l0.DependencyControl.FileOps"
 Updater =        require "l0.DependencyControl.Updater"
 ModuleLoader =   require "l0.DependencyControl.ModuleLoader"
+ModuleProvider = require "l0.DependencyControl.ModuleProvider"
 SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
 
 --- DependencyControl record representing one managed or unmanaged script/module.
@@ -35,7 +36,7 @@ class Record extends Common
     @depConf = {
         file: aegisub.decode_path "?user/config/l0.#{@@__name}.json",
         scriptFields: {"author", "configFile", "feed", "moduleName", "name", "namespace", "url", -- REMOVE
-                       "requiredModules", "version", "unmanaged"},
+                       "requiredModules", "version", "unmanaged", "provides"},
         globalDefaults: {updaterEnabled:true, updateInterval:302400, traceLevel:3, extraFeeds:{},
                          tryAllFeeds:false, dumpFeeds:true, configDir:"?user/config",
                          logMaxFiles: 200, logMaxAge: 604800, logMaxSize:10*(10^6),
@@ -72,7 +73,7 @@ class Record extends Common
 
         {@requiredModules, moduleName:@moduleName, configFile:configFile, virtual:@virtual, :name,
          description:@description, url:@url, feed:@feed, recordType:@recordType, :namespace,
-         author:@author, :version, configFile:@configFile,
+         author:@author, :version, configFile:@configFile, :provides,
          :readGlobalScriptVars, :saveRecordToConfig} = args
 
         @recordType or= @@RecordType.Managed
@@ -126,6 +127,12 @@ class Record extends Common
                 when "string"
                     @requiredModules[i] = {moduleName: mdl}
                 else error msgs.new.badRecordError\format msgs.new.badRecord.badModuleTable\format i, tostring mdl
+
+        -- normalize `provides` aliases (bare string -> {name: …}) and register them so
+        -- `require`-ing a provided alias resolves to this module (see ModuleProvider)
+        if @provides
+            @provides = [type(alias) == "table" and alias or {name: alias} for alias in *@provides]
+            ModuleProvider.registerRecord @
 
         shouldWriteConfig = @loadConfig!
 

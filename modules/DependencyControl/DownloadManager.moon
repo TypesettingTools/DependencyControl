@@ -1,14 +1,8 @@
--- DM.DownloadManager-compatible download manager.
--- Prefers the native DM.DownloadManager library (higher-performance, threaded).
--- Otherwise this class wraps DepCtrl's own Downloader engine to replicate the
--- native API, and registers itself under DM.DownloadManager so other scripts get
--- a working downloader too.
---
--- DEPCTRL_PREFER_FFI_DOWNLOADER=1 skips the native library and forces the FFI path.
-
-unless os.getenv("DEPCTRL_PREFER_FFI_DOWNLOADER") == "1"
-    ok, native = pcall require, "DM.DownloadManager"
-    return native if ok
+-- DM.DownloadManager-compatible download manager: a class that wraps DepCtrl's own
+-- Downloader engine to replicate the native DM.DownloadManager API.
+-- DependencyControl registers it as a provider for the "DM.DownloadManager" alias (see
+-- ModuleProvider), so it's used wherever the native library isn't installed; native takes
+-- precedence by default, and DEPCTRL_PREFER_FFI_DOWNLOADER=1 forces this implementation.
 
 Downloader = require "l0.DependencyControl.Downloader"
 FileOps    = require "l0.DependencyControl.FileOps"
@@ -92,5 +86,4 @@ class DownloadManager
         return true if actual == expected\lower!
         false, msgs.hashMismatch\format actual, expected
 
-package.loaded["DM.DownloadManager"] = DownloadManager
 return DownloadManager

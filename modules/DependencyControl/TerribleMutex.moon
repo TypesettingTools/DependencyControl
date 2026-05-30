@@ -1,21 +1,14 @@
--- Process-scoped mutex using native OS synchronization primitives.
+-- Process-scoped mutex using native OS synchronization primitives — a pure-FFI
+-- stand-in for BM.BadMutex. DependencyControl registers it as a provider for the
+-- "BM.BadMutex" alias (see ModuleProvider), so it is used wherever the native
+-- library isn't installed; native takes precedence by default, and
+-- DEPCTRL_PREFER_FFI_MUTEX=1 forces this implementation instead.
 --
--- Preference rules:
---   Default:                     try BM.BadMutex first, fall back to FFI
---   DEPCTRL_PREFER_FFI_MUTEX=1:  skip BM.BadMutex, always use FFI implementation
---
--- Either way, if BM.BadMutex is not already in package.loaded after the attempt,
--- we register ourselves there so other modules get a working mutex.
+-- The mutex name embeds the process ID so concurrent Aegisub / test-launcher
+-- instances never share the same lock.
 
 ffi = require "ffi"
 
-unless os.getenv("DEPCTRL_PREFER_FFI_MUTEX") == "1"
-    ok, native = pcall require, "BM.BadMutex"
-    return native if ok
-
--- Build pure-FFI implementation.
--- The mutex name embeds the process ID so concurrent Aegisub / test-launcher
--- instances never share the same lock.
 local tryLock, lock, unlock, canary
 
 if ffi.os == "Windows"
@@ -77,11 +70,8 @@ else
 mutex = {
     :tryLock, :lock, :unlock
     __canary: canary  -- keeps canary alive for this module's lifetime
-    -- Satisfies DepCtrl's version check for BM.BadMutex without a full record.
+    -- mirrors the BM.BadMutex version this stands in for
     version: "0.1.3"
 }
-
--- Register as BM.BadMutex so other scripts requiring it get a working mutex.
-package.loaded["BM.BadMutex"] = mutex
 
 return mutex

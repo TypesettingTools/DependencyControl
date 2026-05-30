@@ -19,8 +19,9 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl) ->
   TerribleMutex      = require "l0.DependencyControl.TerribleMutex"
   Downloader         = require "l0.DependencyControl.Downloader"
   Crypto             = require "l0.DependencyControl.Crypto"
+  ModuleProvider     = require "l0.DependencyControl.ModuleProvider"
 
-  TERRIBLE_MUTEX_MODULE_NAME = "l0.DependencyControl.TerribleMutex"
+  BADMUTEX_MODULE_NAME       = "BM.BadMutex"
   TIMER_MODULE_NAME          = "l0.DependencyControl.Timer"
   FILEOPS_MODULE_NAME      = "l0.DependencyControl.FileOps"
   JSON_MODULE_NAME         = "json"
@@ -51,6 +52,9 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl) ->
     Downloader (mgr) -> Downloader.multiplex mgr, driver
 
   Status = Downloader.Download.Status
+
+  -- generates a process-unique module-alias name (the ModuleProvider registry is global)
+  uniqueName = (prefix) -> "#{prefix}_#{'%08X'\format math.random 0, 16^8-1}"
 
   {
     Timer: {
@@ -134,7 +138,8 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl) ->
       -- BM.BadMutex alias
 
       registered_asBadMutex: (ut) ->
-        -- TerribleMutex registers itself (or native BM.BadMutex) under this name
+        -- DepCtrl provides "BM.BadMutex" (native if installed, else this FFI mutex),
+        -- so the bare name resolves once DepCtrl is loaded
         ut\assertNotNil package.loaded["BM.BadMutex"]
 
       _order: {
@@ -177,6 +182,42 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl) ->
       _order: {
         "sha1_abc", "sha1_empty", "sha1_quickBrownFox",
         "sha1_binaryData", "sha1_rejectsNonString", "sha1_backendMatchesReference"
+      }
+    }
+
+    ModuleProvider: {
+      _description: "Tests for ModuleProvider: alias registration and searcher-based resolution. (Unique names per run; the registry is process-global.)"
+
+      register_andGetProvider: (ut) ->
+        name = uniqueName "alias"
+        ut\assertTrue ModuleProvider.register name, "some.provider"
+        ut\assertEquals ModuleProvider.getProvider(name), "some.provider"
+
+      register_firstWins: (ut) ->
+        name = uniqueName "alias"
+        ut\assertTrue ModuleProvider.register name, "first.provider"
+        ut\assertFalse ModuleProvider.register name, "second.provider"   -- already registered
+        ut\assertEquals ModuleProvider.getProvider(name), "first.provider"
+
+      registerRecord_normalizesAliases: (ut) ->
+        stringAlias, tableAlias = uniqueName("string"), uniqueName "table"
+        ModuleProvider.registerRecord {moduleName: "prov.A", provides: {stringAlias}}
+        ModuleProvider.registerRecord {moduleName: "prov.B", provides: {{name: tableAlias}}}
+        ut\assertEquals ModuleProvider.getProvider(stringAlias), "prov.A"
+        ut\assertEquals ModuleProvider.getProvider(tableAlias), "prov.B"
+
+      -- end to end: a require of a registered alias resolves to the provider module
+      searcher_resolvesAliasToProvider: (ut) ->
+        ModuleProvider.install!   -- idempotent; already installed during load
+        name = uniqueName "aliasToSemver"
+        ModuleProvider.register name, "l0.DependencyControl.SemanticVersioning"
+        resolved = require name
+        package.loaded[name] = nil   -- don't leak the alias into the module cache
+        ut\assertIs resolved, SemanticVersioning
+
+      _order: {
+        "register_andGetProvider", "register_firstWins",
+        "registerRecord_normalizesAliases", "searcher_resolvesAliasToProvider"
       }
     }
 
@@ -1007,8 +1048,8 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl) ->
         ut\assertEquals lock\getState!, Lock.LockState.Unknown
 
       getState_held: (ut) ->
-        (ut\stub TERRIBLE_MUTEX_MODULE_NAME, "tryLock")\returns true
-        ut\stub TERRIBLE_MUTEX_MODULE_NAME, "unlock"
+        (ut\stub BADMUTEX_MODULE_NAME, "tryLock")\returns true
+        ut\stub BADMUTEX_MODULE_NAME, "unlock"
         ut\stub Lock.logger, "trace"
         lock = Lock namespace: "ns", resource: "res"
         lock\lock!
@@ -1018,8 +1059,8 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl) ->
       -- lock
 
       lock_success: (ut) ->
-        tryLockStub = (ut\stub TERRIBLE_MUTEX_MODULE_NAME, "tryLock")\returns true
-        ut\stub TERRIBLE_MUTEX_MODULE_NAME, "unlock"
+        tryLockStub = (ut\stub BADMUTEX_MODULE_NAME, "tryLock")\returns true
+        ut\stub BADMUTEX_MODULE_NAME, "unlock"
         ut\stub Lock.logger, "trace"
         lock = Lock namespace: "ns", resource: "res"
         state, timePassed = lock\lock!
@@ -1029,8 +1070,8 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl) ->
         lock\release!
 
       lock_alreadyHeld: (ut) ->
-        tryLockStub = (ut\stub TERRIBLE_MUTEX_MODULE_NAME, "tryLock")\returns true
-        ut\stub TERRIBLE_MUTEX_MODULE_NAME, "unlock"
+        tryLockStub = (ut\stub BADMUTEX_MODULE_NAME, "tryLock")\returns true
+        ut\stub BADMUTEX_MODULE_NAME, "unlock"
         ut\stub Lock.logger, "trace"
         lock = Lock namespace: "ns", resource: "res"
         lock\lock!                          -- acquire
@@ -1040,7 +1081,7 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl) ->
         lock\release!
 
       lock_timeout: (ut) ->
-        tryLockStub = (ut\stub TERRIBLE_MUTEX_MODULE_NAME, "tryLock")\returns false
+        tryLockStub = (ut\stub BADMUTEX_MODULE_NAME, "tryLock")\returns false
         sleepStub   = ut\stub TIMER_MODULE_NAME, "sleep"
         ut\stub Lock.logger, "trace"
         lock = Lock namespace: "ns", resource: "res"
@@ -1051,11 +1092,11 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl) ->
 
       lock_retry: (ut) ->
         callCount   = 0
-        tryLockStub = (ut\stub TERRIBLE_MUTEX_MODULE_NAME, "tryLock")\calls ->
+        tryLockStub = (ut\stub BADMUTEX_MODULE_NAME, "tryLock")\calls ->
           callCount += 1
           callCount >= 2                    -- fails first, succeeds second
         sleepStub = ut\stub TIMER_MODULE_NAME, "sleep"
-        ut\stub TERRIBLE_MUTEX_MODULE_NAME, "unlock"
+        ut\stub BADMUTEX_MODULE_NAME, "unlock"
         ut\stub Lock.logger, "trace"
         lock = Lock namespace: "ns", resource: "res"
         state, timePassed = lock\lock!
@@ -1067,8 +1108,8 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl) ->
       -- tryLock
 
       tryLock_success: (ut) ->
-        tryLockStub = (ut\stub TERRIBLE_MUTEX_MODULE_NAME, "tryLock")\returns true
-        ut\stub TERRIBLE_MUTEX_MODULE_NAME, "unlock"
+        tryLockStub = (ut\stub BADMUTEX_MODULE_NAME, "tryLock")\returns true
+        ut\stub BADMUTEX_MODULE_NAME, "unlock"
         ut\stub Lock.logger, "trace"
         lock = Lock namespace: "ns", resource: "res"
         state, timePassed = lock\tryLock!
@@ -1077,7 +1118,7 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl) ->
         lock\release!
 
       tryLock_fail: (ut) ->
-        tryLockStub = (ut\stub TERRIBLE_MUTEX_MODULE_NAME, "tryLock")\returns false
+        tryLockStub = (ut\stub BADMUTEX_MODULE_NAME, "tryLock")\returns false
         ut\stub TIMER_MODULE_NAME, "sleep"
         ut\stub Lock.logger, "trace"
         lock = Lock namespace: "ns", resource: "res"
@@ -1088,8 +1129,8 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl) ->
       -- release
 
       release_held: (ut) ->
-        (ut\stub TERRIBLE_MUTEX_MODULE_NAME, "tryLock")\returns true
-        unlockStub = ut\stub TERRIBLE_MUTEX_MODULE_NAME, "unlock"
+        (ut\stub BADMUTEX_MODULE_NAME, "tryLock")\returns true
+        unlockStub = ut\stub BADMUTEX_MODULE_NAME, "unlock"
         ut\stub Lock.logger, "trace"
         lock = Lock namespace: "ns", resource: "res"
         lock\lock!
@@ -1109,8 +1150,8 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl) ->
       -- GC canary: unreleased lock is cleaned up and warns on collection
 
       gc_canary: (ut) ->
-        (ut\stub TERRIBLE_MUTEX_MODULE_NAME, "tryLock")\returns true
-        unlockStub = ut\stub TERRIBLE_MUTEX_MODULE_NAME, "unlock"
+        (ut\stub BADMUTEX_MODULE_NAME, "tryLock")\returns true
+        unlockStub = ut\stub BADMUTEX_MODULE_NAME, "unlock"
         warnStub   = ut\stub Lock.logger, "warn"
         ut\stub Lock.logger, "trace"
         do

@@ -1,5 +1,5 @@
 json = require "json"
-DownloadManager = require "l0.DependencyControl.DownloadManager"
+DownloadManager = require "DM.DownloadManager"
 
 Logger            = require "l0.DependencyControl.Logger"
 Common            = require "l0.DependencyControl.Common"
