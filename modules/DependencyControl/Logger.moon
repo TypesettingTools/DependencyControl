@@ -205,6 +205,9 @@ class Logger
         files, totalSize, deletedSize, now, f = {}, 0, 0, os.time!, 0
 
         dir = aegisub.decode_path @logDir
+        -- nothing to trim if the log directory hasn't been created yet
+        return 0, 0, 0, 0 unless lfs.attributes dir, "mode"
+        
         for file in lfs.dir dir
             fullPath = "#{dir}/#{file}"
             attr = lfs.attributes fullPath
