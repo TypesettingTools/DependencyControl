@@ -190,27 +190,27 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl) ->
 
       register_andGetProvider: (ut) ->
         name = uniqueName "alias"
-        ut\assertTrue ModuleProvider.register name, "some.provider"
-        ut\assertEquals ModuleProvider.getProvider(name), "some.provider"
+        ut\assertTrue ModuleProvider\register name, "some.provider"
+        ut\assertEquals ModuleProvider\getProvider(name), "some.provider"
 
       register_firstWins: (ut) ->
         name = uniqueName "alias"
-        ut\assertTrue ModuleProvider.register name, "first.provider"
-        ut\assertFalse ModuleProvider.register name, "second.provider"   -- already registered
-        ut\assertEquals ModuleProvider.getProvider(name), "first.provider"
+        ut\assertTrue ModuleProvider\register name, "first.provider"
+        ut\assertFalse ModuleProvider\register name, "second.provider"   -- already registered
+        ut\assertEquals ModuleProvider\getProvider(name), "first.provider"
 
       registerRecord_normalizesAliases: (ut) ->
         stringAlias, tableAlias = uniqueName("string"), uniqueName "table"
-        ModuleProvider.registerRecord {moduleName: "prov.A", provides: {stringAlias}}
-        ModuleProvider.registerRecord {moduleName: "prov.B", provides: {{name: tableAlias}}}
-        ut\assertEquals ModuleProvider.getProvider(stringAlias), "prov.A"
-        ut\assertEquals ModuleProvider.getProvider(tableAlias), "prov.B"
+        ModuleProvider\registerRecord {moduleName: "prov.A", provides: {stringAlias}}
+        ModuleProvider\registerRecord {moduleName: "prov.B", provides: {{name: tableAlias}}}
+        ut\assertEquals ModuleProvider\getProvider(stringAlias), "prov.A"
+        ut\assertEquals ModuleProvider\getProvider(tableAlias), "prov.B"
 
       -- end to end: a require of a registered alias resolves to the provider module
       searcher_resolvesAliasToProvider: (ut) ->
-        ModuleProvider.install!   -- idempotent; already installed during load
+        ModuleProvider\install!   -- idempotent; already installed during load
         name = uniqueName "aliasToSemver"
-        ModuleProvider.register name, "l0.DependencyControl.SemanticVersioning"
+        ModuleProvider\register name, "l0.DependencyControl.SemanticVersioning"
         resolved = require name
         package.loaded[name] = nil   -- don't leak the alias into the module cache
         ut\assertIs resolved, SemanticVersioning

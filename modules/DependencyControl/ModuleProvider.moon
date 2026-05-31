@@ -29,7 +29,7 @@ class ModuleProvider
     -- @param alias string the (possibly bare) module name to provide
     -- @param providerName string the namespaced module that provides it
     -- @return boolean whether the registration was applied
-    @register = (alias, providerName) ->
+    @register = (alias, providerName) =>
         return false unless type(alias) == "string" and type(providerName) == "string"
         return false if state.providers[alias]
         state.providers[alias] = providerName
@@ -37,7 +37,7 @@ class ModuleProvider
 
     --- Registers every alias declared in a record's `provides` field.
     -- @param record table a record with .moduleName and an optional .provides array
-    @registerRecord = (record) ->
+    @registerRecord = (record) =>
         return unless record.provides and record.moduleName
         for alias in *record.provides
             name = type(alias) == "table" and alias.name or alias
@@ -46,10 +46,10 @@ class ModuleProvider
     --- Gets the provider namespace registered for an alias module name.
     -- @param alias string
     -- @return string|nil the provider namespace registered for the alias
-    @getProvider = (alias) -> state.providers[alias]
+    @getProvider = (alias) => state.providers[alias]
 
     --- Installs the alias searcher. Idempotent across reloads.
-    @install = ->
+    @install = =>
         return if state.installed
         loaders = package.loaders or package.searchers
         loaders[#loaders + 1] = search

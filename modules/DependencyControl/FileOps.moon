@@ -4,6 +4,11 @@ Logger = require "l0.DependencyControl.Logger"
 Common = require "l0.DependencyControl.Common"
 Crypto = require "l0.DependencyControl.Crypto"
 Enum   = require "l0.DependencyControl.Enum"
+
+ENOENT = 2 -- POSIX error code for "No such file or directory"
+ENOTDIR = 20 -- POSIX error code for "Not a directory"
+ERROR_PATH_NOT_FOUND = 3 -- Windows error code for "The system cannot find the path specified"
+
 local ConfigView
 
 --- Filesystem utility helpers used by DependencyControl.
@@ -365,7 +370,7 @@ class FileOps
 
         if recurse
             -- recursively remove contained files and directories
-            toRemove = ["#{path}/#{file}" for file in lfs.dir path]
+            toRemove = [FileOps.joinPath(path, file) for file in lfs.dir path]
             res, details = FileOps.remove toRemove, true
             unless res
                 fileList = table.concat ["#{path}: #{res[2]}" for path, res in pairs details when not res[1]], "\n"
@@ -378,18 +383,39 @@ class FileOps
 
         return true
 
+    -- Creates `dir` along with any missing parent directories, building the path up one
+    -- segment at a time. Idempotent: levels that already exist are left untouched.
+    -- @param dir string a validated, absolute directory path
+    -- @return boolean|nil true on success, or nil on error
+    -- @return string dirPathOrError the directory path on success, or an error message
+    mkdirRecursive = (dir) ->
+        -- preserve a leading separator so POSIX absolute paths keep their root
+        accum, first = dir\match("^[/\\]") and FileOps.pathSep or "", true
+        for segment in FileOps.pathSegments dir
+            accum = first and accum .. segment or "#{accum}#{FileOps.pathSep}#{segment}"
+            first = false
+            continue if accum\match "^%a:$"   -- skip bare drive letters like "C:"
+            unless lfs.attributes accum, "mode"
+                _, err = lfs.mkdir accum
+                -- tolerate races and pre-existing levels; only fail if it's still absent
+                if err and not lfs.attributes accum, "mode"
+                    return nil, msgs.mkdir.createError\format err
+        return true, dir
+
     --- Creates a directory.
     -- @param path string|string[] path or path segments to the directory to create
     -- @param isFile boolean whether the path is a file path (causes the last segment to be discarded when checking/creating the directory)
+    -- @param[opt=false] recurse boolean whether to also create any missing parent directories
     -- @return boolean true if the directory was created, false if it already existed, or nil if an error occurred
     -- @return string dirPathOrError the path to the existing or created directory, or an error message if an error occurred
-    mkdir: (path, isFile) ->
+    mkdir: (path, isFile, recurse) ->
         mode, fullPath, dev, dir, file = FileOps.attributes path, "mode"
         dir = isFile and table.concat({dev,dir or file}) or fullPath
 
         if mode == nil
             return nil, msgs.attributes.genericError\format fullPath
         elseif not mode
+            return mkdirRecursive dir if recurse
             res, err = lfs.mkdir dir
             if err -- can't create directory (possibly a permission error)
                 return nil, msgs.mkdir.createError\format err
@@ -411,18 +437,21 @@ class FileOps
     attributes: (path, key) ->
         fullPath, dev, dir, file = FileOps.validateFullPath path
         unless fullPath
-            path = "#{lfs.currentdir!}/#{path}"
+            path = FileOps.joinPath lfs.currentdir!, path
             fullPath, dev, dir, file = FileOps.validateFullPath path
             unless fullPath
                 return nil, msgs.attributes.badPath\format dev
 
-        attr, err = lfs.attributes fullPath, key
-        if err
-            return nil, msgs.attributes.genericError\format err
-        elseif not attr
+        attr, err, errCode = lfs.attributes fullPath, key
+        if attr
+            return attr, fullPath, dev, dir, file
+        -- Aegisub's lfs implementation signals a non-existent file/dir with a bare nil, 
+        -- while the stock library (https://lunarmodules.github.io/luafilesystem/; v1.7.0+)
+        -- returns an error code alongside an error message
+        elseif err == nil or errCode == ENOENT or errCode == ERROR_PATH_NOT_FOUND or errCode == ENOTDIR
             return false, fullPath, dev, dir, file
-
-        return attr, fullPath, dev, dir, file
+        else
+            return nil, msgs.attributes.genericError\format err
 
     --- Validates and normalizes an absolute filesystem path.
     -- @param path string|string[] Either a path or an array of path segments

@@ -83,9 +83,12 @@ class UnitTest
     -- @treturn[2] string the error message describing how the test failed
     run: (...) =>
         @assertFailed = false
+        @ran = true
         @stubs = {}
         @logStart!
+        startTime = os.clock!
         @success, res = xpcall @f, debug.traceback, @, ...
+        @duration = os.clock! - startTime
         for i = #@stubs, 1, -1
             @stubs[i]\restore!
         @logResult res
@@ -539,9 +542,12 @@ class UnitTestSetup extends UnitTest
     -- @treturn[2] boolean false (test failed)
     -- @treturn[2] string the error message describing how the test failed
     run: =>
+        @ran = true
         @logger\logEx nil, @@msgs.run.setup, false
 
+        startTime = os.clock!
         res = table.pack pcall @f, @
+        @duration = os.clock! - startTime
         @success = table.remove res, 1
         @logResult res[1]
 
@@ -736,6 +742,7 @@ class UnitTestSuite
         @logger\log msgs.run.running, classCnt, @namespace
         @logger.indent += 1
 
+        @startTime = os.time! * 1000   -- epoch ms, for the CTRF report summary
         for i, cls in pairs classes
             success, failed = cls\run abortOnFail
             unless success
@@ -746,6 +753,7 @@ class UnitTestSuite
                     @logger\warn msgs.run.abort, i
                     return false, allFailed
 
+        @endTime = os.time! * 1000
         @logger.indent -= 1
         @success = failedCnt == 0
         if @success
@@ -753,3 +761,80 @@ class UnitTestSuite
         else @logger\log msgs.run.classesFailed, failedCnt, classCnt
 
         return @success, failedCnt > 0 and allFailed or nil
+
+    --- Collects the results of the most recent run into a flat, format-agnostic structure.
+    -- Only tests that actually ran are included; a failed class setup surfaces as an errored
+    -- "setup" case so skipped classes still show up in the report.
+    -- @local
+    -- @treturn {{name=string, cases={{name, classname, duration, failure?, error?}, ...}}, ...}
+    collectResults: =>
+        suites = {}
+        for cls in *@classes
+            cases = {}
+            -- a setup failure aborts the whole class; represent it as an error case
+            if cls.setup and cls.setup.ran and not cls.setup.success
+                cases[#cases+1] = { name: "setup", classname: cls.name,
+                                    duration: cls.setup.duration or 0, error: cls.setup.errMsg }
+            for test in *cls.tests
+                continue unless test.ran
+                cases[#cases+1] = {
+                    name: test.name, classname: cls.name, duration: test.duration or 0
+                    -- keep assertion failures and unexpected errors separate for consumers
+                    -- that care; CTRF itself folds both into a single "failed" status
+                    failure: not test.success and test.assertFailed and (test.errMsg or "assertion failed") or nil
+                    error:   not test.success and not test.assertFailed and (test.errMsg or "unexpected error") or nil
+                }
+            suites[#suites+1] = { name: cls.name, :cases }
+        return suites
+
+    --- Builds a CTRF (Common Test Report Format) report of the most recent run.
+    -- CTRF is a JSON test report schema understood by ready-made CI reporters
+    -- (e.g. the ctrf-io/github-test-reporter action). See https://ctrf.io.
+    -- @treturn table the CTRF report as a plain Lua table, ready to be JSON-encoded
+    toCtrf: =>
+        tests, passed, failed = {}, 0, 0
+        for suite in *@collectResults!
+            for c in *suite.cases
+                failureMsg = c.failure or c.error   -- CTRF has a single "failed" status
+                if failureMsg then failed += 1 else passed += 1
+                entry = {
+                    name: c.name
+                    suite: c.classname
+                    status: failureMsg and "failed" or "passed"
+                    duration: math.floor c.duration * 1000 + 0.5   -- seconds -> ms
+                }
+                entry.message = failureMsg if failureMsg
+                tests[#tests+1] = entry
+
+        return {
+            results: {
+                tool: { name: "DependencyControl.UnitTestSuite" }
+                summary: {
+                    tests: passed + failed
+                    :passed, :failed
+                    pending: 0, skipped: 0, other: 0
+                    start: @startTime or 0
+                    stop: @endTime or 0
+                }
+                :tests
+            }
+        }
+
+    --- Writes a CTRF JSON report of the most recent run to the given path.
+    -- Any missing parent directories are created; Aegisub path tokens are expanded.
+    -- @tparam string path destination file path
+    -- @treturn[1] boolean true on success
+    -- @treturn[2] nil
+    -- @treturn[2] string an error message
+    writeResults: (path) =>
+        FileOps = require "#{Common.moduleName}.FileOps"
+        json    = require "json"   -- provided by DepCtrl (bundled dkjson) once it's loaded
+
+        dirRes, err = FileOps.mkdir path, true, true
+        return nil, err if dirRes == nil
+
+        handle, msg = io.open aegisub.decode_path(path), "wb"
+        return nil, msg unless handle
+        handle\write json.encode @toCtrf!, { indent: true }
+        handle\close!
+        return true

@@ -1,0 +1,50 @@
+name: Tests
+
+on:
+  pull_request:
+    branches:
+      - 'master'
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Release tag or branch to scan.'
+        required: true
+        default: 'master'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.ref || github.ref }}
+
+      - uses: leafo/gh-actions-lua@v13
+        with:
+          luaVersion: "luajit-2.1.0-beta3"
+          # DepCtrl relies on Lua 5.2 features (table.unpack, __pairs/__len)
+          luaCompileFlags: "XCFLAGS=-DLUAJIT_ENABLE_LUA52COMPAT"
+
+      - uses: leafo/gh-actions-luarocks@v6
+      - run: luarocks install moonscript
+      - run: luarocks install luafilesystem
+
+      - name: Run tests
+        run: lua run-tests.lua
+
+      - name: Publish test report
+        uses: ctrf-io/github-test-reporter@v1
+        if: ${{ !cancelled() }}
+        with:
+          report-path: ./ctrf/*.json
+          pull-request: ${{ github.event_name == 'pull_request' && true || false }}
+          overwrite-comment: ${{ github.event_name == 'pull_request' && true || false }}
+          annotate: false
+          use-suite-name: true
+          status-check: true
+          summary-report: true
+          failed-report: true
+          upload-artifact: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

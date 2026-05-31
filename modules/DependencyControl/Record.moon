@@ -132,7 +132,7 @@ class Record extends Common
         -- `require`-ing a provided alias resolves to this module (see ModuleProvider)
         if @provides
             @provides = [type(alias) == "table" and alias or {name: alias} for alias in *@provides]
-            ModuleProvider.registerRecord @
+            ModuleProvider\registerRecord @
 
         shouldWriteConfig = @loadConfig!
 

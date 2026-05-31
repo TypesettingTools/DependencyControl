@@ -15,14 +15,14 @@ Update to a recent Aegisub build to resolve this issue.
 -- module and only falls back to ours; the optional env var forces ours by preempting the
 -- module cache.
 ModuleProvider = require "l0.DependencyControl.ModuleProvider"
-ModuleProvider.install!
+ModuleProvider\install!
 
 provideBundled = (providerName, aliases, forceVar) ->
     if forceVar and os.getenv(forceVar) == "1"
         impl = require providerName
         package.loaded[alias] = impl for alias in *aliases
     else
-        ModuleProvider.register alias, providerName for alias in *aliases
+        ModuleProvider\register alias, providerName for alias in *aliases
 
 provideBundled "l0.dkjson", {"json", "dkjson"}
 provideBundled "l0.DependencyControl.TerribleMutex", {"BM.BadMutex"}, "DEPCTRL_PREFER_FFI_MUTEX"

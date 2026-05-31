@@ -205,12 +205,12 @@ class Logger
         files, totalSize, deletedSize, now, f = {}, 0, 0, os.time!, 0
 
         dir = aegisub.decode_path @logDir
-        lfs.chdir dir
         for file in lfs.dir dir
-            attr = lfs.attributes file
+            fullPath = "#{dir}/#{file}"
+            attr = lfs.attributes fullPath
             if type(attr) == "table" and attr.mode == "file" and file\find @fileMatch
                 f += 1
-                files[f] = {name:file, modified:attr.modification, size:attr.size}
+                files[f] = {name: file, path: fullPath, modified: attr.modification, size: attr.size}
 
         table.sort files, (a,b) -> a.modified > b.modified
         total, kept = #files, 0
@@ -219,7 +219,7 @@ class Logger
             totalSize += file.size
             if doWipe or kept > maxFiles or totalSize > maxSize or file.modified+maxAge < now
                 deletedSize += file.size
-                os.remove file.name
+                os.remove file.path
             else
                 kept += 1
         return total-kept, deletedSize, total, totalSize

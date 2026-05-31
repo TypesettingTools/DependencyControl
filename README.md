@@ -601,3 +601,55 @@ Reference documentation for the UnitTestSuite module is available in the [source
 #### UpdateFeed ####
 
 tbd
+
+----------------------------------
+
+### Running the Test Suite ###
+
+DependencyControl ships a headless test runner (`run-tests.lua`) that executes the full unit
+test suite from the command line — locally or in CI — **without** an Aegisub process. An
+`aegisub` global shim and bundled FFI implementations of the timer, mutex and download manager
+stand in for the host application, and JSON is vendored (dkjson), so the only external
+dependencies are LuaJIT and two LuaRocks modules.
+
+#### Prerequisites ####
+
+ * _LuaJIT_ on your `PATH`, built with `DLUAJIT_ENABLE_LUA52COMPAT`
+ * _LuaRocks_, configured for Lua v5.1, which _LuaJIT_ is ABI-compatible with. You may have to select the Lua version explicitly via `luarocks --lua-version=5.1`
+ * The [moonscript](https://luarocks.org/modules/leafo/moonscript) and [luafilesystem](https://luarocks.org/modules/hisham/luafilesystem) rocks, installed into that 5.1 tree:
+
+   ```sh
+   luarocks --lua-version=5.1 install moonscript
+   luarocks --lua-version=5.1 install luafilesystem
+   ```
+
+ * Your `LUA_PATH` / `LUA_CPATH` must let `luajit` find the LuaRocks-installed modules (`luarocks --lua-version=5.1 path --bin` prints the correct values).
+
+#### Running ####
+
+From the repository root:
+
+```sh
+luajit run-tests.lua
+```
+
+The runner resolves its own location to find the bundled `modules/` directory, so it works
+regardless of the current working directory. It exits `0` when every test passes and `1` otherwise.
+
+Log files and config/feed caches are written to a per-run throwaway workspace created under
+your system temp directory, rather than touching your real Aegisub configuration. Each Aegisub
+path token (`?user`, `?temp`, ...) gets its own subdirectory there. Set `DEPCTRL_TEMP_DIR` to
+choose a different base directory for that workspace.
+
+#### Test report ####
+
+After running, the suite writes a [CTRF](https://ctrf.io) report — a JSON test-result format
+understood by ready-made CI reporters. By default it lands at `./ctrf/DependencyControl.json`
+relative to the runner/repository root; pass a different path as the first CLI argument:
+
+```sh
+luajit run-tests.lua path/to/report.json
+```
+
+The same report can be produced programmatically from any `UnitTestSuite` via
+`suite\writeResults(path)` (or `suite\toCtrf!` for the raw table).
