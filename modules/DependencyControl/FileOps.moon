@@ -470,7 +470,7 @@ class FileOps
         path = aegisub.decode_path path
         -- expand home directory on linux
         homeDir = os.getenv "HOME"
-        path = path\gsub "^~", "{#homeDir}/" if homeDir
+        path = path\gsub "^~", "#{homeDir}/" if homeDir
         -- use single native path separators
         path = path\gsub "[\\/]+", pathMatch.sep
         -- check length
