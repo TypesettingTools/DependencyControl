@@ -576,7 +576,12 @@ class UnitTestClass
             abort: "Test class '%s' FAILED after %d tests, aborting."
             testsFailed: "Done testing class '%s'. FAILED %d of %d tests."
             success: "Test class '%s' completed successfully."
+            skipped: "Test class '%s' SKIPPED (%s)."
+            teardownFailed: "Teardown for test class '%s' FAILED."
             testNotFound: "Couldn't find requested test '%s'."
+        }
+        skipReason: {
+            default: "condition not met"
         }
     }
 
@@ -589,6 +594,10 @@ class UnitTestClass
     -- * _setup: a @{UnitTestSetup} routine
     -- * _teardown: a @{UnitTestTeardown} routine
     -- * _order: alternative syntax to the order parameter (see below)
+    -- * _condition: a predicate `() -> boolean[, string reason]`. Evaluated before the class
+    --   runs; if it returns a falsy value the whole class is skipped and its tests are marked
+    --   as skipped (with the optional reason) in the report rather than run. Use it to gate
+    --   environment-dependent tests, e.g. `_condition: -> os.getenv("DEPCTRL_INTEGRATION") == "1"`.
     -- @tparam [opt=nil (unordered)] {string, ...} A list of test names in the desired execution order.
     -- Only tests mentioned in this table will be performed when running the whole test class.
     -- If unspecified, all tests will be run in random order.
@@ -596,7 +605,9 @@ class UnitTestClass
         @logger = @testSuite.logger
         @setup = UnitTestSetup "setup", args._setup, @
         @teardown = UnitTestTeardown "teardown", args._teardown, @
+        @hasTeardown = args._teardown != nil
         @description = args._description
+        @condition = args._condition
         @order or= args._order
         @tests = [UnitTest(name, f, @) for name, f in pairs args when "_" != name\sub 1,1]
 
@@ -607,6 +618,19 @@ class UnitTestClass
     -- @treturn[2] boolean false (test class failed)
     -- @treturn[2] {@{UnitTest}, ...} a list of unit test that failed
     run: (abortOnFail, order = @order) =>
+        -- class-level skip condition: when the predicate returns falsy, skip the whole class
+        -- and mark its tests as skipped so they still surface (as skipped) in the report.
+        -- Call without `self` (plain `cond!`, not `@condition!`) so the predicate isn't handed
+        -- the class as an unexpected first argument.
+        if cond = @condition
+            shouldRun, reason = cond!
+            unless shouldRun
+                @skipped, @skipReason = true, reason
+                for test in *@tests
+                    test.skipped, test.skipReason = true, reason
+                @logger\log msgs.run.skipped, @name, reason or msgs.skipReason.default
+                return true   -- a skipped class is not a failure
+
         tests, failed = @tests, {}
         if order
             tests, mappings = {}, {test.name, test for test in *@tests}
@@ -619,24 +643,33 @@ class UnitTestClass
         @logger.indent += 1
 
         success, res = @setup\run!
-        -- failing the setup always aborts
+        -- failing the setup always aborts (no teardown: setup never completed)
         unless success
             @logger.indent -= 1
             @logger\warn msgs.run.setupFailed, @name
             return false, -1
 
+        aborted = false
         for i, test in pairs tests
             unless test\run unpack res
                 failedCnt += 1
                 failed[#failed+1] = test
                 if abortOnFail
-                    @logger.indent -= 1
                     @logger\warn msgs.run.abort, @name, i
-                    return false, failed
+                    aborted = true
+                    break
+
+        -- teardown runs after the tests whenever setup succeeded — including the abort path —
+        -- so resource cleanup is reliable. It's best-effort: a teardown failure is logged but
+        -- doesn't change the class result. Setup's return values are passed through to it.
+        if @hasTeardown
+            @logger\warn msgs.run.teardownFailed, @name unless @teardown\run unpack res
 
         @logger.indent -= 1
         @success = failedCnt == 0
 
+        if aborted
+            return false, failed
         if @success
             @logger\log msgs.run.success, @name
             return true
@@ -763,10 +796,10 @@ class UnitTestSuite
         return @success, failedCnt > 0 and allFailed or nil
 
     --- Collects the results of the most recent run into a flat, format-agnostic structure.
-    -- Only tests that actually ran are included; a failed class setup surfaces as an errored
-    -- "setup" case so skipped classes still show up in the report.
+    -- Tests that ran or were skipped are included; a failed class setup surfaces as an errored
+    -- "setup" case so aborted classes still show up in the report.
     -- @local
-    -- @treturn {{name=string, cases={{name, classname, duration, failure?, error?}, ...}}, ...}
+    -- @treturn {{name=string, cases={{name, classname, duration, failure?, error?, skipped?, skipReason?}, ...}}, ...}
     collectResults: =>
         suites = {}
         for cls in *@classes
@@ -776,14 +809,18 @@ class UnitTestSuite
                 cases[#cases+1] = { name: "setup", classname: cls.name,
                                     duration: cls.setup.duration or 0, error: cls.setup.errMsg }
             for test in *cls.tests
-                continue unless test.ran
-                cases[#cases+1] = {
-                    name: test.name, classname: cls.name, duration: test.duration or 0
+                continue unless test.ran or test.skipped
+                case = { name: test.name, classname: cls.name, duration: test.duration or 0 }
+                if test.skipped
+                    case.skipped, case.skipReason = true, test.skipReason
+                elseif not test.success
                     -- keep assertion failures and unexpected errors separate for consumers
                     -- that care; CTRF itself folds both into a single "failed" status
-                    failure: not test.success and test.assertFailed and (test.errMsg or "assertion failed") or nil
-                    error:   not test.success and not test.assertFailed and (test.errMsg or "unexpected error") or nil
-                }
+                    if test.assertFailed
+                        case.failure = test.errMsg or "assertion failed"
+                    else
+                        case.error = test.errMsg or "unexpected error"
+                cases[#cases+1] = case
             suites[#suites+1] = { name: cls.name, :cases }
         return suites
 
@@ -792,27 +829,34 @@ class UnitTestSuite
     -- (e.g. the ctrf-io/github-test-reporter action). See https://ctrf.io.
     -- @treturn table the CTRF report as a plain Lua table, ready to be JSON-encoded
     toCtrf: =>
-        tests, passed, failed = {}, 0, 0
+        tests, passed, failed, skipped = {}, 0, 0, 0
         for suite in *@collectResults!
             for c in *suite.cases
-                failureMsg = c.failure or c.error   -- CTRF has a single "failed" status
-                if failureMsg then failed += 1 else passed += 1
                 entry = {
                     name: c.name
                     suite: c.classname
-                    status: failureMsg and "failed" or "passed"
                     duration: math.floor c.duration * 1000 + 0.5   -- seconds -> ms
                 }
-                entry.message = failureMsg if failureMsg
+                if c.skipped
+                    skipped += 1
+                    entry.status = "skipped"
+                    entry.message = c.skipReason if c.skipReason
+                elseif c.failure or c.error
+                    failed += 1
+                    entry.status = "failed"
+                    entry.message = c.failure or c.error   -- CTRF folds assert/error into "failed"
+                else
+                    passed += 1
+                    entry.status = "passed"
                 tests[#tests+1] = entry
 
         return {
             results: {
                 tool: { name: "DependencyControl.UnitTestSuite" }
                 summary: {
-                    tests: passed + failed
-                    :passed, :failed
-                    pending: 0, skipped: 0, other: 0
+                    tests: passed + failed + skipped
+                    :passed, :failed, :skipped
+                    pending: 0, other: 0
                     start: @startTime or 0
                     stop: @endTime or 0
                 }
