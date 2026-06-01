@@ -35,7 +35,6 @@ class FileOps
                 otherExists: "Couldn't create directory because a %s of the same name is already present."
             }
             copy: {
-                targetExists: "Target file '%s' already exists"
                 genericError: "An error occured while copying file '%s' to '%s':\n%s"
                 dirCopyUnsupported: "Copying directories is currently not supported."
                 missingSource: "Couldn't find source file '%s'."
@@ -58,6 +57,12 @@ class FileOps
                 cantOpen: "Couldn't open file '%s' for reading: %s"
                 cantRead: "An error occurred while trying to read from file '%s': %s"
                 notAFile: "Can only read files but supplied path '%s' points to a %s."
+            }
+            writeFile: {
+                cantOpen: "Couldn't open file '%s' for writing: %s"
+                failedWrite: "An error occurred while trying to write to file '%s': %s",
+                notAFile: "Can only write to files but supplied path '%s' points to a %s.",
+                targetExists: "Target file '%s' already exists."
             }
             verifyHash: {
                 badHash: "Argument #2 (hash) must be a string, got '%s'."
@@ -82,7 +87,7 @@ class FileOps
             validateFullPath: {
                 badType: "Argument #1 (path) had the wrong type. Expected 'string', got '%s'."
                 tooLong: "The specified path exceeded the maximum length limit (%d > %d)."
-                invalidChars: "The specifed path contains one or more invalid characters: '%s'."
+                invalidChars: "The specified path contains one or more invalid characters: '%s'."
                 reservedNames: "The specified path contains reserved path or file names: '%s'."
                 parentPath: "Accessing parent directories is not allowed."
                 notFullPath: "The specified path is not a valid full path."
@@ -217,7 +222,7 @@ class FileOps
             mode, targetFullPath = FileOps.attributes target, "mode"
             switch mode
                 when "file"
-                    return false, msgs.copy.targetExists\format target
+                    return false, msgs.writeFile.targetExists\format target
                 when nil
                     return false, msgs.copy.genericError\format source, target, targetFullPath
                 when "directory"
@@ -337,6 +342,24 @@ class FileOps
         if data
             return data
         else return nil, msgs.readFile.cantRead\format path, msg
+    
+    --- Writes data to a file, creating the file if it doesn't exist and optionally overwriting existing files.
+    -- @param path string|string[] path or path segments to the file to write
+    -- @param data string the data to write to the file
+    -- @param[opt=false] clobber boolean whether to overwrite the file if it already exists
+    -- @return boolean success true if the file was written successfully
+    writeFile: (path, data, clobber = false) ->
+        mode, fullPath = FileOps.attributes path, "mode"
+        return false, msgs.writeFile.notAFile\format path, mode if mode and mode ~= "file"
+        return false, msgs.writeFile.targetExists\format path if mode == "file" and not clobber
+
+        handle, msg = io.open fullPath, "wb"
+        return false, msgs.writeFile.cantOpen\format fullPath, msg unless handle
+
+        success, msg = handle\write data
+        handle\close!
+        return true if success
+        return false, msgs.writeFile.failedWrite\format fullPath, msg
 
     --- Computes the hash of a file's contents.
     -- @param fileName string|string[] path or path segments to the file to hash
