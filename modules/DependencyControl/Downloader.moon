@@ -1,22 +1,14 @@
--- Non-blocking download manager with SHA-1 verification (pure FFI implementation).
--- This is DepCtrl's own downloader; the l0.DependencyControl.DownloadManager wrapper
--- decides whether to use this or the native DM.DownloadManager library.
+-- Non-blocking download manager with SHA-1 verification.
+-- Pure FFI implementation inspired by torque's DM.DownloadManager.
 --
 --   macOS/Linux: libcurl multi interface — parallel, scheduled by libcurl
 --   Windows:     WinINet driver multiplexed by our round-robin scheduler (parallel)
---
--- The round-robin scheduler (`multiplex`) is decoupled from the transfer mechanism
--- via a driver interface {start, step, finish, shutdown}, so our scheduling and
--- orchestration logic can be unit-tested with a fake driver (no network).
---
--- Downloads are queued with addDownload and run by await. Subscribe to progress
--- and completion via the Download / Downloader event APIs (on/off). ETag caching
--- is not implemented.
 
 ffi = require "ffi"
 lfs = require "lfs"
 Enum    = require "l0.DependencyControl.Enum"
 FileOps = require "l0.DependencyControl.FileOps"
+EventEmitter = require "l0.DependencyControl.EventEmitter"
 
 msgs = {
     addMissingArgs:  "Required arguments #1 (url) and #2 (outfile) had the wrong type. Expected string, got '%s' and '%s'."
@@ -26,6 +18,7 @@ msgs = {
     readFailed:      "Connection error while reading response."
     openUrlFailed:   "Could not open URL '%s'."
     curlInit:        "Failed to initialize curl."
+    stalled:         "Download stalled: no data received for %d seconds."
 }
 
 -- Lifecycle state of a single download.
@@ -36,6 +29,7 @@ DownloadStatus = Enum "DownloadStatus", {
     Failed:    "failed"     -- completed with an error
     Cancelled: "cancelled"  -- cancelled before completion
 }
+
 -- statuses representing a download that is no longer in flight
 isTerminalStatus = {
     [DownloadStatus.Finished]:  true
@@ -79,18 +73,38 @@ computeProgress = (downloads) ->
 -- }
 multiplex = (manager, driver) ->
     downloads = manager.downloads
-    active = {}
-    for dl in *downloads
+    queue = downloads
+    maxConnections = manager.maxConnections or 8
+    stallTimeout = manager.stallTimeout
+
+    active, queueIndex = {}, 1
+
+    -- Start the next queued download into an active slot. Returns the started download, or nil
+    -- when the queue is exhausted. A download that fails to start is finalized and skipped so
+    -- the slot stays filled.
+    startNext = ->
+        return nil if queueIndex > #queue
+        dl = queue[queueIndex]
+        queueIndex += 1
         dl.bytesReceived = 0
         ok, err = driver.start dl
-        if ok
-            dl.status = DownloadStatus.Active
-            active[#active + 1] = dl
-        else
+        unless ok
             dl\_complete err or "failed to start download"
+            return startNext!
+        dl.status = DownloadStatus.Active
+        dl._lastProgressBytesReceived, dl._lastProgressAt = 0, os.time!
+        active[#active + 1] = dl
+        dl
+
+    fillSlots = ->
+        while #active < maxConnections and queueIndex <= #queue and not manager.cancelled
+            break unless startNext!
+
+    fillSlots!
 
     -- one pass per loop iteration steps every still-active transfer exactly once
     while #active > 0 and not manager.cancelled
+        now = os.time!
         remaining = {}
         for dl in *active
             if dl._cancelRequested
@@ -100,7 +114,16 @@ multiplex = (manager, driver) ->
                 status = driver.step dl
                 if status == "more"
                     dl\_notifyProgress!
-                    remaining[#remaining + 1] = dl
+                    if dl.bytesReceived > dl._lastProgressBytesReceived
+                        -- progress made: reset the stall timer
+                        dl._lastProgressBytesReceived, dl._lastProgressAt = dl.bytesReceived, now
+                        remaining[#remaining + 1] = dl
+                    elseif stallTimeout and stallTimeout > 0 and now - dl._lastProgressAt >= stallTimeout
+                        driver.finish dl
+                        dl\_complete msgs.stalled\format stallTimeout
+                    else
+                        -- no new bytes yet, but not stalled long enough to give up
+                        remaining[#remaining + 1] = dl
                 elseif status == "done"
                     driver.finish dl
                     dl\_complete!
@@ -108,12 +131,17 @@ multiplex = (manager, driver) ->
                     driver.finish dl
                     dl\_complete status
         active = remaining
+        fillSlots!
+        -- report progress and allow cancellation between each round of steps
         break unless report manager, computeProgress downloads
 
-    -- finalize any survivors as cancelled (whole-downloader cancellation)
+    -- cancel remaining individual downloads if the whole downloader is cancelled
     for dl in *active
         driver.finish dl
         dl\_cancel!
+    for i = queueIndex, #queue
+        queue[i]\_cancel!
+
     driver.shutdown! if driver.shutdown
 
 -- Platform backend selection: sets defaultRunner(manager) and isInternetConnected().
@@ -130,6 +158,7 @@ if ffi.os != "Windows"
         int curl_easy_getinfo(void* handle, int info, ...);
         const char* curl_easy_strerror(int errornum);
         void* curl_multi_init(void);
+        int curl_multi_setopt(void* multi, int option, long value);
         int curl_multi_add_handle(void* multi, void* easy);
         int curl_multi_remove_handle(void* multi, void* easy);
         int curl_multi_perform(void* multi, int* running);
@@ -153,16 +182,20 @@ if ffi.os != "Windows"
             break
 
     if curl
-        CURLOPT_WRITEDATA      = 10001
-        CURLOPT_URL            = 10002
-        CURLOPT_USERAGENT      = 10018
-        CURLOPT_FOLLOWLOCATION = 52
-        CURLOPT_FAILONERROR    = 45
-        CURLOPT_NOPROGRESS     = 43
-        CURLOPT_CONNECTTIMEOUT = 78
-        CURLINFO_SIZE_DOWNLOAD           = 0x300008
-        CURLINFO_CONTENT_LENGTH_DOWNLOAD = 0x30000F
-        CURLMSG_DONE = 1
+        CURLOPT_WRITEDATA      = 10001 -- write the response data to the file passed as a pointer
+        CURLOPT_URL            = 10002 -- set the URL to fetch
+        CURLOPT_USERAGENT      = 10018 -- set the User-Agent header
+        CURLOPT_FOLLOWLOCATION = 52 -- follow HTTP redirects
+        CURLOPT_FAILONERROR    = 45 -- treat HTTP 4xx/5xx responses as errors
+        CURLOPT_NOPROGRESS     = 43 -- disable curl's built-in progress meter
+        CURLOPT_CONNECTTIMEOUT = 78 -- abort if connecting takes longer than the specified number of seconds
+        CURLOPT_LOW_SPEED_LIMIT = 19 -- abort if the transfer speed is below this (in bytes/sec) for too long (see LOW_SPEED_TIME)
+        CURLOPT_LOW_SPEED_TIME  = 20 -- the time (in seconds) the transfer speed should be below the limit before aborting
+        CURLINFO_SIZE_DOWNLOAD  = 0x300008 -- total bytes downloaded so far
+        CURLINFO_CONTENT_LENGTH_DOWNLOAD = 0x30000F -- total expected size of the download, or -1 if unknown
+        CURLMSG_DONE = 1 -- a transfer completed (with either success or error)
+        CURLMOPT_MAX_TOTAL_CONNECTIONS = 13 -- max simultaneous connections of any kind
+        CURLMOPT_MAX_HOST_CONNECTIONS  = 7 -- max simultaneous connections to the same host
 
         -- libcurl's varargs expect a C long for integer options; a bare Lua number
         -- would be passed as a double, so cast explicitly.
@@ -178,7 +211,11 @@ if ffi.os != "Windows"
         -- Unix uses curl's own multi scheduler rather than our round-robin loop.
         defaultRunner = (manager) ->
             downloads = manager.downloads
+            -- libcurl keeps excess transfers queued internally
             multi = curl.curl_multi_init!
+            maxConnections = manager.maxConnections or 8
+            curl.curl_multi_setopt multi, CURLMOPT_MAX_HOST_CONNECTIONS,  ffi.cast "long", maxConnections
+            curl.curl_multi_setopt multi, CURLMOPT_MAX_TOTAL_CONNECTIONS, ffi.cast "long", maxConnections
             handleMap = {}
 
             for dl in *downloads
@@ -199,6 +236,10 @@ if ffi.os != "Windows"
                 setLong handle, CURLOPT_FAILONERROR, 1
                 setLong handle, CURLOPT_NOPROGRESS, 1
                 setLong handle, CURLOPT_CONNECTTIMEOUT, 30
+                -- abort a transfer that drops below 1 byte/sec for stallTimeout seconds
+                if manager.stallTimeout and manager.stallTimeout > 0
+                    setLong handle, CURLOPT_LOW_SPEED_LIMIT, 1
+                    setLong handle, CURLOPT_LOW_SPEED_TIME, manager.stallTimeout
                 dl._handle, dl._file = handle, file
                 dl.status = DownloadStatus.Active
                 handleMap[key handle] = dl
@@ -207,12 +248,12 @@ if ffi.os != "Windows"
             drain = ->
                 pending = ffi.new "int[1]"
                 while true
-                    m = curl.curl_multi_info_read multi, pending
-                    break if m == nil
-                    continue unless m.msg == CURLMSG_DONE
-                    dl = handleMap[key m.easy_handle]
+                    multiStackInfo = curl.curl_multi_info_read multi, pending
+                    break if multiStackInfo == nil
+                    continue unless multiStackInfo.msg == CURLMSG_DONE
+                    dl = handleMap[key multiStackInfo.easy_handle]
                     continue unless dl
-                    res = m.data.result
+                    res = multiStackInfo.data.result
                     dl.bytesReceived = getDouble dl._handle, CURLINFO_SIZE_DOWNLOAD
                     ffi.C.fclose dl._file
                     curl.curl_multi_remove_handle multi, dl._handle
@@ -270,6 +311,7 @@ else
         void* InternetOpenUrlW(void* session, const wchar_t* url, const wchar_t* headers, unsigned long headersLen, unsigned long flags, uintptr_t context);
         int InternetReadFile(void* hFile, void* buffer, unsigned long toRead, unsigned long* read);
         int InternetCloseHandle(void* h);
+        int InternetSetOptionW(void* hInternet, unsigned long option, void* buffer, unsigned long bufferLen);
         int HttpQueryInfoW(void* hRequest, unsigned long infoLevel, void* buffer, unsigned long* bufferLen, unsigned long* index);
         int InternetGetConnectedState(unsigned long* flags, unsigned long reserved);
     ]]
@@ -284,12 +326,14 @@ else
         kernel32.MultiByteToWideChar CP_UTF8, 0, s, -1, buf, n
         buf
 
-    INTERNET_FLAG_RELOAD         = 0x80000000
-    INTERNET_FLAG_NO_CACHE_WRITE = 0x04000000
-    HTTP_QUERY_STATUS_CODE       = 19
-    HTTP_QUERY_CONTENT_LENGTH    = 5
-    HTTP_QUERY_FLAG_NUMBER       = 0x20000000
-    CHUNK = 16384
+    INTERNET_FLAG_RELOAD         = 0x80000000 -- force a reload from the server even if the content is cached
+    INTERNET_FLAG_NO_CACHE_WRITE = 0x04000000 -- don't commit this download to the cache
+    INTERNET_OPTION_MAX_CONNS_PER_SERVER = 73 -- max simultaneous connections to the same HTTP/1.1 server
+    INTERNET_OPTION_MAX_CONNS_PER_1_0_SERVER = 74 -- max simultaneous connections to the same HTTP/1.0 server
+    HTTP_QUERY_STATUS_CODE       = 19 -- HTTP response status code (e.g. 200)
+    HTTP_QUERY_CONTENT_LENGTH    = 5 -- total expected size of the download, or -1 if unknown
+    HTTP_QUERY_FLAG_NUMBER       = 0x20000000 -- return the queried information as a number instead of a string (e.g. for status code or content length)
+    CHUNK_SIZE = 16384 -- bytes to read for each running download per iteration of the scheduler loop (max WinINet buffer size)
 
     queryNumber = (request, info) ->
         out = ffi.new "unsigned long[1]"
@@ -301,47 +345,53 @@ else
     if haveKernel32 and haveWinInet
         -- A WinINet driver for `multiplex`: one request + output file per download,
         -- advanced one chunk per step. The scheduler round-robins across them.
-        makeWinINetDriver = ->
+        makeWinINetDriver = (maxConnectionsPerServer = 8) ->
+            do
+                -- Lift the Windows-default 2-connections-per-server cap so all queued transfers can run at once;
+                -- otherwise a 3rd concurrent InternetOpenUrlW to the same host blocks and times out. 
+                optVal = ffi.new "unsigned long[1]", maxConnectionsPerServer
+                winInet.InternetSetOptionW nil, INTERNET_OPTION_MAX_CONNS_PER_SERVER, optVal, 4
+                winInet.InternetSetOptionW nil, INTERNET_OPTION_MAX_CONNS_PER_1_0_SERVER, optVal, 4
             session = winInet.InternetOpenW toWide("DependencyControl"), 0, nil, nil, 0
-            buffer  = ffi.new "char[?]", CHUNK
+            buffer  = ffi.new "char[?]", CHUNK_SIZE
             read    = ffi.new "unsigned long[1]"
             {
                 start: (dl) ->
-                    out, err = io.open dl.outfile, "wb"
-                    return false, (err or msgs.failedToOpen\format dl.outfile) unless out
+                    outFileHandle, err = io.open dl.outfile, "wb"
+                    return false, (err or msgs.failedToOpen\format dl.outfile) unless outFileHandle
                     request = winInet.InternetOpenUrlW session, toWide(dl.url), nil, 0,
                         bit.bor(INTERNET_FLAG_RELOAD, INTERNET_FLAG_NO_CACHE_WRITE), 0
                     if request == nil
-                        out\close!
+                        outFileHandle\close!
                         return false, msgs.openUrlFailed\format dl.url
                     status = queryNumber request, HTTP_QUERY_STATUS_CODE
                     if status and status >= 400
                         winInet.InternetCloseHandle request
-                        out\close!
+                        outFileHandle\close!
                         return false, msgs.httpStatus\format status
-                    dl._request, dl._out = request, out
+                    dl._request, dl._outFileHandle = request, outFileHandle
                     dl.totalBytes = queryNumber request, HTTP_QUERY_CONTENT_LENGTH
                     true
 
                 step: (dl) ->
-                    return msgs.readFailed if 0 == winInet.InternetReadFile dl._request, buffer, CHUNK, read
+                    return msgs.readFailed if 0 == winInet.InternetReadFile dl._request, buffer, CHUNK_SIZE, read
                     n = tonumber read[0]
                     return "done" if n == 0
-                    dl._out\write ffi.string buffer, n
+                    dl._outFileHandle\write ffi.string buffer, n
                     dl.bytesReceived += n
                     "more"
 
                 finish: (dl) ->
                     winInet.InternetCloseHandle dl._request if dl._request
-                    dl._out\close! if dl._out
-                    dl._request, dl._out = nil
+                    dl._outFileHandle\close! if dl._outFileHandle
+                    dl._request, dl._outFileHandle = nil
 
                 shutdown: ->
                     winInet.InternetCloseHandle session
             }
 
         defaultRunner = (manager) ->
-            multiplex manager, makeWinINetDriver!
+            multiplex manager, makeWinINetDriver manager.maxConnections
 
     else
         defaultRunner = (manager) ->
@@ -351,47 +401,6 @@ else
         return true unless haveWinInet
         flags = ffi.new "unsigned long[1]"
         winInet.InternetGetConnectedState(flags, 0) != 0
-
-
---- Minimal event registration mixin: on(event, cb) / off(event, cb) / _emit(event, ...).
--- Subclasses provide an `@Event` Enum that defines the valid event values.
--- @class EventEmitter
-class EventEmitter
-    new: =>
-        @_listeners = {}
-
-    --- Registers a callback for an event.
-    -- @param event the event value (a member of the subclass's @Event enum)
-    -- @param callback function called with the emitter instance (plus any event args)
-    -- @return self (for chaining)
-    on: (event, callback) =>
-        valid, err = @@Event\validate event, "event"
-        error err unless valid
-        listeners = @_listeners[event]
-        unless listeners
-            listeners = {}
-            @_listeners[event] = listeners
-        listeners[#listeners + 1] = callback
-        return @
-
-    --- Unregisters a previously-registered callback for an event.
-    -- @param event the event value
-    -- @param callback the exact callback passed to on
-    -- @return self (for chaining)
-    off: (event, callback) =>
-        listeners = @_listeners[event]
-        return @ unless listeners
-        for i = #listeners, 1, -1
-            table.remove listeners, i if listeners[i] == callback
-        return @
-
-    -- Invokes all listeners for an event with (self, ...). Iterates a snapshot so
-    -- a listener may safely on/off during dispatch.
-    _emit: (event, ...) =>
-        listeners = @_listeners[event]
-        return unless listeners
-        cb @, ... for cb in *[l for l in *listeners]
-
 
 --- A single download: its URL, output path, transfer state, and event callbacks.
 -- Events (see Download.Event): Progress (data arrived), Finish (reached a terminal
@@ -458,10 +467,23 @@ class Downloader extends EventEmitter
     -- with an injected driver.
     @multiplex = multiplex
 
+    -- Maximum simultaneous transfers (also applied as the per-server connection limit on each
+    -- backend). Excess downloads are queued and started as slots free. 
+    maxConnections: 8
+
+    -- The number of seconds a transfer can go without receiving any data before we consider
+    -- it stalled and abort it. Set to 0 or false to disable stall detection.
+    stallTimeout: 30
+
     --- Creates a downloader.
-    -- @param[opt] runner function(downloader, callback) overrides the transfer implementation
-    new: (runner) =>
+    -- @param runner function(downloader, callback) overrides the transfer implementation
+    -- @param options? table additional options
+    new: (runner, options = {}) =>
         super!
+        
+        @stallTimeout = options.stallTimeout if options.stallTimeout != nil
+        @maxConnections = options.maxConnections if options.maxConnections != nil
+
         @downloads = {}
         @cancelled = false
         @_runner   = runner or defaultRunner

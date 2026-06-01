@@ -26,10 +26,17 @@ jobs:
           luaCompileFlags: "XCFLAGS=-DLUAJIT_ENABLE_LUA52COMPAT"
 
       - uses: leafo/gh-actions-luarocks@v6
+      # moonscript loader
       - run: luarocks install moonscript
+      # lfs (Aegisub provides an internal copy)
       - run: luarocks install luafilesystem
+      # mock HTTP server dependencies
+      - run: luarocks install luasocket
+      - run: luarocks install copas
+      - run: luarocks install pegasus
 
       - name: Run tests
+        timeout-minutes: 5
         run: lua run-tests.lua
 
       - name: Publish test report
@@ -47,4 +54,3 @@ jobs:
           upload-artifact: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
