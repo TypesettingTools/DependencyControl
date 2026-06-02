@@ -1,0 +1,35 @@
+{
+  "dictionaryDefinitions": [
+    {
+      "name": "lua",
+      "path": "./.cspell/lua.txt",
+      "scope": "workspace",
+      "addWords": true
+    },
+    {
+      "name": "ffi",
+      "path": "./.cspell/ffi.txt",
+      "scope": "workspace",
+      "addWords": true
+    },
+    {
+      "name": "domain-specific",
+      "path": "./.cspell/domain-specific.txt",
+      "scope": "workspace",
+      "addWords": true
+    }
+  ],
+  "dictionaries": ["domain-specific"],
+  "languageSettings": [
+    {
+      "languageId": "lua",
+      "dictionaries": ["lua", "ffi"]
+    },
+    {
+      "languageId": "moonscript",
+      "dictionaries": ["lua", "ffi"]
+    }
+  ],
+  "words": ["moonscript"],
+  "ignorePaths": [".cspell/**"]
+}
