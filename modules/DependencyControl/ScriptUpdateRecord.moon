@@ -14,7 +14,7 @@ defaultLogger = Logger fileBaseName: "DepCtrl.ScriptUpdateRecord"
 ---@field files? FeedFileData[] Files provided by this release.
 ---@field platforms? string[] Platforms supported by this channel; absent means all platforms.
 ---@field default? boolean Whether this is the default channel.
----@field released? string Human-readable release date.
+---@field released? string ISO 8601 release date string (e.g. "2024-01-31" or "2024-01-31T23:59:00Z")
 ---@field fileBaseUrl? string Base URL prepended to file names during template expansion.
 
 ---@class FeedScriptData

@@ -1,0 +1,247 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/master/schemas/feed/v0.3.0.json",
+  "title": "DependencyControl Feed Format v0.3.0",
+  "description": "An index for a repository of automation macros and modules available for installation or update via DependencyControl.",
+  "type": "object",
+  "required": ["dependencyControlFeedFormatVersion", "name"],
+  "properties": {
+    "dependencyControlFeedFormatVersion": {
+      "enum": ["0.2.0", "0.3.0"],
+      "description": "Feed format version. This schema accepts '0.2.0' and '0.3.0'; both are handled correctly by a v0.3.0-capable reader. '0.3.0' introduced FeedFile.type for test files."
+    },
+    "name": {
+      "description": "Human-readable name of the feed (e.g. repository or collection name).",
+      "type": "string"
+    },
+    "description": {
+      "description": "Short description of the feed's contents.",
+      "type": "string"
+    },
+    "baseUrl": {
+      "$ref": "#/$defs/TemplateString",
+      "description": "Root URL of the project. Becomes the @{baseUrl} template variable available throughout the feed."
+    },
+    "url": {
+      "$ref": "#/$defs/TemplateString",
+      "description": "Feed's own URL or homepage. May reference @{baseUrl}."
+    },
+    "fileBaseUrl": {
+      "$ref": "#/$defs/TemplateString",
+      "description": "Default base URL for file downloads. Becomes a rolling @{fileBaseUrl} variable: once set it propagates down to all channels that do not define their own fileBaseUrl."
+    },
+    "maintainer": {
+      "description": "Name of the person or organization maintaining this feed.",
+      "type": "string"
+    },
+    "knownFeeds": {
+      "description": "Named registry of other feed URLs, which will be used to discover additional packages (and feeds). Each key becomes a feed alias usable as `@{feed:alias}` in any TemplateString throughout this feed.",
+      "type": "object",
+      "additionalProperties": {
+        "description": "Absolute URL of a DependencyControl feed.",
+        "type": "string",
+        "format": "uri"
+      }
+    },
+    "macros": {
+      "description": "Aegisub automation scripts keyed by their namespaced identifiers.",
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/Package" },
+      "propertyNames": { "$ref": "#/$defs/NamespacedIdentifier" }
+    },
+
+    "modules": {
+      "description": "Lua module entries keyed by their namespaced identifiers.",
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/Package" },
+      "propertyNames": { "$ref": "#/$defs/NamespacedIdentifier" }
+    }
+  },
+  "$defs": {
+    "NamespacedIdentifier": {
+      "description": "A dot-separated namespaced identifier (e.g. 'l0.DependencyControl.Toolbox', 'a-mo.LineCollection').",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+)+$"
+    },
+
+    "Changelog": {
+      "description": "Version-keyed changelog. Keys are version strings; values are a single change description or an array of descriptions.",
+      "type": "object",
+      "additionalProperties": {
+        "oneOf": [
+          { "type": "string" },
+          { "type": "array", "items": { "type": "string" }, "minItems": 1 }
+        ]
+      },
+      "propertyNames": { "$ref": "#/$defs/SemanticVersionWithoutLabels" }
+    },
+
+    "DateOrDateTime": {
+      "description": "A date or date-time string in ISO 8601 format (e.g. '2024-01-31' or '2024-01-31T23:59:00Z').",
+      "anyOf": [
+        { "type": "string", "format": "date" },
+        { "type": "string", "format": "date-time" }
+      ]
+    },
+
+    "SemanticVersionWithoutLabels": {
+      "description": "Semantic version string *without* pre-release or build metadata (<major>.<minor>.<patch>).",
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+
+    "TemplateString": {
+      "description": "A string that may contain `@{variableName}` or `@{feed:alias}` template substitutions. Variables are expanded before the value is used. Recognized variable names at each depth level: `baseUrl`, `fileBaseUrl` (rolling), `url`, `namespace`, `namespacePath`, `scriptName`, `channel`, `version`, `platform`, `fileName`. Cross-feed references use the `@{feed:alias}` form, where alias is a key in knownFeeds (e.g. `@{feed:a-mo}`).",
+      "type": "string"
+    },
+
+    "Sha1Hash": {
+      "description": "SHA-1 digest as 40 hexadecimal characters (case-insensitive).",
+      "type": "string",
+      "pattern": "^[0-9A-Fa-f]{40}$"
+    },
+
+    "PackagedFile": {
+      "description": "A single file included in a release.",
+      "type": "object",
+      "required": ["name", "url", "sha1"],
+      "properties": {
+        "name": {
+          "description": "File path relative to the release channel's effective `@{fileBaseUrl}` template variable value. Conventionally starts with '.' for the primary module file (e.g. '.moon') or '/' for sub-files (e.g. '/Common.moon'). Template variables are NOT expanded in this field. It is provided verbatim as the `@{fileName}` template variable in the 'url' field.",
+          "type": "string"
+        },
+        "url": {
+          "$ref": "#/$defs/TemplateString",
+          "description": "Absolute download URL after template expansion. Defaults to the file name appended to the file base URL when omitted.",
+          "default": "@{fileBaseUrl}@{fileName}"
+        },
+        "sha1": {
+          "$ref": "#/$defs/Sha1Hash",
+          "description": "Expected SHA-1 digest of the downloaded file. Used to verify integrity after download."
+        },
+        "type": {
+          "description": "An optional special purpose for the file. Files marked with 'test' are installed to the tests subdirectory rather than the main automation directory. Introduced in feed version 0.3.0.",
+          "type": "string",
+          "enum": ["test"]
+        },
+        "platform": {
+          "description": "Target platform filter. When present, the file is only installed on matching platforms. Absent means the file is installed on all platforms. Uses LuaJIT `jit.os`and `jit.arch` values (see https://luajit.org/ext_jit.html#jit_os).",
+          "type": "string",
+          "examples": ["Windows-x64", "OSX-x86", "Linux-arm64"]
+        }
+      }
+    },
+
+    "ModuleDependency": {
+      "description": "A dependency declared by a script release.",
+      "type": "object",
+      "required": ["moduleName"],
+      "properties": {
+        "moduleName": {
+          "description": "Lua require-path of the dependency (e.g. 'l0.DependencyControl', 'json', 'aegisub.re').",
+          "type": "string"
+        },
+        "name": {
+          "description": "Human-readable display name shown in install/update dialogs.",
+          "type": "string"
+        },
+        "url": {
+          "description": "Project or homepage URL for the dependency.",
+          "type": "string",
+          "format": "uri"
+        },
+        "version": {
+          "$ref": "#/$defs/SemanticVersionWithoutLabels",
+          "description": "Minimum required version. When omitted any installed version is accepted."
+        },
+        "feed": {
+          "$ref": "#/$defs/TemplateString",
+          "description": "URL (or @{feed:alias} reference) of the feed that can supply this dependency. Used by the Updater to locate and install missing modules."
+        },
+        "optional": {
+          "description": "When true, the dependency is installed if available / loaded if present but its absence is not an error.",
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+
+    "Release": {
+      "description": "A versioned release of an automation script or module currently available on a channel.",
+      "type": "object",
+      "required": ["version", "files"],
+      "properties": {
+        "version": {
+          "$ref": "#/$defs/SemanticVersionWithoutLabels",
+          "description": "The current release version on this channel."
+        },
+        "released": {
+          "$ref": "#/$defs/DateOrDateTime",
+          "description": "The release date in ISO 8601 format (e.g. '2026-05-31' or '2026-05-31T23:59:00Z')."
+        },
+        "default": {
+          "description": "Whether this is the channel selected when no user preference exists. Exactly one channel per script should set this to true.",
+          "type": "boolean",
+          "default": false
+        },
+        "fileBaseUrl": {
+          "$ref": "#/$defs/TemplateString",
+          "description": "Base URL prepended to each file's name to form its download URL. Overrides any `@{fileBaseUrl}` template variable inherited from the script entry or feed root. This is a 'rolling' template variable: once set at a given depth it propagates to all nested levels until overridden."
+        },
+        "files": {
+          "description": "Files included in this release.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/PackagedFile" },
+          "minItems": 1
+        },
+        "requiredModules": {
+          "description": "Dependencies that must be present or installed for the release to function correctly. DependencyControl will attempt to install missing dependencies from any known feed, so long as they have a namespaced identifier.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/ModuleDependency" }
+        },
+        "platforms": {
+          "description": "Compute platforms supported by this channel. When present, the channel is only offered on matching platforms. Absent means all platforms are supported.",
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+
+    "Package": {
+      "description": "A single Aegisub automation script or Lua module entry in the feed.",
+      "type": "object",
+      "required": ["name", "author", "channels"],
+      "properties": {
+        "name": {
+          "description": "Human-readable display name of the script or module.",
+          "type": "string"
+        },
+        "author": {
+          "description": "The name of the person or organization that created/maintains this script or module.",
+          "type": "string"
+        },
+        "description": {
+          "description": "Short description shown in install/update dialogs.",
+          "type": "string"
+        },
+        "url": {
+          "$ref": "#/$defs/TemplateString",
+          "description": "Project or homepage URL. May reference the `@{baseUrl}` or `@{namespace}` template variables."
+        },
+        "fileBaseUrl": {
+          "$ref": "#/$defs/TemplateString",
+          "description": "Default base URL for file downloads within this script. Overrides the feed-level `@{fileBaseUrl}` for this entry's channels."
+        },
+        "channels": {
+          "description": "Available release channels keyed by channel name.",
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": { "$ref": "#/$defs/Release" }
+        },
+        "changelog": {
+          "$ref": "#/$defs/Changelog"
+        }
+      }
+    }
+  }
+}
