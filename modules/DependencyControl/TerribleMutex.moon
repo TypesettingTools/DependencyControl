@@ -37,8 +37,9 @@ if ffi.os == "Windows"
     (getmetatable canary).__gc = -> ffi.C.CloseHandle handle
 
 else
-    -- O_CREAT: 64 (0100 octal) on Linux, 512 (0x200) on macOS
-    O_CREAT = ffi.os == "OSX" and 0x200 or 64
+    O_CREAT = ffi.os == "OSX" and 0x200 or 0x40 -- open syscall flag: create a file if it doesn't exist
+    FILE_MODE_664 = 0x1a4
+    BINARY_SEMAPHORE_INITIAL_VALUE = 1
 
     pcall ffi.cdef, [[
         int getpid(void);
@@ -52,8 +53,7 @@ else
 
     pid  = ffi.C.getpid!
     name = ("/depctrl_%d")\format pid
-    -- 0x1a4 = 0644 octal; initial value 1 makes this a binary semaphore
-    sem  = ffi.C.sem_open name, O_CREAT, 0x1a4, 1
+    sem  = ffi.C.sem_open name, O_CREAT, FILE_MODE_664, BINARY_SEMAPHORE_INITIAL_VALUE
 
     tryLock = -> ffi.C.sem_trywait(sem) == 0
     lock    = -> ffi.C.sem_wait sem
