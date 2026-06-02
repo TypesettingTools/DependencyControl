@@ -428,11 +428,17 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl) ->
         ut\assertFalse result
         ut\assertString err
 
+      validateNamespace_consecutiveDots: (ut) ->
+        result, err = Common.validateNamespace "foo..bar"
+        ut\assertFalse result
+        ut\assertString err
+
       _order: {
         "capitalizeTerms",
         "validateNamespace_valid", "validateNamespace_multiPart",
         "validateNamespace_noDot", "validateNamespace_leadingDot",
-        "validateNamespace_trailingDot", "validateNamespace_invalidChars"
+        "validateNamespace_trailingDot", "validateNamespace_invalidChars",
+        "validateNamespace_consecutiveDots"
       }
     }
 
@@ -464,6 +470,15 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl) ->
         result = FileOps.validateFullPath {basePath, "CON", "file.txt"}
         ut\assertFalse result
 
+      validateFullPath_reservedNameWithExt: (ut) ->
+        return unless isWindows
+        result = FileOps.validateFullPath {basePath, "NUL.txt"}
+        ut\assertFalse result
+
+      validateFullPath_trailingDotSegment: (ut) ->
+        result = FileOps.validateFullPath {basePath, "trailingdot.", "file.txt"}
+        ut\assertFalse result
+
       validateFullPath_valid: (ut) ->
         path, dev, dir, file = FileOps.validateFullPath {basePath, "file.txt"}
         ut\assertString path
@@ -485,6 +500,11 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl) ->
         result = FileOps.validateFullPath {"~", "subdir", "file.txt"}
         ut\assertString result
         ut\assertContains result, home
+
+      validateFullPath_reservedNameNonWindows: (ut) ->
+        return if isWindows
+        result = FileOps.validateFullPath {basePath, "NUL", "file.txt"}
+        ut\assertString result
 
       -- getNamespacedPath: pure computation, no stubs needed
 
@@ -675,8 +695,9 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl) ->
       _order: {
         "validateFullPath_nonString", "validateFullPath_parentDir", "validateFullPath_tooLong",
         "validateFullPath_invalidChars", "validateFullPath_reservedNames",
+        "validateFullPath_reservedNameWithExt", "validateFullPath_trailingDotSegment",
         "validateFullPath_valid", "validateFullPath_noExt_rejected", "validateFullPath_withExt_accepted",
-        "validateFullPath_homeDirExpansion",
+        "validateFullPath_homeDirExpansion", "validateFullPath_reservedNameNonWindows",
         "getNamespacedPath_nested", "getNamespacedPath_flat",
         "getNamespacedPath_badNamespace", "getNamespacedPath_badBasePath",
         "attributes_file", "attributes_notFound",
