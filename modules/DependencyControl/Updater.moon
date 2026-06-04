@@ -334,11 +334,9 @@ class UpdateTask extends UpdaterBase
             baseName = scriptSubDir .. file.name
             tmpName, prettyName = "#{tmpDir}/#{file.type}/#{baseName}", baseName
             switch file.type
-                when "script"
-                    file.fullName = "#{@record.automationDir}/#{baseName}"
-                when "test"
-                    file.fullName = "#{@record.testDir}/#{baseName}"
-                    prettyName ..= " (Unit Test)"
+                when "script", "test"
+                    file.fullName = Common\getFileDeployPath @record.namespace, @record.scriptType, file.name, file.type
+                    prettyName ..= " (Unit Test)" if file.type == "test"
                 else
                     file.unknown = true
                     @logger\log msgs.performUpdate.unknownType, file.name, file.type

@@ -1,5 +1,4 @@
 json = require "json"
-DownloadManager = require "DM.DownloadManager"
 
 Logger            = require "l0.DependencyControl.Logger"
 Common            = require "l0.DependencyControl.Common"
@@ -45,7 +44,6 @@ class UpdateFeed extends Common
     }
 
     @defaultConfig = {
-        downloadPath: aegisub.decode_path "?temp/l0.#{@@__name}_feedCache"
         dumpExpanded: false
     }
     @cache = {}
@@ -75,12 +73,7 @@ class UpdateFeed extends Common
     new: (@url, autoFetch = true, fileName, @config = {}, @logger = defaultLogger) =>
         -- fill in missing config values
         @config[k] = v for k, v in pairs @@defaultConfig when @config[k] == nil
-
-        -- delete old feeds
-        feedsHaveBeenTrimmed or= Logger(fileMatchTemplate: fileMatchTemplate, logDir: @config.downloadPath, maxFiles: 20)\trimFiles!
-
-        @fileName = fileName or table.concat {@config.downloadPath, fileBaseName, "%04X"\format(math.random 0, 16^4-1), ".json"}
-        @downloadManager = DownloadManager aegisub.decode_path @config.downloadPath
+        @fileName = fileName
         if @@cache[@url]
             @logger\trace msgs.trace.usingCached
             @data = @@cache[@url]
@@ -99,6 +92,12 @@ class UpdateFeed extends Common
     -- @return table|boolean dataOrSuccess
     -- @return string|nil err
     fetch: (fileName) =>
+        -- Initialize download infrastructure lazily on first fetch.
+        unless @downloadManager
+            @config.downloadPath or= aegisub.decode_path "?temp/l0.#{@@__name}_feedCache"
+            feedsHaveBeenTrimmed or= Logger(fileMatchTemplate: fileMatchTemplate, logDir: @config.downloadPath, maxFiles: 20)\trimFiles!
+            @fileName or= table.concat {@config.downloadPath, fileBaseName, "%04X"\format(math.random 0, 16^4-1), ".json"}
+            @downloadManager = (require "DM.DownloadManager") aegisub.decode_path @config.downloadPath
         @fileName = fileName if fileName
 
         dl, err = @downloadManager\addDownload @url, @fileName
@@ -107,15 +106,23 @@ class UpdateFeed extends Common
 
         @downloadManager\waitForFinish -> true
         if dl.error
-            return false,  msgs.errors.downloadFailed\format @url, @fileName, dl.error
+            return false, msgs.errors.downloadFailed\format @url, @fileName, dl.error
 
         @logger\trace msgs.trace.downloaded, @fileName
+        return @loadFile @fileName
 
-        handle, err = io.open @fileName
+    --- Loads and parses a local feed JSON file, expanding all template variables in-place.
+    -- Use this to load a feed already on disk without going through the network.
+    ---@param path string Local filesystem path to the feed JSON file.
+    ---@return table|boolean
+    ---@return string|nil err
+    loadFile: (path) =>
+        handle, err = io.open path
         unless handle
             return false, msgs.errors.cantOpen\format err
 
         decoded, data = pcall json.decode, handle\read "*a"
+        handle\close!
         unless decoded and data
             -- luajson errors are useless dumps of whatever, no use to pass them on to the user
             return false, msgs.errors.parse

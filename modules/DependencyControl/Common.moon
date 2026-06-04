@@ -161,6 +161,20 @@ class DependencyControlCommon
     @testDir = {aegisub.decode_path("?user/automation/tests/DepUnit/macros"),
                 aegisub.decode_path("?user/automation/tests/DepUnit/modules")}
 
+    --- Resolves the install path of a packaged file from its owning script's namespace,
+    -- mirroring the layout the Updater installs into: automation scripts go to the
+    -- autoload dir, modules to the include dir (under their namespace path), and test
+    -- files to the matching DepUnit test dir.
+    -- @param namespace string
+    -- @param scriptType number a ScriptType value
+    -- @param fileName string the file's feed name (e.g. ".moon", "/Common.moon")
+    -- @param[opt="script"] fileType string "script" or "test"
+    -- @return string path
+    @getFileDeployPath = (namespace, scriptType, fileName, fileType = "script") =>
+        subDir = scriptType == @ScriptType.Module and (namespace\gsub "%.", "/") or namespace
+        baseDir = fileType == "test" and @testDir[scriptType] or @automationDir[scriptType]
+        return "#{baseDir}/#{subDir}#{fileName}"
+
     --- Deep equality comparison. Tables compared recursively; other types use ==.
     -- Circular references are handled. Metatables are included in the comparison.
     -- @static

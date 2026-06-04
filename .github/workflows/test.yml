@@ -37,7 +37,7 @@ jobs:
 
       - name: Run tests
         timeout-minutes: 5
-        run: lua run-tests.lua
+        run: lua depctrl.lua test
 
       - name: Publish test report
         uses: ctrf-io/github-test-reporter@v1
