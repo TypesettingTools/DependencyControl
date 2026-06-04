@@ -1,6 +1,6 @@
 -- DependencyControl wrapper around the vendored upstream dkjson.
 --
--- The upstream library is kept pristine and unmodified at `modules/dkjson/vendor/dkjson.lua` 
+-- The upstream library is kept pristine and unmodified at `modules/l0/dkjson/vendor/dkjson.lua`
 -- so it can be updated by dropping in a new copy. The wrapper is a thin overlay that only
 -- carries a DependencyControl version record and defers everything else to the upstream module.
 --

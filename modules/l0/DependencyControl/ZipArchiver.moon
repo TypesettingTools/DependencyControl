@@ -6,7 +6,7 @@ json    = require "l0.dkjson"
 
 defaultLogger = Logger fileBaseName: "DepCtrl.ZipArchiver"
 
--- Windows helper: drives .NET's System.IO.Compression ZipArchive directly, reading
+-- Drives .NET's System.IO.Compression ZipArchive directly on Windows, reading
 -- the (source → entry name) mapping from a JSON manifest. Entry names are taken
 -- verbatim from the manifest (always forward-slash), which sidesteps both the
 -- Compress-Archive cmdlet's backslash bug and the legacy ZipFile.CreateFromDirectory
@@ -109,7 +109,7 @@ class ZipArchiver
         return @_writeWindows! if isWindows
         return @_writeUnix!
 
-    -- Windows: write a JSON manifest plus the helper script to the temp dir, then run
+    -- on Windows, write a JSON manifest plus the helper script to the temp dir, then run
     -- it via -File (only path arguments to quote, avoiding cmd.exe quoting pitfalls).
     _writeWindows: =>
         token        = "%04X"\format math.random 0, 16^4 - 1
@@ -136,7 +136,7 @@ class ZipArchiver
         return true if success
         return nil, msgs.errors.zipFailed\format "PowerShell"
 
-    -- Unix: the `zip` CLI can't rename entries, so stage each file into a temp tree at
+    -- on Unix, the `zip` CLI can't rename entries, so stage each file into a temp tree at
     -- its archive name, then archive that tree from the inside.
     _writeUnix: =>
         token    = "%04X"\format math.random 0, 16^4 - 1

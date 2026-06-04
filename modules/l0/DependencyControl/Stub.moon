@@ -58,7 +58,7 @@ class Stub
             @_originalMethod = table[key]
             table[key] = @
 
-            -- GC canary: warn if this stub is collected without restore() being called
+            -- warn if this stub is garbage-collected without restore() having been called
             keyRef, logger = key, @logger or @@logger
             canary = newproxy true
             (getmetatable canary).__gc = ->

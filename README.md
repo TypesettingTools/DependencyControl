@@ -604,7 +604,7 @@ tbd
 
 ### UnitTestSuite
 
-Reference documentation for the UnitTestSuite module is available in the [source code](https://github.com/TypesettingTools/DependencyControl/blob/master/modules/DependencyControl/UnitTestSuite.moon#L760)
+Reference documentation for the UnitTestSuite module is available in the [source code](https://github.com/TypesettingTools/DependencyControl/blob/master/modules/l0/DependencyControl/UnitTestSuite.moon#L760)
 
 ### UpdateFeed
 

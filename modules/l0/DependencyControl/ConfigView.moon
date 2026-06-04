@@ -31,7 +31,7 @@ class ConfigView
             return nil, msg unless handler
             return handler\getView hivePath, defaults
         else
-            -- orphan view: in-memory only, no file backing (used for virtual modules)
+            -- in-memory view with no file backing, used for virtual modules
             handler = ConfigHandler nil, logger
             return ConfigView handler, hivePath, defaults
 
@@ -47,7 +47,7 @@ class ConfigView
 
         -- deprecated, provided for compatibility with DepCtrl < 0.7
         @section = @__hivePath
-        -- compat: expose file path directly on the view
+        -- compatibility alias exposing the config file path on the view
         @file = configHandler and configHandler.filePath
 
         if configHandler

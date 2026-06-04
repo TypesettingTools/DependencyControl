@@ -115,7 +115,7 @@ multiplex = (manager, driver) ->
                 if status == "more"
                     dl\_notifyProgress!
                     if dl.bytesReceived > dl._lastProgressBytesReceived
-                        -- progress made: reset the stall timer
+                        -- reset the stall timer
                         dl._lastProgressBytesReceived, dl._lastProgressAt = dl.bytesReceived, now
                         remaining[#remaining + 1] = dl
                     elseif stallTimeout and stallTimeout > 0 and now - dl._lastProgressAt >= stallTimeout

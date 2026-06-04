@@ -15,8 +15,7 @@
 
 local ffi = require "ffi"
 local lfs = require "lfs"
-require "moonscript"
-local moonbase = require "moonscript.base"
+require "moonscript"  -- installs moonscript's package.moonpath loader for .moon files
 
 -- ── Path utilities ────────────────────────────────────────────────────────────
 
@@ -47,35 +46,13 @@ if launcherDir == "." then
 elseif not isAbsolute(launcherDir) then
     launcherDir = lfs.currentdir() .. pathSep .. launcherDir
 end
+-- ── Module resolution ──────────────────────────────────────────────────────────
+-- The repo's modules/ tree is namespaced (modules/l0/…), so l0.* require paths map
+-- straight onto it: moonscript's loader resolves .moon via package.moonpath, the
+-- stock searcher the vendored .lua via package.path. No custom searcher needed.
 local modulesDir = launcherDir .. pathSep .. "modules"
-
--- ── Module searcher ───────────────────────────────────────────────────────────
--- Maps l0.* names onto the repo's modules/ tree, loading .moon or .lua sources.
--- Appended last so stock searchers (lfs, ffi, moonscript) still take precedence;
--- bare aliases like "json" are resolved by DepCtrl's ModuleProvider once loaded.
-
-local function l0ModuleSearcher(name)
-    local sub = name:match("^l0%.(.+)$")
-    if not sub then return nil end
-
-    local relPath = sub:gsub("%.", pathSep)
-    local base = modulesDir .. pathSep .. relPath
-    local candidates = {
-        { path = base .. ".moon",                moon = true  },
-        { path = base .. ".lua",                 moon = false },
-        { path = base .. pathSep .. "init.moon", moon = true  },
-        { path = base .. pathSep .. "init.lua",  moon = false },
-    }
-    for _, c in ipairs(candidates) do
-        if fileExists(c.path) then
-            local chunk, err = (c.moon and moonbase.loadfile or loadfile)(c.path)
-            if not chunk then error(err) end
-            return chunk
-        end
-    end
-    return "\n\tno l0 module file for '" .. name .. "' under " .. modulesDir
-end
-table.insert(package.loaders or package.searchers, l0ModuleSearcher)
+package.path     = ("%s/?.lua;%s/?/init.lua;"):format(modulesDir, modulesDir) .. package.path
+package.moonpath = ("%s/?.moon;%s/?/init.moon;"):format(modulesDir, modulesDir) .. (package.moonpath or "")
 
 -- ── Aegisub shims ─────────────────────────────────────────────────────────────
 

@@ -74,7 +74,7 @@
       "author": "line0",
       "name": "DependencyControl",
       "description": "Dependency manager and automatic script updater for Aegisub macros and modules.",
-      "fileBaseUrl": "@{fileBaseUrl}v@{version}-@{channel}/modules/@{scriptName}",
+      "fileBaseUrl": "@{fileBaseUrl}v@{version}-@{channel}/modules/@{namespacePath}",
       "channels": {
         "alpha": {
           "version": "0.7.0",
@@ -228,7 +228,7 @@
       "author": "David Kolf",
       "name": "dkjson",
       "description": "David Kolf's JSON module for Lua, vendored with and managed by DependencyControl.",
-      "fileBaseUrl": "@{fileBaseUrl}v@{version}-@{channel}/modules/@{scriptName}",
+      "fileBaseUrl": "@{fileBaseUrl}v@{version}-@{channel}/modules/@{namespacePath}",
       "channels": {
         "release": {
           "version": "2.10.0",

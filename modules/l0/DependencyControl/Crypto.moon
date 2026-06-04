@@ -109,7 +109,7 @@ setupNativeSha1 = ->
             return impl, "CryptoAPI"
 
         else
-            -- Linux and other Unix: OpenSSL libcrypto.
+            -- on Linux and other Unix, use OpenSSL's libcrypto
             local libcrypto
             for name in *{"libcrypto.so.3", "libcrypto.so.1.1", "libcrypto.so", "crypto"}
                 okLib, lib = pcall ffi.load, name
@@ -119,7 +119,7 @@ setupNativeSha1 = ->
             return unless libcrypto
             digest = ffi.new "unsigned char[20]"
 
-            -- Preferred: the non-deprecated EVP interface (OpenSSL 1.1+/3.0).
+            -- use the non-deprecated EVP interface where available (OpenSSL 1.1+/3.0)
             pcall ffi.cdef, [[
                 const void* EVP_sha1(void);
                 void* EVP_MD_CTX_new(void);
@@ -140,8 +140,8 @@ setupNativeSha1 = ->
                     digestToHex digest
                 return impl, "OpenSSL (EVP)"
 
-            -- Fallback for very old libcrypto: the legacy one-shot (deprecated in 3.0
-            -- but still exported; FFI resolves it at runtime regardless).
+            -- on very old libcrypto, fall back to the legacy one-shot SHA1, deprecated in 3.0
+            -- but still exported and resolvable by FFI at runtime
             pcall ffi.cdef, "unsigned char* SHA1(const unsigned char* d, size_t n, unsigned char* md);"
             return unless pcall -> libcrypto.SHA1
             impl = (msg) ->
