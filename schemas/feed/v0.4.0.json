@@ -1,14 +1,14 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/master/schemas/feed/v0.3.0.json",
-  "title": "DependencyControl Feed Format v0.3.0",
+  "$id": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/master/schemas/feed/v0.4.0.json",
+  "title": "DependencyControl Feed Format v0.4.0",
   "description": "An index for a repository of automation macros and modules available for installation or update via DependencyControl.",
   "type": "object",
   "required": ["dependencyControlFeedFormatVersion", "name"],
   "properties": {
     "dependencyControlFeedFormatVersion": {
-      "enum": ["0.2.0", "0.3.0"],
-      "description": "Feed format version. This schema accepts '0.2.0' and '0.3.0'; both are handled correctly by a v0.3.0-capable reader. '0.3.0' introduced FeedFile.type for test files."
+      "enum": ["0.2.0", "0.3.0", "0.4.0"],
+      "description": "Feed format version. This schema accepts '0.2.0', '0.3.0' and '0.4.0'; all are handled correctly by a v0.4.0-capable reader, as each version only adds backwards-compatible, optional fields. '0.3.0' introduced PackagedFile.type for test files; '0.4.0' added the optional localFileBasePath/localFilePath fields used by CI/CLI tooling."
     },
     "name": {
       "description": "Human-readable name of the feed (e.g. repository or collection name).",
@@ -29,6 +29,11 @@
     "fileBaseUrl": {
       "$ref": "#/$defs/TemplateString",
       "description": "Default base URL for file downloads. Becomes a rolling @{fileBaseUrl} variable: once set it propagates down to all channels that do not define their own fileBaseUrl."
+    },
+    "localFileBasePath": {
+      "$ref": "#/$defs/TemplateString",
+      "description": "Local-tooling counterpart of `@{fileBaseUrl}`. Rolling base path used only when a feed is expanded in 'local' mode, where file paths are resolved on disk instead of as download URLs. Added in v0.4.0",
+      "default": "./"
     },
     "maintainer": {
       "description": "Name of the person or organization maintaining this feed.",
@@ -115,6 +120,11 @@
           "description": "Absolute download URL after template expansion. Defaults to the file name appended to the file base URL when omitted.",
           "default": "@{fileBaseUrl}@{fileName}"
         },
+        "localFilePath": {
+          "$ref": "#/$defs/TemplateString",
+          "description": "Local-tooling counterpart of `@{url}`. Used only when a feed is expanded in 'local' mode, where file paths are resolved on disk instead of as download URLs. Added in v0.4.0",
+          "default": "@{localFileBasePath}@{fileName}"
+        },
         "sha1": {
           "$ref": "#/$defs/Sha1Hash",
           "description": "Expected SHA-1 digest of the downloaded file. Used to verify integrity after download."
@@ -188,6 +198,10 @@
           "$ref": "#/$defs/TemplateString",
           "description": "Base URL prepended to each file's name to form its download URL. Overrides any `@{fileBaseUrl}` template variable inherited from the script entry or feed root. This is a 'rolling' template variable: once set at a given depth it propagates to all nested levels until overridden."
         },
+        "localFileBasePath": {
+          "$ref": "#/$defs/TemplateString",
+          "description": "Local-tooling counterpart of `@{fileBaseUrl}`. Rolling base path used only when a feed is expanded in 'local' mode, where file paths are resolved on disk instead of as download URLs. Added in v0.4.0"
+        },
         "files": {
           "description": "Files included in this release.",
           "type": "array",
@@ -231,6 +245,10 @@
         "fileBaseUrl": {
           "$ref": "#/$defs/TemplateString",
           "description": "Default base URL for file downloads within this script. Overrides the feed-level `@{fileBaseUrl}` for this entry's channels."
+        },
+        "localFileBasePath": {
+          "$ref": "#/$defs/TemplateString",
+          "description": "Local-tooling counterpart of `@{fileBaseUrl}`. Rolling base path used only when a feed is expanded in 'local' mode, where file paths are resolved on disk instead of as download URLs. Added in v0.4.0"
         },
         "channels": {
           "description": "Available release channels keyed by channel name.",

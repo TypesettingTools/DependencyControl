@@ -1,26 +1,15 @@
 #!/usr/bin/env luajit
--- DependencyControl CLI launcher.
---
--- Usage: luajit depctrl.lua <command> [args...]
---
---   luajit depctrl.lua test [ctrf-report-path]
---     Run the unit test suite. The optional argument overrides the CTRF report
---     output path (default: ctrf/DependencyControl.json next to this script).
---     Exit code 0 = all tests pass, 1 = failures.
---
---   luajit depctrl.lua bundle
---     Build a dist/ release bundle by copying every file listed in
---     DependencyControl.json to the path derived from its expanded download URL.
---     dist/ is cleaned first. Exit code 0 = success, 1 = one or more warnings.
+-- DependencyControl CLI toolbox
 
-local ffi = require "ffi"
-local lfs = require "lfs"
+local ffi      = require "ffi"
+local lfs      = require "lfs"
+local argparse = require "argparse"
 require "moonscript"  -- installs moonscript's package.moonpath loader for .moon files
 
 -- ── Path utilities ────────────────────────────────────────────────────────────
 
 local isWindows = ffi.os == "Windows"
-local pathSep = isWindows and "\\" or "/"
+local pathSep   = isWindows and "\\" or "/"
 
 local function dirname(path)
     return (path or ""):match("^(.*)[/\\][^/\\]*$") or "."
@@ -31,11 +20,46 @@ local function isAbsolute(path)
         or path:match("^[/\\]") ~= nil      -- /... or \...
 end
 
-local function fileExists(path)
-    local f = io.open(path, "r")
-    if f then f:close(); return true end
-    return false
+local function resolveAbsPath(path)
+    if not isAbsolute(path) then
+        return lfs.currentdir() .. pathSep .. path
+    end
+    return path
 end
+
+-- ── Argument parsing ──────────────────────────────────────────────────────────
+
+local parser = argparse("depctrl", "DependencyControl CLI toolbox")
+    :epilog("See README.md for detailed instructions.")
+parser:command_target("command")
+
+-- Selector options shared by all commands: repeat --target-module / --target-macro to pick
+-- packages by namespace. With none given, a command operates on every package in the feed.
+local function addTargets(cmd)
+    cmd:option("--target-module", "Module namespace to operate on (repeatable; default: all)")
+        :argname("<ns>"):count("*")
+    cmd:option("--target-macro", "Macro namespace to operate on (repeatable; default: all)")
+        :argname("<ns>"):count("*")
+end
+
+local testCmd = parser:command("test", "Run the unit test suite(s) for packages in a feed")
+testCmd:option("-f --feed",       "Feed JSON path"):default("DependencyControl.json")
+testCmd:option("-r --report-dir", "Directory for per-package CTRF JSON reports"):default("ctrf")
+addTargets(testCmd)
+
+local bundleCmd = parser:command("bundle", "Build a dist/ release bundle and zip archive")
+bundleCmd:option("-f --feed",    "Feed JSON path"):default("DependencyControl.json")
+bundleCmd:option("-o --out-dir", "Output directory; script files go into its dist/ subfolder"):default(".")
+addTargets(bundleCmd)
+
+local deployCmd = parser:command("deploy", "Deploy files directly to an output directory")
+deployCmd:option("-f --feed",    "Feed JSON path"):default("DependencyControl.json")
+deployCmd:option("-o --out-dir", "Output directory"):default(".")
+deployCmd:flag("--clobber",    "Overwrite existing files (default)"):target("clobber")
+deployCmd:flag("--no-clobber", "Skip files that already exist at the destination"):target("clobber"):action("store_false")
+addTargets(deployCmd)
+
+local args = parser:parse()
 
 -- ── Resolve the launcher directory ───────────────────────────────────────────
 -- Made absolute up-front so nothing downstream can be confused by CWD changes.
@@ -46,24 +70,26 @@ if launcherDir == "." then
 elseif not isAbsolute(launcherDir) then
     launcherDir = lfs.currentdir() .. pathSep .. launcherDir
 end
--- ── Module resolution ──────────────────────────────────────────────────────────
+
+-- ── Module resolution ─────────────────────────────────────────────────────────
 -- The repo's modules/ tree is namespaced (modules/l0/…), so l0.* require paths map
 -- straight onto it: moonscript's loader resolves .moon via package.moonpath, the
 -- stock searcher the vendored .lua via package.path. No custom searcher needed.
-local modulesDir = launcherDir .. pathSep .. "modules"
-package.path     = ("%s/?.lua;%s/?/init.lua;"):format(modulesDir, modulesDir) .. package.path
-package.moonpath = ("%s/?.moon;%s/?/init.moon;"):format(modulesDir, modulesDir) .. (package.moonpath or "")
+
+local depCtrlModulesDir = launcherDir .. pathSep .. "modules"
+package.path     = ("%s/?.lua;%s/?/init.lua;"):format(depCtrlModulesDir, depCtrlModulesDir) .. package.path
+package.moonpath = ("%s/?.moon;%s/?/init.moon;"):format(depCtrlModulesDir, depCtrlModulesDir) .. (package.moonpath or "")
 
 -- ── Aegisub shims ─────────────────────────────────────────────────────────────
 
-local shims = require "l0.AegisubShims"
+local shims   = require "l0.AegisubShims"
 local aegisub = shims.aegisub  -- pulled into local scope; global is set by the shim for sub-modules
 
 -- ── Shared: workspace + DepCtrl bootstrap ────────────────────────────────────
 
-local function setupDepCtrl(workspacePrefix)
-    local tempBase = shims.getPathToken("temp")
-    local workspace = tempBase .. pathSep .. (workspacePrefix .. "-%x"):format(os.time() % 0x100000)
+local function setupDepCtrl(taskName)
+    local tempBase  = shims.getPathToken("temp")
+    local workspace = tempBase .. pathSep .. ("depctrl-" .. taskName .. "-%x"):format(os.time() % 0x100000)
     for _, token in ipairs({ "user", "local", "data", "temp" }) do
         shims.setPathToken(token, workspace .. pathSep .. token)
     end
@@ -86,183 +112,167 @@ local function setupDepCtrl(workspacePrefix)
     return require "l0.DependencyControl"
 end
 
+-- ── Shared: feed loading, target filtering, source resolution ────────────────
+
+-- Loads and expands a feed (Local mode resolves each file's on-disk source path).
+local function loadFeed(feedPath)
+    local UpdateFeed = require "l0.DependencyControl.UpdateFeed"
+    local feed = UpdateFeed(nil, false, feedPath)
+    local ok, err = feed:loadFile(feedPath, UpdateFeed.ExpansionMode.Local)
+    if not ok then
+        io.stderr:write("Error loading feed '" .. feedPath .. "': " .. tostring(err) .. "\n")
+        os.exit(1)
+    end
+    return feed
+end
+
+-- Builds a ScriptTargetFilter from the --target-module/--target-macro selectors. With no
+-- selectors it includes everything; otherwise just the named packages, by type.
+local function buildFilter(cliArgs)
+    local Common = require "l0.DependencyControl.Common"
+    local filter = require("l0.DependencyControl.ScriptTargetFilter")()
+    local mods, macros = cliArgs.target_module or {}, cliArgs.target_macro or {}
+    if #mods == 0 and #macros == 0 then return filter:includeAll() end
+    for _, ns in ipairs(mods)   do filter:include(Common.ScriptType.Module, ns)     end
+    for _, ns in ipairs(macros) do filter:include(Common.ScriptType.Automation, ns) end
+    return filter
+end
+
+-- Builds a `requireId -> source path` map from every file in the feed and registers it as a
+-- fallback module searcher (after the standard ones), so packages whose source layout isn't
+-- namespaced (e.g. a flat repo root) still resolve straight from the checkout. Namespaced
+-- repos keep resolving via the stock moonpath/path searchers, which run first.
+local function registerFeedSearcher(feed)
+    local moonbase = require "moonscript.base"
+
+    -- ".moon" -> "", "/Common.moon" -> ".Common", "/test/Common.moon" -> ".test.Common"
+    local function leafSuffix(name)
+        return (name:gsub("%.moon$", ""):gsub("%.lua$", ""):gsub("/", "."))
+    end
+
+    local sourceById = {}
+    for file, _, pkg in feed:walkFiles() do
+        local src = file.localFilePath
+        if src then
+            local base = file.type == "test" and (pkg.namespace .. ".test") or pkg.namespace
+            local id = base .. leafSuffix(file.name)
+            sourceById[id] = sourceById[id] or src  -- first channel wins; sources are channel-agnostic
+        end
+    end
+
+    table.insert(package.loaders or package.searchers, function(modName)
+        local src = sourceById[modName]
+        if not src then return "\n\tno source mapped in feed for '" .. modName .. "'" end
+        if src:match("%.moon$") then
+            local chunk, err = moonbase.loadfile(src)
+            if not chunk then error("error compiling " .. src .. ": " .. tostring(err)) end
+            return chunk
+        end
+        return assert(loadfile(src))
+    end)
+
+    return sourceById
+end
+
 -- ── Command dispatch ──────────────────────────────────────────────────────────
 
-local cmd = arg[1]
-
 -- ─── test ─────────────────────────────────────────────────────────────────────
-if cmd == "test" then
-    local DepCtrl = setupDepCtrl("depctrl-tests")
-    local suite   = require "l0.DependencyControl.Tests"
-
-    suite:import(DepCtrl)
-    local success = suite:run()
-
-    local reportPath = arg[2] or (launcherDir .. pathSep .. "ctrf" .. pathSep .. "DependencyControl.json")
-    if not isAbsolute(reportPath) then
-        reportPath = lfs.currentdir() .. pathSep .. reportPath:gsub("^%.[/\\]", "")
+if args.command == "test" then
+    -- Resolve every test suite by its source require identifier, "<namespace>.test".
+    -- Standard searchers resolve namespaced repos (e.g. DepCtrl's own modules/ tree);
+    -- the feed searcher registered below catches non-namespaced ones. Set before any
+    -- package is required, since requiring a managed module triggers test registration.
+    DEPCTRL_UNIT_TEST_SUITE_REQUIRE_IDENTIFIER = function(scriptType, namespace)
+        return namespace .. ".test"
     end
-    local wrote, writeErr = suite:writeResults(reportPath)
 
-    io.stderr:write(wrote and ("\nWrote CTRF report to " .. reportPath .. "\n")
-        or ("\nWarning: couldn't write CTRF report: " .. tostring(writeErr) .. "\n"))
-    io.stderr:write(success and "\nAll DependencyControl tests passed.\n"
-        or "\nDependencyControl tests FAILED.\n")
-    os.exit(success and 0 or 1)
+    setupDepCtrl("tests")
+    local FileOps = require "l0.DependencyControl.FileOps"
+
+    local feedPath = resolveAbsPath(args.feed)
+    local feed     = loadFeed(feedPath)
+
+    local selected = {}
+    for pkg, scriptType in feed:walkPackages(buildFilter(args)) do
+        selected[#selected + 1] = { namespace = pkg.namespace, scriptType = scriptType }
+    end
+    table.sort(selected, function(a, b) return a.namespace < b.namespace end)
+    if #selected == 0 then
+        io.stderr:write("No packages matched in feed '" .. feedPath .. "'.\n")
+        os.exit(1)
+    end
+    registerFeedSearcher(feed)
+
+    local reportDir = resolveAbsPath(args.report_dir)
+    local ran, skipped, failed = 0, 0, 0
+
+    for _, pkg in ipairs(selected) do
+        local ns = pkg.namespace
+        local okRequire, mod = pcall(require, ns)
+        local record = okRequire and type(mod) == "table" and mod.version or nil
+
+        if not okRequire then
+            io.stderr:write(("! %s: failed to load (%s)\n"):format(ns, tostring(mod)))
+            failed = failed + 1
+        elseif not (record and record.__class and record.__class.__name == "DependencyControl") then
+            io.stderr:write(("~ %s: not a DependencyControl-managed package, skipping\n"):format(ns))
+            skipped = skipped + 1
+        elseif record.haveTestSuite == false then
+            io.stderr:write(("~ %s: no test suite found (%s), skipping\n"):format(ns, tostring(record.testSuiteLoadError)))
+            skipped = skipped + 1
+        elseif not record.testSuiteInitialized then
+            io.stderr:write(("! %s: test suite failed to initialize (%s)\n"):format(ns, tostring(record.testSuiteInitializeError)))
+            failed = failed + 1
+        else
+            io.stdout:write(("\n=== Testing %s ===\n"):format(ns))
+            local success = record.tests:run()
+            ran = ran + 1
+            if not success then failed = failed + 1 end
+
+            local reportPath = FileOps.joinPath(reportDir, ns .. ".json")
+            local wrote, writeErr = record.tests:writeResults(reportPath)
+            io.stderr:write(wrote and ("Wrote CTRF report to " .. reportPath .. "\n")
+                or ("Warning: couldn't write CTRF report for " .. ns .. ": " .. tostring(writeErr) .. "\n"))
+        end
+    end
+
+    io.stdout:write(("\n%d package(s) tested, %d skipped, %d failed.\n"):format(ran, skipped, failed))
+    os.exit(failed > 0 and 1 or 0)
 
 -- ─── bundle ───────────────────────────────────────────────────────────────────
-elseif cmd == "bundle" then
-    setupDepCtrl("depctrl-bundle")
+elseif args.command == "bundle" then
+    local feedPath  = resolveAbsPath(args.feed)
+    local outputDir = resolveAbsPath(args.out_dir)
 
-    local Common      = require "l0.DependencyControl.Common"
-    local FileOps     = require "l0.DependencyControl.FileOps"
-    local UpdateFeed  = require "l0.DependencyControl.UpdateFeed"
-    local ZipArchiver = require "l0.DependencyControl.ZipArchiver"
-    local feedPath = launcherDir .. pathSep .. "DependencyControl.json"
+    setupDepCtrl("bundle")
 
-    -- Load and expand the feed without touching the network.
-    local feed = UpdateFeed(feedPath, false)
-    local ok, err = feed:loadFile(feedPath)
-    if not ok then
-        io.stderr:write("Error loading feed: " .. tostring(err) .. "\n")
-        os.exit(1)
-    end
+    local FileOps       = require "l0.DependencyControl.FileOps"
+    local ZipArchiver   = require "l0.DependencyControl.ZipArchiver"
+    local GitRepository = require "l0.DependencyControl.GitRepository"
 
-    local feedFileBaseUrl = feed.data.fileBaseUrl or ""
-    if feedFileBaseUrl == "" then
-        io.stderr:write("Error: feed has no fileBaseUrl — cannot determine source paths\n")
-        os.exit(1)
-    end
+    local feed   = loadFeed(feedPath)
+    local filter = buildFilter(args)
 
-    -- ── Clean and recreate dist/ ──────────────────────────────────────────────
-    -- All managed file operations go through DependencyControl's own FileOps so
-    -- the launcher stays a thin wrapper around the library it ships.
-
-    local distDir = launcherDir .. pathSep .. "dist"
+    local distDir = outputDir .. pathSep .. "dist"
     FileOps.remove(distDir, true)
     FileOps.mkdir(distDir, false, true)
 
-    -- ── Copy files ────────────────────────────────────────────────────────────
-    -- Source path: the file's expanded URL has the feed-level fileBaseUrl prefix
-    -- stripped to a versioned path (e.g. "v0.7.0-alpha/modules/Foo.moon"); dropping
-    -- the leading version/channel segment yields the repo-relative source path.
-    -- Destination: the file's install layout, derived from its namespace via
-    -- Common.getFileDeployPath (autoload/ for macros, include/ for modules, tests/DepUnit/…
-    -- for test files), so dist/ mirrors an Aegisub automation directory and the
-    -- bundle is a drop-in extract.
+    local fileCount, errCount = feed:deployFiles(distDir, filter, false)
 
-    local function escapePat(s)
-        return (s:gsub("([%.%+%-%*%?%[%]%^%$%(%)%%])", "%%%1"))
-    end
-    local baseUrlPat = "^" .. escapePat(feedFileBaseUrl) .. "(.+)$"
-    -- Install paths from Common.getFileDeployPath are absolute under ?user/automation; strip
-    -- that root to get the path relative to dist/. Normalize separators to '/'.
-    local autoRoot = aegisub.decode_path("?user/automation"):gsub("\\", "/")
-
-    local fileCount, warnCount = 0, 0
-
-    for _, section in ipairs({ "macros", "modules" }) do
-        local pkgs = feed.data[section]
-        if not pkgs then goto nextSection end
-        local scriptType = section == "macros" and Common.ScriptType.Automation
-            or Common.ScriptType.Module
-
-        for namespace, pkg in pairs(pkgs) do
-            for channelName, channel in pairs(pkg.channels or {}) do
-                for _, file in ipairs(channel.files or {}) do
-                    local url = file.url
-                    if not url then
-                        io.stderr:write(("  warn: %s/%s/%s has no url\n")
-                            :format(namespace, channelName, tostring(file.name)))
-                        warnCount = warnCount + 1
-                        goto nextFile
-                    end
-
-                    -- Source: strip the feed base URL, then the leading version/channel segment.
-                    local afterBase = url:match(baseUrlPat)
-                    if not afterBase then
-                        io.stderr:write(("  warn: URL not under feedFileBaseUrl, skipping:\n    %s\n"):format(url))
-                        warnCount = warnCount + 1
-                        goto nextFile
-                    end
-
-                    local relPath = afterBase:match("^[^/]+/(.+)$")
-                    if not relPath then
-                        io.stderr:write(("  warn: cannot strip version prefix from: %s\n"):format(afterBase))
-                        warnCount = warnCount + 1
-                        goto nextFile
-                    end
-
-                    local srcPath = launcherDir .. pathSep .. relPath:gsub("/", pathSep)
-                    if not fileExists(srcPath) then
-                        io.stderr:write(("  warn: source not found: %s\n"):format(srcPath))
-                        warnCount = warnCount + 1
-                        goto nextFile
-                    end
-
-                    -- Destination: install layout relative to dist/.
-                    local installRel = Common:getFileDeployPath(namespace, scriptType, file.name, file.type or "script")
-                        :gsub("\\", "/"):sub(#autoRoot + 2)
-                    local dstPath = distDir .. pathSep .. installRel:gsub("/", pathSep)
-
-                    FileOps.mkdir(dstPath, true, true)  -- ensure the target's parent dir exists
-                    local copied, copyErr = FileOps.copy(srcPath, dstPath)
-                    if copied then
-                        io.stdout:write(("  %s  →  dist/%s\n"):format(relPath, installRel))
-                        fileCount = fileCount + 1
-                    else
-                        io.stderr:write(("  error copying %s: %s\n"):format(relPath, tostring(copyErr)))
-                        warnCount = warnCount + 1
-                    end
-
-                    ::nextFile::
-                end
-            end
-        end
-        ::nextSection::
-    end
-
-    -- ── Create the zip archive ─────────────────────────────────────────────────
-    -- Named DependencyControl-v<mainModuleVersion>; when HEAD is not on a tag, a
-    -- -<branch>-g<shortHash> suffix is appended (git-describe style).
-
-    local function defaultChannelVersion(pkg)
-        local fallback
-        for _, ch in pairs(pkg.channels or {}) do
-            fallback = fallback or ch.version
-            if ch.default then return ch.version end
-        end
-        return fallback
-    end
-
-    local mainPkg = feed.data.modules and feed.data.modules["l0.DependencyControl"]
-    local mainVersion = mainPkg and defaultChannelVersion(mainPkg)
+    -- Name the archive after the feed's headline module (DepCtrl's own feed) where present,
+    -- otherwise fall back to the first module version so other feeds still bundle.
+    local mainVersion = feed:getModuleVersion("l0.DependencyControl")
     if not mainVersion then
-        io.stderr:write("Error: couldn't determine l0.DependencyControl version from feed\n")
-        os.exit(1)
+        for ns in pairs(feed.data.modules or {}) do
+            mainVersion = feed:getModuleVersion(ns)
+            if mainVersion then break end
+        end
+        mainVersion = mainVersion or "0.0.0"
     end
 
-    local function git(args)
-        local h = io.popen(('git -C "%s" %s 2>&1'):format(launcherDir, args))
-        if not h then return nil end
-        local out = (h:read("*a") or ""):gsub("%s+$", "")
-        local success = h:close()
-        return success and out ~= "" and out or nil
-    end
+    local suffix  = GitRepository(feed.feedDir):getVersionSuffix()
+    local zipPath = outputDir .. pathSep .. (feed.data.name .. "-v%s%s.zip"):format(mainVersion, suffix)
 
-    local suffix = ""
-    if not git("describe --exact-match --tags HEAD") then  -- HEAD is not on a tag
-        local branch = git("rev-parse --abbrev-ref HEAD") or "unknown"
-        local hash   = git("rev-parse --short=7 HEAD")    or "0000000"
-        suffix = ("-%s-g%s"):format(branch, hash)
-    end
-
-    local zipName = ("DependencyControl-v%s%s.zip"):format(mainVersion, suffix)
-    local zipPath = launcherDir .. pathSep .. zipName
-
-    -- Archive the whole dist/ tree via DependencyControl's own ZipArchiver, which
-    -- uses each platform's stock tooling and emits spec-compliant forward-slash
-    -- entries (per-platform details live in the module).
     local zipOk = false
     if fileCount > 0 then
         local success, archiveErr = ZipArchiver(zipPath):addDirectory(distDir):write()
@@ -274,18 +284,24 @@ elseif cmd == "bundle" then
     end
 
     local status = fileCount > 0 and "Bundle complete" or "Bundle produced no files"
-    io.stdout:write(("\n%s: %d file(s) copied, %d warning(s)  →  %s\n")
-        :format(status, fileCount, warnCount, distDir))
-    if zipOk then
-        io.stdout:write(("Archive: %s\n"):format(zipPath))
-    end
-    os.exit(warnCount > 0 and 1 or 0)
+    io.stdout:write(("\n%s: %d file(s) in %s, %d error(s)\n"):format(status, fileCount, distDir, errCount))
+    if zipOk then io.stdout:write(("Archive: %s\n"):format(zipPath)) end
+    os.exit(errCount > 0 and 1 or 0)
 
--- ─── usage ────────────────────────────────────────────────────────────────────
-else
-    io.stderr:write(("Usage: luajit %s <command> [args...]\n"):format(arg[0] or "depctrl.lua"))
-    io.stderr:write("Commands:\n")
-    io.stderr:write("  test [ctrf-report-path]   Run the unit test suite\n")
-    io.stderr:write("  bundle                    Build the dist/ release bundle\n")
-    os.exit(1)
+-- ─── deploy ───────────────────────────────────────────────────────────────────
+elseif args.command == "deploy" then
+    local feedPath  = resolveAbsPath(args.feed)
+    local outputDir = resolveAbsPath(args.out_dir)
+    local clobber   = args.clobber == true
+
+    setupDepCtrl("deploy")
+
+    local feed   = loadFeed(feedPath)
+    local filter = buildFilter(args)
+
+    local fileCount, errCount = feed:deployFiles(outputDir, filter, clobber)
+
+    local status = fileCount > 0 and "Deploy complete" or "Deploy produced no files"
+    io.stdout:write(("\n%s: %d file(s) deployed to %s, %d error(s)\n"):format(status, fileCount, outputDir, errCount))
+    os.exit(errCount > 0 and 1 or 0)
 end

@@ -27,6 +27,7 @@ class UpdaterBase extends Common
             [10]: "Skipped %s of %s '%s': the update task is already running."
             [15]: "Couldn't %s %s '%s' because its requirements could not be satisfied:"
             [30]: "Couldn't %s %s '%s': failed to create temporary download directory %s"
+            [33]: "Aborted %s of %s '%s' because it attempted to deploy a file (%s) outside of its namespaced path."
             [35]: "Aborted %s of %s '%s' because the feed contained a missing or malformed SHA-1 hash for file %s."
             [50]: "Couldn't finish %s of %s '%s' because some files couldn't be moved to their target location:\n"
             [55]: "%s of %s '%s' succeeded, couldn't be located by the module loader."
@@ -335,7 +336,9 @@ class UpdateTask extends UpdaterBase
             tmpName, prettyName = "#{tmpDir}/#{file.type}/#{baseName}", baseName
             switch file.type
                 when "script", "test"
-                    file.fullName = Common\getFileDeployPath @record.namespace, @record.scriptType, file.name, file.type
+                    return finish -33, file.name if file.name\match "%.%."
+                    file.fullName = UpdateFeed\getFileDeployPath @record.namespace, @record.scriptType, file.name, file.type
+
                     prettyName ..= " (Unit Test)" if file.type == "test"
                 else
                     file.unknown = true

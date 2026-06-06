@@ -28,23 +28,43 @@ provideBundled "l0.dkjson", {"json", "dkjson"}
 provideBundled "l0.DependencyControl.TerribleMutex", {"BM.BadMutex"}, "DEPCTRL_PREFER_FFI_MUTEX"
 provideBundled "l0.DependencyControl.DownloadManager", {"DM.DownloadManager"}, "DEPCTRL_PREFER_FFI_DOWNLOADER"
 
-Logger =         require "l0.DependencyControl.Logger"
-UpdateFeed =     require "l0.DependencyControl.UpdateFeed"
+Common =         require "l0.DependencyControl.Common"
 ConfigHandler =  require "l0.DependencyControl.ConfigHandler"
+ConfigView =     require "l0.DependencyControl.ConfigView"
+Crypto =         require "l0.DependencyControl.Crypto"
+Downloader =     require "l0.DependencyControl.Downloader"
+Enum =           require "l0.DependencyControl.Enum"
+EventEmitter =   require "l0.DependencyControl.EventEmitter"
 FileOps =        require "l0.DependencyControl.FileOps"
-Updater =        require "l0.DependencyControl.Updater"
-UnitTestSuite =  require "l0.DependencyControl.UnitTestSuite"
+GitRepository =  require "l0.DependencyControl.GitRepository"
+Lock =           require "l0.DependencyControl.Lock"
+Logger =         require "l0.DependencyControl.Logger"
 Record =         require "l0.DependencyControl.Record"
+Stub =           require "l0.DependencyControl.Stub"
+Timer =          require "l0.DependencyControl.Timer"
+UnitTestSuite =  require "l0.DependencyControl.UnitTestSuite"
+UpdateFeed =     require "l0.DependencyControl.UpdateFeed"
+Updater =        require "l0.DependencyControl.Updater"
 
 class DependencyControl extends Record
+    @Common = Common
     @ConfigHandler = ConfigHandler
-    @UpdateFeed = UpdateFeed
+    @ConfigView = ConfigView
+    @Crypto = Crypto
+    @Downloader = Downloader
+    @Enum = Enum
+    @EventEmitter = EventEmitter
+    @FileOps = FileOps
+    @GitRepository = GitRepository
+    @Lock = Lock
     @Logger = Logger
+    @Record = Record
+    @Stub = Stub
+    @Timer = Timer
+    @UpdateFeed = UpdateFeed
     @Updater = Updater
     @UnitTestSuite = UnitTestSuite
-    @FileOps = FileOps
     @SemanticVersioning = SemanticVersioning
-
 
 rec = DependencyControl{
     name: "DependencyControl",
@@ -65,5 +85,6 @@ DependencyControl.__class.version = rec
 LOADED_MODULES[rec.moduleName], package.loaded[rec.moduleName] = DependencyControl, DependencyControl
 DependencyControl.updater\scheduleUpdate rec
 rec\requireModules!
+rec\register DependencyControl
 
 return DependencyControl

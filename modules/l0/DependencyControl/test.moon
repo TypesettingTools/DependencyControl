@@ -1,6 +1,10 @@
 DependencyControl = require "l0.DependencyControl"
 
-DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl) ->
+DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl, ...) ->
+  -- The suite controls object is appended by UnitTestSuite\import as the final argument.
+  -- Its index varies by loader (CLI vs Aegisub pass different arg counts), so grab the last one.
+  nArgs    = select "#", ...
+  controls = select nArgs, ...
   lfs       = require "lfs"
   ffi       = require "ffi"
   Logger             = require "l0.DependencyControl.Logger"
@@ -15,11 +19,13 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl) ->
   Record             = require "l0.DependencyControl.Record"
   UpdateFeed         = require "l0.DependencyControl.UpdateFeed"
   ScriptUpdateRecord = require "l0.DependencyControl.ScriptUpdateRecord"
+  GitRepository      = require "l0.DependencyControl.GitRepository"
   Timer              = require "l0.DependencyControl.Timer"
   TerribleMutex      = require "l0.DependencyControl.TerribleMutex"
   Downloader         = require "l0.DependencyControl.Downloader"
   Crypto             = require "l0.DependencyControl.Crypto"
   ModuleProvider     = require "l0.DependencyControl.ModuleProvider"
+  Stub               = require "l0.DependencyControl.Stub"
 
   BADMUTEX_MODULE_NAME       = "BM.BadMutex"
   TIMER_MODULE_NAME          = "l0.DependencyControl.Timer"
@@ -442,6 +448,8 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl) ->
       }
     }
 
+    CommonExtra: (controls\requireTest "Common") basePath
+
     FileOps: {
       _description: "Tests for FileOps path validation and filesystem utilities."
 
@@ -453,31 +461,32 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl) ->
         ut\assertString err
 
       validateFullPath_parentDir: (ut) ->
+        -- ".." is now resolved rather than rejected
         result = FileOps.validateFullPath {basePath, "..", "escape.txt"}
-        ut\assertFalse result
+        ut\assertString result  -- resolves to parent dir + escape.txt
 
       validateFullPath_tooLong: (ut) ->
         result = FileOps.validateFullPath {basePath, "#{string.rep 'a', 300}.txt"}
-        ut\assertFalse result
+        ut\assertNil result
 
       validateFullPath_invalidChars: (ut) ->
         return unless isWindows
         result = FileOps.validateFullPath {basePath, "with<invalid>.txt"}
-        ut\assertFalse result
+        ut\assertNil result
 
       validateFullPath_reservedNames: (ut) ->
         return unless isWindows
         result = FileOps.validateFullPath {basePath, "CON", "file.txt"}
-        ut\assertFalse result
+        ut\assertNil result
 
       validateFullPath_reservedNameWithExt: (ut) ->
         return unless isWindows
         result = FileOps.validateFullPath {basePath, "NUL.txt"}
-        ut\assertFalse result
+        ut\assertNil result
 
       validateFullPath_trailingDotSegment: (ut) ->
         result = FileOps.validateFullPath {basePath, "trailingdot.", "file.txt"}
-        ut\assertFalse result
+        ut\assertNil result
 
       validateFullPath_valid: (ut) ->
         path, dev, dir, file = FileOps.validateFullPath {basePath, "file.txt"}
@@ -710,6 +719,9 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl) ->
         "remove_success", "remove_notFound"
       }
     }
+
+    FileOpsExtra: (controls\requireTest "FileOps") basePath, isWindows
+
 
     Logger: {
       _description: "Tests for the Logger class covering message formatting, dump serialization, and log dispatch."
@@ -1950,15 +1962,18 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl) ->
         registered = {}
         ut\stub(aegisub, "register_macro")\calls (...) -> registered[#registered+1] = table.pack ...
         updaterMock = {scheduleUpdate: (->), releaseLock: ->}
+        registerTestsStub = Stub!
         rec = {
           name: "TestScript",
           description: "desc",
           config: {c: {customMenu: "Automation"}},
+          registerTests: registerTestsStub,
           __class: {updater: updaterMock}
         }
         Record.registerMacro rec, "MyMacro", "My macro", (->)
         ut\assertEquals #registered, 1
         ut\assertContains registered[1][1], "MyMacro"
+        registerTestsStub\assertCalledOnceWith rec
 
       _order: {
         "checkVersion_equal", "checkVersion_greater", "checkVersion_older", "checkVersion_recordArg",
@@ -2131,6 +2146,12 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl) ->
     -- Real-HTTP exercise of the Downloader backends against a local pegasus/copas server
     -- (test/helpers/mock-http-server). Self-gating via _condition: skipped unless the server's
     -- Lua deps are installed, so the default offline run never needs luasocket/copas/pegasus.
+    UpdateFeedExtra: (controls\requireTest "UpdateFeed") basePath, DepCtrl
+
+    GitRepository: (controls\requireTest "GitRepository")!
+
+    ScriptTargetFilter: (controls\requireTest "ScriptTargetFilter")!
+
     DownloaderIntegration: {
       _description: "Real-HTTP Downloader tests against a local test server (runs when launchable)."
 

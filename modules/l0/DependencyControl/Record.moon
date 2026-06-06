@@ -9,6 +9,7 @@ Updater =        require "l0.DependencyControl.Updater"
 ModuleLoader =   require "l0.DependencyControl.ModuleLoader"
 ModuleProvider = require "l0.DependencyControl.ModuleProvider"
 SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
+UnitTestSuite =  require "l0.DependencyControl.UnitTestSuite"
 
 --- DependencyControl record representing one managed or unmanaged script/module.
 -- @class Record
@@ -112,8 +113,8 @@ class Record extends Common
                msgs.new.badRecord.badNamespace\format @namespace
 
         @configFile = configFile or "#{@namespace}.json"
-        @automationDir = @@automationDir[@scriptType]
-        @testDir = @@testDir[@scriptType]
+        @automationDir = Common\getAutomationDir @scriptType
+        @testDir = Common\getTestDir @scriptType
         @version, err = SemanticVersioning\toNumber version
         assert @version, msgs.new.badRecordError\format msgs.new.badRecord.badVersion\format err
 
@@ -259,22 +260,33 @@ class Record extends Common
             LOADED_MODULES[@namespace] = nil
             @@logger\error err
         return unpack [mdl._ref for mdl in *modules]
-
+    
     --- Registers DepUnit tests for this record if test modules are available.
     -- @param[opt] ... any
     registerTests: (...) =>
-        -- load external tests
-        haveTests, tests = pcall require, "DepUnit.#{@@ScriptType.name.legacy[@scriptType]}.#{@namespace}"
+        return if @haveTestSuite == false or @testSuiteInitialized
 
-        if haveTests and not @testsLoaded
-            @tests, tests.name = tests, @name
-            modules =  table.pack @requireModules!
-            if @moduleName
-                @tests\import @ref, modules, ...
-            else @tests\import modules, ...
+        testSuiteIdentifier = UnitTestSuite\getTestSuiteRequireIdentifier @scriptType, @namespace
+        @haveTestSuite, testsOrErrorMsg = pcall UnitTestSuite\require, testSuiteIdentifier
+        if not @haveTestSuite
+            @testSuiteLoadError = testsOrErrorMsg
+            return
+        
+        @tests = testsOrErrorMsg
+        @tests.name = @name
 
-            @tests\registerMacros!
-            @testsLoaded = true
+        modules = table.pack @requireModules!
+        success, errMsg = nil, nil
+        if @moduleName
+            success, errMsg = pcall @tests\import, @ref, modules, ...
+        else
+            success, errMsg = pcall @tests\import, modules, ...
+
+        if success
+            @testSuiteInitialized = true
+        else
+            @testSuiteInitializeError = errMsg
+            @@logger\warn "Error initializing test suite for #{@@terms.scriptType.singular[@scriptType]} '#{@name}': #{errMsg}"
 
     --- Finalizes module registration and swaps dummy module refs for real refs.
     -- @param selfRef table
@@ -294,6 +306,7 @@ class Record extends Common
     -- @param[opt] isActive function
     -- @param[opt] submenu string|boolean
     registerMacro: (name=@name, description=@description, process, validate, isActive, submenu) =>
+        @registerTests!
         -- alternative signature takes name and description from script
         if type(name)=="function"
             process, validate, isActive, submenu = name, description, process, validate
@@ -318,6 +331,7 @@ class Record extends Common
     -- @param[opt] macros table[]
     -- @param[opt=true] submenuDefault boolean
     registerMacros: (macros = {}, submenuDefault = true) =>
+        @registerTests!
         for macro in *macros
             -- allow macro table to omit name and description
             submenuIdx = type(macro[1])=="function" and 4 or 6

@@ -1,5 +1,5 @@
 {
-  "dependencyControlFeedFormatVersion": "0.3.0",
+  "dependencyControlFeedFormatVersion": "0.4.0",
   "name": "DependencyControl",
   "description": "The official DependencyControl repository.",
   "baseUrl": "https://github.com/TypesettingTools/DependencyControl",
@@ -30,6 +30,7 @@
       "name": "DependencyControl Toolbox",
       "description": "Provides DependencyControl maintenance and configuration utilities.",
       "fileBaseUrl": "@{fileBaseUrl}macros-v@{version}-@{channel}/macros/@{namespace}",
+      "localFileBasePath": "@{localFileBasePath}macros/@{namespace}",
       "channels": {
         "alpha": {
           "version": "0.2.0",
@@ -75,6 +76,7 @@
       "name": "DependencyControl",
       "description": "Dependency manager and automatic script updater for Aegisub macros and modules.",
       "fileBaseUrl": "@{fileBaseUrl}v@{version}-@{channel}/modules/@{namespacePath}",
+      "localFileBasePath": "@{localFileBasePath}modules/@{namespacePath}",
       "channels": {
         "alpha": {
           "version": "0.7.0",
@@ -139,7 +141,7 @@
             {
               "name": ".moon",
               "type": "test",
-              "url": "@{fileBaseUrl}/Tests.moon",
+              "url": "@{fileBaseUrl}/test.moon",
               "sha1": "1ED8961CAFCADA7E4C04778227EECDC18E509B8D"
             }
           ],
@@ -229,6 +231,7 @@
       "name": "dkjson",
       "description": "David Kolf's JSON module for Lua, vendored with and managed by DependencyControl.",
       "fileBaseUrl": "@{fileBaseUrl}v@{version}-@{channel}/modules/@{namespacePath}",
+      "localFileBasePath": "@{localFileBasePath}modules/@{namespacePath}",
       "channels": {
         "release": {
           "version": "2.10.0",

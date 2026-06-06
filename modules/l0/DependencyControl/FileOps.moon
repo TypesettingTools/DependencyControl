@@ -39,6 +39,16 @@ class FileOps
                 dirCopyUnsupported: "Copying directories is currently not supported."
                 missingSource: "Couldn't find source file '%s'."
                 openError: "Couldn't open %s file '%s' for reading: \n%s"
+            },
+            exists: {
+                doesntExist: "No such file or directory: '%s'."
+                wrongType: "Expected %s to be a %s but found a %s."
+            }
+            listDir: {
+                notADirectory: "Can only list directories but supplied path '%s' points to a %s."
+            },
+            joinPath: {
+                invalidSegment: "Invalid path segment type: expected a string or pure array table, got '%s'."
             }
             move: {
                 inUseTryingRename: "Target file '%s' already exists and appears to be in use. Trying to rename and delete existing file..."
@@ -82,10 +92,10 @@ class FileOps
             }
             getNamespacedPath: {
                 badBasePath: "Provided base path '%s' is not a valid full path (%s)."
-                badPath: "Generated namespaced path '%s' is not a valid full path (%s)."
+                badPath: "Could not generate a valid full path from base path '%s' and namespaced sub-path '%s': %s."
             }
             validateFullPath: {
-                badType: "Argument #1 (path) had the wrong type. Expected 'string', got '%s'."
+                badType: "Argument #%s (%s) had the wrong type. Expected 'string', got '%s'."
                 tooLong: "The specified path exceeded the maximum length limit (%d > %d)."
                 invalidChars: "The specified path contains one or more invalid characters: '%s'."
                 reservedNames: "The specified path contains reserved path or file names: '%s'."
@@ -100,17 +110,18 @@ class FileOps
         "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
         "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"
     }}
-    pathMatch = {
+    @pathSep = ffi.os == "Windows" and "\\" or "/"
+    @pathMatch = {
         sep: ffi.os == "Windows" and "\\" or "/"
+        sepAll: ffi.os == "Windows" and "[\\/]" or "/"
         invalidChars: '[<>:"|%?%*%z%c;]'
-        maxLen: 255
     }
     -- supported file hash algorithms, keyed by HashType value
     HashType = Enum "FileOpsHashType", { SHA1: "sha1" }
     @HashType = HashType
     hashAlgorithms = { [HashType.SHA1]: Crypto.sha1 }
     @logger = Logger!
-    @pathSep = pathMatch.sep
+    @pathMaxLength = ffi.os == "Windows" and 260 or 4096
 
     createConfig = (noLoad, configDir) ->
         FileOps.configDir = configDir if configDir
@@ -206,7 +217,7 @@ class FileOps
     -- @param target string
     -- @return boolean success
     -- @return string|nil err
-    copy: ( source, target ) ->
+    copy: ( source, target, clobber ) ->
         -- source check
         mode, sourceFullPath, _, _, fileName = FileOps.attributes source, "mode"
         switch mode
@@ -222,7 +233,7 @@ class FileOps
             mode, targetFullPath = FileOps.attributes target, "mode"
             switch mode
                 when "file"
-                    return false, msgs.writeFile.targetExists\format target
+                    return false, msgs.writeFile.targetExists\format target unless clobber
                 when nil
                     return false, msgs.copy.genericError\format source, target, targetFullPath
                 when "directory"
@@ -251,17 +262,51 @@ class FileOps
         else
             return false, msgs.copy.genericError\format sourceFullPath, targetFullPath, msg
 
-    --- Joins multiple path segments into a single path string.
+    listDir: (dirPath) ->
+        mode, fullPath = FileOps.attributes dirPath, "mode"
+        return nil, msgs.listDir.notADirectory\format fullPath, mode if mode != "directory"
+        return [entry for entry in lfs.dir(fullPath) when entry != "." and entry != ".."]
+
+    --- Joins and resolves multiple path segments into a single path string.
     -- @param ... string|string[] one or more path segments, or arrays of path segments
     -- @return string joinedPath the path segments joined by os-specific path separators
     joinPath: (...) ->
-        flatPathSegments = [x for v in *{...} for x in *(type(v) == "table" and v or {v})]
+        args = {...}
+        -- detect root from the first string before splitting consumes separators
+        firstStr = type(args[1]) == "table" and args[1][1] or args[1]
+        return nil, msgs.joinPath.invalidSegment\format type firstStr if type(firstStr) ~= "string"
+        absolutePathRoot = type(firstStr) == "string" and FileOps.getPathRoot firstStr
 
-        return table.concat flatPathSegments, FileOps.pathSep
+        invalidPathSegmentType = nil
+        flatPathSegments = Common.flatten args, 3, (value, typ) ->
+            if typ != "string"
+                invalidPathSegmentType = typ
+                return nil
+
+            firstSegment, moreSegments = nil, nil
+            for segment in FileOps.pathSegments value
+                if firstSegment
+                    moreSegments or= {firstSegment}
+                    table.insert moreSegments, segment
+                else firstSegment = segment
+            return moreSegments or firstSegment, moreSegments
+        return nil, msgs.joinPath.invalidSegment\format invalidPathSegmentType if invalidPathSegmentType
+
+        -- filter extraneous '.', resolve '..', and clamp path traversal at root
+        segments = {}
+        for i, segment in ipairs flatPathSegments
+            switch segment
+                when "."  then segments[#segments + 1] = segment if i == 1 and not absolutePathRoot
+                when ".."
+                    if #segments > (absolutePathRoot and 1 or 0) and segments[#segments] != ".."
+                        segments[#segments] = nil
+                    elseif not absolutePathRoot
+                        segments[#segments + 1] = segment
+                else segments[#segments + 1] = segment
+        -- re-add root separator for absolute paths on POSIX systems removed by splitting
+        return "#{absolutePathRoot and ffi.os != "Windows" and FileOps.pathSep or ""}#{table.concat segments, FileOps.pathSep}"
 
     --- Returns an iterator over the non-empty components of a path, split on any separator.
-    -- Equivalent to collecting `path:gmatch("[^/\\]+")`.
-    -- To get an array instead: `[seg for seg in FileOps.pathSegments(path)]`
     -- @tparam string path
     -- @return iterator
     pathSegments: (path) -> path\gmatch "[^/\\]+"
@@ -393,7 +438,7 @@ class FileOps
 
         if recurse
             -- recursively remove contained files and directories
-            toRemove = [FileOps.joinPath(path, file) for file in lfs.dir path]
+            toRemove = [FileOps.joinPath(path, file) for file in *FileOps.listDir path]
             res, details = FileOps.remove toRemove, true
             unless res
                 fileList = table.concat ["#{path}: #{res[2]}" for path, res in pairs details when not res[1]], "\n"
@@ -458,12 +503,9 @@ class FileOps
     -- @return string? dir the directory component of the path, or nil if the path was invalid
     -- @return string? file the file name component of the path, or nil if the path was invalid or pointed to
     attributes: (path, key) ->
-        fullPath, dev, dir, file = FileOps.validateFullPath path
+        fullPath, dev, dir, file = FileOps.validateFullPath path, false, lfs.currentdir!
         unless fullPath
-            path = FileOps.joinPath lfs.currentdir!, path
-            fullPath, dev, dir, file = FileOps.validateFullPath path
-            unless fullPath
-                return nil, msgs.attributes.badPath\format dev
+            return nil, msgs.attributes.badPath\format dev
 
         attr, err, errCode = lfs.attributes fullPath, key
         if attr
@@ -476,41 +518,71 @@ class FileOps
         else
             return nil, msgs.attributes.genericError\format err
 
+    --- Checks whether a file or directory exists and optionally verifies its type.
+    -- @param path string|string[] Either a path or an array of path segments
+    -- @param expectedMode string|nil If specified, the type of the file system entry
+    -- @return boolean exists true if the file or directory exists and matches the expected type, false if it doesn't exist or doesn't match the expected type, or nil if an error occurred while checking the file
+    -- @return string|nil err an error message if the file doesn't exist or is of the wrong type
+    exists: (path, expectedMode) ->
+        mode, fullPathOrErrMsg = FileOps.attributes path, "mode"
+        switch mode
+            when nil then return nil, fullPathOrErrMsg
+            when false then return false, msgs.exists.doesntExist\format fullPathOrErrMsg
+            else
+                return true if not expectedMode or mode == expectedMode                 
+                return false, msgs.exists.wrongType\format fullPathOrErrMsg, expectedMode, mode
+            
+                
+    getPathRoot: (absolutePath) ->
+        return absolutePath\match "^[A-Za-z]:[/\\]" if ffi.os == "Windows"
+        return absolutePath\match "^/[^/\\]+"
+
     --- Validates and normalizes an absolute filesystem path.
     -- @param path string|string[] Either a path or an array of path segments
     -- @param[opt] checkFileExt boolean
+    -- @param[opt] basePath string|string[] Optional base path to resolve relative paths against. If not provided, relative paths will be rejected.
     -- @return string|nil normalizedPath
     -- @return string|nil err
     -- @return string|nil device
     -- @return string|nil dir
     -- @return string|nil file
-    validateFullPath: (path, checkFileExt) ->
-        if type(path) == "table"
-            path = FileOps.joinPath path
-        elseif type(path) != "string"
-            return nil, msgs.validateFullPath.badType\format type(path)
+    validateFullPath: (path, checkFileExt, basePath) ->
+        if "table" == type path
+            path, errMsg = FileOps.joinPath path
+            return nil, errMsg if not path
+        elseif "string" != type path
+            return nil, msgs.validateFullPath.badType\format 1, "path", type(path)
+
+        if "table" == type basePath
+            basePath, errMsg = FileOps.joinPath basePath
+            return nil, errMsg if not basePath
+        elseif basePath and "string" != type basePath
+            return nil, msgs.validateFullPath.badType\format 3, "basePath", type(basePath)
+            
         -- expand aegisub path specifiers
         path = aegisub.decode_path path
         -- expand home directory on linux
         homeDir = os.getenv "HOME"
         path = path\gsub "^~", "#{homeDir}/" if homeDir
         -- use single native path separators
-        path = path\gsub "[\\/]+", pathMatch.sep
+        path = path\gsub "[\\/]+", FileOps.pathSep
         -- check length
-        if #path > pathMatch.maxLen
-            return false, msgs.validateFullPath.tooLong\format #path, pathMatch.maxLen
+        if #path > FileOps.pathMaxLength
+            return nil, msgs.validateFullPath.tooLong\format #path, FileOps.pathMaxLength
         -- check for invalid characters
-        invChar = path\match pathMatch.invalidChars, ffi.os == "Windows" and 3 or nil
+        invChar = path\match FileOps.pathMatch.invalidChars, ffi.os == "Windows" and 3 or nil
         if invChar
-            return false, msgs.validateFullPath.invalidChars\format invChar
-        -- check for path escalation
-        if path\match "%.%."
-            return false, msgs.validateFullPath.parentPath
-
-        -- parse path structure
-        dev = if ffi.os == "Windows" then path\match "^[A-Za-z]:" else path\match "^/[^/\\]+"
+            return nil, msgs.validateFullPath.invalidChars\format invChar
+        -- check if path is absolute
+        dev = FileOps.getPathRoot path
         unless dev
-            return false, msgs.validateFullPath.notFullPath
+            -- make relative paths absolute if base path is provided
+            if basePath
+                path, errMsg = FileOps.joinPath basePath, path
+                return nil, errMsg if not path
+                dev = FileOps.getPathRoot path
+            else return false, msgs.validateFullPath.notFullPath
+        -- parse path structure
         rest = path\sub #dev + 1
         dir, file = rest\match "^(.*)[/\\]([^/\\]*)$"
         unless dir
@@ -519,14 +591,14 @@ class FileOps
             if ffi.os == "Windows"
                 segmentWithoutExt = segment\match("^[^%.]+") or segment
                 if windowsReservedNameSet[segmentWithoutExt\upper!]
-                    return false, msgs.validateFullPath.reservedNames\format segmentWithoutExt
+                    return nil, msgs.validateFullPath.reservedNames\format segmentWithoutExt
             unless segment\match "[^%.%s]$"
-                return false, msgs.validateFullPath.notFullPath
+                return nil, msgs.validateFullPath.notFullPath
         file = file != "" and file or nil
         if checkFileExt and not (file and file\match ".+%.+")
             return false, msgs.validateFullPath.missingExt
 
-        path = table.concat {dev, dir, file and pathMatch.sep, file}
+        path = table.concat {dev, dir, file and FileOps.pathSep, file}
         return path, dev, dir, file
 
     --- Converts a base path and namespace into a namespaced filesystem path.
@@ -544,9 +616,8 @@ class FileOps
         fullBasePath, msg = FileOps.validateFullPath basePath
         return nil, msgs.getNamespacedPath.badBasePath\format basePath, msg unless fullBasePath
 
-        namespacePath = nested and namespace\gsub("%.", FileOps.pathSep) or namespace
-        fullPath = FileOps.joinPath fullBasePath, "#{namespacePath}#{ext}"
-        normalizedFullPath, msg = FileOps.validateFullPath fullPath
-        return nil, msgs.getNamespacedPath.badPath\format fullPath, msg unless normalizedFullPath
+        namespacePath = "#{nested and namespace\gsub("%.", FileOps.pathSep) or namespace}#{ext}"
+        normalizedFullPath, msg = FileOps.validateFullPath namespacePath, false, fullBasePath
+        return nil, msgs.getNamespacedPath.badPath\format fullBasePath, namespacePath, msg unless normalizedFullPath
 
         return normalizedFullPath

@@ -100,6 +100,42 @@ _itemsEqual = (a, b, onlyNumKeys = true, ignoreExtraAItems, requireIdenticalItem
 
     return true
 
+
+getTableLength = (tbl) ->
+    n = 0
+    n += 1 for _, _ in pairs tbl
+    return n
+
+isPureArrayTable = (tbl) ->
+    typ = type tbl
+    return false, nil, typ if typ != "table"
+    len = getTableLength tbl
+    return #tbl == len, len, typ
+
+--- Flattens nested array tables into a single array up to the specified depth. Values that are not (or not converted to) pure array tables are included as-is.
+-- @param value The value to flatten.
+-- @param depth The maximum depth to flatten.
+-- @param toArrayTable An optional function to convert non-array values to array tables.
+-- @return table flattened # A flattened array table containing the flattened values.
+-- @return number flattenedCount # The number of elements in the flattened array.
+flatten = (value, depth = 1, toArrayTable) ->
+    flattened, f = {}, 0
+
+    recurse = (v, d) ->
+        isArray, _, typ = isPureArrayTable v
+        if toArrayTable and not isArray
+            v, isArray = toArrayTable v, typ
+            isArray = isPureArrayTable(v) if isArray == nil
+        if isArray and d > 0
+            recurse nestedVal, d - 1 for nestedVal in *v
+        else
+            f += 1
+            flattened[f] = v
+
+    recurse value, depth
+    return flattened, f
+
+
 --- Shared constants, enums, and terminology used across DependencyControl modules.
 -- @class DependencyControlCommon
 class DependencyControlCommon
@@ -153,27 +189,18 @@ class DependencyControlCommon
             return true
         return false, msgs.validateNamespace.badNamespace\format namespace
 
-    automationDir: {
-        aegisub.decode_path("?user/automation/autoload"),
-        aegisub.decode_path("?user/automation/include")
-    }
+    @getAutomationDir: (scriptType, rootDir = "?user") =>
+        switch scriptType
+            when @ScriptType.Automation then aegisub.decode_path("#{rootDir}/automation/autoload")
+            when @ScriptType.Module then aegisub.decode_path("#{rootDir}/automation/include")
+            else nil
+        
+    @getTestDir = (scriptType, rootDir = "?user") =>
+        switch scriptType
+            when @ScriptType.Automation then aegisub.decode_path("#{rootDir}/automation/tests/DepUnit/macros")
+            when @ScriptType.Module then aegisub.decode_path("#{rootDir}/automation/tests/DepUnit/modules")
+            else nil
 
-    @testDir = {aegisub.decode_path("?user/automation/tests/DepUnit/macros"),
-                aegisub.decode_path("?user/automation/tests/DepUnit/modules")}
-
-    --- Resolves the install path of a packaged file from its owning script's namespace,
-    -- mirroring the layout the Updater installs into: automation scripts go to the
-    -- autoload dir, modules to the include dir (under their namespace path), and test
-    -- files to the matching DepUnit test dir.
-    -- @param namespace string
-    -- @param scriptType number a ScriptType value
-    -- @param fileName string the file's feed name (e.g. ".moon", "/Common.moon")
-    -- @param[opt="script"] fileType string "script" or "test"
-    -- @return string path
-    @getFileDeployPath = (namespace, scriptType, fileName, fileType = "script") =>
-        subDir = scriptType == @ScriptType.Module and (namespace\gsub "%.", "/") or namespace
-        baseDir = fileType == "test" and @testDir[scriptType] or @automationDir[scriptType]
-        return "#{baseDir}/#{subDir}#{fileName}"
 
     --- Deep equality comparison. Tables compared recursively; other types use ==.
     -- Circular references are handled. Metatables are included in the comparison.
@@ -210,3 +237,11 @@ class DependencyControlCommon
     -- @param tbl table the table to deep copy
     -- @return table the deep-copied table
     @deepCopy = deepCopy
+
+    --- Flattens nested array tables into a single array up to the specified depth. Values that are not (or not converted to) pure array tables are included as-is.
+    -- @param value The value to flatten.
+    -- @param depth The maximum depth to flatten.
+    -- @param toArrayTable An optional function to convert non-array values to array tables.
+    -- @return table flattened # A flattened array table containing the flattened values.
+    -- @return number flattenedCount # The number of elements in the flattened array.
+    @flatten = flatten

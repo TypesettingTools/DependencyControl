@@ -1,10 +1,11 @@
 
 Logger = require "l0.DependencyControl.Logger"
--- make sure tests can be loaded from the test directory
-package.path ..= aegisub.decode_path("?user/automation/tests") .. "/?.lua;"
-
 Common = require "l0.DependencyControl.Common"
 Stub   = require "l0.DependencyControl.Stub"
+DependencyControl = nil
+
+-- make sure tests can be loaded from the test directory
+package.path ..= aegisub.decode_path("?user/automation/tests") .. "/?.lua;"
 
 --- A class for all single unit tests.
 -- Provides useful assertion and logging methods for a user-specified test function.
@@ -678,6 +679,19 @@ class UnitTestClass
         return false, failed
 
 
+--- A bundle of helper utilities handed to a suite's import function as its trailing argument.
+-- @class UnitTestSuiteControls
+class UnitTestSuiteControls
+    -- @param suite UnitTestSuite the suite to expose controls for 
+    new: (suite) =>
+        @_suite = suite -- we don't want to encourage direct access to the suite, but will leave the option for the brave or desperate
+
+    --- Requires one of the suite's sibling test modules by its leaf name.
+    -- Resolved against the test suite identifier, so the same call works for both the Aegisub-default and custom test locations (e.g. as used in CI environments).
+    -- @tparam string leaf the module name relative to the test root (e.g. "FileOps")
+    -- @return the loaded test module
+    requireTest: (leaf) => @_suite\requireTestLeaf leaf
+
 --- A DependencyControl unit test suite.
 -- Your test file/module must return a UnitTestSuite object in order to be recognized as a test suite.
 -- @class UnitTestSuite
@@ -703,23 +717,49 @@ class UnitTestSuite
 
     @UnitTest = UnitTest
     @UnitTestClass = UnitTestClass
+    @UnitTestSuiteControls = UnitTestSuiteControls
     @Stub = Stub
 
-    --- Creates a complete unit test suite for a module or automation script.
-    -- Using this constructor will create all test classes and tests automatically.
-    -- @tparam string namespace the namespace of the module or automation script to test.
-    -- @tparam {[string] = table, ...}|function(self, dependencies, args...) args To create a UnitTest suite,
-    -- you must supply a hashtable of @{UnitTestClass} constructor tables by name. You can either do so directly,
-    -- or wrap it in a function that takes a number of arguments depending on how the tests are registered:
-    -- * self: the module being tested (skipped for automation scripts)
-    -- * dependencies: a numerically keyed table of all the modules required by the tested script/module (in order)
-    -- * args: any additional arguments passed into the @{DependencyControl\registerTests} function.
-    --         Doing so is required to test automation scripts as well as module functions not exposed by its API.
-    -- indexes starting with "_" have special meaning and are not added as regular tests:
-    -- * _order: alternative syntax to the order parameter (see below)
-    -- @tparam [opt=nil (unordered)] {string, ...} An list of test class names in the desired execution order.
-    -- Only test classes mentioned in this table will be performed when running the whole test suite.
-    -- If unspecified, all test classes will be run in random order.
+    --- Return the require specifier used to load DepCtrl test suites in Aegisub environments.
+    -- In an Aegisub environment, test suites reside in '?user/automation/tests/DepUnit/(modules|macros)/<namespace>.(moon|lua)'.
+    -- @param scriptType Common.ScriptType value indicating whether the test suite is for a module or an automation script.
+    -- @param namespace the namespaced identifier of the package under test (e.g. 'l0.Functional').
+    -- @return the require specifier used to load the test suite.
+    @getDefaultTestSuiteRequireIdentifier = (scriptType, namespace) =>
+        "DepUnit.#{Common.ScriptType.name.legacy[scriptType]}.#{namespace}"
+
+    -- Returns the require specifier used to load DepCtrl test suites in the current environment.
+    -- Accepts a hook via the global variable DEPCTRL_UNIT_TEST_SUITE_REQUIRE_IDENTIFIER to be used
+    -- by CLI/CI test runners loading the test suites from the source repo or other locations.
+    -- @param scriptType Common.ScriptType value indicating whether the test suite is for a module or an automation script.
+    -- @param namespace the namespaced identifier of the package under test (e.g. 'l0.Functional').
+    @getTestSuiteRequireIdentifier = (scriptType, namespace) =>
+        DependencyControl or= require "l0.DependencyControl"
+
+        switch type(DEPCTRL_UNIT_TEST_SUITE_REQUIRE_IDENTIFIER)
+            when "nil" then self.getDefaultTestSuiteRequireIdentifier(scriptType, namespace)
+            when "string" then DEPCTRL_UNIT_TEST_SUITE_REQUIRE_IDENTIFIER
+            when "function" then DEPCTRL_UNIT_TEST_SUITE_REQUIRE_IDENTIFIER(scriptType, namespace, DependencyControl)
+            else error "DEPCTRL_UNIT_TEST_SUITE_REQUIRE_IDENTIFIER must be either a string or a function, got a #{type DEPCTRL_UNIT_TEST_SUITE_REQUIRE_IDENTIFIER}"
+
+    --- Requires a test module or the entire test suite.
+    -- @param requireIdentifier string the require specifier of the test suite to be loaded. Use @getTestSuiteRequireIdentifier to obtain it for Aegisub environments.
+    -- @return the loaded test suite module
+    @require: (suiteIdentifier) =>
+        test = require suiteIdentifier
+        test.suiteRequireIdentifier or= suiteIdentifier
+        return test
+
+    ---Creates a complete unit test suite for a module or automation script.
+    ---Using this constructor creates all test classes and tests automatically.
+    ---@param namespace string The namespace of the module or automation script to test.
+    ---@param classes table<string, table>|fun(...): table The test classes by name, or a function that returns them. When a function, it receives:
+    --- * the subject under test: for a module its own ref; for an automation script a map of its registered macros keyed by name, each holding the macro's process/validate/isActive (populated as macros register, so read it inside test bodies, not while building test classes)
+    --- * dependencies: a numerically keyed table of all modules required by the tested script/module (in order)
+    --- * extras: any further arguments passed into register/registerMacros — a module's own table, or an automation script's testExports (the internals under test)
+    --- * a UnitTestSuiteControls handed in as the final argument (e.g. for requireTest)
+    ---Keys starting with "_" have special meaning and aren't added as regular tests (e.g. _order).
+    ---@param order? string[] Test class names in the desired execution order; only listed classes run when running the whole suite. Unordered if omitted.
     new: (@namespace, classes, @order) =>
         @logger = Logger defaultLevel: 3, fileBaseName: @namespace, fileSubName: "UnitTests", toFile: true
         @classes = {}
@@ -737,12 +777,18 @@ class UnitTestSuite
             @order or= {}
             @order[#@order+1] = clsName for clsName in *classes._order
 
-    --- Imports test classes from a function (passing in the specified arguments) and adds them to the suite.
-    -- Use this if you need to add additional test classes to an existing @{UnitTestSuite} object.
-    -- @tparam [opt] args a hashtable of @{UnitTestClass} constructor tables by name.
+    --- Loads test classes from a function and adds them to the suite, passing in the specified arguments and a suite controller.
+    -- Generally used for dependency injection (e.g. the DepCtrl runners pass in the module under test as well as its declared dependencies).
+    -- @param ... any dependencies or other arguments to be passed to the test suite's import function
     import: (...) =>
         return false unless @importFunc
-        classes = self.importFunc ...
+ 
+        controls = UnitTestSuiteControls @
+        args = table.pack ...
+        args.n += 1
+        args[args.n] = controls
+        classes = (@importFunc) unpack args, 1, args.n
+
         @logger\assert type(classes) == "table", msgs.import.noTableReturned, type classes
         @addClasses classes
         @importFunc = nil
@@ -751,11 +797,21 @@ class UnitTestSuite
     -- If the test script is placed in the appropriate directory (according to module/automation script namespace),
     -- this is automatically handled by DependencyControl.
     registerMacros: =>
+        return if @macrosRegistered
+
         menuItem = {"DependencyControl", "Run Tests", @name or @namespace, "[All]"}
         aegisub.register_macro table.concat(menuItem, "/"), msgs.registerMacros.allDesc, -> @run!
         for cls in *@classes
             menuItem[4] = cls.name
             aegisub.register_macro table.concat(menuItem, "/"), cls.description, -> cls\run!
+        @macrosRegistered = true
+
+    --- Requires a specific test leaf module. 
+    -- Used by multi-file test suites to load their sibling test modules without hard-coding environment-specific paths.
+    -- @tparam string leafIdentifier the module name relative to the test root (e.g. "FileOps")
+    requireTestLeaf: (leafIdentifier) =>
+        @logger\assert @suiteRequireIdentifier, "test suite must have a suite require identifier configured in order to resolve sibling test '#{leafIdentifier}'" 
+        require "#{@suiteRequireIdentifier}.#{leafIdentifier}"
 
     --- Runs all test classes of this suite in the specified order.
     -- @param[opt=false] abortOnFail stops testing once a test fails

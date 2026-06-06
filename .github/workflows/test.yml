@@ -30,6 +30,8 @@ jobs:
       - run: luarocks install moonscript
       # lfs (Aegisub provides an internal copy)
       - run: luarocks install luafilesystem
+      # CLI argument parsing
+      - run: luarocks install argparse
       # mock HTTP server dependencies
       - run: luarocks install luasocket
       - run: luarocks install copas
