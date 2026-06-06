@@ -82,10 +82,11 @@
     },
 
     "DateOrDateTime": {
-      "description": "A date or date-time string in ISO 8601 format (e.g. '2024-01-31' or '2024-01-31T23:59:00Z').",
+      "description": "A date or date-time string in ISO 8601 format (e.g. '2024-01-31' or '2024-01-31T23:59:00Z'), or null to indicate an unreleased/pending build.",
       "anyOf": [
         { "type": "string", "format": "date" },
-        { "type": "string", "format": "date-time" }
+        { "type": "string", "format": "date-time" },
+        { "type": "null" }
       ]
     },
 
@@ -133,6 +134,11 @@
           "description": "An optional special purpose for the file. Files marked with 'test' are installed to the tests subdirectory rather than the main automation directory. Introduced in feed version 0.3.0.",
           "type": "string",
           "enum": ["test"]
+        },
+        "delete": {
+          "description": "When true, the Updater will delete this file from the user's installation when processing an update to this channel, rather than downloading it. Use this to remove files that were shipped in a previous release but are no longer part of the package.",
+          "type": "boolean",
+          "default": false
         },
         "platform": {
           "description": "Target platform filter. When present, the file is only installed on matching platforms. Absent means the file is installed on all platforms. Uses LuaJIT `jit.os`and `jit.arch` values (see https://luajit.org/ext_jit.html#jit_os).",
