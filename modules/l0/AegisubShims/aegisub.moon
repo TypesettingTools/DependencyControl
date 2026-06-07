@@ -16,6 +16,11 @@ userDir = os.getenv("DEPCTRL_USER_DIR") or
     (isWindows and "#{os.getenv 'APPDATA'}\\Aegisub" or "#{os.getenv 'HOME'}/.aegisub")
 dataDir = os.getenv("DEPCTRL_DATA_DIR") or userDir
 
+userPathsAddedToPackagePathLua = {}
+userPathsAddedToPackagePathMoon = {}
+
+makePackagePaths = (dir, ext) -> {"#{dir}/?.#{ext}", "#{dir}/?/init.#{ext}"}
+
 -- Canonical token table matching libaegisub/path.cpp.
 -- Empty string means "unset" — decode_path returns the path unchanged (same as real Aegisub).
 -- ?audio, ?script, ?video are empty because no file is loaded headlessly.
@@ -50,8 +55,35 @@ normalizeToken = (spec) ->
 -- @param dir string|nil the directory to resolve the token to; nil/"" marks it unset
 -- @return string|nil dir the value the token now resolves to
 setPathToken = (spec, dir) ->
-    pathTokens[normalizeToken spec] = dir or ""
+    normalizedToken = normalizeToken spec
+    previousDir = pathTokens[normalizedToken]
+    return dir if previousDir == dir
+
+    pathTokens[normalizedToken] = dir or ""
     rebuildSortedTokens!
+
+    if normalizedToken == "?user"
+        -- undo our previous additions to path list, add new ones that aren't already present,
+        -- and ensure the order of existing entries is unchanged to avoid messing up module shadowing
+        rebuildUserPaths = (pathStr, previouslyAdded, ext) ->
+            removed = {p, true for p in *previouslyAdded}
+            seen, ordered = {}, {}
+            for path in pathStr\gmatch "[^;]+"
+                continue if removed[path] or seen[path]
+                seen[path] = true
+                ordered[#ordered + 1] = path
+
+            added = {}
+            for path in *makePackagePaths "#{dir}/automation/modules", ext
+                continue if seen[path]
+                seen[path] = true
+                ordered[#ordered + 1] = path
+                added[#added + 1] = path
+
+            table.concat(ordered, ";"), added
+
+        package.path, userPathsAddedToPackagePathLua = rebuildUserPaths package.path, userPathsAddedToPackagePathLua, "lua"
+        package.moonpath, userPathsAddedToPackagePathMoon = rebuildUserPaths package.moonpath, userPathsAddedToPackagePathMoon, "moon"
     return dir
 
 --- Returns the directory an Aegisub path token currently resolves to.
