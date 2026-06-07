@@ -57,7 +57,7 @@ class FileOps
                 createdDir: "Created target directory '%s'."
                 exists: "Couldn't move file '%s' to '%s' because a %s of the same name is already present."
                 genericError: "An error occured while moving file '%s' to '%s':\n%s"
-                createDirError: "Moving '%s' to '%s' failed (%s)."
+                createDirError: "Could not create target directory for '%s': %s"
                 cantRemove: "Couldn't overwrite file '%s': %s. Attempts at renaming the existing target file failed."
                 cantRenameTryingCopy: "Move operation failed to rename '%s' to '%s' (%s), trying copy+remove instead..."
                 couldntRemoveFiles: "Move operation suceeded to copied the file(s) to the target location, but some of the source files couldn't be removed:\n%s\n%s"
@@ -345,11 +345,11 @@ class FileOps
             return false, msgs.move.genericError\format source, target, err
 
         else -- target file not found, check directory
-            res, dir = FileOps.mkdir target, true
+            res, dirOrErr = FileOps.mkdir target, true, true
             if res == nil
-                return false, msgs.move.createDirError\format source, target, err
+                return false, msgs.move.createDirError\format source, target, dirOrErr
             elseif res
-                FileOps.logger\trace msgs.move.createdDir, dir
+                FileOps.logger\trace msgs.move.createdDir, dirOrErr
 
         -- at this point the target directory exists and the target file doesn't, move the file
         res, err = os.rename source, target
