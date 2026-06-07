@@ -164,7 +164,7 @@ aegisub = {
 
 -- Shim-only configuration hooks, namespaced so they can't collide with the real
 -- Aegisub API surface. Surfaced through l0.AegisubShims for callers to use.
-aegisub.__depctrl = {
+aegisub.__depCtrl = {
     :setPathToken
     :getPathToken
 }

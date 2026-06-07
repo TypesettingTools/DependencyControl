@@ -1,12 +1,12 @@
 -- We ship dkjson, so depend on it directly: it guarantees the `null` sentinel, dkjson's encode
 -- options, and our `indentMode: "prettier"` extension used for feed write-back.
 dkjson = require "l0.dkjson"
-
-Logger            = require "l0.DependencyControl.Logger"
-Common            = require "l0.DependencyControl.Common"
-Enum              = require "l0.DependencyControl.Enum"
-FileOps            = require "l0.DependencyControl.FileOps"
-ModuleProvider     = require "l0.DependencyControl.ModuleProvider"
+constants = require "l0.DependencyControl.Constants"
+Logger = require "l0.DependencyControl.Logger"
+Common = require "l0.DependencyControl.Common"
+Enum = require "l0.DependencyControl.Enum"
+FileOps = require "l0.DependencyControl.FileOps"
+ModuleProvider = require "l0.DependencyControl.ModuleProvider"
 SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
 
 defaultLogger = Logger fileBaseName: "DepCtrl.UpdateFeed"
@@ -173,8 +173,8 @@ class UpdateFeed extends Common
         baseDir = fileType == "test" and Common\getTestDir(scriptType, rootDir) or Common\getAutomationDir scriptType, rootDir
         return FileOps.validateFullPath "#{subDir}#{fileName}", false, baseDir
 
-    fileBaseName = "l0.#{@@__name}_"
-    fileMatchTemplate = "l0.#{@@__name}_%x%x%x%x.*%.json"
+    fileBaseName = "#{constants.DEPCTRL_NAMESPACE}_"
+    fileMatchTemplate = "#{constants.DEPCTRL_NAMESPACE}_%x%x%x%x.*%.json"
     feedsHaveBeenTrimmed = false
 
     -- precalculate some tables for the templater
@@ -228,7 +228,7 @@ class UpdateFeed extends Common
     fetch: (fileName, expansionMode) =>
         -- Initialize download infrastructure lazily on first fetch.
         unless @downloadManager
-            @config.downloadPath or= aegisub.decode_path "?temp/l0.#{@@__name}_feedCache"
+            @config.downloadPath or= aegisub.decode_path "?temp/#{constants.DEPCTRL_NAMESPACE}_feedCache"
             feedsHaveBeenTrimmed or= Logger(fileMatchTemplate: fileMatchTemplate, logDir: @config.downloadPath, maxFiles: 20)\trimFiles!
             @fileName or= table.concat {@config.downloadPath, fileBaseName, "%04X"\format(math.random 0, 16^4-1), ".json"}
             @downloadManager = (require "DM.DownloadManager") aegisub.decode_path @config.downloadPath
@@ -485,7 +485,7 @@ class UpdateFeed extends Common
         -- so simply by running, modules by constructing their record at load. Modules that defer to
         -- a lazy __depCtrlInit (e.g. dkjson) are initialized explicitly below. The record is then
         -- looked up from the registry — the only place a macro's record (and its deps) is reachable.
-        DependencyControl = require Common.moduleName
+        DependencyControl = require "l0.DependencyControl"
         success, mod = xpcall require, debug.traceback, packageNamespace
         ModuleProvider.runInitializer mod, DependencyControl if success
 

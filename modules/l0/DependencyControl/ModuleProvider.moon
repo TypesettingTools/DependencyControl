@@ -1,3 +1,5 @@
+constants = require "l0.DependencyControl.Constants"
+
 -- Resolves provided module aliases (e.g. "json") to their provider module
 -- (e.g. "l0.dkjson") through a custom package searcher.
 --
@@ -10,7 +12,8 @@
 -- DependencyControl self-update reloads.
 -- @class ModuleProvider
 
-GLOBAL_KEY = "__depCtrlModuleProvider"
+DEPCTRL_MODULE_INIT_HOOK_NAME = "#{constants.DEPCTRL_PRIVATE_GLOBAL_VAR_PREFIX}Init"
+GLOBAL_KEY = "#{constants.DEPCTRL_PRIVATE_GLOBAL_VAR_PREFIX}ModuleProvider"
 
 state = _G[GLOBAL_KEY]
 unless state
@@ -21,12 +24,12 @@ unless state
 -- hasn't been initialized yet, so the module exposes a proper DependencyControl record. The guard
 -- avoids re-initializing modules that mutate their exported state on first init (e.g. BadMutex).
 runInitializer = (ref, DependencyControl) ->
-    return ref unless type(ref) == "table" and ref.__depCtrlInit
+    return ref unless type(ref) == "table" and ref[DEPCTRL_MODULE_INIT_HOOK_NAME]
     -- Note to future self: don't change this to a class check! When DepCtrl self-updates
     -- any managed module initialized before will still use the same instance
     alreadyInitialized = type(ref.version) == "table" and ref.version.__class and
         ref.version.__class.__name == DependencyControl.__name
-    ref.__depCtrlInit DependencyControl unless alreadyInitialized
+    ref[DEPCTRL_MODULE_INIT_HOOK_NAME] DependencyControl unless alreadyInitialized
     return ref
 
 -- Resolves DependencyControl from package.loaded rather than require()ing it, because an alias can be
@@ -34,7 +37,7 @@ runInitializer = (ref, DependencyControl) ->
 -- rejects the mid-bootstrap "loading" sentinel. Until the real class is loaded there's nothing to init
 -- against, so the module is returned as-is.
 initProvidedModule = (mod) ->
-    DependencyControl = package.loaded["l0.DependencyControl"]
+    DependencyControl = package.loaded[constants.DEPCTRL_NAMESPACE]
     return mod unless type(DependencyControl) == "table"
     runInitializer mod, DependencyControl
 

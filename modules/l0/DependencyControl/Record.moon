@@ -1,6 +1,7 @@
 json = require "json"
 lfs =  require "lfs"
 
+constants =      require "l0.DependencyControl.Constants"
 Common =         require "l0.DependencyControl.Common"
 Logger =         require "l0.DependencyControl.Logger"
 ConfigView =     require "l0.DependencyControl.ConfigView"
@@ -14,7 +15,7 @@ UnitTestSuite =  require "l0.DependencyControl.UnitTestSuite"
 -- Global registry of live DepCtrl version records keyed by namespace, backed by a global table
 --  so it survives DepCtrl self-update reloads. Required to reach the DepCtrl version records
 -- of automation scripts/macros, which don't expose it globally (only a few script_* globals)
-DEPCTRL_RECORDS_GLOBAL_KEY = "__depCtrlRecords"
+DEPCTRL_RECORDS_GLOBAL_KEY = "#{constants.DEPCTRL_PRIVATE_GLOBAL_VAR_PREFIX}Records"
 recordsByNamespace = _G[DEPCTRL_RECORDS_GLOBAL_KEY]
 unless recordsByNamespace
     recordsByNamespace = {}
@@ -37,7 +38,7 @@ unregisterRecord = (namespace) -> recordsByNamespace[namespace] = nil
 class Record extends Common
     msgs = {
         new: {
-            badRecordError: "Error: Bad #{@@__name} record (%s)."
+            badRecordError: "Error: Bad #{constants.DEPCTRL_NAME} record (%s)."
             badRecord: {
                 noUnmanagedMacros: "Creating unmanaged version records for macros is not allowed"
                 missingNamespace: "No namespace defined"
@@ -47,16 +48,16 @@ class Record extends Common
             }
         }
         uninstall: {
-            noVirtualOrUnmanaged: "Can't uninstall %s %s '%s'. (Only installed scripts managed by #{@@__name} can be uninstalled)."
+            noVirtualOrUnmanaged: "Can't uninstall %s %s '%s'. (Only installed scripts managed by #{constants.DEPCTRL_NAME} can be uninstalled)."
         }
         writeConfig: {
-            error: "An error occured while writing the #{@@__name} config file: %s"
+            error: "An error occurred while writing the #{constants.DEPCTRL_NAME} config file: %s"
             writing: "Writing updated %s data to config file..."
         }
     }
 
     @depConf = {
-        file: aegisub.decode_path "?user/config/l0.#{@@__name}.json",
+        file: aegisub.decode_path "?user/config/#{constants.DEPCTRL_NAMESPACE}.json",
         scriptFields: {"author", "configFile", "feed", "moduleName", "name", "namespace", "url", -- REMOVE
                        "requiredModules", "version", "unmanaged", "provides"},
         globalDefaults: {updaterEnabled:true, updateInterval:302400, traceLevel:3, extraFeeds:{},
@@ -77,7 +78,7 @@ class Record extends Common
     init = =>
         FileOps.mkdir @depConf.file, true
         @loadConfig!
-        @logger = Logger { fileBaseName: "DepCtrl", fileSubName: script_namespace, prefix: "[#{@@__name}] ",
+        @logger = Logger { fileBaseName: constants.DEPCTRL_SHORT_NAME, fileSubName: script_namespace, prefix: "[#{constants.DEPCTRL_SHORT_NAME}] ",
                              toFile: @config.c.writeLogs, defaultLevel: @config.c.traceLevel,
                              maxAge: @config.c.logMaxAge,maxSize: @config.c.logMaxSize, maxFiles: @config.c.logMaxFiles,
                              logDir: @config.c.logDir }

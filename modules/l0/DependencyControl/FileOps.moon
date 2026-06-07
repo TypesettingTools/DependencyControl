@@ -1,5 +1,6 @@
 ffi = require "ffi"
 lfs = require "lfs"
+constants = require "l0.DependencyControl.Constants"
 Logger = require "l0.DependencyControl.Logger"
 Common = require "l0.DependencyControl.Common"
 Crypto = require "l0.DependencyControl.Crypto"
@@ -21,7 +22,7 @@ class FileOps
             attributes: {
                 badPath: "Path failed verification: %s."
                 genericError: "Can't retrieve attributes: %s."
-                noAttribute: "Can't find attriubte with name '%s'."
+                noAttribute: "Can't find attribute with name '%s'."
             }
 
             createConfig: {
@@ -35,7 +36,7 @@ class FileOps
                 otherExists: "Couldn't create directory because a %s of the same name is already present."
             }
             copy: {
-                genericError: "An error occured while copying file '%s' to '%s':\n%s"
+                genericError: "An error occurred while copying file '%s' to '%s':\n%s"
                 dirCopyUnsupported: "Copying directories is currently not supported."
                 missingSource: "Couldn't find source file '%s'."
                 openError: "Couldn't open %s file '%s' for reading: \n%s"
@@ -56,11 +57,11 @@ class FileOps
                 overwritingFile: "File '%s' already exists, overwriting..."
                 createdDir: "Created target directory '%s'."
                 exists: "Couldn't move file '%s' to '%s' because a %s of the same name is already present."
-                genericError: "An error occured while moving file '%s' to '%s':\n%s"
+                genericError: "An error occurred while moving file '%s' to '%s':\n%s"
                 createDirError: "Could not create target directory for '%s': %s"
                 cantRemove: "Couldn't overwrite file '%s': %s. Attempts at renaming the existing target file failed."
                 cantRenameTryingCopy: "Move operation failed to rename '%s' to '%s' (%s), trying copy+remove instead..."
-                couldntRemoveFiles: "Move operation suceeded to copied the file(s) to the target location, but some of the source files couldn't be removed:\n%s\n%s"
+                couldntRemoveFiles: "Move operation succeeded to copied the file(s) to the target location, but some of the source files couldn't be removed:\n%s\n%s"
                 cantCopy: "Move operation failed to copy '%s' to '%s' (%s) after a failed rename attempt (%s)."
             }
             readFile: {
@@ -125,9 +126,9 @@ class FileOps
 
     createConfig = (noLoad, configDir) ->
         FileOps.configDir = configDir if configDir
-        ConfigView or= require "#{Common.moduleName}.ConfigView"
+        ConfigView or= require "#{constants.DEPCTRL_NAMESPACE}.ConfigView"
         unless FileOps.config
-            FileOps.config = ConfigView\get "#{FileOps.configDir}/l0.#{FileOps.__name}.json",
+            FileOps.config = ConfigView\get "#{FileOps.configDir}/#{constants.DEPCTRL_NAMESPACE}.json",
                                nil, {toRemove: {}}, FileOps.logger, noLoad
             return nil, msgs.createConfig.handlerFailed\format "constructor returned nil" unless FileOps.config
         return FileOps.config
@@ -144,7 +145,7 @@ class FileOps
     --- Generates a unique temporary file path.
     -- @return string tempFilePath absolute path to a unique temporary directory that does not exist yet
     getTempDir: () ->
-        return aegisub.decode_path "?temp/#{Common.moduleName}_#{'%04X'\format math.random 0, 16^4-1}"
+        return aegisub.decode_path "?temp/#{constants.DEPCTRL_NAMESPACE}_#{'%04X'\format math.random 0, 16^4-1}"
 
     --- Removes one or more files/directories and optionally reschedules failed removals.
     -- @param paths string|(string|string)[] path or paths to the files/directories to remove. If an array of paths is provided, each path can be specified as a string or an array of path segments.

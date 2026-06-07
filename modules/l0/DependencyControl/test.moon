@@ -1,6 +1,7 @@
+constants = require "l0.DependencyControl.Constants"
 DependencyControl = require "l0.DependencyControl"
 
-DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl, ...) ->
+DependencyControl.UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
   -- The suite controls object is appended by UnitTestSuite\import as the final argument.
   -- Its index varies by loader (CLI vs Aegisub pass different arg counts), so grab the last one.
   nArgs    = select "#", ...
@@ -27,10 +28,12 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl, ...) ->
   ModuleProvider     = require "l0.DependencyControl.ModuleProvider"
   Stub               = require "l0.DependencyControl.Stub"
 
-  BADMUTEX_MODULE_NAME       = "BM.BadMutex"
-  TIMER_MODULE_NAME          = "l0.DependencyControl.Timer"
-  FILEOPS_MODULE_NAME      = "l0.DependencyControl.FileOps"
-  JSON_MODULE_NAME         = "json"
+  BADMUTEX_MODULE_NAME = "BM.BadMutex"
+  TIMER_MODULE_NAME = "l0.DependencyControl.Timer"
+  FILEOPS_MODULE_NAME = "l0.DependencyControl.FileOps"
+  JSON_MODULE_NAME = "json"
+  DEPCTRL_DUMMY_MODULE_MARKER = "#{constants.DEPCTRL_PRIVATE_GLOBAL_VAR_PREFIX}Dummy"
+  DEPCTRL_RECORDS_GLOBAL_KEY = "#{constants.DEPCTRL_PRIVATE_GLOBAL_VAR_PREFIX}Records"
 
   isWindows  = ffi.os == "Windows"
   pathSep = isWindows and "\\" or "/"
@@ -1661,7 +1664,7 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl, ...) ->
         result = ModuleLoader.createDummyRef rec
         ut\assertTrue result
         ut\assertNotNil LOADED_MODULES[ns]
-        ut\assertTrue LOADED_MODULES[ns].__depCtrlDummy
+        ut\assertTrue LOADED_MODULES[ns][DEPCTRL_DUMMY_MODULE_MARKER]
         LOADED_MODULES[ns] = nil
 
       createDummyRef_existingRef: (ut) ->
@@ -1684,7 +1687,7 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl, ...) ->
         ns = "test.ModuleLoader.removeDummy"
         rec = {scriptType: Common.ScriptType.Module, namespace: ns, __class: {ScriptType: Common.ScriptType}}
         LOADED_MODULES = LOADED_MODULES or {}
-        LOADED_MODULES[ns] = {__depCtrlDummy: true}
+        LOADED_MODULES[ns] = {[DEPCTRL_DUMMY_MODULE_MARKER]: true}
         result = ModuleLoader.removeDummyRef rec
         ut\assertTrue result
         ut\assertNil LOADED_MODULES[ns]
@@ -1693,7 +1696,7 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl, ...) ->
         ns = "test.ModuleLoader.removeNonDummy"
         rec = {scriptType: Common.ScriptType.Module, namespace: ns, __class: {ScriptType: Common.ScriptType}}
         LOADED_MODULES = LOADED_MODULES or {}
-        LOADED_MODULES[ns] = {__depCtrlDummy: false}
+        LOADED_MODULES[ns] = {[DEPCTRL_DUMMY_MODULE_MARKER]: false}
         result = ModuleLoader.removeDummyRef rec
         ut\assertFalse result
         LOADED_MODULES[ns] = nil
@@ -1947,7 +1950,7 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl, ...) ->
       registry_getReturnsRegistered: (ut) ->
         ns = uniqueName "regns"
         rec = {namespace: ns}
-        _G.__depCtrlRecords[ns] = rec
+        _G[DEPCTRL_RECORDS_GLOBAL_KEY][ns] = rec
         ut\assertIs Record\getRecord(ns), rec
 
       registry_getMissing: (ut) ->
@@ -1955,7 +1958,7 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl, ...) ->
 
       registry_getSkipsVirtual: (ut) ->
         ns = uniqueName "virtns"
-        _G.__depCtrlRecords[ns] = {namespace: ns, virtual: true}
+        _G[DEPCTRL_RECORDS_GLOBAL_KEY][ns] = {namespace: ns, virtual: true}
         ut\assertNil Record\getRecord ns
 
       -- a virtual placeholder flipped to non-virtual in place (as the Updater does on install)
@@ -1963,7 +1966,7 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl, ...) ->
       registry_returnsAfterUnvirtualized: (ut) ->
         ns = uniqueName "virtns"
         rec = {namespace: ns, virtual: true}
-        _G.__depCtrlRecords[ns] = rec
+        _G[DEPCTRL_RECORDS_GLOBAL_KEY][ns] = rec
         ut\assertNil Record\getRecord ns
         rec.virtual = false
         ut\assertIs Record\getRecord(ns), rec

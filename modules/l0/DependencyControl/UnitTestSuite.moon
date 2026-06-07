@@ -927,7 +927,7 @@ class UnitTestSuite
     -- @treturn[2] nil
     -- @treturn[2] string an error message
     writeResults: (path) =>
-        FileOps = require "#{Common.moduleName}.FileOps"
+        FileOps = require "l0.DependencyControl.FileOps"
         json    = require "json"   -- provided by DepCtrl (bundled dkjson) once it's loaded
 
         dirRes, err = FileOps.mkdir path, true, true

@@ -2,8 +2,11 @@
 -- Everything in this class can and will change without any prior notice
 -- and calling any method is guaranteed to interfere with DependencyControl operation
 
+constants = require "l0.DependencyControl.Constants"
 SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
-ModuleProvider     = require "l0.DependencyControl.ModuleProvider"
+ModuleProvider = require "l0.DependencyControl.ModuleProvider"
+
+DEPCTRL_DUMMY_MODULE_MARKER = "#{constants.DEPCTRL_PRIVATE_GLOBAL_VAR_PREFIX}Dummy"
 
 --- Internal module loading helpers for DependencyControl-managed module dependencies.
 -- @class ModuleLoader
@@ -44,13 +47,13 @@ class ModuleLoader
     export LOADED_MODULES = {} unless LOADED_MODULES
     unless LOADED_MODULES[@namespace]
       @ref = {}
-      LOADED_MODULES[@namespace] = setmetatable {__depCtrlDummy: true, version: @}, @ref
+      LOADED_MODULES[@namespace] = setmetatable {[DEPCTRL_DUMMY_MODULE_MARKER]: true, version: @}, @ref
       return true
     return false
 
   @removeDummyRef = =>
     return nil if @scriptType != @@ScriptType.Module
-    if LOADED_MODULES[@namespace] and LOADED_MODULES[@namespace].__depCtrlDummy
+    if LOADED_MODULES[@namespace] and LOADED_MODULES[@namespace][DEPCTRL_DUMMY_MODULE_MARKER]
       LOADED_MODULES[@namespace] = nil
       return true
     return  false
@@ -81,7 +84,7 @@ class ModuleLoader
         return nil
 
       -- set new references
-      if reload and ._ref and ._ref.__depCtrlDummy
+      if reload and ._ref and ._ref[DEPCTRL_DUMMY_MODULE_MARKER]
         setmetatable ._ref, res
       ._ref, LOADED_MODULES[moduleName] = res, res
 

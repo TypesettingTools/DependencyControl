@@ -1,8 +1,8 @@
 json = require "json"
-
-fileOps    = require "l0.DependencyControl.FileOps"
-Logger     = require "l0.DependencyControl.Logger"
-Lock       = require "l0.DependencyControl.Lock"
+constants = require "l0.DependencyControl.Constants"
+fileOps = require "l0.DependencyControl.FileOps"
+Logger = require "l0.DependencyControl.Logger"
+Lock = require "l0.DependencyControl.Lock"
 ConfigView = require "l0.DependencyControl.ConfigView"
 
 --- JSON-backed configuration manager with cooperative cross-script locking.
@@ -69,7 +69,7 @@ Reload your automation scripts to generate a new configuration file.]]
 
     -- make references to provided handlers weak to allow for gc
     @handlers = setmetatable {}, {__mode: 'v'}
-    @logger = Logger fileBaseName: "DepCtrl.ConfigHandler", fileSubName: script_namespace
+    @logger = Logger fileBaseName: "#{constants.DEPCTRL_SHORT_NAME}.#{@__name}", fileSubName: script_namespace
 
     --- Returns an existing handler for filePath, or creates and optionally loads one.
     -- @param filePath string

@@ -2,8 +2,11 @@
 -- __depCtrlInit runner. Called from test.moon as: (require "...test.ModuleProvider") basePath, DepCtrl
 -- (Names are unique per run since the provider registry is process-global.)
 (basePath, DepCtrl) ->
-  ModuleProvider     = require "l0.DependencyControl.ModuleProvider"
+  constants = require "l0.DependencyControl.Constants"
+  ModuleProvider = require "l0.DependencyControl.ModuleProvider"
   SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
+  
+  DEPCTRL_MODULE_INIT_HOOK_NAME = "#{constants.DEPCTRL_PRIVATE_GLOBAL_VAR_PREFIX}Init"
   uniqueName = (prefix) -> "#{prefix}_#{'%08X'\format math.random 0, 16^8-1}"
 
   {
@@ -41,20 +44,20 @@
     -- a plain module with no initializer is returned untouched
     runInitializer_noInitHook: (ut) ->
       ref = {version: "1.0.0"}
-      ut\assertIs ModuleProvider.runInitializer(ref, {__name: "DependencyControl"}), ref
+      ut\assertIs ModuleProvider.runInitializer(ref, {__name: constants.DEPCTRL_NAME}), ref
 
     -- an uninitialized module (raw .version) gets its initializer run with the DepCtrl class
     runInitializer_runsWhenUninitialized: (ut) ->
-      fakeDC, received = {__name: "DependencyControl"}, {}
-      ref = {version: "raw-version-string", __depCtrlInit: (dc) -> received[#received + 1] = dc}
+      fakeDC, received = {__name: constants.DEPCTRL_NAME}, {}
+      ref = {version: "raw-version-string", [DEPCTRL_MODULE_INIT_HOOK_NAME]: (dc) -> received[#received + 1] = dc}
       ModuleProvider.runInitializer ref, fakeDC
       ut\assertEquals #received, 1
       ut\assertIs received[1], fakeDC
 
     -- a module whose .version is already a DepCtrl record must NOT be re-initialized
     runInitializer_skipsWhenInitialized: (ut) ->
-      fakeDC, calls = {__name: "DependencyControl"}, 0
-      ref = {version: {__class: {__name: "DependencyControl"}}, __depCtrlInit: -> calls += 1}
+      fakeDC, calls = {__name: constants.DEPCTRL_NAME}, 0
+      ref = {version: {__class: {__name: constants.DEPCTRL_NAME}}, [DEPCTRL_MODULE_INIT_HOOK_NAME]: -> calls += 1}
       ModuleProvider.runInitializer ref, fakeDC
       ut\assertEquals calls, 0
 
