@@ -7,40 +7,40 @@
   "fileBaseUrl": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/",
   "maintainer": "line0",
   "knownFeeds": {
-    "line0scripts": "https://raw.githubusercontent.com/TypesettingTools/line0-Aegisub-Scripts/master/DependencyControl.json",
     "a-mo": "https://raw.githubusercontent.com/TypesettingTools/Aegisub-Motion/DepCtrl/DependencyControl.json",
-    "SubInspector": "https://raw.githubusercontent.com/TypesettingTools/SubInspector/master/DependencyControl.json",
+    "arch1t3cht-scripts": "https://raw.githubusercontent.com/TypesettingTools/arch1t3cht-Aegisub-Scripts/main/DependencyControl.json",
     "ASSFoundation": "https://raw.githubusercontent.com/TypesettingTools/ASSFoundation/master/DependencyControl.json",
-    "ffi-experiments": "https://raw.githubusercontent.com/torque/ffi-experiments/master/DependencyControl.json",
-    "lyger-scripts": "https://raw.githubusercontent.com/TypesettingTools/lyger-Aegisub-Scripts/master/DependencyControl.json",
-    "unanimated-scripts": "https://raw.githubusercontent.com/TypesettingTools/unanimated-Aegisub-Scripts/master/DependencyControl.json",
     "coffeeflux-scripts": "https://raw.githubusercontent.com/TypesettingTools/CoffeeFlux-Aegisub-Scripts/master/DependencyControl.json",
+    "ffi-experiments": "https://raw.githubusercontent.com/torque/ffi-experiments/master/DependencyControl.json",
+    "ILL": "https://raw.githubusercontent.com/TypesettingTools/ILL-Aegisub-Scripts/main/DependencyControl.json",
+    "line0scripts": "https://raw.githubusercontent.com/TypesettingTools/line0-Aegisub-Scripts/master/DependencyControl.json",
+    "lyger-scripts": "https://raw.githubusercontent.com/TypesettingTools/lyger-Aegisub-Scripts/master/DependencyControl.json",
     "myaamori-scripts": "https://raw.githubusercontent.com/TypesettingTools/Myaamori-Aegisub-Scripts/master/DependencyControl.json",
     "petzku-scripts": "https://raw.githubusercontent.com/petzku/Aegisub-Scripts/master/DependencyControl.json",
-    "zahuczky-scripts": "https://raw.githubusercontent.com/Zahuczky/Zahuczkys-Aegisub-Scripts/main/DependencyControl.json",
     "phoscity-scripts": "https://raw.githubusercontent.com/PhosCity/Aegisub-Scripts/main/DependencyControl.json",
-    "zeref-scripts": "https://raw.githubusercontent.com/TypesettingTools/zeref-Aegisub-Scripts/main/DependencyControl.json",
-    "arch1t3cht-scripts": "https://raw.githubusercontent.com/TypesettingTools/arch1t3cht-Aegisub-Scripts/main/DependencyControl.json",
-    "ILL": "https://raw.githubusercontent.com/TypesettingTools/ILL-Aegisub-Scripts/main/DependencyControl.json"
+    "SubInspector": "https://raw.githubusercontent.com/TypesettingTools/SubInspector/master/DependencyControl.json",
+    "unanimated-scripts": "https://raw.githubusercontent.com/TypesettingTools/unanimated-Aegisub-Scripts/master/DependencyControl.json",
+    "zahuczky-scripts": "https://raw.githubusercontent.com/Zahuczky/Zahuczkys-Aegisub-Scripts/main/DependencyControl.json",
+    "zeref-scripts": "https://raw.githubusercontent.com/TypesettingTools/zeref-Aegisub-Scripts/main/DependencyControl.json"
   },
   "macros": {
     "l0.DependencyControl.Toolbox": {
-      "url": "@{baseUrl}#@{namespace}",
-      "author": "line0",
       "name": "DependencyControl Toolbox",
       "description": "Provides DependencyControl maintenance and configuration utilities.",
+      "author": "line0",
+      "url": "@{baseUrl}#@{namespace}",
       "fileBaseUrl": "@{fileBaseUrl}macros-v@{version}-@{channel}/macros/@{namespace}",
       "localFileBasePath": "@{localFileBasePath}macros/@{namespace}",
       "channels": {
         "alpha": {
           "version": "0.2.0",
-          "released": "2026-05-23",
+          "released": null,
           "default": true,
           "files": [
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "5F7E0EEFC89E71F427819EEF69630455C0CC2304"
+              "sha1": "077264D7771AAB8384F8AD3BDCC9040F606D5591"
             }
           ],
           "requiredModules": [
@@ -63,126 +63,242 @@
         "0.1.3": [
           "Fixed an issue where trying to uninstall an unmanaged script resulted in an error unrelated to the intended error message."
         ],
-        "0.2.0": [
-          "Now registers the DepCtrl-internal test suite as a macro."
-        ]
+        "0.2.0": ["Now registers the DepCtrl-internal test suite as a macro."]
       }
     }
   },
   "modules": {
     "l0.DependencyControl": {
-      "url": "@{baseUrl}#@{namespace}",
-      "author": "line0",
       "name": "DependencyControl",
       "description": "Dependency manager and automatic script updater for Aegisub macros and modules.",
+      "author": "line0",
+      "url": "@{baseUrl}#@{namespace}",
       "fileBaseUrl": "@{fileBaseUrl}v@{version}-@{channel}/modules/@{namespacePath}",
       "localFileBasePath": "@{localFileBasePath}modules/@{namespacePath}",
       "channels": {
         "alpha": {
           "version": "0.7.0",
-          "released": "2026-05-23",
+          "released": null,
           "default": true,
           "files": [
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "36104C47B776412EBF36AAA00D583180BF4507D5"
+              "sha1": "688A395AE62742B496633959BA8FECCDC8E49544"
             },
             {
               "name": "/Common.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "7262886AEB9F106E95697E86FF0D44738415DBA6"
+              "sha1": "6AB31EB4EDEA50A1BAB047645E18274EC8AB1FDB"
             },
             {
               "name": "/ConfigHandler.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "1FEC3583C37E4A997E806D5B17A338390657BA53"
+              "sha1": "AC4B013B7A352B020A8B9FF90E081BC602F0D292"
+            },
+            {
+              "name": "/ConfigView.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "4CEC6275CB7D0BC6F19BE79A320679B47A9A05AB"
+            },
+            {
+              "name": "/Crypto.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "143EBF2D4E7B99960193FD16637059086784819C"
+            },
+            {
+              "name": "/Downloader.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "E1D05400E021109BAA128BF6BBB9048ACBE63639"
+            },
+            {
+              "name": "/DownloadManager.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "989E147B32287EAC26456266402C6C69877EE121"
+            },
+            {
+              "name": "/Enum.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "468E8243882CBF0192DF105F781F911EDE6184FE"
+            },
+            {
+              "name": "/EventEmitter.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "3699FF01202D89D227BBE214E37DA056A93DED20"
             },
             {
               "name": "/FileOps.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "5A54D4B942F34C005ABC977B7655C2B849EC8889"
+              "sha1": "37ADA9D77A11519384511D048E4EC807470424A4"
+            },
+            {
+              "name": "/GitRepository.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "A4C19B95FC9B218CB5C630883141502A8C6C4D20"
+            },
+            {
+              "name": "/Lock.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "68515CB1EA45191529EF4A75F0E88387A9085F15"
             },
             {
               "name": "/Logger.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "C4980A42A5AE9C8E24BE04DD12006D118606DBA1"
+              "sha1": "28A6A8774007AEE99F9529BC2491A688DE68BB85"
             },
             {
               "name": "/ModuleLoader.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "F35D88A9902FF9BC912D34299733D37FC15A36DF"
+              "sha1": "6CD3DEEEB8472768B537A4F15EEC5AE6A095CF62"
+            },
+            {
+              "name": "/ModuleProvider.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "A938976FFF31034738D99B87F1BC08A301496BDC"
             },
             {
               "name": "/Record.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "796A430D14CACA3E2E15DBDD23F01DC4DC9E4B19"
+              "sha1": "C37CFF46C6FB12485D8FE0D59DD2E6B6AFF414BE"
+            },
+            {
+              "name": "/ScriptTargetFilter.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "7F766A279DC8E5EDF597A081D827D8C4ED5D0019"
+            },
+            {
+              "name": "/ScriptUpdateRecord.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "16C3B016D33C95BF7AE794F07FFB093896F620BE"
             },
             {
               "name": "/SemanticVersioning.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "C8DE63A2BE75B1135CEED3ED4ADF7025C927706C"
+              "sha1": "81D572B7174FDEE2C391C0C3CA70C8CB36CC93A7"
+            },
+            {
+              "name": "/Stub.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "F48B4E3EBA9ADBB22745714060B454C22CE75AB9"
+            },
+            {
+              "name": "/TerribleMutex.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "6B1C4E43BB588DDD2DE0FF730F3F288C641C535E"
+            },
+            {
+              "name": "/Timer.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "5E3C81C8D90BC8D04D2A9B42494506F66381142D"
             },
             {
               "name": "/UnitTestSuite.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "BF316812E9ACF6C73570337C2FCA89FD33189A2B"
+              "sha1": "046772463E64D609B41A7457552B1E2E2A12C964"
             },
             {
               "name": "/UpdateFeed.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "7B64A01259AAA32E963708AE26BCF090AFC1E0DD"
+              "sha1": "D550DBC51FC0398F5FD7A07299BB402AF33D2152"
             },
             {
               "name": "/Updater.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "6647D7CAB70637E2B961EF334153718B06EA1027"
+              "sha1": "E8A98A4D2C27C75DE8E8D06903722F674DE81715"
+            },
+            {
+              "name": "/ZipArchiver.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "93A4D958835DECFE594F6D8CAEF050992523E4DB"
             },
             {
               "name": ".moon",
-              "type": "test",
               "url": "@{fileBaseUrl}/test.moon",
-              "sha1": "1ED8961CAFCADA7E4C04778227EECDC18E509B8D"
+              "sha1": "688A395AE62742B496633959BA8FECCDC8E49544",
+              "type": "test"
+            },
+            {
+              "name": "/test/Common.moon",
+              "url": "@{fileBaseUrl}@{fileName}n",
+              "sha1": "2915E7F04AAA17C510576E8E28D9EC2CE06B6937",
+              "type": "test"
+            },
+            {
+              "name": "/test/FileOps.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "50021BFAB752397D1658158914187CFADEBFAC80",
+              "type": "test"
+            },
+            {
+              "name": "/test/GitRepository.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "F7E43D74EF6574408DFD1B851EF40F18BDB64FFA",
+              "type": "test"
+            },
+            {
+              "name": "/test/ScriptTargetFilter.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "278632008FE11ADB967B4761A2BFD1AB344C12B8",
+              "type": "test"
+            },
+            {
+              "name": "/test/UpdateFeed.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "9968EC4BED9C6D698DE5E99ADA363DC2E1C7DDDE",
+              "type": "test"
+            },
+            {
+              "name": "/test/helpers/mock-http-server.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "D6D87B5EA2F188EA5FF6D9479412FF5F9CE99EAE",
+              "type": "test"
+            },
+            {
+              "name": "/test/helpers/MockHttpServerController.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "CE361BB092ECBD1671B579CDF6A3FA181F4EC737",
+              "type": "test"
             }
           ],
           "requiredModules": [
             {
               "moduleName": "requireffi.requireffi",
               "version": "0.1.1",
+              "optional": true,
               "feed": "@{feed:ffi-experiments}"
             }
           ]
         }
       },
       "changelog": {
-        "0.7.0": [
-          "The previously monolithic `DependencyControl.moon` has been broken up into focused sub-modules as groundwork for a future SQLite-based script registry backend: `Record` (version record management), `ModuleLoader` (module loading and dependency resolution), `SemanticVersioning` (version number handling), and `Common` (shared enums and utilities).",
-          "Script types (automation macros vs. modules) and record types are now represented by proper enums (`ScriptType`, `RecordType`) instead of bare booleans, making the API more explicit and extensible.",
-          "UpdateFeed: Fixed two regressions caused by the refactoring, both of which caused the update process to fail.",
-          "Global initialization has been moved into a dedicated setup method, reducing implicit global state for loggers and configuration.",
-          "DepCtrl now refuses to load if the installed Moonscript is below the minimum required version with a helpful error message directing users to update their Aegisub build.",
-          "ModuleLoader: Fixed a regression where DepCtrl init hooks were called again on already-initialized modules, causing errors in modules that mutate their exported state on first call (e.g. BadMutex).",
-          "Common: Fixed a long-standing bug that guaranteed the `capitalize()` function to fail, that  was never caught because it was unused until the refactoring.",
-          "Updater: Fixed a potential issue where a multi-assignment statement could corrupt record fields after an unsuccessful update."
+        "0.5.0": [
+          "DependencyControl does now auto-update itself and its dependencies.",
+          "Provided Sub-Modules (Logger, ConfigHandler, ...) can now easily be accessed as class properties of the main DependencyControl module.",
+          "A bug was fixed that caused macros always being registered with the overall script description, ignoring specific descriptions for the macro menu entries.",
+          "The \\getConfigHandler() method no longer ignores the defaults parameter.",
+          "Fixed a FileOps bug that would cause path validation to fail on paths relative to the working directory.",
+          "ConfigHandler: writes to the configuration table are no longer accidentally routed to the defaults table when a value is updated that only exists in the Defaults.",
+          "ConfigHandler: Looping over the configuration table is now completely transparent wrt which fields are user configuration or defaults.",
+          "ConfigHandler: fixed a bug that prevented a global lock on the config file from being released on certain error conditions.",
+          "The update feed format has been updated to v0.2.0 and introduces a new template variable to reference knownFeeds specifed at the top level."
         ],
-        "0.6.4": [
-          "Logger: Fixed a crash when `logEx()` is called without format arguments — `msg:format(...)` is now skipped when no varargs are supplied.",
-          "Logger: `fileBaseName` now falls back to `\"UNKNOWN\"` when `script_namespace` is nil, preventing errors during Logger initialization in contexts where no namespace is available.",
-          "Logger/UpdateFeed: Fixed chained method calls on file handles (`handle:write():flush()` and `handle:write():close()`) that could silently swallow errors"
+        "0.5.1": [
+          "Macros registered using DependencyControl now get passed the previously missing 'active_line' parameter.",
+          "Fixed a bug that would cause an unrelated error to be thrown in place of the real error message when an updated module failed to load."
         ],
-        "0.6.3": [
-          "Fixed a v0.6.2 regression that caused DependencyControl to fail loading the first time after a scheduled self-update."
+        "0.5.2": [
+          "Updates and installations no longer fail when no suitable version of a module marked as an optional dependency can be found.",
+          "ConfigHandlers now recover gracefully when a corrupted config is encountered.",
+          "Fixed a bug that may have caused updates of unmanaged modules to throw an error after completion.",
+          "DependencyControl initialization functions in modules with optional DepCtrl support are now expected to use the predefined name __depCtrlInit. This lifts the unreasonable requirement of having to specify the name of the function in the dependency tables of the loading scripts. By extension, this also fixes errors when trying to update the binary modules required by DependencyControl (such as DownloadManager).",
+          "The Updater now checks for an active internet connection before going ahead with downloading feeds and packages.",
+          "FileOps: added a copy function for files."
         ],
-        "0.6.2": [
-          "An issue was fixed that would cause DepCtrl initializer code in modules previously loaded with regular Lua loading mechanisms to be skipped when requested in a _DependencyControl_- context. This kept the [requireffi](https://github.com/torque/ffi-experiments/tree/master/requireffi) _DependencyControl_ record from being established, preventing any updates from taking place.",
-          "UnitTestSuite: Fixed several broken assertions and related error messages, among them the `assertMatches` and `assertErrorMatches` assertions always returning `true`. Please make sure to rerun your tests after upgrading to confirm your tested actually return values whatever they were supposed to match.",
-          "Updater: Identical or duplicate feeds from different sources (user configuration, feeds and API use) are no longer being checked for updates multiple times.",
-          "Updater / FileOps: Fixed several broken error messages and return values."
-        ],
-        "0.6.1": [
-          "The Updater component now supports the DownloadManager v0.4.0 API changes.",
-          "Updater: A regression introduced in v0.6.0 was fixed that caused update or installation processes to fail when the feed contained deletion records.",
-          "FileOps.mkdir() no longer falsely retuns an error state when a path to an existing file is passed with the `isFile` flag set."
+        "0.5.3": [
+          "ConfigHandler: A host of longstanding issues related to config file corruption and concurrent access to config files from multiple DepCtrl-hosting automation scripts have been fixed.",
+          "Error Reports of required modules loaded by DependencyControl now actually provide semi-useful stack traces.",
+          "A bug was fixed that could cause DepCtrl to rerun the __depCtrlInit method on modules even though a prior DependencyControl record had already been initialized.",
+          "The DependencyControl self-update now runs through properly without throwing an error at the end of the process."
         ],
         "0.6.0": [
           "The UnitTestSuite framework for automatically testing automation scripts and modules has been added.",
@@ -194,54 +310,54 @@
           "FileOps.move() no longer fails to move files across file systems on *nix operating systems and properly cleans up after itself if files could not be overwritten and were renamed instead.",
           "FileOps: path validation is no longer broken on non-windows systems"
         ],
-        "0.5.3": [
-          "ConfigHandler: A host of longstanding issues related to config file corruption and concurrent access to config files from multiple DepCtrl-hosting automation scripts have been fixed.",
-          "Error Reports of required modules loaded by DependencyControl now actually provide semi-useful stack traces.",
-          "A bug was fixed that could cause DepCtrl to rerun the __depCtrlInit method on modules even though a prior DependencyControl record had already been initialized.",
-          "The DependencyControl self-update now runs through properly without throwing an error at the end of the process."
+        "0.6.1": [
+          "The Updater component now supports the DownloadManager v0.4.0 API changes.",
+          "Updater: A regression introduced in v0.6.0 was fixed that caused update or installation processes to fail when the feed contained deletion records.",
+          "FileOps.mkdir() no longer falsely retuns an error state when a path to an existing file is passed with the `isFile` flag set."
         ],
-        "0.5.2": [
-          "Updates and installations no longer fail when no suitable version of a module marked as an optional dependency can be found.",
-          "ConfigHandlers now recover gracefully when a corrupted config is encountered.",
-          "Fixed a bug that may have caused updates of unmanaged modules to throw an error after completion.",
-          "DependencyControl initialization functions in modules with optional DepCtrl support are now expected to use the predefined name __depCtrlInit. This lifts the unreasonable requirement of having to specify the name of the function in the dependency tables of the loading scripts. By extension, this also fixes errors when trying to update the binary modules required by DependencyControl (such as DownloadManager).",
-          "The Updater now checks for an active internet connection before going ahead with downloading feeds and packages.",
-          "FileOps: added a copy function for files."
+        "0.6.2": [
+          "An issue was fixed that would cause DepCtrl initializer code in modules previously loaded with regular Lua loading mechanisms to be skipped when requested in a _DependencyControl_- context. This kept the [requireffi](https://github.com/torque/ffi-experiments/tree/master/requireffi) _DependencyControl_ record from being established, preventing any updates from taking place.",
+          "UnitTestSuite: Fixed several broken assertions and related error messages, among them the `assertMatches` and `assertErrorMatches` assertions always returning `true`. Please make sure to rerun your tests after upgrading to confirm your tested actually return values whatever they were supposed to match.",
+          "Updater: Identical or duplicate feeds from different sources (user configuration, feeds and API use) are no longer being checked for updates multiple times.",
+          "Updater / FileOps: Fixed several broken error messages and return values."
         ],
-        "0.5.1": [
-          "Macros registered using DependencyControl now get passed the previously missing 'active_line' paramter.",
-          "Fixed a bug that would cause an unrelated error to be thrown in place of the real error message when an updated module failed to load."
+        "0.6.3": [
+          "Fixed a v0.6.2 regression that caused DependencyControl to fail loading the first time after a scheduled self-update."
         ],
-        "0.5.0": [
-          "DependencyControl does now auto-update itself and its dependencies.",
-          "Provided Sub-Modules (Logger, ConfigHandler, ...) can now easily be accessed as class properties of the main DependencyControl module.",
-          "A bug was fixed that caused macros always being registered with the overall script description, ignoring specific descriptions for the macro menu entries.",
-          "The \\getConfigHandler() method no longer ignores the defaults parameter.",
-          "Fixed a FileOps bug that would cause path validation to fail on paths relative to the working directory.",
-          "ConfigHandler: writes to the configuration table are no longer accidentally routed to the defaults table when a value is updated that only exists in the Defaults.",
-          "ConfigHandler: Looping over the configuration table is now completely transparent wrt which fields are user configuration or defaults.",
-          "ConfigHandler: fixed a bug that prevented a global lock on the config file from being released on certain error conditions.",
-          "The update feed format has been updated to v0.2.0 and introduces a new template variable to reference knownFeeds specifed at the top level."
+        "0.6.4": [
+          "Logger: Fixed a crash when `logEx()` is called without format arguments — `msg:format(...)` is now skipped when no varargs are supplied.",
+          "Logger: `fileBaseName` now falls back to `\"UNKNOWN\"` when `script_namespace` is nil, preventing errors during Logger initialization in contexts where no namespace is available.",
+          "Logger/UpdateFeed: Fixed chained method calls on file handles (`handle:write():flush()` and `handle:write():close()`) that could silently swallow errors"
+        ],
+        "0.7.0": [
+          "The previously monolithic `DependencyControl.moon` has been broken up into focused sub-modules as groundwork for a future SQLite-based script registry backend: `Record` (version record management), `ModuleLoader` (module loading and dependency resolution), `SemanticVersioning` (version number handling), and `Common` (shared enums and utilities).",
+          "Script types (automation macros vs. modules) and record types are now represented by proper enums (`ScriptType`, `RecordType`) instead of bare booleans, making the API more explicit and extensible.",
+          "UpdateFeed: Fixed two regressions caused by the refactoring, both of which caused the update process to fail.",
+          "Global initialization has been moved into a dedicated setup method, reducing implicit global state for loggers and configuration.",
+          "DepCtrl now refuses to load if the installed Moonscript is below the minimum required version with a helpful error message directing users to update their Aegisub build.",
+          "ModuleLoader: Fixed a regression where DepCtrl init hooks were called again on already-initialized modules, causing errors in modules that mutate their exported state on first call (e.g. BadMutex).",
+          "Common: Fixed a long-standing bug that guaranteed the `capitalize()` function to fail, that  was never caught because it was unused until the refactoring.",
+          "Updater: Fixed a potential issue where a multi-assignment statement could corrupt record fields after an unsuccessful update."
         ]
       }
     },
     "l0.dkjson": {
-      "url": "http://dkolf.de/dkjson-lua/",
-      "author": "David Kolf",
       "name": "dkjson",
       "description": "David Kolf's JSON module for Lua, vendored with and managed by DependencyControl.",
+      "author": "David Kolf",
+      "url": "http://dkolf.de/dkjson-lua/",
       "fileBaseUrl": "@{fileBaseUrl}v@{version}-@{channel}/modules/@{namespacePath}",
       "localFileBasePath": "@{localFileBasePath}modules/@{namespacePath}",
       "channels": {
         "release": {
           "version": "2.10.0",
-          "released": "2026-05-30",
+          "released": null,
           "default": true,
           "files": [
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "94DDD16A2B34530F50F664F6D0F7A4B6B962A886"
+              "sha1": "9805D5DF27A7C12DCFF4D420B320085D1E8315EB"
             },
             {
               "name": "/vendor/dkjson.lua",
@@ -252,7 +368,9 @@
         }
       },
       "changelog": {
-        "2.10.0": ["Vendored dkjson v2.10 with a DependencyControl version record and json/dkjson self-registration."]
+        "2.10.0": [
+          "Vendored dkjson v2.10 with a DependencyControl version record and json/dkjson self-registration."
+        ]
       }
     }
   }

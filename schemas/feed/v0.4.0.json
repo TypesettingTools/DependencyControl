@@ -66,7 +66,8 @@
     "NamespacedIdentifier": {
       "description": "A dot-separated namespaced identifier (e.g. 'l0.DependencyControl.Toolbox', 'a-mo.LineCollection').",
       "type": "string",
-      "pattern": "^[A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+)+$"
+      "pattern": "^[A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+)+$",
+      "lpegPattern": "[A-Za-z0-9_-]+ ('.' [A-Za-z0-9_-]+)+ !."
     },
 
     "Changelog": {
@@ -93,7 +94,8 @@
     "SemanticVersionWithoutLabels": {
       "description": "Semantic version string *without* pre-release or build metadata (<major>.<minor>.<patch>).",
       "type": "string",
-      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "lpegPattern": "%d+ '.' %d+ '.' %d+ !."
     },
 
     "TemplateString": {
@@ -104,7 +106,10 @@
     "Sha1Hash": {
       "description": "SHA-1 digest as 40 hexadecimal characters (case-insensitive).",
       "type": "string",
-      "pattern": "^[0-9A-Fa-f]{40}$"
+      "pattern": "^[0-9A-Fa-f]{40}$",
+      "lpegPattern": "[0-9A-Fa-f]+ !.",
+      "minLength": 40,
+      "maxLength": 40
     },
 
     "PackagedFile": {

@@ -59,6 +59,14 @@ deployCmd:flag("--clobber",    "Overwrite existing files (default)"):target("clo
 deployCmd:flag("--no-clobber", "Skip files that already exist at the destination"):target("clobber"):action("store_false")
 addTargets(deployCmd)
 
+local updateFeedCmd = parser:command("update-feed",
+    "Refresh SHA-1 hashes, version info, and file presence in a feed channel")
+updateFeedCmd:option("-f --feed",    "Feed JSON path"):default("DependencyControl.json")
+updateFeedCmd:option("-c --channel", "Channel to update (default: the channel marked default: true)")
+    :argname("<name>")
+updateFeedCmd:flag("-n --dry-run", "Print what would change without writing back")
+addTargets(updateFeedCmd)
+
 local args = parser:parse()
 
 -- ── Resolve the launcher directory ───────────────────────────────────────────
@@ -304,4 +312,58 @@ elseif args.command == "deploy" then
     local status = fileCount > 0 and "Deploy complete" or "Deploy produced no files"
     io.stdout:write(("\n%s: %d file(s) deployed to %s, %d error(s)\n"):format(status, fileCount, outputDir, errCount))
     os.exit(errCount > 0 and 1 or 0)
+
+-- ─── update-feed ──────────────────────────────────────────────────────────────
+elseif args.command == "update-feed" then
+    local feedPath = resolveAbsPath(args.feed)
+
+    setupDepCtrl("update-feed")
+
+    local UpdateFeed = require "l0.DependencyControl.UpdateFeed"
+    local feed = UpdateFeed(nil, false, feedPath)
+
+    registerFeedSearcher(feed)
+
+    local stats, err = feed:updateFeed({
+        channel   = args.channel,
+        filter    = buildFilter(args),
+        schemaDir = table.concat({ launcherDir, "schemas", "feed" }, pathSep),
+        outPath   = args.dry_run and false or nil,
+    })
+
+    if not stats then
+        io.stderr:write("Error updating feed: " .. tostring(err) .. "\n")
+        os.exit(1)
+    end
+
+    -- Per-package breakdown: one status line per package, with any errors indented beneath it.
+    local changedWord = args.dry_run and "would change" or "updated"
+    for _, pkg in ipairs(stats.packages) do
+        local label = pkg.namespace .. (pkg.channel and (" (" .. pkg.channel .. ")") or "")
+        local status
+        if #pkg.errors > 0 then
+            status = ("%d error%s"):format(#pkg.errors, #pkg.errors == 1 and "" or "s")
+        elseif pkg.changed then
+            status = changedWord
+        else
+            status = "no changes"
+        end
+        io.stdout:write(("  %-48s %s\n"):format(label, status))
+        for _, e in ipairs(pkg.errors) do
+            io.stderr:write("      ! " .. (tostring(e):gsub("\n", "\n        ")) .. "\n")
+        end
+    end
+
+    -- Summary
+    local total = #stats.packages
+    if stats.changed > 0 then
+        local verb = args.dry_run and "would change — dry run, nothing written" or ("updated in " .. feedPath)
+        io.stdout:write(("\n%d of %d package(s) %s\n"):format(stats.changed, total, verb))
+    else
+        io.stdout:write("\nFeed is already up to date.\n")
+    end
+    if stats.errored > 0 then
+        io.stdout:write(("%d package(s) had errors (see above).\n"):format(stats.errored))
+    end
+    os.exit(stats.errored > 0 and 1 or 0)
 end

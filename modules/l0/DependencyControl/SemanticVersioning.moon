@@ -1,3 +1,5 @@
+SemanticVersioning = nil
+
 --- Semantic versioning utilities.
 -- @class SemanticVersioning
 class SemanticVersioning
@@ -76,3 +78,19 @@ class SemanticVersioning
 
     b = bit.band b, mask
     return a >= b, b
+
+  isHigher: (version, reference) ->
+    version, errMsg = SemanticVersioning\toNumber version
+    assert version, errMsg
+    referenceVersionNumber, errMsg = SemanticVersioning\toNumber reference
+    assert referenceVersionNumber, errMsg
+
+    return version > referenceVersionNumber
+
+  isLower: (version, reference) ->
+    version, errMsg = SemanticVersioning\toNumber version
+    assert version, errMsg
+    referenceVersionNumber, errMsg = SemanticVersioning\toNumber reference
+    assert referenceVersionNumber, errMsg
+
+    return version < referenceVersionNumber

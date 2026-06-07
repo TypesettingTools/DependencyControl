@@ -89,11 +89,39 @@
       ut\assertEquals flat[2], "b"
       ut\assertEquals flat[3], "x"
 
+    -- getObjectHash: deterministic, order-independent SHA-1 of a (nested) value
+
+    getObjectHash_isHexString: (ut) ->
+      hash = Common.getObjectHash {a: 1, b: "two"}
+      ut\assertString hash
+      ut\assertMatches hash, "^%x+$"
+
+    getObjectHash_deterministic: (ut) ->
+      ut\assertEquals Common.getObjectHash({a: 1, b: 2}), Common.getObjectHash {a: 1, b: 2}
+
+    getObjectHash_ignoresKeyOrder: (ut) ->
+      ut\assertEquals Common.getObjectHash({a: 1, b: 2, c: 3}), Common.getObjectHash {c: 3, a: 1, b: 2}
+
+    getObjectHash_nestedOrderIndependent: (ut) ->
+      a = {x: {p: 1, q: 2}, y: 3}
+      b = {y: 3, x: {q: 2, p: 1}}
+      ut\assertEquals Common.getObjectHash(a), Common.getObjectHash b
+
+    getObjectHash_distinguishesContent: (ut) ->
+      ut\assertNotEquals Common.getObjectHash({v: "1"}), Common.getObjectHash {v: "2"}
+
+    -- type tagging keeps the number 1 and the string "1" from colliding
+    getObjectHash_typeTagged: (ut) ->
+      ut\assertNotEquals Common.getObjectHash({v: 1}), Common.getObjectHash {v: "1"}
+
     _order: {
       "getAutomationDir_automation", "getAutomationDir_module",
       "getAutomationDir_customRoot", "getAutomationDir_unknown",
       "getTestDir_automation", "getTestDir_module", "getTestDir_customRoot",
       "flatten_depth2Array", "flatten_depth1StopsEarly", "flatten_depth0NoFlatten",
-      "flatten_scalar", "flatten_returnsCount", "flatten_toArrayTable"
+      "flatten_scalar", "flatten_returnsCount", "flatten_toArrayTable",
+      "getObjectHash_isHexString", "getObjectHash_deterministic", "getObjectHash_ignoresKeyOrder",
+      "getObjectHash_nestedOrderIndependent", "getObjectHash_distinguishesContent",
+      "getObjectHash_typeTagged"
     }
   }

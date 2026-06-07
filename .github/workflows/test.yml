@@ -36,6 +36,9 @@ jobs:
       - run: luarocks install luasocket
       - run: luarocks install copas
       - run: luarocks install pegasus
+      # json schema validation
+      - run: luarocks install lua-schema
+      - run: luarocks install lpeg
 
       - name: Run tests
         timeout-minutes: 5

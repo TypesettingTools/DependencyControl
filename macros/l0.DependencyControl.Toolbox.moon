@@ -5,7 +5,12 @@ export script_author = "line0"
 export script_namespace = "l0.DependencyControl.Toolbox"
 
 DepCtrl = require "l0.DependencyControl"
-depRec = DepCtrl feed: "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/master/DependencyControl.json"
+depRec = DepCtrl {
+    feed: "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/master/DependencyControl.json",
+    {
+        {"l0.DependencyControl", version: "0.7.0"}
+    }
+}
 logger = DepCtrl.logger
 logger.usePrefixWindow = false
 

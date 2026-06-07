@@ -1,4 +1,23 @@
 ffi = require "ffi"
+Crypto = require "l0.DependencyControl.Crypto"
+
+-- Serializes a value into a canonical string for hashing: table keys are emitted in sorted
+-- order so field ordering never affects the result, and every value is tagged with its type
+-- so distinct types can't collide (e.g. the number 1 vs. the string "1").
+-- @param value any the value to canonicalize
+-- @return string the canonicalized string 
+canonicalize = (value) ->
+    switch type value
+        when "table"
+            entries = {}
+            entries[#entries + 1] = "#{canonicalize k}=#{canonicalize v}" for k, v in pairs value
+            table.sort entries
+            "{#{table.concat entries, ","}}"
+        when "string" then "s:#{value}"
+        when "number" then "n:#{string.format "%.17g", value}"
+        when "boolean" then "b:#{value and 1 or 0}"
+        when "nil" then "nil"
+        else "#{type value}:#{tostring value}"
 
 -- Compares two values for deep equality. Tables are compared recursively;
 -- other types use == except that two identical values always compare equal.
@@ -245,3 +264,12 @@ class DependencyControlCommon
     -- @return table flattened # A flattened array table containing the flattened values.
     -- @return number flattenedCount # The number of elements in the flattened array.
     @flatten = flatten
+
+    --- Produces a deterministic SHA-1 hash of a (possibly nested) Lua value.
+    -- Table keys are sorted before hashing, so field ordering never affects the result; pass an
+    -- object pruned to just the fields you care about to obtain a stable content signature that
+    -- ignores irrelevant differences. Useful for cheaply detecting whether semantic content changed.
+    -- @static
+    -- @param value any the value to hash
+    -- @return string a 40-character lowercase SHA-1 hex digest
+    @getObjectHash = (value) -> Crypto.sha1 canonicalize value

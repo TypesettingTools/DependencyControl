@@ -191,41 +191,7 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl, ...) ->
       }
     }
 
-    ModuleProvider: {
-      _description: "Tests for ModuleProvider: alias registration and searcher-based resolution. (Unique names per run; the registry is process-global.)"
-
-      register_andGetProvider: (ut) ->
-        name = uniqueName "alias"
-        ut\assertTrue ModuleProvider\register name, "some.provider"
-        ut\assertEquals ModuleProvider\getProvider(name), "some.provider"
-
-      register_firstWins: (ut) ->
-        name = uniqueName "alias"
-        ut\assertTrue ModuleProvider\register name, "first.provider"
-        ut\assertFalse ModuleProvider\register name, "second.provider"   -- already registered
-        ut\assertEquals ModuleProvider\getProvider(name), "first.provider"
-
-      registerRecord_normalizesAliases: (ut) ->
-        stringAlias, tableAlias = uniqueName("string"), uniqueName "table"
-        ModuleProvider\registerRecord {moduleName: "prov.A", provides: {stringAlias}}
-        ModuleProvider\registerRecord {moduleName: "prov.B", provides: {{name: tableAlias}}}
-        ut\assertEquals ModuleProvider\getProvider(stringAlias), "prov.A"
-        ut\assertEquals ModuleProvider\getProvider(tableAlias), "prov.B"
-
-      -- end to end: a require of a registered alias resolves to the provider module
-      searcher_resolvesAliasToProvider: (ut) ->
-        ModuleProvider\install!   -- idempotent; already installed during load
-        name = uniqueName "aliasToSemver"
-        ModuleProvider\register name, "l0.DependencyControl.SemanticVersioning"
-        resolved = require name
-        package.loaded[name] = nil   -- don't leak the alias into the module cache
-        ut\assertIs resolved, SemanticVersioning
-
-      _order: {
-        "register_andGetProvider", "register_firstWins",
-        "registerRecord_normalizesAliases", "searcher_resolvesAliasToProvider"
-      }
-    }
+    ModuleProvider: (controls\requireTest "ModuleProvider") basePath, DepCtrl
 
     Downloader: {
       _description: "Tests for the Downloader engine: round-robin scheduling and per-download callbacks (via a fake driver). (Offline — no network.)"
@@ -1975,6 +1941,33 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl, ...) ->
         ut\assertContains registered[1][1], "MyMacro"
         registerTestsStub\assertCalledOnceWith rec
 
+      -- namespace registry: getRecord is the public lookup; registration happens internally (via
+      -- the constructor), so these seed the process-global registry directly, with unique namespaces.
+
+      registry_getReturnsRegistered: (ut) ->
+        ns = uniqueName "regns"
+        rec = {namespace: ns}
+        _G.__depCtrlRecords[ns] = rec
+        ut\assertIs Record\getRecord(ns), rec
+
+      registry_getMissing: (ut) ->
+        ut\assertNil Record\getRecord uniqueName "absent"
+
+      registry_getSkipsVirtual: (ut) ->
+        ns = uniqueName "virtns"
+        _G.__depCtrlRecords[ns] = {namespace: ns, virtual: true}
+        ut\assertNil Record\getRecord ns
+
+      -- a virtual placeholder flipped to non-virtual in place (as the Updater does on install)
+      -- becomes visible through getRecord
+      registry_returnsAfterUnvirtualized: (ut) ->
+        ns = uniqueName "virtns"
+        rec = {namespace: ns, virtual: true}
+        _G.__depCtrlRecords[ns] = rec
+        ut\assertNil Record\getRecord ns
+        rec.virtual = false
+        ut\assertIs Record\getRecord(ns), rec
+
       _order: {
         "checkVersion_equal", "checkVersion_greater", "checkVersion_older", "checkVersion_recordArg",
         "setVersion_validString", "setVersion_validNumber", "setVersion_invalid",
@@ -1982,7 +1975,9 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl, ...) ->
         "validateNamespace_invalid_trailingDot", "validateNamespace_virtual",
         "uninstall_virtual", "uninstall_unmanaged",
         "getSubmodules_virtual", "getSubmodules_unmanaged", "getSubmodules_nonModule",
-        "getConfigFileName_basic", "registerMacro_basic"
+        "getConfigFileName_basic", "registerMacro_basic",
+        "registry_getReturnsRegistered", "registry_getMissing",
+        "registry_getSkipsVirtual", "registry_returnsAfterUnvirtualized"
       }
     }
 
@@ -2151,6 +2146,8 @@ DependencyControl.UnitTestSuite "l0.DependencyControl", (DepCtrl, ...) ->
     GitRepository: (controls\requireTest "GitRepository")!
 
     ScriptTargetFilter: (controls\requireTest "ScriptTargetFilter")!
+
+    JsonSchema: (controls\requireTest "JsonSchema") basePath
 
     DownloaderIntegration: {
       _description: "Real-HTTP Downloader tests against a local test server (runs when launchable)."

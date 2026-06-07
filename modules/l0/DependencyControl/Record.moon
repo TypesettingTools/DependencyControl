@@ -11,6 +11,27 @@ ModuleProvider = require "l0.DependencyControl.ModuleProvider"
 SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
 UnitTestSuite =  require "l0.DependencyControl.UnitTestSuite"
 
+-- Global registry of live DepCtrl version records keyed by namespace, backed by a global table
+--  so it survives DepCtrl self-update reloads. Required to reach the DepCtrl version records
+-- of automation scripts/macros, which don't expose it globally (only a few script_* globals)
+DEPCTRL_RECORDS_GLOBAL_KEY = "__depCtrlRecords"
+recordsByNamespace = _G[DEPCTRL_RECORDS_GLOBAL_KEY]
+unless recordsByNamespace
+    recordsByNamespace = {}
+    _G[DEPCTRL_RECORDS_GLOBAL_KEY] = recordsByNamespace
+
+--- Registers a record in the global registry under its namespace. Latest call wins.
+-- @param record Record
+-- @return Record the record passed in
+registerRecord = (record) ->
+    recordsByNamespace[record.namespace] = record if record.namespace
+    return record
+
+--- Removes a namespace's record from the registry (e.g. on uninstall).
+-- @param namespace string
+unregisterRecord = (namespace) -> recordsByNamespace[namespace] = nil
+
+
 --- DependencyControl record representing one managed or unmanaged script/module.
 -- @class Record
 class Record extends Common
@@ -44,6 +65,14 @@ class Record extends Common
                          updateWaitTimeout: 60, updateOrphanTimeout: 600,
                          logDir: "?user/log", writeLogs: true}
     }
+
+    --- Returns the live, installed record registered for a namespace, or nil if none is registered
+    -- or the registered one is still a virtual (not-yet-installed) placeholder.
+    -- @param namespace string
+    -- @return Record|nil
+    @getRecord = (namespace) =>
+        record = recordsByNamespace[namespace]
+        record unless record and record.virtual
 
     init = =>
         FileOps.mkdir @depConf.file, true
@@ -135,11 +164,13 @@ class Record extends Common
             @provides = [type(alias) == "table" and alias or {name: alias} for alias in *@provides]
             ModuleProvider\registerRecord @
 
-        shouldWriteConfig = @loadConfig!
+        -- publish this record so tooling can look it up by namespace after requiring the script
+        registerRecord @
 
         -- write config file if contents are missing or are out of sync with the script version record
         -- ramp up the random wait time on first initialization (many scripts may want to write configuration data)
         -- we can't really profit from write concerting here because we don't know which module loads last
+        shouldWriteConfig = @loadConfig!
         @writeConfig if shouldWriteConfig and saveRecordToConfig
 
     checkOptionalModules: ModuleLoader.checkOptionalModules
@@ -388,4 +419,7 @@ class Record extends Common
             -- automation scripts don't use any subdirectories
             if (@moduleName or mode == "file") and file\match currPattern
                 toRemove[#toRemove+1] = path
+
+        -- drop the record from the registry so tooling no longer sees the removed script
+        unregisterRecord @namespace
         return FileOps.remove toRemove, true, true

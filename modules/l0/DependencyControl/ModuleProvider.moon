@@ -17,14 +17,43 @@ unless state
     state = { providers: {}, installed: false }
     _G[GLOBAL_KEY] = state
 
--- Lua module searcher: returns a loader for a registered alias, otherwise nil. 
+-- Runs a freshly-loaded module's DependencyControl initializer (`__depCtrlInit`) if it has one and
+-- hasn't been initialized yet, so the module exposes a proper DependencyControl record. The guard
+-- avoids re-initializing modules that mutate their exported state on first init (e.g. BadMutex).
+runInitializer = (ref, DependencyControl) ->
+    return ref unless type(ref) == "table" and ref.__depCtrlInit
+    -- Note to future self: don't change this to a class check! When DepCtrl self-updates
+    -- any managed module initialized before will still use the same instance
+    alreadyInitialized = type(ref.version) == "table" and ref.version.__class and
+        ref.version.__class.__name == DependencyControl.__name
+    ref.__depCtrlInit DependencyControl unless alreadyInitialized
+    return ref
+
+-- Resolves DependencyControl from package.loaded rather than require()ing it, because an alias can be
+-- pulled in during DepCtrl's own bootstrap where a require-back would cycle, and the type check also
+-- rejects the mid-bootstrap "loading" sentinel. Until the real class is loaded there's nothing to init
+-- against, so the module is returned as-is.
+initProvidedModule = (mod) ->
+    DependencyControl = package.loaded["l0.DependencyControl"]
+    return mod unless type(DependencyControl) == "table"
+    runInitializer mod, DependencyControl
+
+-- Returns a loader for a registered alias, or nil for an unregistered name.
 -- Kept to a single hash lookup since it runs for every otherwise-unresolved require.
 search = (name) ->
     providerName = state.providers[name]
     return unless providerName
-    -> require providerName
+    -> initProvidedModule require providerName
 
 class ModuleProvider
+    --- Runs a freshly-loaded module reference's DependencyControl initializer (`__depCtrlInit`), if
+    -- it has one and hasn't been initialized yet, so the module exposes a proper DependencyControl
+    -- record. The guard avoids re-initializing modules that mutate state on first init (e.g. BadMutex).
+    -- @param ref any the loaded module reference
+    -- @param DependencyControl table the DependencyControl class to hand the initializer
+    -- @return any the same ref, for convenient chaining
+    @runInitializer = runInitializer
+
     --- Registers a provider for an alias name. First registration wins.
     -- @param alias string the (possibly bare) module name to provide
     -- @param providerName string the namespaced module that provides it

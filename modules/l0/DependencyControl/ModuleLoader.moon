@@ -3,6 +3,7 @@
 -- and calling any method is guaranteed to interfere with DependencyControl operation
 
 SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
+ModuleProvider     = require "l0.DependencyControl.ModuleProvider"
 
 --- Internal module loading helpers for DependencyControl-managed module dependencies.
 -- @class ModuleLoader
@@ -55,13 +56,6 @@ class ModuleLoader
     return  false
 
   @loadModule = (mdl, usePrivate, reload) =>
-    runInitializer = (ref) ->
-      return unless type(ref) == "table" and ref.__depCtrlInit
-      -- Note to future self: don't change this to a class check! When DepCtrl self-updates
-      -- any managed module initialized before will still use the same instance
-      if type(ref.version) != "table" or not (ref.version.__class and ref.version.__class.__name == @@__name)
-        ref.__depCtrlInit @@
-
     with mdl
       ._missing, ._error = nil
 
@@ -75,7 +69,7 @@ class ModuleLoader
       elseif ._ref = LOADED_MODULES[moduleName]
         -- module is already loaded, however it may or may not have been loaded by DepCtrl
         -- so we have to call any DepCtrl initializer if it hasn't been called yet
-        runInitializer ._ref
+        ModuleProvider.runInitializer ._ref, @@
         return ._ref
 
       loaded, res = xpcall require, debug.traceback, moduleName
@@ -92,7 +86,7 @@ class ModuleLoader
       ._ref, LOADED_MODULES[moduleName] = res, res
 
       -- run DepCtrl initializer if one was specified
-      runInitializer res
+      ModuleProvider.runInitializer res, @@
 
     return mdl._ref  -- having this in the with block breaks moonscript
 

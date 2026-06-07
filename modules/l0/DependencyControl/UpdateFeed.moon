@@ -1,14 +1,18 @@
-json = require "json"
+-- We ship dkjson, so depend on it directly: it guarantees the `null` sentinel, dkjson's encode
+-- options, and our `indentMode: "prettier"` extension used for feed write-back.
+dkjson = require "l0.dkjson"
 
 Logger            = require "l0.DependencyControl.Logger"
 Common            = require "l0.DependencyControl.Common"
 Enum              = require "l0.DependencyControl.Enum"
 FileOps            = require "l0.DependencyControl.FileOps"
+ModuleProvider     = require "l0.DependencyControl.ModuleProvider"
 SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
 
 defaultLogger = Logger fileBaseName: "DepCtrl.UpdateFeed"
 ScriptUpdateRecord = require "l0.DependencyControl.ScriptUpdateRecord"
 ScriptTargetFilter = require "l0.DependencyControl.ScriptTargetFilter"
+JsonSchema = nil
 
 -- Iterates the real packages of a loaded feed that pass the given filter, yielding
 -- (pkgProxy, scriptType, section). pkgProxy exposes the package's `namespace` alongside its
@@ -26,6 +30,24 @@ walkPackages = (feed, filter) ->
                 continue unless filter\matches scriptType, namespace
                 pkgProxy = setmetatable {}, __index: (_, k) -> k == "namespace" and namespace or pkg[k]
                 coroutine.yield pkgProxy, scriptType, section
+
+-- Gives an expanded file record a lazily-resolved `localFilePath` property
+-- by appending the file `name` to `localFileBasePath` and resolving that against the feed directory. 
+-- @param file table the file record to attach the accessor to
+-- @param feedDirPath string the feed directory to resolve against
+attachLocalFilePath = (file, feedDirPath) ->
+    setmetatable file, __index: (self, key) ->
+        return unless key == "localFilePath"
+        base, name = (rawget self, "localFileBasePath"), rawget self, "name"
+        return unless base and name
+        path = FileOps.validateFullPath base .. name, false, feedDirPath
+        return path
+
+-- Deep-copies a decoded feed table while dropping any field whose value is the dkjson.null
+-- sentinel, turning a round-tripped JSON null back into an absent key. Used for the expanded
+-- working copy so consumers see plain nil where the raw feed has an explicit null.
+stripNulls = (tbl) ->
+    {k, (type(v) == "table" and stripNulls(v) or v) for k, v in pairs tbl when v != dkjson.null}
 
 --- Downloaded and expanded update feed data source.
     -- @class UpdateFeed
@@ -64,6 +86,7 @@ class UpdateFeed extends Common
             downloaded:  "Downloaded feed to %s."
         }
         errors: {
+            urlOrFilePathRequired: "Either a URL or a file path must be provided."
             downloadAdd:     "Couldn't initiate download of %s to %s (%s)."
             downloadFailed:  "Download of feed %s to %s failed (%s)."
             cantOpen:        "Can't open downloaded feed for reading (%s)."
@@ -78,6 +101,47 @@ class UpdateFeed extends Common
             copied:      "%s -> %s"
             skipped:     "skipped (already exists): %s"
         }
+        ensureLoaded: {
+            noLocalPath: "Local expansion mode require a local feed file path to resolve local path templates against."
+        }
+        refreshFiles: {
+            noLocalPath: "Feed has no local path required to check file '%s' for changes."
+            sha1Failed: "Couldn't compute SHA-1 for file '%s' to check for changes: %s"
+        }
+        refreshVersionRecord: {
+            loadFailed: "Failed to load %s '%s' for getting a fresh DependencyControl version record: %s"
+            missingDepctrlRecord: "No DependencyControl version record exposed by %s '%s'."
+        }
+        updatePackage: {
+            failedRefreshVersionRecord: "Failed to refresh version/dependencies: %s"
+        }
+        update: {
+            notInRaw:      "%s: not found in the feed data, skipping."
+            channelError:  "%s: %s"
+            noRecord:      "%s: no DependencyControl record (%s), skipping version/dependency refresh."
+            sha1Failed:    "  '%s': couldn't compute SHA-1 — %s"
+            schemaValid:   "Feed conforms to schema (format v%s)."
+            schemaInvalid: "Feed fails schema validation (format v%s) — continuing anyway."
+            wrote:         "Wrote %d updated package(s) to %s."
+            noRawData:     "No raw feed data loaded — call loadFile or updateFeed first."
+        }
+    }
+
+    -- Stable key order for serializing a feed back to JSON. Keys absent from this list are
+    -- appended afterwards in pairs() order (undefined, but stable for unchanged subtrees).
+    feedKeyOrder = {
+        "dependencyControlFeedFormatVersion",
+        "name", "description", "author",
+        "baseUrl", "url", "fileBaseUrl", "localFileBasePath",
+        "maintainer", "knownFeeds",
+        "moduleName",
+        "version", "released", "default",
+        "optional",
+        "channels", "changelog",
+        "files", "requiredModules", "platforms",
+        "sha1", "delete", "type", "platform",
+        "macros", "modules",
+        "feed",
     }
 
     @defaultConfig = {
@@ -127,27 +191,27 @@ class UpdateFeed extends Common
 
     --- Creates an update feed wrapper and optionally fetches feed data.
     -- @param url string
-    -- @param[opt=true] autoFetch boolean
+    -- @param[opt=true] autoLoad boolean
     -- @param[opt] fileName string
     -- @param[opt] config table
     -- @param[opt] logger Logger
-    new: (@url, autoFetch = true, fileName, @config = {}, @logger = defaultLogger) =>
+    new: (@_url, autoLoad = true, @fileName, @config = {}, @logger = defaultLogger) =>
+        error msgs.errors.urlOrFilePathRequired if not @_url and not fileName
+    
         meta = getmetatable @
         setmetatable @, {
             __index: (self, key) ->
                 rawValue = meta[key]
                 return rawValue if rawValue != nil
-                if key == 'url' then return self.fileName and "file://#{self.fileName}" or nil
+                if key == 'url'
+                    return self._url if self._url
+                    return "file://#{self.fileName}" if self.fileName
         }
 
         -- fill in missing config values
         @config[k] = v for k, v in pairs @@defaultConfig when @config[k] == nil
-        @fileName = fileName
-        if @@cache[@url]
-            @logger\trace msgs.trace.usingCached
-            @data = @@cache[@url]
-        elseif autoFetch
-            @fetch!
+
+        @ensureLoaded! if autoLoad
 
     --- Returns URLs of all feeds referenced in the knownFeeds section of this feed.
     -- @return string[] urls
@@ -156,11 +220,12 @@ class UpdateFeed extends Common
         return [url for _, url in pairs @data.knownFeeds]
         -- TODO: maybe also search all requirements for feed URLs
 
-    --- Downloads and parses feed JSON data.
-    -- @param[opt] fileName string
+    --- Downloads feed to a temporary JSON file and sets the .fileName property for subsequent loading. 
+    -- @param fileName? string
+    -- @param expansionMode? UpdateFeedExpansionMode
     -- @return table|boolean dataOrSuccess
     -- @return string|nil err
-    fetch: (fileName) =>
+    fetch: (fileName, expansionMode) =>
         -- Initialize download infrastructure lazily on first fetch.
         unless @downloadManager
             @config.downloadPath or= aegisub.decode_path "?temp/l0.#{@@__name}_feedCache"
@@ -178,41 +243,76 @@ class UpdateFeed extends Common
             return false, msgs.errors.downloadFailed\format @url, @fileName, dl.error
 
         @logger\trace msgs.trace.downloaded, @fileName
-        return @loadFile @fileName
+        return @loadFile @fileName, expansionMode
 
     --- Loads and parses a local feed JSON file, expanding all template variables in-place.
     -- Use this to load a feed already on disk without going through the network.
-    ---@param path string Local filesystem path to the feed JSON file.
-    ---@param[opt] mode UpdateFeedExpansionMode expansion mode (Remote by default; Local also
-    --             resolves the localFileBasePath/localFilePath fields against the feed's directory).
-    ---@return table|boolean
-    ---@return string|nil err
-    loadFile: (path, mode = @@ExpansionMode.Remote) =>
-        handle, err = io.open path
+    ---@param srcPath? string Local filesystem path to the feed JSON file. 
+    ---            Defaults to the .fileName property, which has either been provided in the
+    ---            constructor, or set to a temporary path when the feed is fetched.
+    ---@param expansionMode? UpdateFeedExpansionMode expansion mode (Defaults to remote if feed is loaded
+    ---            from an URL; otherwise local, enables resolving of the rolling @{localFileBasePath} 
+    ---            template variables to and exposes the `localFilePath` property on file records
+    ---            for usage in build tooling such as the bundler).
+    ---@return table|boolean the expanded feed data, or false on failure
+    ---@return string|nil err error message on failure
+    loadFile: (srcPath = @fileName, expansionMode) =>
+        handle, err = io.open srcPath
         unless handle
             return false, msgs.errors.cantOpen\format err
 
-        decoded, data = pcall json.decode, handle\read "*a"
+        -- Decode JSON null to the dkjson.null sentinel (rather than dropping it) so that
+        -- `released: null` and friends survive a load/write round-trip in @rawFeedData.
+        decoded, data = pcall dkjson.decode, handle\read("*a"), nil, dkjson.null
         handle\close!
         unless decoded and data
             -- luajson errors are useless dumps of whatever, no use to pass them on to the user
             return false, msgs.errors.parse
 
+        -- Keep the pristine decoded feed with null sentinels for write-back;
+        @rawFeedData = data
+        -- Hide null sentinels from the working copy exposed to consumers
+        data = stripNulls data
+
         data[key] = {} for key in *{ @@ScriptType.name.legacy[@@ScriptType.Automation],
                                      @@ScriptType.name.legacy[@@ScriptType.Module],
                                      "knownFeeds"} when not data[key]
         @data, @@cache[@url] = data, data
-        @feedDir = path\match("^(.*)[/\\][^/\\]*$") or "."
+        @feedPath = srcPath
+        @feedDir = srcPath\match("^(.*)[/\\][^/\\]*$") or "."
 
-        @expand mode
+        @expand expansionMode
         return @data
+
+    --- Fetches the feed (or loads it from disk if local) in case it hasn't been loaded yet.
+    -- @param expansionMode? UpdateFeedExpansionMode the expansion mode required for the operation
+    -- @return table|boolean feedData the expanded feed data, or false on failure
+    -- @return string|nil error an error message in case of failure
+    ensureLoaded: (expansionMode) =>
+        if expansionMode == @@ExpansionMode.Local and not @fileName
+            return nil, msgs.ensureLoaded.noLocalPath\format @url
+
+        -- when already loaded, reuse as-is if the expansion mode matches, otherwise re-expand
+        if @data
+            return @data if not expansionMode or expansionMode == @expansionMode
+            return @expand expansionMode
+
+        -- when not yet loaded, fetch a remote feed by its real URL, otherwise load the local file
+        if @_url
+            @data = @@cache[@_url]
+            if @data
+                @logger\trace msgs.trace.usingCached
+                return @data
+            return @fetch nil, expansionMode
+
+        return @loadFile @fileName, expansionMode
 
     --- Walks the parsed feed JSON and expands @{template} variables in-place.
     -- @param mode UpdateFeedExpansionMode expansion mode local mode resolves addition rolling templates for local source file paths
     -- @return table data
-    expand: (mode = @@ExpansionMode.Remote) =>
+    expand: (mode = @expansionMode or (@_url and @@ExpansionMode.Remote or @@ExpansionMode.Local)) =>
         {:templates, :maxDepth, :sourceAt, :rolling, :sourceKeys} = templateData
-        localMode = mode == @@ExpansionMode.Local
+        isLocalMode = mode == @@ExpansionMode.Local
         vars, rvars = {}, {i, {} for i=0, maxDepth}
 
         expandTemplates = (val, depth, rOff=0) ->
@@ -248,6 +348,9 @@ class UpdateFeed extends Common
                 rvars[depth][name] = expandTemplates rvars[depth][name], depth, -1
                 obj[templates[name].key] = rvars[depth][name]
 
+            -- file records (array entries under a `files` key) get a lazy localFilePath accessor
+            attachLocalFilePath obj, @feedDir if isLocalMode and upKey == "files"
+
             -- expand variables in non-template strings and recurse tables
             for k,v in pairs obj
                 if sourceKeys[k] ~= depth and not rolling[k]
@@ -261,10 +364,11 @@ class UpdateFeed extends Common
                             rvars[depth+1] = {}
 
         recurse @data
+        @expansionMode = mode
 
         if @dumpExpanded
             handle = io.open @fileName\gsub(".json$", ".exp.json"), "w"
-            handle\write(json.encode @data)\close!
+            handle\write(dkjson.encode @data, indentMode: "prettier")\close!
 
         return @data
 
@@ -282,9 +386,8 @@ class UpdateFeed extends Common
 
         section = @@ScriptType.name.legacy[scriptType]
         unless section
-            err = msgs.errors.invalidScriptType\format scriptType, 
-                table.concat ["#{v} (#{@@ScriptType.name.canonical[v]})" for k, v in pairs @@ScriptType when k != "name"], ", "
-            return nil, err
+            return nil, msgs.errors.invalidScriptType\format scriptType, 
+                table.concat ["#{v} (#{Common.ScriptType.name.canonical[v]})" for k, v in pairs Common.ScriptType when k != "name"], ", "
         
         scriptData = @data[section][namespace]
         return false unless scriptData
@@ -320,6 +423,231 @@ class UpdateFeed extends Common
             fallback or= ch.version
             return ch.version if ch.default
         fallback
+
+    --- Resolves which channel of a package to operate on.
+    -- With an explicit name, that channel must exist; otherwise the channel flagged `default: true`
+    -- is used.
+    -- @param channels table the package's `channels` map
+    -- @param channelName? string an explicit channel name to select
+    -- @return string|nil name the resolved channel name, or nil if none matched
+    -- @return string|nil err Error message on failure
+    @resolveChannel = (channels = {}, channelName) =>
+        if channelName
+            return channelName if channels[channelName]
+            return nil, "channel '#{channelName}' not found"
+        for name, channel in pairs channels
+            return name if channel.default
+        return nil, "no default channel — specify one explicitly"
+
+    --- Writes the raw (unexpanded) feed data back to disk.
+    -- @param path? string destination path (defaults to the source path of the loaded feed)
+    -- @return boolean success Whether the write succeeded
+    -- @return string|nil err Error message on failure
+    writeRawFeed: (path) =>
+        loaded, err = @ensureLoaded!
+        return false, err unless loaded
+        path or= @feedPath
+        encoded = dkjson.encode @rawFeedData, {indentMode: "prettier", keyorder: feedKeyOrder}
+        FileOps.writeFile path, "#{encoded}\n", true
+
+    --- Validates @rawFeedData against the feed schema matching its declared format version.
+    -- Best-effort: warns through @logger but never raises, so an unavailable schema rock or a
+    -- non-conforming feed doesn't block an update.
+    -- @param schemaDir string|string[] directory holding the feed schemas (named `v<version>.json`)
+    -- @return boolean|nil valid Whether the feed is valid, or nil if validation couldn't be performed
+    -- @return string schemaVersionOrErrMsg The feed format version the feed validated against, 
+    --                                      or an error message if validation couldn't be performed.
+    validateAgainstSchema: (schemaDir) =>
+        JsonSchema or= require "l0.DependencyControl.JsonSchema"
+
+        schemaPathsByVersion, schemasErr = JsonSchema\getSchemasInDirectory schemaDir
+        unless schemaPathsByVersion
+            return nil, nil, schemasErr
+
+        -- strip dkjson null sentinels before validation as lua-schema trips over them
+        validationData = stripNulls @rawFeedData
+        isValid, validationVersion, validationErr = JsonSchema\validateAny validationData,
+            schemaPathsByVersion, @rawFeedData.dependencyControlFeedFormatVersion
+
+        if isValid
+            return true, validationVersion, msgs.update.schemaValid\format validationVersion
+        return isValid, validationVersion, validationErr
+
+    --- Updates a package channel's version and dependencies in the raw feed data by loading
+    -- the package's script and reading its DependencyControl record. 
+    -- @param scriptType number the script type of the package to refresh (supported: Common.ScriptType.Automation or Common.ScriptType.Module)
+    -- @param packageNamespace string the package namespace
+    -- @param rawChannel table the raw channel entry to update in place
+    -- @return boolean|nil changed whether anything was modified or nil on error
+    -- @return string|nil err error message on failure
+    refreshVersionRecord: (scriptType, packageNamespace, rawChannel) =>
+        -- Require the script so it registers its DependencyControl record by namespace: macros do
+        -- so simply by running, modules by constructing their record at load. Modules that defer to
+        -- a lazy __depCtrlInit (e.g. dkjson) are initialized explicitly below. The record is then
+        -- looked up from the registry — the only place a macro's record (and its deps) is reachable.
+        DependencyControl = require Common.moduleName
+        success, mod = xpcall require, debug.traceback, packageNamespace
+        ModuleProvider.runInitializer mod, DependencyControl if success
+
+        record = DependencyControl\getRecord packageNamespace
+        unless record
+            return nil, success and msgs.refreshVersionRecord.missingDepctrlRecord\format(scriptType, packageNamespace) or
+                msgs.refreshVersionRecord.loadFailed\format scriptType, packageNamespace, mod
+
+        changed = false
+        newVer, verErr = SemanticVersioning\toString record.version
+        return nil, verErr unless newVer
+        if newVer != rawChannel.version
+            rawChannel.version = newVer
+            changed = true
+
+        existingDepsByName = {dep.moduleName, dep for dep in *rawChannel.requiredModules or {}}
+        newDeps = {}
+        for dep in *record.requiredModules or {}
+            existing = existingDepsByName[dep.moduleName]
+            entry = moduleName: dep.moduleName
+            entry.version  = dep.version  if dep.version  != nil
+            entry.optional = dep.optional if dep.optional != nil
+            if existing
+                entry.feed = existing.feed if existing.feed != nil
+                entry.url  = existing.url  if existing.url  != nil
+                entry.name = existing.name if existing.name != nil
+            else
+                entry.feed = dep.feed if dep.feed != nil
+                entry.url  = dep.url  if dep.url  != nil
+                entry.name = dep.name if dep.name != nil
+            newDeps[#newDeps + 1] = entry
+
+        -- Compare only the semantically relevant fields, ignoring order: a moduleName-keyed
+        -- digest of each dep's version/optional. Template fields (feed/url/name) are carried over
+        -- verbatim, so they never count as a change on their own. version/optional are normalized
+        -- (absent version == "", absent/false optional == false) so that purely representational
+        -- differences don't register as changes.
+        getDepSignature = (deps) ->
+            Common.getObjectHash {d.moduleName, {version: d.version or "", optional: d.optional and true or false} for d in *deps or {}}
+        if getDepSignature(newDeps) != getDepSignature rawChannel.requiredModules
+            rawChannel.requiredModules = #newDeps > 0 and newDeps or nil
+            changed = true
+
+        return changed
+
+    --- Refreshes the SHA-1 hashes of a channel's files from their local sources and flags any
+    -- file that has vanished locally with `delete: true` so the Updater removes it from users'
+    -- installations on their next update. Files already flagged for deletion are left untouched.
+    -- @param rawChannel table the raw channel entry to update in place
+    -- @param expandedChannel table the matching expanded channel
+    -- @return boolean changed whether anything was modified
+    -- @return string[] errors per-file error messages encountered while refreshing
+    refreshFiles: (rawChannel, expandedChannel) =>
+        return false, {} unless rawChannel.files
+
+        changed, errors = false, {}
+        for i, rawFile in ipairs rawChannel.files
+            expFile   = expandedChannel and expandedChannel.files and expandedChannel.files[i]
+            localPath = expFile and expFile.localFilePath
+            continue if rawFile.delete
+            if not localPath
+                errors[#errors + 1] = msgs.refreshFiles.noLocalPath\format rawFile.name
+            elseif FileOps.exists localPath, "file"
+                newHash, err = FileOps.getHash localPath
+                unless newHash
+                    errors[#errors + 1] = msgs.refreshFiles.sha1Failed\format rawFile.name, tostring err
+                else if newHash\upper! != (rawFile.sha1 or "")\upper!
+                    rawFile.sha1 = newHash\upper!
+                    changed = true
+            else
+                rawFile.delete = true
+                changed = true
+
+        return changed, errors
+
+    --- Applies all in-place updates to a single package's selected channel and, if anything
+    -- changed, resets its `released` date to null to mark the build as pending/unreleased.
+    -- Collects this package's own outcome rather than mutating shared state, so the caller can
+    -- present results per package.
+    -- @param scriptType Common.ScriptType the package's script type (1 for automation or 2 for module)
+    -- @param packageNamespace string the namespaced identifier of the package to update (e.g. "l0.Functional")
+    -- @param channel? string the channel to update (default: each package's default channel)
+    -- @return table result { namespace, scriptType, channel?, changed = boolean, errors = string[] }
+    updatePackage: (scriptType, packageNamespace, channel) =>
+        result = {namespace: packageNamespace, :scriptType, changed: false, errors: {}}
+        errors = result.errors
+
+        section = Common.ScriptType.name.legacy[scriptType]
+
+        rawPkg = @rawFeedData[section] and @rawFeedData[section][packageNamespace]
+        unless rawPkg
+            errors[#errors + 1] = msgs.update.notInRaw\format packageNamespace
+            return result
+
+        channelName, err = @@resolveChannel rawPkg.channels, channel
+        unless channelName
+            errors[#errors + 1] = msgs.update.channelError\format packageNamespace, err
+            return result
+        result.channel = channelName
+
+        rawChannel = rawPkg.channels[channelName]
+        expandedSection = @data[section] and @data[section][packageNamespace]
+        expandedChannel = expandedSection and expandedSection.channels[channelName]
+
+        depsChanged, depErr = @refreshVersionRecord scriptType, packageNamespace, rawChannel
+        errors[#errors + 1] = msgs.updatePackage.failedRefreshVersionRecord\format depErr if depErr
+
+        filesChanged, fileErrors = @refreshFiles rawChannel, expandedChannel
+        errors[#errors + 1] = e for e in *fileErrors
+
+        if depsChanged or filesChanged
+            rawChannel.released = dkjson.null
+            result.changed = true
+
+        return result
+
+    --- Loads the feed (unless already loaded), optionally validates it, refreshes the targeted
+    -- packages in place and writes the result back to disk. The feed path is the one supplied to
+    -- the constructor; pre-load with @{loadFile} if you need to act on the feed before refresh.
+    -- @param opts? table options to customize the behavior; fields:
+    --   channel?    string              channel to update (default: each package's default channel)
+    --   filter?     ScriptTargetFilter  restricts which packages are processed (default: all)
+    --   schemaDir?  string|string[]     directory of feed schemas (`v<version>.json`); when given,
+    --                                   the feed is validated against its declared format version.
+    --   outPath?    string|boolean      where to write the updated feed. `false` performs a dry run,
+    --                                   defaults to the source path of the loaded feed.
+    -- @return table|nil stats { changed = number (packages changed), errored = number (packages with
+    --         errors), packages = { {namespace, scriptType, channel?, changed, errors}, ... } }, or
+    --         nil on a fatal load/write error
+    -- @return string|nil err
+    updateFeed: (opts = {}) =>
+        -- Loads lazily in Local mode; a prior walkFiles/walkPackages (e.g. from registering a
+        -- module searcher) may already have loaded the feed, in which case this is a no-op.
+        loaded, err = @ensureLoaded @@ExpansionMode.Local
+        return nil, err unless loaded
+
+        dryRun = opts.outPath == false
+        outPath = (opts.outPath == true or opts.outPath == nil) and @feedPath or opts.outPath
+
+        if opts.schemaDir
+            schemaValid, _, schemaMsg = @validateAgainstSchema opts.schemaDir
+            if schemaValid
+                @logger\trace schemaMsg if schemaMsg
+            elseif schemaMsg
+                @logger\warn schemaMsg
+
+        filter = opts.filter or ScriptTargetFilter!\includeAll!
+        stats = changed: 0, errored: 0, packages: {}
+        for pkg, scriptType in @walkPackages filter
+            -- isolate per-package processing so one package's failure doesn't abort the whole run
+            ok, result = pcall @updatePackage, @, scriptType, pkg.namespace, opts.channel
+            result = {namespace: pkg.namespace, :scriptType, changed: false, errors: {tostring result}} unless ok
+            stats.packages[#stats.packages + 1] = result
+            stats.changed += 1 if result.changed
+            stats.errored += 1 if #result.errors > 0
+
+        if stats.changed > 0 and not dryRun
+            wrote, writeErr = @writeRawFeed outPath
+            return nil, writeErr unless wrote
+            @logger\hint msgs.update.wrote, stats.changed, outPath
+
+        return stats
 
     --- Copies every file listed in the feed to distDir using the Updater's install layout.
     -- The feed must have been loaded with ExpansionMode.Local so localFileBasePath is populated.
@@ -375,6 +703,7 @@ class UpdateFeed extends Common
     -- @param filter? ScriptTargetFilter restricts which packages are walked (default: all)
     -- @return function iterator
     walkPackages: (filter = ScriptTargetFilter!\includeAll!) =>
+        @ensureLoaded!
         walkPackages @, filter
 
     --- Returns a coroutine-based iterator over every file entry of the packages passing the filter.
@@ -388,18 +717,13 @@ class UpdateFeed extends Common
     -- @param filter? ScriptTargetFilter restricts which packages are walked (default: all)
     -- @return function iterator
     walkFiles: (filter = ScriptTargetFilter!\includeAll!) =>
-        FileOps = require "l0.DependencyControl.FileOps"
-        feedDir = @feedDir
-
+        @ensureLoaded @@ExpansionMode.Local
         coroutine.wrap ->
             for pkg, scriptType, section in walkPackages @, filter
                 for channelName, channel in pairs pkg.channels or {}
                     chanProxy = setmetatable {}, __index: (_, k) -> k == "name" and channelName or channel[k]
 
+                    -- file records carry their own lazy `.localFilePath` (attached during local-mode
+                    -- expansion), so they can be yielded directly without a wrapping proxy.
                     for file in *channel.files or {}
-                        fileProxy = setmetatable {}, {
-                            __index: (_, k) ->
-                                return (FileOps.validateFullPath file.localFileBasePath .. file.name, false, feedDir) if k == "localFilePath"
-                                file[k]
-                        }
-                        coroutine.yield fileProxy, chanProxy, pkg, section, scriptType
+                        coroutine.yield file, chanProxy, pkg, section, scriptType
