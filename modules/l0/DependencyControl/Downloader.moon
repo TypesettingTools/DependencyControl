@@ -499,8 +499,7 @@ class Downloader extends EventEmitter
         unless type(url) == "string" and type(outfile) == "string"
             return nil, msgs.addMissingArgs\format type(url), type(outfile)
 
-        dir = outfile\match "^(.*[/\\])"
-        lfs.mkdir dir if dir and lfs.attributes(dir, "mode") != "directory"
+        FileOps.mkdir outfile, true, true
 
         @_lastId = (@_lastId or 0) + 1
         download = Download url, outfile, @_lastId
