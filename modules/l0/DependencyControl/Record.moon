@@ -306,7 +306,7 @@ class Record extends Common
         testSuiteIdentifier = UnitTestSuite\getTestSuiteRequireIdentifier @scriptType, @namespace
         @haveTestSuite, testsOrErrorMsg = pcall UnitTestSuite\require, testSuiteIdentifier
         if not @haveTestSuite
-            @testSuiteLoadError = testsOrErrorMsg
+            @testSuiteLoadError = testsOrErrorMsg unless testsOrErrorMsg\match "module '[^']+' not found"
             return
         
         @tests = testsOrErrorMsg

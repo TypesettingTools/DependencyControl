@@ -194,7 +194,7 @@ if args.command == "test" then
         return namespace .. ".test"
     end
 
-    setupDepCtrl("tests")
+    local DepCtrl = setupDepCtrl("tests")
     local FileOps = require "l0.DependencyControl.FileOps"
 
     local feedPath = resolveAbsPath(args.feed)
@@ -216,8 +216,8 @@ if args.command == "test" then
 
     for _, pkg in ipairs(selected) do
         local ns = pkg.namespace
-        local okRequire, mod = pcall(require, ns)
-        local record = okRequire and type(mod) == "table" and mod.version or nil
+        local okRequire, mod = xpcall(require, debug.traceback, ns)
+        local record = okRequire and DepCtrl:getRegisteredRecord(ns) or nil
 
         if not okRequire then
             io.stderr:write(("! %s: failed to load (%s)\n"):format(ns, tostring(mod)))
@@ -226,8 +226,13 @@ if args.command == "test" then
             io.stderr:write(("~ %s: not a DependencyControl-managed package, skipping\n"):format(ns))
             skipped = skipped + 1
         elseif record.haveTestSuite == false then
-            io.stderr:write(("~ %s: no test suite found (%s), skipping\n"):format(ns, tostring(record.testSuiteLoadError)))
-            skipped = skipped + 1
+            if record.testSuiteLoadError then
+                io.stderr:write(("! %s: test suite failed to load (%s)\n"):format(ns, tostring(record.testSuiteLoadError)))
+                failed = failed + 1
+            else
+                io.stderr:write(("~ %s: no test suite found, skipping\n"):format(ns))
+                skipped = skipped + 1
+            end
         elseif not record.testSuiteInitialized then
             io.stderr:write(("! %s: test suite failed to initialize (%s)\n"):format(ns, tostring(record.testSuiteInitializeError)))
             failed = failed + 1
