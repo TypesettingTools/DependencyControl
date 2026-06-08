@@ -65,6 +65,19 @@ DependencyControl.UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
   -- generates a process-unique module-alias name (the ModuleProvider registry is global)
   uniqueName = (prefix) -> "#{prefix}_#{'%08X'\format math.random 0, 16^8-1}"
 
+  -- Runs fn with FileOps' path-length detection results overridden, restoring them
+  -- afterwards (even if fn raises) so the platform-derived values don't leak between
+  -- tests. Lets us exercise every "path too long" diagnostic branch on any OS.
+  withPathLimits = (maxLength, longPathsDisabled, registryEnabled, fn) ->
+    saved = {FileOps.pathMaxLength, FileOps.longPathsDisabled, FileOps.windowsRegistryLongPathsEnabled}
+    FileOps.pathMaxLength = maxLength
+    FileOps.longPathsDisabled = longPathsDisabled
+    FileOps.windowsRegistryLongPathsEnabled = registryEnabled
+    results = table.pack pcall fn
+    FileOps.pathMaxLength, FileOps.longPathsDisabled, FileOps.windowsRegistryLongPathsEnabled = saved[1], saved[2], saved[3]
+    error results[2] unless results[1]
+    return unpack results, 2, results.n
+
   {
     Timer: {
       _description: "Tests for the FFI-based Timer: monotonic timing and millisecond sleep."
@@ -435,8 +448,52 @@ DependencyControl.UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
         ut\assertString result  -- resolves to parent dir + escape.txt
 
       validateFullPath_tooLong: (ut) ->
-        result = FileOps.validateFullPath {basePath, "#{string.rep 'a', 300}.txt"}
+        -- exceed the full-path limit on every platform/config (well past the ~32k
+        -- long-path-enabled Windows limit) while keeping each component within bounds
+        segments = [string.rep "a", 200 for _ = 1, 200]
+        result = FileOps.validateFullPath {basePath, segments}
         ut\assertNil result
+
+      validateFullPath_segmentTooLong: (ut) ->
+        -- a single component over the per-segment limit is rejected even when the overall
+        -- path fits the length limit (raise the length cap so the segment check is reached)
+        result, err = withPathLimits 32767, false, false, ->
+          FileOps.validateFullPath {basePath, "#{string.rep 'a', 300}.txt"}
+        ut\assertNil result
+        ut\assertContains err, "path component"
+
+      -- detected, platform-specific path limits
+      pathLimits_detected: (ut) ->
+        ut\assertEquals FileOps.pathMaxSegmentLength, 255
+        if isWindows
+          -- 260 (capped) or 32767 (long paths available to this process)
+          ut\assertTrue FileOps.pathMaxLength == 260 or FileOps.pathMaxLength == 32767
+          ut\assertBoolean FileOps.longPathsDisabled
+        else
+          ut\assertEquals FileOps.pathMaxLength, 4096
+          ut\assertFalse FileOps.longPathsDisabled
+
+      -- "path too long" diagnostic selection (field-driven via withPathLimits, runs on any OS)
+      validateFullPath_tooLong_generic: (ut) ->
+        -- non-Windows / long paths available: plain limit message, no Windows-specific guidance
+        result, err = withPathLimits 260, false, false, ->
+          FileOps.validateFullPath {basePath, [string.rep "a", 200 for _ = 1, 3]}
+        ut\assertNil result
+        ut\assertContains err, "maximum length limit"
+
+      validateFullPath_tooLong_registryDisabled: (ut) ->
+        -- Windows, long paths off system-wide: error explains how to enable the registry key
+        result, err = withPathLimits 260, true, false, ->
+          FileOps.validateFullPath {basePath, [string.rep "a", 200 for _ = 1, 3]}
+        ut\assertNil result
+        ut\assertContains err, "LongPathsEnabled"
+
+      validateFullPath_tooLong_processUnaware: (ut) ->
+        -- Windows, registry on but app not long-path-aware: error explains the manifest cap
+        result, err = withPathLimits 260, true, true, ->
+          FileOps.validateFullPath {basePath, [string.rep "a", 200 for _ = 1, 3]}
+        ut\assertNil result
+        ut\assertContains err, "long-path-aware"
 
       validateFullPath_invalidChars: (ut) ->
         return unless isWindows
@@ -672,6 +729,9 @@ DependencyControl.UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
 
       _order: {
         "validateFullPath_nonString", "validateFullPath_parentDir", "validateFullPath_tooLong",
+        "validateFullPath_segmentTooLong", "pathLimits_detected",
+        "validateFullPath_tooLong_generic", "validateFullPath_tooLong_registryDisabled",
+        "validateFullPath_tooLong_processUnaware",
         "validateFullPath_invalidChars", "validateFullPath_reservedNames",
         "validateFullPath_reservedNameWithExt", "validateFullPath_trailingDotSegment",
         "validateFullPath_valid", "validateFullPath_noExt_rejected", "validateFullPath_withExt_accepted",
