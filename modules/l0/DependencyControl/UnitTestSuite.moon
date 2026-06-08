@@ -4,8 +4,7 @@ Common = require "l0.DependencyControl.Common"
 Stub   = require "l0.DependencyControl.Stub"
 DependencyControl = nil
 
--- make sure tests can be loaded from the test directory
-package.path ..= aegisub.decode_path("?user/automation/tests") .. "/?.lua;"
+package.path ..= "#{package.path\sub(-1) == ";" and "" or ";"}#{aegisub.decode_path "?user/automation/tests"}/?.lua;"
 
 --- A class for all single unit tests.
 -- Provides useful assertion and logging methods for a user-specified test function.
