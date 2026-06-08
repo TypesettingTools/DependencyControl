@@ -140,12 +140,6 @@ class ModuleLoader
             elseif not .optional
               ._outdated = true
               ._reason = @@updater\getUpdaterErrorMsg code, .name or .moduleName, true, false, extErr
-          else
-            -- perform regular update check if we can get a lock without waiting
-            -- right now we don't care about the result and don't reload the module
-            -- so the update will not be effective until the user restarts Aegisub
-            -- or reloads the script
-            @@updater\scheduleUpdate record
 
     missing, outdated, moduleError = {}, {}, {}
     for mdl in *modules

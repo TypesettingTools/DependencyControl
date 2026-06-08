@@ -40,7 +40,7 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "077264D7771AAB8384F8AD3BDCC9040F606D5591"
+              "sha1": "6F8EB2990C51BC8040DAF037CB35088A6F5840E5"
             }
           ],
           "requiredModules": [
@@ -63,7 +63,10 @@
         "0.1.3": [
           "Fixed an issue where trying to uninstall an unmanaged script resulted in an error unrelated to the intended error message."
         ],
-        "0.2.0": ["Now registers the DepCtrl-internal test suite as a macro."]
+        "0.2.0": [
+          "Centralized automatic update scheduling for all installed scripts, including modules not loaded by any automation script, eliminating redundant per-environment checks at startup.",
+          "Unit test menus for installed modules with a DependencyControl test suite are now registered automatically at startup."
+        ]
       }
     }
   },
@@ -89,12 +92,17 @@
             {
               "name": "/Common.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "6AB31EB4EDEA50A1BAB047645E18274EC8AB1FDB"
+              "sha1": "F1B976B691125057B641893BCEB525661C122AF3"
+            },
+            {
+              "name": "/Constants.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "F1B976B691125057B641893BCEB525661C122AF3"
             },
             {
               "name": "/ConfigHandler.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "AC4B013B7A352B020A8B9FF90E081BC602F0D292"
+              "sha1": "976A2F1B5EF87DBA0F98EC8544230EC55F3B9C3B"
             },
             {
               "name": "/ConfigView.moon",
@@ -109,7 +117,7 @@
             {
               "name": "/Downloader.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "E1D05400E021109BAA128BF6BBB9048ACBE63639"
+              "sha1": "A36FC8823AEC86E8B4CD138EA4F86DFBADCEF448"
             },
             {
               "name": "/DownloadManager.moon",
@@ -129,7 +137,7 @@
             {
               "name": "/FileOps.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "37ADA9D77A11519384511D048E4EC807470424A4"
+              "sha1": "24E9E02DFCB78AC9AF12BFC04CBD20502D0257B8"
             },
             {
               "name": "/GitRepository.moon",
@@ -149,17 +157,17 @@
             {
               "name": "/ModuleLoader.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "6CD3DEEEB8472768B537A4F15EEC5AE6A095CF62"
+              "sha1": "A5A0059AA74360503D9642B80F392DB9BE833F3D"
             },
             {
               "name": "/ModuleProvider.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "A938976FFF31034738D99B87F1BC08A301496BDC"
+              "sha1": "3A8A1E13DA7B43795DBCF9DD123BAB9C2749360C"
             },
             {
               "name": "/Record.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "C37CFF46C6FB12485D8FE0D59DD2E6B6AFF414BE"
+              "sha1": "D7D922B9184CEC3BA81E4307A7CBE8AB237BEFA4"
             },
             {
               "name": "/ScriptTargetFilter.moon",
@@ -174,7 +182,7 @@
             {
               "name": "/SemanticVersioning.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "81D572B7174FDEE2C391C0C3CA70C8CB36CC93A7"
+              "sha1": "E3FC94FA19337BF814EF7A5A4EE6FA0E636BCA9B"
             },
             {
               "name": "/Stub.moon",
@@ -194,12 +202,12 @@
             {
               "name": "/UnitTestSuite.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "046772463E64D609B41A7457552B1E2E2A12C964"
+              "sha1": "9D88A620C160DE830242A65FFEDD49BB1567B81A"
             },
             {
               "name": "/UpdateFeed.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "D550DBC51FC0398F5FD7A07299BB402AF33D2152"
+              "sha1": "24A49C745F1950B390D8F60CE322E76A16E6700A"
             },
             {
               "name": "/Updater.moon",
@@ -220,7 +228,7 @@
             {
               "name": "/test/Common.moon",
               "url": "@{fileBaseUrl}@{fileName}n",
-              "sha1": "2915E7F04AAA17C510576E8E28D9EC2CE06B6937",
+              "sha1": "890EE068F0FA76B126C2459F8A91850ED1582956",
               "type": "test"
             },
             {
@@ -236,6 +244,18 @@
               "type": "test"
             },
             {
+              "name": "/test/JsonSchema.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "7785C25F8060AD519EFA2BF9D9E41BF9D984A43A",
+              "type": "test"
+            },
+            {
+              "name": "/test/ModuleProvider.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "40B64946924F562A0E3BB7D6DBA203E576CE9865",
+              "type": "test"
+            },
+            {
               "name": "/test/ScriptTargetFilter.moon",
               "url": "@{fileBaseUrl}@{fileName}",
               "sha1": "278632008FE11ADB967B4761A2BFD1AB344C12B8",
@@ -244,7 +264,7 @@
             {
               "name": "/test/UpdateFeed.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "9968EC4BED9C6D698DE5E99ADA363DC2E1C7DDDE",
+              "sha1": "9C0FF19921BFECDC3B4FAF561FFF3617CA979D59",
               "type": "test"
             },
             {
@@ -337,7 +357,10 @@
           "DepCtrl now refuses to load if the installed Moonscript is below the minimum required version with a helpful error message directing users to update their Aegisub build.",
           "ModuleLoader: Fixed a regression where DepCtrl init hooks were called again on already-initialized modules, causing errors in modules that mutate their exported state on first call (e.g. BadMutex).",
           "Common: Fixed a long-standing bug that guaranteed the `capitalize()` function to fail, that  was never caught because it was unused until the refactoring.",
-          "Updater: Fixed a potential issue where a multi-assignment statement could corrupt record fields after an unsuccessful update."
+          "Updater: Fixed a potential issue where a multi-assignment statement could corrupt record fields after an unsuccessful update.",
+          "Automatic update scheduling is now centralized in the DependencyControl Toolbox and runs in a single Aegisub environment at startup, covering all installed scripts including modules not loaded by any automation script. Previously, each automation script's environment scheduled redundant checks for every module it loaded.",
+          "Record: Added `getRegisteredRecords()` to expose the full live record registry to tooling.",
+          "Modules with a DependencyControl unit test suite now have their test menus registered automatically by the Toolbox. Automation scripts register their own test menus when they call `registerMacros` through DependencyControl."
         ]
       }
     },
@@ -357,7 +380,7 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "9805D5DF27A7C12DCFF4D420B320085D1E8315EB"
+              "sha1": "E206415E5890C65F353EF2D6D2478401914BD9B7"
             },
             {
               "name": "/vendor/dkjson.lua",

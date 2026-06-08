@@ -25,6 +25,11 @@ msgs = {
         lockedFiles: "%s Some script files are still in use and will be deleted during the next restart/reload:\n%s"
         error: "Error: %s"
     }
+    scheduleUpdatesAndRegisterTests: {
+        moduleLoadFailed: "Couldn't load module '%s' to schedule updates/register its tests: %s"
+        registerMacrosError: "Error registering test macros for module '%s': %s"
+        scheduleError: "Un schedule update for record '%s': %s"
+    }
     macroConfig: {
         hints: {
             customMenu: "Lets you sort your automation macros into submenus. Use / to denote submenu levels."
@@ -227,12 +232,41 @@ macroConfig = ->
 
     config\write!
 
--- required to register DepCtrl test suite
-DepCtrl.__class.version\register DepCtrl
-
 depRec\registerMacros{
     {"Install Script", "Installs an automation script or module on your system.", install},
     {"Update Script", "Manually check and perform updates to any installed script.", update},
     {"Uninstall Script", "Removes an automation script or module from your system.", uninstall},
     {"Macro Configuration", "Lets you change per-automation script settings.", macroConfig},
 }, "DependencyControl"
+
+-- Force-loads all installed modules, then sweeps the live record registry to schedule
+-- periodic update checks for every record and register unit test menus for modules.
+-- Automation scripts schedule their own update checks on macro invocation and register
+-- their own test menus within their own Aegisub environment.
+scheduleUpdatesAndRegisterTests = ->
+    config = getConfig!
+
+    for namespace in pairs (config.c.modules or {})
+        success, err = pcall require, namespace
+        unless success
+            logger\trace msgs.scheduleUpdatesAndRegisterTests.moduleLoadFailed, namespace, tostring err
+
+    for _, record in pairs DepCtrl\getAllRegisteredRecords!
+        success, errMsgOrErrCode, errDetail = pcall DepCtrl.updater\scheduleUpdate, record
+        unless success
+            logger\trace msgs.scheduleUpdatesAndRegisterTests.scheduleError, record.name or record.namespace, errMsgOrErrCode
+            continue
+        if errMsgOrErrCode < 0
+            logger\trace msgs.scheduleUpdatesAndRegisterTests.scheduleError, record.name or record.namespace, 
+                DepCtrl.updater\getUpdaterErrorMsg errMsgOrErrCode, record.name or record.namespace, record.scriptType, false, errDetail
+            continue
+
+        if record.tests and record.scriptType == DepCtrl.ScriptType.Module
+            success, errMsg = pcall record.tests\registerMacros
+            unless success
+                logger\trace msgs.scheduleUpdatesAndRegisterTests.registerMacrosError, record.name or record.namespace, errMsg
+                continue
+
+    DepCtrl.updater\releaseLock!
+
+scheduleUpdatesAndRegisterTests!

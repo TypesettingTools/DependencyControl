@@ -71,9 +71,14 @@ class Record extends Common
     -- or the registered one is still a virtual (not-yet-installed) placeholder.
     -- @param namespace string
     -- @return Record|nil
-    @getRecord = (namespace) =>
+    @getRegisteredRecord = (namespace) =>
         record = recordsByNamespace[namespace]
         record unless record and record.virtual
+
+    --- Returns all currently registered live records keyed by namespace.
+    -- Includes virtual (not-yet-installed) placeholders.
+    -- @return {[string]: Record}
+    @getAllRegisteredRecords = => {ns, record for ns, record in pairs recordsByNamespace}
 
     init = =>
         FileOps.mkdir @depConf.file, true
@@ -319,6 +324,12 @@ class Record extends Common
         else
             @testSuiteInitializeError = errMsg
             @@logger\warn "Error initializing test suite for #{@@terms.scriptType.singular[@scriptType]} '#{@name}': #{errMsg}"
+
+        -- Automation scripts run in their own isolated environment exactly once, so they register
+        -- their own test menu right here. Modules, by contrast, load in every script's environment;
+        -- registering from here would create duplicate menu entries, so their test menus are
+        -- registered centrally by the Toolbox (which loads each module exactly once).
+        @tests\registerMacros! if @testSuiteInitialized and @scriptType == @@ScriptType.Automation
 
     --- Finalizes module registration and swaps dummy module refs for real refs.
     -- @param selfRef table

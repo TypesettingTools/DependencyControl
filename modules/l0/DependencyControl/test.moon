@@ -2004,32 +2004,49 @@ DependencyControl.UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
         ut\assertContains registered[1][1], "MyMacro"
         registerTestsStub\assertCalledOnceWith rec
 
-      -- namespace registry: getRecord is the public lookup; registration happens internally (via
+      -- namespace registry: getRegisteredRecord is the public lookup; registration happens internally (via
       -- the constructor), so these seed the process-global registry directly, with unique namespaces.
 
       registry_getReturnsRegistered: (ut) ->
         ns = uniqueName "regns"
         rec = {namespace: ns}
         _G[DEPCTRL_RECORDS_GLOBAL_KEY][ns] = rec
-        ut\assertIs Record\getRecord(ns), rec
+        ut\assertIs Record\getRegisteredRecord(ns), rec
 
       registry_getMissing: (ut) ->
-        ut\assertNil Record\getRecord uniqueName "absent"
+        ut\assertNil Record\getRegisteredRecord uniqueName "absent"
 
       registry_getSkipsVirtual: (ut) ->
         ns = uniqueName "virtns"
         _G[DEPCTRL_RECORDS_GLOBAL_KEY][ns] = {namespace: ns, virtual: true}
-        ut\assertNil Record\getRecord ns
+        ut\assertNil Record\getRegisteredRecord ns
 
       -- a virtual placeholder flipped to non-virtual in place (as the Updater does on install)
-      -- becomes visible through getRecord
+      -- becomes visible through getRegisteredRecord
       registry_returnsAfterUnvirtualized: (ut) ->
         ns = uniqueName "virtns"
         rec = {namespace: ns, virtual: true}
         _G[DEPCTRL_RECORDS_GLOBAL_KEY][ns] = rec
-        ut\assertNil Record\getRecord ns
+        ut\assertNil Record\getRegisteredRecord ns
         rec.virtual = false
-        ut\assertIs Record\getRecord(ns), rec
+        ut\assertIs Record\getRegisteredRecord(ns), rec
+
+      registry_getRegisteredReturnsCopy: (ut) ->
+        ns = uniqueName "allns"
+        rec = {namespace: ns}
+        _G[DEPCTRL_RECORDS_GLOBAL_KEY][ns] = rec
+        records = Record\getAllRegisteredRecords!
+        ut\assertIs records[ns], rec
+        -- a shallow copy: mutating the returned table must not affect the live registry
+        records[ns] = nil
+        ut\assertIs _G[DEPCTRL_RECORDS_GLOBAL_KEY][ns], rec
+
+      -- unlike getRegisteredRecord, the full registry sweep also surfaces virtual placeholders
+      registry_getRegisteredIncludesVirtual: (ut) ->
+        ns = uniqueName "allvirtns"
+        rec = {namespace: ns, virtual: true}
+        _G[DEPCTRL_RECORDS_GLOBAL_KEY][ns] = rec
+        ut\assertIs Record\getAllRegisteredRecords![ns], rec
 
       _order: {
         "checkVersion_equal", "checkVersion_greater", "checkVersion_older", "checkVersion_recordArg",
@@ -2040,7 +2057,8 @@ DependencyControl.UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
         "getSubmodules_virtual", "getSubmodules_unmanaged", "getSubmodules_nonModule",
         "getConfigFileName_basic", "registerMacro_basic",
         "registry_getReturnsRegistered", "registry_getMissing",
-        "registry_getSkipsVirtual", "registry_returnsAfterUnvirtualized"
+        "registry_getSkipsVirtual", "registry_returnsAfterUnvirtualized",
+        "registry_getRegisteredReturnsCopy", "registry_getRegisteredIncludesVirtual"
       }
     }
 

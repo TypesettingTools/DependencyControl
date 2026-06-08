@@ -489,7 +489,7 @@ class UpdateFeed extends Common
         success, mod = xpcall require, debug.traceback, packageNamespace
         ModuleProvider.runInitializer mod, DependencyControl if success
 
-        record = DependencyControl\getRecord packageNamespace
+        record = DependencyControl\getRegisteredRecord packageNamespace
         unless record
             return nil, success and msgs.refreshVersionRecord.missingDepctrlRecord\format(scriptType, packageNamespace) or
                 msgs.refreshVersionRecord.loadFailed\format scriptType, packageNamespace, mod
