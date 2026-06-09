@@ -535,7 +535,7 @@ class Updater extends UpdaterBase
 
         -- the update interval has not yet been passed since the last update check
         if record.config.c.lastUpdateCheck and (record.config.c.lastUpdateCheck + @config.c.updateInterval > os.time!)
-            return false
+            return 0
 
         record.config.c.lastUpdateCheck = os.time!
         record.config\write!

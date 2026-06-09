@@ -17,7 +17,7 @@
     getAutomationDir_module: (ut) ->
       result = Common\getAutomationDir Common.ScriptType.Module
       ut\assertString result
-      ut\assertContains result, "modules"
+      ut\assertContains result, "include"
 
     getAutomationDir_customRoot: (ut) ->
       (ut\stub aegisub, "decode_path")\calls (path) -> path

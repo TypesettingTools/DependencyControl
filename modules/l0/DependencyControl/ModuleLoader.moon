@@ -5,6 +5,7 @@
 constants = require "l0.DependencyControl.Constants"
 SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
 ModuleProvider = require "l0.DependencyControl.ModuleProvider"
+Common = require "l0.DependencyControl.Common"
 
 DEPCTRL_DUMMY_MODULE_MARKER = "#{constants.DEPCTRL_PRIVATE_GLOBAL_VAR_PREFIX}Dummy"
 
@@ -40,7 +41,7 @@ class ModuleLoader
       return msgs.formatVersionErrorTemplate.missing\format name, reqVersion, url, reason
 
   @createDummyRef = =>
-    return nil if @scriptType != @@ScriptType.Module
+    return nil if @scriptType != Common.ScriptType.Module
     -- global module registry allows for circular dependencies:
     -- set a dummy reference to this module since this module is not ready
     -- when the other one tries to load it (and vice versa)
@@ -52,7 +53,7 @@ class ModuleLoader
     return false
 
   @removeDummyRef = =>
-    return nil if @scriptType != @@ScriptType.Module
+    return nil if @scriptType != Common.ScriptType.Module
     if LOADED_MODULES[@namespace] and LOADED_MODULES[@namespace][DEPCTRL_DUMMY_MODULE_MARKER]
       LOADED_MODULES[@namespace] = nil
       return true
@@ -75,7 +76,7 @@ class ModuleLoader
         ModuleProvider.runInitializer ._ref, @@
         return ._ref
 
-      loaded, res = xpcall require, debug.traceback, moduleName
+      loaded, res = xpcall require, ModuleProvider.fullTraceback, moduleName
       unless loaded
         LOADED_MODULES[moduleName] = nil
         res or= "unknown error"
@@ -129,8 +130,8 @@ class ModuleLoader
             ._error = msgs.loadModules.missingRecord\format .moduleName
             continue
 
-          if type(record) != "table" or record.__class != @@
-            record = @@ moduleName: .moduleName, version: record, recordType: @@RecordType.Unmanaged
+          if not ModuleProvider.isDepCtrlVersionRecord record
+            record = @@ moduleName: .moduleName, version: record, recordType: Common.RecordType.Unmanaged
 
           -- force an update for outdated modules
           if not record\checkVersion .version
@@ -158,7 +159,7 @@ class ModuleLoader
     if #outdated > 0
       errorMsg[#errorMsg+1] = msgs.loadModules.outdated\format @name, table.concat outdated, "\n"
     if #missing > 0
-      downloadHint = msgs.checkOptionalModules.downloadHint\format @@automationDir.modules
+      downloadHint = msgs.checkOptionalModules.downloadHint\format Common\getAutomationDir Common.ScriptType.Module
       errorMsg[#errorMsg+1] = msgs.loadModules.missing\format @name, table.concat(missing, "\n"), downloadHint
 
     return #errorMsg == 0, table.concat(errorMsg, "\n\n")
@@ -173,7 +174,7 @@ class ModuleLoader
               mdl._reason for mdl in *@requiredModules when mdl.optional and mdl._missing and modules[mdl.name]]
 
     if #missing>0
-      downloadHint = msgs.checkOptionalModules.downloadHint\format @@automationDir.modules
+      downloadHint = msgs.checkOptionalModules.downloadHint\format Common\getAutomationDir Common.ScriptType.Module
       errorMsg = msgs.checkOptionalModules.missing\format @name, table.concat(missing, "\n"), downloadHint
       return false, errorMsg
     return true

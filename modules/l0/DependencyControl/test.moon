@@ -1,7 +1,7 @@
 constants = require "l0.DependencyControl.Constants"
-DependencyControl = require "l0.DependencyControl"
+UnitTestSuite = require "l0.DependencyControl.UnitTestSuite"
 
-DependencyControl.UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
+UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
   -- The suite controls object is appended by UnitTestSuite\import as the final argument.
   -- Its index varies by loader (CLI vs Aegisub pass different arg counts), so grab the last one.
   nArgs    = select "#", ...
@@ -37,7 +37,7 @@ DependencyControl.UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
 
   isWindows  = ffi.os == "Windows"
   pathSep = isWindows and "\\" or "/"
-  basePath = aegisub.decode_path "?temp/l0.#{DependencyControl.__name}.#{DependencyControl.UnitTestSuite.__name}_#{'%04X'\format math.random 0, 16^4-1}"
+  basePath = aegisub.decode_path "?temp/l0.#{DepCtrl.__name}.#{UnitTestSuite.__name}_#{'%04X'\format math.random 0, 16^4-1}"
 
   -- Fake transfer driver for Downloader.multiplex: each download completes after
   -- `steps` step() calls (1 byte each), recording the order step() is called so

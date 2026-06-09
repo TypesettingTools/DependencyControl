@@ -32,15 +32,16 @@ walkPackages = (feed, filter) ->
                 coroutine.yield pkgProxy, scriptType, section
 
 -- Gives an expanded file record a lazily-resolved `localFilePath` property
--- by appending the file `name` to `localFileBasePath` and resolving that against the feed directory. 
+-- by appending the file `name` to `localFileBasePath` and resolving that against the feed directory.
 -- @param file table the file record to attach the accessor to
 -- @param feedDirPath string the feed directory to resolve against
-attachLocalFilePath = (file, feedDirPath) ->
+-- @param localFileBasePath string the resolved local base path for this file (captured from the rolling template state)
+attachLocalFilePath = (file, feedDirPath, localFileBasePath) ->
     setmetatable file, __index: (self, key) ->
         return unless key == "localFilePath"
-        base, name = (rawget self, "localFileBasePath"), rawget self, "name"
-        return unless base and name
-        path = FileOps.validateFullPath base .. name, false, feedDirPath
+        name = rawget self, "name"
+        return unless localFileBasePath and name
+        path = FileOps.validateFullPath localFileBasePath .. name, false, feedDirPath
         return path
 
 -- Deep-copies a decoded feed table while dropping any field whose value is the dkjson.null
@@ -67,14 +68,24 @@ class UpdateFeed extends Common
             fileName:      {depth: 7, order: 2, key: "name"                                                  }
             -- rolling templates
             localFileBasePath: {
-                key: "localFileBasePath", 
-                rolling: true, 
+                key: "localFileBasePath",
+                rolling: true,
                 expansionModes: {local: true},
-                default: "./"
+                default: "./",
+
+                -- keyBy/keyAt/keyDefault: the JSON value may be a keyed object (e.g.
+                -- {script:…, test:…}) instead of a plain string. If the object selected
+                -- by keyAt doesn't have an entry for keyBy, entry[keyDefault] is used as a fallback.
+                keyBy: "type",
+                keyAt: "files",
+                keyDefault: "script"
             }
             fileBaseUrl: {
-                key: "fileBaseUrl", 
-                rolling: true
+                key: "fileBaseUrl",
+                rolling: true,
+                keyBy: "type",
+                keyAt: "files",
+                keyDefault: "script"
             }
         }
         sourceAt: {}
@@ -346,10 +357,19 @@ class UpdateFeed extends Common
                 default = templates[name].default
                 rvars[depth][name] = obj[templates[name].key] or rvars[depth-1][name] or default
                 rvars[depth][name] = expandTemplates rvars[depth][name], depth, -1
-                obj[templates[name].key] = rvars[depth][name]
+
+                -- Collapse a keyed rolling object to its plain string once it reaches an
+                -- object under the template's `keyAt` key (see template declaration).
+                with templates[name]
+                    if .keyBy and upKey == .keyAt and type(rvars[depth][name]) == "table"
+                        keyValue = obj[.keyBy] or .keyDefault
+                        resolved = rvars[depth][name][keyValue] if keyValue
+                        rvars[depth][name] = resolved if resolved
+                -- Only write back when the key is already present
+                obj[templates[name].key] = rvars[depth][name] if obj[templates[name].key] != nil
 
             -- file records (array entries under a `files` key) get a lazy localFilePath accessor
-            attachLocalFilePath obj, @feedDir if isLocalMode and upKey == "files"
+            attachLocalFilePath obj, @feedDir, rvars[depth]["localFileBasePath"] if isLocalMode and upKey == "files"
 
             -- expand variables in non-template strings and recurse tables
             for k,v in pairs obj
@@ -486,7 +506,7 @@ class UpdateFeed extends Common
         -- a lazy __depCtrlInit (e.g. dkjson) are initialized explicitly below. The record is then
         -- looked up from the registry — the only place a macro's record (and its deps) is reachable.
         DependencyControl = require "l0.DependencyControl"
-        success, mod = xpcall require, debug.traceback, packageNamespace
+        success, mod = xpcall require, ModuleProvider.fullTraceback, packageNamespace
         ModuleProvider.runInitializer mod, DependencyControl if success
 
         record = DependencyControl\getRegisteredRecord packageNamespace

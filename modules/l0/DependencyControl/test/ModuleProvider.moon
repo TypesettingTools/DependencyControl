@@ -9,6 +9,14 @@
   DEPCTRL_MODULE_INIT_HOOK_NAME = "#{constants.DEPCTRL_PRIVATE_GLOBAL_VAR_PREFIX}Init"
   uniqueName = (prefix) -> "#{prefix}_#{'%08X'\format math.random 0, 16^8-1}"
 
+  -- Minimal fake of the DependencyControl class, sufficient for tests that pass it as the
+  -- `DependencyControl` argument to runInitializer (or need to verify it was forwarded).
+  makeDepCtrlClassMock = -> {__name: constants.DEPCTRL_NAME}
+
+  -- Minimal table that satisfies ModuleProvider.isDepCtrlVersionRecord without
+  -- creating a real DependencyControl record (which has config/registry side effects).
+  makeDepCtrlRecordMock = -> {__class: makeDepCtrlClassMock!, checkVersion: ->}
+
   {
     _description: "Tests for ModuleProvider: alias registration, searcher resolution, and the shared __depCtrlInit runner."
 
@@ -41,25 +49,25 @@
 
     -- runInitializer: shared __depCtrlInit guard + call (also used by ModuleLoader & UpdateFeed)
 
-    -- a plain module with no initializer is returned untouched
+    -- a module with no init hook is a no-op: returns false without touching the module
     runInitializer_noInitHook: (ut) ->
       ref = {version: "1.0.0"}
-      ut\assertIs ModuleProvider.runInitializer(ref, {__name: constants.DEPCTRL_NAME}), ref
+      ut\assertFalse ModuleProvider.runInitializer(ref, makeDepCtrlClassMock!)
 
     -- an uninitialized module (raw .version) gets its initializer run with the DepCtrl class
     runInitializer_runsWhenUninitialized: (ut) ->
-      fakeDC, received = {__name: constants.DEPCTRL_NAME}, {}
-      ref = {version: "raw-version-string", [DEPCTRL_MODULE_INIT_HOOK_NAME]: (dc) -> received[#received + 1] = dc}
-      ModuleProvider.runInitializer ref, fakeDC
-      ut\assertEquals #received, 1
-      ut\assertIs received[1], fakeDC
+      dcMock = makeDepCtrlClassMock!
+      ref = {version: "raw-version-string"}
+      initStub = ut\stub ref, DEPCTRL_MODULE_INIT_HOOK_NAME
+      ModuleProvider.runInitializer ref, dcMock
+      initStub\assertCalledOnceWith dcMock
 
     -- a module whose .version is already a DepCtrl record must NOT be re-initialized
     runInitializer_skipsWhenInitialized: (ut) ->
-      fakeDC, calls = {__name: constants.DEPCTRL_NAME}, 0
-      ref = {version: {__class: {__name: constants.DEPCTRL_NAME}}, [DEPCTRL_MODULE_INIT_HOOK_NAME]: -> calls += 1}
-      ModuleProvider.runInitializer ref, fakeDC
-      ut\assertEquals calls, 0
+      ref = {version: makeDepCtrlRecordMock!}
+      initStub = ut\stub ref, DEPCTRL_MODULE_INIT_HOOK_NAME
+      ModuleProvider.runInitializer ref, makeDepCtrlClassMock!
+      initStub\assertNotCalled!
 
     _order: {
       "register_andGetProvider", "register_firstWins",

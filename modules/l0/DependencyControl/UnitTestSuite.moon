@@ -736,7 +736,7 @@ class UnitTestSuite
         DependencyControl or= require "l0.DependencyControl"
 
         switch type(DEPCTRL_UNIT_TEST_SUITE_REQUIRE_IDENTIFIER)
-            when "nil" then self.getDefaultTestSuiteRequireIdentifier(scriptType, namespace)
+            when "nil" then @getDefaultTestSuiteRequireIdentifier scriptType, namespace
             when "string" then DEPCTRL_UNIT_TEST_SUITE_REQUIRE_IDENTIFIER
             when "function" then DEPCTRL_UNIT_TEST_SUITE_REQUIRE_IDENTIFIER(scriptType, namespace, DependencyControl)
             else error "DEPCTRL_UNIT_TEST_SUITE_REQUIRE_IDENTIFIER must be either a string or a function, got a #{type DEPCTRL_UNIT_TEST_SUITE_REQUIRE_IDENTIFIER}"

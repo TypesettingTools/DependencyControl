@@ -40,7 +40,7 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "6F8EB2990C51BC8040DAF037CB35088A6F5840E5"
+              "sha1": "42AFEF27FF1B53FD88A23E4E96085F342A8E4BA6"
             }
           ],
           "requiredModules": [
@@ -76,8 +76,14 @@
       "description": "Dependency manager and automatic script updater for Aegisub macros and modules.",
       "author": "line0",
       "url": "@{baseUrl}#@{namespace}",
-      "fileBaseUrl": "@{fileBaseUrl}v@{version}-@{channel}/modules/@{namespacePath}",
-      "localFileBasePath": "@{localFileBasePath}modules/@{namespacePath}",
+      "fileBaseUrl": {
+        "script": "@{fileBaseUrl}v@{version}-@{channel}/modules/@{namespacePath}",
+        "test": "@{fileBaseUrl}v@{version}-@{channel}/modules/@{namespacePath}/test"
+      },
+      "localFileBasePath": {
+        "script": "@{localFileBasePath}modules/@{namespacePath}",
+        "test": "@{localFileBasePath}modules/@{namespacePath}/test"
+      },
       "channels": {
         "alpha": {
           "version": "0.7.0",
@@ -87,17 +93,17 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "688A395AE62742B496633959BA8FECCDC8E49544"
+              "sha1": "9D86C61973B0F19383AEC85A13FCD7C00FBCAA75"
             },
             {
               "name": "/Common.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "F1B976B691125057B641893BCEB525661C122AF3"
+              "sha1": "9B0BE0B10BDF5EBC8586CD6D3C993427F301377D"
             },
             {
               "name": "/Constants.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "F1B976B691125057B641893BCEB525661C122AF3"
+              "sha1": "80C42CB6088B92218AFCFD41E63DEE742E5D0882"
             },
             {
               "name": "/ConfigHandler.moon",
@@ -137,12 +143,17 @@
             {
               "name": "/FileOps.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "24E9E02DFCB78AC9AF12BFC04CBD20502D0257B8"
+              "sha1": "77BA31055310009D2E8D066B8E7B65F2EF24FCFF"
             },
             {
               "name": "/GitRepository.moon",
               "url": "@{fileBaseUrl}@{fileName}",
               "sha1": "A4C19B95FC9B218CB5C630883141502A8C6C4D20"
+            },
+            {
+              "name": "/JsonSchema.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "5279C47C09987D2DE5A1DFF47C46ABC72F9CBF58"
             },
             {
               "name": "/Lock.moon",
@@ -157,17 +168,17 @@
             {
               "name": "/ModuleLoader.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "A5A0059AA74360503D9642B80F392DB9BE833F3D"
+              "sha1": "47BE77247A9E2732BE9D50F8251D16E92B4D5AB8"
             },
             {
               "name": "/ModuleProvider.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "3A8A1E13DA7B43795DBCF9DD123BAB9C2749360C"
+              "sha1": "951409F023D8D7159D9AD4B218B4A93CEB9067AC"
             },
             {
               "name": "/Record.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "D7D922B9184CEC3BA81E4307A7CBE8AB237BEFA4"
+              "sha1": "671C3F05B0A533FBF08C68559DE84E2837790344"
             },
             {
               "name": "/ScriptTargetFilter.moon",
@@ -202,17 +213,17 @@
             {
               "name": "/UnitTestSuite.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "9D88A620C160DE830242A65FFEDD49BB1567B81A"
+              "sha1": "75541FD94D8B0B34731ED74D4CBA787BC869E390"
             },
             {
               "name": "/UpdateFeed.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "24A49C745F1950B390D8F60CE322E76A16E6700A"
+              "sha1": "7588536CDE3DA5DE9AE6BD667A4D81271A35D69C"
             },
             {
               "name": "/Updater.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "E8A98A4D2C27C75DE8E8D06903722F674DE81715"
+              "sha1": "2A76F7DA351389F03B219CDC16D54E797A424965"
             },
             {
               "name": "/ZipArchiver.moon",
@@ -221,60 +232,66 @@
             },
             {
               "name": ".moon",
-              "url": "@{fileBaseUrl}/test.moon",
-              "sha1": "688A395AE62742B496633959BA8FECCDC8E49544",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "3EB678551149E3E71EBCAA4504D19AE2F5DDB088",
               "type": "test"
             },
             {
-              "name": "/test/Common.moon",
-              "url": "@{fileBaseUrl}@{fileName}n",
+              "name": "/Common.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
               "sha1": "890EE068F0FA76B126C2459F8A91850ED1582956",
               "type": "test"
             },
             {
-              "name": "/test/FileOps.moon",
+              "name": "/FileOps.moon",
               "url": "@{fileBaseUrl}@{fileName}",
               "sha1": "50021BFAB752397D1658158914187CFADEBFAC80",
               "type": "test"
             },
             {
-              "name": "/test/GitRepository.moon",
+              "name": "/GitRepository.moon",
               "url": "@{fileBaseUrl}@{fileName}",
               "sha1": "F7E43D74EF6574408DFD1B851EF40F18BDB64FFA",
               "type": "test"
             },
             {
-              "name": "/test/JsonSchema.moon",
+              "name": "/JsonSchema.moon",
               "url": "@{fileBaseUrl}@{fileName}",
               "sha1": "7785C25F8060AD519EFA2BF9D9E41BF9D984A43A",
               "type": "test"
             },
             {
-              "name": "/test/ModuleProvider.moon",
+              "name": "/ModuleProvider.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "40B64946924F562A0E3BB7D6DBA203E576CE9865",
+              "sha1": "19B4A2217D237F9803DE6C6E1B6A486BE45EED73",
               "type": "test"
             },
             {
-              "name": "/test/ScriptTargetFilter.moon",
+              "name": "/Record.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "C93745C8F984FD18965B711A2A63BD6891CC8D85",
+              "type": "test"
+            },
+            {
+              "name": "/ScriptTargetFilter.moon",
               "url": "@{fileBaseUrl}@{fileName}",
               "sha1": "278632008FE11ADB967B4761A2BFD1AB344C12B8",
               "type": "test"
             },
             {
-              "name": "/test/UpdateFeed.moon",
+              "name": "/UpdateFeed.moon",
               "url": "@{fileBaseUrl}@{fileName}",
               "sha1": "9C0FF19921BFECDC3B4FAF561FFF3617CA979D59",
               "type": "test"
             },
             {
-              "name": "/test/helpers/mock-http-server.moon",
+              "name": "/helpers/mock-http-server.moon",
               "url": "@{fileBaseUrl}@{fileName}",
               "sha1": "D6D87B5EA2F188EA5FF6D9479412FF5F9CE99EAE",
               "type": "test"
             },
             {
-              "name": "/test/helpers/MockHttpServerController.moon",
+              "name": "/helpers/MockHttpServerController.moon",
               "url": "@{fileBaseUrl}@{fileName}",
               "sha1": "CE361BB092ECBD1671B579CDF6A3FA181F4EC737",
               "type": "test"
@@ -359,7 +376,7 @@
           "Common: Fixed a long-standing bug that guaranteed the `capitalize()` function to fail, that  was never caught because it was unused until the refactoring.",
           "Updater: Fixed a potential issue where a multi-assignment statement could corrupt record fields after an unsuccessful update.",
           "Automatic update scheduling is now centralized in the DependencyControl Toolbox and runs in a single Aegisub environment at startup, covering all installed scripts including modules not loaded by any automation script. Previously, each automation script's environment scheduled redundant checks for every module it loaded.",
-          "Record: Added `getRegisteredRecords()` to expose the full live record registry to tooling.",
+          "Record: Added `getAllRegisteredRecords()` to expose the full live record registry to tooling.",
           "Modules with a DependencyControl unit test suite now have their test menus registered automatically by the Toolbox. Automation scripts register their own test menus when they call `registerMacros` through DependencyControl."
         ]
       }

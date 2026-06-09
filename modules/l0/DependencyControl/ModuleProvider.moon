@@ -20,17 +20,67 @@ unless state
     state = { providers: {}, installed: false }
     _G[GLOBAL_KEY] = state
 
+msgs = {
+    runInitializer: {
+        initializerError: "Module #{moduleName} initializer error: %s"
+    }
+}
+
+-- debug.traceback truncates chunk names to LUA_IDSIZE (60 chars); using debug.getinfo
+-- directly lets us read the full untruncated source path from info.source.
+fullTraceback = (msg) ->
+    parts = {}
+    parts[#parts+1] = msg if msg
+    parts[#parts+1] = "stack traceback:"
+    pathPrefixes = {}
+    if type(aegisub) == "table"
+        for alias in *{"?user", "?data", "?temp"}
+            ok, resolved = pcall aegisub.decode_path, alias
+            pathPrefixes[#pathPrefixes+1] = {resolved, alias} if ok and resolved
+    i = 2
+    while true
+        info = debug.getinfo i, "Sln"
+        break unless info
+        src = info.source
+        if src\sub(1, 1) == "@"
+            src = src\sub 2
+        elseif src\sub(1, 1) == "="
+            -- "=[C]" → "[C]", "=name" → "name"
+            src = src\sub 2
+        for {prefix, alias} in *pathPrefixes
+            if src\sub(1, #prefix) == prefix
+                src = alias .. src\sub #prefix + 1
+                break
+        if src == "[C]"
+            -- anonymous C frames carry no useful location; named ones don't need a line number
+            parts[#parts+1] = "\t[C] in #{info.name}()" if info.name
+        else
+            entry = "#{src}:#{info.currentline}"
+            entry ..= " in #{info.name}()" if info.name
+            parts[#parts+1] = "\t#{entry}"
+        i += 1
+    table.concat parts, "\n"
+
+-- Returns true when value is a live DependencyControl Record instance. Uses class name and the
+-- presence of checkVersion rather than class identity so the test passes across self-update
+-- reloads and other classes accidentally named "DependencyControl".
+isDepCtrlVersionRecord = (value) ->
+    type(value) == "table" and
+        value.__class and value.__class.__name == constants.DEPCTRL_NAME and
+        type(value.checkVersion) == "function"
+
 -- Runs a freshly-loaded module's DependencyControl initializer (`__depCtrlInit`) if it has one and
 -- hasn't been initialized yet, so the module exposes a proper DependencyControl record. The guard
 -- avoids re-initializing modules that mutate their exported state on first init (e.g. BadMutex).
 runInitializer = (ref, DependencyControl) ->
-    return ref unless type(ref) == "table" and ref[DEPCTRL_MODULE_INIT_HOOK_NAME]
-    -- Note to future self: don't change this to a class check! When DepCtrl self-updates
-    -- any managed module initialized before will still use the same instance
-    alreadyInitialized = type(ref.version) == "table" and ref.version.__class and
-        ref.version.__class.__name == DependencyControl.__name
-    ref[DEPCTRL_MODULE_INIT_HOOK_NAME] DependencyControl unless alreadyInitialized
-    return ref
+    return ref unless type(ref) == "table"
+    initializer = ref[DEPCTRL_MODULE_INIT_HOOK_NAME]
+    return false unless initializer
+    return false if isDepCtrlVersionRecord ref.version
+
+    success, errMsg = xpcall initializer, fullTraceback, DependencyControl
+    return true if success
+    return nil, msgs.runInitializer.initializerError\format ref.moduleName, errMsg
 
 -- Resolves DependencyControl from package.loaded rather than require()ing it, because an alias can be
 -- pulled in during DepCtrl's own bootstrap where a require-back would cycle, and the type check also
@@ -39,7 +89,10 @@ runInitializer = (ref, DependencyControl) ->
 initProvidedModule = (mod) ->
     DependencyControl = package.loaded[constants.DEPCTRL_NAMESPACE]
     return mod unless type(DependencyControl) == "table"
-    runInitializer mod, DependencyControl
+
+    initialized, errMsg = runInitializer mod, DependencyControl
+    error errMsg if initialized == nil
+    return mod
 
 -- Returns a loader for a registered alias, or nil for an unregistered name.
 -- Kept to a single hash lookup since it runs for every otherwise-unresolved require.
@@ -49,6 +102,10 @@ search = (name) ->
     -> initProvidedModule require providerName
 
 class ModuleProvider
+    ---@param value any
+    ---@return boolean true when value is a live DependencyControl Record instance from any class object
+    @isDepCtrlVersionRecord = isDepCtrlVersionRecord
+
     --- Runs a freshly-loaded module reference's DependencyControl initializer (`__depCtrlInit`), if
     -- it has one and hasn't been initialized yet, so the module exposes a proper DependencyControl
     -- record. The guard avoids re-initializing modules that mutate state on first init (e.g. BadMutex).
@@ -75,6 +132,8 @@ class ModuleProvider
             name = type(alias) == "table" and alias.name or alias
             @register name, record.moduleName if name
 
+    @fullTraceback = fullTraceback
+
     --- Gets the provider namespace registered for an alias module name.
     -- @param alias string
     -- @return string|nil the provider namespace registered for the alias
@@ -85,6 +144,6 @@ class ModuleProvider
         return if state.installed
         loaders = package.loaders or package.searchers
         loaders[#loaders + 1] = search
-        state.installed = true
+        state.installed = true    
 
 return ModuleProvider

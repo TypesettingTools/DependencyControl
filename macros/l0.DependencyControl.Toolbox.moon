@@ -28,7 +28,7 @@ msgs = {
     scheduleUpdatesAndRegisterTests: {
         moduleLoadFailed: "Couldn't load module '%s' to schedule updates/register its tests: %s"
         registerMacrosError: "Error registering test macros for module '%s': %s"
-        scheduleError: "Un schedule update for record '%s': %s"
+        scheduleError: "Unexpected error scheduling update for record '%s': %s"
     }
     macroConfig: {
         hints: {
@@ -249,23 +249,20 @@ scheduleUpdatesAndRegisterTests = ->
     for namespace in pairs (config.c.modules or {})
         success, err = pcall require, namespace
         unless success
-            logger\trace msgs.scheduleUpdatesAndRegisterTests.moduleLoadFailed, namespace, tostring err
+            logger\trace msgs.scheduleUpdate^sAndRegisterTests.moduleLoadFailed, namespace, tostring err
 
     for _, record in pairs DepCtrl\getAllRegisteredRecords!
         success, errMsgOrErrCode, errDetail = pcall DepCtrl.updater\scheduleUpdate, record
-        unless success
+        if not success
             logger\trace msgs.scheduleUpdatesAndRegisterTests.scheduleError, record.name or record.namespace, errMsgOrErrCode
-            continue
-        if errMsgOrErrCode < 0
+        elseif errMsgOrErrCode < 0
             logger\trace msgs.scheduleUpdatesAndRegisterTests.scheduleError, record.name or record.namespace, 
                 DepCtrl.updater\getUpdaterErrorMsg errMsgOrErrCode, record.name or record.namespace, record.scriptType, false, errDetail
-            continue
-
+        
         if record.tests and record.scriptType == DepCtrl.ScriptType.Module
             success, errMsg = pcall record.tests\registerMacros
             unless success
                 logger\trace msgs.scheduleUpdatesAndRegisterTests.registerMacrosError, record.name or record.namespace, errMsg
-                continue
 
     DepCtrl.updater\releaseLock!
 

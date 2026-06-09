@@ -304,7 +304,7 @@ class Record extends Common
         return if @haveTestSuite == false or @testSuiteInitialized
 
         testSuiteIdentifier = UnitTestSuite\getTestSuiteRequireIdentifier @scriptType, @namespace
-        @haveTestSuite, testsOrErrorMsg = pcall UnitTestSuite\require, testSuiteIdentifier
+        @haveTestSuite, testsOrErrorMsg = xpcall UnitTestSuite\require, ModuleProvider.fullTraceback, testSuiteIdentifier
         if not @haveTestSuite
             @testSuiteLoadError = testsOrErrorMsg unless testsOrErrorMsg\match "module '[^']+' not found"
             return
