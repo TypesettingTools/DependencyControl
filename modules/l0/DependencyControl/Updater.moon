@@ -1,13 +1,18 @@
 lfs = require "lfs"
-DownloadManager = require "DM.DownloadManager"
+constants = require "l0.DependencyControl.Constants"
+Downloader = require "l0.DependencyControl.Downloader"
 Timer = require "l0.DependencyControl.Timer"
 UpdateFeed = require "l0.DependencyControl.UpdateFeed"
 fileOps =    require "l0.DependencyControl.FileOps"
 Logger =     require "l0.DependencyControl.Logger"
 Common =     require "l0.DependencyControl.Common"
+Lock =       require "l0.DependencyControl.Lock"
 ModuleLoader = require "l0.DependencyControl.ModuleLoader"
 SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
 DependencyControl = nil
+
+UPDATER_LOCK_NAMESPACE = "#{constants.DEPCTRL_NAMESPACE}.Updater"
+UPDATER_LOCK_RESOURCE_RUN  = "run"
 
 --- Shared updater error decoding and base behavior.
 -- @class UpdaterBase
@@ -60,7 +65,7 @@ class UpdaterBase extends Common
 --- Mutable execution state for one install/update operation.
 -- @class UpdateTask
 class UpdateTask extends UpdaterBase
-    dlm = DownloadManager!
+    downloader = Downloader!
     msgs = {
         checkFeed: {
             downloadFailed: "Failed to download feed: %s"
@@ -219,10 +224,10 @@ class UpdateTask extends UpdaterBase
             return logUpdateError -4
 
         -- check internet connection
-        return logUpdateError -7 unless dlm\isInternetConnected!
+        return logUpdateError -7 unless downloader\isInternetConnected!
 
         -- get a lock on the updater
-        success, otherHost = @updater\getLock waitLock
+        success, otherHost = @updater\acquireLock waitLock
         return logUpdateError -5, otherHost unless success
 
         -- check feeds for update until we find and update or run out of feeds to check
@@ -234,6 +239,7 @@ class UpdateTask extends UpdaterBase
 
         maxVer, updateRecord = 0
         for i, feed in ipairs feeds
+            @updater\renewLock!
             @logger\log msgs.run.feedTrying, i, #feeds, feed
 
             res, rec, version = @checkFeed feed
@@ -328,7 +334,7 @@ class UpdateTask extends UpdaterBase
         scriptSubDir = @record.namespace
         scriptSubDir = scriptSubDir\gsub "%.","/" if @record.scriptType == @@ScriptType.Module
 
-        dlm\clear!
+        downloader\clear!
         for file in *update.files
             file.type or= "script"
 
@@ -349,22 +355,23 @@ class UpdateTask extends UpdaterBase
             unless type(file.sha1)=="string" and #file.sha1 == 40 and tonumber(file.sha1, 16)
                 return finish -35, "#{prettyName} (#{tostring(file.sha1)\lower!})"
 
-            if dlm\checkFileSHA1 file.fullName, file.sha1
+            if fileOps.verifyHash file.fullName, file.sha1
                 @logger\trace msgs.performUpdate.fileUnchanged, prettyName
                 continue
 
-            dl, err = dlm\addDownload file.url, tmpName, file.sha1
+            dl, err = downloader\addDownload file.url, tmpName, file.sha1
             return finish -140, err unless dl
             dl.targetFile = file.fullName
             @logger\trace msgs.performUpdate.fileAddDownload, file.url, prettyName
 
-        dlm\waitForFinish (progress) ->
-            @logger\progress progress, msgs.performUpdate.filesDownloading, #dlm.downloads
-            return true
+        downloader\await (_, progress) ->
+            @updater\renewLock!
+            @logger\progress progress, msgs.performUpdate.filesDownloading, #downloader.downloads
         @logger\progress!
 
-        if #dlm.failedDownloads>0
-            err = @logger\format ["#{dl.url}: #{dl.error}" for dl in *dlm.failedDownloads], 1
+        failedDownloads = [dl for dl in *downloader.downloads when dl.status == Downloader.Download.Status.Failed]
+        if #failedDownloads>0
+            err = @logger\format ["#{dl.url}: #{dl.error}" for dl in *failedDownloads], 1
             return finish -245, err
 
 
@@ -373,7 +380,7 @@ class UpdateTask extends UpdaterBase
         @logger\log msgs.performUpdate.movingFiles, @record.automationDir
         moveErrors = {}
         @logger.indent += 1
-        for dl in *dlm.downloads
+        for dl in *downloader.downloads
             res, err = fileOps.move dl.outfile, dl.targetFile, true
             -- don't immediately error out if moving of a single file failed
             -- try to move as many files as possible and let the user handle the rest
@@ -448,11 +455,8 @@ class UpdateTask extends UpdaterBase
 -- @class Updater
 class Updater extends UpdaterBase
     msgs = {
-        getLock: {
-            orphaned: "Ignoring orphaned in-progress update started by %s."
-            waitFinished: "Waited %d seconds."
-            abortWait: "Timeout reached after %d seconds."
-            waiting: "Waiting for update intiated by %s to finish..."
+        acquireLock: {
+            waiting: "Waiting for update initiated by %s to finish..."
         }
         require: {
             macroPassed: "%s is not a module."
@@ -545,52 +549,57 @@ class Updater extends UpdaterBase
         return task\run!
 
 
-    --- Acquires the global updater lock shared across scripts.
-    -- @param doWait boolean
-    -- @param[opt] waitTimeout number
-    -- @return boolean
-    -- @return string|nil lockOwner
-    getLock: (doWait, waitTimeout = @config.c.updateWaitTimeout) =>
+    -- Lazily builds this updater's handle to the shared, cross-process updater lock.
+    _getLockHandle: =>
+        @lock or= Lock {
+            namespace: UPDATER_LOCK_NAMESPACE, resource: UPDATER_LOCK_RESOURCE_RUN
+            scope: Lock.Scope.Global, holderName: @host, logger: @logger
+            expiresAfter: @config.c.updateOrphanTimeout
+        }
+        return @lock
+
+    --- Acquires the global updater lock shared across scripts and processes.
+    -- @param doWait boolean wait for a concurrent update to finish instead of bailing out
+    -- @param[opt] waitTimeout number seconds to wait when doWait is set
+    -- @return boolean acquired
+    -- @return string|nil lockOwner the holder script's name when acquisition failed
+    acquireLock: (doWait, waitTimeout = @config.c.updateWaitTimeout) =>
         return true if @hasLock
+        lock = @_getLockHandle!
 
-        @config\load!
-        running, didWait = @config.c.updaterRunning
+        if doWait
+            holder = lock\getActiveHolder!
+            @logger\log msgs.acquireLock.waiting, holder.holderName if holder and holder.holderName != @host
 
-        if running and running.host != @host
-            if running.time + @config.c.updateOrphanTimeout < os.time!
-                @logger\log msgs.getLock.orphaned, running.host
-            elseif doWait
-                @logger\log msgs.getLock.waiting, running.host
-                timeout, didWait = waitTimeout, true
-                while running and timeout > 0
-                    Timer.sleep 1000
-                    timeout -= 1
-                    @config\load!
-                    running = @config.c.updaterRunning
-                @logger\log timeout <= 0 and msgs.getLock.abortWait or msgs.getLock.waitFinished,
-                           waitTimeout - timeout
+        state, timePassed = lock\lock doWait and waitTimeout * 1000 or 0
+        unless state == Lock.LockState.Held
+            holder = lock\getActiveHolder!
+            return false, holder and holder.holderName
 
-            else return false, running.host
-
-        -- register the running update in the config file to prevent collisions
-        -- with other scripts trying to update the same modules
-        -- TODO: store this flag in the db
-
-        @config.c.updaterRunning = host: @host, time: os.time!
-        @config\write!
         @hasLock = true
-
-        -- reload important module version information from configuration
-        -- because another updater instance might have updated them in the meantime
-        if didWait
+        -- if we actually had to wait, another updater may have updated modules in the meantime
+        if timePassed > 0
             task\refreshRecord! for _,task in pairs @tasks[@@ScriptType.Module]
-
+        
         return true
+
+    --- Renews the updater lock's lease if we currently hold it.
+    renewLock: =>
+        @lock\renew! if @hasLock and @lock
 
     --- Releases the global updater lock.
     -- @return boolean
     releaseLock: =>
         return false unless @hasLock
         @hasLock = false
-        @config.c.updaterRunning = false
-        @config\write!
+        @lock\release! if @lock
+        return true
+
+    --- Reports whether an update is currently running in any script or process.
+    -- @return boolean running
+    -- @return string|nil holderName the name of the script holding the updater lock
+    @isRunning = =>
+        holder = Lock({
+            namespace: UPDATER_LOCK_NAMESPACE, resource: UPDATER_LOCK_RESOURCE_RUN, scope: Lock.Scope.Global
+        })\getActiveHolder!
+        return holder != nil, holder and holder.holderName

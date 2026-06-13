@@ -6,6 +6,7 @@ Logger = require "l0.DependencyControl.Logger"
 Common = require "l0.DependencyControl.Common"
 Enum = require "l0.DependencyControl.Enum"
 FileOps = require "l0.DependencyControl.FileOps"
+Downloader = require "l0.DependencyControl.Downloader"
 ModuleProvider = require "l0.DependencyControl.ModuleProvider"
 SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
 
@@ -238,18 +239,18 @@ class UpdateFeed extends Common
     -- @return string|nil err
     fetch: (fileName, expansionMode) =>
         -- Initialize download infrastructure lazily on first fetch.
-        unless @downloadManager
+        unless @downloader
             @config.downloadPath or= aegisub.decode_path "?temp/#{constants.DEPCTRL_NAMESPACE}_feedCache"
             feedsHaveBeenTrimmed or= Logger(fileMatchTemplate: fileMatchTemplate, logDir: @config.downloadPath, maxFiles: 20)\trimFiles!
             @fileName or= table.concat {@config.downloadPath, fileBaseName, "%04X"\format(math.random 0, 16^4-1), ".json"}
-            @downloadManager = (require "DM.DownloadManager") aegisub.decode_path @config.downloadPath
+            @downloader = Downloader!
         @fileName = fileName if fileName
 
-        dl, err = @downloadManager\addDownload @url, @fileName
+        dl, err = @downloader\addDownload @url, @fileName
         unless dl
             return false, msgs.errors.downloadAdd\format @url, @fileName, err
 
-        @downloadManager\waitForFinish -> true
+        @downloader\await!
         if dl.error
             return false, msgs.errors.downloadFailed\format @url, @fileName, dl.error
 

@@ -305,7 +305,8 @@ if ffi.os != "Windows"
     isInternetConnected = -> true  -- best-effort: assume connected, let downloads report real errors
 
 else
-    pcall ffi.cdef, "int MultiByteToWideChar(unsigned int cp, unsigned long flags, const char* str, int cbMulti, wchar_t* wide, int cchWide);"
+    ffiWin = require "l0.DependencyControl.helpers.ffi-windows"
+
     pcall ffi.cdef, [[
         void* InternetOpenW(const wchar_t* agent, unsigned long accessType, const wchar_t* proxy, const wchar_t* proxyBypass, unsigned long flags);
         void* InternetOpenUrlW(void* session, const wchar_t* url, const wchar_t* headers, unsigned long headersLen, unsigned long flags, uintptr_t context);
@@ -316,15 +317,10 @@ else
         int InternetGetConnectedState(unsigned long* flags, unsigned long reserved);
     ]]
 
-    haveKernel32, kernel32 = pcall ffi.load, "kernel32"
-    haveWinInet, winInet   = pcall ffi.load, "winInet"
+    haveKernel32         = ffiWin.haveKernel32
+    haveWinInet, winInet = pcall ffi.load, "winInet"
 
-    CP_UTF8 = 65001
-    toWide = (s) ->
-        n = kernel32.MultiByteToWideChar CP_UTF8, 0, s, -1, nil, 0
-        buf = ffi.new "wchar_t[?]", n
-        kernel32.MultiByteToWideChar CP_UTF8, 0, s, -1, buf, n
-        buf
+    toWide = ffiWin.toWide
 
     INTERNET_FLAG_RELOAD         = 0x80000000 -- force a reload from the server even if the content is cached
     INTERNET_FLAG_NO_CACHE_WRITE = 0x04000000 -- don't commit this download to the cache
@@ -518,14 +514,18 @@ class Downloader extends EventEmitter
     --- Performs all queued downloads, blocking until they finish or are cancelled.
     -- Subscribe to Progress/Finished via on; a Progress listener may call cancel!.
     -- Inspect each download's final state via its @status (Download.Status).
+    -- @param onProgress? function(downloader, percent) called with this downloader and the
+    --   aggregate progress (0-100) on each Progress event, for the duration of this call only.
     -- @return Downloader self (for chaining)
-    await: =>
+    await: (onProgress) =>
+        @on @@Event.Progress, onProgress if onProgress
         @_runner @
+        @off @@Event.Progress, onProgress if onProgress
         @_emit @@Event.Finished
         return @
 
     --- @return number current aggregate progress (0-100)
-    progress: => computeProgress @downloads
+    getProgress: => computeProgress @downloads
 
     -- Runner-internal: emit the Progress event with the current overall percentage.
     _reportProgress: (percent) => @_emit @@Event.Progress, percent

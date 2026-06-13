@@ -63,7 +63,7 @@ class Record extends Common
         globalDefaults: {updaterEnabled:true, updateInterval:302400, traceLevel:3, extraFeeds:{},
                          tryAllFeeds:false, dumpFeeds:true, configDir:"?user/config",
                          logMaxFiles: 200, logMaxAge: 604800, logMaxSize:10*(10^6),
-                         updateWaitTimeout: 60, updateOrphanTimeout: 600,
+                         updateWaitTimeout: 60, updateOrphanTimeout: 50,
                          logDir: "?user/log", writeLogs: true}
     }
 

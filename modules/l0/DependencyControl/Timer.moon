@@ -1,14 +1,9 @@
--- Monotonic timer with millisecond sleep.
--- DepCtrl always uses this FFI-based implementation for consistent behavior.
--- If PT.PreciseTimer has not been loaded by the time this module runs, it is
--- registered under that name so other scripts requiring it get a working timer.
-
 ffi = require "ffi"
 
 local getTime, sleep
 
 if ffi.os == "Windows"
-    -- Separate pcalls: a Sleep redeclaration conflict must not block QPC/QPF.
+    -- each cdef gets its own pcall so a Sleep redeclaration conflict can't block the QPC/QPF definitions
     pcall ffi.cdef, "int QueryPerformanceCounter(long long *lpPerformanceCount);"
     pcall ffi.cdef, "int QueryPerformanceFrequency(long long *lpFrequency);"
     pcall ffi.cdef, "unsigned int Sleep(unsigned int dwMilliseconds);"
@@ -25,7 +20,6 @@ if ffi.os == "Windows"
     sleep = (ms) -> ffi.C.Sleep ms
 
 else
-    -- CLOCK_MONOTONIC: 1 on Linux, 6 on macOS
     CLOCK_MONOTONIC = ffi.os == "OSX" and 6 or 1
 
     pcall ffi.cdef, [[
@@ -41,16 +35,45 @@ else
 
     sleep = (ms) -> ffi.C.poll nil, 0, ms
 
-
+--- Timer with monotonic clock readings and millisecond sleep.
+-- Not affected by system clock changes.
+---@class Timer
 class Timer
-    --- Creates a new timer, capturing the current time as the start point.
+    --- Creates a new timer, running from the current time.
     new: =>
-        @startTime = getTime!
+        @accumulated = 0
+        @start!
 
-    --- Returns wall-clock seconds elapsed since construction.
+    --- Returns the seconds measured so far, excluding any intervals during which the
+    -- timer was stopped.
     ---@return number seconds
-    timeElapsed: =>
-        getTime! - @startTime
+    timeElapsed: => @accumulated + (@running and getTime! - @startTime or 0)
+
+    --- Resumes measurement from the current time. No-op if already running, so a prior
+    -- stop/start round trip never discards accumulated time.
+    ---@return Timer self for chaining
+    start: =>
+        unless @running
+            @startTime = getTime!
+            @running   = true
+        return @
+
+    --- Pauses measurement, folding the elapsed interval into the accumulated total.
+    -- No-op if already stopped.
+    ---@return Timer self for chaining
+    stop: =>
+        if @running
+            @accumulated += getTime! - @startTime
+            @running = false
+        return @
+
+    --- Clears the accumulated time and restarts measuring from the current time,
+    -- preserving the running/stopped state.
+    ---@return Timer self for chaining
+    reset: =>
+        @accumulated = 0
+        @startTime   = getTime!
+        return @
 
     --- Sleeps for the given number of milliseconds.
     ---@param ms number
@@ -58,11 +81,8 @@ class Timer
 
     @sleep = sleep
 
-
--- Try loading the real PT.PreciseTimer so other scripts can use it if available.
--- If it's unavailable (no native build, missing dependencies), inject our
--- Timer as a fallback so those scripts still get a working implementation.
-if not pcall require, "PT.PreciseTimer"
-    package.loaded["PT.PreciseTimer"] = Timer
+    --- Returns the current value of the process's monotonic clock, in seconds, at
+    -- sub-second resolution. Only differences between readings are meaningful.
+    @getTime = getTime
 
 return Timer

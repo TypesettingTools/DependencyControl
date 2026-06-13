@@ -10,10 +10,7 @@ Update to a recent Aegisub build to resolve this issue.
 
 
 -- Install the module-provides searcher and register DepCtrl's bundled fallbacks before
--- the sub-modules below load (they `require` the bare names "json", "BM.BadMutex" and
--- "DM.DownloadManager"). By default the searcher defers to a separately installed native
--- module and only falls back to ours; the optional env var forces ours by preempting the
--- module cache.
+-- the sub-modules below load.
 ModuleProvider = require "l0.DependencyControl.ModuleProvider"
 ModuleProvider\install!
 
@@ -25,8 +22,9 @@ provideBundled = (providerName, aliases, forceVar) ->
         ModuleProvider\register alias, providerName for alias in *aliases
 
 provideBundled "l0.dkjson", {"json", "dkjson"}
-provideBundled "l0.DependencyControl.TerribleMutex", {"BM.BadMutex"}, "DEPCTRL_PREFER_FFI_MUTEX"
-provideBundled "l0.DependencyControl.DownloadManager", {"DM.DownloadManager"}, "DEPCTRL_PREFER_FFI_DOWNLOADER"
+provideBundled "l0.DependencyControl.shims.BadMutex", {"BM.BadMutex"}, "DEPCTRL_FORCE_BUILTIN_MUTEX"
+provideBundled "l0.DependencyControl.shims.DownloadManager", {"DM.DownloadManager"}, "DEPCTRL_FORCE_BUILTIN_DOWNLOADER"
+provideBundled "l0.DependencyControl.shims.PreciseTimer", {"PT.PreciseTimer"}, "DEPCTRL_FORCE_BUILTIN_TIMER"
 
 Common =         require "l0.DependencyControl.Common"
 ConfigHandler =  require "l0.DependencyControl.ConfigHandler"
@@ -74,12 +72,6 @@ rec = DependencyControl{
     url: "http://github.com/TypesettingTools/DependencyControl",
     moduleName: "l0.DependencyControl",
     feed: "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/master/DependencyControl.json",
-    {
-        -- BM.BadMutex and DM.DownloadManager are provided by DepCtrl's bundled FFI
-        -- implementations (see the provideBundled calls above); the native libraries are
-        -- preferred automatically when separately installed.
-        {"requireffi.requireffi", version: "0.1.1", feed: "https://raw.githubusercontent.com/torque/ffi-experiments/master/DependencyControl.json", optional: true},
-    }
 }
 DependencyControl.__class.version = rec
 LOADED_MODULES[rec.moduleName], package.loaded[rec.moduleName] = DependencyControl, DependencyControl

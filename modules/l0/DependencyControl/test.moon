@@ -22,14 +22,11 @@ UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
   ScriptUpdateRecord = require "l0.DependencyControl.ScriptUpdateRecord"
   GitRepository      = require "l0.DependencyControl.GitRepository"
   Timer              = require "l0.DependencyControl.Timer"
-  TerribleMutex      = require "l0.DependencyControl.TerribleMutex"
   Downloader         = require "l0.DependencyControl.Downloader"
   Crypto             = require "l0.DependencyControl.Crypto"
   ModuleProvider     = require "l0.DependencyControl.ModuleProvider"
   Stub               = require "l0.DependencyControl.Stub"
 
-  BADMUTEX_MODULE_NAME = "BM.BadMutex"
-  TIMER_MODULE_NAME = "l0.DependencyControl.Timer"
   FILEOPS_MODULE_NAME = "l0.DependencyControl.FileOps"
   JSON_MODULE_NAME = "json"
   DEPCTRL_DUMMY_MODULE_MARKER = "#{constants.DEPCTRL_PRIVATE_GLOBAL_VAR_PREFIX}Dummy"
@@ -79,97 +76,9 @@ UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
     return unpack results, 2, results.n
 
   {
-    Timer: {
-      _description: "Tests for the FFI-based Timer: monotonic timing and millisecond sleep."
+    Timer: (controls\requireTest "Timer")!
 
-      -- timeElapsed
-
-      timeElapsed_nonNegative: (ut) ->
-        t = Timer!
-        ut\assertGreaterThanOrEquals t\timeElapsed!, 0
-
-      timeElapsed_monotonic: (ut) ->
-        t = Timer!
-        a = t\timeElapsed!
-        b = t\timeElapsed!
-        ut\assertGreaterThanOrEquals b, a
-
-      timeElapsed_advancesAfterSleep: (ut) ->
-        t = Timer!
-        Timer.sleep 20          -- 20 ms
-        -- Require at least 10 ms to pass; allows 50% margin for CI jitter.
-        ut\assertGreaterThan t\timeElapsed!, 0.010
-
-      -- sleep
-
-      sleep_isCallable: (ut) ->
-        -- Smoke test: sleep(0) must not error and must return.
-        Timer.sleep 0
-        ut\assertTrue true
-
-      sleep_onClass: (ut) ->
-        -- sleep is a static method accessible directly on the class.
-        ut\assertFunction Timer.sleep
-
-      sleep_onInstance: (ut) ->
-        -- sleep is also accessible through an instance (class method inheritance).
-        t = Timer!
-        ut\assertFunction t.sleep
-
-      _order: {
-        "timeElapsed_nonNegative", "timeElapsed_monotonic",
-        "timeElapsed_advancesAfterSleep",
-        "sleep_isCallable", "sleep_onClass", "sleep_onInstance"
-      }
-    }
-
-    TerribleMutex: {
-      _description: "Tests for TerribleMutex: FFI-based process-scoped mutex that fills in for BM.BadMutex."
-
-      -- API surface
-
-      api_hasTryLock: (ut) ->
-        ut\assertFunction TerribleMutex.tryLock
-
-      api_hasLock: (ut) ->
-        ut\assertFunction TerribleMutex.lock
-
-      api_hasUnlock: (ut) ->
-        ut\assertFunction TerribleMutex.unlock
-
-      -- tryLock / unlock round-trip
-
-      tryLock_acquires: (ut) ->
-        result = TerribleMutex.tryLock!
-        ut\assertTrue result
-        TerribleMutex.unlock!  -- release so subsequent tests start clean
-
-      tryLock_failsWhenHeld: (ut) ->
-        ut\assertTrue TerribleMutex.tryLock!          -- acquire
-        result = TerribleMutex.tryLock!               -- second attempt must fail
-        TerribleMutex.unlock!
-        ut\assertFalse result
-
-      unlock_releasesLock: (ut) ->
-        ut\assertTrue TerribleMutex.tryLock!
-        TerribleMutex.unlock!
-        result = TerribleMutex.tryLock!               -- must succeed again after release
-        TerribleMutex.unlock!
-        ut\assertTrue result
-
-      -- BM.BadMutex alias
-
-      registered_asBadMutex: (ut) ->
-        -- DepCtrl provides "BM.BadMutex" (native if installed, else this FFI mutex),
-        -- so the bare name resolves once DepCtrl is loaded
-        ut\assertNotNil package.loaded["BM.BadMutex"]
-
-      _order: {
-        "api_hasTryLock", "api_hasLock", "api_hasUnlock",
-        "tryLock_acquires", "tryLock_failsWhenHeld", "unlock_releasesLock",
-        "registered_asBadMutex"
-      }
-    }
+    BadMutex: (controls\requireTest "BadMutex")!
 
     Crypto: {
       _description: "Tests for the pure-Lua Crypto utilities (SHA-1) against known vectors."
@@ -318,6 +227,27 @@ UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
         ut\assertGreaterThan progressCount, 0
         ut\assertTrue finished
 
+      -- await(onProgress) registers the callback for that run only and removes it before
+      -- returning, so it never leaks into a later await. It follows the EventEmitter convention
+      -- of receiving the emitter (the downloader) ahead of the percent.
+
+      await_onProgressAutoBinds: (ut) ->
+        dm = fakeManager makeFakeDriver 2, {}
+        dm\addDownload "http://x/1", "#{basePath}_apb1"
+        seen = {}
+        dm\await (downloader, percent) ->
+          ut\assertEquals downloader, dm   -- the emitter is passed through per the convention
+          seen[#seen + 1] = percent
+        ut\assertGreaterThan #seen, 0
+        ut\assertEquals type(seen[1]), "number"
+
+        -- a second await without a callback must not re-invoke the first run's listener
+        priorCount = #seen
+        dm\clear!
+        dm\addDownload "http://x/2", "#{basePath}_apb2"
+        dm\await!
+        ut\assertEquals #seen, priorCount
+
       -- a failed start marks the download Failed with the start error
 
       runner_recordsStartFailure: (ut) ->
@@ -371,7 +301,7 @@ UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
         "roundRobin_interleaves", "roundRobin_detectsConcurrencyThenCancels",
         "finishEvent_canMarkFailed", "on_off", "on_rejectsUnknownEvent",
         "addDownload_sha1Verifies", "addDownload_sha1Mismatch",
-        "downloaderEvents",
+        "downloaderEvents", "await_onProgressAutoBinds",
         "runner_recordsStartFailure", "individualCancel",
         "addDownload_queues", "addDownload_badArgs",
         "clear_emptiesInPlace"
@@ -1067,174 +997,7 @@ UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
       }
     }
 
-    Lock: {
-      _description: "Tests for the Lock cooperative mutex class."
-
-      -- LockState enum: verifies Enum was called with "LockState" and the correct value mapping
-
-      lockState_values: (ut) ->
-        ut\assertEquals Lock.LockState.Unknown, -1
-        ut\assertEquals Lock.LockState.Unavailable, 0
-        ut\assertEquals Lock.LockState.Available, 1
-        ut\assertEquals Lock.LockState.Held, 2
-
-      lockState_name: (ut) ->
-        found, val = Lock.LockState\test "Held"
-        ut\assertTrue found
-        ut\assertEquals val, 2
-
-      -- class-level Logger: verifies Logger was constructed with the correct fileBaseName
-
-      classLogger_fileBaseName: (ut) ->
-        ut\assertEquals Lock.logger.fileBaseName, "DependencyControl.Lock"
-
-      -- constructor
-
-      new_defaults: (ut) ->
-        lock = Lock namespace: "ns", resource: "res"
-        ut\assertEquals lock.namespace, "ns"
-        ut\assertEquals lock.resource, "res"
-        ut\assertEquals lock.holderName, "unknown"
-        ut\assertEquals lock.expiresAfter, 300
-        ut\assertString lock.instanceId
-
-      new_customLogger: (ut) ->
-        customLogger = Logger toFile: false, toWindow: false
-        lock = Lock namespace: "ns", resource: "res", logger: customLogger
-        ut\assertEquals lock.logger, customLogger
-
-      -- getState
-
-      getState_initial: (ut) ->
-        lock = Lock namespace: "ns", resource: "res"
-        ut\assertEquals lock\getState!, Lock.LockState.Unknown
-
-      getState_held: (ut) ->
-        (ut\stub BADMUTEX_MODULE_NAME, "tryLock")\returns true
-        ut\stub BADMUTEX_MODULE_NAME, "unlock"
-        ut\stub Lock.logger, "trace"
-        lock = Lock namespace: "ns", resource: "res"
-        lock\lock!
-        ut\assertEquals lock\getState!, Lock.LockState.Held
-        lock\release!
-
-      -- lock
-
-      lock_success: (ut) ->
-        tryLockStub = (ut\stub BADMUTEX_MODULE_NAME, "tryLock")\returns true
-        ut\stub BADMUTEX_MODULE_NAME, "unlock"
-        ut\stub Lock.logger, "trace"
-        lock = Lock namespace: "ns", resource: "res"
-        state, timePassed = lock\lock!
-        ut\assertEquals state, Lock.LockState.Held
-        ut\assertEquals timePassed, 0
-        tryLockStub\assertCalledOnce!
-        lock\release!
-
-      lock_alreadyHeld: (ut) ->
-        tryLockStub = (ut\stub BADMUTEX_MODULE_NAME, "tryLock")\returns true
-        ut\stub BADMUTEX_MODULE_NAME, "unlock"
-        ut\stub Lock.logger, "trace"
-        lock = Lock namespace: "ns", resource: "res"
-        lock\lock!                          -- acquire
-        state, timePassed = lock\lock!      -- re-enter: already held path
-        ut\assertEquals state, Lock.LockState.Held
-        tryLockStub\assertCalledOnce!       -- mutex not re-acquired on second call
-        lock\release!
-
-      lock_timeout: (ut) ->
-        tryLockStub = (ut\stub BADMUTEX_MODULE_NAME, "tryLock")\returns false
-        sleepStub   = ut\stub TIMER_MODULE_NAME, "sleep"
-        ut\stub Lock.logger, "trace"
-        lock = Lock namespace: "ns", resource: "res"
-        state, timePassed = lock\lock 0
-        ut\assertEquals state, Lock.LockState.Unavailable
-        tryLockStub\assertCalledOnce!
-        sleepStub\assertNotCalled!          -- timeout=0 suppresses sleep
-
-      lock_retry: (ut) ->
-        callCount   = 0
-        tryLockStub = (ut\stub BADMUTEX_MODULE_NAME, "tryLock")\calls ->
-          callCount += 1
-          callCount >= 2                    -- fails first, succeeds second
-        sleepStub = ut\stub TIMER_MODULE_NAME, "sleep"
-        ut\stub BADMUTEX_MODULE_NAME, "unlock"
-        ut\stub Lock.logger, "trace"
-        lock = Lock namespace: "ns", resource: "res"
-        state, timePassed = lock\lock!
-        ut\assertEquals state, Lock.LockState.Held
-        tryLockStub\assertCalledTimes 2
-        sleepStub\assertCalledOnceWith 250  -- default lockWaitInterval
-        lock\release!
-
-      -- tryLock
-
-      tryLock_success: (ut) ->
-        tryLockStub = (ut\stub BADMUTEX_MODULE_NAME, "tryLock")\returns true
-        ut\stub BADMUTEX_MODULE_NAME, "unlock"
-        ut\stub Lock.logger, "trace"
-        lock = Lock namespace: "ns", resource: "res"
-        state, timePassed = lock\tryLock!
-        ut\assertEquals state, Lock.LockState.Held
-        tryLockStub\assertCalledOnce!
-        lock\release!
-
-      tryLock_fail: (ut) ->
-        tryLockStub = (ut\stub BADMUTEX_MODULE_NAME, "tryLock")\returns false
-        ut\stub TIMER_MODULE_NAME, "sleep"
-        ut\stub Lock.logger, "trace"
-        lock = Lock namespace: "ns", resource: "res"
-        state, timePassed = lock\tryLock!
-        ut\assertEquals state, Lock.LockState.Unavailable
-        tryLockStub\assertCalledOnce!
-
-      -- release
-
-      release_held: (ut) ->
-        (ut\stub BADMUTEX_MODULE_NAME, "tryLock")\returns true
-        unlockStub = ut\stub BADMUTEX_MODULE_NAME, "unlock"
-        ut\stub Lock.logger, "trace"
-        lock = Lock namespace: "ns", resource: "res"
-        lock\lock!
-        result, extra = lock\release!
-        ut\assertTrue result
-        ut\assertEquals extra, Lock.LockState.Available
-        unlockStub\assertCalledOnce!
-
-      release_notHeld: (ut) ->
-        ut\stub Lock.logger, "trace"
-        lock = Lock namespace: "ns", resource: "res"
-        result, err = lock\release!
-        ut\assertNil result
-        ut\assertString err
-        ut\assertContains err, "not currently held"
-
-      -- GC canary: unreleased lock is cleaned up and warns on collection
-
-      gc_canary: (ut) ->
-        (ut\stub BADMUTEX_MODULE_NAME, "tryLock")\returns true
-        unlockStub = ut\stub BADMUTEX_MODULE_NAME, "unlock"
-        warnStub   = ut\stub Lock.logger, "warn"
-        ut\stub Lock.logger, "trace"
-        do
-          lock = Lock namespace: "ns", resource: "res"
-          lock\lock!
-        collectgarbage "collect"
-        collectgarbage "collect"  -- second pass needed for __gc finalizers
-        warnStub\assertCalledOnce!
-        unlockStub\assertCalledOnce!
-
-      _order: {
-        "lockState_values", "lockState_name",
-        "classLogger_fileBaseName",
-        "new_defaults", "new_customLogger",
-        "getState_initial", "getState_held",
-        "lock_success", "lock_alreadyHeld", "lock_timeout", "lock_retry",
-        "tryLock_success", "tryLock_fail",
-        "release_held", "release_notHeld",
-        "gc_canary"
-      }
-    }
+    Lock: (controls\requireTest "Lock")!
 
     ConfigHandler: {
       _description: "Tests for the ConfigHandler JSON-backed config manager."
@@ -2043,6 +1806,8 @@ UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
     ScriptTargetFilter: (controls\requireTest "ScriptTargetFilter")!
 
     JsonSchema: (controls\requireTest "JsonSchema") basePath
+
+    FfiPosix: (controls\requireTest "FfiPosix")!
 
     DownloaderIntegration: {
       _description: "Real-HTTP Downloader tests against a local test server (runs when launchable)."

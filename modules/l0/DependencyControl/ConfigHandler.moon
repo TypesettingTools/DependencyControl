@@ -120,8 +120,12 @@ Reload your automation scripts to generate a new configuration file.]]
             path, msg = fileOps.validateFullPath filePath, true
             @logger\assert path, msgs.new.badPath, filePath, msg
             @filePath = path
-            @lock = Lock namespace: "l0.DependencyControl.ConfigHandler", resource: @filePath,
-                         holderName: @@__name, logger: @logger
+            -- config files are shared across concurrent Aegisub instances, so the lock
+            -- must exclude across processes, not just within this one
+            @lock = Lock {
+                namespace: "l0.DependencyControl.ConfigHandler", resource: @filePath
+                holderName: @@__name, logger: @logger, scope: Lock.Scope.Global
+            }
 
 
     readFile = (waitLockTime, useLock = true) =>

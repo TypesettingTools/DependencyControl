@@ -1,9 +1,3 @@
--- DM.DownloadManager-compatible download manager: a class that wraps DepCtrl's own
--- Downloader engine to replicate the native DM.DownloadManager API.
--- DependencyControl registers it as a provider for the "DM.DownloadManager" alias (see
--- ModuleProvider), so it's used wherever the native library isn't installed; native takes
--- precedence by default, and DEPCTRL_PREFER_FFI_DOWNLOADER=1 forces this implementation.
-
 Downloader = require "l0.DependencyControl.Downloader"
 FileOps    = require "l0.DependencyControl.FileOps"
 Crypto     = require "l0.DependencyControl.Crypto"
@@ -14,11 +8,11 @@ msgs = {
 }
 
 --- A download manager replicating the DM.DownloadManager API on top of the
--- DepCtrl Downloader engine.
+-- DependencyControl Downloader engine.
 -- @class DownloadManager
 class DownloadManager
     -- Matches the DM.DownloadManager dependency version declared in DependencyControl.moon
-    -- so DepCtrl accepts this implementation without a full managed record.
+    -- so DependencyControl accepts this implementation without a full managed record.
     @version = "0.3.1"
 
     --- @param[opt] etagCacheDir string accepted for API compatibility; ETag caching is not implemented
@@ -45,10 +39,7 @@ class DownloadManager
     waitForFinish: (callback) =>
         if callback
             -- bridge the DM-style cancel-capable callback onto the Progress event
-            onProgress = (_, percent) -> @downloader\cancel! unless callback percent
-            @downloader\on Downloader.Event.Progress, onProgress
-            @downloader\await!
-            @downloader\off Downloader.Event.Progress, onProgress
+            @downloader\await (_, percent) -> @downloader\cancel! unless callback percent
             callback 100 unless @downloader.cancelled
         else
             @downloader\await!
@@ -58,7 +49,7 @@ class DownloadManager
         return
 
     --- @return number current aggregate progress (0-100)
-    progress: => @downloader\progress!
+    progress: => @downloader\getProgress!
 
     cancel: => @downloader\cancel!
     clear:  => @downloader\clear!
