@@ -76,14 +76,23 @@ class MockHttpServerController
         io.stderr\write "Starting mock HTTP server with command: #{startCommand}...\n"
         spawnDetached startCommand
 
-        -- ready once the port accepts a connection
+        -- Ready only once the server actually answers HTTP. A bare TCP connect succeeds as
+        -- soon as the kernel accepts into the listen backlog (which can happen before copas
+        -- starts dispatching requests).
+        isServing = ->
+            conn = socket.tcp!
+            conn\settimeout 0.5
+            unless conn\connect "127.0.0.1", port
+                conn\close!
+                return false
+            conn\send "GET /status/200 HTTP/1.0\r\nHost: 127.0.0.1\r\n\r\n"
+            statusLine = conn\receive "*l"
+            conn\close!
+            return statusLine != nil and statusLine\match("^HTTP/") != nil
+
         deadline = socket.gettime! + @timeout
         while socket.gettime! < deadline
-            conn = socket.tcp!
-            conn\settimeout 0.2
-            connected = conn\connect "127.0.0.1", port
-            conn\close!
-            return @ if connected
+            return @ if isServing!
             socket.sleep 0.05
         error "mock HTTP server didn't start on port #{port} within #{@timeout}s"
 

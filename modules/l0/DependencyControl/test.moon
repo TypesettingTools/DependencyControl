@@ -1807,7 +1807,7 @@ UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
 
     JsonSchema: (controls\requireTest "JsonSchema") basePath
 
-    FfiPosix: (controls\requireTest "FfiPosix")!
+    FfiPosix: (controls\requireTest "ffi-posix")!
 
     DownloaderIntegration: {
       _description: "Real-HTTP Downloader tests against a local test server (runs when launchable)."
