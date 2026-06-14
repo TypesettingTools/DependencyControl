@@ -213,7 +213,7 @@ class FileOps
         tempDir = FileOps.getTempDir()
         res, dir = FileOps.mkdir tempDir
         return tempDir if res
-        return nil, msgs.createTempDir.failedCreate\format err
+        return nil, msgs.createTempDir.failedCreate\format dir
 
     ---Generates a unique temporary directory path that does not exist yet.
     ---@return string tempDirPath Absolute path to a unique, not-yet-existing temporary directory.
