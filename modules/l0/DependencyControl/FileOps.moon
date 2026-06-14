@@ -141,8 +141,9 @@ class FileOps
             rmdir: {
                 emptyPath: "Argument #1 (path) must not be an empty string."
                 couldntRemoveFiles: "Some of the files and folders in the specified directory couldn't be removed:\n%s"
-                couldntRemoveDir: "Error removing empty directory: %s."
-
+                couldntRemoveDir: "Error removing empty directory: %s.",
+                doesntExist: "No such file or directory: '%s'."
+                notDir: "Expected '%s' to be a directory but found a %s."
             }
             runScheduledRemoval: {
                 noConfigReschedule: "Couldn't load the FileOps config file (%s) - rescheduled deletions will not be performed!"
@@ -511,7 +512,8 @@ class FileOps
     rmdir: (path, recurse = true) ->
         return nil, msgs.rmdir.emptyPath if path == ""
         mode, path = FileOps.attributes path, "mode"
-        return nil, msgs.rmdir.notPath unless mode == "directory"
+        return nil, msgs.rmdir.doesntExist\format path if mode == false
+        return nil, msgs.rmdir.notDir\format path, mode unless mode == "directory"
 
         if recurse
             -- recursively remove contained files and directories
