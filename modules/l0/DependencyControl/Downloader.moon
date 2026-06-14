@@ -398,18 +398,19 @@ else
         flags = ffi.new "unsigned long[1]"
         winInet.InternetGetConnectedState(flags, 0) != 0
 
---- A single download: its URL, output path, transfer state, and event callbacks.
--- Events (see Download.Event): Progress (data arrived), Finish (reached a terminal
--- status). A Finish listener may downgrade the status via markFailed (e.g. for a
--- failed hash verification). The current state is exposed via @status (Download.Status).
--- @class Download
+---A single download: its URL, output path, transfer state, and event callbacks.
+---Events (see Download.Event): Progress (data arrived), Finish (reached a terminal
+---status). A Finish listener may downgrade the status via markFailed (e.g. for a
+---failed hash verification). The current state is exposed via @status (Download.Status).
+---@class Download: EventEmitter
 class Download extends EventEmitter
     @Status = DownloadStatus
     @Event  = Enum "DownloadEvent", { Progress: "progress", Finish: "finish" }
 
-    --- @param url string
-    -- @param outfile string full output path
-    -- @param[opt] id number an identifier assigned by the Downloader
+    ---Creates a single download in the Queued state.
+    ---@param url string
+    ---@param outfile string Full output path.
+    ---@param id? number An identifier assigned by the Downloader.
     new: (@url, @outfile, @id) =>
         super!
         @bytesReceived = 0
@@ -417,13 +418,13 @@ class Download extends EventEmitter
         @status        = DownloadStatus.Queued
         @error         = nil
 
-    --- Requests cancellation of this download. The downloader releases its
-    -- resources and sets the status to Cancelled on its next scheduling pass.
+    ---Requests cancellation of this download. The downloader releases its
+    ---resources and sets the status to Cancelled on its next scheduling pass.
     cancel: => @_cancelRequested = true
 
-    --- Marks the download as failed (e.g. from a Finish listener performing
-    -- hash verification).
-    -- @param err string the failure reason
+    ---Marks the download as failed (e.g. from a Finish listener performing
+    ---hash verification).
+    ---@param err string The failure reason.
     markFailed: (err) =>
         @error = err
         @status = @@Status.Failed
@@ -431,9 +432,9 @@ class Download extends EventEmitter
     -- Runner-internal: fire Progress listeners.
     _notifyProgress: => @_emit @@Event.Progress
 
-    -- Runner-internal: finalize the transfer (success or transport error) and fire
-    -- Finish listeners (which may downgrade the status via markFailed).
-    -- @param[opt] transportError string a transport-level error, if any
+    ---Runner-internal: finalize the transfer (success or transport error) and fire
+    ---Finish listeners (which may downgrade the status via markFailed).
+    ---@param transportError? string A transport-level error, if any.
     _complete: (transportError) =>
         return if @_finalized
         @_finalized = true
@@ -452,10 +453,10 @@ class Download extends EventEmitter
         @_emit @@Event.Finish
 
 
---- Manages a set of concurrent downloads. This is DepCtrl's own engine; the
--- DM.DownloadManager-compatible API lives in l0.DependencyControl.DownloadManager.
--- Events (see Downloader.Event): Progress (overall %), Finished (await completed).
--- @class Downloader
+---Manages a set of concurrent downloads. This is DepCtrl's own engine; the
+---DM.DownloadManager-compatible API lives in l0.DependencyControl.DownloadManager.
+---Events (see Downloader.Event): Progress (overall %), Finished (await completed).
+---@class Downloader: EventEmitter
 class Downloader extends EventEmitter
     @Download = Download
     @Event = Enum "DownloaderEvent", { Progress: "progress", Finished: "finished" }
@@ -471,9 +472,9 @@ class Downloader extends EventEmitter
     -- it stalled and abort it. Set to 0 or false to disable stall detection.
     stallTimeout: 30
 
-    --- Creates a downloader.
-    -- @param runner function(downloader, callback) overrides the transfer implementation
-    -- @param options? table additional options
+    ---Creates a downloader.
+    ---@param runner? fun(downloader: Downloader) Overrides the transfer implementation (defaults to the platform backend).
+    ---@param options? { stallTimeout?: number, maxConnections?: integer } Additional options.
     new: (runner, options = {}) =>
         super!
         
@@ -484,13 +485,13 @@ class Downloader extends EventEmitter
         @cancelled = false
         @_runner   = runner or defaultRunner
 
-    --- Queues a download. Transfers happen later, in await.
-    -- Register progress/finish listeners on the returned Download as needed.
-    -- @param url string
-    -- @param outfile string full output path (relative paths unsupported)
-    -- @param[opt] sha1 string expected SHA-1 hash; verified automatically on finish
-    -- @return Download|nil download
-    -- @return string|nil err
+    ---Queues a download. Transfers happen later, in await.
+    ---Register progress/finish listeners on the returned Download as needed.
+    ---@param url string
+    ---@param outfile string Full output path (relative paths unsupported).
+    ---@param sha1? string Expected SHA-1 hash; verified automatically on finish.
+    ---@return Download? download
+    ---@return string? err
     addDownload: (url, outfile, sha1) =>
         unless type(url) == "string" and type(outfile) == "string"
             return nil, msgs.addMissingArgs\format type(url), type(outfile)
@@ -511,12 +512,11 @@ class Downloader extends EventEmitter
         @downloads[#@downloads + 1] = download
         download
 
-    --- Performs all queued downloads, blocking until they finish or are cancelled.
-    -- Subscribe to Progress/Finished via on; a Progress listener may call cancel!.
-    -- Inspect each download's final state via its @status (Download.Status).
-    -- @param onProgress? function(downloader, percent) called with this downloader and the
-    --   aggregate progress (0-100) on each Progress event, for the duration of this call only.
-    -- @return Downloader self (for chaining)
+    ---Performs all queued downloads, blocking until they finish or are cancelled.
+    ---Subscribe to Progress/Finished via on; a Progress listener may call cancel!.
+    ---Inspect each download's final state via its @status (Download.Status).
+    ---@param onProgress? fun(downloader: Downloader, percent: number) Called with this downloader and the aggregate progress (0-100) on each Progress event, for the duration of this call only.
+    ---@return Downloader self for chaining
     await: (onProgress) =>
         @on @@Event.Progress, onProgress if onProgress
         @_runner @
@@ -524,22 +524,22 @@ class Downloader extends EventEmitter
         @_emit @@Event.Finished
         return @
 
-    --- @return number current aggregate progress (0-100)
+    ---@return number progress Current aggregate progress (0-100).
     getProgress: => computeProgress @downloads
 
     -- Runner-internal: emit the Progress event with the current overall percentage.
     _reportProgress: (percent) => @_emit @@Event.Progress, percent
 
-    --- Cancels all remaining downloads (e.g. from within a Progress listener).
+    ---Cancels all remaining downloads (e.g. from within a Progress listener).
     cancel: => @cancelled = true
 
-    --- Removes all downloads and resets state.
-    -- Empties the array in place so external references stay valid.
+    ---Removes all downloads and resets state.
+    ---Empties the array in place so external references stay valid.
     clear: =>
         @downloads[i] = nil for i = #@downloads, 1, -1
         @cancelled = false
 
-    --- @return boolean whether an internet connection appears to be available
+    ---@return boolean connected Whether an internet connection appears to be available.
     isInternetConnected: => isInternetConnected!
 
 return Downloader

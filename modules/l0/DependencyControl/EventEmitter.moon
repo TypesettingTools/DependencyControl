@@ -1,14 +1,14 @@
---- Minimal event registration mixin: on(event, cb) / off(event, cb) / _emit(event, ...).
--- Subclasses provide an `@Event` Enum that defines the valid event values.
--- @class EventEmitter
+---Minimal event registration mixin: on(event, cb) / off(event, cb) / _emit(event, ...).
+---Subclasses provide an `@Event` Enum that defines the valid event values.
+---@class EventEmitter
 class EventEmitter
     new: =>
         @_listeners = {}
 
-    --- Registers a callback for an event.
-    -- @param event the event value (a member of the subclass's @Event enum)
-    -- @param callback function called with the emitter instance (plus any event args)
-    -- @return self (for chaining)
+    ---Registers a callback for an event.
+    ---@param event any The event value (a member of the subclass's `@Event` enum).
+    ---@param callback fun(self: EventEmitter, ...) Called with the emitter instance plus any event arguments.
+    ---@return EventEmitter self for chaining
     on: (event, callback) =>
         valid, err = @@Event\validate event, "event"
         error err unless valid
@@ -19,10 +19,10 @@ class EventEmitter
         listeners[#listeners + 1] = callback
         return @
 
-    --- Unregisters a previously-registered callback for an event.
-    -- @param event the event value
-    -- @param callback the exact callback passed to on
-    -- @return self (for chaining)
+    ---Unregisters a previously-registered callback for an event.
+    ---@param event any The event value.
+    ---@param callback function The exact callback previously passed to on().
+    ---@return EventEmitter self for chaining
     off: (event, callback) =>
         listeners = @_listeners[event]
         return @ unless listeners

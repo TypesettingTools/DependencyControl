@@ -38,17 +38,16 @@ execOk = (cmd) ->
     r = os.execute cmd
     return (type(r) == "number" and r == 0) or r == true
 
---- Builds zip archives using each platform's stock tooling — no extra rocks or
--- shared libraries to install or locate. Files are added with explicit, forward-slash
--- entry names so the resulting archives extract correctly on every platform.
--- Compression only for now; reading/extraction can be added when needed.
---
---   archiver = ZipArchiver outputPath
---   archiver\addDirectory distDir
---   archiver\addFile readmePath, "README.md"
---   success, err = archiver\write!
---
--- @class ZipArchiver
+---Builds zip archives using each platform's stock tooling — no extra rocks or
+---shared libraries to install or locate. Files are added with explicit, forward-slash
+---entry names so the resulting archives extract correctly on every platform.
+---Compression only for now; reading/extraction can be added when needed.
+---
+---    archiver = ZipArchiver outputPath
+---    archiver\addDirectory distDir
+---    archiver\addFile readmePath, "README.md"
+---    success, err = archiver\write!
+---@class ZipArchiver
 class ZipArchiver
     isWindows = ffi.os == "Windows"
     pathSep   = FileOps.pathSep
@@ -77,8 +76,8 @@ class ZipArchiver
         @entries[#@entries + 1] = {source: sourcePath, name: archiveName}
         return @
 
-    --- Adds every file beneath `sourceDir`, naming each entry by its path relative to
-    -- `sourceDir` (optionally below `archivePrefix`).
+    ---Adds every file beneath `sourceDir`, naming each entry by its path relative to
+    ---`sourceDir` (optionally below `archivePrefix`).
     ---@param sourceDir string Absolute path of the directory to add.
     ---@param archivePrefix? string Optional path prefix for the entries inside the archive.
     ---@return ZipArchiver self for chaining.
@@ -99,8 +98,8 @@ class ZipArchiver
         recurse sourceDir, ""
         return @
 
-    --- Writes the archive to `outputPath`. Returns true on success, or nil plus an
-    -- error message.
+    ---Writes the archive to `outputPath`. Returns true on success, or nil plus an
+    ---error message.
     ---@return boolean|nil success
     ---@return string|nil err
     write: =>

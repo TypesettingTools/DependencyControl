@@ -76,17 +76,17 @@ else
     unlockImpl  = (h) -> ffi.C.flock h.fd, LOCK_UN
     closeImpl   = (h) -> ffi.C.close h.fd
 
---- A cross-process advisory lock on a file.
--- Usable as a cross-process lock primitive.
--- Automatically released when the instance is garbage collected or if the process exists.
--- However, unlike a semaphore, it cannot be forcibly taken from a process that is alive but hung.
--- @class FileLock
+---A cross-process advisory lock on a file.
+---Usable as a cross-process lock primitive.
+---Automatically released when the instance is garbage collected or when the process exits.
+---However, unlike a semaphore, it cannot be forcibly taken from a process that is alive but hung.
+---@class FileLock
 class FileLock
     -- whether the OS file-lock FFI is isAvailable on this platform/build
     @isAvailable = isAvailable
 
-    --- Opens (creating if absent) the lock file and prepares it for locking.
-    -- @param path string full path to the lock file
+    ---Opens (creating if absent) the lock file and prepares it for locking.
+    ---@param path string Full path to the lock file.
     new: (path) =>
         @isOpen = false
         assert isAvailable, msgs.noImplementation
@@ -105,12 +105,12 @@ class FileLock
         (getmetatable canary).__gc = -> pcall closeImpl, handleRef
         @_canary = canary
 
-    --- Attempts to acquire the lock without blocking.
-    -- @return boolean true if acquired
+    ---Attempts to acquire the lock without blocking.
+    ---@return boolean acquired True if acquired.
     tryLock: => @isOpen and tryLockImpl(@_handle) or false
 
-    --- Releases the lock. Only the current holder should call this.
-    -- @return boolean true if a release was issued
+    ---Releases the lock. Only the current holder should call this.
+    ---@return boolean issued True if a release was issued.
     unlock: =>
         return false unless @isOpen
         unlockImpl @_handle

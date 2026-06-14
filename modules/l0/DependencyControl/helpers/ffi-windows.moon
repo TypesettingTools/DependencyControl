@@ -16,10 +16,10 @@ haveKernel32, kernel32 = pcall ffi.load, "kernel32"
     -- whether kernel32 loaded successfully; gate any use of `kernel32`/`toWide` on this
     haveKernel32: haveKernel32
 
-    --- Converts a UTF-8 string to a NUL-terminated wide-char (UTF-16) buffer for the *W Win32 APIs.
-    -- Requires kernel32 to have loaded (see `haveKernel32`); errors otherwise.
-    -- @param s string a UTF-8 encoded string
-    -- @return ffi.cdata* a wchar_t[] buffer holding the converted, NUL-terminated string
+    ---Converts a UTF-8 string to a NUL-terminated wide-char (UTF-16) buffer for the *W Win32 APIs.
+    ---Requires kernel32 to have loaded (see `haveKernel32`); errors otherwise.
+    ---@param s string A UTF-8 encoded string.
+    ---@return ffi.cdata* buffer A wchar_t[] buffer holding the converted, NUL-terminated string.
     toWide: (s) ->
         n = kernel32.MultiByteToWideChar CP_UTF8, 0, s, -1, nil, 0
         buf = ffi.new "wchar_t[?]", n

@@ -1,11 +1,11 @@
 ffi = require "ffi"
 Crypto = require "l0.DependencyControl.Crypto"
 
--- Serializes a value into a canonical string for hashing: table keys are emitted in sorted
--- order so field ordering never affects the result, and every value is tagged with its type
--- so distinct types can't collide (e.g. the number 1 vs. the string "1").
--- @param value any the value to canonicalize
--- @return string the canonicalized string 
+---Serializes a value into a canonical string for hashing: table keys are emitted in sorted
+---order so field ordering never affects the result, and every value is tagged with its type
+---so distinct types can't collide (e.g. the number 1 vs. the string "1").
+---@param value any The value to canonicalize.
+---@return string canonical The canonicalized string.
 canonicalize = (value) ->
     switch type value
         when "table"
@@ -131,12 +131,12 @@ isPureArrayTable = (tbl) ->
     len = getTableLength tbl
     return #tbl == len, len, typ
 
---- Flattens nested array tables into a single array up to the specified depth. Values that are not (or not converted to) pure array tables are included as-is.
--- @param value The value to flatten.
--- @param depth The maximum depth to flatten.
--- @param toArrayTable An optional function to convert non-array values to array tables.
--- @return table flattened # A flattened array table containing the flattened values.
--- @return number flattenedCount # The number of elements in the flattened array.
+---Flattens nested array tables into a single array up to the specified depth. Values that are not (or not converted to) pure array tables are included as-is.
+---@param value any The value to flatten.
+---@param depth? number Maximum depth to flatten (default 1).
+---@param toArrayTable? fun(value: any, valueType: string): table?, boolean? Converts a non-array value to an array table.
+---@return table flattened A flattened array table containing the flattened values.
+---@return number flattenedCount The number of elements in the flattened array.
 flatten = (value, depth = 1, toArrayTable) ->
     flattened, f = {}, 0
 
@@ -155,8 +155,8 @@ flatten = (value, depth = 1, toArrayTable) ->
     return flattened, f
 
 
---- Shared constants, enums, and terminology used across DependencyControl modules.
--- @class DependencyControlCommon
+---Shared constants, enums, and terminology used across DependencyControl modules.
+---@class DependencyControlCommon
 class DependencyControlCommon
     msgs = {
         validateNamespace: {
@@ -197,10 +197,10 @@ class DependencyControlCommon
         }
     }
 
-    --- Validates a DependencyControl namespace string.
-    -- @param namespace string
-    -- @return boolean|nil
-    -- @return string|nil err
+    ---Validates a DependencyControl namespace string.
+    ---@param namespace string
+    ---@return boolean? valid True when the namespace is well-formed.
+    ---@return string? err Validation error message when invalid.
     @validateNamespace = (namespace) ->
         segments = [seg for seg in namespace\gmatch "[^%.]+"]
         _, dotCount = namespace\gsub "%.", ""
@@ -221,55 +221,50 @@ class DependencyControlCommon
             else nil
 
 
-    --- Deep equality comparison. Tables compared recursively; other types use ==.
-    -- Circular references are handled. Metatables are included in the comparison.
-    -- @static
-    -- @param a
-    -- @param b
-    -- @treturn boolean
+    ---Deep equality comparison. Tables compared recursively; other types use ==.
+    ---Circular references are handled. Metatables are included in the comparison.
+    ---@param a any
+    ---@param b any
+    ---@return boolean equal
     @equals = _equals
 
-    --- Compares table items for equality, ignoring keys.
-    -- By default only numerical indexes are compared.
-    -- @static
-    -- @tparam table a
-    -- @tparam table b
-    -- @tparam[opt=true] boolean onlyNumKeys
-    -- @tparam[opt=false] boolean ignoreExtraAItems
-    -- @tparam[opt=false] boolean requireIdenticalItems
-    -- @treturn boolean
+    ---Compares table items for equality, ignoring keys.
+    ---By default only numerical indexes are compared.
+    ---@param a table
+    ---@param b table
+    ---@param onlyNumKeys? boolean Compare only sequential numeric indices (default true).
+    ---@param ignoreExtraAItems? boolean Allow `a` to contain items absent from `b` (default false).
+    ---@param requireIdenticalItems? boolean Require identical (not merely equal) table items (default false).
+    ---@return boolean equal
     @itemsEqual = _itemsEqual
 
-    --- Shallow-copies a table (no metatable).
-    -- @static
-    -- @param tbl table the table to copy
-    -- @return table the copied table
+    ---Shallow-copies a table (no metatable).
+    ---@param tbl table The table to copy.
+    ---@return table copy The copied table.
     @copy = (tbl) -> {k, v for k, v in pairs tbl}
 
-    --- Deep-copies a table recursively (no metatables).
-    -- @param tbl table the table to deep copy
-    -- @return table the deep-copied table
+    ---Deep-copies a table recursively (no metatables).
+    ---@param tbl table The table to deep-copy.
+    ---@return table copy The deep-copied table.
     deepCopy = (tbl) -> {k, (type(v) == "table" and deepCopy(v) or v) for k, v in pairs tbl}
-    
-    --- Deep-copies a table recursively (no metatables).
-    -- @static
-    -- @param tbl table the table to deep copy
-    -- @return table the deep-copied table
+
+    ---Deep-copies a table recursively (no metatables).
+    ---@param tbl table The table to deep-copy.
+    ---@return table copy The deep-copied table.
     @deepCopy = deepCopy
 
-    --- Flattens nested array tables into a single array up to the specified depth. Values that are not (or not converted to) pure array tables are included as-is.
-    -- @param value The value to flatten.
-    -- @param depth The maximum depth to flatten.
-    -- @param toArrayTable An optional function to convert non-array values to array tables.
-    -- @return table flattened # A flattened array table containing the flattened values.
-    -- @return number flattenedCount # The number of elements in the flattened array.
+    ---Flattens nested array tables into a single array up to the specified depth. Values that are not (or not converted to) pure array tables are included as-is.
+    ---@param value any The value to flatten.
+    ---@param depth? number Maximum depth to flatten (default 1).
+    ---@param toArrayTable? fun(value: any, valueType: string): table?, boolean? Converts a non-array value to an array table.
+    ---@return table flattened A flattened array table containing the flattened values.
+    ---@return number flattenedCount The number of elements in the flattened array.
     @flatten = flatten
 
-    --- Produces a deterministic SHA-1 hash of a (possibly nested) Lua value.
-    -- Table keys are sorted before hashing, so field ordering never affects the result; pass an
-    -- object pruned to just the fields you care about to obtain a stable content signature that
-    -- ignores irrelevant differences. Useful for cheaply detecting whether semantic content changed.
-    -- @static
-    -- @param value any the value to hash
-    -- @return string a 40-character lowercase SHA-1 hex digest
+    ---Produces a deterministic SHA-1 hash of a (possibly nested) Lua value.
+    ---Table keys are sorted before hashing, so field ordering never affects the result; pass an
+    ---object pruned to just the fields you care about to obtain a stable content signature that
+    ---ignores irrelevant differences. Useful for cheaply detecting whether semantic content changed.
+    ---@param value any The value to hash.
+    ---@return string hash A 40-character lowercase SHA-1 hex digest.
     @getObjectHash = (value) -> Crypto.sha1 canonicalize value

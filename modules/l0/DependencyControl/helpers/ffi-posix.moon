@@ -33,11 +33,11 @@ filePermissionBits = {r: 4, w: 2, x: 1}
         TmpFile:   isOSX and 0 or 0x410000
     }
 
-    --- Builds the numeric file mode for the given symbolic permissions.
-    -- @param user? string any combination of "r", "w" and "x" for the owner, or "" for none
-    -- @param group? string same, for the owner's group
-    -- @param other? string same, for all other users
-    -- @return number the file mode, e.g. getFileMode("rwx", "r", "r") -> 0o744 (484)
+    ---Builds the numeric file mode for the given symbolic permissions.
+    ---@param user? string Any combination of "r", "w" and "x" for the owner, or "" for none.
+    ---@param group? string Same, for the owner's group.
+    ---@param other? string Same, for all other users.
+    ---@return number mode The file mode, e.g. getFileMode("rwx", "r", "r") -> 0o744 (484).
     getFileMode: (user = "", group = "", other = "") ->
         mode = 0
         for perm in user\gmatch "."

@@ -1,10 +1,10 @@
 Common = require "l0.DependencyControl.Common"
 local ConfigHandler
 
---- A view into a hive (nested path) of a ConfigHandler's JSON config file.
--- Holds the proxy/defaults machinery and exposes @c / @config / @userConfig.
--- Multiple views on the same file are coordinated through their shared ConfigHandler.
--- @class ConfigView
+---A view into a hive (nested path) of a ConfigHandler's JSON config file.
+---Holds the proxy/defaults machinery and exposes @c / @config / @userConfig.
+---Multiple views on the same file are coordinated through their shared ConfigHandler.
+---@class ConfigView
 class ConfigView
     msgs = {
         new: {
@@ -15,14 +15,14 @@ class ConfigView
         }
     }
 
-    --- Returns a ConfigView for the given file and hive path, creating a handler if needed.
-    -- @param filePath string|boolean
-    -- @param hivePath string|string[]
-    -- @param[opt] defaults table
-    -- @param[opt] logger Logger
-    -- @param[opt=false] noLoad boolean
-    -- @return ConfigView|nil
-    -- @return string|nil err
+    ---Returns a ConfigView for the given file and hive path, creating a handler if needed.
+    ---@param filePath string|boolean Config file path, or false for an in-memory (orphan) view.
+    ---@param hivePath string|string[] The hive (nested key path) this view targets.
+    ---@param defaults? table Default values for the hive.
+    ---@param logger? Logger
+    ---@param noLoad? boolean Don't load the file immediately (default false).
+    ---@return ConfigView? view
+    ---@return string? err
     @get = (filePath, hivePath, defaults, logger, noLoad = false) =>
         ConfigHandler or= require "l0.DependencyControl.ConfigHandler"
 
@@ -36,10 +36,10 @@ class ConfigView
             return ConfigView handler, hivePath, defaults
 
 
-    --- Creates a view into a hive of the given ConfigHandler.
-    -- @param configHandler ConfigHandler|nil
-    -- @param hivePath string|string[]
-    -- @param[opt] defaults table
+    ---Creates a view into a hive of the given ConfigHandler.
+    ---@param configHandler ConfigHandler|nil Backing handler, or nil for an in-memory (orphan) view.
+    ---@param hivePath string|string[] The hive (nested key path) this view targets.
+    ---@param defaults? table Default values for the hive.
     new: (configHandler, hivePath, defaults) =>
         ConfigHandler or= require "l0.DependencyControl.ConfigHandler"
         @__hivePath = "table" == type(hivePath) and hivePath or {hivePath}
@@ -116,22 +116,22 @@ class ConfigView
         recurse @defaults
 
 
-    --- Removes this view's hive from the config file.
-    -- @param[opt] waitLockTime number
-    -- @return boolean|nil
-    -- @return string|nil err
+    ---Removes this view's hive from the config file.
+    ---@param waitLockTime? number Seconds to wait for the config lock.
+    ---@return boolean? success
+    ---@return string? err
     delete: (waitLockTime) =>
         @userConfig, msg = @__configHandler\purgeHive @
         return nil, msg unless @userConfig
         return @save waitLockTime
 
 
-    --- Copies values from a table or ConfigView into this view's user config.
-    -- @param[opt] tbl table|ConfigView
-    -- @param[opt] keys string[]
-    -- @param[opt] updateOnly boolean
-    -- @param[opt] skipSameLengthTables boolean
-    -- @return boolean changesMade
+    ---Copies values from a table or ConfigView into this view's user config.
+    ---@param tbl? table|ConfigView Source values.
+    ---@param keys? string[] Restrict the copy to these keys.
+    ---@param updateOnly? boolean Only overwrite keys already present in this view.
+    ---@param skipSameLengthTables? boolean Skip array values whose length matches the existing one.
+    ---@return boolean changesMade
     import: (tbl, keys, updateOnly, skipSameLengthTables) =>
         tbl = tbl.userConfig if tbl.__class == @@
         changesMade = false
@@ -150,10 +150,10 @@ class ConfigView
         return changesMade
 
 
-    --- Returns whether this view's hive overlaps with another view on the same handler.
-    -- @param otherView ConfigView
-    -- @return boolean|nil
-    -- @return string|nil err
+    ---Returns whether this view's hive overlaps with another view on the same handler.
+    ---@param otherView ConfigView
+    ---@return boolean? overlapping nil when the views belong to different handlers.
+    ---@return string? err
     isOverlappingView: (otherView) =>
         if @__configHandler != otherView.__configHandler
             return nil, msgs.isOverlappingView.differentHandler\format otherView.__configHandler.filePath,
@@ -168,18 +168,18 @@ class ConfigView
             return true if i == thisViewHivePathDepth or i == otherViewHivePathDepth
 
 
-    --- Reloads only this view's hive from the config file.
-    -- @param[opt] waitLockTime number
-    -- @return boolean|nil
-    -- @return string|nil err
+    ---Reloads only this view's hive from the config file.
+    ---@param waitLockTime? number Seconds to wait for the config lock.
+    ---@return boolean? success
+    ---@return string? err
     load: (waitLockTime) =>
         return false unless @__configHandler and @__configHandler.filePath
         @__configHandler\load @, waitLockTime
 
 
-    --- Refreshes this view's userConfig from the handler's in-memory config.
-    -- @return boolean|nil
-    -- @return string|nil err
+    ---Refreshes this view's userConfig from the handler's in-memory config.
+    ---@return boolean? success
+    ---@return string? err
     refresh: =>
         @userConfig, msg = @__configHandler\getHive @__hivePath
         return if @userConfig
@@ -187,10 +187,10 @@ class ConfigView
         else nil, msg
 
 
-    --- Writes this view's hive to the config file.
-    -- @param[opt] waitLockTime number
-    -- @return boolean|nil
-    -- @return string|nil err
+    ---Writes this view's hive to the config file.
+    ---@param waitLockTime? number Seconds to wait for the config lock.
+    ---@return boolean? success
+    ---@return string? err
     save: (waitLockTime) =>
         return false unless @__configHandler and @__configHandler.filePath
         @__configHandler\save @, waitLockTime

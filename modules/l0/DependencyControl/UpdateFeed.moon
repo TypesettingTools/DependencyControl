@@ -32,11 +32,11 @@ walkPackages = (feed, filter) ->
                 pkgProxy = setmetatable {}, __index: (_, k) -> k == "namespace" and namespace or pkg[k]
                 coroutine.yield pkgProxy, scriptType, section
 
--- Gives an expanded file record a lazily-resolved `localFilePath` property
--- by appending the file `name` to `localFileBasePath` and resolving that against the feed directory.
--- @param file table the file record to attach the accessor to
--- @param feedDirPath string the feed directory to resolve against
--- @param localFileBasePath string the resolved local base path for this file (captured from the rolling template state)
+---Gives an expanded file record a lazily-resolved `localFilePath` property
+---by appending the file `name` to `localFileBasePath` and resolving that against the feed directory.
+---@param file table The file record to attach the accessor to.
+---@param feedDirPath string The feed directory to resolve against.
+---@param localFileBasePath string The resolved local base path for this file (captured from the rolling template state).
 attachLocalFilePath = (file, feedDirPath, localFileBasePath) ->
     setmetatable file, __index: (self, key) ->
         return unless key == "localFilePath"
@@ -51,8 +51,8 @@ attachLocalFilePath = (file, feedDirPath, localFileBasePath) ->
 stripNulls = (tbl) ->
     {k, (type(v) == "table" and stripNulls(v) or v) for k, v in pairs tbl when v != dkjson.null}
 
---- Downloaded and expanded update feed data source.
-    -- @class UpdateFeed
+---Downloaded and expanded update feed data source.
+---@class UpdateFeed: DependencyControlCommon
 class UpdateFeed extends Common
     templateData = {
         maxDepth: 7
@@ -161,25 +161,30 @@ class UpdateFeed extends Common
     }
     @cache = {}
 
-    --- Variable-expansion modes for @{expand}.
-    -- Remote (default): expand `fileBaseUrl`/`url` to their download URLs.
-    -- Local: additionally resolve the `localFileBasePath`/`localFilePath` sister fields to
-    -- on-disk paths (used by tooling such as the bundler). The remote fields are left intact.
+    ---@alias UpdateFeedExpansionMode
+    ---| "remote" # Expand `fileBaseUrl`/`url` to their download URLs.
+    ---| "local" # Additionally resolve `localFileBasePath`/`localFilePath` to on-disk paths.
+
+    ---Variable-expansion modes for expand().
+    ---Remote (default): expand `fileBaseUrl`/`url` to their download URLs.
+    ---Local: additionally resolve the `localFileBasePath`/`localFilePath` sister fields to
+    ---on-disk paths (used by tooling such as the bundler). The remote fields are left intact.
     @ExpansionMode = Enum "UpdateFeedExpansionMode", {
         Remote: "remote"
         Local:  "local"
     }
 
-    --- Resolves the install path of a packaged file from its owning script's namespace,
-    -- mirroring the layout the Updater installs into: automation scripts go to the
-    -- autoload dir, modules to the include dir (under their namespace path), and test
-    -- files to the matching DepUnit test dir.
-    -- @param namespace string
-    -- @param scriptType number a ScriptType value
-    -- @param fileName string the file's feed name (e.g. ".moon", "/Common.moon")
-    -- @param[opt="script"] fileType string "script" or "test"
-    -- @param[opt] rootDir string the root directory for deployment
-    -- @return string path
+    ---Resolves the install path of a packaged file from its owning script's namespace,
+    ---mirroring the layout the Updater installs into: automation scripts go to the
+    ---autoload dir, modules to the include dir (under their namespace path), and test
+    ---files to the matching DepUnit test dir.
+    ---@param namespace string
+    ---@param scriptType integer A Common.ScriptType value.
+    ---@param fileName string The file's feed name (e.g. ".moon", "/Common.moon").
+    ---@param fileType? string "script" or "test" (default "script").
+    ---@param rootDir? string The root directory for deployment.
+    ---@return string? path
+    ---@return string? err
     @getFileDeployPath = (namespace, scriptType, fileName, fileType = "script", rootDir) =>
         subDir = scriptType == Common.ScriptType.Module and (namespace\gsub "%.", "/") or namespace
         baseDir = fileType == "test" and Common\getTestDir(scriptType, rootDir) or Common\getAutomationDir scriptType, rootDir
@@ -201,12 +206,12 @@ class UpdateFeed extends Common
                     j += 1
             table.sort .sourceAt[i], (a,b) -> return .templates[a].order < .templates[b].order
 
-    --- Creates an update feed wrapper and optionally fetches feed data.
-    -- @param url string
-    -- @param[opt=true] autoLoad boolean
-    -- @param[opt] fileName string
-    -- @param[opt] config table
-    -- @param[opt] logger Logger
+    ---Creates an update feed wrapper and optionally fetches feed data.
+    ---@param _url? string Feed URL (or nil when loading from a local file via fileName).
+    ---@param autoLoad? boolean Fetch/load the feed immediately (default true).
+    ---@param fileName? string Local feed file path.
+    ---@param config? table Feed config overrides.
+    ---@param logger? Logger
     new: (@_url, autoLoad = true, @fileName, @config = {}, @logger = defaultLogger) =>
         error msgs.errors.urlOrFilePathRequired if not @_url and not fileName
     
@@ -225,18 +230,18 @@ class UpdateFeed extends Common
 
         @ensureLoaded! if autoLoad
 
-    --- Returns URLs of all feeds referenced in the knownFeeds section of this feed.
-    -- @return string[] urls
+    ---Returns URLs of all feeds referenced in the knownFeeds section of this feed.
+    ---@return string[] urls
     getKnownFeeds: =>
         return {} unless @data
         return [url for _, url in pairs @data.knownFeeds]
         -- TODO: maybe also search all requirements for feed URLs
 
-    --- Downloads feed to a temporary JSON file and sets the .fileName property for subsequent loading. 
-    -- @param fileName? string
-    -- @param expansionMode? UpdateFeedExpansionMode
-    -- @return table|boolean dataOrSuccess
-    -- @return string|nil err
+    ---Downloads feed to a temporary JSON file and sets the .fileName property for subsequent loading.
+    ---@param fileName? string Destination path (defaults to a generated temp path).
+    ---@param expansionMode? UpdateFeedExpansionMode
+    ---@return table|boolean dataOrSuccess
+    ---@return string? err
     fetch: (fileName, expansionMode) =>
         -- Initialize download infrastructure lazily on first fetch.
         unless @downloader
@@ -257,17 +262,16 @@ class UpdateFeed extends Common
         @logger\trace msgs.trace.downloaded, @fileName
         return @loadFile @fileName, expansionMode
 
-    --- Loads and parses a local feed JSON file, expanding all template variables in-place.
-    -- Use this to load a feed already on disk without going through the network.
-    ---@param srcPath? string Local filesystem path to the feed JSON file. 
-    ---            Defaults to the .fileName property, which has either been provided in the
-    ---            constructor, or set to a temporary path when the feed is fetched.
-    ---@param expansionMode? UpdateFeedExpansionMode expansion mode (Defaults to remote if feed is loaded
-    ---            from an URL; otherwise local, enables resolving of the rolling @{localFileBasePath} 
-    ---            template variables to and exposes the `localFilePath` property on file records
-    ---            for usage in build tooling such as the bundler).
-    ---@return table|boolean the expanded feed data, or false on failure
-    ---@return string|nil err error message on failure
+    ---Loads and parses a local feed JSON file, expanding all template variables in-place.
+    ---Use this to load a feed already on disk without going through the network.
+    ---@param srcPath? string Local filesystem path to the feed JSON file.
+    ---Defaults to the .fileName property, which was either provided in the
+    ---constructor, or set to a temporary path when the feed is fetched.
+    ---@param expansionMode? UpdateFeedExpansionMode Expansion mode. Defaults to remote if the feed
+    ---was loaded from a URL; otherwise local, which resolves the rolling localFileBasePath template
+    ---variables and exposes the `localFilePath` property on file records for build tooling such as the bundler.
+    ---@return table|boolean dataOrSuccess The expanded feed data, or false on failure.
+    ---@return string? err Error message on failure.
     loadFile: (srcPath = @fileName, expansionMode) =>
         handle, err = io.open srcPath
         unless handle
@@ -296,10 +300,10 @@ class UpdateFeed extends Common
         @expand expansionMode
         return @data
 
-    --- Fetches the feed (or loads it from disk if local) in case it hasn't been loaded yet.
-    -- @param expansionMode? UpdateFeedExpansionMode the expansion mode required for the operation
-    -- @return table|boolean feedData the expanded feed data, or false on failure
-    -- @return string|nil error an error message in case of failure
+    ---Fetches the feed (or loads it from disk if local) in case it hasn't been loaded yet.
+    ---@param expansionMode? UpdateFeedExpansionMode The expansion mode required for the operation.
+    ---@return table|boolean|nil feedData The expanded feed data, false on failure, or nil on a local-path error.
+    ---@return string? err An error message in case of failure.
     ensureLoaded: (expansionMode) =>
         if expansionMode == @@ExpansionMode.Local and not @fileName
             return nil, msgs.ensureLoaded.noLocalPath\format @url
@@ -319,9 +323,9 @@ class UpdateFeed extends Common
 
         return @loadFile @fileName, expansionMode
 
-    --- Walks the parsed feed JSON and expands @{template} variables in-place.
-    -- @param mode UpdateFeedExpansionMode expansion mode local mode resolves addition rolling templates for local source file paths
-    -- @return table data
+    ---Walks the parsed feed JSON and expands template variables in-place.
+    ---@param mode? UpdateFeedExpansionMode Expansion mode; local mode additionally resolves rolling templates for local source file paths.
+    ---@return table data
     expand: (mode = @expansionMode or (@_url and @@ExpansionMode.Remote or @@ExpansionMode.Local)) =>
         {:templates, :maxDepth, :sourceAt, :rolling, :sourceKeys} = templateData
         isLocalMode = mode == @@ExpansionMode.Local
@@ -393,13 +397,13 @@ class UpdateFeed extends Common
 
         return @data
 
-    --- Retrieves a script update record by namespace and type.
-    -- @param namespace string
-    -- @param scriptType number|boolean
-    -- @param[opt] config table
-    -- @param[opt] autoChannel boolean
-    -- @return ScriptUpdateRecord|boolean|nil
-    -- @return string|nil err
+    ---Retrieves a script update record by namespace and type.
+    ---@param namespace string
+    ---@param scriptType integer|boolean A Common.ScriptType value (true/false accepted for legacy module/automation).
+    ---@param config? table
+    ---@param autoChannel? boolean Select the default channel automatically.
+    ---@return ScriptUpdateRecord|boolean|nil record False when not found, nil on error.
+    ---@return string? err
     getScript: (namespace, scriptType, config, autoChannel) =>
         -- legacy compatibility for <= 0.6.3
         if scriptType == true then scriptType = @@ScriptType.Module
@@ -414,28 +418,28 @@ class UpdateFeed extends Common
         return false unless scriptData
         ScriptUpdateRecord namespace, scriptData, config, scriptType, autoChannel, @logger
 
-    --- Retrieves an automation script update record by namespace.
-    -- @param namespace string
-    -- @param[opt] config table
-    -- @param[opt] autoChannel boolean
-    -- @return ScriptUpdateRecord|boolean|nil
-    -- @return string|nil err
+    ---Retrieves an automation script update record by namespace.
+    ---@param namespace string
+    ---@param config? table
+    ---@param autoChannel? boolean Select the default channel automatically.
+    ---@return ScriptUpdateRecord|boolean|nil record False when not found, nil on error.
+    ---@return string? err
     getMacro: (namespace, config, autoChannel) =>
         @getScript namespace, @@ScriptType.Automation, config, autoChannel
 
-    --- Retrieves a module update record by namespace.
-    -- @param namespace string
-    -- @param[opt] config table
-    -- @param[opt] autoChannel boolean
-    -- @return ScriptUpdateRecord|boolean|nil
-    -- @return string|nil err
+    ---Retrieves a module update record by namespace.
+    ---@param namespace string
+    ---@param config? table
+    ---@param autoChannel? boolean Select the default channel automatically.
+    ---@return ScriptUpdateRecord|boolean|nil record False when not found, nil on error.
+    ---@return string? err
     getModule: (namespace, config, autoChannel) =>
         @getScript namespace, @@ScriptType.Module, config, autoChannel
 
-    --- Returns the default channel's version for a module namespace, or nil.
-    -- "Default" means the channel with default:true; falls back to the first channel found.
-    -- @param namespace string
-    -- @return string|nil version
+    ---Returns the default channel's version for a module namespace, or nil.
+    ---"Default" means the channel with default:true; falls back to the first channel found.
+    ---@param namespace string
+    ---@return string? version
     getModuleVersion: (namespace) =>
         pkg = @data.modules and @data.modules[namespace]
         return nil unless pkg
@@ -445,13 +449,13 @@ class UpdateFeed extends Common
             return ch.version if ch.default
         fallback
 
-    --- Resolves which channel of a package to operate on.
-    -- With an explicit name, that channel must exist; otherwise the channel flagged `default: true`
-    -- is used.
-    -- @param channels table the package's `channels` map
-    -- @param channelName? string an explicit channel name to select
-    -- @return string|nil name the resolved channel name, or nil if none matched
-    -- @return string|nil err Error message on failure
+    ---Resolves which channel of a package to operate on.
+    ---With an explicit name, that channel must exist; otherwise the channel flagged `default: true`
+    ---is used.
+    ---@param channels? table The package's `channels` map.
+    ---@param channelName? string An explicit channel name to select.
+    ---@return string? name The resolved channel name, or nil if none matched.
+    ---@return string? err Error message on failure.
     @resolveChannel = (channels = {}, channelName) =>
         if channelName
             return channelName if channels[channelName]
@@ -460,10 +464,10 @@ class UpdateFeed extends Common
             return name if channel.default
         return nil, "no default channel — specify one explicitly"
 
-    --- Writes the raw (unexpanded) feed data back to disk.
-    -- @param path? string destination path (defaults to the source path of the loaded feed)
-    -- @return boolean success Whether the write succeeded
-    -- @return string|nil err Error message on failure
+    ---Writes the raw (unexpanded) feed data back to disk.
+    ---@param path? string Destination path (defaults to the source path of the loaded feed).
+    ---@return boolean success Whether the write succeeded.
+    ---@return string? err Error message on failure.
     writeRawFeed: (path) =>
         loaded, err = @ensureLoaded!
         return false, err unless loaded
@@ -471,13 +475,13 @@ class UpdateFeed extends Common
         encoded = dkjson.encode @rawFeedData, {indentMode: "prettier", keyorder: feedKeyOrder}
         FileOps.writeFile path, "#{encoded}\n", true
 
-    --- Validates @rawFeedData against the feed schema matching its declared format version.
-    -- Best-effort: warns through @logger but never raises, so an unavailable schema rock or a
-    -- non-conforming feed doesn't block an update.
-    -- @param schemaDir string|string[] directory holding the feed schemas (named `v<version>.json`)
-    -- @return boolean|nil valid Whether the feed is valid, or nil if validation couldn't be performed
-    -- @return string schemaVersionOrErrMsg The feed format version the feed validated against, 
-    --                                      or an error message if validation couldn't be performed.
+    ---Validates @rawFeedData against the feed schema matching its declared format version.
+    ---Best-effort: warns through @logger but never raises, so an unavailable schema rock or a
+    ---non-conforming feed doesn't block an update.
+    ---@param schemaDir string|string[] Directory holding the feed schemas (named `v<version>.json`).
+    ---@return boolean? valid Whether the feed is valid, or nil if validation couldn't be performed.
+    ---@return string? schemaVersion The feed format version validated against, if any.
+    ---@return string? message A success or error message.
     validateAgainstSchema: (schemaDir) =>
         JsonSchema or= require "l0.DependencyControl.JsonSchema"
 
@@ -494,13 +498,13 @@ class UpdateFeed extends Common
             return true, validationVersion, msgs.update.schemaValid\format validationVersion
         return isValid, validationVersion, validationErr
 
-    --- Updates a package channel's version and dependencies in the raw feed data by loading
-    -- the package's script and reading its DependencyControl record. 
-    -- @param scriptType number the script type of the package to refresh (supported: Common.ScriptType.Automation or Common.ScriptType.Module)
-    -- @param packageNamespace string the package namespace
-    -- @param rawChannel table the raw channel entry to update in place
-    -- @return boolean|nil changed whether anything was modified or nil on error
-    -- @return string|nil err error message on failure
+    ---Updates a package channel's version and dependencies in the raw feed data by loading
+    ---the package's script and reading its DependencyControl record.
+    ---@param scriptType integer The script type of the package to refresh (Common.ScriptType.Automation or .Module).
+    ---@param packageNamespace string The package namespace.
+    ---@param rawChannel table The raw channel entry to update in place.
+    ---@return boolean? changed Whether anything was modified, or nil on error.
+    ---@return string? err Error message on failure.
     refreshVersionRecord: (scriptType, packageNamespace, rawChannel) =>
         -- Require the script so it registers its DependencyControl record by namespace: macros do
         -- so simply by running, modules by constructing their record at load. Modules that defer to
@@ -552,13 +556,13 @@ class UpdateFeed extends Common
 
         return changed
 
-    --- Refreshes the SHA-1 hashes of a channel's files from their local sources and flags any
-    -- file that has vanished locally with `delete: true` so the Updater removes it from users'
-    -- installations on their next update. Files already flagged for deletion are left untouched.
-    -- @param rawChannel table the raw channel entry to update in place
-    -- @param expandedChannel table the matching expanded channel
-    -- @return boolean changed whether anything was modified
-    -- @return string[] errors per-file error messages encountered while refreshing
+    ---Refreshes the SHA-1 hashes of a channel's files from their local sources and flags any
+    ---file that has vanished locally with `delete: true` so the Updater removes it from users'
+    ---installations on their next update. Files already flagged for deletion are left untouched.
+    ---@param rawChannel table The raw channel entry to update in place.
+    ---@param expandedChannel table The matching expanded channel.
+    ---@return boolean changed Whether anything was modified.
+    ---@return string[] errors Per-file error messages encountered while refreshing.
     refreshFiles: (rawChannel, expandedChannel) =>
         return false, {} unless rawChannel.files
 
@@ -582,14 +586,14 @@ class UpdateFeed extends Common
 
         return changed, errors
 
-    --- Applies all in-place updates to a single package's selected channel and, if anything
-    -- changed, resets its `released` date to null to mark the build as pending/unreleased.
-    -- Collects this package's own outcome rather than mutating shared state, so the caller can
-    -- present results per package.
-    -- @param scriptType Common.ScriptType the package's script type (1 for automation or 2 for module)
-    -- @param packageNamespace string the namespaced identifier of the package to update (e.g. "l0.Functional")
-    -- @param channel? string the channel to update (default: each package's default channel)
-    -- @return table result { namespace, scriptType, channel?, changed = boolean, errors = string[] }
+    ---Applies all in-place updates to a single package's selected channel and, if anything
+    ---changed, resets its `released` date to null to mark the build as pending/unreleased.
+    ---Collects this package's own outcome rather than mutating shared state, so the caller can
+    ---present results per package.
+    ---@param scriptType integer The package's script type (Common.ScriptType.Automation or .Module).
+    ---@param packageNamespace string The namespaced identifier of the package to update (e.g. "l0.Functional").
+    ---@param channel? string The channel to update (default: the package's default channel).
+    ---@return { namespace: string, scriptType: integer, channel?: string, changed: boolean, errors: string[] } result
     updatePackage: (scriptType, packageNamespace, channel) =>
         result = {namespace: packageNamespace, :scriptType, changed: false, errors: {}}
         errors = result.errors
@@ -623,20 +627,12 @@ class UpdateFeed extends Common
 
         return result
 
-    --- Loads the feed (unless already loaded), optionally validates it, refreshes the targeted
-    -- packages in place and writes the result back to disk. The feed path is the one supplied to
-    -- the constructor; pre-load with @{loadFile} if you need to act on the feed before refresh.
-    -- @param opts? table options to customize the behavior; fields:
-    --   channel?    string              channel to update (default: each package's default channel)
-    --   filter?     ScriptTargetFilter  restricts which packages are processed (default: all)
-    --   schemaDir?  string|string[]     directory of feed schemas (`v<version>.json`); when given,
-    --                                   the feed is validated against its declared format version.
-    --   outPath?    string|boolean      where to write the updated feed. `false` performs a dry run,
-    --                                   defaults to the source path of the loaded feed.
-    -- @return table|nil stats { changed = number (packages changed), errored = number (packages with
-    --         errors), packages = { {namespace, scriptType, channel?, changed, errors}, ... } }, or
-    --         nil on a fatal load/write error
-    -- @return string|nil err
+    ---Loads the feed (unless already loaded), optionally validates it, refreshes the targeted
+    ---packages in place and writes the result back to disk. The feed path is the one supplied to
+    ---the constructor; pre-load with loadFile() if you need to act on the feed before refresh.
+    ---@param opts? { channel?: string, filter?: ScriptTargetFilter, schemaDir?: string|string[], outPath?: string|boolean } Options. `outPath` false performs a dry run; nil/true defaults to the loaded feed's source path.
+    ---@return { changed: integer, errored: integer, packages: table[] }|nil stats Per-run statistics, or nil on a fatal load/write error.
+    ---@return string? err
     updateFeed: (opts = {}) =>
         -- Loads lazily in Local mode; a prior walkFiles/walkPackages (e.g. from registering a
         -- module searcher) may already have loaded the feed, in which case this is a no-op.
@@ -670,14 +666,13 @@ class UpdateFeed extends Common
 
         return stats
 
-    --- Copies every file listed in the feed to distDir using the Updater's install layout.
-    -- The feed must have been loaded with ExpansionMode.Local so localFileBasePath is populated.
-    -- @param distDir string absolute path of the output dist directory
-    -- @param scriptTypes? table list of script types to deploy (by default goes over automation scripts and modules)
-    -- @param clobber? boolean overwrite existing destination files (defaults to false)
-    -- @return number fileCount number of files successfully copied
-    -- @return number errCount number of files that failed to copy (e.g. due to missing source file or copy error)
-    -- @param filter? ScriptTargetFilter restricts which packages are deployed (by default deploys all)
+    ---Copies every file listed in the feed to distDir using the Updater's install layout.
+    ---The feed must have been loaded with ExpansionMode.Local so localFileBasePath is populated.
+    ---@param distDir string Absolute path of the output dist directory.
+    ---@param filter? ScriptTargetFilter Restricts which packages are deployed (default: all).
+    ---@param clobber? boolean Overwrite existing destination files (default false).
+    ---@return number fileCount Number of files successfully copied.
+    ---@return number errCount Number of files that failed to copy (e.g. missing source file or copy error).
     deployFiles: (distDir, filter, clobber = false) =>
         fileCount, errCount = 0, 0
 
@@ -715,28 +710,28 @@ class UpdateFeed extends Common
 
         return fileCount, errCount
 
-    --- Returns a coroutine-based iterator over the packages of this feed that pass the filter.
-    -- The feed must have been loaded before calling this method.
-    -- Each iteration yields three values:
-    --   pkg        – the package object; the package key is accessible via `.namespace`
-    --   scriptType – the script type (Common.ScriptType.Module / .Automation)
-    --   section    – the section name (e.g. "macros" or "modules")
-    -- @param filter? ScriptTargetFilter restricts which packages are walked (default: all)
-    -- @return function iterator
+    ---Returns a coroutine-based iterator over the packages of this feed that pass the filter.
+    ---The feed must have been loaded before calling this method.
+    ---Each iteration yields three values:
+    ---  pkg        – the package object; the package key is accessible via `.namespace`
+    ---  scriptType – the script type (Common.ScriptType.Module / .Automation)
+    ---  section    – the section name (e.g. "macros" or "modules")
+    ---@param filter? ScriptTargetFilter Restricts which packages are walked (default: all).
+    ---@return function iterator
     walkPackages: (filter = ScriptTargetFilter!\includeAll!) =>
         @ensureLoaded!
         walkPackages @, filter
 
-    --- Returns a coroutine-based iterator over every file entry of the packages passing the filter.
-    -- The feed must have been loaded before calling this method.
-    -- Each iteration yields five values:
-    --   file    – the file object; `.localFilePath` resolves localFileBasePath+name against @feedDir
-    --   channel – the channel object; the channel key is accessible via `.name`
-    --   pkg     – the package object; the package key is accessible via `.namespace`
-    --   section – the section name (e.g. "macros" or "modules")
-    --   scriptType – the script type (Common.ScriptType.Module / .Automation)
-    -- @param filter? ScriptTargetFilter restricts which packages are walked (default: all)
-    -- @return function iterator
+    ---Returns a coroutine-based iterator over every file entry of the packages passing the filter.
+    ---The feed must have been loaded before calling this method.
+    ---Each iteration yields five values:
+    ---  file    – the file object; `.localFilePath` resolves localFileBasePath+name against @feedDir
+    ---  channel – the channel object; the channel key is accessible via `.name`
+    ---  pkg     – the package object; the package key is accessible via `.namespace`
+    ---  section – the section name (e.g. "macros" or "modules")
+    ---  scriptType – the script type (Common.ScriptType.Module / .Automation)
+    ---@param filter? ScriptTargetFilter Restricts which packages are walked (default: all).
+    ---@return function iterator
     walkFiles: (filter = ScriptTargetFilter!\includeAll!) =>
         @ensureLoaded @@ExpansionMode.Local
         coroutine.wrap ->

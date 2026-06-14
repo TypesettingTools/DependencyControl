@@ -49,11 +49,11 @@ rebuildSortedTokens!
 normalizeToken = (spec) ->
     "string" == type(spec) and (spec\sub(1, 1) == "?" and spec or "?#{spec}") or spec
 
---- Points an Aegisub path token (e.g. "?user", "?temp") at a different directory.
--- Lets headless callers relocate where DepCtrl reads/writes without environment variables.
--- @param spec string the token to set, with or without the leading "?" ("user" or "?user")
--- @param dir string|nil the directory to resolve the token to; nil/"" marks it unset
--- @return string|nil dir the value the token now resolves to
+---Points an Aegisub path token (e.g. "?user", "?temp") at a different directory.
+---Lets headless callers relocate where DepCtrl reads/writes without environment variables.
+---@param spec string The token to set, with or without the leading "?" ("user" or "?user").
+---@param dir? string The directory to resolve the token to; nil/"" marks it unset.
+---@return string? dir The value the token now resolves to.
 setPathToken = (spec, dir) ->
     normalizedToken = normalizeToken spec
     previousDir = pathTokens[normalizedToken]
@@ -86,9 +86,9 @@ setPathToken = (spec, dir) ->
         package.moonpath, userPathsAddedToPackagePathMoon = rebuildUserPaths package.moonpath, userPathsAddedToPackagePathMoon, "moon"
     return dir
 
---- Returns the directory an Aegisub path token currently resolves to.
--- @param spec string the token to query, with or without the leading "?"
--- @return string|nil dir the configured directory, or nil if the token is unknown
+---Returns the directory an Aegisub path token currently resolves to.
+---@param spec string The token to query, with or without the leading "?".
+---@return string? dir The configured directory, or nil if the token is unknown.
 getPathToken = (spec) ->
     dir = pathTokens[normalizeToken spec]
     return dir if dir and dir != ""

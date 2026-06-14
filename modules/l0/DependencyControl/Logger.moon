@@ -1,8 +1,8 @@
 Timer = require "l0.DependencyControl.Timer"
 lfs = require "lfs"
 
---- Structured logger that writes to Aegisub's log window and optional log files.
--- @class Logger
+---Structured logger that writes to Aegisub's log window and optional log files.
+---@class Logger
 class Logger
     levels = {"fatal", "error", "warning", "hint", "debug", "trace"}
     defaultLevel: 2
@@ -43,14 +43,14 @@ class Logger
         @fileName = @fileTemplate\format aegisub.decode_path(@logDir), os.date("%Y-%m-%d-%H-%M-%S"),
                                           math.random(0, 16^4-1), @fileBaseName, @fileSubName
 
-    --- Writes a log message with explicit rendering options.
-    -- @param[opt] level number
-    -- @param[opt] msg string|table
-    -- @param[opt=true] insertLineFeed boolean
-    -- @param[opt] prefix string
-    -- @param[opt] indent number
-    -- @param[opt] ... any
-    -- @return boolean
+    ---Writes a log message with explicit rendering options.
+    ---@param level? number Severity level (default: the logger's defaultLevel).
+    ---@param msg? string|table Message, or a list of lines joined with newlines.
+    ---@param insertLineFeed? boolean Append a trailing newline (default true).
+    ---@param prefix? string Line prefix (default: the logger's prefix).
+    ---@param indent? number Indentation depth (default: the logger's indent).
+    ---@param ... any Format arguments substituted into msg.
+    ---@return boolean written False if msg was empty, otherwise true.
     logEx: (level = @defaultLevel, msg = "", insertLineFeed = true, prefix = @prefix, indent = @indent, ...) =>
         return false if msg == ""
 
@@ -106,19 +106,19 @@ class Logger
     debug: (...) => @log 4, ...
     trace: (...) => @log 5, ...
 
-    --- Logs an error message when the given condition is falsy.
-    -- @param cond any
-    -- @param[opt] ... any
-    -- @return any
+    ---Logs an error message when the given condition is falsy.
+    ---@param cond any Value to test for truthiness.
+    ---@param ... any Error message and format arguments logged when cond is falsy.
+    ---@return any cond The condition and any trailing arguments, returned unchanged when truthy.
     assert: (cond, ...) =>
         if not cond
             @log 1, ...
         else return cond, ...
 
-    --- Logs an error message when the given condition is nil.
-    -- @param cond any
-    -- @param[opt] ... any
-    -- @return any
+    ---Logs an error message when the given condition is nil.
+    ---@param cond any Value to test for nil.
+    ---@param ... any Error message and format arguments logged when cond is nil.
+    ---@return any cond The condition and any trailing arguments, returned unchanged when not nil.
     assertNotNil: (cond, ...) =>
         if cond == nil
             @log 1, ...
@@ -138,19 +138,19 @@ class Logger
             @progressStep = step
 
     -- taken from https://github.com/TypesettingCartel/Aegisub-Motion/blob/master/src/Log.moon
-    --- Logs a table dump (or scalar value) at the specified level.
-    -- @param item any
-    -- @param[opt] ignore any
-    -- @param[opt] level number
-    -- @param[opt] maxDepth number
+    ---Logs a table dump (or scalar value) at the specified level.
+    ---@param item any Value to dump; tables are rendered recursively.
+    ---@param ignore? any Table key to omit from the dump.
+    ---@param level? number Log level (default: the logger's defaultLevel).
+    ---@param maxDepth? number Maximum table depth to recurse into.
     dump: ( item, ignore, level = @defaultLevel, maxDepth ) =>
         @log level, @dumpToString item, ignore, maxDepth
 
-    --- Converts a table dump (or scalar value) to a readable string.
-    -- @param item any
-    -- @param[opt] ignore any
-    -- @param[opt] maxDepth number
-    -- @return string
+    ---Converts a table dump (or scalar value) to a readable string.
+    ---@param item any Value to render; tables are rendered recursively.
+    ---@param ignore? any Table key to omit from the dump.
+    ---@param maxDepth? number Maximum table depth to recurse into.
+    ---@return string
     dumpToString: ( item, ignore, maxDepth ) =>
         if "table" != type item
             return tostring item

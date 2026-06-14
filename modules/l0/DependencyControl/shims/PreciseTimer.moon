@@ -4,8 +4,8 @@ Timer = require "l0.DependencyControl.Timer"
 -- shim has no library, so expose this module's own source path as the closest equivalent.
 selfPath = debug.getinfo(1, "S").source\gsub "^@", ""
 
---- A monotonic stopwatch replicating the native PT.PreciseTimer API on top of the
--- DependencyControl Timer engine.
+---A monotonic stopwatch replicating the native PT.PreciseTimer API on top of the
+---DependencyControl Timer engine.
 ---@class PreciseTimer
 class PreciseTimer
     -- mirrors the native PT.PreciseTimer version this shim is API-compatible with

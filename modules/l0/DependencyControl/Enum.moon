@@ -33,8 +33,8 @@ msgs = {
   }
 }
 
---- An immutable enumeration type with value/key reverse lookup.
--- @class Enum
+---An immutable enumeration type with value/key reverse lookup.
+---@class Enum
 class Enum
   @logger = Logger fileBaseName: "DependencyControl.Enum"
   @reservedKeys = reservedKeys
@@ -42,10 +42,10 @@ class Enum
     return type(k) == "string" and (k\sub(1,2) == "__" or reservedKeySet[k]) or false
 
 
-  --- Creates an enum from a table of key/value pairs or a list of names.
-  -- @param name string
-  -- @param values table
-  -- @param[opt] logger Logger
+  ---Creates an enum from a table of key/value pairs or a list of names.
+  ---@param name string
+  ---@param values table Key/value pairs, or a list of names whose value defaults to their position.
+  ---@param __logger? Logger
   new: (@name, values, @__logger = @@logger) =>
     @__logger\assert type(@name) == "string", msgs.new.missingOrInvalidName, Logger\describeType @name
     @elements, @__valuesToKeys, @values, @keys = {}, {}, {}, {}
@@ -83,20 +83,20 @@ class Enum
     }, clsIdx
 
 
-  --- Returns whether the given key is defined in this enum.
-  -- @param key string
-  -- @return boolean
-  -- @return any|nil value
+  ---Returns whether the given key is defined in this enum.
+  ---@param key string
+  ---@return boolean defined
+  ---@return any value The value mapped to the key, or nil if undefined.
   test: (key) =>
     val = @elements[key]
     return val != nil and true or false, val
 
 
-  --- Returns the key name(s) for one or more values.
-  -- @param values any
-  -- @param[opt] join string|boolean
-  -- @return string|string[]|nil
-  -- @return string|nil err
+  ---Returns the key name(s) for one or more values.
+  ---@param values any A single value, or a list of values to look up.
+  ---@param join? string|boolean Separator string for joining multiple keys, true for ", ", or false to return a list (default false).
+  ---@return string|string[]|nil keys The matching key(s), or nil when a single value is undefined.
+  ---@return string? err Error message when a single value is undefined.
   describe: (values, join = false) =>
     key = @__valuesToKeys[values]
     if key != nil
@@ -114,11 +114,11 @@ class Enum
     return join and table.concat(keys, join == true and ', ' or join) or keys
 
 
-  --- Validates that a value is a member of this enum.
-  -- @param value any
-  -- @param[opt] argName string
-  -- @return boolean|nil
-  -- @return string|nil err
+  ---Validates that a value is a member of this enum.
+  ---@param value any
+  ---@param argName? string Argument name to include in the error message.
+  ---@return boolean? valid True when the value is a member, nil otherwise.
+  ---@return string? err Validation error message when invalid.
   validate: (value, argName) =>
     if value == nil or @__valuesToKeys[value] == nil
       prefix = argName != nil and msgs.validate.argPrefix\format(argName) or ""

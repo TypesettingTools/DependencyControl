@@ -21,20 +21,40 @@ unless recordsByNamespace
     recordsByNamespace = {}
     _G[DEPCTRL_RECORDS_GLOBAL_KEY] = recordsByNamespace
 
---- Registers a record in the global registry under its namespace. Latest call wins.
--- @param record Record
--- @return Record the record passed in
+---Registers a record in the global registry under its namespace. Latest call wins.
+---@param record Record
+---@return Record record The record passed in.
 registerRecord = (record) ->
     recordsByNamespace[record.namespace] = record if record.namespace
     return record
 
---- Removes a namespace's record from the registry (e.g. on uninstall).
--- @param namespace string
+---Removes a namespace's record from the registry (e.g. on uninstall).
+---@param namespace string
 unregisterRecord = (namespace) -> recordsByNamespace[namespace] = nil
 
 
---- DependencyControl record representing one managed or unmanaged script/module.
--- @class Record
+---Constructor arguments for a [Record](lua://Record). All fields are optional; unset fields are
+---filled from script_* globals (for automation scripts) or sensible defaults.
+---@class RecordArgs
+---@field [1]? table[] Required module specs, passed positionally.
+---@field moduleName? string Module namespace; its presence marks this record as a module rather than an automation script.
+---@field name? string Display name (defaults to the script/module name).
+---@field description? string Description (defaults to script_description).
+---@field author? string Author (defaults to script_author).
+---@field version? number|string Semantic version (defaults to script_version).
+---@field namespace? string Unique namespace (defaults to script_namespace).
+---@field url? string Project or homepage URL.
+---@field feed? string Update feed URL.
+---@field configFile? string Config file name (defaults to "<namespace>.json").
+---@field virtual? boolean Mark as a not-yet-installed placeholder record.
+---@field recordType? integer A Common.RecordType value (default Managed).
+---@field requiredModules? table[] Required module specs (alternative to the positional list).
+---@field provides? string[] Module alias names this module satisfies for `require`.
+---@field readGlobalScriptVars? boolean Read script_* globals for unset fields (default true).
+---@field saveRecordToConfig? boolean Persist this record to the config file (default true).
+
+---DependencyControl record representing one managed or unmanaged script/module.
+---@class Record: DependencyControlCommon
 class Record extends Common
     msgs = {
         new: {
@@ -67,17 +87,17 @@ class Record extends Common
                          logDir: "?user/log", writeLogs: true}
     }
 
-    --- Returns the live, installed record registered for a namespace, or nil if none is registered
-    -- or the registered one is still a virtual (not-yet-installed) placeholder.
-    -- @param namespace string
-    -- @return Record|nil
+    ---Returns the live, installed record registered for a namespace, or nil if none is registered
+    ---or the registered one is still a virtual (not-yet-installed) placeholder.
+    ---@param namespace string
+    ---@return Record? record
     @getRegisteredRecord = (namespace) =>
         record = recordsByNamespace[namespace]
         record unless record and record.virtual
 
-    --- Returns all currently registered live records keyed by namespace.
-    -- Includes virtual (not-yet-installed) placeholders.
-    -- @return {[string]: Record}
+    ---Returns all currently registered live records keyed by namespace.
+    ---Includes virtual (not-yet-installed) placeholders.
+    ---@return table<string, Record> records
     @getAllRegisteredRecords = => {ns, record for ns, record in pairs recordsByNamespace}
 
     init = =>
@@ -96,8 +116,8 @@ class Record extends Common
         FileOps.runScheduledRemoval @configDir
 
 
-    --- Creates a DependencyControl record from explicit arguments and/or script globals.
-    -- @param args table
+    ---Creates a DependencyControl record from explicit arguments and/or script globals.
+    ---@param args RecordArgs
     new: (args) =>
         init Record unless @@logger
 
@@ -181,16 +201,16 @@ class Record extends Common
 
     checkOptionalModules: ModuleLoader.checkOptionalModules
 
-    --- Loads global DependencyControl configuration.
-    -- @return ConfigView
+    ---Loads global DependencyControl configuration.
+    ---@return ConfigView config
     @loadConfig = =>
         if @config
             @config\load!
         else @config = ConfigView\get @depConf.file, {"config"}, @depConf.globalDefaults, @logger
 
-    --- Loads this record's script/module configuration hive.
-    -- @param[opt=false] importRecord boolean
-    -- @return boolean
+    ---Loads this record's script/module configuration hive.
+    ---@param importRecord? boolean Overwrite this record's fields from the stored config (default false).
+    ---@return boolean shouldWriteConfig
     loadConfig: (importRecord = false) =>
         -- virtual modules are not yet present on the user's system and have no persistent configuration
         @config or= ConfigView\get not @virtual and @@depConf.file,
@@ -221,8 +241,7 @@ class Record extends Common
 
         return false
 
-    --- Writes this record's persisted fields to the shared config file.
-    -- @return nil
+    ---Writes this record's persisted fields to the shared config file.
     writeConfig: =>
         unless @virtual or @config.file
             @config\setFile @@depConf.file
@@ -240,22 +259,22 @@ class Record extends Common
     @getVersionString = SemanticVersioning.toString
 
 
-    --- Resolves this record's external config file path.
-    -- @return string
+    ---Resolves this record's external config file path.
+    ---@return string path
     getConfigFileName: () =>
         return aegisub.decode_path "#{@@configDir}/#{@configFile}"
 
-    --- Creates a ConfigView for this record's script-specific config file.
-    -- @param[opt] defaults table
-    -- @param[opt] section string|string[]
-    -- @param[opt] noLoad boolean
-    -- @return ConfigView
+    ---Creates a ConfigView for this record's script-specific config file.
+    ---@param defaults? table Default values for the config.
+    ---@param section? string|string[] Config section path.
+    ---@param noLoad? boolean Skip loading the file immediately.
+    ---@return ConfigView
     getConfigHandler: (defaults, section, noLoad) =>
         return ConfigView\get @getConfigFileName!, section, defaults, nil, noLoad
 
-    --- Creates a logger preconfigured for this record.
-    -- @param[opt] args table
-    -- @return Logger
+    ---Creates a logger preconfigured for this record.
+    ---@param args? table Logger options; missing fields are filled from this record's config.
+    ---@return Logger
     getLogger: (args = {}) =>
         args.fileBaseName or= @namespace
         args.toFile = @config.c.logToFile if args.toFile == nil
@@ -264,30 +283,30 @@ class Record extends Common
 
         return Logger args
 
-    --- Checks whether this record's version satisfies a minimum version.
-    -- @param value number|string|Record
-    -- @param[opt="patch"] precision SemverPrecision
-    -- @return boolean|nil
-    -- @return number|string|nil
+    ---Checks whether this record's version satisfies a minimum version.
+    ---@param value number|string|Record Version, or record, to compare against.
+    ---@param precision? SemverPrecision Precision to compare at (default "patch").
+    ---@return boolean? satisfied
+    ---@return number|string|nil maskedOrError Masked comparison value on success, or an error message.
     checkVersion: (value, precision = "patch") =>
         if type(value) == "table" and value.__class == @@
             value = value.version
         return SemanticVersioning\check @version, value
 
 
-    --- Retrieves managed submodules registered under this module namespace.
-    -- @return string[]|nil
-    -- @return ConfigView|nil
+    ---Retrieves managed submodules registered under this module namespace.
+    ---@return string[]? submodules Submodule namespaces, or nil for non-module records.
+    ---@return ConfigView? config The module config section handler.
     getSubmodules: =>
         return nil if @virtual or @recordType == @@RecordType.Unmanaged or @scriptType != @@ScriptType.Module
         mdlConfig = @@config\getSectionHandler @@ScriptType.name.legacy[@@ScriptType.Module]
         pattern = "^#{@namespace}."\gsub "%.", "%%."
         return [mdl for mdl, _ in pairs mdlConfig.c when mdl\match pattern], mdlConfig
 
-    --- Loads or updates required modules and returns their references.
-    -- @param[opt] modules table[]
-    -- @param[opt] addFeeds string[]
-    -- @return ... any
+    ---Loads or updates required modules and returns their references.
+    ---@param modules? table[] Module specs to load (default: this record's requiredModules).
+    ---@param addFeeds? string[] Extra feed URLs to search (default: this record's feed).
+    ---@return any ... The loaded module references, in order.
     requireModules: (modules = @requiredModules, addFeeds = {@feed}) =>
         success, err = ModuleLoader.loadModules @, modules, addFeeds
         @@updater\releaseLock!
@@ -298,8 +317,8 @@ class Record extends Common
             @@logger\error err
         return unpack [mdl._ref for mdl in *modules]
     
-    --- Registers DepUnit tests for this record if test modules are available.
-    -- @param[opt] ... any
+    ---Registers DepUnit tests for this record if test modules are available.
+    ---@param ... any Forwarded to the test suite's import().
     registerTests: (...) =>
         return if @haveTestSuite == false or @testSuiteInitialized
 
@@ -331,23 +350,25 @@ class Record extends Common
         -- registered centrally by the Toolbox (which loads each module exactly once).
         @tests\registerMacros! if @testSuiteInitialized and @scriptType == @@ScriptType.Automation
 
-    --- Finalizes module registration and swaps dummy module refs for real refs.
-    -- @param selfRef table
-    -- @param[opt] ... any
-    -- @return table
+    ---Finalizes module registration and swaps dummy module refs for real refs.
+    ---@param selfRef table The module's real exported table.
+    ---@param ... any Forwarded to registerTests().
+    ---@return table selfRef
     register: (selfRef, ...) =>
         -- replace dummy refs with real refs to own module
         @ref.__index, @ref, LOADED_MODULES[@moduleName] = selfRef, selfRef, selfRef
         @registerTests selfRef, ...
         return selfRef
 
-    --- Registers a single Aegisub macro with DependencyControl update hooks.
-    -- @param[opt] name string|function
-    -- @param[opt] description string|function
-    -- @param process function
-    -- @param[opt] validate function
-    -- @param[opt] isActive function
-    -- @param[opt] submenu string|boolean
+    ---Registers a single Aegisub macro with DependencyControl update hooks.
+    ---When the first argument is a function, name and description are taken from the script and the
+    ---remaining arguments shift left.
+    ---@param name? string|function Macro name, or the process function in the short signature.
+    ---@param description? string|function Macro description, or the validate function in the short signature.
+    ---@param process function Macro processing callback.
+    ---@param validate? function Aegisub validation callback.
+    ---@param isActive? function Aegisub is-active callback.
+    ---@param submenu? string|boolean Submenu name, or true to use the script name.
     registerMacro: (name=@name, description=@description, process, validate, isActive, submenu) =>
         @registerTests!
         -- alternative signature takes name and description from script
@@ -370,9 +391,9 @@ class Record extends Common
 
         aegisub.register_macro table.concat(menuName, "/"), description, processHooked, validate, isActive
 
-    --- Registers multiple macros declared in table form.
-    -- @param[opt] macros table[]
-    -- @param[opt=true] submenuDefault boolean
+    ---Registers multiple macros declared in table form.
+    ---@param macros? table[] Macro definitions, each an argument list for registerMacro.
+    ---@param submenuDefault? boolean Default submenu value applied when a macro omits it (default true).
     registerMacros: (macros = {}, submenuDefault = true) =>
         @registerTests!
         for macro in *macros
@@ -381,10 +402,10 @@ class Record extends Common
             macro[submenuIdx] = submenuDefault if macro[submenuIdx] == nil
             @registerMacro unpack(macro, 1, 6)
 
-    --- Parses and sets this record's semantic version.
-    -- @param version number|string
-    -- @return number|nil
-    -- @return string|nil err
+    ---Parses and sets this record's semantic version.
+    ---@param version number|string
+    ---@return number? version The parsed integer version, or nil on error.
+    ---@return string? err
     setVersion: (version) =>
         version, err = SemanticVersioning\toNumber version
         if version
@@ -392,16 +413,17 @@ class Record extends Common
             return version
         else return nil, err
 
-    --- Validates this record's namespace, always passing for virtual records.
-    -- @return boolean
+    ---Validates this record's namespace, always passing for virtual records.
+    ---@return boolean valid
+    ---@return string? err
     validateNamespace: =>
         return true if @virtual
         return Common.validateNamespace @namespace
 
-    --- Uninstalls this managed record and removes matching files from automation paths.
-    -- @param[opt=true] removeConfig boolean
-    -- @return boolean|nil
-    -- @return table|string|nil
+    ---Uninstalls this managed record and removes matching files from automation paths.
+    ---@param removeConfig? boolean Also delete the record's config (default true).
+    ---@return boolean? success nil when the record can't be uninstalled (virtual/unmanaged).
+    ---@return table|string|nil result Per-file removal results, or an error message.
     uninstall: (removeConfig = true) =>
         if @virtual or @recordType == @@RecordType.Unmanaged
             return nil, msgs.uninstall.noVirtualOrUnmanaged\format @virtual and "virtual" or "unmanaged",

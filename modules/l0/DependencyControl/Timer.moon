@@ -35,22 +35,22 @@ else
 
     sleep = (ms) -> ffi.C.poll nil, 0, ms
 
---- Timer with monotonic clock readings and millisecond sleep.
--- Not affected by system clock changes.
+---Timer with monotonic clock readings and millisecond sleep.
+---Not affected by system clock changes.
 ---@class Timer
 class Timer
-    --- Creates a new timer, running from the current time.
+    ---Creates a new timer, running from the current time.
     new: =>
         @accumulated = 0
         @start!
 
-    --- Returns the seconds measured so far, excluding any intervals during which the
-    -- timer was stopped.
+    ---Returns the seconds measured so far, excluding any intervals during which the
+    ---timer was stopped.
     ---@return number seconds
     timeElapsed: => @accumulated + (@running and getTime! - @startTime or 0)
 
-    --- Resumes measurement from the current time. No-op if already running, so a prior
-    -- stop/start round trip never discards accumulated time.
+    ---Resumes measurement from the current time. No-op if already running, so a prior
+    ---stop/start round trip never discards accumulated time.
     ---@return Timer self for chaining
     start: =>
         unless @running
@@ -58,8 +58,8 @@ class Timer
             @running   = true
         return @
 
-    --- Pauses measurement, folding the elapsed interval into the accumulated total.
-    -- No-op if already stopped.
+    ---Pauses measurement, folding the elapsed interval into the accumulated total.
+    ---No-op if already stopped.
     ---@return Timer self for chaining
     stop: =>
         if @running
@@ -67,8 +67,8 @@ class Timer
             @running = false
         return @
 
-    --- Clears the accumulated time and restarts measuring from the current time,
-    -- preserving the running/stopped state.
+    ---Clears the accumulated time and restarts measuring from the current time,
+    ---preserving the running/stopped state.
     ---@return Timer self for chaining
     reset: =>
         @accumulated = 0
@@ -81,8 +81,9 @@ class Timer
 
     @sleep = sleep
 
-    --- Returns the current value of the process's monotonic clock, in seconds, at
-    -- sub-second resolution. Only differences between readings are meaningful.
+    ---Returns the current value of the process's monotonic clock, in seconds, at
+    ---sub-second resolution. Only differences between readings are meaningful.
+    ---@return number seconds
     @getTime = getTime
 
 return Timer

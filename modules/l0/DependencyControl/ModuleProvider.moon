@@ -10,7 +10,6 @@ constants = require "l0.DependencyControl.Constants"
 --
 -- State lives in a global table so registrations and the installed searcher survive
 -- DependencyControl self-update reloads.
--- @class ModuleProvider
 
 DEPCTRL_MODULE_INIT_HOOK_NAME = "#{constants.DEPCTRL_PRIVATE_GLOBAL_VAR_PREFIX}Init"
 GLOBAL_KEY = "#{constants.DEPCTRL_PRIVATE_GLOBAL_VAR_PREFIX}ModuleProvider"
@@ -101,31 +100,35 @@ search = (name) ->
     return unless providerName
     -> initProvidedModule require providerName
 
+---Resolves provided module aliases to their provider module through a custom package searcher.
+---@class ModuleProvider
 class ModuleProvider
+    ---Returns true when value is a live DependencyControl Record instance, regardless of which class object created it.
     ---@param value any
-    ---@return boolean true when value is a live DependencyControl Record instance from any class object
+    ---@return boolean isRecord
     @isDepCtrlVersionRecord = isDepCtrlVersionRecord
 
-    --- Runs a freshly-loaded module reference's DependencyControl initializer (`__depCtrlInit`), if
-    -- it has one and hasn't been initialized yet, so the module exposes a proper DependencyControl
-    -- record. The guard avoids re-initializing modules that mutate state on first init (e.g. BadMutex).
-    -- @param ref any the loaded module reference
-    -- @param DependencyControl table the DependencyControl class to hand the initializer
-    -- @return any the same ref, for convenient chaining
+    ---Runs a freshly-loaded module reference's DependencyControl initializer (`__depCtrlInit`), if
+    ---it has one and hasn't been initialized yet, so the module exposes a proper DependencyControl
+    ---record. The guard avoids re-initializing modules that mutate state on first init (e.g. BadMutex).
+    ---@param ref any The loaded module reference.
+    ---@param DependencyControl table The DependencyControl class handed to the initializer.
+    ---@return boolean|nil ran True if the initializer ran, false if there was nothing to run, nil on initializer error.
+    ---@return string? err Error message when the initializer raised.
     @runInitializer = runInitializer
 
-    --- Registers a provider for an alias name. First registration wins.
-    -- @param alias string the (possibly bare) module name to provide
-    -- @param providerName string the namespaced module that provides it
-    -- @return boolean whether the registration was applied
+    ---Registers a provider for an alias name. First registration wins.
+    ---@param alias string The (possibly bare) module name to provide.
+    ---@param providerName string The namespaced module that provides it.
+    ---@return boolean registered Whether the registration was applied.
     @register = (alias, providerName) =>
         return false unless type(alias) == "string" and type(providerName) == "string"
         return false if state.providers[alias]
         state.providers[alias] = providerName
         return true
 
-    --- Registers every alias declared in a record's `provides` field.
-    -- @param record table a record with .moduleName and an optional .provides array
+    ---Registers every alias declared in a record's `provides` field.
+    ---@param record table A record with .moduleName and an optional .provides array.
     @registerRecord = (record) =>
         return unless record.provides and record.moduleName
         for alias in *record.provides
@@ -134,12 +137,12 @@ class ModuleProvider
 
     @fullTraceback = fullTraceback
 
-    --- Gets the provider namespace registered for an alias module name.
-    -- @param alias string
-    -- @return string|nil the provider namespace registered for the alias
+    ---Gets the provider namespace registered for an alias module name.
+    ---@param alias string
+    ---@return string? providerName The provider namespace registered for the alias.
     @getProvider = (alias) => state.providers[alias]
 
-    --- Installs the alias searcher. Idempotent across reloads.
+    ---Installs the alias searcher. Idempotent across reloads.
     @install = =>
         return if state.installed
         loaders = package.loaders or package.searchers

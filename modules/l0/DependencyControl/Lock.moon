@@ -19,23 +19,41 @@ RENEW_SAFETY_MARGIN_MS = 2000
 -- separates namespace from resource when hashing them into a single name token
 NAMESPACE_RESOURCE_SEPARATOR = "\31"
 
---- Cooperative, named lock with per-resource granularity. Each distinct
--- (scope, namespace, resource) maps to its own OS lock, so unrelated resources lock
--- independently. A lock is mutually exclusive across every Lock instance -- and, for
--- Global scope, across every process -- that targets the same tuple.
---
--- Scope (see Lock.Scope) selects the primitive and reach of exclusion:
---   Process: a named semaphore whose name embeds the pid; only Lua states within this
---            process contend.
---   Global:  an OS advisory file lock (FileLock) shared by every process in the session --
---            use for resources shared between Aegisub instances (e.g. a config file). The
---            kernel releases it if the holder crashes, so it never stays stuck; it cannot,
---            however, be taken from a holder that is alive but hung.
---
--- While held, the holder's identity and lease are recorded in a per-resource side file for
--- diagnostics. Long operations should call renew! periodically to extend the recorded lease
--- so waiters don't mistake a busy holder for a crashed one.
--- @class Lock
+---@alias LockScope
+---| "process" # Only Lua states within this process contend.
+---| "global" # Every process in the session contends (advisory file lock).
+
+---@class LockArgs
+---@field namespace? string Logical namespace component of the locked resource (default "").
+---@field resource? string Resource component within the namespace (default "").
+---@field holderName? string Human-readable holder name recorded for diagnostics (default "unknown").
+---@field logger? Logger
+---@field expiresAfter? number Lease duration in seconds before a holder is considered stale (default 300).
+---@field scope? LockScope Scope selecting the primitive and reach of exclusion (default "process").
+---@field recordHolder? boolean Write a holder side file while held (default true).
+---@field overrideExpiry? boolean Judge foreign holders against this instance's expiresAfter rather than their recorded lease (default false).
+
+---@class GuardArgs: LockArgs
+---@field timeout? number Acquire timeout in milliseconds (default math.huge).
+---@field lockWaitInterval? number Poll interval in milliseconds while waiting (default 250).
+
+---Cooperative, named lock with per-resource granularity. Each distinct
+---(scope, namespace, resource) maps to its own OS lock, so unrelated resources lock
+---independently. A lock is mutually exclusive across every Lock instance -- and, for
+---Global scope, across every process -- that targets the same tuple.
+---
+---Scope (see Lock.Scope) selects the primitive and reach of exclusion:
+---  Process: a named semaphore whose name embeds the pid; only Lua states within this
+---           process contend.
+---  Global:  an OS advisory file lock (FileLock) shared by every process in the session --
+---           use for resources shared between Aegisub instances (e.g. a config file). The
+---           kernel releases it if the holder crashes, so it never stays stuck; it cannot,
+---           however, be taken from a holder that is alive but hung.
+---
+---While held, the holder's identity and lease are recorded in a per-resource side file for
+---diagnostics. Long operations should call renew! periodically to extend the recorded lease
+---so waiters don't mistake a busy holder for a crashed one.
+---@class Lock
 class Lock
     msgs = {
         new: {
@@ -86,12 +104,13 @@ class Lock
             v = c == "x" and math.random(0, 0xf) or math.random 8, 0xb
             return "%x"\format v
 
-    -- Builds the OS lock primitive backing a lock: a named semaphore for Process scope, an
-    -- advisory file lock for Global scope.
-    -- @param scope string a Lock.Scope value
-    -- @param token string OS-safe semaphore name token (Process scope)
-    -- @param lockFile string full path to the lock file (Global scope)
-    -- @return table a primitive exposing isOpen, tryLock and unlock
+    ---Builds the OS lock primitive backing a lock: a named semaphore for Process scope, an
+    ---advisory file lock for Global scope.
+    ---@param scope LockScope
+    ---@param token string OS-safe semaphore name token (Process scope).
+    ---@param lockFile string Full path to the lock file (Global scope).
+    ---@return table? primitive A primitive exposing isOpen, tryLock and unlock, or nil on invalid scope.
+    ---@return string? err
     @createPrimitive = (scope, token, lockFile) =>
         scopeIsValid, errMsg = Scope\validate scope, "scope"
         return nil, errMsg unless scopeIsValid
@@ -112,11 +131,8 @@ class Lock
         lockFilePath = aegisub.decode_path "?temp/depctrl_lock_#{token}.lock"
         return token, holderFilePath, lockFilePath
 
-    --- Creates a lock for the given resource.
-    -- @param args table fields: namespace, resource, holderName?, logger?, expiresAfter?,
-    --   scope? (Lock.Scope, default Process), recordHolder? (default true),
-    --   overrideExpiry? (default false -- when true, judge a foreign holder against this
-    --   instance's expiresAfter instead of honoring the holder's recorded lease)
+    ---Creates a lock for the given resource.
+    ---@param args LockArgs
     new: (args) =>
         {namespace: @namespace, resource: @resource, holderName: @holderName, logger: @logger,
          expiresAfter: @expiresAfter, scope: @scope, recordHolder: @recordHolder,
@@ -160,9 +176,9 @@ class Lock
             __canary: canary
         }
 
-    -- Reads the holder record written by the current lock holder, or nil if none is
-    -- present/parseable. Read lock-free, so the record may be stale or briefly absent.
-    -- @return table|nil record
+    ---Reads the holder record written by the current lock holder, or nil if none is
+    ---present/parseable. Read lock-free, so the record may be stale or briefly absent.
+    ---@return table? record
     _readHolder: =>
         return nil unless @recordHolder
         data = FileOps.readFile @_holderFilePath
@@ -207,11 +223,11 @@ class Lock
             return record.acquiredAt + @expiresAfter
         return record.expiresAt or (record.acquiredAt and record.acquiredAt + @expiresAfter)
 
-    --- Returns the holder currently believed to hold this lock, or nil if it appears free.
-    -- Reads the side file lock-free, so the result is advisory: a holder whose lease has
-    -- lapsed (likely crashed) is reported as free, and a brand-new holder may not be visible
-    -- yet. Reports this instance too when it holds the lock. Requires holder recording.
-    -- @return table|nil record the holder record (holderName, pid, namespace, resource, ...)
+    ---Returns the holder currently believed to hold this lock, or nil if it appears free.
+    ---Reads the side file lock-free, so the result is advisory: a holder whose lease has
+    ---lapsed (likely crashed) is reported as free, and a brand-new holder may not be visible
+    ---yet. Reports this instance too when it holds the lock. Requires holder recording.
+    ---@return table? record The holder record (holderName, pid, namespace, resource, ...).
     getActiveHolder: =>
         record = @_readHolder!
         return nil unless record
@@ -219,19 +235,19 @@ class Lock
         return nil if deadline and os.time! > deadline
         return record
 
-    --- Returns the current lock state for this instance.
-    -- Returns Held if this instance holds the lock, Unknown otherwise (the OS lock
-    -- can't be queried for foreign holders without attempting to acquire it).
-    -- @return number LockState
+    ---Returns the current lock state for this instance.
+    ---Returns Held if this instance holds the lock, Unknown otherwise (the OS lock
+    ---can't be queried for foreign holders without attempting to acquire it).
+    ---@return integer state A Lock.LockState value.
     getState: =>
         return @@LockState.Held if @_state.held
         @@LockState.Unknown
 
-    --- Attempts to acquire the lock, waiting up to timeout milliseconds.
-    -- @param[opt=math.huge] timeout number
-    -- @param[opt=250] lockWaitInterval number
-    -- @return number LockState
-    -- @return number timePassed
+    ---Attempts to acquire the lock, waiting up to timeout milliseconds.
+    ---@param timeout? number Maximum time to wait in milliseconds (default math.huge).
+    ---@param lockWaitInterval? number Poll interval in milliseconds while waiting (default 250).
+    ---@return integer state A Lock.LockState value (Held on success, Unavailable on timeout).
+    ---@return number timePassed Milliseconds spent waiting.
     lock: (timeout = math.huge, lockWaitInterval = DEFAULT_LOCK_WAIT_INTERVAL) =>
         -- Without a working OS primitive we can't coordinate across states/processes;
         -- degrade to a process-local grant so DepCtrl keeps functioning, and warn once.
@@ -278,15 +294,15 @@ class Lock
         @logger\trace msgs.lock.timeout, @namespace, @resource, @holderName, @instanceId
         return @@LockState.Unavailable, timePassed
 
-    --- Attempts to acquire the lock without waiting.
-    -- @return number LockState
-    -- @return number timePassed
+    ---Attempts to acquire the lock without waiting.
+    ---@return integer state A Lock.LockState value.
+    ---@return number timePassed Milliseconds spent waiting (always 0).
     tryLock: =>
         return @lock 0
 
-    --- Releases the lock held by this instance.
-    -- @return boolean|nil
-    -- @return string|nil err
+    ---Releases the lock held by this instance.
+    ---@return boolean? released True on success, nil if the lock wasn't held by this instance.
+    ---@return integer|string statusOrErr A Lock.LockState value on success, or an error message when not held.
     release: =>
         unless @_state.held
             return nil, msgs.release.failed\format @namespace, @resource, @holderName, @instanceId, msgs.release.notHeld
@@ -298,17 +314,14 @@ class Lock
         @logger\trace msgs.release.released, @holderName, @instanceId, @namespace, @resource
         return true, @@LockState.Available
 
-    --- Refreshes the held lock's lease when it is close to expiring, re-stamping its recorded
-    -- expiry to @expiresAfter from now. This only affects the metadata on the this Lock instance
-    -- and the side file, so waiters don't mistake a busy holder for a crashed one. The underlying
-    -- OS lock remains held until explicitly released. To avoid unnecessary writes, the side file
-    -- is only updated when the remaining lease is approaching expiry.
-    -- @param expiryThreshold? number renews only if the remaining lease is <= this many
-    --   milliseconds. -1 forces an unconditional refresh. Defaults to whichever is larger of
-    --   half the lease or RENEW_SAFETY_MARGIN_MS (capped at the full lease), so a refresh
-    --   always lands well before expiry even under scheduling latency.
-    -- @return boolean|nil renewed true if refreshed, false if still fresh
-    -- @return string|nil err set (with nil renewed) only when the lock isn't held
+    ---Refreshes the held lock's lease when it is close to expiring, re-stamping its recorded
+    ---expiry to @expiresAfter from now. This only affects the metadata on this Lock instance
+    ---and the side file, so waiters don't mistake a busy holder for a crashed one. The underlying
+    ---OS lock remains held until explicitly released. To avoid unnecessary writes, the side file
+    ---is only updated when the remaining lease is approaching expiry.
+    ---@param expiryThreshold? number Renew only if the remaining lease is <= this many milliseconds; -1 forces an unconditional refresh. Defaults to the larger of half the lease or the safety margin, capped at the full lease.
+    ---@return boolean? renewed True if refreshed, false if still fresh, nil if the lock isn't held.
+    ---@return string? err Set (with nil renewed) only when the lock isn't held.
     renew: (expiryThreshold) =>
         return nil, msgs.renew.notHeld unless @_state.held
         return false unless @recordHolder and @_leaseExpiresMono
@@ -320,12 +333,12 @@ class Lock
         @_writeHolder!
         return true
 
-    --- Acquires a lock for the given args and runs the provided body function.
-    -- Releases the lock when the body function completes or throws.
-    -- Passes the held Lock as an argument to the body function, so it can call renew on it if needed.
-    -- @param args table Lock constructor args, plus optional timeout/lockWaitInterval applied to the acquire
-    -- @param body function called with the held Lock; its return values are passed through
-    -- @return any the body's return values on success, or nil + err on failure to acquire
+    ---Acquires a lock for the given args and runs the provided body function.
+    ---Releases the lock when the body completes or throws. The held Lock is passed to the body
+    ---so it can call renew on it if needed.
+    ---@param args GuardArgs Lock constructor args plus optional timeout/lockWaitInterval for the acquire.
+    ---@param body fun(lock: Lock): ... Called with the held Lock; its return values are passed through.
+    ---@return any ... The body's return values on success, or nil + err if the lock couldn't be acquired.
     @guard = (args, body) =>
         lock = @ args
         state = lock\lock args.timeout or math.huge, args.lockWaitInterval or DEFAULT_LOCK_WAIT_INTERVAL

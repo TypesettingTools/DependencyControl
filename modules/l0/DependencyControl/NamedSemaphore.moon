@@ -36,7 +36,6 @@ if ffi.os == "Windows"
 else
     -- POSIX named semaphore. Unlike Windows, the name persists in the kernel namespace
     -- until it is unlinked or reboot, so it does not self-heal after a holder process dies.
-    -- self-heal when a holder dies.
 
     ffiPosix = require "l0.DependencyControl.helpers.ffi-posix"
     -- Aegisub runs per-user, so semaphores don't need to be shared with others.
@@ -74,9 +73,9 @@ else
         ffi.C.sem_unlink name if unlink
 
 
---- A non-reentrant binary semaphore identified by a name. 
--- Usable as a per-process or cross-process lock primitive.
--- @class NamedSemaphore
+---A non-reentrant binary semaphore identified by a name.
+---Usable as a per-process or cross-process lock primitive.
+---@class NamedSemaphore
 class NamedSemaphore
     -- whether the OS semaphore FFI is isAvailable at all on this platform/build
     @isAvailable = isAvailable
@@ -84,12 +83,12 @@ class NamedSemaphore
     -- this process's id, exposed so callers can build process-scoped names and holder records
     @pid = pid
 
-    --- Gets a handle to the named semaphore for the given token, creating it if it doesn't exist.
-    -- @param token string a name token restricted to [A-Za-z0-9_]
-    -- @param unlinkOnClose? boolean POSIX-only: remove the OS name when this instance is garbage-collected.
-    --   Use true for process-private names so a reused PID can't inherit a stale semaphore.
-    --   Use false for cross-process usage to prevent an exiting process from pulling the rug out from under others. 
-    --   No effect on Windows, where names are automatically cleaned up when the last handle closes.    
+    ---Gets a handle to the named semaphore for the given token, creating it if it doesn't exist.
+    ---@param token string A name token restricted to [A-Za-z0-9_].
+    ---@param unlinkOnClose? boolean POSIX-only: remove the OS name when this instance is garbage-collected.
+    ---Use true for process-private names so a reused PID can't inherit a stale semaphore.
+    ---Use false for cross-process usage to prevent an exiting process from removing a name others still hold.
+    ---No effect on Windows, where names are cleaned up automatically when the last handle closes.
     new: (token, unlinkOnClose = false) =>
         assert isAvailable, msgs.noImplementation
 
@@ -104,19 +103,19 @@ class NamedSemaphore
         (getmetatable canary).__gc = -> pcall closeImpl, name, handle, unlink
         @_canary = canary
 
-    --- Attempts to acquire without blocking.
-    -- @return boolean true if the semaphore was acquired
+    ---Attempts to acquire without blocking.
+    ---@return boolean acquired True if the semaphore was acquired.
     tryLock: => @isOpen and tryLockImpl(@handle) or false
 
-    --- Blocks until the semaphore is acquired.
-    -- @return boolean true if a wait was issued (false only when unavailable)
+    ---Blocks until the semaphore is acquired.
+    ---@return boolean issued True if a wait was issued (false only when unavailable).
     lock: =>
         return false unless @isOpen
         lockImpl @handle
         true
 
-    --- Releases one unit of the semaphore. Safe to call only by the current holder.
-    -- @return boolean true if a release was issued
+    ---Releases one unit of the semaphore. Safe to call only by the current holder.
+    ---@return boolean issued True if a release was issued.
     unlock: =>
         return false unless @isOpen
         unlockImpl @handle

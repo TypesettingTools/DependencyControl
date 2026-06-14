@@ -44,6 +44,9 @@ UnitTestSuite =  require "l0.DependencyControl.UnitTestSuite"
 UpdateFeed =     require "l0.DependencyControl.UpdateFeed"
 Updater =        require "l0.DependencyControl.Updater"
 
+---Main DependencyControl entry point. 
+---Provides package management and access to all sub-modules.
+---@class DependencyControl: Record
 class DependencyControl extends Record
     @Common = Common
     @ConfigHandler = ConfigHandler

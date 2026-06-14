@@ -9,8 +9,8 @@ Common = require "l0.DependencyControl.Common"
 
 DEPCTRL_DUMMY_MODULE_MARKER = "#{constants.DEPCTRL_PRIVATE_GLOBAL_VAR_PREFIX}Dummy"
 
---- Internal module loading helpers for DependencyControl-managed module dependencies.
--- @class ModuleLoader
+---Internal module loading helpers for DependencyControl-managed module dependencies.
+---@class ModuleLoader
 class ModuleLoader
   msgs = {
     checkOptionalModules: {
@@ -94,12 +94,12 @@ class ModuleLoader
 
     return mdl._ref  -- having this in the with block breaks moonscript
 
-  --- Loads required modules, updates missing/outdated ones, and validates version constraints.
-  -- @param modules table[]
-  -- @param[opt] addFeeds string[]
-  -- @param[opt] skip table
-  -- @return boolean
-  -- @return string err
+  ---Loads required modules, updates missing/outdated ones, and validates version constraints.
+  ---@param modules table[]
+  ---@param addFeeds? string[] Extra feed URLs to search when fetching missing modules (default: this script's feed).
+  ---@param skip? table<string, boolean> Module names to skip, keyed by name (default: this module itself).
+  ---@return boolean success
+  ---@return string err Combined error message (empty on success).
   @loadModules = (modules, addFeeds = {@feed}, skip = @moduleName and {[@moduleName]: true} or {}) =>
     for mdl in *modules
       continue if skip[mdl.moduleName]
@@ -164,10 +164,10 @@ class ModuleLoader
 
     return #errorMsg == 0, table.concat(errorMsg, "\n\n")
 
-  --- Validates optional module availability for the requested feature set.
-  -- @param modules string|string[]
-  -- @return boolean
-  -- @return string|nil err
+  ---Validates optional module availability for the requested feature set.
+  ---@param modules string|string[] Feature name(s) whose optional modules to check.
+  ---@return boolean available
+  ---@return string? err Error message listing missing modules.
   @checkOptionalModules = (modules) =>
     modules = type(modules)=="string" and {[modules]:true} or {mdl,true for mdl in *modules}
     missing = [ModuleLoader.formatVersionErrorTemplate @, mdl.moduleName, mdl.version, mdl.url,

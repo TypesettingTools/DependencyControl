@@ -7,15 +7,16 @@ msgs = {
     hashMismatch:     "Hash mismatch. Got %s, expected %s."
 }
 
---- A download manager replicating the DM.DownloadManager API on top of the
--- DependencyControl Downloader engine.
--- @class DownloadManager
+---A download manager replicating the DM.DownloadManager API on top of the
+---DependencyControl Downloader engine.
+---@class DownloadManager
 class DownloadManager
     -- Matches the DM.DownloadManager dependency version declared in DependencyControl.moon
     -- so DependencyControl accepts this implementation without a full managed record.
     @version = "0.3.1"
 
-    --- @param[opt] etagCacheDir string accepted for API compatibility; ETag caching is not implemented
+    ---Creates a download manager.
+    ---@param etagCacheDir? string Accepted for API compatibility; ETag caching is not implemented.
     new: (etagCacheDir) =>
         @downloader = Downloader!
         -- the native API exposes .downloads directly; Downloader.clear empties it in
@@ -23,19 +24,18 @@ class DownloadManager
         @downloads       = @downloader.downloads
         @failedDownloads = {}
 
-    --- Queues a download, optionally verifying its SHA-1 once complete.
-    -- @param url string
-    -- @param outfile string full output path
-    -- @param[opt] sha1 string expected SHA-1 hash
-    -- @param[opt] etag string accepted for API compatibility; ignored
-    -- @return table|nil download
-    -- @return string|nil err
+    ---Queues a download, optionally verifying its SHA-1 once complete.
+    ---@param url string
+    ---@param outfile string Full output path.
+    ---@param sha1? string Expected SHA-1 hash.
+    ---@param etag? string Accepted for API compatibility; ignored.
+    ---@return Download? download
+    ---@return string? err
     addDownload: (url, outfile, sha1, etag) =>
         @downloader\addDownload url, outfile, sha1
 
-    --- Performs all queued downloads (DM.DownloadManager-compatible).
-    -- @param[opt] callback function(progress) called with 0-100; returning a falsy
-    --   value cancels remaining downloads. Bridged to the engine's Progress event.
+    ---Performs all queued downloads (DM.DownloadManager-compatible).
+    ---@param callback? fun(progress: number): any Called with 0-100; returning a falsy value cancels remaining downloads. Bridged to the engine's Progress event.
     waitForFinish: (callback) =>
         if callback
             -- bridge the DM-style cancel-capable callback onto the Progress event
@@ -48,28 +48,33 @@ class DownloadManager
         @failedDownloads = [dl for dl in *@downloads when dl.status == failed]
         return
 
-    --- @return number current aggregate progress (0-100)
+    ---@return number progress Current aggregate progress (0-100).
     progress: => @downloader\getProgress!
 
     cancel: => @downloader\cancel!
     clear:  => @downloader\clear!
 
-    --- @return boolean whether an internet connection appears to be available
+    ---@return boolean connected Whether an internet connection appears to be available.
     isInternetConnected: => @downloader\isInternetConnected!
 
-    --- Computes the SHA-1 of a file's contents.
-    -- @return string|nil hexDigest
-    -- @return string|nil err
+    ---Computes the SHA-1 of a file's contents.
+    ---@param filename string
+    ---@return string? hexDigest
+    ---@return string? err
     getFileSHA1: (filename) => FileOps.getHash filename, "sha1"
 
-    --- Verifies a file against an expected SHA-1 hash.
-    -- @return boolean|nil match
-    -- @return string|nil err
+    ---Verifies a file against an expected SHA-1 hash.
+    ---@param filename string
+    ---@param expected string Expected SHA-1 hex digest.
+    ---@return boolean? match
+    ---@return string? err
     checkFileSHA1: (filename, expected) => FileOps.verifyHash filename, expected, "sha1"
 
-    --- Verifies a string against an expected SHA-1 hash.
-    -- @return boolean|nil match
-    -- @return string|nil err
+    ---Verifies a string against an expected SHA-1 hash.
+    ---@param str string
+    ---@param expected string Expected SHA-1 hex digest.
+    ---@return boolean? match
+    ---@return string? err
     checkStringSHA1: (str, expected) =>
         return nil, msgs.checkMissingArgs\format type(str), type(expected) unless type(expected) == "string"
         actual, err = Crypto.sha1 str   -- Crypto validates the payload type

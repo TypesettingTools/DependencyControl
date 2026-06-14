@@ -14,8 +14,8 @@ DependencyControl = nil
 UPDATER_LOCK_NAMESPACE = "#{constants.DEPCTRL_NAMESPACE}.Updater"
 UPDATER_LOCK_RESOURCE_RUN  = "run"
 
---- Shared updater error decoding and base behavior.
--- @class UpdaterBase
+---Shared updater error decoding and base behavior.
+---@class UpdaterBase: DependencyControlCommon
 class UpdaterBase extends Common
     @logger = Logger fileBaseName: "DependencyControl.Updater"
     msgs = {
@@ -44,13 +44,13 @@ class UpdaterBase extends Common
         updaterErrorComponent: {"DownloadManager (adding download)", "DownloadManager"}
     }
 
-    --- Converts updater status/error codes into user-facing error messages.
-    -- @param code number
-    -- @param name string
-    -- @param scriptType number
-    -- @param isInstall boolean
-    -- @param[opt] detailMsg string
-    -- @return string
+    ---Converts updater status/error codes into user-facing error messages.
+    ---@param code number
+    ---@param name string
+    ---@param scriptType integer A Common.ScriptType value.
+    ---@param isInstall boolean
+    ---@param detailMsg? string
+    ---@return string
     getUpdaterErrorMsg: (code, name, scriptType, isInstall, detailMsg) =>
         if code <= -100
             -- Generic downstream error
@@ -62,8 +62,8 @@ class UpdaterBase extends Common
                                                   @@terms.scriptType.singular[scriptType],
                                                   name, detailMsg
 
---- Mutable execution state for one install/update operation.
--- @class UpdateTask
+---Mutable execution state for one install/update operation.
+---@class UpdateTask: UpdaterBase
 class UpdateTask extends UpdaterBase
     downloader = Downloader!
     msgs = {
@@ -108,14 +108,14 @@ class UpdateTask extends UpdaterBase
         }
     }
 
-    --- Creates an update task for one record.
-    -- @param record Record
-    -- @param[opt=0] targetVersionNumber number
-    -- @param[opt] addFeeds string[]
-    -- @param[opt] exhaustive boolean
-    -- @param[opt] channel string
-    -- @param[opt] optional boolean
-    -- @param updater Updater
+    ---Creates an update task for one record.
+    ---@param record Record
+    ---@param targetVersionNumber? number Minimum version to install (default 0, i.e. any).
+    ---@param addFeeds? string[]
+    ---@param exhaustive? boolean Check all feeds and pick the highest version.
+    ---@param channel? string Update channel to use.
+    ---@param optional? boolean Treat this as an optional dependency.
+    ---@param updater Updater
     new: (@record, targetVersionNumber = 0, @addFeeds, @exhaustive, @channel, @optional, @updater) =>
         DependencyControl or= require "l0.DependencyControl"
         assert @record.__class == DependencyControl, "First parameter must be a #{DependencyControl.__name} object."
@@ -135,11 +135,11 @@ class UpdateTask extends UpdaterBase
         return nil, -1 unless @updater.config.c.updaterEnabled -- TODO: check if this even works
         return nil, -2 unless @record\validateNamespace!
 
-    --- Loads and validates one feed candidate for the current update task.
-    -- @param feedUrl string
-    -- @return table|boolean|nil
-    -- @return string|number|nil
-    -- @return number|nil
+    ---Loads and validates one feed candidate for the current update task.
+    ---@param feedUrl string
+    ---@return boolean|nil ok True with an update available, false if none newer, nil on error.
+    ---@return table|string|nil recordOrErr The update record on success, or an error message on failure.
+    ---@return number? version The candidate's version number.
     checkFeed: (feedUrl) =>
         -- get feed contents
         feed = UpdateFeed feedUrl, false, nil, @feedConfig, @logger
@@ -176,11 +176,11 @@ class UpdateTask extends UpdaterBase
         return true, updateRecord, version
 
 
-    --- Runs the full update/install flow for this task.
-    -- @param[opt] waitLock boolean
-    -- @param[opt] exhaustive boolean
-    -- @return number statusCode
-    -- @return any detail
+    ---Runs the full update/install flow for this task.
+    ---@param waitLock? boolean Wait for a concurrent update to finish instead of bailing.
+    ---@param exhaustive? boolean Check all feeds and pick the highest version.
+    ---@return number statusCode
+    ---@return any detail
     run: (waitLock, exhaustive = @updater.config.c.tryAllFeeds or @@exhaustive) =>
         logUpdateError = (code, extErr, virtual = @record.virtual) ->
             if code < 0
@@ -281,10 +281,10 @@ class UpdateTask extends UpdaterBase
         code, res = @performUpdate updateRecord
         return logUpdateError code, res, wasVirtual
 
-    --- Downloads and installs files for a selected update entry.
-    -- @param update ScriptUpdateRecord
-    -- @return number statusCode
-    -- @return table|string|nil detail
+    ---Downloads and installs files for a selected update entry.
+    ---@param update ScriptUpdateRecord
+    ---@return number statusCode
+    ---@return table|string|nil detail
     performUpdate: (update) =>
         finish = (...) ->
             @running = false
@@ -451,8 +451,8 @@ class UpdateTask extends UpdaterBase
                     @logger\log msgs.refreshRecord.otherUpdate, @@terms.scriptType.singular[.scriptType], .name,
                                 SemanticVersioning\toString @record.version
 
---- Coordinates background update checks and update task lifecycle.
--- @class Updater
+---Coordinates background update checks and update task lifecycle.
+---@class Updater: UpdaterBase
 class Updater extends UpdaterBase
     msgs = {
         acquireLock: {
@@ -467,23 +467,23 @@ class Updater extends UpdaterBase
             runningUpdate: "Running scheduled update for %s '%s'..."
         }
     }
-    --- Creates an updater coordinator for one host script context.
-    -- @param[opt] host string
-    -- @param config ConfigHandler
-    -- @param[opt] logger Logger
+    ---Creates an updater coordinator for one host script context.
+    ---@param host? string Host script namespace (default script_namespace).
+    ---@param config ConfigView The global DependencyControl config view.
+    ---@param logger? Logger
     new: (@host = script_namespace, @config, @logger = @@logger) =>
         @tasks = {scriptType, {} for _, scriptType in pairs @@ScriptType when "number" == type scriptType}
 
-    --- Creates or updates a queued update task for a record.
-    -- @param record Record|table
-    -- @param[opt] targetVersion number|string
-    -- @param[opt] addFeeds string[]
-    -- @param[opt] exhaustive boolean
-    -- @param[opt] channel string
-    -- @param[opt] optional boolean
-    -- @return UpdateTask|nil
-    -- @return number|nil code
-    -- @return string|nil detail
+    ---Creates or updates a queued update task for a record.
+    ---@param record Record|table A record, or a plain table to construct one from.
+    ---@param targetVersion? number|string Minimum version to install.
+    ---@param addFeeds? string[]
+    ---@param exhaustive? boolean Check all feeds and pick the highest version.
+    ---@param channel? string Update channel to use.
+    ---@param optional? boolean Treat this as an optional dependency.
+    ---@return UpdateTask? task
+    ---@return number? code
+    ---@return string? detail
     addTask: (record, targetVersion, addFeeds = {}, exhaustive, channel, optional) =>
         DependencyControl or= require "l0.DependencyControl"
         if record.__class != DependencyControl
@@ -503,12 +503,12 @@ class Updater extends UpdaterBase
         @tasks[record.scriptType][record.namespace] = task
         return task, code
 
-    --- Ensures a module dependency is installed/updated and loadable.
-    -- @param record Record
-    -- @param[opt] ... any
-    -- @return any
-    -- @return number|nil code
-    -- @return string|nil detail
+    ---Ensures a module dependency is installed/updated and loadable.
+    ---@param record Record
+    ---@param ... any Forwarded to addTask (targetVersion, addFeeds, ...).
+    ---@return any ref The loaded module reference, or nil on error.
+    ---@return number? code
+    ---@return string? detail
     require: (record, ...) =>
         @logger\assert record.scriptType == @@ScriptType.Module, msgs.require, record.name or record.namespace
         @logger\log "%s module '%s'...", record.virtual and "Installing required" or "Updating outdated", record.name
@@ -525,9 +525,9 @@ class Updater extends UpdaterBase
         else -- pass on update errors
             return nil, code, res
 
-    --- Performs a periodic non-blocking update check for a managed record.
-    -- @param record Record
-    -- @return number|boolean
+    ---Performs a periodic non-blocking update check for a managed record.
+    ---@param record Record
+    ---@return number|boolean status A status code, or the task's run result.
     scheduleUpdate: (record) =>
         unless @config.c.updaterEnabled
             @logger\trace msgs.scheduleUpdate.updaterDisabled, record.name or record.namespace
@@ -558,11 +558,11 @@ class Updater extends UpdaterBase
         }
         return @lock
 
-    --- Acquires the global updater lock shared across scripts and processes.
-    -- @param doWait boolean wait for a concurrent update to finish instead of bailing out
-    -- @param[opt] waitTimeout number seconds to wait when doWait is set
-    -- @return boolean acquired
-    -- @return string|nil lockOwner the holder script's name when acquisition failed
+    ---Acquires the global updater lock shared across scripts and processes.
+    ---@param doWait boolean Wait for a concurrent update to finish instead of bailing out.
+    ---@param waitTimeout? number Seconds to wait when doWait is set.
+    ---@return boolean acquired
+    ---@return string? lockOwner The holder script's name when acquisition failed.
     acquireLock: (doWait, waitTimeout = @config.c.updateWaitTimeout) =>
         return true if @hasLock
         lock = @_getLockHandle!
@@ -583,21 +583,21 @@ class Updater extends UpdaterBase
         
         return true
 
-    --- Renews the updater lock's lease if we currently hold it.
+    ---Renews the updater lock's lease if we currently hold it.
     renewLock: =>
         @lock\renew! if @hasLock and @lock
 
-    --- Releases the global updater lock.
-    -- @return boolean
+    ---Releases the global updater lock.
+    ---@return boolean released
     releaseLock: =>
         return false unless @hasLock
         @hasLock = false
         @lock\release! if @lock
         return true
 
-    --- Reports whether an update is currently running in any script or process.
-    -- @return boolean running
-    -- @return string|nil holderName the name of the script holding the updater lock
+    ---Reports whether an update is currently running in any script or process.
+    ---@return boolean running
+    ---@return string? holderName The name of the script holding the updater lock.
     @isRunning = =>
         holder = Lock({
             namespace: UPDATER_LOCK_NAMESPACE, resource: UPDATER_LOCK_RESOURCE_RUN, scope: Lock.Scope.Global

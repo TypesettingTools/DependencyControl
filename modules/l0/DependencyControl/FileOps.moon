@@ -68,8 +68,8 @@ if ffi.os == "Windows"
         ok, res = pcall detectRegistryLongPathsEnabled
         windowsRegistryLongPathsEnabled = ok and res
 
---- Filesystem utility helpers used by DependencyControl.
--- @class FileOps
+---Filesystem utility helpers used by DependencyControl.
+---@class FileOps
 class FileOps
     msgs = {
             generic: {
@@ -176,6 +176,8 @@ class FileOps
         sepAll: ffi.os == "Windows" and "[\\/]" or "/"
         invalidChars: '[<>:"|%?%*%z%c;]'
     }
+    ---@alias FileOpsHashType "sha1"
+
     -- supported file hash algorithms, keyed by HashType value
     HashType = Enum "FileOpsHashType", { SHA1: "sha1" }
     @HashType = HashType
@@ -204,27 +206,27 @@ class FileOps
             return nil, msgs.createConfig.handlerFailed\format "constructor returned nil" unless FileOps.config
         return FileOps.config
 
-    --- Creates a unique temporary directory and returns its path.
-    -- @return string? tempDirPath absolute path to the created temporary directory or nil if the directory couldn't be created
-    -- @return string? err error message if the directory couldn't be created
+    ---Creates a unique temporary directory and returns its path.
+    ---@return string? tempDirPath Absolute path to the created temporary directory, or nil if it couldn't be created.
+    ---@return string? err Error message if the directory couldn't be created.
     createTempDir: () ->
         tempDir = FileOps.getTempDir()
         res, dir = FileOps.mkdir tempDir
         return tempDir if res
-        return nil, msgs.createTempDir.failedCreate\format err 
+        return nil, msgs.createTempDir.failedCreate\format err
 
-    --- Generates a unique temporary file path.
-    -- @return string tempFilePath absolute path to a unique temporary directory that does not exist yet
+    ---Generates a unique temporary directory path that does not exist yet.
+    ---@return string tempDirPath Absolute path to a unique, not-yet-existing temporary directory.
     getTempDir: () ->
         return aegisub.decode_path "?temp/#{constants.DEPCTRL_NAMESPACE}_#{'%04X'\format math.random 0, 16^4-1}"
 
-    --- Removes one or more files/directories and optionally reschedules failed removals.
-    -- @param paths string|(string|string)[] path or paths to the files/directories to remove. If an array of paths is provided, each path can be specified as a string or an array of path segments.
-    -- @param[opt] recurse boolean
-    -- @param[opt] reSchedule boolean
-    -- @return boolean|nil overallSuccess
-    -- @return table details
-    -- @return string|nil firstErr
+    ---Removes one or more files/directories and optionally reschedules failed removals.
+    ---@param paths string|(string|string[])[] Path, or list of paths (each a string or an array of path segments).
+    ---@param recurse? boolean Recurse into directories.
+    ---@param reSchedule? boolean Reschedule failed removals for the next restart.
+    ---@return boolean? overallSuccess True if all succeeded, false if any were rescheduled, nil on hard failure.
+    ---@return table details Per-path result tables keyed by path.
+    ---@return string? firstErr The first error encountered.
     remove: (paths, recurse, reSchedule) ->
         config, configLoaded, overallSuccess, details, firstErr = nil, false, true, {}
         paths = {paths} unless type(paths) == "table"
@@ -266,10 +268,10 @@ class FileOps
         config\write! if configLoaded
         return overallSuccess, details, firstErr
 
-    --- Replays removals previously scheduled by @{FileOps:remove}.
-    -- @param[opt] configDir string
-    -- @return boolean
-    -- @return string|nil err
+    ---Replays removals previously scheduled by remove().
+    ---@param configDir? string Directory holding the FileOps config (defaults to the configured dir).
+    ---@return boolean? success
+    ---@return string? err
     runScheduledRemoval: (configDir) ->
         config, msg = createConfig false, configDir
         unless config
@@ -284,11 +286,12 @@ class FileOps
             config\write!
         return true
 
-    --- Copies a file to a target path.
-    -- @param source string
-    -- @param target string
-    -- @return boolean success
-    -- @return string|nil err
+    ---Copies a file to a target path.
+    ---@param source string
+    ---@param target string
+    ---@param clobber? boolean Overwrite an existing target file.
+    ---@return boolean success
+    ---@return string? err
     copy: ( source, target, clobber ) ->
         -- source check
         mode, sourceFullPath, _, _, fileName = FileOps.attributes source, "mode"
@@ -339,9 +342,10 @@ class FileOps
         return nil, msgs.listDir.notADirectory\format fullPath, mode if mode != "directory"
         return [entry for entry in lfs.dir(fullPath) when entry != "." and entry != ".."]
 
-    --- Joins and resolves multiple path segments into a single path string.
-    -- @param ... string|string[] one or more path segments, or arrays of path segments
-    -- @return string joinedPath the path segments joined by os-specific path separators
+    ---Joins and resolves multiple path segments into a single path string.
+    ---@param ... string|string[] One or more path segments, or arrays of path segments.
+    ---@return string? joinedPath The path segments joined by OS-specific separators, or nil on error.
+    ---@return string? err
     joinPath: (...) ->
         args = {...}
         -- detect root from the first string before splitting consumes separators
@@ -378,17 +382,17 @@ class FileOps
         -- re-add root separator for absolute paths on POSIX systems removed by splitting
         return "#{absolutePathRoot and ffi.os != "Windows" and FileOps.pathSep or ""}#{table.concat segments, FileOps.pathSep}"
 
-    --- Returns an iterator over the non-empty components of a path, split on any separator.
-    -- @tparam string path
-    -- @return iterator
+    ---Returns an iterator over the non-empty components of a path, split on any separator.
+    ---@param path string
+    ---@return fun(): string? iterator
     pathSegments: (path) -> path\gmatch "[^/\\]+"
 
-    --- Moves a file to a target path, optionally replacing existing targets.
-    -- @param source string
-    -- @param target string
-    -- @param[opt] overwrite boolean
-    -- @return boolean success
-    -- @return string|nil err
+    ---Moves a file to a target path, optionally replacing existing targets.
+    ---@param source string
+    ---@param target string
+    ---@param overwrite? boolean Replace an existing target file.
+    ---@return boolean success
+    ---@return string? err
     move: (source, target, overwrite) ->
         mode, err = FileOps.attributes target, "mode"
         if mode == "file"
@@ -441,10 +445,10 @@ class FileOps
 
         return true
 
-    --- Reads and returns the full contents of a file.
-    -- @param path string|string[] path or path segments to the file to read
-    -- @return string? data the contents of the file, or nil if an error occurred
-    -- @return string? err an error message if an error occurred, or nil if the file was read successfully
+    ---Reads and returns the full contents of a file.
+    ---@param path string|string[] Path or path segments to the file to read.
+    ---@return string? data The contents of the file, or nil if an error occurred.
+    ---@return string? err An error message if an error occurred.
     readFile: (path) ->
         mode, fullPath = FileOps.attributes path, "mode"
         return nil, msgs.readFile.cantOpen\format path, fullPath unless mode
@@ -460,11 +464,12 @@ class FileOps
             return data
         else return nil, msgs.readFile.cantRead\format path, msg
     
-    --- Writes data to a file, creating the file if it doesn't exist and optionally overwriting existing files.
-    -- @param path string|string[] path or path segments to the file to write
-    -- @param data string the data to write to the file
-    -- @param[opt=false] clobber boolean whether to overwrite the file if it already exists
-    -- @return boolean success true if the file was written successfully
+    ---Writes data to a file, creating the file if it doesn't exist and optionally overwriting existing files.
+    ---@param path string|string[] Path or path segments to the file to write.
+    ---@param data string The data to write to the file.
+    ---@param clobber? boolean Overwrite the file if it already exists (default false).
+    ---@return boolean success True if the file was written successfully.
+    ---@return string? err
     writeFile: (path, data, clobber = false) ->
         mode, fullPath = FileOps.attributes path, "mode"
         return false, msgs.writeFile.notAFile\format path, mode if mode and mode ~= "file"
@@ -478,11 +483,11 @@ class FileOps
         return true if success
         return false, msgs.writeFile.failedWrite\format fullPath, msg
 
-    --- Computes the hash of a file's contents.
-    -- @param fileName string|string[] path or path segments to the file to hash
-    -- @param[opt=HashType.SHA1] hashType FileOps.HashType the hash algorithm to use
-    -- @return string? hexDigest the lowercase hex digest, or nil if an error occurred
-    -- @return string? err an error message if an error occurred
+    ---Computes the hash of a file's contents.
+    ---@param fileName string|string[] Path or path segments to the file to hash.
+    ---@param hashType? FileOpsHashType The hash algorithm to use (default SHA1).
+    ---@return string? hexDigest The lowercase hex digest, or nil if an error occurred.
+    ---@return string? err An error message if an error occurred.
     getHash: (fileName, hashType = HashType.SHA1) ->
         valid, err = HashType\validate hashType, "hashType"
         return nil, err unless valid
@@ -490,12 +495,12 @@ class FileOps
         return nil, readErr unless data
         return hashAlgorithms[hashType] data
 
-    --- Verifies that a file's contents match an expected hash.
-    -- @param fileName string|string[] path or path segments to the file to verify
-    -- @param hash string the expected hex digest (case-insensitive)
-    -- @param[opt=HashType.SHA1] hashType FileOps.HashType the hash algorithm to use
-    -- @return boolean? match true on match, false on mismatch, or nil on error
-    -- @return string? err the mismatch detail or error message
+    ---Verifies that a file's contents match an expected hash.
+    ---@param fileName string|string[] Path or path segments to the file to verify.
+    ---@param hash string The expected hex digest (case-insensitive).
+    ---@param hashType? FileOpsHashType The hash algorithm to use (default SHA1).
+    ---@return boolean? match True on match, false on mismatch, or nil on error.
+    ---@return string? err The mismatch detail or error message.
     verifyHash: (fileName, hash, hashType = HashType.SHA1) ->
         return nil, msgs.verifyHash.badHash\format type hash unless type(hash) == "string"
         actual, err = FileOps.getHash fileName, hashType
@@ -523,11 +528,11 @@ class FileOps
 
         return true
 
-    -- Creates `dir` along with any missing parent directories, building the path up one
-    -- segment at a time. Idempotent: levels that already exist are left untouched.
-    -- @param dir string a validated, absolute directory path
-    -- @return boolean|nil true on success, or nil on error
-    -- @return string dirPathOrError the directory path on success, or an error message
+    ---Creates `dir` along with any missing parent directories, building the path up one
+    ---segment at a time. Idempotent: levels that already exist are left untouched.
+    ---@param dir string A validated, absolute directory path.
+    ---@return boolean? success True on success, or nil on error.
+    ---@return string dirPathOrError The directory path on success, or an error message.
     mkdirRecursive = (dir) ->
         -- preserve a leading separator so POSIX absolute paths keep their root
         accum, first = dir\match("^[/\\]") and FileOps.pathSep or "", true
@@ -542,12 +547,12 @@ class FileOps
                     return nil, msgs.mkdir.createError\format err
         return true, dir
 
-    --- Creates a directory.
-    -- @param path string|string[] path or path segments to the directory to create
-    -- @param isFile boolean whether the path is a file path (causes the last segment to be discarded when checking/creating the directory)
-    -- @param[opt=false] recurse boolean whether to also create any missing parent directories
-    -- @return boolean true if the directory was created, false if it already existed, or nil if an error occurred
-    -- @return string dirPathOrError the path to the existing or created directory, or an error message if an error occurred
+    ---Creates a directory.
+    ---@param path string|string[] Path or path segments to the directory to create.
+    ---@param isFile boolean Whether the path is a file path (discards the last segment when checking/creating the directory).
+    ---@param recurse? boolean Also create any missing parent directories (default false).
+    ---@return boolean? created True if created, false if it already existed, nil if an error occurred.
+    ---@return string dirPathOrError The existing/created directory path, or an error message.
     mkdir: (path, isFile, recurse) ->
         mode, fullPath, dev, dir, file = FileOps.attributes path, "mode"
         dir = isFile and table.concat({dev,dir or file}) or fullPath
@@ -566,14 +571,14 @@ class FileOps
             return nil, msgs.mkdir.otherExists\format mode
         return false, dir
 
-    --- Retrieves file or directory attributes.
-    -- @param path string|string[] Either a path or an array of path segments
-    -- @param key string|nil attribute name to retrieve (e.g. "mode", "size", "modification"), or nil to retrieve the full attribute table
-    -- @return table|string|number|boolean|nil attr the requested attribute(s), or nil if an error occurred
-    -- @return string fullPath the validated full path to the file or directory, or an error message if the path was invalid
-    -- @return string? device the device component of the path, or nil if the path was invalid
-    -- @return string? dir the directory component of the path, or nil if the path was invalid
-    -- @return string? file the file name component of the path, or nil if the path was invalid or pointed to
+    ---Retrieves file or directory attributes.
+    ---@param path string|string[] Either a path or an array of path segments.
+    ---@param key? string Attribute name to retrieve (e.g. "mode", "size", "modification"), or nil for the full attribute table.
+    ---@return table|string|number|boolean|nil attr The requested attribute(s), false if absent, or nil on error.
+    ---@return string fullPath The validated full path, or an error message if the path was invalid.
+    ---@return string? device The device component of the path.
+    ---@return string? dir The directory component of the path.
+    ---@return string? file The file name component of the path.
     attributes: (path, key) ->
         fullPath, dev, dir, file = FileOps.validateFullPath path, false, lfs.currentdir!
         unless fullPath
@@ -590,11 +595,11 @@ class FileOps
         else
             return nil, msgs.attributes.genericError\format err
 
-    --- Checks whether a file or directory exists and optionally verifies its type.
-    -- @param path string|string[] Either a path or an array of path segments
-    -- @param expectedMode string|nil If specified, the type of the file system entry
-    -- @return boolean exists true if the file or directory exists and matches the expected type, false if it doesn't exist or doesn't match the expected type, or nil if an error occurred while checking the file
-    -- @return string|nil err an error message if the file doesn't exist or is of the wrong type
+    ---Checks whether a file or directory exists and optionally verifies its type.
+    ---@param path string|string[] Either a path or an array of path segments.
+    ---@param expectedMode? string If specified, the required type of the filesystem entry.
+    ---@return boolean? exists True if it exists and matches the expected type, false if not, nil on error.
+    ---@return string? err An error message if the file doesn't exist or is of the wrong type.
     exists: (path, expectedMode) ->
         mode, fullPathOrErrMsg = FileOps.attributes path, "mode"
         switch mode
@@ -609,15 +614,14 @@ class FileOps
         return absolutePath\match "^[A-Za-z]:[/\\]" if ffi.os == "Windows"
         return absolutePath\match "^/[^/\\]+"
 
-    --- Validates and normalizes an absolute filesystem path.
-    -- @param path string|string[] Either a path or an array of path segments
-    -- @param[opt] checkFileExt boolean
-    -- @param[opt] basePath string|string[] Optional base path to resolve relative paths against. If not provided, relative paths will be rejected.
-    -- @return string|nil normalizedPath
-    -- @return string|nil err
-    -- @return string|nil device
-    -- @return string|nil dir
-    -- @return string|nil file
+    ---Validates and normalizes an absolute filesystem path.
+    ---@param path string|string[] Either a path or an array of path segments.
+    ---@param checkFileExt? boolean Require the path to have a file extension.
+    ---@param basePath? string|string[] Base path to resolve relative paths against; relative paths are rejected without it.
+    ---@return string|false|nil normalizedPath The normalized path, or false/nil on error.
+    ---@return string? deviceOrErr The device/root component on success, or an error message on failure.
+    ---@return string? dir The directory component (success only).
+    ---@return string? file The file name component (success only).
     validateFullPath: (path, checkFileExt, basePath) ->
         if "table" == type path
             path, errMsg = FileOps.joinPath path
@@ -680,14 +684,14 @@ class FileOps
         path = table.concat {dev, dir, file and FileOps.pathSep, file}
         return path, dev, dir, file
 
-    --- Converts a base path and namespace into a namespaced filesystem path.
-    -- Dots in the namespace are converted to path separators when nested is true.
-    -- @param basePath string|string[] base path or path segments to the directory under which the namespaced path should be created
-    -- @param namespace string
-    -- @param ext string file extension (including dot)
-    -- @param[opt=true] nested boolean
-    -- @return string|nil path
-    -- @return string|nil err
+    ---Converts a base path and namespace into a namespaced filesystem path.
+    ---Dots in the namespace are converted to path separators when nested is true.
+    ---@param basePath string|string[] Base path (or segments) the namespaced path is created under.
+    ---@param namespace string
+    ---@param ext string File extension (including the dot).
+    ---@param nested? boolean Convert namespace dots to path separators (default true).
+    ---@return string? path
+    ---@return string? err
     getNamespacedPath: (basePath, namespace, ext, nested = true) ->
         res, msg = Common.validateNamespace namespace
         return nil, msg unless res

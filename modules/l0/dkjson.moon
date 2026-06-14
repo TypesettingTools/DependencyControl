@@ -95,20 +95,20 @@ prettyEncode = (value, state = {}) ->
 
 wrapper = setmetatable {}, __index: dkjson
 
---- Encodes a Lua value as JSON.
--- The DependencyControl-bundled package adds the following state options on top of upstream dkjson:
--- - `state.indentMode`: when set to 'prettier', formatting matches Prettier (two-space indents, a space 
---   after each colon, objects one-property-per-line, arrays collapsed when they fit within the configured
---   print width).
--- - `state.indentPrintWidth`: the target line width for the 'prettier' indent mode (default: 80).
--- - `state.defaultKeyOrder`: a function that accepts two keys and returns true if the first should appear
---   before the second when encoding objects, and false otherwise. This is used to sort object keys
---   that do not appear in `state.keyorder` (which takes precedence). Default is case-insensitive alphabetical. 
---   Currently only used in the 'prettier' indent mode.
--- returning the encoded string. Any other `indentMode` (or none) defers entirely to upstream dkjson.
--- @param value any the value to encode
--- @param state? table dkjson encode state, optionally carrying `indentMode`/`keyorder`
--- @return string|boolean the JSON string, or dkjson's native return value for non-prettier modes
+---Encodes a Lua value as JSON.
+---The DependencyControl-bundled package adds the following state options on top of upstream dkjson:
+---- `state.indentMode`: when set to 'prettier', formatting matches Prettier (two-space indents, a space
+---  after each colon, objects one-property-per-line, arrays collapsed when they fit within the configured
+---  print width).
+---- `state.indentPrintWidth`: the target line width for the 'prettier' indent mode (default: 80).
+---- `state.defaultKeyOrder`: a function that accepts two keys and returns true if the first should appear
+---  before the second when encoding objects, and false otherwise. Used to sort object keys not present in
+---  `state.keyorder` (which takes precedence). Default is case-insensitive alphabetical, and currently only
+---  applies in the 'prettier' indent mode.
+---Any other `indentMode` (or none) defers entirely to upstream dkjson.
+---@param value any The value to encode.
+---@param state? table dkjson encode state, optionally carrying `indentMode`/`keyorder`.
+---@return string|boolean json The JSON string, or dkjson's native return value for non-prettier modes.
 wrapper.encode = (value, state) ->
     return prettyEncode value, state if state and state.indentMode == "prettier"
     return dkjson.encode value, state

@@ -5,10 +5,10 @@ Logger = require "l0.DependencyControl.Logger"
 Lock = require "l0.DependencyControl.Lock"
 ConfigView = require "l0.DependencyControl.ConfigView"
 
---- JSON-backed configuration manager with cooperative cross-script locking.
--- Manages one JSON file per instance. Use ConfigView (via getView or ConfigView.get)
--- to access specific hives (nested sections) of the config.
--- @class ConfigHandler
+---JSON-backed configuration manager with cooperative cross-script locking.
+---Manages one JSON file per instance. Use ConfigView (via getView or ConfigView.get)
+---to access specific hives (nested sections) of the config.
+---@class ConfigHandler
 class ConfigHandler
     msgs = {
         get: {
@@ -71,12 +71,12 @@ Reload your automation scripts to generate a new configuration file.]]
     @handlers = setmetatable {}, {__mode: 'v'}
     @logger = Logger fileBaseName: "#{constants.DEPCTRL_SHORT_NAME}.#{@__name}", fileSubName: script_namespace
 
-    --- Returns an existing handler for filePath, or creates and optionally loads one.
-    -- @param filePath string
-    -- @param[opt] logger Logger
-    -- @param[opt=false] noLoad boolean
-    -- @return ConfigHandler|nil
-    -- @return string|nil err
+    ---Returns an existing handler for filePath, or creates and optionally loads one.
+    ---@param filePath string
+    ---@param logger? Logger
+    ---@param noLoad? boolean Don't load the file immediately (default false).
+    ---@return ConfigHandler? handler
+    ---@return string? err
     @get = (filePath, logger = @logger, noLoad = false) =>
         return handler for path, handler in pairs @@handlers when path == filePath
 
@@ -96,13 +96,13 @@ Reload your automation scripts to generate a new configuration file.]]
         return handler
 
 
-    --- Returns a ConfigView for the given file and hive path, creating a handler if needed.
-    -- @param filePath string
-    -- @param hivePath string|string[]
-    -- @param[opt] defaults table
-    -- @param[opt] logger Logger
-    -- @return ConfigView|nil
-    -- @return string|nil err
+    ---Returns a ConfigView for the given file and hive path, creating a handler if needed.
+    ---@param filePath string
+    ---@param hivePath string|string[]
+    ---@param defaults? table Default values for the hive.
+    ---@param logger? Logger
+    ---@return ConfigView? view
+    ---@return string? err
     @getView = (filePath, hivePath, defaults, logger) =>
         handler, msg = @get filePath, logger
         return nil, msgs.getView.failedHandler\format filePath, msg unless handler
@@ -110,9 +110,9 @@ Reload your automation scripts to generate a new configuration file.]]
         return handler\getView hivePath, defaults
 
 
-    --- Creates a ConfigHandler for the given file. Does not load from disk.
-    -- @param[opt] filePath string
-    -- @param[opt] logger Logger
+    ---Creates a ConfigHandler for the given file. Does not load from disk.
+    ---@param filePath? string
+    ---@param logger? Logger
     new: (filePath, @logger = Logger fileBaseName: @@__name) =>
         @views = setmetatable {}, {__mode: 'k'}
         @config = {}
@@ -276,10 +276,10 @@ Reload your automation scripts to generate a new configuration file.]]
         return purgeHive path, config
 
 
-    --- Deep-copies a value while skipping private keys prefixed with "_".
-    -- @param val any
-    -- @return any
     -- copied from Aegisub util.moon, adjusted to skip private keys
+    ---Deep-copies a value while skipping private keys prefixed with "_".
+    ---@param val any
+    ---@return any copy
     @getSerializableCopy = (val) =>
         seen = {}
         copy = (val) ->
@@ -290,10 +290,10 @@ Reload your automation scripts to generate a new configuration file.]]
         copy val
 
 
-    --- Returns the config table at the given hive path, creating it if missing.
-    -- @param path string[]
-    -- @return table|nil hive
-    -- @return string|nil err
+    ---Returns the config table at the given hive path, creating it if missing.
+    ---@param path string[]
+    ---@return table? hive
+    ---@return string? err
     getHive: (path) =>
         hive, msg = traverseHive path, @config
         switch hive
@@ -311,10 +311,10 @@ Reload your automation scripts to generate a new configuration file.]]
         return hive
 
 
-    --- Returns views on the same handler whose hive paths overlap with targetView.
-    -- @param targetView ConfigView
-    -- @return ConfigView[]|nil
-    -- @return string|nil err
+    ---Returns views on the same handler whose hive paths overlap with targetView.
+    ---@param targetView ConfigView
+    ---@return ConfigView[]? views nil when targetView belongs to a different handler.
+    ---@return string? err
     getOverlappingViews: (targetView) =>
         if targetView.__configHandler != @
             return nil, msgs.getOverlappingViews.differentHandler\format targetView.__configHandler.filePath, @filePath
@@ -324,11 +324,11 @@ Reload your automation scripts to generate a new configuration file.]]
             view
 
 
-    --- Creates and registers a ConfigView for the given hive path.
-    -- @param hivePath string|string[]
-    -- @param[opt] defaults table
-    -- @return ConfigView|nil
-    -- @return string|nil err
+    ---Creates and registers a ConfigView for the given hive path.
+    ---@param hivePath string|string[]
+    ---@param defaults? table Default values for the hive.
+    ---@return ConfigView? view
+    ---@return string? err
     getView: (hivePath, defaults) =>
         success, view = pcall ConfigView, @, hivePath, defaults
 
@@ -339,11 +339,11 @@ Reload your automation scripts to generate a new configuration file.]]
         return view
 
 
-    --- Reads the config file and refreshes the in-memory config and all (or specified) views.
-    -- @param[opt] views ConfigView|ConfigView[]
-    -- @param[opt] waitLockTime number
-    -- @return boolean|nil
-    -- @return string|nil err
+    ---Reads the config file and refreshes the in-memory config and all (or specified) views.
+    ---@param views? ConfigView|ConfigView[] Views to refresh (default: all registered views).
+    ---@param waitLockTime? number Seconds to wait for the config lock.
+    ---@return boolean? success
+    ---@return string? err
     load: (views, waitLockTime) =>
         return nil, msgs.load.noFilePath unless @filePath
         if type(views) == "table" and views.__class == ConfigView
@@ -379,11 +379,11 @@ Reload your automation scripts to generate a new configuration file.]]
         return true
 
 
-    --- Writes the config file, merging only the specified views (or the full config if nil).
-    -- @param[opt] views ConfigView|ConfigView[]
-    -- @param[opt] waitLockTime number
-    -- @return boolean|nil
-    -- @return string|nil err
+    ---Writes the config file, merging only the specified views (or the full config if nil).
+    ---@param views? ConfigView|ConfigView[] Views to merge (default: the whole config).
+    ---@param waitLockTime? number Seconds to wait for the config lock.
+    ---@return boolean? success
+    ---@return string? err
     save: (views, waitLockTime) =>
         return nil, msgs.save.noFile unless @filePath
         if type(views) == "table" and views.__class == ConfigView
@@ -430,10 +430,10 @@ Reload your automation scripts to generate a new configuration file.]]
         else nil, msgs.save.failedHives\format views, @filePath, msg
 
 
-    --- Removes a view's hive from the in-memory config and returns the fresh (empty) hive.
-    -- @param hive ConfigView
-    -- @return table|nil
-    -- @return string|nil err
+    ---Removes a view's hive from the in-memory config and returns the fresh (empty) hive.
+    ---@param hive ConfigView
+    ---@return table? hive
+    ---@return string? err
     purgeHive: (hive) =>
         purgeHive hive.__hivePath, @config
         return @getHive hive.__hivePath

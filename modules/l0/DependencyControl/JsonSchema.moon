@@ -45,10 +45,10 @@ collectValidationErrors = (result, acc = {}) ->
         acc[#acc + 1] = "#{result.instanceLocation or '?'}: #{result.error}"
     return acc
 
---- JSON schema loading and validation utilities.
--- Depends on the `lua-schema` library for validation, which must be manually installed
--- via LuaRocks and/or otherwise made available on the Lua path by the user. 
--- @class JsonSchema
+---JSON schema loading and validation utilities.
+---Depends on the `lua-schema` library for validation, which must be manually installed
+---via LuaRocks and/or otherwise made available on the Lua path by the user.
+---@class JsonSchema
 class JsonSchema
     msgs = {
         load: {
@@ -83,7 +83,7 @@ class JsonSchema
         }
     }
 
-    -- Whether the no-op `pattern` keyword has already been installed (see @{validate}).
+    -- Whether the no-op `pattern` keyword has already been installed (see validate).
     @patternKeywordShadowed = false
 
     @getSchemasInDirectory = (schemaDir, fileNamePattern = "^v(%d+%.%d+%.%d+)%.json$") =>
@@ -142,9 +142,9 @@ class JsonSchema
         return nil, nil, msgs.validateAny.errors.allFailed\format tostring(dataSchemaVersion), table.concat(
             ["  v#{v}: #{e}" for v, e in pairs errors], "\n")
 
-    --- Loads and parses a JSON schema, ready to validate against.
-    -- @param schemaOrSchemaPath table|string the JSON schema, either as path to the schema file or a pre-parsed table
-    -- @param[opt] logger Logger
+    ---Loads and parses a JSON schema, ready to validate against.
+    ---@param schemaOrSchemaPath table|string The JSON schema, either as a path to the schema file or a pre-parsed table.
+    ---@param logger? Logger
     new: (schemaOrSchemaPath, @logger = defaultLogger) =>
         dataType = type schemaOrSchemaPath
         @data = schemaOrSchemaPath
@@ -166,12 +166,12 @@ class JsonSchema
             msgs.load.errors.notAnObject\format(@schemaPath, dataType) or 
             msgs.load.errors.badArgument\format dataType
 
-    --- Validates a Lua value against the loaded schema.
-    -- Best-effort: returns the validation result rather than raising, so callers can warn and
-    -- continue. Returns `nil` (plus a message) when validation couldn't be performed at all.
-    -- @param data table the value to validate
-    -- @return boolean|nil valid true/false on a completed validation, nil if it couldn't run
-    -- @return string|nil err the validation errors if validation failed or an error message when validation could not be performed
+    ---Validates a Lua value against the loaded schema.
+    ---Best-effort: returns the validation result rather than raising, so callers can warn and
+    ---continue. Returns `nil` (plus a message) when validation couldn't be performed at all.
+    ---@param data table The value to validate.
+    ---@return boolean? valid True/false on a completed validation, nil if it couldn't run.
+    ---@return string? err The validation errors if validation failed, or an error message when validation could not be performed.
     validate: (data) =>
         lib = loadLuaSchemaLib!
         return nil, msgs.validate.errors.libMissing unless lib

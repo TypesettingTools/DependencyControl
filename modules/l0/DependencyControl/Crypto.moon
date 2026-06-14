@@ -2,7 +2,6 @@
 -- Uses a fast native SHA-1 when one is available (CommonCrypto on macOS, libcrypto
 -- on Linux, the Windows CryptoAPI), and falls back to a pure-Lua implementation
 -- otherwise — so it always works, even headless / on platforms without the libs.
--- @class Crypto
 
 ffi = require "ffi"
 bit = require "bit"
@@ -158,18 +157,20 @@ if ok and native
     if verified and digest == sha1Lua "abc"
         sha1Impl, sha1Backend = native, backendName
 
+---Cryptographic / hashing utilities backed by a native SHA-1 where available.
+---@class Crypto
 class Crypto
     -- Name of the active SHA-1 backend ("CommonCrypto"/"OpenSSL"/"CryptoAPI"/"lua").
     @sha1Backend = sha1Backend
 
-    --- Computes the SHA-1 digest of a string.
-    -- Accepts arbitrary binary data: Lua strings are byte-safe, so any byte sequence
-    -- (e.g. a file read in binary mode) hashes correctly. A raw FFI buffer must be
-    -- converted with ffi.string(buf, len) first.
-    -- Suitable for file integrity verification; not for security-sensitive use.
-    -- @param msg string the input bytes (may be binary)
-    -- @return string|nil a 40-character lowercase hex digest, or nil on invalid input
-    -- @return string|nil err
+    ---Computes the SHA-1 digest of a string.
+    ---Accepts arbitrary binary data: Lua strings are byte-safe, so any byte sequence
+    ---(e.g. a file read in binary mode) hashes correctly. A raw FFI buffer must be
+    ---converted with ffi.string(buf, len) first.
+    ---Suitable for file integrity verification; not for security-sensitive use.
+    ---@param msg string The input bytes (may be binary).
+    ---@return string? digest A 40-character lowercase hex digest, or nil on invalid input.
+    ---@return string? err
     @sha1 = (msg) ->
         return nil, msgs.sha1.badPayload\format type(msg) unless type(msg) == "string"
         sha1Impl msg

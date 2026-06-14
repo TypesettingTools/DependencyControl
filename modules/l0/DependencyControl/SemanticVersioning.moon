@@ -1,7 +1,12 @@
 SemanticVersioning = nil
 
---- Semantic versioning utilities.
--- @class SemanticVersioning
+---@alias SemverPrecision
+---| "major"
+---| "minor"
+---| "patch"
+
+---Semantic versioning utilities.
+---@class SemanticVersioning
 class SemanticVersioning
   msgs = {
     toNumber: {
@@ -31,10 +36,10 @@ class SemanticVersioning
     return "%d.%d.%d"\format unpack parts
 
 
-  --- Converts a semantic version string or number to an integer.
-  -- @param value string|number|nil The version as string (e.g. "1.2.3"), number, or nil.
-  -- @return number|false The integer version, or false on error.
-  -- @return string|nil Error message if conversion failed.
+  ---Converts a semantic version string or number to an integer.
+  ---@param value string|number|nil The version as a string (e.g. "1.2.3"), a number, or nil.
+  ---@return number|false version The integer version, or false on error.
+  ---@return string? err Error message if conversion failed.
   @toNumber = (value) =>
     return switch type value
       when "number" then math.max value, 0
@@ -56,12 +61,12 @@ class SemanticVersioning
       else false, msgs.toNumber.badType\format type value
 
 
-  --- Checks if version a is greater than or equal to version b, up to the given precision.
-  -- @param a number|string The first version (number or string).
-  -- @param b number|string The second version (number or string).
-  -- @param[opt="patch"] precision string The precision to use ("major", "minor", or "patch").
-  -- @return boolean|nil True if a >= b, or nil on error.
-  -- @return number|nil The masked version of b, or error message if failed.
+  ---Checks whether version `a` is greater than or equal to version `b`, up to the given precision.
+  ---@param a number|string The first version.
+  ---@param b number|string The second version.
+  ---@param precision? SemverPrecision Precision to compare at (default "patch").
+  ---@return boolean? result True if a >= b, or nil on error.
+  ---@return number|string masked The masked value of b on success, or the error message on failure.
   @check: (a, b, precision = "patch") =>
     if type(a) != "number"
       a, err = @toNumber a
@@ -79,6 +84,10 @@ class SemanticVersioning
     b = bit.band b, mask
     return a >= b, b
 
+  ---Reports whether `version` is strictly higher than `reference`. Raises on invalid input.
+  ---@param version number|string
+  ---@param reference number|string
+  ---@return boolean
   isHigher: (version, reference) ->
     version, errMsg = SemanticVersioning\toNumber version
     assert version, errMsg
@@ -87,6 +96,10 @@ class SemanticVersioning
 
     return version > referenceVersionNumber
 
+  ---Reports whether `version` is strictly lower than `reference`. Raises on invalid input.
+  ---@param version number|string
+  ---@param reference number|string
+  ---@return boolean
   isLower: (version, reference) ->
     version, errMsg = SemanticVersioning\toNumber version
     assert version, errMsg

@@ -20,27 +20,27 @@ _stubMatch = (call, expected) ->
         return false unless Common.equals call[i], expected[i]
     return true
 
---- A callable stub that records invocations and supports fluent configuration and assertions.
--- Can be used standalone or via UnitTest:stub for automatic lifecycle management.
--- @class Stub
+---A callable stub that records invocations and supports fluent configuration and assertions.
+---Can be used standalone or via UnitTest:stub for automatic lifecycle management.
+---@class Stub
 class Stub
     @logger = Logger fileBaseName: "DependencyControl.Stub"
 
-    --- Creates a spy on a method, recording calls while still invoking the original method.
-    -- @param table table|string the table to spy into, or a module name (looked up in the module cache)
-    -- @param key string the field name to spy on
-    -- @param[opt] logger Logger the logger to use; when nil a default logger is used
-    -- @param[opt] unitTest UnitTest the unit test instance to report assertion failures    
-    -- @return Stub
+    ---Creates a spy on a method, recording calls while still invoking the original method.
+    ---@param table table|string The table to spy into, or a module name (looked up in the module cache).
+    ---@param key string The field name to spy on.
+    ---@param logger? Logger Logger to use; a default logger is used when nil.
+    ---@param unitTest? UnitTest Unit test instance used to report assertion failures.
+    ---@return Stub
     @spy = (table, key, logger, unitTest) =>
         s = @ table, key, logger, unitTest
         return s\calls (...) -> s._originalMethod ...
 
-    --- Creates a stub, optionally replacing a key in a table.
-    -- @param[opt] table table|string the table to stub into, or a module name (looked up in the module cache)
-    -- @param[opt] key string the field name to replace; when nil no table is modified
-    -- @param[opt] logger Logger the logger to use; when nil a default logger is used
-    -- @param[opt] unitTest UnitTest the unit test instance to report assertion failures to; when nil assertion failures throw errors
+    ---Creates a stub, optionally replacing a key in a table.
+    ---@param table? table|string The table to stub into, or a module name (looked up in the module cache).
+    ---@param key? string The field name to replace; no table is modified when nil.
+    ---@param logger? Logger Logger to use; a default logger is used when nil.
+    ---@param unitTest? UnitTest Unit test instance to report assertion failures to; failures throw when nil.
     new: (table, key, logger, unitTest) =>
         @_calls = {}
         @_replacement = ->
@@ -79,21 +79,22 @@ class Stub
         repl = @_replacement
         return repl ...
 
-    --- Sets the function to invoke when the stub is called.
-    -- @tparam function impl
-    -- @treturn Stub self
+    ---Sets the function to invoke when the stub is called.
+    ---@param impl function
+    ---@return Stub self
     calls: (impl) =>
         @_replacement = impl
         return @
 
-    --- Sets the stub to return fixed values on every call.
-    -- @treturn Stub self
+    ---Sets the stub to return fixed values on every call.
+    ---@param ... any Values to return from every call.
+    ---@return Stub self
     returns: (...) =>
         vals = table.pack ...
         @_replacement = -> unpack vals, 1, vals.n
         return @
 
-    --- Restores the original value that was replaced by this stub.
+    ---Restores the original value that was replaced by this stub.
     restore: =>
         if @_targetTable != nil
             @_targetTable[@_targetMethodKey] = @_originalMethod

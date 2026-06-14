@@ -32,11 +32,12 @@ defaultLogger = Logger fileBaseName: "DepCtrl.ScriptUpdateRecord"
 ---@field macros table<string, FeedScriptData> Automation scripts indexed by namespace.
 ---@field modules table<string, FeedScriptData> Modules indexed by namespace.
 
---- Feed-specific update information for a single script in a selected channel.
--- Fields from @{FeedScriptData} (name, changelog, etc.) are accessible directly on
--- the instance via __index fallback to the @data table.
--- Fields from the active @{FeedChannelData} (version, files, platforms, etc.) are
--- copied onto the instance directly by @{setChannel}.
+---Feed-specific update information for a single script in a selected channel.
+---
+---Fields of the underlying [FeedScriptData](lua://FeedScriptData) (name, changelog, etc.)
+---are readable directly on the instance, and the active channel's
+---[FeedChannelData](lua://FeedChannelData) fields (version, files, platforms, etc.) are
+---exposed directly on the instance once a channel is selected.
 ---@class ScriptUpdateRecord
 ---@field namespace string Script namespace.
 ---@field data FeedScriptData Shallow copy of the raw script entry from the feed.
