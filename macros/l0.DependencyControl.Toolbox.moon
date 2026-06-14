@@ -249,7 +249,7 @@ scheduleUpdatesAndRegisterTests = ->
     for namespace in pairs (config.c.modules or {})
         success, err = pcall require, namespace
         unless success
-            logger\trace msgs.scheduleUpdate^sAndRegisterTests.moduleLoadFailed, namespace, tostring err
+            logger\trace msgs.scheduleUpdatesAndRegisterTests.moduleLoadFailed, namespace, tostring err
 
     for _, record in pairs DepCtrl\getAllRegisteredRecords!
         success, errMsgOrErrCode, errDetail = pcall DepCtrl.updater\scheduleUpdate, record
