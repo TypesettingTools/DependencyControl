@@ -291,7 +291,7 @@ class Record extends Common
     checkVersion: (value, precision = "patch") =>
         if type(value) == "table" and value.__class == @@
             value = value.version
-        return SemanticVersioning\check @version, value
+        return SemanticVersioning\check @version, value, precision
 
 
     ---Retrieves managed submodules registered under this module namespace.
