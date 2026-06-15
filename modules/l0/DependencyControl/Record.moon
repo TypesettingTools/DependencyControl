@@ -420,6 +420,38 @@ class Record extends Common
         return true if @virtual
         return Common.validateNamespace @namespace
 
+    ---Returns all candidate entry point paths for this record under a given base directory,
+    ---covering .moon and .lua extensions and init.* variants for modules.
+    ---@param baseDir string Absolute automation base directory.
+    ---@return string[] paths
+    getPossibleEntryPointPaths: (baseDir) =>
+        isModule = @scriptType == Common.ScriptType.Module
+        subPath = isModule and @namespace\gsub("%.", "/") or @namespace
+        paths = {}
+        for ext in *{".moon", ".lua"}
+            if path = FileOps.validateFullPath "#{subPath}#{ext}", false, baseDir
+                paths[#paths+1] = path
+            if isModule
+                if path = FileOps.validateFullPath "#{subPath}/init#{ext}", false, baseDir
+                    paths[#paths+1] = path
+        return paths
+
+    ---Finds this record's primary entry point file, checking ?user then ?data automation directories.
+    ---@return string? path
+    ---@return boolean? isUserPath True when found under ?user, false when found under ?data, nil when not found.
+    getEntryPointPath: =>
+        userDir = Common\getAutomationDir @scriptType, "?user"
+        for path in *@getPossibleEntryPointPaths userDir
+            return path, true if "file" == FileOps.attributes path, "mode"
+
+        dataDir = Common\getAutomationDir @scriptType, "?data"
+        if dataDir and dataDir != userDir
+            for path in *@getPossibleEntryPointPaths dataDir
+                return path, false if "file" == FileOps.attributes path, "mode"
+
+        -- TODO: what if a module is available in another package search path?
+        return nil, nil
+
     ---Uninstalls this managed record and removes matching files from automation paths.
     ---@param removeConfig? boolean Also delete the record's config (default true).
     ---@return boolean? success nil when the record can't be uninstalled (virtual/unmanaged).

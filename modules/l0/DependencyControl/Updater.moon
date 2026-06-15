@@ -29,6 +29,7 @@ class UpdaterBase extends Common
             [5]: "Skipped %s of %s '%s': Another update initiated by %s is already running."
             [7]: "Skipped %s of %s '%s': An internet connection is currently not available."
             [8]: "Couldn't %s %s '%s' because the requested version is invalid: %s"
+            [9]: "Skipped %s of %s '%s' because its entry point (%s) is in Aegisub's data automation directory. If it's managed by a system package manager, please update it through that instead."
             [10]: "Skipped %s of %s '%s': the update task is already running."
             [15]: "Couldn't %s %s '%s' because its requirements could not be satisfied:"
             [30]: "Couldn't %s %s '%s': failed to create temporary download directory %s"
@@ -192,6 +193,11 @@ class UpdateTask extends UpdaterBase
 
         -- don't perform update of a script when another one is already running for the same script
         return logUpdateError -10 if @running
+
+        -- don't shadow scripts installed to the ?data automation dir with a ?user copy
+        entryPath, isUserPath = @record\getEntryPointPath!
+        if isUserPath == false
+            return logUpdateError -9, entryPath
 
         -- check if the script was already updated
         if @updated and not exhaustive and @record\checkVersion @targetVersion
@@ -464,6 +470,7 @@ class Updater extends UpdaterBase
         }
         scheduleUpdate: {
             updaterDisabled: "Skipping update check for %s (Updater disabled)."
+            protectedInstall: "Skipping update check for %s '%s': its entry point (%s) is in Aegisub's data automation directory, managed outside of #{constants.DEPCTRL_NAME}."
             runningUpdate: "Running scheduled update for %s '%s'..."
         }
     }
@@ -543,6 +550,13 @@ class Updater extends UpdaterBase
 
         record.config.c.lastUpdateCheck = os.time!
         record.config\write!
+
+        -- don't shadow scripts installed to the ?data automation dir with a ?user copy
+        entryPath, isUserPath = record\getEntryPointPath!
+        if isUserPath == false
+            @logger\trace msgs.scheduleUpdate.protectedInstall, @@terms.scriptType.singular[record.scriptType],
+                          record.name or record.namespace, entryPath
+            return -9, entryPath
 
         task = @addTask record -- no need to check for errors, because we've already accounted for those case
         @logger\trace msgs.scheduleUpdate.runningUpdate, @@terms.scriptType.singular[record.scriptType], record.name

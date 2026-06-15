@@ -40,7 +40,7 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "5F5CEE335196ACB7C7D2D7B3B4929B2A8B91E3B4"
+              "sha1": "598076DC6C112BCF5CD3EF0058F9D20E7C3F7B08"
             }
           ],
           "requiredModules": [
@@ -93,12 +93,12 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "347F082AA79C6DB9E58672C246F553CDCB668ACB"
+              "sha1": "F54C44CC727BA42DFF58A964159B6D9EADEB01F2"
             },
             {
               "name": "/Common.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "9B0BE0B10BDF5EBC8586CD6D3C993427F301377D"
+              "sha1": "3826E8455751D04864823D04399E86A51C0F2F39"
             },
             {
               "name": "/Constants.moon",
@@ -108,102 +108,102 @@
             {
               "name": "/ConfigHandler.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "1B8EE7C531794148B63B09BDC1197EEA66D5E98B"
+              "sha1": "30E8728C8D07057E5F00E1A220BBE38F5D167DF5"
             },
             {
               "name": "/ConfigView.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "4CEC6275CB7D0BC6F19BE79A320679B47A9A05AB"
+              "sha1": "9CF75E1BA571B95A550125FAD1CAD7053268097E"
             },
             {
               "name": "/Crypto.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "143EBF2D4E7B99960193FD16637059086784819C"
+              "sha1": "3AE799E87F69321077CF7C05FC42FFCEADEF4A05"
             },
             {
               "name": "/Downloader.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "0FC493932D84FDF629B18DE260565C5CFCDD8714"
+              "sha1": "B5051F30040C2BE95789D836D95BCBB68DD5D6D5"
             },
             {
               "name": "/Enum.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "468E8243882CBF0192DF105F781F911EDE6184FE"
+              "sha1": "0C60962AF286FAEB3E3326A004C18A8E24EF7EA4"
             },
             {
               "name": "/EventEmitter.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "3699FF01202D89D227BBE214E37DA056A93DED20"
+              "sha1": "ECD301C2EA0A74111981A6A0E2EAC6ADB2B32AB9"
             },
             {
               "name": "/FileLock.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "E2434F8C39E118364FC60F465BF07F9F79086CA7"
+              "sha1": "F6CB3F535AC17E783687BA629FD6D672555AB41B"
             },
             {
               "name": "/FileOps.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "77BA31055310009D2E8D066B8E7B65F2EF24FCFF"
+              "sha1": "0BE6B42CAD0184AC05A3A0ABA312C7491D28A9B6"
             },
             {
               "name": "/GitRepository.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "A4C19B95FC9B218CB5C630883141502A8C6C4D20"
+              "sha1": "2D23AAA1BD2A16555F3374253A36475114E2F650"
             },
             {
               "name": "/JsonSchema.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "5279C47C09987D2DE5A1DFF47C46ABC72F9CBF58"
+              "sha1": "9E0E9AE5249B1B7112D4A5B6EE42CD80C42F6D19"
             },
             {
               "name": "/Lock.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "982B95D6B0AFB567997B43D7741CB69B357B6977"
+              "sha1": "FC8A3B58F4A6FEE4ADFBBFD4343EE862580C9BAB"
             },
             {
               "name": "/Logger.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "28A6A8774007AEE99F9529BC2491A688DE68BB85"
+              "sha1": "1315A1B66FCA9E850F95BCB529174F2ABEADAFD9"
             },
             {
               "name": "/ModuleLoader.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "1A6E9FC0077B56EF9BB8FD47108852BA0864B14C"
+              "sha1": "75997D551402B8673213F6F9A07DDC6FF132388A"
             },
             {
               "name": "/ModuleProvider.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "5F634C4B566E70D962C606D55D94A7AC4FE1C253"
+              "sha1": "1D0B293D563BE18FA2685966FC56E51683065FB8"
             },
             {
               "name": "/NamedSemaphore.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "5C40B2EDFFE229912E52B6B9722B71C9A4F3C67B"
+              "sha1": "CAD7BF0E840581EF16A62859A0A957CFADCFE57D"
             },
             {
               "name": "/Record.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "9671CF860C24069572ED72BEB086637544036407"
+              "sha1": "FB54FCF8843C4C25FB8D49D585091F379A9D776E"
             },
             {
               "name": "/ScriptTargetFilter.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "7F766A279DC8E5EDF597A081D827D8C4ED5D0019"
+              "sha1": "6A3E34EA91136A0B42F9A3A0F626D520B344F144"
             },
             {
               "name": "/ScriptUpdateRecord.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "16C3B016D33C95BF7AE794F07FFB093896F620BE"
+              "sha1": "1C29F3462BBC010898528F9A072202FFAD1CF18A"
             },
             {
               "name": "/SemanticVersioning.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "E3FC94FA19337BF814EF7A5A4EE6FA0E636BCA9B"
+              "sha1": "12C2DF09B3681AC28C6F53A5A23A2DB9B956885F"
             },
             {
               "name": "/Stub.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "F48B4E3EBA9ADBB22745714060B454C22CE75AB9"
+              "sha1": "EBBE07FF72CD2DA24A71424087EA31947073B0AC"
             },
             {
               "name": "/BadMutex.moon",
@@ -214,37 +214,37 @@
             {
               "name": "/Timer.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "5CD3E71061C48F8209B4849398B333DBAEB03ADD"
+              "sha1": "BCE7AEB26FBCA73276DB61A0C86BFDD1F7569B95"
             },
             {
               "name": "/UnitTestSuite.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "75541FD94D8B0B34731ED74D4CBA787BC869E390"
+              "sha1": "4684062614EB98F585917C1F18D2BDE17609B7ED"
             },
             {
               "name": "/UpdateFeed.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "9C060E835FEEFF275B261E8638CF028D17CEE44B"
+              "sha1": "217CFF60C8B6A87CC6074EEE51AB7B74F664CDEB"
             },
             {
               "name": "/Updater.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "8DEF5E943716147B1879E387FA15EEE0E03DA49D"
+              "sha1": "171A57DB3D7C553A5BD916FEC7B1EC8AD8B1CB7D"
             },
             {
               "name": "/ZipArchiver.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "93A4D958835DECFE594F6D8CAEF050992523E4DB"
+              "sha1": "0957979B1112933C9EF2B7AEE919F7CC884DCE78"
             },
             {
               "name": "/helpers/ffi-posix.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "70CCC5FBFB48234DAD013854E8845541CC28A94F"
+              "sha1": "972CE60ABA29D4BE64031C8E0FD087CA8EC59966"
             },
             {
               "name": "/helpers/ffi-windows.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "8A2ABE7CB6011F4F7D390C9FB9E396B337B3584C"
+              "sha1": "49B3E5CAFF38C141FB52D950000F785F5D91DFA4"
             },
             {
               "name": "/shims/BadMutex.moon",
@@ -254,17 +254,17 @@
             {
               "name": "/shims/DownloadManager.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "38D6884F543E23512F7132CA4E3A5F627E3A1B7B"
+              "sha1": "F5E25C2678ABFAA7055DB6F99E58E44F7C454E0A"
             },
             {
               "name": "/shims/PreciseTimer.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "D46B97F295F555FE74E184CC16424F5004F33687"
+              "sha1": "F976BF883F90623D4D71191F1A5E72703A8551BE"
             },
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "D57577BD7500F56A84F127B422FF2A724302BDED",
+              "sha1": "FE85119FE24E944A19E1185D0E8B7D6AFF840169",
               "type": "test"
             },
             {
@@ -337,6 +337,12 @@
               "name": "/UpdateFeed.moon",
               "url": "@{fileBaseUrl}@{fileName}",
               "sha1": "9C0FF19921BFECDC3B4FAF561FFF3617CA979D59",
+              "type": "test"
+            },
+            {
+              "name": "/Updater.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "FDEDD2360CBDD793B83BD1C4DF8307EDE65E1F1C",
               "type": "test"
             },
             {
@@ -429,7 +435,8 @@
           "Lock: While a lock is held it records its holder (name, process id, and lease expiry) in a side file for troubleshooting, and logs a warning when it is waiting on a holder whose lease has lapsed (a likely crash or stall). The recorded lease is honored by waiters; an `overrideExpiry` option lets a waiter apply its own expiry instead.",
           "Lock: Added `renew(threshold)` to extend a held lock's lease during long operations (refreshing only when the remaining lease drops below the threshold, so it is cheap to call from a busy loop), and a `Lock.guard` helper that acquires a lock, runs a function, and always releases it (even if the function errors).",
           "Updater: The in-progress-update flag is no longer stored in the config file; concurrent updates are now coordinated by a dedicated cross-process lock that the system releases automatically if an updater crashes. The lease is renewed throughout long downloads, and a new `Updater.isRunning()` reports whether (and which script) an update is currently running.",
-          "Timer: Exposed a shared monotonic `Timer.getTime()` clock, added stopwatch-style `start()`, `stop()`, and `reset()` methods, and PT.PreciseTimer is now provided through the same bundled-provider mechanism as BM.BadMutex and DM.DownloadManager (set DEPCTRL_FORCE_BUILTIN_TIMER=1 to force DepCtrl's implementation)."
+          "Timer: Exposed a shared monotonic `Timer.getTime()` clock, added stopwatch-style `start()`, `stop()`, and `reset()` methods, and PT.PreciseTimer is now provided through the same bundled-provider mechanism as BM.BadMutex and DM.DownloadManager (set DEPCTRL_FORCE_BUILTIN_TIMER=1 to force DepCtrl's implementation).",
+          "Updater: Scripts and modules installed in Aegisub's data automation directory (e.g. native modules installed by a system package manager) are no longer updated by DependencyControl — scheduled checks skip them with a debug log, while manual installs/updates and dependency resolution report a descriptive error. Portable / \"Local Config\" setups, where the user and data directories are the same, are unaffected."
         ]
       }
     },
@@ -449,7 +456,7 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "E206415E5890C65F353EF2D6D2478401914BD9B7"
+              "sha1": "73EDA9FC07D0F6B4B3713F08262C337B520B69B9"
             },
             {
               "name": "/vendor/dkjson.lua",

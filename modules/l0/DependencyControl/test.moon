@@ -1639,6 +1639,8 @@ UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
 
     Record: (controls\requireTest "Record")!
 
+    Updater: (controls\requireTest "Updater")!
+
     ScriptUpdateRecord: {
       _description: "Tests for ScriptUpdateRecord channel management and update record accessors."
 
