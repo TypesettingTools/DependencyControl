@@ -1,11 +1,52 @@
--- Additional Common tests: getAutomationDir, getTestDir, flatten.
+-- Common tests: namespace validation, terms, and shared utilities
+-- (getAutomationDir, getTestDir, flatten, getObjectHash).
 -- Called from Tests.moon as: (require "...test.Common") basePath
 (basePath) ->
   ffi    = require "ffi"
   Common = require "l0.DependencyControl.Common"
 
   {
-    _description: "Tests for Common utilities: getAutomationDir, getTestDir, flatten."
+    _description: "Tests for the Common base class: namespace validation, shared terms, and utilities."
+
+    capitalizeTerms: (ut) ->
+      ut\assertEquals Common.terms.capitalize("hello world"), "Hello world"
+
+    -- validateNamespace: pure computation, no stubs needed
+
+    validateNamespace_valid: (ut) ->
+      result, err = Common.validateNamespace "l0.DependencyControl"
+      ut\assertTrue result
+      ut\assertNil err
+
+    validateNamespace_multiPart: (ut) ->
+      result, err = Common.validateNamespace "a.b.c"
+      ut\assertTrue result
+      ut\assertNil err
+
+    validateNamespace_noDot: (ut) ->
+      result, err = Common.validateNamespace "no-dot"
+      ut\assertFalse result
+      ut\assertString err
+
+    validateNamespace_leadingDot: (ut) ->
+      result, err = Common.validateNamespace ".foo.bar"
+      ut\assertFalse result
+      ut\assertString err
+
+    validateNamespace_trailingDot: (ut) ->
+      result, err = Common.validateNamespace "foo.bar."
+      ut\assertFalse result
+      ut\assertString err
+
+    validateNamespace_invalidChars: (ut) ->
+      result, err = Common.validateNamespace "foo bar.baz"
+      ut\assertFalse result
+      ut\assertString err
+
+    validateNamespace_consecutiveDots: (ut) ->
+      result, err = Common.validateNamespace "foo..bar"
+      ut\assertFalse result
+      ut\assertString err
 
     -- getAutomationDir
 
@@ -115,6 +156,11 @@
       ut\assertNotEquals Common.getObjectHash({v: 1}), Common.getObjectHash {v: "1"}
 
     _order: {
+      "capitalizeTerms",
+      "validateNamespace_valid", "validateNamespace_multiPart",
+      "validateNamespace_noDot", "validateNamespace_leadingDot",
+      "validateNamespace_trailingDot", "validateNamespace_invalidChars",
+      "validateNamespace_consecutiveDots",
       "getAutomationDir_automation", "getAutomationDir_module",
       "getAutomationDir_customRoot", "getAutomationDir_unknown",
       "getTestDir_automation", "getTestDir_module", "getTestDir_customRoot",

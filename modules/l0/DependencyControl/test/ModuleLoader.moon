@@ -1,0 +1,205 @@
+-- ModuleLoader tests: internal module loading helpers.
+-- Called from Tests.moon as: (require "...test.ModuleLoader")!
+->
+  constants    = require "l0.DependencyControl.Constants"
+  Common       = require "l0.DependencyControl.Common"
+  ModuleLoader = require "l0.DependencyControl.ModuleLoader"
+
+  DEPCTRL_DUMMY_MODULE_MARKER = "#{constants.DEPCTRL_PRIVATE_GLOBAL_VAR_PREFIX}Dummy"
+
+  {
+    _description: "Tests for ModuleLoader internal module loading helpers."
+
+    -- formatVersionErrorTemplate: pure computation, uses SemanticVersioning.toString
+
+    formatVersionErrorTemplate_missing_bare: (ut) ->
+      result = ModuleLoader.formatVersionErrorTemplate nil, "MyModule", nil, nil, "not found"
+      ut\assertString result
+      ut\assertContains result, "MyModule"
+      ut\assertContains result, "not found"
+
+    formatVersionErrorTemplate_missing_withVersion: (ut) ->
+      result = ModuleLoader.formatVersionErrorTemplate nil, "MyModule", "1.0.0", nil, "not found"
+      ut\assertContains result, "(v1.0.0)"
+
+    formatVersionErrorTemplate_missing_withUrl: (ut) ->
+      result = ModuleLoader.formatVersionErrorTemplate nil, "MyModule", nil, "http://example.com", "not found"
+      ut\assertContains result, ": http://example.com"
+
+    formatVersionErrorTemplate_outdated_scalarRef: (ut) ->
+      ref = {version: 65793}  -- 1*65536 + 1*256 + 1 = "1.1.1" in base-256 encoding
+      result = ModuleLoader.formatVersionErrorTemplate nil, "MyModule", "2.0.0", nil, "too old", ref
+      ut\assertContains result, "Installed:"
+      ut\assertContains result, "Required: v2.0.0"
+      ut\assertContains result, "1.1.1"
+
+    formatVersionErrorTemplate_outdated_tableRef: (ut) ->
+      ref = {version: {version: 65793}}  -- 1*65536 + 1*256 + 1 = "1.1.1" in base-256 encoding
+      result = ModuleLoader.formatVersionErrorTemplate nil, "MyModule", "2.0.0", nil, "too old", ref
+      ut\assertContains result, "Installed:"
+      ut\assertContains result, "1.1.1"
+
+    -- createDummyRef: tests LOADED_MODULES manipulation
+
+    createDummyRef_nonModule: (ut) ->
+      rec = {scriptType: Common.ScriptType.Automation, __class: {ScriptType: Common.ScriptType}}
+      result = ModuleLoader.createDummyRef rec
+      ut\assertNil result
+
+    createDummyRef_newRef: (ut) ->
+      ns = "test.ModuleLoader.createNew"
+      rec = {scriptType: Common.ScriptType.Module, namespace: ns, __class: {ScriptType: Common.ScriptType}}
+      LOADED_MODULES = LOADED_MODULES or {}
+      LOADED_MODULES[ns] = nil
+      result = ModuleLoader.createDummyRef rec
+      ut\assertTrue result
+      ut\assertNotNil LOADED_MODULES[ns]
+      ut\assertTrue LOADED_MODULES[ns][DEPCTRL_DUMMY_MODULE_MARKER]
+      LOADED_MODULES[ns] = nil
+
+    createDummyRef_existingRef: (ut) ->
+      ns = "test.ModuleLoader.createExisting"
+      rec = {scriptType: Common.ScriptType.Module, namespace: ns, __class: {ScriptType: Common.ScriptType}}
+      LOADED_MODULES = LOADED_MODULES or {}
+      LOADED_MODULES[ns] = {existing: true}
+      result = ModuleLoader.createDummyRef rec
+      ut\assertFalse result
+      LOADED_MODULES[ns] = nil
+
+    -- removeDummyRef: tests LOADED_MODULES manipulation
+
+    removeDummyRef_nonModule: (ut) ->
+      rec = {scriptType: Common.ScriptType.Automation, __class: {ScriptType: Common.ScriptType}}
+      result = ModuleLoader.removeDummyRef rec
+      ut\assertNil result
+
+    removeDummyRef_dummy: (ut) ->
+      ns = "test.ModuleLoader.removeDummy"
+      rec = {scriptType: Common.ScriptType.Module, namespace: ns, __class: {ScriptType: Common.ScriptType}}
+      LOADED_MODULES = LOADED_MODULES or {}
+      LOADED_MODULES[ns] = {[DEPCTRL_DUMMY_MODULE_MARKER]: true}
+      result = ModuleLoader.removeDummyRef rec
+      ut\assertTrue result
+      ut\assertNil LOADED_MODULES[ns]
+
+    removeDummyRef_nonDummy: (ut) ->
+      ns = "test.ModuleLoader.removeNonDummy"
+      rec = {scriptType: Common.ScriptType.Module, namespace: ns, __class: {ScriptType: Common.ScriptType}}
+      LOADED_MODULES = LOADED_MODULES or {}
+      LOADED_MODULES[ns] = {[DEPCTRL_DUMMY_MODULE_MARKER]: false}
+      result = ModuleLoader.removeDummyRef rec
+      ut\assertFalse result
+      LOADED_MODULES[ns] = nil
+
+    -- loadModule: stubs require, controls LOADED_MODULES
+
+    loadModule_cached: (ut) ->
+      ns = "test.ModuleLoader.cached"
+      mockRef = {loaded: true}
+      mdl = {moduleName: ns}
+      rec = {namespace: "host.Module", __class: {ScriptType: Common.ScriptType, __name: "DependencyControl"}}
+      LOADED_MODULES = LOADED_MODULES or {}
+      LOADED_MODULES[ns] = mockRef
+      result = ModuleLoader.loadModule rec, mdl, false, false
+      ut\assertEquals result, mockRef
+      LOADED_MODULES[ns] = nil
+
+    loadModule_success: (ut) ->
+      ns = "test.ModuleLoader.success"
+      mockRef = {loaded: true}
+      mdl = {moduleName: ns}
+      rec = {namespace: "host.Module", __class: {ScriptType: Common.ScriptType, __name: "DependencyControl"}}
+      LOADED_MODULES = LOADED_MODULES or {}
+      LOADED_MODULES[ns] = nil
+      (ut\stub _G, "require")\calls (name) -> mockRef
+      result = ModuleLoader.loadModule rec, mdl, false, false
+      ut\assertEquals result, mockRef
+      ut\assertEquals mdl._ref, mockRef
+      LOADED_MODULES[ns] = nil
+
+    loadModule_missing: (ut) ->
+      ns = "test.ModuleLoader.missing"
+      mdl = {moduleName: ns}
+      rec = {namespace: "host.Module", __class: {ScriptType: Common.ScriptType, __name: "DependencyControl"}}
+      LOADED_MODULES = LOADED_MODULES or {}
+      LOADED_MODULES[ns] = nil
+      (ut\stub _G, "require")\calls (name) -> error "module '#{name}' not found: no such file"
+      result = ModuleLoader.loadModule rec, mdl, false, false
+      ut\assertNil result
+      ut\assertTrue mdl._missing
+      ut\assertNil mdl._error
+
+    loadModule_error: (ut) ->
+      ns = "test.ModuleLoader.error"
+      mdl = {moduleName: ns}
+      rec = {namespace: "host.Module", __class: {ScriptType: Common.ScriptType, __name: "DependencyControl"}}
+      LOADED_MODULES = LOADED_MODULES or {}
+      LOADED_MODULES[ns] = nil
+      (ut\stub _G, "require")\calls (name) -> error "syntax error in module"
+      result = ModuleLoader.loadModule rec, mdl, false, false
+      ut\assertNil result
+      ut\assertFalse mdl._missing
+      ut\assertString mdl._error
+
+    -- loadModules: stubs loadModule to control loading behavior
+
+    loadModules_skipsModule: (ut) ->
+      ns = "test.ModuleLoader.skip"
+      mdl = {moduleName: ns}
+      loadModuleStub = ut\stub ModuleLoader, "loadModule"
+      rec = {moduleName: "host.Module", feed: nil, name: "host",
+             __class: {ScriptType: Common.ScriptType, __name: "DependencyControl", updater: nil}}
+      success, err = ModuleLoader.loadModules rec, {mdl}, nil, {[ns]: true}
+      ut\assertTrue success
+      ut\assertEquals err, ""
+      loadModuleStub\assertNotCalled!
+
+    loadModules_allLoaded: (ut) ->
+      ns = "test.ModuleLoader.allLoaded"
+      mockRef = {loaded: true}
+      mdl = {moduleName: ns, version: nil, name: ns}
+      rec = {namespace: "host.Module", moduleName: "host.Module", feed: nil, name: "host",
+             __class: {ScriptType: Common.ScriptType, __name: "DependencyControl", updater: nil}}
+      (ut\stub ModuleLoader, "loadModule")\calls (self, m, usePrivate) ->
+        m._ref = mockRef unless usePrivate
+      success, err = ModuleLoader.loadModules rec, {mdl}
+      ut\assertTrue success
+      ut\assertEquals err, ""
+
+    -- checkOptionalModules: mock self with requiredModules
+
+    checkOptionalModules_noneOptional: (ut) ->
+      rec = {
+        name: "test"
+        requiredModules: {{moduleName: "SomeModule", name: "SomeModule", optional: false}}
+        __class: {ScriptType: Common.ScriptType, automationDir: {modules: "include"}}
+      }
+      result, err = ModuleLoader.checkOptionalModules rec, {"SomeModule"}
+      ut\assertTrue result
+      ut\assertNil err
+
+    checkOptionalModules_missingOptional: (ut) ->
+      rec = {
+        name: "test"
+        requiredModules: {
+          {moduleName: "MissingMod", name: "MissingMod", optional: true, _missing: true,
+           _reason: "not found", version: nil, url: nil}
+        }
+        __class: {ScriptType: Common.ScriptType, automationDir: {modules: "include"}}
+      }
+      result, err = ModuleLoader.checkOptionalModules rec, {"MissingMod"}
+      ut\assertFalse result
+      ut\assertString err
+      ut\assertContains err, "MissingMod"
+
+    _order: {
+      "formatVersionErrorTemplate_missing_bare", "formatVersionErrorTemplate_missing_withVersion",
+      "formatVersionErrorTemplate_missing_withUrl",
+      "formatVersionErrorTemplate_outdated_scalarRef", "formatVersionErrorTemplate_outdated_tableRef",
+      "createDummyRef_nonModule", "createDummyRef_newRef", "createDummyRef_existingRef",
+      "removeDummyRef_nonModule", "removeDummyRef_dummy", "removeDummyRef_nonDummy",
+      "loadModule_cached", "loadModule_success", "loadModule_missing", "loadModule_error",
+      "loadModules_skipsModule", "loadModules_allLoaded",
+      "checkOptionalModules_noneOptional", "checkOptionalModules_missingOptional"
+    }
+  }

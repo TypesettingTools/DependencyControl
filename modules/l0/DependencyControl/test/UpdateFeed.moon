@@ -1,4 +1,5 @@
--- Additional UpdateFeed tests: getModuleVersion, getFileDeployPath, walkFiles, deployFiles.
+-- UpdateFeed tests: feed data access, script record retrieval, file deployment,
+-- and feed refresh.
 -- Called from Tests.moon as: (require "...test.UpdateFeed") basePath, DepCtrl
 (basePath, DepCtrl) ->
   Common            = require "l0.DependencyControl.Common"
@@ -7,7 +8,73 @@
   FILEOPS_MODULE_NAME = "l0.DependencyControl.FileOps"
 
   {
-    _description: "Additional UpdateFeed tests: getModuleVersion, getFileDeployPath, walkFiles, deployFiles."
+    _description: "Tests for UpdateFeed feed data access, script record retrieval, and file deployment."
+
+    getKnownFeeds_noData: (ut) ->
+      feed = {data: nil, __class: UpdateFeed}
+      result = UpdateFeed.getKnownFeeds feed
+      ut\assertTable result
+      ut\assertEquals #result, 0
+
+    getKnownFeeds_withData: (ut) ->
+      feed = {
+        data: {knownFeeds: {a: "https://example.com/a.json", b: "https://example.com/b.json"}},
+        __class: UpdateFeed
+      }
+      result = UpdateFeed.getKnownFeeds feed
+      ut\assertEquals #result, 2
+
+    getScript_invalidType: (ut) ->
+      feed = {data: {macros: {}, modules: {}, knownFeeds: {}}, logger: DepCtrl.logger, __class: UpdateFeed}
+      result, err = UpdateFeed.getScript feed, "test.NS", 99
+      ut\assertNil result
+      ut\assertString err
+
+    getScript_missing: (ut) ->
+      feed = {data: {macros: {}, modules: {}, knownFeeds: {}}, logger: DepCtrl.logger, __class: UpdateFeed}
+      result = UpdateFeed.getScript feed, "test.NS", Common.ScriptType.Module
+      ut\assertFalse result
+
+    getScript_found: (ut) ->
+      feed = {
+        data: {modules: {"test.NS": {
+          channels: {release: {default: true, version: "1.0.0", files: {}}},
+          name: "T"
+        }}, macros: {}, knownFeeds: {}},
+        logger: DepCtrl.logger, __class: UpdateFeed
+      }
+      sur = UpdateFeed.getScript feed, "test.NS", Common.ScriptType.Module
+      ut\assertTable sur
+      ut\assertEquals sur.namespace, "test.NS"
+      ut\assertEquals sur.activeChannel, "release"
+
+    getMacro_usesAutomationType: (ut) ->
+      -- getMacro calls @getScript, which requires self.getScript to resolve via colon call.
+      -- Adding getScript directly to the mock avoids needing a full class metatable.
+      feed = {
+        data: {macros: {"test.NS": {
+          channels: {release: {default: true, version: "1.0.0", files: {}}},
+          name: "T"
+        }}, modules: {}, knownFeeds: {}},
+        logger: DepCtrl.logger, __class: UpdateFeed,
+        getScript: UpdateFeed.getScript
+      }
+      sur = UpdateFeed.getMacro feed, "test.NS"
+      ut\assertTable sur
+      ut\assertFalse sur.moduleName  -- false for Automation (not a module)
+
+    getModule_usesModuleType: (ut) ->
+      feed = {
+        data: {modules: {"test.NS": {
+          channels: {release: {default: true, version: "1.0.0", files: {}}},
+          name: "T"
+        }}, macros: {}, knownFeeds: {}},
+        logger: DepCtrl.logger, __class: UpdateFeed,
+        getScript: UpdateFeed.getScript
+      }
+      sur = UpdateFeed.getModule feed, "test.NS"
+      ut\assertTable sur
+      ut\assertEquals sur.moduleName, "test.NS"  -- set for Module type
 
     -- getModuleVersion
 
@@ -255,6 +322,9 @@
       ut\assertContains result.errors[1], "no record"
 
     _order: {
+      "getKnownFeeds_noData", "getKnownFeeds_withData",
+      "getScript_invalidType", "getScript_missing", "getScript_found",
+      "getMacro_usesAutomationType", "getModule_usesModuleType",
       "getModuleVersion_defaultChannel", "getModuleVersion_fallback", "getModuleVersion_missing",
       "getFileDeployPath_module", "getFileDeployPath_test",
       "walkFiles_yieldsProxies", "walkFiles_passesThroughLocalFilePath",
