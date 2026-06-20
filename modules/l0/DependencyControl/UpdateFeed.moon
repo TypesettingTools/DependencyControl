@@ -150,7 +150,7 @@ class UpdateFeed extends Common
         "version", "released", "default",
         "optional",
         "channels", "changelog",
-        "files", "requiredModules", "platforms",
+        "files", "requiredModules", "provides", "platforms",
         "sha1", "delete", "type", "platform",
         "macros", "modules",
         "feed",
@@ -449,6 +449,24 @@ class UpdateFeed extends Common
             return ch.version if ch.default
         fallback
 
+    ---Returns the modules in this feed whose default channel `provides` the given name. Only the
+    ---`modules` section is searched (automation scripts can't be `require`d). The feed must be loaded.
+    ---@param alias string The required module name to find providers for.
+    ---@return ScriptUpdateRecord[] providers Update records (default channel selected) whose `provides` lists the name.
+    getProviders: (alias) =>
+        providers = {}
+        return providers unless @data and @data.modules
+        for namespace, pkg in pairs @data.modules
+            continue unless type(pkg) == "table" and pkg.channels
+            record = ScriptUpdateRecord namespace, pkg, nil, @@ScriptType.Module, false, @logger
+            continue unless (record\setChannel!) and record.provides
+            for entry in *record.provides
+                name = type(entry) == "table" and entry.name or entry
+                if name == alias
+                    providers[#providers + 1] = record
+                    break
+        return providers
+
     ---Resolves which channel of a package to operate on.
     ---With an explicit name, that channel must exist; otherwise the channel flagged `default: true`
     ---is used.
@@ -552,6 +570,16 @@ class UpdateFeed extends Common
             Common.getObjectHash {d.moduleName, {version: d.version or "", optional: d.optional and true or false} for d in *deps or {}}
         if getDepSignature(newDeps) != getDepSignature rawChannel.requiredModules
             rawChannel.requiredModules = #newDeps > 0 and newDeps or nil
+            changed = true
+
+        -- Mirror the record's provided aliases onto the channel, emitted as bare strings (the record
+        -- normalizes them to {name: …}). Compared as an order-independent set so reordering or a
+        -- representational difference (bare string vs {name}) isn't reported as a change.
+        aliasNames = (provides) -> [type(p) == "table" and p.name or p for p in *provides or {}]
+        getProvidesSignature = (provides) -> Common.getObjectHash {name, true for name in *aliasNames provides}
+        newProvides = aliasNames record.provides
+        if getProvidesSignature(newProvides) != getProvidesSignature rawChannel.provides
+            rawChannel.provides = #newProvides > 0 and newProvides or nil
             changed = true
 
         return changed

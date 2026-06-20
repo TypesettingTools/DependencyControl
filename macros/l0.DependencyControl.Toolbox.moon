@@ -88,11 +88,11 @@ getScriptListDlg = (macros, modules) ->
         {name:  "module",               class: "dropdown", x: 1, y: 1, width: 1,  height: 1, items: modules, value: ""    }
     }
 
-runUpdaterTask = (scriptData, exhaustive, isInstall) ->
+runUpdaterTask = (scriptData, isInstall) ->
     return unless scriptData
-    
-    task, code, extErr = DepCtrl.updater\addTask scriptData, nil, nil, exhaustive, scriptData.channel
-    return task\run! if task 
+
+    task, code, extErr = DepCtrl.updater\addTask scriptData, nil, nil, nil, scriptData.channel
+    return task\run! if task
     with scriptData
          logger\log DepCtrl.updater\getUpdaterErrorMsg code, .moduleName or .name,
             .moduleName and DepCtrl.ScriptType.Module or DepCtrl.ScriptType.Automation, isInstall, extErr
@@ -151,8 +151,8 @@ install = ->
 
     -- create and run the update tasks
     macro, mdl = macroMap[res.macro], moduleMap[res.module]
-    runUpdaterTask mdl, false, true
-    runUpdaterTask macro, false, true
+    runUpdaterTask mdl, true
+    runUpdaterTask macro, true
 
 uninstall = ->
     doUninstall = (script) ->
@@ -195,15 +195,13 @@ update = ->
     moduleList, moduleMap = buildInstalledDlgList "modules", config
     macroList, macroMap = buildInstalledDlgList "macros", config
 
-    dlg = getScriptListDlg macroList, moduleList
-    dlg[5] = {name: "exhaustive", label: "Exhaustive Mode", class: "checkbox", x: 0, y: 2, width: 1, height: 1}
-    btn, res = aegisub.dialog.display dlg
+    btn, res = aegisub.dialog.display getScriptListDlg macroList, moduleList
     return unless btn
 
     -- create and run the update tasks
     macro, mdl = macroMap[res.macro], moduleMap[res.module]
-    runUpdaterTask mdl, res.exhaustive, false
-    runUpdaterTask macro, res.exhaustive, false
+    runUpdaterTask mdl, false
+    runUpdaterTask macro, false
 
 macroConfig = ->
     config = getConfig "macros"

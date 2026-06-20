@@ -99,6 +99,54 @@
       feed = {data: {modules: {}}, __class: UpdateFeed}
       ut\assertNil UpdateFeed.getModuleVersion feed, "no.Such.NS"
 
+    -- getProviders: virtual-package resolution lookup over the feed's module section
+
+    getProviders_findsByBareAlias: (ut) ->
+      feed = {
+        data: {modules: {
+          "l0.dkjson": {name: "dkjson", channels: {release: {default: true, version: "2.10.0", files: {}, provides: {"json", "dkjson"}}}}
+          "l0.Other":  {name: "Other",  channels: {release: {default: true, version: "1.0.0", files: {}}}}
+        }, macros: {}},
+        logger: DepCtrl.logger, __class: UpdateFeed
+      }
+      providers = UpdateFeed.getProviders feed, "json"
+      ut\assertEquals #providers, 1
+      ut\assertEquals providers[1].namespace, "l0.dkjson"
+      ut\assertEquals providers[1].version, "2.10.0"
+
+    getProviders_objectAliasEntries: (ut) ->
+      feed = {
+        data: {modules: {
+          "l0.prov": {name: "P", channels: {release: {default: true, version: "1.2.3", files: {}, provides: {{name: "yaml"}}}}}
+        }, macros: {}},
+        logger: DepCtrl.logger, __class: UpdateFeed
+      }
+      providers = UpdateFeed.getProviders feed, "yaml"
+      ut\assertEquals #providers, 1
+      ut\assertEquals providers[1].namespace, "l0.prov"
+
+    getProviders_noMatchReturnsEmpty: (ut) ->
+      feed = {
+        data: {modules: {
+          "l0.dkjson": {name: "dkjson", channels: {release: {default: true, version: "2.10.0", files: {}, provides: {"json"}}}}
+        }, macros: {}},
+        logger: DepCtrl.logger, __class: UpdateFeed
+      }
+      ut\assertEquals #UpdateFeed.getProviders(feed, "xml"), 0
+
+    getProviders_ignoresModulesWithoutProvides: (ut) ->
+      feed = {
+        data: {modules: {
+          "l0.A": {name: "A", channels: {release: {default: true, version: "1.0.0", files: {}}}}
+        }, macros: {}},
+        logger: DepCtrl.logger, __class: UpdateFeed
+      }
+      ut\assertEquals #UpdateFeed.getProviders(feed, "json"), 0
+
+    getProviders_noModulesSection: (ut) ->
+      feed = {data: {macros: {}}, logger: DepCtrl.logger, __class: UpdateFeed}
+      ut\assertEquals #UpdateFeed.getProviders(feed, "json"), 0
+
     -- getFileDeployPath
 
     getFileDeployPath_module: (ut) ->
@@ -326,6 +374,8 @@
       "getScript_invalidType", "getScript_missing", "getScript_found",
       "getMacro_usesAutomationType", "getModule_usesModuleType",
       "getModuleVersion_defaultChannel", "getModuleVersion_fallback", "getModuleVersion_missing",
+      "getProviders_findsByBareAlias", "getProviders_objectAliasEntries", "getProviders_noMatchReturnsEmpty",
+      "getProviders_ignoresModulesWithoutProvides", "getProviders_noModulesSection",
       "getFileDeployPath_module", "getFileDeployPath_test",
       "walkFiles_yieldsProxies", "walkFiles_passesThroughLocalFilePath",
       "deployFiles_copiesToDist", "deployFiles_skipExistingNoClobber",

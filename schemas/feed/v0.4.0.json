@@ -8,7 +8,7 @@
   "properties": {
     "dependencyControlFeedFormatVersion": {
       "enum": ["0.2.0", "0.3.0", "0.4.0"],
-      "description": "Feed format version. This schema accepts '0.2.0', '0.3.0' and '0.4.0'; all are handled correctly by a v0.4.0-capable reader, as each version only adds backwards-compatible, optional fields. '0.3.0' introduced PackagedFile.type for test files; '0.4.0' added the optional localFileBasePath/localFilePath fields used by CI/CLI tooling."
+      "description": "Feed format version. This schema accepts '0.2.0', '0.3.0' and '0.4.0'; all are handled correctly by a v0.4.0-capable reader, as each version only adds backwards-compatible, optional fields. '0.3.0' introduced PackagedFile.type for test files; '0.4.0' added the optional localFileBasePath/localFilePath fields used by CI/CLI tooling and the optional Release.provides field for fallback package resolution."
     },
     "name": {
       "description": "Human-readable name of the feed (e.g. repository or collection name).",
@@ -46,6 +46,14 @@
         "description": "Absolute URL of a DependencyControl feed.",
         "type": "string",
         "format": "uri"
+      }
+    },
+    "blockedFeeds": {
+      "description": "Feed URLs that must never be used as a package source. Only honored in DependencyControl's own feed, where it acts as an official block list (a last line of defense against compromised feeds). Each entry is matched case-insensitively as a URL prefix, so a host root like 'https://example.com/' blocks every feed under it.",
+      "type": "array",
+      "items": {
+        "description": "Case-insensitive URL prefix of the feed(s) to block.",
+        "type": "string"
       }
     },
     "macros": {
@@ -187,6 +195,23 @@
       }
     },
 
+    "ModuleAlias": {
+      "description": "A module alias declared in a release's `provides`. Either a bare alias string, or an object carrying the alias `name`.",
+      "oneOf": [
+        { "type": "string" },
+        {
+          "type": "object",
+          "required": ["name"],
+          "properties": {
+            "name": {
+              "description": "The provided module alias: a `require` path that this module can satisfy. May be bare/non-namespaced (e.g. 'json') even though the providing module's own identifier is namespaced.",
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+
     "Release": {
       "description": "A versioned release of an automation script or module currently available on a channel.",
       "type": "object",
@@ -223,6 +248,11 @@
           "description": "Dependencies that must be present or installed for the release to function correctly. DependencyControl will attempt to install missing dependencies from any known feed, so long as they have a namespaced identifier.",
           "type": "array",
           "items": { "$ref": "#/$defs/ModuleDependency" }
+        },
+        "provides": {
+          "description": "Module aliases this release can satisfy for `require` (cf. Debian `Provides:` / Arch `provides`). When a script's requiredModules names one of these aliases and no feed offers it directly, DependencyControl may install this module to satisfy the dependency. Version satisfaction uses this module's own release version.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/ModuleAlias" }
         },
         "platforms": {
           "description": "Compute platforms supported by this channel. When present, the channel is only offered on matching platforms. Absent means all platforms are supported.",

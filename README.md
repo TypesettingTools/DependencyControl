@@ -79,8 +79,9 @@ Changes made in the `config` section of the configuration file will affect all s
 - _int_ **updateInterval [3 Days]:** The time in seconds between two update checks of a script
 - _int_ **traceLevel [3]:** Sets the Trace level of DependencyControl update messages. Setting this higher than your _Trace level_ setting in Aegisub will prevent any of the messages from littering your log window.
 - _bool_ **dumpFeeds [true]:** Debug option that will make DependencyControl dump updater feeds (original and expanded) to your Aegisub folder.
-- _arr_ **extraFeeds:** lets you provide additional update feeds that will be used when checking any script for updates
-- _bool_ **tryAllFeeds [false]:** When set to true (exhaustive mode), all candidate feeds are checked and the highest available version wins. When set to false (normal mode), the updater stops at the first feed that offers a newer version.
+- _arr_ **extraFeeds:** lets you provide additional update feeds that will be used when checking any script for updates. Feeds you list here are treated as trusted.
+- _arr_ **trustedFeeds:** additional feed URLs you trust as package sources, on top of the feeds DependencyControl trusts by default (those advertised in its own feed). Unlike `extraFeeds`, these aren't crawled for updates on their own — they only mark a feed as trusted so packages can be installed from it without a warning.
+- _arr_ **blockedFeeds:** feed URLs that must never be used as a package source. A blocked feed is rejected regardless of any other setting (including `userFeed`). Applied on top of DependencyControl's own block list. Each entry is matched case-insensitively as a URL prefix, so a host root like `https://example.com/` blocks every feed under it.
 - _str_ **configDir ["?user/config"]:** Sets the configuration directory that will be "offered" to automation scripts (they may or may not actually use it)
 - _str_ **writeLogs [true]:** When enabled, DependencyControl log messages will be written to a file in the Aegisub log folder. This is a valuable resource for debugging, especially since the Aegisub log window is not available during script initialization.
 - _int_ **logMaxFiles [200]:** DependencyControl will purge old updater log files when any of the limits for log file count, log age and cumulative file size is exceeded.
@@ -99,6 +100,28 @@ Changes made in the `macros` and `modules` sections of the configuration file af
 - _int_ **logLevel [3]:** sets the default trace level for log messages from this script (only applies to messages sent through a Logger instance provided by DependencyControl to the script)
 - _bool_ **logToFile [false]:** set the user preference wrt/ whether log messages of this script should be written to disk or not (same restrictions as above apply, may be overridden by the script)
 - `author`, `configFile`, `feed`, `moduleName`, `name`, `namespace`, `url`, `requiredModules`, `version`, `unmanaged`, `provides`: These fields hold aspects of the script's version record. Don't change them (they will be reset anyway)
+
+### How DependencyControl Selects Package Sources
+
+When a script or module needs to be installed or updated, more than one feed may be able to supply it. DependencyControl chooses the source by **trust first, version second**, so an unexpected or compromised feed can't win just by advertising a higher version number. Candidates are ranked best-first:
+
+1. **The package's own / declared feed**: the feed an installed package advertises, or the feed the depending script declares for the dependency — as long as it still offers the package and remains trusted.
+2. **Other trusted feeds**: offering the package directly by name.
+3. **Trusted feeds offering a _provider_**: a different module that declares it `provides` the required name (see [Providing module aliases](#providing-module-aliases)).
+4. **Untrusted feeds** (by name, then via a provider): interactive installs ask for confirmation before using them. Silent installs/updates are refused until the feed is added to the trusted list.
+
+Within a tier the highest satisfying version wins. Feeds are fetched lazily in this order, so closer, more-trusted sources are tried before DependencyControl reaches further out.
+
+#### Customizing Feed Sources & Trust
+
+The feeds DependencyControl advertises in its own feed are trusted out of the box, as is anything you add yourself. Tune this in your [global configuration](#1-global-configuration):
+
+- **`trustedFeeds`**: additional feed URLs you trust as package sources.
+- **`extraFeeds`**: extra feeds to check for updates (these count as trusted, too).
+- **`blockedFeeds`**: feeds that must never be used, overriding everything else (applied in addition to DependencyControl's own block list). Entries match case-insensitively by URL prefix, so a host root blocks every feed under it.
+- **`userFeed`** (per script): pin a single feed to be used exclusively for that script.
+
+(A future DependencyControl Toolbox UI will let you confirm and trust feeds interactively instead of editing the config by hand.)
 
 ## Usage for Automation Scripts
 
@@ -213,6 +236,20 @@ Notes:
   (dotted) namespace.
 - Resolution only applies after DependencyControl itself has been loaded, and always defers to a
   genuinely installed module of that name — so users can still bring their own.
+
+##### Satisfying a dependency with a provider
+
+`provides` also works across the dependency graph at install time. When a script's `requiredModules` names a module that no feed offers directly, DependencyControl can install a module  that lists that name in its `provides` instead — much like Debian's `Provides:` or Arch's `provides`. For example, a script that requires `json` can be satisfied by installing `l0.dkjson`, which provides it. A candidate must actually be installable (its `platforms` must include yours and its version must meet the requirement), a directly-named module is always preferred over a provider, and the usual [package-source precedence](#how-dependencycontrol-selects-package-sources) decides which feed it comes from.
+
+For module authors: the `provides` you declare in your version record is mirrored into your feed automatically when you run the `update-feed` CLI, so a published feed advertises it without manual upkeep (you may also add it to a feed by hand).
+
+#### Advanced: moving a package to a new feed URL
+
+A package can change the feed it updates from by shipping a release whose record points `feed` at the new URL; DependencyControl picks that up the next time it updates the package. Because source selection is trust-aware (see [How DependencyControl Selects Package Sources](#how-dependencycontrol-selects-package-sources)),
+plan migrations with that in mind:
+
+- If the new URL is **already trusted** (listed in DependencyControl's feed, or added by users), the move is seamless.
+- If the new URL is **not yet trusted**, automatic updates to it are held back. To avoid breaking them, keep serving from your **old, already-trusted feed in parallel** during the transition and/or get the new URL added to DependencyControl's trusted list. Individual users can also add it to their own `trustedFeeds`.
 
 ---
 
@@ -592,11 +629,11 @@ If **doWait** is true, the function will wait until the updater is unlocked or *
 
 Makes an updater host (macro) release its lock on the Updater if it has one. See _:getUpdaterLock_ for more information
 
-**:update(_bool_ [force], _tbl_ [addFeeds], _bool_ [tryAllFeeds=auto]) --> _int_ resultCode, _str_ extError**
+**:update(_bool_ [force], _tbl_ [addFeeds]) --> _int_ resultCode, _str_ extError**
 
 Runs the updater on this automation script or module. This includes recursively updating all required modules. When **force** is true, required modules will skip their update interval check.
 
-By default, the updater will process all suitable feeds until one feed confirms the script to be up-to-date (unless configured otherwise by the user or if we are looking for updates to an outdated component). Set **tryAllFeeds** to true to check all feeds until an update is found. You can also supply **additional candidate feeds**.
+The updater consults feeds in trust order (closest and most-trusted first) and stops as soon as a source can satisfy the requirement — see [How DependencyControl Selects Package Sources](#how-dependencycontrol-selects-package-sources). You can supply **additional candidate feeds**.
 
 Returns a result code (0: up-to-date, 1: update performed, <=-1: error) and extended error information which can be fed into _:getUpdaterErrorMsg()_ to get a descriptive error message.
 

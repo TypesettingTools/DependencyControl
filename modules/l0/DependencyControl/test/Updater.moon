@@ -5,8 +5,43 @@
   Common  = require "l0.DependencyControl.Common"
   FileOps = require "l0.DependencyControl.FileOps"
   Record  = require "l0.DependencyControl.Record"
+  Updater = require "l0.DependencyControl.Updater"
+  SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
+
+  UpdateTask = Updater.UpdateTask
 
   FILEOPS_MODULE_NAME = "l0.DependencyControl.FileOps"
+
+  -- A candidate as pooled in run(): a feed record (with the fields selectCandidate reads — version
+  -- string, namespace, checkPlatform predicate, files) plus its trust band and feed URL.
+  -- opts: namespace, feedUrl, platform (false to fail platform), files (set {} to exclude).
+  makeCandidate = (band, version, opts = {}) ->
+    {
+      :band
+      feedUrl: opts.feedUrl or "feed://test"
+      direct: opts.direct != false
+      record: {
+        namespace: opts.namespace or "l0.cand"
+        :version
+        files: opts.files == nil and {{}} or opts.files
+        checkPlatform: -> opts.platform != false
+      }
+    }
+
+  -- A stub task self for selectCandidate: it consults targetVersion, logger, record.feed (the
+  -- declared-feed tie-break) and record.namespace (the ambiguity log).
+  makeSelectTask = (targetVersion, opts = {}) ->
+    {
+      :targetVersion
+      record: {namespace: "json", feed: opts.declaredFeed}
+      logger: {log: (_, ...) -> opts.logged[#opts.logged + 1] = {...} if opts.logged}
+      __class: UpdateTask
+    }
+
+  -- A stub task self for getInstalledProviderFor: its updater.config returns the given persisted module
+  -- records (keyed by namespace) from getSectionHandler.
+  taskWithInstalledModules = (modulesConfig) ->
+    {updater: {config: {getSectionHandler: (_, section) -> {c: modulesConfig}}}, __class: UpdateTask}
 
   -- Drive prefix so stubbed paths are recognized as absolute on Windows too.
   DRIVE = ffi.os == "Windows" and "C:" or ""
@@ -112,10 +147,122 @@
       ut\assertEquals path, expected
       ut\assertFalse isUserPath
 
+    -- UpdateTask.selectCandidate: ranks the pooled candidates by trust band, then version, then a
+    -- deterministic tie-break (declared feed, then namespace); returns the winner or nil if none is eligible.
+
+    -- eligibility: release version must meet the target version
+    selectCandidate_filtersByVersion: (ut) ->
+      task = makeSelectTask SemanticVersioning\toNumber "1.0.0"
+      chosen = UpdateTask.selectCandidate task, {makeCandidate(2, "0.9.0", namespace: "l0.old"), makeCandidate(2, "1.5.0", namespace: "l0.ok")}
+      ut\assertNotNil chosen
+      ut\assertEquals chosen.record.namespace, "l0.ok"
+
+    selectCandidate_noneSatisfiesVersion: (ut) ->
+      task = makeSelectTask SemanticVersioning\toNumber "3.0.0"
+      ut\assertNil UpdateTask.selectCandidate task, {makeCandidate(2, "1.0.0"), makeCandidate(2, "2.9.0")}
+
+    -- eligibility: a candidate whose channel can't run on the current platform is skipped
+    selectCandidate_skipsUnsupportedPlatform: (ut) ->
+      task = makeSelectTask 0
+      chosen = UpdateTask.selectCandidate task,
+        {makeCandidate(2, "2.0.0", namespace: "l0.win", platform: false), makeCandidate(2, "1.0.0", namespace: "l0.any")}
+      ut\assertEquals chosen.record.namespace, "l0.any"
+
+    -- eligibility: a candidate with no files to install is skipped
+    selectCandidate_skipsEmptyFiles: (ut) ->
+      task = makeSelectTask 0
+      chosen = UpdateTask.selectCandidate task,
+        {makeCandidate(2, "2.0.0", namespace: "l0.nofiles", files: {}), makeCandidate(2, "1.0.0", namespace: "l0.ok")}
+      ut\assertEquals chosen.record.namespace, "l0.ok"
+
+    selectCandidate_noneEligible: (ut) ->
+      task = makeSelectTask 0
+      ut\assertNil UpdateTask.selectCandidate task, {makeCandidate(2, "2.0.0", platform: false)}
+
+    -- a lower (more trusted) band wins even against a higher-version candidate in a higher band
+    selectCandidate_lowerBandBeatsHigherVersion: (ut) ->
+      task = makeSelectTask 0
+      chosen = UpdateTask.selectCandidate task,
+        {makeCandidate(4, "9.9.9", namespace: "l0.untrusted"), makeCandidate(1, "1.0.0", namespace: "l0.trusted")}
+      ut\assertEquals chosen.record.namespace, "l0.trusted"
+      ut\assertEquals chosen.band, 1
+
+    selectCandidate_highestVersionWithinBand: (ut) ->
+      task = makeSelectTask 0
+      chosen = UpdateTask.selectCandidate task, {makeCandidate(2, "1.0.0", namespace: "l0.a"), makeCandidate(2, "2.0.0", namespace: "l0.b")}
+      ut\assertEquals chosen.record.namespace, "l0.b"
+
+    -- same band + version: the candidate from the declared feed wins (even with a higher namespace)
+    selectCandidate_declaredFeedTiebreak: (ut) ->
+      task = makeSelectTask 0, declaredFeed: "feed://declared"
+      chosen = UpdateTask.selectCandidate task,
+        {makeCandidate(2, "2.0.0", namespace: "l0.a", feedUrl: "feed://other"), makeCandidate(2, "2.0.0", namespace: "l0.z", feedUrl: "feed://declared")}
+      ut\assertEquals chosen.record.namespace, "l0.z"
+
+    -- same band + version, neither declared: lexicographically lowest namespace wins; the tie is logged
+    selectCandidate_namespaceTiebreakLogged: (ut) ->
+      logged = {}
+      task = makeSelectTask 0, logged: logged
+      chosen = UpdateTask.selectCandidate task,
+        {makeCandidate(3, "2.0.0", namespace: "l0.b"), makeCandidate(3, "2.0.0", namespace: "l0.a")}
+      ut\assertEquals chosen.record.namespace, "l0.a"
+      ut\assertTrue #logged > 0
+
+    selectCandidate_unambiguousNoLog: (ut) ->
+      logged = {}
+      task = makeSelectTask 0, logged: logged
+      chosen = UpdateTask.selectCandidate task, {makeCandidate(1, "1.0.0", namespace: "l0.only")}
+      ut\assertEquals chosen.record.namespace, "l0.only"
+      ut\assertEquals #logged, 0
+
+    -- UpdateTask.feedMatchesPrefix: case-insensitive, prefix-based block-list matching
+
+    feedMatchesPrefix_exactAndCaseInsensitive: (ut) ->
+      ut\assertTrue UpdateTask\feedMatchesPrefix "https://example.com/feed.json", {"https://example.com/feed.json"}
+      ut\assertTrue UpdateTask\feedMatchesPrefix "https://Example.COM/Feed.json", {"https://example.com/feed.json"}
+
+    feedMatchesPrefix_hostPrefixBlocksEverythingUnder: (ut) ->
+      ut\assertTrue UpdateTask\feedMatchesPrefix "https://example.com/a/b.json", {"https://example.com/"}
+
+    feedMatchesPrefix_noMatch: (ut) ->
+      ut\assertFalse UpdateTask\feedMatchesPrefix "https://other.com/feed.json", {"https://example.com/"}
+
+    -- guards: nil url, no entries, and an empty entry (which must not match everything)
+    feedMatchesPrefix_guards: (ut) ->
+      ut\assertFalse UpdateTask\feedMatchesPrefix nil, {"https://example.com/"}
+      ut\assertFalse UpdateTask\feedMatchesPrefix "https://example.com/x", {}
+      ut\assertFalse UpdateTask\feedMatchesPrefix "https://example.com/x", {""}
+
+    -- UpdateTask.getInstalledProviderFor: finds the installed module that provides an alias (from the
+    -- persisted module config), so resolution can stay pinned to the already-installed provider.
+
+    getInstalledProviderFor_findsByProvides: (ut) ->
+      task = taskWithInstalledModules {
+        "l0.dkjson": {provides: {{name: "json"}, {name: "dkjson"}}}
+        "l0.other":  {provides: {{name: "yaml"}}}
+      }
+      ut\assertEquals UpdateTask.getInstalledProviderFor(task, "json"), "l0.dkjson"
+      ut\assertEquals UpdateTask.getInstalledProviderFor(task, "yaml"), "l0.other"
+
+    getInstalledProviderFor_handlesBareStrings: (ut) ->
+      task = taskWithInstalledModules {"l0.prov": {provides: {"toml"}}}
+      ut\assertEquals UpdateTask.getInstalledProviderFor(task, "toml"), "l0.prov"
+
+    getInstalledProviderFor_noMatch: (ut) ->
+      task = taskWithInstalledModules {"l0.dkjson": {provides: {{name: "json"}}}, "l0.plain": {}}
+      ut\assertNil UpdateTask.getInstalledProviderFor task, "xml"
+
     _order: {
       "module_dataOnly", "module_initLayout",
       "module_alsoUnderUser", "module_userOnly",
       "notInstalled", "portable",
-      "macro_dataOnly"
+      "macro_dataOnly",
+      "selectCandidate_filtersByVersion", "selectCandidate_noneSatisfiesVersion",
+      "selectCandidate_skipsUnsupportedPlatform", "selectCandidate_skipsEmptyFiles", "selectCandidate_noneEligible",
+      "selectCandidate_lowerBandBeatsHigherVersion", "selectCandidate_highestVersionWithinBand",
+      "selectCandidate_declaredFeedTiebreak", "selectCandidate_namespaceTiebreakLogged", "selectCandidate_unambiguousNoLog",
+      "feedMatchesPrefix_exactAndCaseInsensitive", "feedMatchesPrefix_hostPrefixBlocksEverythingUnder",
+      "feedMatchesPrefix_noMatch", "feedMatchesPrefix_guards",
+      "getInstalledProviderFor_findsByProvides", "getInstalledProviderFor_handlesBareStrings", "getInstalledProviderFor_noMatch"
     }
   }
