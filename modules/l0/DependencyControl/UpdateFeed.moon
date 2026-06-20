@@ -516,6 +516,21 @@ class UpdateFeed extends Common
             return true, validationVersion, msgs.update.schemaValid\format validationVersion
         return isValid, validationVersion, validationErr
 
+    -- Fields a feed `ModuleAlias` may carry (per v0.4.0 of the feed schema).
+    moduleAliasFields = {"name", "version"}
+
+    ---Projects a list of `provides` entries to feed ModuleAlias tables, keeping only the
+    ---schema-permissible fields (`name`, `version`).
+    ---@param provides? (string|ModuleAlias)[]
+    ---@return ModuleAlias[]
+    @normalizeModuleAliases = (provides) =>
+        aliases = {}
+        for entry in *(provides or {})
+            aliases[#aliases + 1] = if type(entry) == "table"
+                {field, entry[field] for field in *moduleAliasFields when entry[field] != nil}
+            else {name: entry}
+        return aliases
+
     ---Updates a package channel's version and dependencies in the raw feed data by loading
     ---the package's script and reading its DependencyControl record.
     ---@param scriptType integer The script type of the package to refresh (Common.ScriptType.Automation or .Module).
@@ -572,13 +587,12 @@ class UpdateFeed extends Common
             rawChannel.requiredModules = #newDeps > 0 and newDeps or nil
             changed = true
 
-        -- Mirror the record's provided aliases onto the channel, emitted as bare strings (the record
-        -- normalizes them to {name: …}). Compared as an order-independent set so reordering or a
-        -- representational difference (bare string vs {name}) isn't reported as a change.
-        aliasNames = (provides) -> [type(p) == "table" and p.name or p for p in *provides or {}]
-        getProvidesSignature = (provides) -> Common.getObjectHash {name, true for name in *aliasNames provides}
-        newProvides = aliasNames record.provides
-        if getProvidesSignature(newProvides) != getProvidesSignature rawChannel.provides
+        -- Mirror the record's provided aliases onto the channel as ModuleAlias tables.
+        -- A mere reordering or switching between string and table forms doesn't count as a change.
+        providesSignature = (aliases) ->
+            Common.getObjectHash {a.name, {k, v for k, v in pairs a when k != "name"} for a in *aliases when a.name}
+        newProvides = @@normalizeModuleAliases record.provides
+        if providesSignature(newProvides) != providesSignature @@normalizeModuleAliases rawChannel.provides
             rawChannel.provides = #newProvides > 0 and newProvides or nil
             changed = true
 

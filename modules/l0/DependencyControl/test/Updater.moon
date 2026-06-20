@@ -20,6 +20,7 @@
       :band
       feedUrl: opts.feedUrl or "feed://test"
       direct: opts.direct != false
+      providesVersion: opts.providesVersion
       record: {
         namespace: opts.namespace or "l0.cand"
         :version
@@ -215,6 +216,42 @@
       ut\assertEquals chosen.record.namespace, "l0.only"
       ut\assertEquals #logged, 0
 
+    -- a provider is judged by the alias range it declares, not its own release version: the unrelated
+    -- release 9.9.9 is ignored, and ~1.2 still covers the 1.2.4 target
+    selectCandidate_providesVersionRangeSatisfies: (ut) ->
+      task = makeSelectTask SemanticVersioning\toNumber "1.2.4"
+      chosen = UpdateTask.selectCandidate task, {makeCandidate(3, "9.9.9", namespace: "l0.prov", direct: false, providesVersion: "~1.2")}
+      ut\assertNotNil chosen
+      ut\assertEquals chosen.record.namespace, "l0.prov"
+
+    -- conversely, a high release version can't rescue a provider once its declared range no longer reaches the target
+    selectCandidate_providesVersionRangeRejects: (ut) ->
+      task = makeSelectTask SemanticVersioning\toNumber "1.5.0"
+      ut\assertNil UpdateTask.selectCandidate task, {makeCandidate(3, "9.9.9", namespace: "l0.prov", direct: false, providesVersion: "~1.2")}
+
+    -- a target below the declared range stays satisfiable: the provider can still supply a version >= target
+    selectCandidate_providesVersionRangeAboveTarget: (ut) ->
+      task = makeSelectTask SemanticVersioning\toNumber "1.0.0"
+      chosen = UpdateTask.selectCandidate task, {makeCandidate(3, "1.0.0", namespace: "l0.prov", direct: false, providesVersion: "~1.2")}
+      ut\assertNotNil chosen
+      ut\assertEquals chosen.record.namespace, "l0.prov"
+
+    -- a provider that declares no range stands in for any version
+    selectCandidate_providerNoRangeMatchesAny: (ut) ->
+      task = makeSelectTask SemanticVersioning\toNumber "5.0.0"
+      chosen = UpdateTask.selectCandidate task, {makeCandidate(3, "1.0.0", namespace: "l0.prov", direct: false)}
+      ut\assertNotNil chosen
+      ut\assertEquals chosen.record.namespace, "l0.prov"
+
+    -- among providers, the release version doesn't drive rank: the wider declared range (higher covered
+    -- version) wins even though its provider has the lower release version
+    selectCandidate_providerRankedByRangeMaxNotRelease: (ut) ->
+      task = makeSelectTask SemanticVersioning\toNumber "1.0.0"
+      chosen = UpdateTask.selectCandidate task,
+        {makeCandidate(3, "9.9.9", namespace: "l0.a", direct: false, providesVersion: "^1"),
+         makeCandidate(3, "1.0.0", namespace: "l0.b", direct: false, providesVersion: "^2")}
+      ut\assertEquals chosen.record.namespace, "l0.b"
+
     -- UpdateTask.feedMatchesPrefix: case-insensitive, prefix-based block-list matching
 
     feedMatchesPrefix_exactAndCaseInsensitive: (ut) ->
@@ -261,6 +298,9 @@
       "selectCandidate_skipsUnsupportedPlatform", "selectCandidate_skipsEmptyFiles", "selectCandidate_noneEligible",
       "selectCandidate_lowerBandBeatsHigherVersion", "selectCandidate_highestVersionWithinBand",
       "selectCandidate_declaredFeedTiebreak", "selectCandidate_namespaceTiebreakLogged", "selectCandidate_unambiguousNoLog",
+      "selectCandidate_providesVersionRangeSatisfies", "selectCandidate_providesVersionRangeRejects",
+      "selectCandidate_providesVersionRangeAboveTarget", "selectCandidate_providerNoRangeMatchesAny",
+      "selectCandidate_providerRankedByRangeMaxNotRelease",
       "feedMatchesPrefix_exactAndCaseInsensitive", "feedMatchesPrefix_hostPrefixBlocksEverythingUnder",
       "feedMatchesPrefix_noMatch", "feedMatchesPrefix_guards",
       "getInstalledProviderFor_findsByProvides", "getInstalledProviderFor_handlesBareStrings", "getInstalledProviderFor_noMatch"

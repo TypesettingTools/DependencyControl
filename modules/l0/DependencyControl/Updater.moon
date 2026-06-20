@@ -222,31 +222,42 @@ class UpdateTask extends UpdaterBase
             for entry in *(record.provides or {})
                 return namespace if (type(entry) == "table" and entry.name or entry) == alias
 
-    ---Selects the best candidate to satisfy this task's requirement from a pooled set, ranking by a trust band,
-    ---then highest version, then a deterministic tie-break . A candidate is eligible only when its release version 
-    ---meets the task's target version, its channel supports the current platform, and it has files to install.
-    ---@param candidates { record: ScriptUpdateRecord, feedUrl: string, direct: boolean, band: UpdaterTrustBand }[] Pooled candidates, channel already selected on each record.
-    ---@return { record: ScriptUpdateRecord, feedUrl: string, direct: boolean, band: UpdaterTrustBand }? selected The chosen candidate, or nil when none is eligible.
+    ---Selects the best candidate to satisfy this task's requirement from a pooled set, ranking by trust band, then
+    ---version, then a deterministic tie-break. A candidate must support the current platform and have files to install.
+    ---A direct candidate is matched and ranked by its release version; a provider by the alias version range it declares
+    ---(or any version in case it doesn't), ranked by the highest version that range covers.
+    ---@param candidates { record: ScriptUpdateRecord, feedUrl: string, direct: boolean, band: UpdaterTrustBand, providesVersion?: string }[] Pooled candidates, channel already selected on each record.
+    ---@return { record: ScriptUpdateRecord, feedUrl: string, direct: boolean, band: UpdaterTrustBand, providesVersion?: string }? selected The chosen candidate, or nil when none is eligible.
     selectCandidate: (candidates) =>
+        atLeastTarget = ">=#{SemanticVersioning\toString @targetVersion}"
         eligible = {}
         for candidate in *candidates
-            versionNumber = SemanticVersioning\toNumber candidate.record.version
-            continue unless versionNumber and SemanticVersioning\check versionNumber, @targetVersion
+            local rankVersion
+            if candidate.direct
+                versionNumber = SemanticVersioning\toNumber candidate.record.version
+                continue unless versionNumber and SemanticVersioning\check versionNumber, @targetVersion
+                rankVersion = versionNumber
+            else
+                -- a provider is matched and ranked by its declared alias range, defaulting to any version
+                range = candidate.providesVersion or "*"
+                continue unless SemanticVersioning\rangesIntersect range, atLeastTarget
+                rankVersion = SemanticVersioning\getRangeMaxVersion range
+                continue unless rankVersion
             continue unless candidate.record\checkPlatform!
             continue unless candidate.record.files and #candidate.record.files > 0
-            eligible[#eligible + 1] = {:candidate, :versionNumber}
+            eligible[#eligible + 1] = {:candidate, :rankVersion}
 
         return nil if #eligible == 0
         declaredFeed = @record.feed
         table.sort eligible, (a, b) ->
             return a.candidate.band < b.candidate.band if a.candidate.band != b.candidate.band
-            return a.versionNumber > b.versionNumber if a.versionNumber != b.versionNumber
+            return a.rankVersion > b.rankVersion if a.rankVersion != b.rankVersion
             aDeclared, bDeclared = a.candidate.feedUrl == declaredFeed, b.candidate.feedUrl == declaredFeed
             return aDeclared if aDeclared != bDeclared
             return a.candidate.record.namespace < b.candidate.record.namespace
 
-        winner, topVersion = eligible[1].candidate, eligible[1].versionNumber
-        tied = [e.candidate.record.namespace for e in *eligible when e.candidate.band == winner.band and e.versionNumber == topVersion]
+        winner, topVersion = eligible[1].candidate, eligible[1].rankVersion
+        tied = [e.candidate.record.namespace for e in *eligible when e.candidate.band == winner.band and e.rankVersion == topVersion]
         if #tied > 1
             @logger\log msgs.run.providerAmbiguous, @record.namespace, winner.record.namespace, table.concat tied, ", "
         return winner
@@ -337,9 +348,11 @@ class UpdateTask extends UpdaterBase
                     @logger\log errMsg
                 if @record.virtual
                     for provider in *feed\getProviders @record.namespace
+                        -- the version range this provider declares for the required alias, if any
+                        providesVersions = [e.version for e in *(provider.provides or {}) when type(e) == "table" and e.name == @record.namespace]
                         -- a trusted candidate from the already-installed provider stays pinned (declared-direct band)
                         band = (provider.namespace == installedProviderNamespace and trusted[feedUrl]) and TrustBand.DeclaredDirect or bandOf(feedUrl, false)
-                        candidates[#candidates + 1] = {record: provider, feedUrl: feedUrl, direct: false, :band}
+                        candidates[#candidates + 1] = {record: provider, feedUrl: feedUrl, direct: false, :band, providesVersion: providesVersions[1]}
 
         @logger.indent += 1
         local selected

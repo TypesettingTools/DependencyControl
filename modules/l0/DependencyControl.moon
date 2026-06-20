@@ -75,6 +75,11 @@ rec = DependencyControl{
     url: "http://github.com/TypesettingTools/DependencyControl",
     moduleName: "l0.DependencyControl",
     feed: "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/master/DependencyControl.json",
+    provides: {
+        {name: "BM.BadMutex", version: "^0.1.3"},
+        {name: "DM.DownloadManager", version: "^0.3.1"},
+        {name: "PT.PreciseTimer", version: "^0.1.6"},
+    }
 }
 DependencyControl.__class.version = rec
 LOADED_MODULES[rec.moduleName], package.loaded[rec.moduleName] = DependencyControl, DependencyControl

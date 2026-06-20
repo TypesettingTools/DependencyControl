@@ -33,6 +33,12 @@ registerRecord = (record) ->
 unregisterRecord = (namespace) -> recordsByNamespace[namespace] = nil
 
 
+---A provided-module alias: the `require` name this module satisfies plus optional metadata. In a
+---`provides` list a bare string is shorthand for `{name = <string>}`; records and feeds store the
+---normalized table form. `version` is the version of the provided module the provider satisfies
+---(reserved — not yet consulted during resolution, which uses the provider's own release version).
+---@alias ModuleAlias { name: string, version?: string }
+
 ---Constructor arguments for a [Record](lua://Record). All fields are optional; unset fields are
 ---filled from script_* globals (for automation scripts) or sensible defaults.
 ---@class RecordArgs
@@ -49,7 +55,7 @@ unregisterRecord = (namespace) -> recordsByNamespace[namespace] = nil
 ---@field virtual? boolean Mark as a not-yet-installed placeholder record.
 ---@field recordType? integer A Common.RecordType value (default Managed).
 ---@field requiredModules? table[] Required module specs (alternative to the positional list).
----@field provides? string[] Module alias names this module satisfies for `require`.
+---@field provides? (string|ModuleAlias)[] Module aliases this module satisfies for `require` (bare strings are normalized to ModuleAlias tables).
 ---@field readGlobalScriptVars? boolean Read script_* globals for unset fields (default true).
 ---@field saveRecordToConfig? boolean Persist this record to the config file (default true).
 
@@ -187,8 +193,8 @@ class Record extends Common
 
         -- normalize `provides` aliases (bare string -> {name: …}) and register them so
         -- `require`-ing a provided alias resolves to this module (see ModuleProvider)
-        if @provides
-            @provides = [type(alias) == "table" and alias or {name: alias} for alias in *@provides]
+        if provides
+            @provides = [type(alias) == "table" and alias or {name: alias} for alias in *provides]
             ModuleProvider\registerRecord @
 
         -- publish this record so tooling can look it up by namespace after requiring the script

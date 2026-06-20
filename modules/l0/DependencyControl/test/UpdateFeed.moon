@@ -147,6 +147,33 @@
       feed = {data: {macros: {}}, logger: DepCtrl.logger, __class: UpdateFeed}
       ut\assertEquals #UpdateFeed.getProviders(feed, "json"), 0
 
+    -- normalizeModuleAliases: expands bare strings to ModuleAlias tables and preserves table fields
+
+    normalizeModuleAliases_bareStringsToTables: (ut) ->
+      result = UpdateFeed\normalizeModuleAliases {"json", "dkjson"}
+      ut\assertEquals #result, 2
+      ut\assertEquals result[1].name, "json"
+      ut\assertEquals result[2].name, "dkjson"
+
+    normalizeModuleAliases_preservesFields: (ut) ->
+      input = {{name: "json", version: "1.2.0"}}
+      result = UpdateFeed\normalizeModuleAliases input
+      ut\assertEquals result[1].name, "json"
+      ut\assertEquals result[1].version, "1.2.0"
+      sameRef = result[1] == input[1]
+      ut\assertFalse sameRef   -- copied, not the caller's table
+
+    normalizeModuleAliases_dropsNonSchemaFields: (ut) ->
+      result = UpdateFeed\normalizeModuleAliases {{name: "json", version: "1.0.0", optional: true, bogus: "x"}}
+      ut\assertEquals result[1].name, "json"
+      ut\assertEquals result[1].version, "1.0.0"
+      ut\assertNil result[1].optional
+      ut\assertNil result[1].bogus
+
+    normalizeModuleAliases_nilAndEmpty: (ut) ->
+      ut\assertEquals #UpdateFeed\normalizeModuleAliases(nil), 0
+      ut\assertEquals #UpdateFeed\normalizeModuleAliases({}), 0
+
     -- getFileDeployPath
 
     getFileDeployPath_module: (ut) ->
@@ -376,6 +403,8 @@
       "getModuleVersion_defaultChannel", "getModuleVersion_fallback", "getModuleVersion_missing",
       "getProviders_findsByBareAlias", "getProviders_objectAliasEntries", "getProviders_noMatchReturnsEmpty",
       "getProviders_ignoresModulesWithoutProvides", "getProviders_noModulesSection",
+      "normalizeModuleAliases_bareStringsToTables", "normalizeModuleAliases_preservesFields",
+      "normalizeModuleAliases_dropsNonSchemaFields", "normalizeModuleAliases_nilAndEmpty",
       "getFileDeployPath_module", "getFileDeployPath_test",
       "walkFiles_yieldsProxies", "walkFiles_passesThroughLocalFilePath",
       "deployFiles_copiesToDist", "deployFiles_skipExistingNoClobber",

@@ -199,6 +199,22 @@
       _G[DEPCTRL_RECORDS_GLOBAL_KEY][ns] = rec
       ut\assertIs Record\getAllRegisteredRecords![ns], rec
 
+    -- Regression: the constructor must populate @provides (normalizing bare strings to ModuleAlias
+    -- tables) and register every alias with the module-provides searcher. A field/local mix-up that
+    -- left @provides nil silently disabled both alias resolution and update-feed `provides` mirroring.
+    construct_populatesAndRegistersProvides: (ut) ->
+      ModuleProvider = require "l0.DependencyControl.ModuleProvider"
+      ns, alias = uniqueName("prov.mod"), uniqueName "alias"
+      rec = Record {moduleName: ns, version: "1.0.0", feed: "https://example.com/feed.json",
+                    provides: {{name: alias, version: "^1"}, "bare.#{ns}"}}
+      ut\assertNotNil rec.provides
+      ut\assertEquals #rec.provides, 2
+      ut\assertEquals rec.provides[1].name, alias
+      ut\assertEquals rec.provides[1].version, "^1"
+      ut\assertEquals rec.provides[2].name, "bare.#{ns}"   -- bare string normalized to a table
+      ut\assertEquals ModuleProvider\getProvider(alias), ns
+      ut\assertEquals ModuleProvider\getProvider("bare.#{ns}"), ns
+
     _order: {
       "checkVersion_equal", "checkVersion_greater", "checkVersion_older", "checkVersion_recordArg",
       "setVersion_validString", "setVersion_validNumber", "setVersion_invalid",
@@ -209,6 +225,7 @@
       "getConfigFileName_basic", "registerMacro_basic",
       "registry_getReturnsRegistered", "registry_getMissing",
       "registry_getSkipsVirtual", "registry_returnsAfterUnvirtualized",
-      "registry_getRegisteredReturnsCopy", "registry_getRegisteredIncludesVirtual"
+      "registry_getRegisteredReturnsCopy", "registry_getRegisteredIncludesVirtual",
+      "construct_populatesAndRegistersProvides"
     }
   }
