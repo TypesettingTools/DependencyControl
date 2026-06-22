@@ -40,7 +40,7 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "EA9004424667149E1EBD2DBC02C8242844BC9CE0"
+              "sha1": "3C5950707D01B356431A6BD1B859ACC355054394"
             }
           ],
           "requiredModules": [
@@ -168,7 +168,7 @@
             {
               "name": "/ModuleLoader.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "75997D551402B8673213F6F9A07DDC6FF132388A"
+              "sha1": "8130AEBDC011560D5BB54C910EEBA5BE06AD0DE7"
             },
             {
               "name": "/ModuleProvider.moon",
@@ -183,7 +183,7 @@
             {
               "name": "/Record.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "544BF15F4775E1B247874594E4E0E9376EED0F42"
+              "sha1": "7BDC1AB03F7B84F23A8C48BA57EA79182B2EE09A"
             },
             {
               "name": "/ScriptTargetFilter.moon",
@@ -219,7 +219,7 @@
             {
               "name": "/UnitTestSuite.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "4684062614EB98F585917C1F18D2BDE17609B7ED"
+              "sha1": "83FB10CB3E6BFE9A75B15FBC262E0C37EE645E18"
             },
             {
               "name": "/UpdateFeed.moon",
@@ -227,9 +227,14 @@
               "sha1": "6DC4BBE7E070BFEEF161BC39E893A3CABAAF83D2"
             },
             {
+              "name": "/UpdateTask.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "26F8255D4A1F6D6837E57011FE33471C77516A22"
+            },
+            {
               "name": "/Updater.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "0F1E914AC0CBAEAA803DD5DA11C277C72AF6FF9E"
+              "sha1": "8E23E9B40CF1704885D850482A00B3697794DC63"
             },
             {
               "name": "/ZipArchiver.moon",
@@ -264,7 +269,7 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "A6A453495625616E66610A70519842177958D0E1",
+              "sha1": "F6BAD5A4B175241353FADF4D69F2907C43130319",
               "type": "test"
             },
             {
@@ -360,7 +365,7 @@
             {
               "name": "/Record.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "BB35945BEE615662466ED9CD0B47C0043D6880DA",
+              "sha1": "81AF42E361A64BE16CAF0693D7FD3A4278DAC18B",
               "type": "test"
             },
             {
@@ -394,9 +399,15 @@
               "type": "test"
             },
             {
+              "name": "/UpdateTask.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "7F6575EE145328C432859531970C964DACB3706A",
+              "type": "test"
+            },
+            {
               "name": "/Updater.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "EBF9351157CD6D0F273A2215E1ED8EC5D28694D1",
+              "sha1": "B3BD84E44AC9D57EE56BFDEC35A2D1FCB14B9D69",
               "type": "test"
             },
             {
@@ -524,7 +535,9 @@
           "Timer: Exposed a shared monotonic `Timer.getTime()` clock, added stopwatch-style `start()`, `stop()`, and `reset()` methods, and PT.PreciseTimer is now provided through the same bundled-provider mechanism as BM.BadMutex and DM.DownloadManager (set DEPCTRL_FORCE_BUILTIN_TIMER=1 to force DepCtrl's implementation).",
           "Updater: Scripts and modules installed in Aegisub's data automation directory (e.g. native modules installed by a system package manager) are no longer updated by DependencyControl — scheduled checks skip them with a debug log, while manual installs/updates and dependency resolution report a descriptive error. Portable / \"Local Config\" setups, where the user and data directories are the same, are unaffected.",
           "Updater: A required module that no feed offers directly can now be satisfied by installing a module that declares it in `provides`  — for example, a script requiring `json` is satisfied by installing `dkjson`. Providers are only used when no feed offers the module by name; a candidate must be installable on your platform and meet the required version, and a directly-named module is always preferred over a provider. Once a provider is installed for a requirement, it keeps being used and updated instead of switching to a different provider (as long as it can still satisfy the requirement). Feeds can now advertise `provides` per release, and `update-feed` mirrors a module's declared aliases into the feed automatically. A provider can pin a provided alias to an npm-style version range (e.g. `~1.2`), so it keeps satisfying requirements within that range without having to be re-published for every patch release of the provided module.",
-          "Updater: Package sources are now selected by trust to harden against supply-chain attacks. Feeds are consulted closest-first (the feed a script declares for a dependency, then feeds DependencyControl trusts — those in its own feed plus your `extraFeeds`/`trustedFeeds` — then any others), and the install is refused if a requirement can only be met from an untrusted feed. A new `blockedFeeds` config (and an official block list in DependencyControl's own feed) lets a compromised feed be rejected outright. The obsolete `tryAllFeeds` setting and its exhaustive update mode have been removed."
+          "Updater: Package sources are now selected by trust to harden against supply-chain attacks. Feeds are consulted closest-first (the feed a script declares for a dependency, then feeds DependencyControl trusts — those in its own feed plus your `extraFeeds`/`trustedFeeds` — then any others), and the install is refused if a requirement can only be met from an untrusted feed. A new `blockedFeeds` config (and an official block list in DependencyControl's own feed) lets a compromised feed be rejected outright. The obsolete `tryAllFeeds` setting and its exhaustive update mode have been removed.",
+          "Updater: When an install would otherwise be refused because it can only be satisfied from an untrusted feed, DependencyControl can now ask you to confirm and either use it just this once, add it to your trusted feeds, or block it outright; and when several equally-ranked packages can satisfy a requirement it can ask you to pick one. How freely it may prompt is controlled by two new settings: `feedTrustPromptThreshold` for trusting an untrusted feed (defaults to prompting in all situations, since it decides whether an update succeeds) and `packageChoicePromptThreshold` for picking between equally-ranked packages (defaults to only actions you start yourself).",
+          "Updater: The package picker now also lets you decide how long your choice should stick — use the source only this once, remember it while it stays available, pin it so DependencyControl never switches silently, or hand the decision back to DependencyControl for good. The remembered choice is stored per package and follows the source across feed-URL changes; a pinned source that becomes unavailable fails a required dependency (so you can fix the pin) and skips an optional one. A new global `packageChoiceOfferAllSources` setting offers every eligible source (including lower-ranked and untrusted ones) whenever there's more than one, so you can override the ranking."
         ]
       }
     },

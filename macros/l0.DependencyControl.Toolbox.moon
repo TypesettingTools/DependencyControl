@@ -91,10 +91,11 @@ getScriptListDlg = (macros, modules) ->
 runUpdaterTask = (scriptData, isInstall) ->
     return unless scriptData
 
-    task, code, extErr = DepCtrl.updater\addTask scriptData, nil, nil, nil, scriptData.channel
+    task, code, extErr = DepCtrl.updater\addTask scriptData, nil, nil, nil, scriptData.channel,
+                                                 DepCtrl.Updater.UpdateReason.UserRequested
     return task\run! if task
     with scriptData
-         logger\log DepCtrl.updater\getUpdaterErrorMsg code, .moduleName or .name,
+         logger\log DepCtrl.Updater.getUpdaterErrorMsg code, .moduleName or .name,
             .moduleName and DepCtrl.ScriptType.Module or DepCtrl.ScriptType.Automation, isInstall, extErr
 
 -- Macros
@@ -255,7 +256,7 @@ scheduleUpdatesAndRegisterTests = ->
             logger\trace msgs.scheduleUpdatesAndRegisterTests.scheduleError, record.name or record.namespace, errMsgOrErrCode
         elseif errMsgOrErrCode < 0
             logger\trace msgs.scheduleUpdatesAndRegisterTests.scheduleError, record.name or record.namespace, 
-                DepCtrl.updater\getUpdaterErrorMsg errMsgOrErrCode, record.name or record.namespace, record.scriptType, false, errDetail
+                DepCtrl.Updater.getUpdaterErrorMsg errMsgOrErrCode, record.name or record.namespace, record.scriptType, false, errDetail
         
         if record.tests and record.scriptType == DepCtrl.ScriptType.Module
             success, errMsg = pcall record.tests\registerMacros

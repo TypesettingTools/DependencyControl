@@ -31,6 +31,7 @@ UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
     ConfigView:         (controls\requireTest "ConfigView")!
     ModuleLoader:       (controls\requireTest "ModuleLoader")!
     Record:             (controls\requireTest "Record")!
+    UpdateTask:         (controls\requireTest "UpdateTask")!
     Updater:            (controls\requireTest "Updater")!
     ScriptUpdateRecord: (controls\requireTest "ScriptUpdateRecord")!
     UpdateFeed:         (controls\requireTest "UpdateFeed") basePath, DepCtrl

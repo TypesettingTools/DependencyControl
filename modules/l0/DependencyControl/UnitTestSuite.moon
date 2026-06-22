@@ -1,8 +1,11 @@
 
 Logger = require "l0.DependencyControl.Logger"
 Common = require "l0.DependencyControl.Common"
-Stub   = require "l0.DependencyControl.Stub"
+Stub = require "l0.DependencyControl.Stub"
+constants = require "l0.DependencyControl.Constants"
 DependencyControl = nil
+
+HIDDEN_TEST_EXPORTS_KEY = "#{constants.DEPCTRL_PRIVATE_GLOBAL_VAR_PREFIX}TestExports"
 
 package.path ..= "#{package.path\sub(-1) == ";" and "" or ";"}#{aegisub.decode_path "?user/automation/tests"}/?.lua;"
 
@@ -732,6 +735,26 @@ class UnitTestSuite
         test = require suiteIdentifier
         test.suiteRequireIdentifier or= suiteIdentifier
         return test
+
+    ---Reveals a module's private internals to its unit tests by storing them on the module's metatable.
+    ---@generic T
+    ---@param mod T The module table (e.g. a class) to expose internals on.
+    ---@param exports table The internals to reveal to the module's tests.
+    ---@return T mod The module, unchanged apart from the hidden exports.
+    @withTestExports = (mod, exports) =>
+        mt = getmetatable mod
+        unless mt
+            mt = {}
+            setmetatable mod, mt
+        mt[HIDDEN_TEST_EXPORTS_KEY] = exports
+        mod
+
+    ---Returns the test exports attached to a module via withTestExports, or nil if it has none.
+    ---@param mod table The required module to read test exports from.
+    ---@return table? exports
+    @getTestExports = (mod) =>
+        mt = getmetatable mod
+        mt and mt[HIDDEN_TEST_EXPORTS_KEY]
 
     ---Creates a complete unit test suite for a module or automation script.
     ---Using this constructor creates all test classes and tests automatically.

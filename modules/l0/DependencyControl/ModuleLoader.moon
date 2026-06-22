@@ -118,7 +118,7 @@ class ModuleLoader
           if ._ref or .optional
             ._updated, ._missing = true, false
           else
-            ._reason = @@updater\getUpdaterErrorMsg code, .name or .moduleName, true, true, extErr
+            ._reason = @@updater.__class.getUpdaterErrorMsg code, .name or .moduleName, true, true, extErr
             -- nuke dummy reference for circular dependencies
             LOADED_MODULES[.moduleName] = nil
 
@@ -140,7 +140,7 @@ class ModuleLoader
               ._ref = ref
             elseif not .optional
               ._outdated = true
-              ._reason = @@updater\getUpdaterErrorMsg code, .name or .moduleName, true, false, extErr
+              ._reason = @@updater.__class.getUpdaterErrorMsg code, .name or .moduleName, true, false, extErr
 
     missing, outdated, moduleError = {}, {}, {}
     for mdl in *modules

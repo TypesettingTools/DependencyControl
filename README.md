@@ -82,6 +82,14 @@ Changes made in the `config` section of the configuration file will affect all s
 - _arr_ **extraFeeds:** lets you provide additional update feeds that will be used when checking any script for updates. Feeds you list here are treated as trusted.
 - _arr_ **trustedFeeds:** additional feed URLs you trust as package sources, on top of the feeds DependencyControl trusts by default (those advertised in its own feed). Unlike `extraFeeds`, these aren't crawled for updates on their own — they only mark a feed as trusted so packages can be installed from it without a warning.
 - _arr_ **blockedFeeds:** feed URLs that must never be used as a package source. A blocked feed is rejected regardless of any other setting (including `userFeed`). Applied on top of DependencyControl's own block list. Each entry is matched case-insensitively as a URL prefix, so a host root like `https://example.com/` blocks every feed under it.
+- _int_ **feedTrustPromptThreshold [3]:** When DependencyControl may ask you to approve installing from a feed not (yet) on the trusted list. The levels are:
+  - `1` only for actions you start yourself (e.g. via the Toolbox)
+  - `2` also while a module is installed as a dependency
+  - `3` (default) also during background update checks
+  
+  When a situation isn't allowed to prompt, the install fails or is skipped rather than using the untrusted feed.
+- _int_ **packageChoicePromptThreshold [1]:** When DependencyControl may ask you to pick between equally-ranked packages that can satisfy a requirement. Same `1`/`2`/`3` situations as above. When a situation isn't allowed to prompt, a stable but arbitrary tie-breaker is used.
+- _bool_ **packageChoiceOfferAllSources [false]:** By default the package picker only appears when two or more sources are genuinely tied (same trust band and version). Set this to `true` to be offered _every_ eligible source whenever there's more than one (including lower-ranked and untrusted ones).
 - _str_ **configDir ["?user/config"]:** Sets the configuration directory that will be "offered" to automation scripts (they may or may not actually use it)
 - _str_ **writeLogs [true]:** When enabled, DependencyControl log messages will be written to a file in the Aegisub log folder. This is a valuable resource for debugging, especially since the Aegisub log window is not available during script initialization.
 - _int_ **logMaxFiles [200]:** DependencyControl will purge old updater log files when any of the limits for log file count, log age and cumulative file size is exceeded.
@@ -97,6 +105,7 @@ Changes made in the `macros` and `modules` sections of the configuration file af
 - _str_ **customMenu:** If you want to sort your automation macros into submenus, set this to the submenu name (use `/` to denote submenu levels).
 - _str_ **userFeed:** When set the updater will use this feed exclusively to update the script in question (instead of other feeds)
 - _int_ **lastUpdateCheck [auto]:** This field is used to store the (epoch) time of the last update check.
+- _obj_ **currentSource [auto]:** Remembers which source last satisfied this package and how sticky that choice is (see [Remembering your source choice](#remembering-your-source-choice)). Managed automatically; don't edit it.
 - _int_ **logLevel [3]:** sets the default trace level for log messages from this script (only applies to messages sent through a Logger instance provided by DependencyControl to the script)
 - _bool_ **logToFile [false]:** set the user preference wrt/ whether log messages of this script should be written to disk or not (same restrictions as above apply, may be overridden by the script)
 - `author`, `configFile`, `feed`, `moduleName`, `name`, `namespace`, `url`, `requiredModules`, `version`, `unmanaged`, `provides`: These fields hold aspects of the script's version record. Don't change them (they will be reset anyway)
@@ -122,6 +131,18 @@ The feeds DependencyControl advertises in its own feed are trusted out of the bo
 - **`userFeed`** (per script): pin a single feed to be used exclusively for that script.
 
 (A future DependencyControl Toolbox UI will let you confirm and trust feeds interactively instead of editing the config by hand.)
+
+#### Remembering your source choice
+
+When a package can be installed from more than one source and DependencyControl asks you to pick one, the picker also lets you decide how long that choice should stick. The buttons map to:
+
+- **Just This Once**: use the picked source for this install only; you'll be asked again next time there's a choice.
+- **Remember**: keep using the picked source as long as it stays available. If it later disappears (e.g. the feed stops offering the package), DependencyControl asks you to choose again — or, during a non-interactive update, falls back to asking next time and proceeds with its own ranked pick for now.
+- **Pin/Lock**: pin this source. DependencyControl will keep using it without asking and will refuse to silently switch — if a pinned source becomes unavailable, a required dependency fails (so you can fix the pin) while an optional one is skipped.
+- **Auto-Pick**: stop asking for this package and always take the top-ranked source automatically.
+- **Cancel**: cancel the operation without installing.
+
+A remembered choice follows the source even if its feed URL changes, so moving a feed won't break it. When the picked source is reached through a [provider](#providing-module-aliases), it's the provider that's remembered, so version bumps update it in place instead of switching to a different one.
 
 ## Usage for Automation Scripts
 
