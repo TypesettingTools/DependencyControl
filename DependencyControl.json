@@ -98,7 +98,7 @@
             {
               "name": "/Common.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "3826E8455751D04864823D04399E86A51C0F2F39"
+              "sha1": "91CD6730F6ABFDBC2AD2143206AC2B317CDB18EF"
             },
             {
               "name": "/Constants.moon",
@@ -108,12 +108,12 @@
             {
               "name": "/ConfigHandler.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "30E8728C8D07057E5F00E1A220BBE38F5D167DF5"
+              "sha1": "7E42448EED793895845DD7B53B481B752490EE36"
             },
             {
               "name": "/ConfigView.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "9CF75E1BA571B95A550125FAD1CAD7053268097E"
+              "sha1": "B5266BD7A03FAC66E95D2356CEDA208620A7BBA7"
             },
             {
               "name": "/Crypto.moon",
@@ -168,7 +168,7 @@
             {
               "name": "/ModuleLoader.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "8130AEBDC011560D5BB54C910EEBA5BE06AD0DE7"
+              "sha1": "6576CB49736529DBD907028D1D2FAA1C0F3820A8"
             },
             {
               "name": "/ModuleProvider.moon",
@@ -183,22 +183,22 @@
             {
               "name": "/Record.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "7BDC1AB03F7B84F23A8C48BA57EA79182B2EE09A"
+              "sha1": "60FF08C0DBA77E827795532E8EEB2454A58CE128"
             },
             {
               "name": "/ScriptTargetFilter.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "6A3E34EA91136A0B42F9A3A0F626D520B344F144"
+              "sha1": "77CB9F63E63ACF0899E91B6B97698BE79D04B7F2"
             },
             {
               "name": "/ScriptUpdateRecord.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "1C29F3462BBC010898528F9A072202FFAD1CF18A"
+              "sha1": "8F236016F7ECC216C93ED5D99E7A27DA457D621B"
             },
             {
               "name": "/SemanticVersioning.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "A8F8A3CFDCE8464C1D7F21442271FF369944B3FF"
+              "sha1": "5A5D88058A616584A2A9EC9EFFB5F8FAFD5575BF"
             },
             {
               "name": "/Stub.moon",
@@ -219,22 +219,22 @@
             {
               "name": "/UnitTestSuite.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "83FB10CB3E6BFE9A75B15FBC262E0C37EE645E18"
+              "sha1": "4E458609CEFD71F8927C86894F1B858EB5FA5206"
             },
             {
               "name": "/UpdateFeed.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "6DC4BBE7E070BFEEF161BC39E893A3CABAAF83D2"
+              "sha1": "BFFC535DD1ECFFDBC1F443C4341379B3E3F9A156"
             },
             {
               "name": "/UpdateTask.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "26F8255D4A1F6D6837E57011FE33471C77516A22"
+              "sha1": "7CE416DD78B83221088BA48118DF7E502092A73B"
             },
             {
               "name": "/Updater.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "8E23E9B40CF1704885D850482A00B3697794DC63"
+              "sha1": "045869155790D1DD656DF7DEFA370317FE013C4C"
             },
             {
               "name": "/ZipArchiver.moon",
@@ -524,6 +524,7 @@
           "DepCtrl now refuses to load if the installed Moonscript is below the minimum required version with a helpful error message directing users to update their Aegisub build.",
           "ModuleLoader: Fixed a regression where DepCtrl init hooks were called again on already-initialized modules, causing errors in modules that mutate their exported state on first call (e.g. BadMutex).",
           "Common: Fixed a long-standing bug that guaranteed the `capitalize()` function to fail, that  was never caught because it was unused until the refactoring.",
+          "Common: Added the `makeSet()`, `addDefaults()`, and `trim()` utility helpers (building a set from a list, filling in missing table defaults, and stripping surrounding whitespace from a string), shared with the Functional module.",
           "Updater: Fixed a potential issue where a multi-assignment statement could corrupt record fields after an unsuccessful update.",
           "Automatic update scheduling is now centralized in the DependencyControl Toolbox and runs in a single Aegisub environment at startup, covering all installed scripts including modules not loaded by any automation script. Previously, each automation script's environment scheduled redundant checks for every module it loaded.",
           "Record: Added `getAllRegisteredRecords()` to expose the full live record registry to tooling.",

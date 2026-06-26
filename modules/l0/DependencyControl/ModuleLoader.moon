@@ -169,7 +169,7 @@ class ModuleLoader
   ---@return boolean available
   ---@return string? err Error message listing missing modules.
   @checkOptionalModules = (modules) =>
-    modules = type(modules)=="string" and {[modules]:true} or {mdl,true for mdl in *modules}
+    modules = type(modules)=="string" and {[modules]:true} or Common.makeSet modules
     missing = [ModuleLoader.formatVersionErrorTemplate @, mdl.moduleName, mdl.version, mdl.url,
               mdl._reason for mdl in *@requiredModules when mdl.optional and mdl._missing and modules[mdl.name]]
 

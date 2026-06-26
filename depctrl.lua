@@ -88,6 +88,10 @@ local depCtrlModulesDir = launcherDir .. pathSep .. "modules"
 package.path     = ("%s/?.lua;%s/?/init.lua;"):format(depCtrlModulesDir, depCtrlModulesDir) .. package.path
 package.moonpath = ("%s/?.moon;%s/?/init.moon;"):format(depCtrlModulesDir, depCtrlModulesDir) .. (package.moonpath or "")
 
+if isWindows then
+    require("l0.DependencyControl.helpers.ffi-windows").setConsoleOutputUTF8()
+end
+
 -- ── Aegisub shims ─────────────────────────────────────────────────────────────
 
 local shims   = require "l0.AegisubShims"
@@ -213,6 +217,7 @@ if args.command == "test" then
 
     local reportDir = resolveAbsPath(args.report_dir)
     local ran, skipped, failed = 0, 0, 0
+    local allFailures = {}   -- accumulated across packages for the end-of-run summary
 
     for _, pkg in ipairs(selected) do
         local ns = pkg.namespace
@@ -240,12 +245,28 @@ if args.command == "test" then
             io.stdout:write(("\n=== Testing %s ===\n"):format(ns))
             local success = record.tests:run()
             ran = ran + 1
-            if not success then failed = failed + 1 end
+            if not success then
+                failed = failed + 1
+                for _, f in ipairs(record.tests:getFailures()) do
+                    f.namespace = ns
+                    allFailures[#allFailures + 1] = f
+                end
+            end
 
             local reportPath = FileOps.joinPath(reportDir, ns .. ".json")
             local wrote, writeErr = record.tests:writeResults(reportPath)
             io.stderr:write(wrote and ("Wrote CTRF report to " .. reportPath .. "\n")
                 or ("Warning: couldn't write CTRF report for " .. ns .. ": " .. tostring(writeErr) .. "\n"))
+        end
+    end
+
+    if #allFailures > 0 then
+        io.stdout:write("\n—— Failures ——\n")
+        for _, f in ipairs(allFailures) do
+            io.stdout:write(("\n%s > %s > %s [%s]\n"):format(
+                f.namespace, f.classname, f.name, f.isAssertion and "assertion" or "error"))
+            local err = tostring(f.error or ""):gsub("%s+$", "")
+            io.stdout:write("    " .. err:gsub("\n", "\n    ") .. "\n")
         end
     end
 

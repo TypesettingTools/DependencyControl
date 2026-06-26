@@ -85,6 +85,78 @@
       __class: UpdateTask
     }, __index: UpdateTask.__base
 
+  -- resolve() drives all feed I/O through @loadFeed/@checkFeed and all prompting through @shouldPrompt
+  -- /@promptSelectPackageSource/@promptTrustFeed; makeResolveTask stubs those so a test can place exactly
+  -- the candidates each cascade tier should see and script the prompt outcomes. `feeds` maps a feedUrl to
+  -- { direct?: <directRec>, providers?: {<providerRec>,...} }; a feed absent from the map fails to load.
+  directRec = (spec) -> {
+    version: spec.version, namespace: spec.namespace or "json", activeChannel: spec.channel or "release"
+    files: spec.files == nil and {{}} or spec.files, checkPlatform: -> spec.platform != false
+  }
+  providerRec = (spec) -> {
+    namespace: spec.namespace, provides: {{name: "json", version: spec.providesVersion}}
+    files: spec.files == nil and {{}} or spec.files, checkPlatform: -> spec.platform != false
+  }
+
+  -- opts: declaredFeed, feeds, currentSource, userFeed, addFeeds, optional, virtual (default true),
+  -- targetVersion, version (installed), modules (for provider feed lookup), officialTrusted/officialBlocked,
+  -- config {extraFeeds, trustedFeeds, blockedFeeds, offerAllSources, *PromptThreshold}, allowPrompt (gates
+  -- both prompts), selectReturn {pick, stickiness} (nil pick = abort), trustReturn (a FeedTrustDecision).
+  makeResolveTask = (opts = {}) ->
+    cfg = opts.config or {}
+    calls = {select: 0, trust: 0}
+    task = setmetatable {
+      __class: UpdateTask
+      :calls
+      targetVersion: opts.targetVersion or 0
+      optional: opts.optional
+      reason: opts.reason
+      channel: opts.channel
+      addFeeds: opts.addFeeds or {}
+      triedFeeds: {}
+      _feeds: opts.feeds or {}
+      record: {
+        feed: opts.declaredFeed
+        namespace: "json"
+        name: "json"
+        version: opts.version or 0
+        virtual: opts.virtual != false
+        scriptType: Common.ScriptType.Module
+        config: {c: {userFeed: opts.userFeed, currentSource: opts.currentSource}}
+      }
+      updater: {
+        renewLock: ->
+        getOfficialTrustedFeeds: => opts.officialTrusted or {}
+        getOfficialBlockedFeeds: => opts.officialBlocked or {}
+        config: {
+          c: {
+            extraFeeds: cfg.extraFeeds, trustedFeeds: cfg.trustedFeeds, blockedFeeds: cfg.blockedFeeds
+            packageChoiceOfferAllSources: cfg.offerAllSources
+            packageChoicePromptThreshold: cfg.packageChoicePromptThreshold or PromptThreshold.UserRequested
+            feedTrustPromptThreshold: cfg.feedTrustPromptThreshold or PromptThreshold.UserRequested
+          }
+          getSectionHandler: (_, section) -> {c: opts.modules or {}}
+        }
+      }
+      logger: {log: ->, trace: ->, indent: 0}
+      loadFeed: (url) =>
+        return nil, "feed not found: #{url}" unless @_feeds[url]
+        providers = @_feeds[url].providers or {}
+        {__url: url, getProviders: (=> providers)}
+      checkFeed: (feed) =>
+        d = @_feeds[feed.__url].direct
+        return nil, nil unless d
+        return d, nil, SemanticVersioning\toNumber d.version
+      shouldPrompt: (threshold) => opts.allowPrompt and true or false
+      promptSelectPackageSource: (choices, preselect, noLongerAvail) =>
+        calls.select += 1
+        unpack(opts.selectReturn or {})
+      promptTrustFeed: (selected) =>
+        calls.trust += 1
+        opts.trustReturn
+    }, __index: UpdateTask.__base
+    task
+
   {
     _description: "Tests for UpdateTask: candidate selection/ranking, interactivity gating, the trust/choice prompts, feed-prefix matching, and installed-provider lookup."
 
@@ -426,6 +498,187 @@
       ut\assertEquals #blocked, 1
       ut\assertEquals blocked[1], "https://bad.example/"
 
+    -- UpdateTask.resolve: walks the lazy trust-ranked feed cascade and the currentSource stickiness tree,
+    -- running prompts inline, and returns either a candidate to install or a terminal status code. It
+    -- performs no installs, so it's tested directly with feed I/O and prompts stubbed (see makeResolveTask).
+
+    -- cascade: a DeclaredDirect (band 1) winner short-circuits the rest of the cascade — the trusted tier
+    -- is never even fetched (a higher-version candidate there is irrelevant).
+    resolve_cascadeShortCircuitsOnDeclaredDirect: (ut) ->
+      task = makeResolveTask {
+        declaredFeed: "feed://decl", officialTrusted: {"feed://decl": true}
+        config: {extraFeeds: {"feed://extra"}}
+        feeds: {"feed://decl": {direct: directRec version: "1.0.0"}, "feed://extra": {direct: directRec version: "9.9.9"}}
+      }
+      d = UpdateTask.resolve task
+      ut\assertTrue d.installRequired
+      ut\assertEquals d.selectedSource.feedUrl, "feed://decl"
+      ut\assertNil task.triedFeeds["feed://extra"]   -- tier 2 was never reached
+
+    -- cascade: an empty declared feed falls through to a trusted feed (TrustedDirect, band 2)
+    resolve_fallsThroughToTrustedDirect: (ut) ->
+      task = makeResolveTask {
+        declaredFeed: "feed://decl", officialTrusted: {"feed://trusted": true}
+        feeds: {"feed://decl": {}, "feed://trusted": {direct: directRec version: "2.0.0"}}
+      }
+      d = UpdateTask.resolve task
+      ut\assertTrue d.installRequired
+      ut\assertEquals d.selectedSource.feedUrl, "feed://trusted"
+      ut\assertEquals d.selectedSource.trustBand, 2
+
+    -- trust gate: a required dependency whose only source is an untrusted feed (band 4) fails with -16
+    -- when no prompt is permitted
+    resolve_untrustedRequiredFailsWithoutPrompt: (ut) ->
+      task = makeResolveTask {
+        declaredFeed: "feed://decl", addFeeds: {"feed://un"}
+        feeds: {"feed://decl": {}, "feed://un": {direct: directRec version: "1.0.0"}}
+      }
+      d = UpdateTask.resolve task
+      ut\assertFalse d.installRequired
+      ut\assertEquals d.statusCode, -16
+
+    -- trust gate: the same untrusted winner proceeds once the user approves it (Trust this time)
+    resolve_untrustedApprovedProceeds: (ut) ->
+      task = makeResolveTask {
+        declaredFeed: "feed://decl", addFeeds: {"feed://un"}, allowPrompt: true, trustReturn: FeedTrustDecision.Once
+        feeds: {"feed://decl": {}, "feed://un": {direct: directRec version: "1.0.0"}}
+      }
+      d = UpdateTask.resolve task
+      ut\assertTrue d.installRequired
+      ut\assertEquals d.selectedSource.feedUrl, "feed://un"
+      ut\assertEquals task.calls.trust, 1
+
+    -- trust gate: an optional dependency from an untrusted feed is skipped (3) rather than failed
+    resolve_untrustedOptionalSkips: (ut) ->
+      task = makeResolveTask {
+        declaredFeed: "feed://decl", addFeeds: {"feed://un"}, optional: true
+        feeds: {"feed://decl": {}, "feed://un": {direct: directRec version: "1.0.0"}}
+      }
+      d = UpdateTask.resolve task
+      ut\assertFalse d.installRequired
+      ut\assertEquals d.statusCode, 3
+
+    -- no candidate: a required install with no source anywhere fails with -6
+    resolve_noCandidateRequiredFails: (ut) ->
+      task = makeResolveTask {declaredFeed: "feed://decl", feeds: {"feed://decl": {}}}
+      d = UpdateTask.resolve task
+      ut\assertFalse d.installRequired
+      ut\assertEquals d.statusCode, -6
+
+    -- no candidate: an optional install with no source is skipped (3)
+    resolve_noCandidateOptionalSkips: (ut) ->
+      task = makeResolveTask {declaredFeed: "feed://decl", optional: true, feeds: {"feed://decl": {}}}
+      d = UpdateTask.resolve task
+      ut\assertFalse d.installRequired
+      ut\assertEquals d.statusCode, 3
+
+    -- pinned: the remembered source is reused directly and the pin is preserved, no prompt
+    resolve_pinnedReuseProceeds: (ut) ->
+      cs = {feedSource: SourceFeedKind.SelfDeclared, channel: "release", stickiness: SourceChoiceStickiness.Pinned}
+      task = makeResolveTask {
+        declaredFeed: "feed://decl", officialTrusted: {"feed://decl": true}, currentSource: cs
+        feeds: {"feed://decl": {direct: directRec version: "1.0.0"}}
+      }
+      d = UpdateTask.resolve task
+      ut\assertTrue d.installRequired
+      ut\assertEquals d.selectedSource.feedUrl, "feed://decl"
+      ut\assertEquals d.stickiness, SourceChoiceStickiness.Pinned
+      ut\assertEquals task.calls.select, 0
+
+    -- pinned: a required dependency whose pinned source has vanished aborts with -17 (no silent switch)
+    resolve_pinnedMissingRequiredAborts: (ut) ->
+      cs = {feedSource: SourceFeedKind.SelfDeclared, channel: "release", stickiness: SourceChoiceStickiness.Pinned}
+      task = makeResolveTask {declaredFeed: "feed://decl", currentSource: cs, feeds: {"feed://decl": {}}}
+      d = UpdateTask.resolve task
+      ut\assertFalse d.installRequired
+      ut\assertEquals d.statusCode, -17
+
+    -- pinned: the same vanished pin only skips (3) for an optional dependency
+    resolve_pinnedMissingOptionalSkips: (ut) ->
+      cs = {feedSource: SourceFeedKind.SelfDeclared, channel: "release", stickiness: SourceChoiceStickiness.Pinned}
+      task = makeResolveTask {declaredFeed: "feed://decl", optional: true, currentSource: cs, feeds: {"feed://decl": {}}}
+      d = UpdateTask.resolve task
+      ut\assertFalse d.installRequired
+      ut\assertEquals d.statusCode, 3
+
+    -- retain: a still-eligible remembered source is reused without prompting
+    resolve_retainReuseProceeds: (ut) ->
+      cs = {feedSource: SourceFeedKind.SelfDeclared, channel: "release", stickiness: SourceChoiceStickiness.Retain}
+      task = makeResolveTask {
+        declaredFeed: "feed://decl", officialTrusted: {"feed://decl": true}, currentSource: cs
+        feeds: {"feed://decl": {direct: directRec version: "1.0.0"}}
+      }
+      d = UpdateTask.resolve task
+      ut\assertTrue d.installRequired
+      ut\assertEquals d.selectedSource.feedUrl, "feed://decl"
+      ut\assertEquals task.calls.select, 0
+
+    -- retain (soft): when the remembered pick is gone and the run is non-interactive, fall back to the
+    -- cascade's pick and downgrade the stickiness to Once
+    resolve_retainMissingNonInteractiveDowngrades: (ut) ->
+      cs = {feedSource: SourceFeedKind.Other, feedUrl: "feed://gone", channel: "release", stickiness: SourceChoiceStickiness.Retain}
+      task = makeResolveTask {
+        declaredFeed: "feed://decl", officialTrusted: {"feed://decl": true}, currentSource: cs
+        feeds: {"feed://decl": {direct: directRec version: "1.0.0"}}
+      }
+      d = UpdateTask.resolve task
+      ut\assertTrue d.installRequired
+      ut\assertEquals d.selectedSource.feedUrl, "feed://decl"
+      ut\assertEquals d.stickiness, SourceChoiceStickiness.Once
+      ut\assertEquals task.calls.select, 0
+
+    -- retain (soft): when the remembered pick is gone and the run is interactive, re-prompt and take the
+    -- user's pick and stickiness
+    resolve_retainMissingInteractivePicks: (ut) ->
+      cs = {feedSource: SourceFeedKind.Other, feedUrl: "feed://gone", channel: "release", stickiness: SourceChoiceStickiness.Retain}
+      pick = {feedUrl: "feed://decl", trustBand: 1, isDirect: true, updateRecord: {namespace: "json", version: "1.0.0"}}
+      task = makeResolveTask {
+        declaredFeed: "feed://decl", officialTrusted: {"feed://decl": true}, currentSource: cs
+        allowPrompt: true, selectReturn: {pick, SourceChoiceStickiness.Retain}
+        feeds: {"feed://decl": {direct: directRec version: "1.0.0"}}
+      }
+      d = UpdateTask.resolve task
+      ut\assertTrue d.installRequired
+      ut\assertEquals d.selectedSource, pick
+      ut\assertEquals d.stickiness, SourceChoiceStickiness.Retain
+      ut\assertEquals task.calls.select, 1
+
+    -- the chooser aborts the update: a required dependency fails with -18
+    resolve_choiceAbortRequiredFails: (ut) ->
+      cs = {feedSource: SourceFeedKind.Other, feedUrl: "feed://gone", channel: "release", stickiness: SourceChoiceStickiness.Retain}
+      task = makeResolveTask {
+        declaredFeed: "feed://decl", officialTrusted: {"feed://decl": true}, currentSource: cs
+        allowPrompt: true, selectReturn: {}
+        feeds: {"feed://decl": {direct: directRec version: "1.0.0"}}
+      }
+      d = UpdateTask.resolve task
+      ut\assertFalse d.installRequired
+      ut\assertEquals d.statusCode, -18
+
+    -- auto: never prompts even when several equally-ranked candidates tie; takes the algorithm's pick
+    resolve_autoNeverPrompts: (ut) ->
+      cs = {feedSource: SourceFeedKind.SelfDeclared, channel: "release", stickiness: SourceChoiceStickiness.Auto}
+      task = makeResolveTask {
+        currentSource: cs, allowPrompt: true, officialTrusted: {"feed://a": true, "feed://b": true}
+        feeds: {"feed://a": {direct: directRec version: "1.0.0"}, "feed://b": {direct: directRec version: "1.0.0"}}
+      }
+      d = UpdateTask.resolve task
+      ut\assertTrue d.installRequired
+      ut\assertEquals task.calls.select, 0
+
+    -- offer-all-sources: with the global toggle on, the chooser fires whenever ≥2 candidates are eligible
+    resolve_offerAllSourcesPromptsOnMultiple: (ut) ->
+      pick = {feedUrl: "feed://b", trustBand: 2, isDirect: true, updateRecord: {namespace: "json", version: "1.0.0"}}
+      task = makeResolveTask {
+        allowPrompt: true, config: {offerAllSources: true}
+        officialTrusted: {"feed://a": true, "feed://b": true}, selectReturn: {pick, SourceChoiceStickiness.Once}
+        feeds: {"feed://a": {direct: directRec version: "1.0.0"}, "feed://b": {direct: directRec version: "1.0.0"}}
+      }
+      d = UpdateTask.resolve task
+      ut\assertTrue d.installRequired
+      ut\assertEquals d.selectedSource, pick
+      ut\assertEquals task.calls.select, 1
+
     _order: {
       "selectCandidate_filtersByVersion", "selectCandidate_noneSatisfiesVersion",
       "selectCandidate_skipsUnsupportedPlatform", "selectCandidate_skipsEmptyFiles", "selectCandidate_noneEligible",
@@ -449,6 +702,13 @@
       "persistSource_writesDirect", "persistSource_recordsProvider", "persistSource_storesFeedUrlForOther",
       "persistSource_skipsUnchanged",
       "getTrustedFeeds_mergesOfficialAndUser", "getTrustedFeeds_officialOnlyWhenNoUserFeeds",
-      "getBlockedFeeds_mergesOfficialThenUser", "getBlockedFeeds_officialOnlyWhenNoUserFeeds"
+      "getBlockedFeeds_mergesOfficialThenUser", "getBlockedFeeds_officialOnlyWhenNoUserFeeds",
+      "resolve_cascadeShortCircuitsOnDeclaredDirect", "resolve_fallsThroughToTrustedDirect",
+      "resolve_untrustedRequiredFailsWithoutPrompt", "resolve_untrustedApprovedProceeds",
+      "resolve_untrustedOptionalSkips", "resolve_noCandidateRequiredFails", "resolve_noCandidateOptionalSkips",
+      "resolve_pinnedReuseProceeds", "resolve_pinnedMissingRequiredAborts", "resolve_pinnedMissingOptionalSkips",
+      "resolve_retainReuseProceeds", "resolve_retainMissingNonInteractiveDowngrades",
+      "resolve_retainMissingInteractivePicks", "resolve_choiceAbortRequiredFails",
+      "resolve_autoNeverPrompts", "resolve_offerAllSourcesPromptsOnMultiple"
     }
   }

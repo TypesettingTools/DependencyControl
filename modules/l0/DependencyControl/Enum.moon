@@ -48,7 +48,7 @@ class Enum
   ---@param __logger? Logger
   new: (@name, values, @__logger = @@logger) =>
     @__logger\assert type(@name) == "string", msgs.new.missingOrInvalidName, Logger\describeType @name
-    @elements, @__valuesToKeys, @values, @keys = {}, {}, {}, {}
+    @elements, @__keysByValue, @values, @keys = {}, {}, {}, {}
 
     for k, v in pairs values
       -- we support lists as input, but we do not support numerical keys, which is sane
@@ -57,9 +57,9 @@ class Enum
 
       @__logger\assert not @@isReservedKey(k), msgs.new.noReservedKeys, k
       @__logger\assert @elements[k] == nil, msgs.new.keyAlreadyDefined, k, @name
-      @__logger\assert @__valuesToKeys[v] == nil, msgs.new.valueAlreadyTaken, k, @name, v, @__valuesToKeys[v]
+      @__logger\assert @__keysByValue[v] == nil, msgs.new.valueAlreadyTaken, k, @name, v, @__keysByValue[v]
 
-      @elements[k], @__valuesToKeys[v] = v, k
+      @elements[k], @__keysByValue[v] = v, k
       table.insert @values, v
       table.insert @keys, k
 
@@ -92,27 +92,20 @@ class Enum
     return val != nil and true or false, val
 
 
-  ---Returns the key name(s) for one or more values.
-  ---@param values any A single value, or a list of values to look up.
-  ---@param join? string|boolean Separator string for joining multiple keys, true for ", ", or false to return a list (default false).
-  ---@return string|string[]|nil keys The matching key(s), or nil when a single value is undefined.
-  ---@return string? err Error message when a single value is undefined.
-  describe: (values, join = false) =>
-    key = @__valuesToKeys[values]
-    if key != nil
-      return key
-
-    if "table" != type values
-      return nil, msgs.describe.valueNotDefined\format values, @name
-
+  ---Returns a human-readable description of the given value(s) in this enum.
+  ---@param values? any A single value, or a list of values to look up. If not provided, returns all keys.
+  ---@param join? string|boolean Separator string for joining multiple keys, true for ", ", or false to return a list (default true).
+  ---@param pattern? fun(key: string, value: any): string A function to format the key/value pair for display (default "<value> (<key>)").
+  ---@return string|string[] A single string when a single value is provided, or a list of strings when multiple values are provided (or join is false).
+  describe: (values = @values, pattern = ((key, value) -> "#{value} (#{key})"), join = true) =>
+    values = {values} if "table" != type values
+  
     keys = for v in *values
-      key = @__valuesToKeys[v]
-      if key == nil
-        join and '<invalid>' or nil
-      else key
+      key = @__keysByValue[v]
+      @__logger\assert key != nil, msgs.describe.valueNotDefined, v, @name
+      pattern key, v
 
     return join and table.concat(keys, join == true and ', ' or join) or keys
-
 
   ---Validates that a value is a member of this enum.
   ---@param value any
@@ -120,7 +113,7 @@ class Enum
   ---@return boolean? valid True when the value is a member, nil otherwise.
   ---@return string? err Validation error message when invalid.
   validate: (value, argName) =>
-    if value == nil or @__valuesToKeys[value] == nil
+    if value == nil or @__keysByValue[value] == nil
       prefix = argName != nil and msgs.validate.argPrefix\format(argName) or ""
       return nil, msgs.validate.invalidValue\format prefix, value, @name
 

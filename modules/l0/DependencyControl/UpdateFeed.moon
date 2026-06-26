@@ -15,6 +15,8 @@ ScriptUpdateRecord = require "l0.DependencyControl.ScriptUpdateRecord"
 ScriptTargetFilter = require "l0.DependencyControl.ScriptTargetFilter"
 JsonSchema = nil
 
+ScriptType = Common.ScriptType
+
 -- Iterates the real packages of a loaded feed that pass the given filter, yielding
 -- (pkgProxy, scriptType, section). pkgProxy exposes the package's `namespace` alongside its
 -- raw fields. Rolling-template keys the expander writes into a section container (e.g.
@@ -22,7 +24,7 @@ JsonSchema = nil
 walkPackages = (feed, filter) ->
     coroutine.wrap ->
         for scriptType in *filter\scriptTypes!
-            section = Common.ScriptType.name.legacy[scriptType]
+            section = Common.ScriptTypeSection[scriptType]
             packages = feed.data[section]
             continue unless packages
 
@@ -52,8 +54,8 @@ stripNulls = (tbl) ->
     {k, (type(v) == "table" and stripNulls(v) or v) for k, v in pairs tbl when v != dkjson.null}
 
 ---Downloaded and expanded update feed data source.
----@class UpdateFeed: DependencyControlCommon
-class UpdateFeed extends Common
+---@class UpdateFeed
+class UpdateFeed
     templateData = {
         maxDepth: 7
         templates: {
@@ -179,14 +181,14 @@ class UpdateFeed extends Common
     ---autoload dir, modules to the include dir (under their namespace path), and test
     ---files to the matching DepUnit test dir.
     ---@param namespace string
-    ---@param scriptType integer A Common.ScriptType value.
+    ---@param scriptType ScriptType A ScriptType value.
     ---@param fileName string The file's feed name (e.g. ".moon", "/Common.moon").
     ---@param fileType? string "script" or "test" (default "script").
     ---@param rootDir? string The root directory for deployment.
     ---@return string? path
     ---@return string? err
     @getFileDeployPath = (namespace, scriptType, fileName, fileType = "script", rootDir) =>
-        subDir = scriptType == Common.ScriptType.Module and (namespace\gsub "%.", "/") or namespace
+        subDir = scriptType == ScriptType.Module and (namespace\gsub "%.", "/") or namespace
         baseDir = fileType == "test" and Common\getTestDir(scriptType, rootDir) or Common\getAutomationDir scriptType, rootDir
         return FileOps.validateFullPath "#{subDir}#{fileName}", false, baseDir
 
@@ -225,8 +227,7 @@ class UpdateFeed extends Common
                     return "file://#{self.fileName}" if self.fileName
         }
 
-        -- fill in missing config values
-        @config[k] = v for k, v in pairs @@defaultConfig when @config[k] == nil
+        Common.addDefaults @config, @@defaultConfig
 
         @ensureLoaded! if autoLoad
 
@@ -290,8 +291,8 @@ class UpdateFeed extends Common
         -- Hide null sentinels from the working copy exposed to consumers
         data = stripNulls data
 
-        data[key] = {} for key in *{ @@ScriptType.name.legacy[@@ScriptType.Automation],
-                                     @@ScriptType.name.legacy[@@ScriptType.Module],
+        data[key] = {} for key in *{ Common.ScriptTypeSection[ScriptType.Automation],
+                                     Common.ScriptTypeSection[ScriptType.Module],
                                      "knownFeeds"} when not data[key]
         @data, @@cache[@url] = data, data
         @feedPath = srcPath
@@ -399,21 +400,21 @@ class UpdateFeed extends Common
 
     ---Retrieves a script update record by namespace and type.
     ---@param namespace string
-    ---@param scriptType integer|boolean A Common.ScriptType value (true/false accepted for legacy module/automation).
+    ---@param scriptType ScriptType|boolean A ScriptType value (true/false accepted for legacy module/automation).
     ---@param config? table
     ---@param autoChannel? boolean Select the default channel automatically.
     ---@return ScriptUpdateRecord|boolean|nil record False when not found, nil on error.
     ---@return string? err
     getScript: (namespace, scriptType, config, autoChannel) =>
         -- legacy compatibility for <= 0.6.3
-        if scriptType == true then scriptType = @@ScriptType.Module
-        elseif scriptType == false then scriptType = @@ScriptType.Automation
+        if scriptType == true then scriptType = ScriptType.Module
+        elseif scriptType == false then scriptType = ScriptType.Automation
 
-        section = @@ScriptType.name.legacy[scriptType]
-        unless section
-            return nil, msgs.errors.invalidScriptType\format scriptType, 
-                table.concat ["#{v} (#{Common.ScriptType.name.canonical[v]})" for k, v in pairs Common.ScriptType when k != "name"], ", "
-        
+        haveSection, section = Common.ScriptTypeSection\test scriptType
+        unless haveSection
+            return nil, msgs.errors.invalidScriptType\format scriptType,
+                ScriptType\describe nil, (_, v) -> v
+            
         scriptData = @data[section][namespace]
         return false unless scriptData
         ScriptUpdateRecord namespace, scriptData, config, scriptType, autoChannel, @logger
@@ -425,7 +426,7 @@ class UpdateFeed extends Common
     ---@return ScriptUpdateRecord|boolean|nil record False when not found, nil on error.
     ---@return string? err
     getMacro: (namespace, config, autoChannel) =>
-        @getScript namespace, @@ScriptType.Automation, config, autoChannel
+        @getScript namespace, ScriptType.Automation, config, autoChannel
 
     ---Retrieves a module update record by namespace.
     ---@param namespace string
@@ -434,7 +435,7 @@ class UpdateFeed extends Common
     ---@return ScriptUpdateRecord|boolean|nil record False when not found, nil on error.
     ---@return string? err
     getModule: (namespace, config, autoChannel) =>
-        @getScript namespace, @@ScriptType.Module, config, autoChannel
+        @getScript namespace, ScriptType.Module, config, autoChannel
 
     ---Returns the default channel's version for a module namespace, or nil.
     ---"Default" means the channel with default:true; falls back to the first channel found.
@@ -458,7 +459,7 @@ class UpdateFeed extends Common
         return providers unless @data and @data.modules
         for namespace, pkg in pairs @data.modules
             continue unless type(pkg) == "table" and pkg.channels
-            record = ScriptUpdateRecord namespace, pkg, nil, @@ScriptType.Module, false, @logger
+            record = ScriptUpdateRecord namespace, pkg, nil, ScriptType.Module, false, @logger
             continue unless (record\setChannel!) and record.provides
             for entry in *record.provides
                 name = type(entry) == "table" and entry.name or entry
@@ -533,7 +534,7 @@ class UpdateFeed extends Common
 
     ---Updates a package channel's version and dependencies in the raw feed data by loading
     ---the package's script and reading its DependencyControl record.
-    ---@param scriptType integer The script type of the package to refresh (Common.ScriptType.Automation or .Module).
+    ---@param scriptType ScriptType The script type of the package to refresh (ScriptType.Automation or .Module).
     ---@param packageNamespace string The package namespace.
     ---@param rawChannel table The raw channel entry to update in place.
     ---@return boolean? changed Whether anything was modified, or nil on error.
@@ -632,7 +633,7 @@ class UpdateFeed extends Common
     ---changed, resets its `released` date to null to mark the build as pending/unreleased.
     ---Collects this package's own outcome rather than mutating shared state, so the caller can
     ---present results per package.
-    ---@param scriptType integer The package's script type (Common.ScriptType.Automation or .Module).
+    ---@param scriptType ScriptType The package's script type (ScriptType.Automation or .Module).
     ---@param packageNamespace string The namespaced identifier of the package to update (e.g. "l0.Functional").
     ---@param channel? string The channel to update (default: the package's default channel).
     ---@return { namespace: string, scriptType: integer, channel?: string, changed: boolean, errors: string[] } result
@@ -640,7 +641,7 @@ class UpdateFeed extends Common
         result = {namespace: packageNamespace, :scriptType, changed: false, errors: {}}
         errors = result.errors
 
-        section = Common.ScriptType.name.legacy[scriptType]
+        section = Common.ScriptTypeSection[scriptType]
 
         rawPkg = @rawFeedData[section] and @rawFeedData[section][packageNamespace]
         unless rawPkg
@@ -756,7 +757,7 @@ class UpdateFeed extends Common
     ---The feed must have been loaded before calling this method.
     ---Each iteration yields three values:
     ---  pkg        – the package object; the package key is accessible via `.namespace`
-    ---  scriptType – the script type (Common.ScriptType.Module / .Automation)
+    ---  scriptType – the script type (ScriptType.Module / .Automation)
     ---  section    – the section name (e.g. "macros" or "modules")
     ---@param filter? ScriptTargetFilter Restricts which packages are walked (default: all).
     ---@return function iterator
@@ -771,7 +772,7 @@ class UpdateFeed extends Common
     ---  channel – the channel object; the channel key is accessible via `.name`
     ---  pkg     – the package object; the package key is accessible via `.namespace`
     ---  section – the section name (e.g. "macros" or "modules")
-    ---  scriptType – the script type (Common.ScriptType.Module / .Automation)
+    ---  scriptType – the script type (ScriptType.Module / .Automation)
     ---@param filter? ScriptTargetFilter Restricts which packages are walked (default: all).
     ---@return function iterator
     walkFiles: (filter = ScriptTargetFilter!\includeAll!) =>

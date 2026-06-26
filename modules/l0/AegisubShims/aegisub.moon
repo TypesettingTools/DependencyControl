@@ -104,6 +104,21 @@ decodePath = (path) ->
             return suffix == "" and dir or dir .. pathSep .. suffix
     return path  -- no token: return as-is
 
+---Writes a log message to stderr, interpolating printf-style arguments like real Aegisub. Accepts both
+---call forms: `(msg, ...)` and `(level, msg, ...)` with a numeric level, which is ignored here.
+---The message is written verbatim with no trailing newline: callers append their own, so adding one
+---would break same-line output.
+---@param level number|string The numeric log level, or the message when the level is omitted.
+---@param msg? any The message (or its first format argument in the level-less form).
+---@param ... any Arguments interpolated into the message with string.format.
+writeLog = (level, msg, ...) ->
+    local text
+    if type(level) == "string"
+        text = if msg != nil then level\format msg, ... else level
+    else
+        text = if select("#", ...) > 0 then msg\format ... else msg
+    io.stderr\write tostring text or ""
+
 aegisub = {
     lua_automation_version: 4
 
@@ -133,14 +148,10 @@ aegisub = {
 
     -- These are normally injected by LuaProgressSink during macro execution.
     -- We provide static stubs so scripts that call them at module load time don't crash.
-    log: (level, msg, ...) ->
-        text = type(level) == "string" and level or msg
-        io.stderr\write tostring(text or "") .. "\n"
+    log: writeLog
 
     debug: {
-        out: (level, msg, ...) ->
-            text = type(level) == "string" and level or msg
-            io.stderr\write tostring(text or "") .. "\n"
+        out: writeLog
     }
 
     progress: {
@@ -151,7 +162,8 @@ aegisub = {
     }
 
     dialog: {
-        display: -> {}, false
+        -- every headless dialog reports a cancel: button false, plus an empty result-values table
+        display: -> false, {}
         open:    -> nil
         save:    -> nil
     }

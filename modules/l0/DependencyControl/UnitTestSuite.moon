@@ -18,8 +18,8 @@ class UnitTest
             setup: "Performing setup... "
             teardown: "Performing teardown... "
             test: "Running test '%s'... "
-            ok: "OK."
-            failed: "FAILED!"
+            ok: "✓"
+            failed: "✗"
             reason: "Reason: %s"
         }
         new: {
@@ -107,15 +107,21 @@ class UnitTest
     ---@private
     ---@param errMsg? string The error message to log; defaults to the error from this test's last run.
     logResult: (errMsg = @errMsg) =>
+        -- a test that logged output of its own already closed the "Running test… " line; when so,
+        -- restate the name beside the marker so it isn't stranded on a line by itself
+        restate = Logger.isAtLineStart!
+        indent = restate and @logger.indent or 0
         if @success
-            @logger\logEx nil, @@msgs.run.ok, nil, nil, 0
+            ok = restate and "#{@@msgs.run.ok} #{@name}" or @@msgs.run.ok
+            @logger\logEx nil, ok, nil, nil, indent
         else
             if @assertFailed
                 -- scrub useless stack trace from asserts provided by this module
                 errMsg = errMsg\gsub "%[%w+ \".-\"%]:%d+:", ""
                 errMsg = errMsg\gsub "stack traceback:.*", ""
             @errMsg = errMsg
-            @logger\logEx nil, @@msgs.run.failed, nil, nil, 0
+            fail = restate and "#{@@msgs.run.failed} #{@name}" or @@msgs.run.failed
+            @logger\logEx nil, fail, nil, nil, indent
             @logger.indent += 1
             @logger\log @@msgs.run.reason, @errMsg
             @logger.indent -= 1
@@ -707,16 +713,16 @@ class UnitTestSuite
 
     ---Returns the require specifier used to load DepCtrl test suites in Aegisub environments.
     ---In an Aegisub environment, test suites reside in '?user/automation/tests/DepUnit/(modules|macros)/<namespace>.(moon|lua)'.
-    ---@param scriptType integer A Common.ScriptType value (module or automation script).
+    ---@param scriptType ScriptType A Common.ScriptType value (module or automation script).
     ---@param namespace string The namespaced identifier of the package under test (e.g. 'l0.Functional').
     ---@return string identifier The require specifier used to load the test suite.
     @getDefaultTestSuiteRequireIdentifier = (scriptType, namespace) =>
-        "DepUnit.#{Common.ScriptType.name.legacy[scriptType]}.#{namespace}"
+        "DepUnit.#{Common.ScriptTypeSection[scriptType]}.#{namespace}"
 
     ---Returns the require specifier used to load DepCtrl test suites in the current environment.
     ---Accepts a hook via the global variable DEPCTRL_UNIT_TEST_SUITE_REQUIRE_IDENTIFIER to be used
     ---by CLI/CI test runners loading the test suites from the source repo or other locations.
-    ---@param scriptType integer A Common.ScriptType value (module or automation script).
+    ---@param scriptType ScriptType A Common.ScriptType value (module or automation script).
     ---@param namespace string The namespaced identifier of the package under test (e.g. 'l0.Functional').
     ---@return string identifier
     @getTestSuiteRequireIdentifier = (scriptType, namespace) =>
@@ -885,6 +891,22 @@ class UnitTestSuite
                 cases[#cases+1] = case
             suites[#suites+1] = { name: cls.name, :cases }
         return suites
+
+    ---Returns the failures from the most recent run as a flat list, each tagged as an assertion
+    ---failure or an unexpected error. Intended for printing a failure summary after a run.
+    ---@return { classname: string, name: string, error: string, isAssertion: boolean }[] failures
+    getFailures: =>
+        failures = {}
+        for suite in *@collectResults!
+            for c in *suite.cases
+                if c.failure or c.error
+                    failures[#failures+1] = {
+                        classname: c.classname
+                        name: c.name
+                        error: c.failure or c.error
+                        isAssertion: c.failure != nil
+                    }
+        return failures
 
     ---Builds a CTRF (Common Test Report Format) report of the most recent run.
     ---CTRF is a JSON test report schema understood by ready-made CI reporters

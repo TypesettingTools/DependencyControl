@@ -135,7 +135,7 @@ class ConfigView
     import: (tbl, keys, updateOnly, skipSameLengthTables) =>
         tbl = tbl.userConfig if tbl.__class == @@
         changesMade = false
-        keySet = {key, true for key in *keys} if keys
+        keySet = Common.makeSet keys if keys
 
         for k, v in pairs tbl
             continue if keys and not keySet[k] or @userConfig[k] == v

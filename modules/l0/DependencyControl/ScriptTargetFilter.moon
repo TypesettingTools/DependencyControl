@@ -1,7 +1,7 @@
 Common = require "l0.DependencyControl.Common"
 
--- all concrete script types (the ScriptType table also holds a `name` lookup sub-table)
-scriptTypeList = [v for k, v in pairs Common.ScriptType when k != "name"]
+-- fresh copy of all script-type values, so the in-place sort below can't mutate the Enum's own list
+scriptTypeList = [v for v in *Common.ScriptType.values]
 table.sort scriptTypeList
 
 ---Selects which packages a feed operation should process, by script type and namespace.

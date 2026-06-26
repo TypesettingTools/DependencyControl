@@ -53,15 +53,15 @@ unregisterRecord = (namespace) -> recordsByNamespace[namespace] = nil
 ---@field feed? string Update feed URL.
 ---@field configFile? string Config file name (defaults to "<namespace>.json").
 ---@field virtual? boolean Mark as a not-yet-installed placeholder record.
----@field recordType? integer A Common.RecordType value (default Managed).
+---@field recordType? RecordType A Common.RecordType value (default Managed).
 ---@field requiredModules? table[] Required module specs (alternative to the positional list).
 ---@field provides? (string|ModuleAlias)[] Module aliases this module satisfies for `require` (bare strings are normalized to ModuleAlias tables).
 ---@field readGlobalScriptVars? boolean Read script_* globals for unset fields (default true).
 ---@field saveRecordToConfig? boolean Persist this record to the config file (default true).
 
 ---DependencyControl record representing one managed or unmanaged script/module.
----@class Record: DependencyControlCommon
-class Record extends Common
+---@class Record
+class Record
     msgs = {
         new: {
             badRecordError: "Error: Bad #{constants.DEPCTRL_NAME} record (%s)."
@@ -131,26 +131,25 @@ class Record extends Common
     new: (args) =>
         init Record unless @@logger
 
-        -- defaults
-        args[k] = v for k, v in pairs {
+        Common.addDefaults args, {
             readGlobalScriptVars: true
             saveRecordToConfig: true
-        } when args[k] == nil
+        }
 
         {@requiredModules, moduleName:@moduleName, configFile:configFile, virtual:@virtual, :name,
          description:@description, url:@url, feed:@feed, recordType:@recordType, :namespace,
          author:@author, :version, configFile:@configFile, :provides,
          :readGlobalScriptVars, :saveRecordToConfig} = args
 
-        @recordType or= @@RecordType.Managed
+        @recordType or= Common.RecordType.Managed
         -- also support name key (as used in configuration) for required modules
         @requiredModules or= args.requiredModules
 
         if @moduleName
             @namespace = @moduleName
             @name = name or @moduleName
-            @scriptType = @@ScriptType.Module
-            ModuleLoader.createDummyRef @ unless @virtual or @recordType == @@RecordType.Unmanaged
+            @scriptType = Common.ScriptType.Module
+            ModuleLoader.createDummyRef @ unless @virtual or @recordType == Common.RecordType.Unmanaged
 
         else
             if @virtual or not readGlobalScriptVars
@@ -164,9 +163,9 @@ class Record extends Common
                 version or= script_version
 
             @namespace = namespace or script_namespace
-            assert @recordType == @@RecordType.Managed, msgs.new.badRecordError\format msgs.new.badRecord.noUnmanagedMacros
+            assert @recordType == Common.RecordType.Managed, msgs.new.badRecordError\format msgs.new.badRecord.noUnmanagedMacros
             assert @namespace, msgs.new.badRecordError\format msgs.new.badRecord.missingNamespace
-            @scriptType = @@ScriptType.Automation
+            @scriptType = Common.ScriptType.Automation
 
         -- if the hosting macro doesn't have a namespace defined, define it for
         -- the first DepCtrled module loaded by the macro or its required modules
@@ -174,7 +173,7 @@ class Record extends Common
             export script_namespace = @namespace
 
         -- non-depctrl record don't need to conform to namespace rules
-        assert @virtual or @recordType == @@RecordType.Unmanaged or @validateNamespace!,
+        assert @virtual or @recordType == Common.RecordType.Unmanaged or @validateNamespace!,
                msgs.new.badRecord.badNamespace\format @namespace
 
         @configFile = configFile or "#{@namespace}.json"
@@ -224,7 +223,7 @@ class Record extends Common
     loadConfig: (importRecord = false) =>
         -- virtual modules are not yet present on the user's system and have no persistent configuration
         @config or= ConfigView\get not @virtual and @@depConf.file,
-                    { @@ScriptType.name.legacy[@scriptType], @namespace }, {}, @@logger, true
+                    { Common.ScriptTypeSection[@scriptType], @namespace }, {}, @@logger, true
 
         -- import and overwrites version record from the configuration
         if importRecord
@@ -256,7 +255,7 @@ class Record extends Common
         unless @virtual or @config.file
             @config\setFile @@depConf.file
 
-        @@logger\trace msgs.writeConfig.writing, @@terms.scriptType.singular[@scriptType]
+        @@logger\trace msgs.writeConfig.writing, Common.terms.scriptType.singular[@scriptType]
         @config\import @, @@depConf.scriptFields, false, true
         success, errMsg = @config\save!
 
@@ -308,8 +307,8 @@ class Record extends Common
     ---@return string[]? submodules Submodule namespaces, or nil for non-module records.
     ---@return ConfigView? config The module config section handler.
     getSubmodules: =>
-        return nil if @virtual or @recordType == @@RecordType.Unmanaged or @scriptType != @@ScriptType.Module
-        mdlConfig = @@config\getSectionHandler @@ScriptType.name.legacy[@@ScriptType.Module]
+        return nil if @virtual or @recordType == Common.RecordType.Unmanaged or @scriptType != Common.ScriptType.Module
+        mdlConfig = @@config\getSectionHandler Common.ScriptTypeSection[Common.ScriptType.Module]
         pattern = "^#{@namespace}."\gsub "%.", "%%."
         return [mdl for mdl, _ in pairs mdlConfig.c when mdl\match pattern], mdlConfig
 
@@ -352,13 +351,13 @@ class Record extends Common
             @testSuiteInitialized = true
         else
             @testSuiteInitializeError = errMsg
-            @@logger\warn "Error initializing test suite for #{@@terms.scriptType.singular[@scriptType]} '#{@name}': #{errMsg}"
+            @@logger\warn "Error initializing test suite for #{Common.terms.scriptType.singular[@scriptType]} '#{@name}': #{errMsg}"
 
         -- Automation scripts run in their own isolated environment exactly once, so they register
         -- their own test menu right here. Modules, by contrast, load in every script's environment;
         -- registering from here would create duplicate menu entries, so their test menus are
         -- registered centrally by the Toolbox (which loads each module exactly once).
-        @tests\registerMacros! if @testSuiteInitialized and @scriptType == @@ScriptType.Automation
+        @tests\registerMacros! if @testSuiteInitialized and @scriptType == Common.ScriptType.Automation
 
     ---Finalizes module registration and swaps dummy module refs for real refs.
     ---@param selfRef table The module's real exported table.
@@ -467,9 +466,9 @@ class Record extends Common
     ---@return boolean? success nil when the record can't be uninstalled (virtual/unmanaged).
     ---@return table|string|nil result Per-file removal results, or an error message.
     uninstall: (removeConfig = true) =>
-        if @virtual or @recordType == @@RecordType.Unmanaged
+        if @virtual or @recordType == Common.RecordType.Unmanaged
             return nil, msgs.uninstall.noVirtualOrUnmanaged\format @virtual and "virtual" or "unmanaged",
-                                                                   @@terms.scriptType.singular[@scriptType],
+                                                                   Common.terms.scriptType.singular[@scriptType],
                                                                    @name
         @config\delete!
         subModules, mdlConfig = @getSubmodules!

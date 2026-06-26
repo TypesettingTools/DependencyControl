@@ -1,5 +1,6 @@
 ffi = require "ffi"
 Crypto = require "l0.DependencyControl.Crypto"
+Enum = require "l0.DependencyControl.Enum"
 
 ---Serializes a value into a canonical string for hashing: table keys are emitted in sorted
 ---order so field ordering never affects the result, and every value is tagged with its type
@@ -168,10 +169,43 @@ class DependencyControlCommon
 
     @moduleName = "l0.DependencyControl"
 
+    ---@alias RecordType
+    ---| "managed" # Managed: a script/module DependencyControl installs and keeps up to date
+    ---| "unmanaged" # Unmanaged: a record describing a module DependencyControl tracks but does not update
+    RecordType = Enum "RecordType", {
+        Managed: "managed"
+        Unmanaged: "unmanaged"
+    }
+    @RecordType = RecordType
+
+    ---@alias ScriptType
+    ---| "automation" # Automation: an automation script (macro / applied filter)
+    ---| "module" # Module: a require()-able module
+    ScriptType = Enum "ScriptType", {
+        Automation: "automation"
+        Module: "module"
+    }
+    @ScriptType = ScriptType
+
+    ---@alias ScriptTypeSection
+    ---| "macros" # Automation scripts are stored in the "macros" section
+    ---| "modules" # Modules are stored in the "modules" section
+    ---Per-script type property names used in update feed data and config files.
+    @ScriptTypeSection = Enum "ScriptTypeSection", {
+        [ScriptType.Automation]: "macros"
+        [ScriptType.Module]: "modules"
+    }
+
     @terms = {
         scriptType: {
-            singular: { "automation script", "module" }
-            plural: { "automation scripts", "modules" }
+            singular: {
+                [ScriptType.Automation]: "automation script"
+                [ScriptType.Module]: "module"
+            }
+            plural: {
+                [ScriptType.Automation]: "automation scripts"
+                [ScriptType.Module]: "modules"
+            }
         }
 
         isInstall: {
@@ -180,21 +214,6 @@ class DependencyControlCommon
         }
 
         capitalize: (str) -> (str\sub 1, 1)\upper! .. str\sub 2
-    }
-
-    -- Common enums
-    @RecordType = {
-        Managed: 1
-        Unmanaged: 2
-    }
-
-    @ScriptType = {
-        Automation: 1
-        Module: 2
-        name: {
-            legacy: { "macros", "modules" }
-            canonical: {"automation", "modules"}
-        }
     }
 
     ---Validates a DependencyControl namespace string.
@@ -252,6 +271,34 @@ class DependencyControlCommon
     ---@param tbl table The table to deep-copy.
     ---@return table copy The deep-copied table.
     @deepCopy = deepCopy
+
+    ---Builds (or extends) a set from an array's values: each value becomes a key mapped to `value`.
+    ---@param source any[] Array whose values become the set's keys.
+    ---@param target? table Table to populate (default a new table).
+    ---@param overwrite? boolean Overwrite keys already present in `target` (default true).
+    ---@param value? any Value to map each key to (default true).
+    ---@return table set The populated `target`.
+    @makeSet = (source, target = {}, overwrite = true, value = true) ->
+        target[v] = value for v in *source when overwrite or not target[v]
+        return target
+
+    ---Fills in missing entries of `tbl` from `defaults`, mutating `tbl` in place.
+    ---@param tbl table The table to fill in.
+    ---@param defaults table Default key/value pairs.
+    ---@param predicate? fun(value: any, key: any, tbl: table): boolean Per-key test for whether to apply the default; when omitted, defaults apply wherever `tbl[key]` is nil.
+    ---@return number addedCount The number of defaults applied.
+    @addDefaults = (tbl, defaults, predicate) ->
+        addedCnt = 0
+        for k, v in pairs defaults
+            if not predicate and tbl[k] == nil or predicate and predicate tbl[k], k, tbl
+                addedCnt += 1
+                tbl[k] = v
+        return addedCnt
+
+    ---Strips leading and trailing whitespace from a string.
+    ---@param str string The string to trim.
+    ---@return string trimmed The trimmed string.
+    @trim = (str) -> (str\gsub "^%s*(.-)%s*$", "%1")
 
     ---Flattens nested array tables into a single array up to the specified depth. Values that are not (or not converted to) pure array tables are included as-is.
     ---@param value any The value to flatten.

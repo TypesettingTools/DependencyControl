@@ -52,25 +52,25 @@
     describe_single: (ut) ->
       e = Enum "MyEnum", {Foo: 1, Bar: 2}
       result = e\describe 1
-      ut\assertEquals result, "Foo"
+      ut\assertEquals result, "1 (Foo)"
 
     describe_list: (ut) ->
       e = Enum "MyEnum", {Foo: 1, Bar: 2}
-      result = e\describe {1, 2}
+      result = e\describe {1, 2}, nil, false
       ut\assertTable result
       ut\assertEquals #result, 2
 
     describe_join: (ut) ->
       e = Enum "MyEnum", {Foo: 1, Bar: 2}
-      result = e\describe {1, 2}, true
+      result = e\describe {1, 2}, (k) -> k
       ut\assertString result
       ut\assertContains result, "Foo"
       ut\assertContains result, "Bar"
 
     describe_unknown: (ut) ->
       e = Enum "MyEnum", {Foo: 1}
-      result, err = e\describe 99
-      ut\assertNil result
+      result, err = pcall e\describe, 99
+      ut\assertFalse result
       ut\assertContains err, "MyEnum"
       ut\assertContains err, "99"
 

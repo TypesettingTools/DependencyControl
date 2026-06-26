@@ -21,7 +21,7 @@ loadOfficialFeedTrust = () =>
     trusted, blocked = {[constants.DEPCTRL_FEED_URL]: true}, {}
     feed = UpdateFeed constants.DEPCTRL_FEED_URL, false, nil, nil, @logger
     if feed\ensureLoaded!
-        trusted[url] = true for url in *feed\getKnownFeeds!
+        Common.makeSet feed\getKnownFeeds!, trusted
         blocked = feed.data.blockedFeeds or {}
     @officialFeedTrust = {:trusted, :blocked}
 
@@ -49,7 +49,7 @@ class Updater
     ---@param config ConfigView The global DependencyControl config view.
     ---@param logger? Logger
     new: (@host = script_namespace, @config, @logger = @@logger) =>
-        @tasks = {scriptType, {} for _, scriptType in pairs Common.ScriptType when "number" == type scriptType}
+        @tasks = {scriptType, {} for scriptType in *Common.ScriptType.values}
 
     ---Returns the feed URLs DependencyControl officially trusts (its own feed URL plus the feeds it
     ---advertises).

@@ -33,6 +33,15 @@ TrustBand = Enum "UpdaterTrustBand", {
 ---@field trustBand UpdaterTrustBand The candidate's trust band.
 ---@field providesVersion? string For a provider, the alias version range it declares (nil = any version).
 
+---The outcome of resolving a package source: either a source to install or a status to return.
+---@class UpdaterResolution
+---@field installRequired boolean Whether the caller must perform an install/update.
+---@field statusCode? number Status code to return when no install is required (e.g. 0 up-to-date, 3 skipped optional, or a negative error code).
+---@field statusDetailMessage? any Detail accompanying statusCode (e.g. an untrusted feed URL or an error string).
+---@field selectedSource? CandidatePackageSource The source to install; set when installRequired is true.
+---@field stickiness? SourceChoiceStickiness The source-choice stickiness to persist; set when installRequired is true.
+---@field maxVersion? number The highest candidate version found during resolution; set when installRequired is true.
+
 ---A ceiling on which updates are allowed to prompt the user for approval, in order of decreasing
 ---interactivity requirements.
 ---@alias PromptThreshold
@@ -211,7 +220,7 @@ class UpdateTask
     ---Converts updater status/error codes into user-facing error messages.
     ---@param code number
     ---@param name string
-    ---@param scriptType integer A Common.ScriptType value.
+    ---@param scriptType ScriptType A Common.ScriptType value.
     ---@param isInstall boolean
     ---@param detailMsg? string
     ---@return string
@@ -289,8 +298,8 @@ class UpdateTask
     getTrustedFeeds: =>
         config = @updater.config.c
         trustedFeeds = {url, true for url in pairs(@updater\getOfficialTrustedFeeds!)}
-        trustedFeeds[url] = true for url in *(config.extraFeeds or {})
-        trustedFeeds[url] = true for url in *(config.trustedFeeds or {})
+        Common.makeSet config.extraFeeds or {}, trustedFeeds
+        Common.makeSet config.trustedFeeds or {}, trustedFeeds
         return trustedFeeds
 
     ---Returns this task's merged blocked feed-URL prefix list: DependencyControl's official block list plus
@@ -327,7 +336,7 @@ class UpdateTask
             when SourceFeedKind.Other then previousSource.feedUrl
             when SourceFeedKind.Provider
                 return nil unless previousSource.provider and previousSource.provider.namespace
-                view = @updater.config\getSectionHandler Common.ScriptType.name.legacy[Common.ScriptType.Module]
+                view = @updater.config\getSectionHandler Common.ScriptTypeSection[Common.ScriptType.Module]
                 providerRecord = view and view.c and view.c[previousSource.provider.namespace]
                 providerRecord and providerRecord.feed
 
@@ -537,21 +546,16 @@ class UpdateTask
     ---@return number statusCode
     ---@return any detail
     run: (waitLock) =>
-        logUpdateError = (code, extErr, virtual = @record.virtual) ->
-            if code < 0
-                @logger\log UpdateTask.getUpdaterErrorMsg code, @record.name, @record.scriptType, virtual, extErr
-            return code, extErr
-
         with @record do @logger\log msgs.run.starting, Common.terms.isInstall[.virtual],
                                                        Common.terms.scriptType.singular[.scriptType], .name
 
         -- don't perform update of a script when another one is already running for the same script
-        return logUpdateError -10 if @running
+        return @logUpdateError -10 if @running
 
         -- don't shadow scripts installed to the ?data automation dir with a ?user copy
         entryPath, isUserPath = @record\getEntryPointPath!
         if isUserPath == false
-            return logUpdateError -9, entryPath
+            return @logUpdateError -9, entryPath
 
         -- check if the script was already updated
         if @updated and @record\checkVersion @targetVersion
@@ -559,15 +563,76 @@ class UpdateTask
             return 2
 
         -- check internet connection
-        return logUpdateError -7 unless downloader\isInternetConnected!
+        return @logUpdateError -7 unless downloader\isInternetConnected!
 
         -- get a lock on the updater
         success, otherHost = @updater\acquireLock waitLock
-        return logUpdateError -5, otherHost unless success
+        return @logUpdateError -5, otherHost unless success
 
-        -- Resolve which package, from which feed, satisfies the requirement. Candidates are ranked according
-        -- to trust bands.Feeds are fetched lazily per-trust band, so we only reach for less-trusted feeds
-        -- when no closer source can satisfy.
+        resolution = @resolve!
+        return resolution.statusCode, resolution.statusDetailMessage unless resolution.installRequired
+        selectedSource, stickiness, maxVersion = resolution.selectedSource, resolution.stickiness, resolution.maxVersion
+
+        -- remember which source satisfied this package and how sticky the choice is, for next time
+        @persistSource selectedSource, stickiness
+
+        -- an installed module already satisfies the chosen (trusted) version
+        if selectedSource.isDirect and not @record.virtual and @record\checkVersion selectedSource.updateRecord.version
+            @logger\log msgs.run.upToDate, Common.terms.scriptType.singular[@record.scriptType],
+                                           @record.name, SemanticVersioning\toString @record.version
+            return 0
+
+        wasVirtual = @record.virtual
+        if selectedSource.isDirect
+            code, res = @performUpdate selectedSource.updateRecord
+            return @logUpdateError code, res, wasVirtual
+
+        -- indirect: install the chosen provider in place of the required module
+        ref, code, extErr = @installProvider selectedSource.updateRecord, selectedSource.feedUrl
+        unless ref
+            @logger\trace msgs.run.providerInstallFailed, @record.namespace, selectedSource.updateRecord.namespace, tostring extErr
+            code, detail = @reportNoSuitablePackage maxVersion
+            return code, detail
+        @ref, @updated = ref, true
+        @logger\log msgs.run.providerResolved, @record.namespace, Common.terms.scriptType.singular[Common.ScriptType.Module],
+                    selectedSource.updateRecord.name or selectedSource.updateRecord.namespace, selectedSource.updateRecord.version
+        return 1, selectedSource.updateRecord.version
+
+    ---Logs the error message for a negative status code and returns the code and detail unchanged.
+    ---Non-negative (success/skip) codes are returned without logging.
+    ---@param statusCode number The updater status code.
+    ---@param statusDetailMessage? string a message with further explanation of the outcome, if any.
+    ---@param virtual? boolean Whether this is a fresh install (default: the record's current virtual flag).
+    ---@return number statusCode the same code passed in.
+    ---@return string? statusDetailMessage  the same status detail message passed in, if any.
+    logUpdateError: (statusCode, statusDetailMessage, virtual = @record.virtual) =>
+        if statusCode < 0
+            @logger\log UpdateTask.getUpdaterErrorMsg statusCode, @record.name, @record.scriptType, virtual, statusDetailMessage
+        return statusCode, statusDetailMessage
+
+    ---Logs and returns this task's "no suitable package" status — a skip if optional, else a failure.
+    ---@param maxVersion number The highest candidate version seen during resolution (0 when none was found).
+    ---@return number statusCode A negative failure code for a required dependency, or the skip code (3) for an optional one.
+    ---@return string? statusDetailMessage The availability summary for a failure; nil for an optional skip.
+    reportNoSuitablePackage: (maxVersion) =>
+        detail = msgs.run.noFeedAvailExt\format @targetVersion == 0 and "any" or SemanticVersioning\toString(@targetVersion),
+                                                @record.virtual and "no" or SemanticVersioning\toString(@record.version),
+                                                maxVersion < 1 and "none" or SemanticVersioning\toString maxVersion
+        if @optional
+            @logger\log msgs.run.skippedOptional, @record.name, Common.terms.isInstall[@record.virtual],
+                                                  msgs.run.optionalNoUpdate\format detail
+            return 3
+        return @logUpdateError -6, detail
+
+    ---Resolves which package source should satisfy this task, without installing anything. May fetch feeds
+    ---and prompt the user (to choose a package source or to approve an untrusted feed). The updater lock
+    ---must already be held.
+    ---@return UpdaterResolution resolution The source to install, or a status code to return when no install is needed.
+    resolve: =>
+        withoutInstall = (statusCode, statusDetailMessage) -> {installRequired: false, :statusCode, :statusDetailMessage}
+
+        -- Candidates are ranked by trust band. Feeds are fetched lazily per band, so we only reach for
+        -- less-trusted feeds when no closer source can satisfy.
         config, userFeed, declaredFeed = @updater.config.c, @record.config.c.userFeed, @record.feed
         trusted, blocked = @getTrustedFeeds!, @getBlockedFeeds!
         isBlocked = (url) -> @@feedMatchesPrefix url, blocked
@@ -653,42 +718,31 @@ class UpdateTask
                     selected, tied, eligible = @selectCandidate candidates
         @logger.indent -= 1
 
-        local code, res
-        wasVirtual = @record.virtual
+        abortResolution = ->
+            if @optional
+                @logger\log msgs.run.skippedOptional, @record.name, Common.terms.isInstall[@record.virtual],
+                                                      msgs.run.optionalAborted
+                return 3
+            return @logUpdateError -18
 
         -- a hard pin whose remembered source vanished aborts (required) or skips (optional)
         if stickiness == SourceChoiceStickiness.Pinned and not reuse
             if @optional
                 @logger\log msgs.run.skippedOptional, @record.name, Common.terms.isInstall[@record.virtual],
                                                       msgs.run.optionalPinnedUnavailable
-                return 3
-            return logUpdateError -17
-
-        noSuitablePackage = ->
-            detail = msgs.run.noFeedAvailExt\format @targetVersion == 0 and "any" or SemanticVersioning\toString(@targetVersion),
-                                                    @record.virtual and "no" or SemanticVersioning\toString(@record.version),
-                                                    maxVer < 1 and "none" or SemanticVersioning\toString maxVer
-            if @optional
-                @logger\log msgs.run.skippedOptional, @record.name, Common.terms.isInstall[@record.virtual],
-                                                      msgs.run.optionalNoUpdate\format detail
-                return 3
-            return logUpdateError -6, detail
-
-        abortResolution = ->
-            if @optional
-                @logger\log msgs.run.skippedOptional, @record.name, Common.terms.isInstall[@record.virtual],
-                                                      msgs.run.optionalAborted
-                return 3
-            return logUpdateError -18
+                return withoutInstall 3
+            code, detail = @logUpdateError -17
+            return withoutInstall code, detail
 
         unless selected
             if maxVer > 0 and not @record.virtual and @targetVersion <= @record.version
                 -- dependency is already up-to-date, so no matter we don't have a candidate to install
                 @logger\log msgs.run.upToDate, Common.terms.scriptType.singular[@record.scriptType],
                                                @record.name, SemanticVersioning\toString @record.version
-                return 0
+                return withoutInstall 0
 
-            return noSuitablePackage!
+            code, detail = @reportNoSuitablePackage maxVer
+            return withoutInstall code, detail
 
         -- consult the remembered source choice to decide whether to let the user pick a package source.
         -- `auto` never asks and the reuse path already settled the pick, so neither prompts here.
@@ -702,48 +756,32 @@ class UpdateTask
                 -- the soft-remembered pick is gone: re-ask in interactive mode, downgrade to `once` otherwise
                 if allowPrompt
                     pick, pickType = @promptSelectPackageSource choices, selected, true
-                    return abortResolution! unless pick
+                    unless pick
+                        code, detail = abortResolution!
+                        return withoutInstall code, detail
                     selected, stickiness = pick, pickType
                 else
                     stickiness = SourceChoiceStickiness.Once
             elseif choices and #choices > 1 and allowPrompt
                 pick, pickType = @promptSelectPackageSource choices, (remPick or selected)
-                return abortResolution! unless pick
+                unless pick
+                    code, detail = abortResolution!
+                    return withoutInstall code, detail
                 selected, stickiness = pick, pickType
 
         -- the chosen candidate is from an untrusted feed: install it only if the user is asked and approves
         if selected.trustBand >= TrustBand.UntrustedDirect
-            decision = @shouldPrompt(@updater.config.c.feedTrustPromptThreshold) and @promptTrustFeed selected
-            unless decision == FeedTrustDecision.Once or decision == FeedTrustDecision.Always
-                blocked = decision == FeedTrustDecision.Never
+            trustDecision = @shouldPrompt(@updater.config.c.feedTrustPromptThreshold) and @promptTrustFeed selected
+            unless trustDecision == FeedTrustDecision.Once or trustDecision == FeedTrustDecision.Always
+                userBlockedFeed = trustDecision == FeedTrustDecision.Never
                 if @optional
-                    reason = (blocked and msgs.run.optionalBlocked or msgs.run.optionalUntrusted)\format selected.feedUrl
+                    reason = (userBlockedFeed and msgs.run.optionalBlocked or msgs.run.optionalUntrusted)\format selected.feedUrl
                     @logger\log msgs.run.skippedOptional, @record.name, Common.terms.isInstall[@record.virtual], reason
-                    return 3
-                return logUpdateError (blocked and -19 or -16), selected.feedUrl
+                    return withoutInstall 3
+                code, detail = @logUpdateError (userBlockedFeed and -19 or -16), selected.feedUrl
+                return withoutInstall code, detail
 
-        -- remember which source satisfied this package and how sticky the choice is, for next time
-        @persistSource selected, stickiness
-
-        -- an installed module already satisfies the chosen (trusted) version
-        if selected.isDirect and not @record.virtual and @record\checkVersion selected.updateRecord.version
-            @logger\log msgs.run.upToDate, Common.terms.scriptType.singular[@record.scriptType],
-                                           @record.name, SemanticVersioning\toString @record.version
-            return 0
-
-        if selected.isDirect
-            code, res = @performUpdate selected.updateRecord
-            return logUpdateError code, res, wasVirtual
-
-        -- indirect: install the chosen provider in place of the required module
-        ref, code, extErr = @installProvider selected.updateRecord, selected.feedUrl
-        unless ref
-            @logger\trace msgs.run.providerInstallFailed, @record.namespace, selected.updateRecord.namespace, tostring extErr
-            return noSuitablePackage!
-        @ref, @updated = ref, true
-        @logger\log msgs.run.providerResolved, @record.namespace, Common.terms.scriptType.singular[Common.ScriptType.Module],
-                    selected.updateRecord.name or selected.updateRecord.namespace, selected.updateRecord.version
-        return 1, selected.updateRecord.version
+        return {installRequired: true, selectedSource: selected, :stickiness, maxVersion: maxVer}
 
     ---Downloads and installs files for a selected update entry.
     ---@param update ScriptUpdateRecord

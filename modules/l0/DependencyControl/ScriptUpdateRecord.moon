@@ -120,7 +120,7 @@ class ScriptUpdateRecord
     ---@return string platform
     checkPlatform: =>
         @logger\assert @activeChannel, msgs.errors.noActiveChannel
-        return not @platforms or ({p,true for p in *@platforms})[Common.platform], Common.platform
+        return not @platforms or (Common.makeSet @platforms)[Common.platform], Common.platform
 
     --- Formats changelog entries between the current version and a minimum version.
     ---@param versionRecord any Unused; present for API compatibility.

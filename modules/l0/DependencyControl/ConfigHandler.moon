@@ -4,6 +4,7 @@ fileOps = require "l0.DependencyControl.FileOps"
 Logger = require "l0.DependencyControl.Logger"
 Lock = require "l0.DependencyControl.Lock"
 ConfigView = require "l0.DependencyControl.ConfigView"
+Common = require "l0.DependencyControl.Common"
 
 ---JSON-backed configuration manager with cooperative cross-script locking.
 ---Manages one JSON file per instance. Use ConfigView (via getView or ConfigView.get)
@@ -361,7 +362,7 @@ Reload your automation scripts to generate a new configuration file.]]
             view\refresh! for view, _ in pairs @views
             return true
 
-        viewsToRefresh = {view, true for view in *views}
+        viewsToRefresh = Common.makeSet views
 
         for view in *views
             hiveConfig, msg = traverseHive view.__hivePath, config
@@ -372,7 +373,7 @@ Reload your automation scripts to generate a new configuration file.]]
                     mergeHive view.__hivePath, makeHive(view.__hivePath), @config
                 else mergeHive view.__hivePath, makeHive(view.__hivePath, hiveConfig), @config
 
-            viewsToRefresh[v] or= true for v in *@getOverlappingViews view
+            Common.makeSet @getOverlappingViews(view), viewsToRefresh, false
 
         view\refresh! for view, _ in pairs viewsToRefresh
 

@@ -22,6 +22,11 @@ class Logger
 
     timer, seeded = Timer!, false
 
+    -- All logger instances  write to the same live stream (Aegisub's log window or the CLI's stderr), 
+    -- so we need to track  the last logger that didn't end its last message with a line feed, 
+    -- so another logger's next message can be broken onto a fresh line instead of being glued onto it.
+    streamAtLineStart, streamOpenedBy = true, nil
+
     new: (args) =>
         if args
             @[k] = v for k, v in pairs args
@@ -73,10 +78,19 @@ class Logger
         -- for some reason the stack trace gets swallowed when not doing the replace
         assert level > 1,"#{indentStr}Error: #{prefixWin}#{msg\gsub ':', ': '}"
         if show
-            aegisub.log level, table.concat({indentStr, prefixWin, msg, lineFeed})
+            -- ensure this message starts clean instead of being glued onto unrelated output
+            lineBreak = (not streamAtLineStart and streamOpenedBy != @) and "\n" or ""
+            aegisub.log level, table.concat({lineBreak, indentStr, prefixWin, msg, lineFeed})
+            streamAtLineStart = insertLineFeed
+            streamOpenedBy = if insertLineFeed then nil else @
 
         @lastHadLineFeed = insertLineFeed
         return true
+
+    ---Whether the last message to the  log stream ended with a line feed, or left the stream mid-line.
+    ---Lets a caller decide whether its next output continues that open line or starts fresh.
+    ---@return boolean
+    @isAtLineStart = -> streamAtLineStart
 
     format: (msg, indent, ...) =>
         if type(msg) == "table"

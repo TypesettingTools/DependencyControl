@@ -3,6 +3,7 @@ ffi = require "ffi"
 pcall ffi.cdef, [[
     int CloseHandle(void* hObject);
     int MultiByteToWideChar(unsigned int cp, unsigned long flags, const char* str, int cbMulti, wchar_t* wide, int cchWide);
+    int SetConsoleOutputCP(unsigned int wCodePageID);
 ]]
 
 CP_UTF8 = 65001  -- code page identifier for UTF-8, passed to the *CP() conversion APIs
@@ -25,4 +26,9 @@ haveKernel32, kernel32 = pcall ffi.load, "kernel32"
         buf = ffi.new "wchar_t[?]", n
         kernel32.MultiByteToWideChar CP_UTF8, 0, s, -1, buf, n
         buf
+
+    ---Switches the attached console's output code page to UTF-8.
+    ---Returns false if kernel32 is unavailable or no console is attached (output is redirected).
+    ---@return boolean ok Whether the output code page was switched to UTF-8.
+    setConsoleOutputUTF8: -> haveKernel32 and kernel32.SetConsoleOutputCP(CP_UTF8) != 0 or false
 }

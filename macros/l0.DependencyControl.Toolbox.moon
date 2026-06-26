@@ -5,6 +5,7 @@ export script_author = "line0"
 export script_namespace = "l0.DependencyControl.Toolbox"
 
 DepCtrl = require "l0.DependencyControl"
+Common = DepCtrl.Common
 depRec = DepCtrl {
     feed: "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/master/DependencyControl.json",
     {
@@ -96,7 +97,7 @@ runUpdaterTask = (scriptData, isInstall) ->
     return task\run! if task
     with scriptData
          logger\log DepCtrl.Updater.getUpdaterErrorMsg code, .moduleName or .name,
-            .moduleName and DepCtrl.ScriptType.Module or DepCtrl.ScriptType.Automation, isInstall, extErr
+            .moduleName and Common.ScriptType.Module or Common.ScriptType.Automation, isInstall, extErr
 
 -- Macros
 
@@ -104,12 +105,12 @@ install = ->
     config = getConfig!
 
     addAvailableToInstall = (tbl, feed, scriptType) ->
-        scriptTypeConfigAndFeedKeyName = DepCtrl.ScriptType.name.legacy[scriptType]
+        scriptTypeConfigAndFeedKeyName = Common.ScriptTypeSection[scriptType]
 
         for namespace, data in pairs feed.data[scriptTypeConfigAndFeedKeyName]
             scriptData, err = feed\getScript namespace, scriptType, nil, false
             if err
-                logger\warn msgs.install.createScriptUpdateRecordFailed\format DepCtrl.terms.scriptType.singular[scriptType], namespace, feed.url, err
+                logger\warn msgs.install.createScriptUpdateRecordFailed\format Common.terms.scriptType.singular[scriptType], namespace, feed.url, err
                 continue
 
             channels, defaultChannel = scriptData\getChannels!
@@ -119,7 +120,7 @@ install = ->
                 verNum = DepCtrl.SemanticVersioning\toNumber record.version
                 unless config.c[scriptTypeConfigAndFeedKeyName][namespace] or (tbl[namespace][channel] and verNum < tbl[namespace][channel].verNum)
                     tbl[namespace][channel] = { name: scriptData.name, version: record.version, verNum: verNum, feed: feed.url,
-                                                default: defaultChannel == channel, moduleName: scriptType == DepCtrl.ScriptType.Module and namespace }
+                                                default: defaultChannel == channel, moduleName: scriptType == Common.ScriptType.Module and namespace }
         return tbl
 
     buildDlgList = (tbl) ->
@@ -140,8 +141,8 @@ install = ->
 
     logger\log msgs.install.scanning, #feeds
     for feed in *feeds
-        macros = addAvailableToInstall macros, feed, DepCtrl.ScriptType.Automation
-        modules = addAvailableToInstall modules, feed, DepCtrl.ScriptType.Module
+        macros = addAvailableToInstall macros, feed, Common.ScriptType.Automation
+        modules = addAvailableToInstall modules, feed, Common.ScriptType.Module
 
     -- build macro and module lists as well as reverse mappings
     moduleList, moduleMap = buildDlgList modules
@@ -258,7 +259,7 @@ scheduleUpdatesAndRegisterTests = ->
             logger\trace msgs.scheduleUpdatesAndRegisterTests.scheduleError, record.name or record.namespace, 
                 DepCtrl.Updater.getUpdaterErrorMsg errMsgOrErrCode, record.name or record.namespace, record.scriptType, false, errDetail
         
-        if record.tests and record.scriptType == DepCtrl.ScriptType.Module
+        if record.tests and record.scriptType == Common.ScriptType.Module
             success, errMsg = pcall record.tests\registerMacros
             unless success
                 logger\trace msgs.scheduleUpdatesAndRegisterTests.registerMacrosError, record.name or record.namespace, errMsg
