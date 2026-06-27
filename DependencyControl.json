@@ -542,7 +542,8 @@
           "Unit test framework: `assertContains` now honors its case-insensitive option (it previously always compared case-sensitively) and reports a proper message when the assertion fails.",
           "Unit test framework: a failing test-class setup is now reported as a failure instead of aborting the entire test run with an internal error.",
           "Unit test framework: a failing `assertNegative` now says \"negative\" rather than \"positive\" in its message.",
-          "Updater: the temporary download directory is now removed after a successful install instead of being left behind."
+          "Updater: the temporary download directory is now removed after a successful install instead of being left behind.",
+          "FileOps: `mkdir` no longer reports success when the directory could not actually be created."
         ]
       }
     },

@@ -564,8 +564,8 @@ class FileOps
         elseif not mode
             return mkdirRecursive dir if recurse
             res, err = lfs.mkdir dir
-            if err -- can't create directory (possibly a permission error)
-                return nil, msgs.mkdir.createError\format err
+            unless res -- can't create directory (some lfs builds signal failure with a bare nil)
+                return nil, msgs.mkdir.createError\format(err or "unknown error")
             return true, dir
         elseif isFile and mode == "file" -- if the file already exists, so does the directory
             return false, dir
