@@ -266,7 +266,7 @@ class FileOps
             -- file not found or permission issue
             else details[path] = {nil, path}
 
-        config\write! if configLoaded
+        config\save! if configLoaded
         return overallSuccess, details, firstErr
 
     ---Replays removals previously scheduled by remove().
@@ -284,7 +284,7 @@ class FileOps
             -- rescheduled removals will not be rescheduled another time
             FileOps.remove paths, true
             config.c.toRemove = {}
-            config\write!
+            config\save!
         return true
 
     ---Copies a file to a target path.

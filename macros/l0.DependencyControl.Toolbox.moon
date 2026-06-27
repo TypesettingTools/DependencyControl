@@ -230,7 +230,7 @@ macroConfig = ->
         elseif v != ""
             config.c[nsp][prop] = v
 
-    config\write!
+    config\save!
 
 depRec\registerMacros{
     {"Install Script", "Installs an automation script or module on your system.", install},

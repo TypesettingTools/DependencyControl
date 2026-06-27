@@ -196,11 +196,16 @@ class ConfigView
         @__configHandler\save @, waitLockTime
 
 
-    -- deprecated, provided for compatibility with DepCtrl < 0.7
+    ---@deprecated Use `save`. Retained as an alias for callers written against DepCtrl < 0.7.
+    ---@param waitLockTime? number Seconds to wait for the config lock.
+    ---@return boolean? success
+    ---@return string? err
     write: (waitLockTime) => @save waitLockTime
 
-    -- deprecated, provided for compatibility with DepCtrl < 0.7
-    -- Attaches this view to a different config file path.
+    ---Attaches this view to a different config file, without loading it (the caller loads separately).
+    ---@param filePath string Full path to the config file.
+    ---@return boolean? success
+    ---@return string? err
     setFile: (filePath) =>
         ConfigHandler or= require "l0.DependencyControl.ConfigHandler"
         logger = @__configHandler and @__configHandler.logger
@@ -210,8 +215,8 @@ class ConfigView
         @file = handler.filePath
         return true
 
-    -- deprecated, provided for compatibility with DepCtrl < 0.7
-    -- Detaches this view from its config file (reverts to orphan/in-memory state).
+    ---Detaches this view from its config file, reverting to an in-memory (orphan) state.
+    ---@return boolean success
     unsetFile: =>
         ConfigHandler or= require "l0.DependencyControl.ConfigHandler"
         @__configHandler = ConfigHandler nil, @__configHandler and @__configHandler.logger
@@ -219,8 +224,12 @@ class ConfigView
         @userConfig = {}
         return true
 
-    -- deprecated, provided for compatibility with DepCtrl < 0.7
-    -- Returns a new ConfigView for a child hive of this view's handler.
+    ---Returns a ConfigView for a child hive of this view's config.
+    ---@param hivePath string|string[] Path to the child hive, relative to this view.
+    ---@param defaults? table Default values for the child view.
+    ---@param noLoad? boolean Skip loading the child view (the caller loads it separately).
+    ---@return ConfigView? view
+    ---@return string? err
     getSectionHandler: (hivePath, defaults, noLoad) =>
         view, msg = @__configHandler\getView hivePath, defaults
         return nil, msg unless view

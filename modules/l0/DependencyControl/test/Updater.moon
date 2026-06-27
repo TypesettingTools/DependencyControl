@@ -92,7 +92,7 @@
       updater = makeScheduleUpdater {updaterEnabled: true, updateInterval: 0}
       record = {
         virtual: false, name: "X", namespace: "l0.x", scriptType: Common.ScriptType.Module
-        config: {c: {}, write: (=>)}
+        config: {c: {}, save: (=>)}
         getEntryPointPath: (=> "data/path", false)
       }
       code, path = Updater.scheduleUpdate updater, record
@@ -104,7 +104,7 @@
       updater = makeScheduleUpdater {updaterEnabled: true, updateInterval: 0, :task}
       record = {
         virtual: false, name: "X", namespace: "l0.x", scriptType: Common.ScriptType.Module
-        config: {c: {}, write: (=>)}
+        config: {c: {}, save: (=>)}
         getEntryPointPath: (=> "user/path", true)
       }
       ut\assertEquals (Updater.scheduleUpdate updater, record), UpdateStatus.Installed

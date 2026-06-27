@@ -140,7 +140,7 @@ class Updater
             return UpdateStatus.UpToDate
 
         record.config.c.lastUpdateCheck = os.time!
-        record.config\write!
+        record.config\save!
 
         -- don't shadow scripts installed to the ?data automation dir with a ?user copy
         entryPath, isUserPath = record\getEntryPointPath!
