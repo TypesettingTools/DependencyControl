@@ -387,7 +387,7 @@ class UnitTest
     assertNegative: (actual, includeZero = false) =>
         @checkArgTypes actual: {actual, "number"}, includeZero: {includeZero, "boolean"}
         res = includeZero and actual <= 0 or actual < 0
-        @assert res, @@msgs.assert.positiveNegative, "positive",
+        @assert res, @@msgs.assert.positiveNegative, "negative",
                        includeZero and "included" or "excluded"
 
 
