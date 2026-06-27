@@ -379,7 +379,7 @@ class UnitTest
         @checkArgTypes actual: {actual, "number"}, includeZero: {includeZero, "boolean"}
         res = includeZero and actual >= 0 or actual > 0
         @assert res, @@msgs.assert.positiveNegative, "positive",
-                       includeZero and "included" or "excluded"
+                       (includeZero and "included" or "excluded"), actual
 
     ---Fails the assertion if a specified number is greater than or equal to 0.
     ---@param actual number The value.
@@ -388,7 +388,7 @@ class UnitTest
         @checkArgTypes actual: {actual, "number"}, includeZero: {includeZero, "boolean"}
         res = includeZero and actual <= 0 or actual < 0
         @assert res, @@msgs.assert.positiveNegative, "negative",
-                       includeZero and "included" or "excluded"
+                       (includeZero and "included" or "excluded"), actual
 
 
     -- generic asserts

@@ -24,6 +24,7 @@ UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
     Common:             (controls\requireTest "Common") basePath
     FileOps:            (controls\requireTest "FileOps") basePath, isWindows
     Logger:             (controls\requireTest "Logger")!
+    UnitTestSuite:      (controls\requireTest "UnitTestSuite")!
     Enum:               (controls\requireTest "Enum")!
     SemanticVersioning: (controls\requireTest "SemanticVersioning")!
     Lock:               (controls\requireTest "Lock")!

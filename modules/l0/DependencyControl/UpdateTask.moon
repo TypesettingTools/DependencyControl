@@ -7,7 +7,6 @@ Enum =       require "l0.DependencyControl.Enum"
 ModuleLoader = require "l0.DependencyControl.ModuleLoader"
 SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
 UnitTestSuite = require "l0.DependencyControl.UnitTestSuite"
-DependencyControl = nil
 
 -- How preferred a candidate package source is, in highest-to-lowest trust order.
 ---@alias UpdaterTrustBand
@@ -215,7 +214,11 @@ msgs = {
 ---Mutable execution state for one install/update operation.
 ---@class UpdateTask
 class UpdateTask
-    downloader = Downloader!
+    ---@private
+    @__downloader = Downloader!
+    ---DependencyControl's own class, required lazily to break the circular dependency.
+    ---@private
+    @__DependencyControl = nil
 
     ---Converts updater status/error codes into user-facing error messages.
     ---@param code number
@@ -244,8 +247,8 @@ class UpdateTask
     ---@param reason? UpdateReason Why this task runs; a prompt is allowed only when this reason is permitted by that prompt kind's configured threshold.
     ---@param updater Updater
     new: (@record, targetVersionNumber = 0, @addFeeds, @optional, @channel, @reason, @updater) =>
-        DependencyControl or= require "l0.DependencyControl"
-        assert @record.__class == DependencyControl, "First parameter must be a #{DependencyControl.__name} object."
+        @@__DependencyControl or= require "l0.DependencyControl"
+        assert @record.__class == @@__DependencyControl, "First parameter must be a #{@@__DependencyControl.__name} object."
         assert type(targetVersionNumber) == "number", "Second parameter must be a semantic version number in integer format."
 
         @logger = @updater.logger
@@ -460,8 +463,8 @@ class UpdateTask
     ---@return string? detail Error detail on failure.
     ---@private
     __installProvider: (provider, feedUrl) =>
-        DependencyControl or= require "l0.DependencyControl"
-        providerRecord = DependencyControl {
+        @@__DependencyControl or= require "l0.DependencyControl"
+        providerRecord = @@.__DependencyControl {
             moduleName: provider.namespace, name: provider.name or provider.namespace,
             version: -1, virtual: true, feed: feedUrl, url: provider.url
         }
@@ -575,7 +578,7 @@ class UpdateTask
             return 2
 
         -- check internet connection
-        return @__logUpdateError -7 unless downloader\isInternetConnected!
+        return @__logUpdateError -7 unless @@__downloader\isInternetConnected!
 
         -- get a lock on the updater
         success, otherHost = @updater\acquireLock waitLock
@@ -852,7 +855,7 @@ class UpdateTask
         scriptSubDir = @record.namespace
         scriptSubDir = scriptSubDir\gsub "%.","/" if @record.scriptType == Common.ScriptType.Module
 
-        downloader\clear!
+        @@__downloader\clear!
         for file in *update.files
             file.type or= "script"
 
@@ -877,17 +880,17 @@ class UpdateTask
                 @logger\trace msgs.performUpdate.fileUnchanged, prettyName
                 continue
 
-            dl, err = downloader\addDownload file.url, tmpName, file.sha1
+            dl, err = @@__downloader\addDownload file.url, tmpName, file.sha1
             return finish -140, err unless dl
             dl.targetFile = file.fullName
             @logger\trace msgs.performUpdate.fileAddDownload, file.url, prettyName
 
-        downloader\await (_, progress) ->
+        @@__downloader\await (_, progress) ->
             @updater\renewLock!
-            @logger\progress progress, msgs.performUpdate.filesDownloading, #downloader.downloads
+            @logger\progress progress, msgs.performUpdate.filesDownloading, #@@__downloader.downloads
         @logger\progress!
 
-        failedDownloads = [dl for dl in *downloader.downloads when dl.status == Downloader.Download.Status.Failed]
+        failedDownloads = [dl for dl in *@@__downloader.downloads when dl.status == Downloader.Download.Status.Failed]
         if #failedDownloads>0
             err = @logger\format ["#{dl.url}: #{dl.error}" for dl in *failedDownloads], 1
             return finish -245, err
@@ -898,7 +901,7 @@ class UpdateTask
         @logger\log msgs.performUpdate.movingFiles, @record.automationDir
         moveErrors = {}
         @logger.indent += 1
-        for dl in *downloader.downloads
+        for dl in *@@__downloader.downloads
             res, err = fileOps.move dl.outfile, dl.targetFile, true
             -- don't immediately error out if moving of a single file failed
             -- try to move as many files as possible and let the user handle the rest
@@ -926,12 +929,12 @@ class UpdateTask
                 else return finish -55
 
             -- get a fresh version record
-            if type(ref.version) == "table" and ref.version.__class.__name == DependencyControl.__name
+            if type(ref.version) == "table" and ref.version.__class.__name == @@__DependencyControl.__name
                 @record = ref.version
             else
                 -- look for any compatible non-DepCtrl version records and create an unmanaged record
                 return finish -57 unless ref.version
-                success, rec = pcall DependencyControl, { moduleName: @record.moduleName, version: ref.version,
+                success, rec = pcall @@__DependencyControl, { moduleName: @record.moduleName, version: ref.version,
                                                           recordType: Common.RecordType.Unmanaged, name: @record.name }
                 return finish -58, rec unless success
                 @record = rec

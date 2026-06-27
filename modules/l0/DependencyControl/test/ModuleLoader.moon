@@ -4,6 +4,8 @@
   constants    = require "l0.DependencyControl.Constants"
   Common       = require "l0.DependencyControl.Common"
   ModuleLoader = require "l0.DependencyControl.ModuleLoader"
+  ModuleProvider = require "l0.DependencyControl.ModuleProvider"
+  SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
 
   DEPCTRL_DUMMY_MODULE_MARKER = "#{constants.DEPCTRL_PRIVATE_GLOBAL_VAR_PREFIX}Dummy"
 
@@ -166,6 +168,77 @@
       ut\assertTrue success
       ut\assertEquals err, ""
 
+    -- loadModules: a missing module is fetched through the updater; on success it's marked updated.
+    -- @@ (the host record's class) must be callable (constructs the to-fetch record) and carry an
+    -- `updater` whose `require` performs the fetch.
+    loadModules_missingFetchedViaUpdater: (ut) ->
+      ns = "test.ModuleLoader.missingFetch"
+      mockRef = {fetched: true}
+      updater = {require: ((...) => mockRef)}
+      recClass = setmetatable {ScriptType: Common.ScriptType, __name: "DependencyControl", :updater},
+                              {__call: (cls, args) -> {}}
+      rec = {feed: nil, moduleName: "host.Module", name: "host", __class: recClass}
+      mdl = {moduleName: ns, name: ns, version: nil}
+      (ut\stub ModuleLoader, "loadModule")\calls (self, m, usePrivate) -> m._missing = true unless usePrivate
+      success, err = ModuleLoader.loadModules rec, {mdl}
+      ut\assertTrue success
+      ut\assertEquals err, ""
+      ut\assertTrue mdl._updated
+      ut\assertFalse mdl._missing
+
+    -- loadModules: a missing *required* module the updater can't fetch fails, and the circular-dependency
+    -- dummy ref is cleared.
+    loadModules_missingRequiredFails: (ut) ->
+      ns = "test.ModuleLoader.missingFail"
+      updaterClass = {getUpdaterErrorMsg: (code, name) -> "fetch failed: #{name}"}
+      updater = {require: ((...) => return nil, -6, "no feed"), __class: updaterClass}
+      recClass = setmetatable {ScriptType: Common.ScriptType, __name: "DependencyControl", :updater},
+                              {__call: (cls, args) -> {}}
+      rec = {feed: nil, moduleName: "host.Module", name: "host", __class: recClass}
+      mdl = {moduleName: ns, name: ns, version: nil, optional: false}
+      (ut\stub ModuleLoader, "loadModule")\calls (self, m, usePrivate) -> m._missing = true unless usePrivate
+      LOADED_MODULES = LOADED_MODULES or {}
+      LOADED_MODULES[ns] = {dummy: true}
+      success, err = ModuleLoader.loadModules rec, {mdl}
+      ut\assertFalse success
+      ut\assertContains err, ns
+      ut\assertNil LOADED_MODULES[ns]   -- dummy ref nuked
+
+    -- loadModules: an outdated installed module is force-updated through the updater; the fresh ref
+    -- replaces the loaded one. (isDepCtrlVersionRecord is stubbed so the loaded version record is used
+    -- as-is rather than wrapped in an unmanaged record.)
+    loadModules_outdatedForcesUpdate: (ut) ->
+      ns = "test.ModuleLoader.outdated"
+      newRef = {updated: true}
+      loadedRef = {version: {version: 65793, checkVersion: ((target) => false)}}  -- installed but too old
+      updater = {require: ((...) => newRef)}
+      recClass = setmetatable {ScriptType: Common.ScriptType, __name: "DependencyControl", :updater},
+                              {__call: (cls, args) -> {}}
+      rec = {feed: nil, moduleName: "host.Module", name: "host", __class: recClass}
+      mdl = {moduleName: ns, name: ns, version: SemanticVersioning\toNumber "2.0.0"}
+      (ut\stub ModuleLoader, "loadModule")\calls (self, m, usePrivate) -> m._ref = loadedRef unless usePrivate
+      ut\stub(ModuleProvider, "isDepCtrlVersionRecord")\returns true
+      success, err = ModuleLoader.loadModules rec, {mdl}
+      ut\assertTrue success
+      ut\assertEquals err, ""
+      ut\assertEquals mdl._ref, newRef
+
+    -- loadModules: an outdated *required* module the updater can't update fails with an "outdated" error
+    loadModules_outdatedRequiredFails: (ut) ->
+      ns = "test.ModuleLoader.outdatedFail"
+      loadedRef = {version: {version: 65793, checkVersion: ((target) => false)}}
+      updaterClass = {getUpdaterErrorMsg: (code, name) -> "too old: #{name}"}
+      updater = {require: ((...) => return nil, -6, "no newer version"), __class: updaterClass}
+      recClass = setmetatable {ScriptType: Common.ScriptType, __name: "DependencyControl", :updater},
+                              {__call: (cls, args) -> {}}
+      rec = {feed: nil, moduleName: "host.Module", name: "host", __class: recClass}
+      mdl = {moduleName: ns, name: ns, version: SemanticVersioning\toNumber "2.0.0", optional: false}
+      (ut\stub ModuleLoader, "loadModule")\calls (self, m, usePrivate) -> m._ref = loadedRef unless usePrivate
+      ut\stub(ModuleProvider, "isDepCtrlVersionRecord")\returns true
+      success, err = ModuleLoader.loadModules rec, {mdl}
+      ut\assertFalse success
+      ut\assertContains err, ns
+
     -- checkOptionalModules: mock self with requiredModules
 
     checkOptionalModules_noneOptional: (ut) ->
@@ -200,6 +273,8 @@
       "removeDummyRef_nonModule", "removeDummyRef_dummy", "removeDummyRef_nonDummy",
       "loadModule_cached", "loadModule_success", "loadModule_missing", "loadModule_error",
       "loadModules_skipsModule", "loadModules_allLoaded",
+      "loadModules_missingFetchedViaUpdater", "loadModules_missingRequiredFails",
+      "loadModules_outdatedForcesUpdate", "loadModules_outdatedRequiredFails",
       "checkOptionalModules_noneOptional", "checkOptionalModules_missingOptional"
     }
   }

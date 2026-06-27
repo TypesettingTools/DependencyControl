@@ -5,6 +5,10 @@
   UpdateTask = require "l0.DependencyControl.UpdateTask"
   UnitTestSuite = require "l0.DependencyControl.UnitTestSuite"
   SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
+  FileOps = require "l0.DependencyControl.FileOps"
+  UpdateFeed = require "l0.DependencyControl.UpdateFeed"
+  Downloader = require "l0.DependencyControl.Downloader"
+  ModuleLoader = require "l0.DependencyControl.ModuleLoader"
 
   PromptThreshold = UpdateTask.PromptThreshold
   UpdateReason = UpdateTask.UpdateReason
@@ -156,6 +160,88 @@
         opts.trustReturn
     }, __index: UpdateTask.__base
     task
+
+  -- A stub task self for run() itself. Its fake __class carries the mockable download engine for
+  -- the internet check; __resolve returns a scripted resolution and the dispatch targets record their
+  -- calls in `calls`. The metatable resolves run()'s own __base methods (e.g. __logUpdateError).
+  -- opts: resolution; running, updated, virtual (default true), isUserPath, online (default true),
+  -- lockOk (default true), installedSatisfies (drives record\checkVersion), targetVersion;
+  -- performUpdateReturn {code, detail}, installProviderReturn {ref, code, detail}.
+  makeRunTask = (opts = {}) ->
+    calls = {}
+    setmetatable {
+      __class: {__downloader: {isInternetConnected: (=> opts.online != false)}}
+      :calls
+      running: opts.running
+      updated: opts.updated
+      targetVersion: opts.targetVersion or 0
+      record: {
+        name: "TestMod", namespace: "l0.TestMod", scriptType: Common.ScriptType.Module, version: 0
+        virtual: opts.virtual != false
+        getEntryPointPath: (=> "entry/path", opts.isUserPath)
+        checkVersion: (=> opts.installedSatisfies and true or false)
+      }
+      updater: {acquireLock: (=> opts.lockOk != false, "otherHost")}
+      logger: {log: ->, trace: ->, progress: ->}
+      __resolve: =>
+        calls.resolved = true
+        opts.resolution
+      __persistSource: (sel, st) => calls.persisted = {selected: sel, stickiness: st}
+      performUpdate: (update) =>
+        calls.performUpdate = update
+        unpack(opts.performUpdateReturn or {1, "performed"})
+      __installProvider: (rec, url) =>
+        calls.installProvider = {:rec, :url}
+        unpack(opts.installProviderReturn or {})
+    }, __index: UpdateTask.__base
+
+  -- A stub task self for __installProvider: its fake __class carries a mockable DependencyControl
+  -- constructor (here one that wraps its ctor args for inspection), and updater.require records its call
+  -- in `opts.capture` and returns opts.requireReturn.
+  makeProviderTask = (opts = {}) ->
+    cap = opts.capture or {}
+    setmetatable {
+      __class: {__DependencyControl: opts.depCtrl}
+      addFeeds: opts.addFeeds or {}
+      targetVersion: opts.targetVersion or 0
+      optional: opts.optional
+      reason: opts.reason
+      updater: {
+        require: (record, targetVersion, addFeeds, optional, channel, reason) =>
+          cap.record, cap.addFeeds = record, addFeeds
+          cap.targetVersion, cap.optional, cap.reason = targetVersion, optional, reason
+          unpack(opts.requireReturn or {})
+      }
+    }, __index: UpdateTask.__base
+
+  -- A stub task self for performUpdate: a non-virtual record (so the dummy-ref + requiredModules preamble
+  -- is skipped) and a fake __class carrying a stub download engine. FileOps/UpdateFeed statics are
+  -- stubbed per-test. opts: downloadStatus (the status each created download ends up in), addDownloadFails.
+  makePerformTask = (opts = {}) ->
+    engine = {downloads: {}}
+    engine.clear = (self) -> self.downloads = {}
+    engine.addDownload = (self, url, outfile, sha1) ->
+      return nil, "add failed: #{url}" if opts.addDownloadFails
+      d = {:url, :outfile, :sha1, error: "download boom"
+           status: opts.downloadStatus or Downloader.Download.Status.Finished}
+      self.downloads[#self.downloads + 1] = d
+      d
+    engine.await = (self, cb) -> cb nil, 1
+    setmetatable {
+      __class: {__downloader: engine, __DependencyControl: {__name: "DependencyControl"}}
+      running: false
+      updated: false
+      targetVersion: 0
+      record: {
+        name: "TestMod", namespace: "l0.test", automationDir: "auto", version: 0
+        scriptType: Common.ScriptType.Module, virtual: false
+      }
+      updater: {renewLock: (=>)}
+      logger: {
+        log: ->, trace: ->, progress: ->, indent: 0
+        format: (arr) => table.concat (arr or {}), "; "
+      }
+    }, __index: UpdateTask.__base
 
   {
     _description: "Tests for UpdateTask: candidate selection/ranking, interactivity gating, the trust/choice prompts, feed-prefix matching, and installed-provider lookup."
@@ -679,6 +765,216 @@
       ut\assertEquals d.selectedSource, pick
       ut\assertEquals task.calls.select, 1
 
+    -- blocked feed: a block-listed feed is skipped entirely (not even fetched, and despite being
+    -- trusted); with no other source the required install fails
+    resolve_blockedFeedSkipped: (ut) ->
+      task = makeResolveTask {
+        declaredFeed: "feed://blocked", officialTrusted: {"feed://blocked": true}
+        config: {blockedFeeds: {"feed://blocked"}}
+        feeds: {"feed://blocked": {direct: directRec version: "1.0.0"}}
+      }
+      d = UpdateTask.__resolve task
+      ut\assertFalse d.installRequired
+      ut\assertEquals d.statusCode, -6
+      ut\assertNil task.triedFeeds["feed://blocked"]   -- skipped before being fetched
+
+    -- userFeed: an exclusive override feed is consulted in place of the declared-feed cascade
+    resolve_userFeedUsedExclusively: (ut) ->
+      task = makeResolveTask {
+        declaredFeed: "feed://decl", userFeed: "feed://user"
+        feeds: {"feed://decl": {direct: directRec version: "9.9.9"}, "feed://user": {direct: directRec version: "1.0.0"}}
+      }
+      d = UpdateTask.__resolve task
+      ut\assertTrue d.installRequired
+      ut\assertEquals d.selectedSource.feedUrl, "feed://user"
+      ut\assertNil task.triedFeeds["feed://decl"]   -- the declared feed is never consulted
+
+    -- run(): a direct-install resolution is persisted, then dispatched to performUpdate
+    run_dispatchesDirectInstall: (ut) ->
+      task = makeRunTask {
+        virtual: false   -- so the post-resolve up-to-date check runs
+        resolution: {
+          installRequired: true, stickiness: SourceChoiceStickiness.Once, maxVersion: 0
+          selectedSource: {isDirect: true, updateRecord: {version: "1.0.0"}}
+        }
+      }
+      code = UpdateTask.run task
+      ut\assertEquals code, 1
+      ut\assertNotNil task.calls.persisted
+      ut\assertNotNil task.calls.performUpdate
+      ut\assertNil task.calls.installProvider
+
+    -- run(): a provider (indirect) resolution is dispatched to installProvider, not performUpdate
+    run_dispatchesProviderInstall: (ut) ->
+      providerRef = {ref: true}
+      task = makeRunTask {
+        installProviderReturn: {providerRef}
+        resolution: {
+          installRequired: true, stickiness: SourceChoiceStickiness.Once, maxVersion: 0
+          selectedSource: {
+            isDirect: false, feedUrl: "feed://p"
+            updateRecord: {namespace: "l0.p", name: "P", version: "2.0.0"}
+          }
+        }
+      }
+      code, detail = UpdateTask.run task
+      ut\assertEquals code, 1
+      ut\assertEquals detail, "2.0.0"
+      ut\assertNotNil task.calls.installProvider
+      ut\assertNil task.calls.performUpdate
+
+    -- run(): when the chosen direct source already satisfies the installed version, short-circuit to 0
+    run_upToDateShortCircuits: (ut) ->
+      task = makeRunTask {
+        virtual: false, installedSatisfies: true
+        resolution: {
+          installRequired: true, stickiness: SourceChoiceStickiness.Once, maxVersion: 0
+          selectedSource: {isDirect: true, updateRecord: {version: "1.0.0"}}
+        }
+      }
+      code = UpdateTask.run task
+      ut\assertEquals code, 0
+      ut\assertNil task.calls.performUpdate   -- no install performed
+      ut\assertNotNil task.calls.persisted    -- but the source choice is still recorded
+
+    -- run(): a terminal resolution (no install required) returns its status without dispatching
+    run_terminalResolutionReturnsStatus: (ut) ->
+      task = makeRunTask {
+        resolution: {installRequired: false, statusCode: -16, statusDetailMessage: "feed://x"}
+      }
+      code, detail = UpdateTask.run task
+      ut\assertEquals code, -16
+      ut\assertEquals detail, "feed://x"
+      ut\assertNil task.calls.persisted
+      ut\assertNil task.calls.performUpdate
+
+    -- run(): the internet-connectivity guard fails (-7) before resolution is even attempted
+    run_noInternetGuard: (ut) ->
+      task = makeRunTask {online: false, resolution: {installRequired: false, statusCode: 0}}
+      code = UpdateTask.run task
+      ut\assertEquals code, -7
+      ut\assertNil task.calls.resolved   -- the guard returns before resolve()
+
+    -- __installProvider: builds a virtual provider record from the feed entry, appends the provider's
+    -- feed to addFeeds, and installs it through the updater (forwarding targetVersion/optional/reason)
+    installProvider_constructsRecordAndRequires: (ut) ->
+      cap = {}
+      fakeRef = {ref: true}
+      task = makeProviderTask {
+        depCtrl: ((args) -> {ctorArgs: args})
+        addFeeds: {"feed://a"}, targetVersion: 0x10000, optional: true, reason: UpdateReason.UserRequested
+        requireReturn: {fakeRef}, capture: cap
+      }
+      provider = {namespace: "l0.prov", name: "Prov", url: "http://prov/x.zip"}
+      ref = UpdateTask.__installProvider task, provider, "feed://prov"
+      ut\assertEquals ref, fakeRef
+      ctor = cap.record.ctorArgs
+      ut\assertEquals ctor.moduleName, "l0.prov"
+      ut\assertEquals ctor.version, -1
+      ut\assertTrue ctor.virtual
+      ut\assertEquals ctor.feed, "feed://prov"
+      ut\assertEquals ctor.url, "http://prov/x.zip"
+      ut\assertEquals cap.addFeeds[1], "feed://a"
+      ut\assertEquals cap.addFeeds[2], "feed://prov"   -- the provider's feed is appended
+      ut\assertEquals cap.targetVersion, 0x10000
+      ut\assertTrue cap.optional
+      ut\assertEquals cap.reason, UpdateReason.UserRequested
+
+    -- performUpdate: a temp-directory creation failure aborts with -30
+    performUpdate_tempDirFailure: (ut) ->
+      ut\stub(FileOps, "getTempDir")\returns "tmp"
+      ut\stub(FileOps, "mkdir")\returns nil, "denied"
+      code = UpdateTask.performUpdate makePerformTask!, {version: 0x10000, files: {}}
+      ut\assertEquals code, -30
+
+    -- performUpdate: a file name containing ".." is rejected as a path-traversal attempt (-33)
+    performUpdate_rejectsPathTraversal: (ut) ->
+      ut\stub(FileOps, "getTempDir")\returns "tmp"
+      ut\stub(FileOps, "mkdir")\returns true, "tmp"
+      update = {version: 0x10000, files: {{name: "../evil.moon", type: "script"}}}
+      code, detail = UpdateTask.performUpdate makePerformTask!, update
+      ut\assertEquals code, -33
+      ut\assertEquals detail, "../evil.moon"
+
+    -- performUpdate: a file with a malformed sha1 hash is rejected (-35)
+    performUpdate_rejectsBadSha1: (ut) ->
+      ut\stub(FileOps, "getTempDir")\returns "tmp"
+      ut\stub(FileOps, "mkdir")\returns true, "tmp"
+      ut\stub(UpdateFeed, "getFileDeployPath")\returns "deploy/x.moon"
+      update = {version: 0x10000, files: {{name: "x.moon", type: "script", sha1: "abc"}}}   -- not 40 hex chars
+      code = UpdateTask.performUpdate makePerformTask!, update
+      ut\assertEquals code, -35
+
+    -- performUpdate: a download that ends in a Failed status is reported (-245)
+    performUpdate_reportsFailedDownloads: (ut) ->
+      ut\stub(FileOps, "getTempDir")\returns "tmp"
+      ut\stub(FileOps, "mkdir")\returns true, "tmp"
+      ut\stub(UpdateFeed, "getFileDeployPath")\returns "deploy/x.moon"
+      ut\stub(FileOps, "verifyHash")\returns false   -- not already on disk → it gets downloaded
+      task = makePerformTask {downloadStatus: Downloader.Download.Status.Failed}
+      update = {version: 0x10000, files: {{name: "x.moon", type: "script", url: "http://x", sha1: string.rep "a", 40}}}
+      code = UpdateTask.performUpdate task, update
+      ut\assertEquals code, -245
+
+    -- performUpdate: a failed file move (after a successful download) is reported (-50)
+    performUpdate_reportsMoveFailures: (ut) ->
+      ut\stub(FileOps, "getTempDir")\returns "tmp"
+      ut\stub(FileOps, "mkdir")\returns true, "tmp"
+      ut\stub(UpdateFeed, "getFileDeployPath")\returns "deploy/x.moon"
+      ut\stub(FileOps, "verifyHash")\returns false
+      ut\stub(FileOps, "move")\returns nil, "move denied"
+      task = makePerformTask {downloadStatus: Downloader.Download.Status.Finished}
+      update = {version: 0x10000, files: {{name: "x.moon", type: "script", url: "http://x", sha1: string.rep "a", 40}}}
+      code = UpdateTask.performUpdate task, update
+      ut\assertEquals code, -50
+
+    -- performUpdate happy path (module): after a successful download+move, the module is reloaded and the
+    -- task's record is swapped to the fresh DependencyControl version record; returns 1 and the new version
+    performUpdate_reloadsModuleAndRefreshesRecord: (ut) ->
+      ut\stub(FileOps, "getTempDir")\returns "tmp"
+      ut\stub(FileOps, "mkdir")\returns true, "tmp"
+      ut\stub(UpdateFeed, "getFileDeployPath")\returns "deploy/x.moon"
+      ut\stub(FileOps, "verifyHash")\returns false
+      ut\stub(FileOps, "move")\returns true
+      ut\stub(FileOps, "rmdir")\returns true
+      newRecord = {__class: {__name: "DependencyControl"}, version: SemanticVersioning\toNumber "1.0.0"}
+      ut\stub(ModuleLoader, "loadModule")\returns {version: newRecord}
+      task = makePerformTask {downloadStatus: Downloader.Download.Status.Finished}
+      update = {
+        version: "1.0.0", getChangelog: ((rec, ver) => "")
+        files: {{name: "x.moon", type: "script", url: "http://x", sha1: string.rep "a", 40}}
+      }
+      code, detail = UpdateTask.performUpdate task, update
+      ut\assertEquals code, 1
+      ut\assertEquals detail, "1.0.0"
+      ut\assertTrue task.updated
+      ut\assertIs task.record, newRecord   -- record swapped to the freshly-loaded version record
+
+    -- refreshRecord: another updater installed the module while we waited for the lock → adopt the result
+    refreshRecord_detectsExternalInstall: (ut) ->
+      loadedRef = {fresh: true}
+      ut\stub(ModuleLoader, "loadModule")\returns loadedRef
+      record = {
+        virtual: true, version: 0, scriptType: Common.ScriptType.Module, name: "Dep"
+        loadConfig: (force) =>
+          @virtual = false
+          @version = SemanticVersioning\toNumber "1.0.0"
+      }
+      task = setmetatable {updated: false, logger: {log: ->}, :record}, __index: UpdateTask.__base
+      UpdateTask.refreshRecord task
+      ut\assertTrue task.updated
+      ut\assertIs task.ref, loadedRef
+
+    -- refreshRecord: nothing changed since the last check → the task is left untouched
+    refreshRecord_noChangeStaysUntouched: (ut) ->
+      record = {
+        virtual: false, version: SemanticVersioning\toNumber "1.0.0"
+        scriptType: Common.ScriptType.Module, name: "Dep", loadConfig: (force) => nil
+      }
+      task = setmetatable {updated: false, logger: {log: ->}, :record}, __index: UpdateTask.__base
+      UpdateTask.refreshRecord task
+      ut\assertFalse task.updated
+
     _order: {
       "selectCandidate_filtersByVersion", "selectCandidate_noneSatisfiesVersion",
       "selectCandidate_skipsUnsupportedPlatform", "selectCandidate_skipsEmptyFiles", "selectCandidate_noneEligible",
@@ -709,6 +1005,14 @@
       "resolve_pinnedReuseProceeds", "resolve_pinnedMissingRequiredAborts", "resolve_pinnedMissingOptionalSkips",
       "resolve_retainReuseProceeds", "resolve_retainMissingNonInteractiveDowngrades",
       "resolve_retainMissingInteractivePicks", "resolve_choiceAbortRequiredFails",
-      "resolve_autoNeverPrompts", "resolve_offerAllSourcesPromptsOnMultiple"
+      "resolve_autoNeverPrompts", "resolve_offerAllSourcesPromptsOnMultiple",
+      "resolve_blockedFeedSkipped", "resolve_userFeedUsedExclusively",
+      "run_dispatchesDirectInstall", "run_dispatchesProviderInstall", "run_upToDateShortCircuits",
+      "run_terminalResolutionReturnsStatus", "run_noInternetGuard",
+      "installProvider_constructsRecordAndRequires",
+      "performUpdate_tempDirFailure", "performUpdate_rejectsPathTraversal", "performUpdate_rejectsBadSha1",
+      "performUpdate_reportsFailedDownloads", "performUpdate_reportsMoveFailures",
+      "performUpdate_reloadsModuleAndRefreshesRecord",
+      "refreshRecord_detectsExternalInstall", "refreshRecord_noChangeStaysUntouched"
     }
   }
