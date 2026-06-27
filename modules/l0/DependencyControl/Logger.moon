@@ -147,7 +147,7 @@ class Logger
                 @progressStep = 0
                 msg ..= " " if #msg>0
                 @logEx nil, "#{msg}[", false, nil, nil, ...
-            step = math.floor(progress * 0.01 + 0.5) / 0.1
+            step = math.floor(progress * 0.1 + 0.5)
             @logEx nil, "■"\rep(step-@progressStep), false, ""
             @progressStep = step
 
