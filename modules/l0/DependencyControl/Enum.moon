@@ -37,7 +37,9 @@ msgs = {
 ---@class Enum
 class Enum
   @logger = Logger fileBaseName: "DependencyControl.Enum"
-  @reservedKeys = reservedKeys
+  ---Reports whether `k` is reserved as an enum key — a built-in member name or `__`-prefixed.
+  ---@param k string
+  ---@return boolean reserved
   @isReservedKey = (k) =>
     return type(k) == "string" and (k\sub(1,2) == "__" or reservedKeySet[k]) or false
 

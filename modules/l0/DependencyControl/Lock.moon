@@ -3,6 +3,7 @@ NamedSemaphore = require "l0.DependencyControl.NamedSemaphore"
 FileLock = require "l0.DependencyControl.FileLock"
 Timer  = require "l0.DependencyControl.Timer"
 Logger = require "l0.DependencyControl.Logger"
+Common = require "l0.DependencyControl.Common"
 Enum   = require "l0.DependencyControl.Enum"
 Crypto = require "l0.DependencyControl.Crypto"
 FileOps = require "l0.DependencyControl.FileOps"
@@ -98,12 +99,6 @@ class Lock
     }, @logger
     Scope = @Scope
 
-    @uuid = ->
-        -- https://gist.github.com/jrus/3197011
-        "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx"\gsub "[xy]", (c) ->
-            v = c == "x" and math.random(0, 0xf) or math.random 8, 0xb
-            return "%x"\format v
-
     ---Builds the OS lock primitive backing a lock: a named semaphore for Process scope, an
     ---advisory file lock for Global scope.
     ---@param scope LockScope
@@ -111,7 +106,8 @@ class Lock
     ---@param lockFile string Full path to the lock file (Global scope).
     ---@return table? primitive A primitive exposing isOpen, tryLock and unlock, or nil on invalid scope.
     ---@return string? err
-    @createPrimitive = (scope, token, lockFile) =>
+    ---@private
+    @__createPrimitive = (scope, token, lockFile) =>
         scopeIsValid, errMsg = Scope\validate scope, "scope"
         return nil, errMsg unless scopeIsValid
 
@@ -147,11 +143,11 @@ class Lock
         @namespace or= ""
         @resource or= ""
         @recordHolder = true if @recordHolder == nil
-        @instanceId = @@uuid!
+        @instanceId = Common.uuid!
 
         token, holderFilePath, lockFilePath = deriveNames @scope, @namespace, @resource
         @_holderFilePath = holderFilePath
-        @_primitive = @@createPrimitive @scope, token, lockFilePath
+        @_primitive = @@__createPrimitive @scope, token, lockFilePath
 
         -- mutable held-state shared with the GC canary (avoids capturing self)
         state = {held: false}
@@ -179,7 +175,8 @@ class Lock
     ---Reads the holder record written by the current lock holder, or nil if none is
     ---present/parseable. Read lock-free, so the record may be stale or briefly absent.
     ---@return table? record
-    _readHolder: =>
+    ---@private
+    __readHolder: =>
         return nil unless @recordHolder
         data = FileOps.readFile @_holderFilePath
         return nil unless data
@@ -188,11 +185,12 @@ class Lock
 
     -- Records this instance as the current holder in the side file, stamping the lease
     -- (expiresAt = now + expiresAfter) so waiters honor the holder's own expiry. Keeps the
-    -- original @acquiredAt across renewals. Also tracks the lease end on the monotonic
-    -- clock for this instance's own renew decisions (os.time is shared across processes but
-    -- coarse and can jump; the monotonic clock is local but fine-grained and steady). No-op
-    -- when holder recording is disabled; best-effort, so failures don't affect the lock.
-    _writeHolder: =>
+    -- original @acquiredAt across renewals. Also tracks the lease end on the monotonic clock
+    -- for this instance's own renew decisions. os.time is shared across processes but coarse
+    -- and can jump, whereas the monotonic clock is local but fine-grained and steady. No-op
+    -- when holder recording is disabled, and best-effort so failures don't affect the lock.
+    ---@private
+    __writeHolder: =>
         return unless @recordHolder
         @expiresAt = os.time! + @expiresAfter
         @_leaseExpiresMono = Timer.getTime! + @expiresAfter
@@ -205,19 +203,22 @@ class Lock
         FileOps.writeFile @_holderFilePath, data, true if ok
 
     -- Removes the holder side file. No-op when holder recording is disabled.
-    _clearHolder: =>
+    ---@private
+    __clearHolder: =>
         FileOps.remove @_holderFilePath if @recordHolder
 
     -- Human-readable description of the current foreign holder for log messages, e.g.
     -- "'ConfigHandler' (pid 1234)" or "another instance" when no record is available.
-    _describeHolder: (record) =>
+    ---@private
+    __describeHolder: (record) =>
         return "another instance" unless record
         "'#{record.holderName or DEFAULT_HOLDER_NAME}' (pid #{record.pid or "?"})"
 
     -- Timestamp at which a foreign holder's lease lapses, or nil if it can't be determined.
     -- Honors the holder's recorded expiresAt unless overrideExpiry is set, in which case
     -- this instance's expiresAfter is applied to the holder's acquiredAt instead.
-    _holderDeadline: (record) =>
+    ---@private
+    __holderDeadline: (record) =>
         return nil unless record
         if @overrideExpiry and record.acquiredAt
             return record.acquiredAt + @expiresAfter
@@ -229,9 +230,9 @@ class Lock
     ---yet. Reports this instance too when it holds the lock. Requires holder recording.
     ---@return table? record The holder record (holderName, pid, namespace, resource, ...).
     getActiveHolder: =>
-        record = @_readHolder!
+        record = @__readHolder!
         return nil unless record
-        deadline = @_holderDeadline record
+        deadline = @__holderDeadline record
         return nil if deadline and os.time! > deadline
         return record
 
@@ -256,7 +257,7 @@ class Lock
                 @logger\warn msgs.lock.unavailable, @namespace, @resource, @holderName, @instanceId
                 @_state.held = true
                 @acquiredAt = os.time!
-                @_writeHolder!
+                @__writeHolder!
             return @@LockState.Held, 0
 
         timePassed = 0
@@ -274,16 +275,16 @@ class Lock
                     if @_primitive\tryLock!
                         @_state.held = true
                         @acquiredAt = os.time!
-                        @_writeHolder!
+                        @__writeHolder!
                         @logger\trace msgs.lock.attained, @holderName, @instanceId, @namespace, @resource
                         return @@LockState.Held, timePassed
 
-                    -- held by someone else: surface who, and warn when the holder's lease has
-                    -- lapsed (likely crashed or stalled). Informational only -- a Global file
-                    -- lock self-heals on crash, and a live holder's lock is never force-stolen.
-                    record = @_readHolder!
-                    holderDesc = @_describeHolder record
-                    deadline = @_holderDeadline record
+                    -- the lock is held by someone else, so surface who holds it and warn when the
+                    -- holder's lease has lapsed (likely crashed or stalled). Informational only -- a Global
+                    -- file lock self-heals on crash, and a live holder's lock is never force-stolen.
+                    record = @__readHolder!
+                    holderDesc = @__describeHolder record
+                    deadline = @__holderDeadline record
                     if deadline and os.time! > deadline
                         @logger\warn msgs.lock.staleHolder, @namespace, @resource, holderDesc, os.time! - deadline
 
@@ -307,7 +308,7 @@ class Lock
         unless @_state.held
             return nil, msgs.release.failed\format @namespace, @resource, @holderName, @instanceId, msgs.release.notHeld
         @_primitive\unlock!
-        @_clearHolder!
+        @__clearHolder!
         @_state.held = false
         @acquiredAt = nil
         @_leaseExpiresMono = nil
@@ -330,7 +331,7 @@ class Lock
         unless threshold < 0  -- negative forces a refresh
             remainingMs = (@_leaseExpiresMono - Timer.getTime!) * 1000
             return false if remainingMs > threshold
-        @_writeHolder!
+        @__writeHolder!
         return true
 
     ---Acquires a lock for the given args and runs the provided body function.

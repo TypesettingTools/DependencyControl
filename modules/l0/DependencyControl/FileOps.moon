@@ -352,7 +352,7 @@ class FileOps
         -- detect root from the first string before splitting consumes separators
         firstStr = type(args[1]) == "table" and args[1][1] or args[1]
         return nil, msgs.joinPath.invalidSegment\format type firstStr if type(firstStr) ~= "string"
-        absolutePathRoot = type(firstStr) == "string" and FileOps.getPathRoot firstStr
+        absolutePathRoot = type(firstStr) == "string" and FileOps.__getPathRoot firstStr
 
         invalidPathSegmentType = nil
         flatPathSegments = Common.flatten args, 3, (value, typ) ->
@@ -612,7 +612,8 @@ class FileOps
                 return false, msgs.exists.wrongType\format fullPathOrErrMsg, expectedMode, mode
             
                 
-    getPathRoot: (absolutePath) ->
+    ---@private
+    __getPathRoot: (absolutePath) ->
         return absolutePath\match "^[A-Za-z]:[/\\]" if ffi.os == "Windows"
         return absolutePath\match "^/[^/\\]+"
 
@@ -657,13 +658,13 @@ class FileOps
         if invChar
             return nil, msgs.validateFullPath.invalidChars\format invChar
         -- check if path is absolute
-        dev = FileOps.getPathRoot path
+        dev = FileOps.__getPathRoot path
         unless dev
             -- make relative paths absolute if base path is provided
             if basePath
                 path, errMsg = FileOps.joinPath basePath, path
                 return nil, errMsg if not path
-                dev = FileOps.getPathRoot path
+                dev = FileOps.__getPathRoot path
             else return false, msgs.validateFullPath.notFullPath
         -- parse path structure
         rest = path\sub #dev + 1

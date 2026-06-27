@@ -323,20 +323,20 @@
       ut\assertString result
       ut\assertContains result, "file.txt"
 
-    -- getPathRoot
+    -- __getPathRoot
 
     getPathRoot_windowsPath: (ut) ->
       return unless isWindows
-      result = FileOps.getPathRoot "C:\\Users\\foo"
+      result = FileOps.__getPathRoot "C:\\Users\\foo"
       ut\assertEquals result, "C:\\"
 
     getPathRoot_posixPath: (ut) ->
       return if isWindows
-      result = FileOps.getPathRoot "/usr/local"
+      result = FileOps.__getPathRoot "/usr/local"
       ut\assertEquals result, "/usr"
 
     getPathRoot_relative: (ut) ->
-      result = FileOps.getPathRoot "relative/path"
+      result = FileOps.__getPathRoot "relative/path"
       ut\assertNil result
 
     -- joinPath: dot/dot-dot resolution

@@ -151,7 +151,8 @@ class Updater
 
 
     -- Lazily builds this updater's handle to the shared, cross-process updater lock.
-    _getLockHandle: =>
+    ---@private
+    __getLockHandle: =>
         @lock or= Lock {
             namespace: UPDATER_LOCK_NAMESPACE, resource: UPDATER_LOCK_RESOURCE_RUN
             scope: Lock.Scope.Global, holderName: @host, logger: @logger
@@ -166,7 +167,7 @@ class Updater
     ---@return string? lockOwner The holder script's name when acquisition failed.
     acquireLock: (doWait, waitTimeout = @config.c.updateWaitTimeout) =>
         return true if @hasLock
-        lock = @_getLockHandle!
+        lock = @__getLockHandle!
 
         if doWait
             holder = lock\getActiveHolder!

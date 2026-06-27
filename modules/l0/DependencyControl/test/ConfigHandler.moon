@@ -99,13 +99,13 @@
       ut\assertNil view
       ut\assertString err
 
-    -- getOverlappingViews
+    -- __getOverlappingViews
 
     getOverlappingViews_wrongHandler: (ut) ->
       handler1 = ConfigHandler nil
       handler2 = ConfigHandler nil
       view2 = ConfigView handler2, {"section"}
-      overlaps, err = handler1\getOverlappingViews view2
+      overlaps, err = handler1\__getOverlappingViews view2
       ut\assertNil overlaps
       ut\assertString err
 
@@ -115,7 +115,7 @@
       view2 = ConfigView handler, {"section", "child"}
       handler.views[view1] = true
       handler.views[view2] = true
-      overlaps, err = handler\getOverlappingViews view1
+      overlaps, err = handler\__getOverlappingViews view1
       ut\assertNil err
       ut\assertEquals #overlaps, 1
       ut\assertEquals overlaps[1], view2
@@ -126,7 +126,7 @@
       view2 = ConfigView handler, {"sectionB"}
       handler.views[view1] = true
       handler.views[view2] = true
-      overlaps, err = handler\getOverlappingViews view1
+      overlaps, err = handler\__getOverlappingViews view1
       ut\assertNil err
       ut\assertEquals #overlaps, 0
 

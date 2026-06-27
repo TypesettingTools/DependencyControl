@@ -8,7 +8,7 @@
   TIMER_MODULE_NAME   = "l0.DependencyControl.Timer"
 
   -- A controllable stand-in for the OS lock primitive, installed via the
-  -- Lock.createPrimitive seam so Lock tests never open a real OS handle. Spy/stub its
+  -- Lock.__createPrimitive seam so Lock tests never open a real OS handle. Spy/stub its
   -- methods with ut\stub.
   makeFakeSemaphore = (isOpen = true) ->
     {
@@ -18,7 +18,7 @@
       unlock:  => true
     }
 
-  -- Installs a fake lock primitive through the Lock.createPrimitive seam for the next Lock
+  -- Installs a fake lock primitive through the Lock.__createPrimitive seam for the next Lock
   -- constructed in this test. tryLockBehavior is either a fixed boolean (returned every
   -- call) or a function used as the stub implementation. Returns the fake plus the
   -- tryLock/unlock stubs for assertions.
@@ -30,7 +30,7 @@
     else
       tryLockStub\returns tryLockBehavior
     unlockStub = ut\stub sem, "unlock"
-    (ut\stub Lock, "createPrimitive")\returns sem
+    (ut\stub Lock, "__createPrimitive")\returns sem
     return sem, tryLockStub, unlockStub
 
   -- Minimal JSON holder record for exercising Lock's lease/stale-holder logic via a
@@ -152,7 +152,7 @@
     -- a missing OS primitive degrades to a process-local grant rather than failing
     lock_primitiveUnavailable: (ut) ->
       sem = makeFakeSemaphore false       -- isOpen = false
-      (ut\stub Lock, "createPrimitive")\returns sem
+      (ut\stub Lock, "__createPrimitive")\returns sem
       ut\stub Lock.logger, "warn"
       ut\stub Lock.logger, "trace"
       lock = Lock namespace: "ns", resource: "res", recordHolder: false
@@ -392,7 +392,7 @@
       sem = makeFakeSemaphore!
       (ut\stub sem, "tryLock")\returns true
       unlockStub = ut\stub sem, "unlock"
-      (ut\stub Lock, "createPrimitive")\returns sem
+      (ut\stub Lock, "__createPrimitive")\returns sem
       warned = false
       warnStub = (ut\stub Lock.logger, "warn")\calls -> warned = true
       ut\stub Lock.logger, "trace"

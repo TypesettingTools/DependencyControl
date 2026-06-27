@@ -429,11 +429,13 @@ class Download extends EventEmitter
         @error = err
         @status = @@Status.Failed
 
-    -- Runner-internal: fire Progress listeners.
+    ---Part of the download-runner callback contract: a runner calls this to fire this download's
+    ---Progress listeners as bytes arrive.
     _notifyProgress: => @_emit @@Event.Progress
 
-    ---Runner-internal: finalize the transfer (success or transport error) and fire
-    ---Finish listeners (which may downgrade the status via markFailed).
+    ---Part of the download-runner callback contract: a runner calls this when the transfer ends to
+    ---finalize it (success, or a transport-level error) and fire Finish listeners (which may downgrade
+    ---the status via `markFailed`). Idempotent — only the first call takes effect.
     ---@param transportError? string A transport-level error, if any.
     _complete: (transportError) =>
         return if @_finalized
@@ -445,7 +447,8 @@ class Download extends EventEmitter
             @status = @@Status.Finished
         @_emit @@Event.Finish
 
-    -- Runner-internal: finalize as cancelled and fire Finish listeners.
+    ---Part of the download-runner callback contract: a runner calls this to finalize the download as
+    ---cancelled and fire Finish listeners. Idempotent.
     _cancel: =>
         return if @_finalized
         @_finalized = true
@@ -527,7 +530,9 @@ class Downloader extends EventEmitter
     ---@return number progress Current aggregate progress (0-100).
     getProgress: => computeProgress @downloads
 
-    -- Runner-internal: emit the Progress event with the current overall percentage.
+    ---Part of the download-runner callback contract: a runner calls this to report the manager's
+    ---aggregate progress and fire the Downloader's Progress listeners.
+    ---@param percent number Aggregate progress, 0-100.
     _reportProgress: (percent) => @_emit @@Event.Progress, percent
 
     ---Cancels all remaining downloads (e.g. from within a Progress listener).

@@ -19,7 +19,7 @@ class ConfigHandler
         getHive: {
             unexpected: "An unexpected error occurred while trying to create hive '%s' on ConfigHandler for file '%s'"
         }
-        getOverlappingViews: {
+        __getOverlappingViews: {
             differentHandler: "Other view on config file '%s' does not belong to this config handler of config file '%s'."
         }
         getView: {
@@ -316,9 +316,10 @@ Reload your automation scripts to generate a new configuration file.]]
     ---@param targetView ConfigView
     ---@return ConfigView[]? views nil when targetView belongs to a different handler.
     ---@return string? err
-    getOverlappingViews: (targetView) =>
+    ---@private
+    __getOverlappingViews: (targetView) =>
         if targetView.__configHandler != @
-            return nil, msgs.getOverlappingViews.differentHandler\format targetView.__configHandler.filePath, @filePath
+            return nil, msgs.__getOverlappingViews.differentHandler\format targetView.__configHandler.filePath, @filePath
 
         return for view, _ in pairs @views
             continue if view == targetView or not targetView\isOverlappingView view
@@ -373,7 +374,7 @@ Reload your automation scripts to generate a new configuration file.]]
                     mergeHive view.__hivePath, makeHive(view.__hivePath), @config
                 else mergeHive view.__hivePath, makeHive(view.__hivePath, hiveConfig), @config
 
-            Common.makeSet @getOverlappingViews(view), viewsToRefresh, false
+            Common.makeSet @__getOverlappingViews(view), viewsToRefresh, false
 
         view\refresh! for view, _ in pairs viewsToRefresh
 

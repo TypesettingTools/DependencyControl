@@ -118,15 +118,15 @@ class UpdateFeed
         ensureLoaded: {
             noLocalPath: "Local expansion mode require a local feed file path to resolve local path templates against."
         }
-        refreshFiles: {
+        __refreshFiles: {
             noLocalPath: "Feed has no local path required to check file '%s' for changes."
             sha1Failed: "Couldn't compute SHA-1 for file '%s' to check for changes: %s"
         }
-        refreshVersionRecord: {
+        __refreshVersionRecord: {
             loadFailed: "Failed to load %s '%s' for getting a fresh DependencyControl version record: %s"
             missingDepctrlRecord: "No DependencyControl version record exposed by %s '%s'."
         }
-        updatePackage: {
+        __updatePackage: {
             failedRefreshVersionRecord: "Failed to refresh version/dependencies: %s"
         }
         update: {
@@ -471,11 +471,12 @@ class UpdateFeed
     ---Resolves which channel of a package to operate on.
     ---With an explicit name, that channel must exist; otherwise the channel flagged `default: true`
     ---is used.
+    ---@private
     ---@param channels? table The package's `channels` map.
     ---@param channelName? string An explicit channel name to select.
     ---@return string? name The resolved channel name, or nil if none matched.
     ---@return string? err Error message on failure.
-    @resolveChannel = (channels = {}, channelName) =>
+    @__resolveChannel = (channels = {}, channelName) =>
         if channelName
             return channelName if channels[channelName]
             return nil, "channel '#{channelName}' not found"
@@ -484,10 +485,11 @@ class UpdateFeed
         return nil, "no default channel — specify one explicitly"
 
     ---Writes the raw (unexpanded) feed data back to disk.
+    ---@private
     ---@param path? string Destination path (defaults to the source path of the loaded feed).
     ---@return boolean success Whether the write succeeded.
     ---@return string? err Error message on failure.
-    writeRawFeed: (path) =>
+    __writeRawFeed: (path) =>
         loaded, err = @ensureLoaded!
         return false, err unless loaded
         path or= @feedPath
@@ -522,9 +524,10 @@ class UpdateFeed
 
     ---Projects a list of `provides` entries to feed ModuleAlias tables, keeping only the
     ---schema-permissible fields (`name`, `version`).
+    ---@private
     ---@param provides? (string|ModuleAlias)[]
     ---@return ModuleAlias[]
-    @normalizeModuleAliases = (provides) =>
+    @__normalizeModuleAliases = (provides) =>
         aliases = {}
         for entry in *(provides or {})
             aliases[#aliases + 1] = if type(entry) == "table"
@@ -534,12 +537,13 @@ class UpdateFeed
 
     ---Updates a package channel's version and dependencies in the raw feed data by loading
     ---the package's script and reading its DependencyControl record.
+    ---@private
     ---@param scriptType ScriptType The script type of the package to refresh (ScriptType.Automation or .Module).
     ---@param packageNamespace string The package namespace.
     ---@param rawChannel table The raw channel entry to update in place.
     ---@return boolean? changed Whether anything was modified, or nil on error.
     ---@return string? err Error message on failure.
-    refreshVersionRecord: (scriptType, packageNamespace, rawChannel) =>
+    __refreshVersionRecord: (scriptType, packageNamespace, rawChannel) =>
         -- Require the script so it registers its DependencyControl record by namespace: macros do
         -- so simply by running, modules by constructing their record at load. Modules that defer to
         -- a lazy __depCtrlInit (e.g. dkjson) are initialized explicitly below. The record is then
@@ -550,8 +554,8 @@ class UpdateFeed
 
         record = DependencyControl\getRegisteredRecord packageNamespace
         unless record
-            return nil, success and msgs.refreshVersionRecord.missingDepctrlRecord\format(scriptType, packageNamespace) or
-                msgs.refreshVersionRecord.loadFailed\format scriptType, packageNamespace, mod
+            return nil, success and msgs.__refreshVersionRecord.missingDepctrlRecord\format(scriptType, packageNamespace) or
+                msgs.__refreshVersionRecord.loadFailed\format scriptType, packageNamespace, mod
 
         changed = false
         newVer, verErr = SemanticVersioning\toString record.version
@@ -592,8 +596,8 @@ class UpdateFeed
         -- A mere reordering or switching between string and table forms doesn't count as a change.
         providesSignature = (aliases) ->
             Common.getObjectHash {a.name, {k, v for k, v in pairs a when k != "name"} for a in *aliases when a.name}
-        newProvides = @@normalizeModuleAliases record.provides
-        if providesSignature(newProvides) != providesSignature @@normalizeModuleAliases rawChannel.provides
+        newProvides = @@__normalizeModuleAliases record.provides
+        if providesSignature(newProvides) != providesSignature @@__normalizeModuleAliases rawChannel.provides
             rawChannel.provides = #newProvides > 0 and newProvides or nil
             changed = true
 
@@ -602,11 +606,12 @@ class UpdateFeed
     ---Refreshes the SHA-1 hashes of a channel's files from their local sources and flags any
     ---file that has vanished locally with `delete: true` so the Updater removes it from users'
     ---installations on their next update. Files already flagged for deletion are left untouched.
+    ---@private
     ---@param rawChannel table The raw channel entry to update in place.
     ---@param expandedChannel table The matching expanded channel.
     ---@return boolean changed Whether anything was modified.
     ---@return string[] errors Per-file error messages encountered while refreshing.
-    refreshFiles: (rawChannel, expandedChannel) =>
+    __refreshFiles: (rawChannel, expandedChannel) =>
         return false, {} unless rawChannel.files
 
         changed, errors = false, {}
@@ -615,11 +620,11 @@ class UpdateFeed
             localPath = expFile and expFile.localFilePath
             continue if rawFile.delete
             if not localPath
-                errors[#errors + 1] = msgs.refreshFiles.noLocalPath\format rawFile.name
+                errors[#errors + 1] = msgs.__refreshFiles.noLocalPath\format rawFile.name
             elseif FileOps.exists localPath, "file"
                 newHash, err = FileOps.getHash localPath
                 unless newHash
-                    errors[#errors + 1] = msgs.refreshFiles.sha1Failed\format rawFile.name, tostring err
+                    errors[#errors + 1] = msgs.__refreshFiles.sha1Failed\format rawFile.name, tostring err
                 else if newHash\upper! != (rawFile.sha1 or "")\upper!
                     rawFile.sha1 = newHash\upper!
                     changed = true
@@ -633,11 +638,12 @@ class UpdateFeed
     ---changed, resets its `released` date to null to mark the build as pending/unreleased.
     ---Collects this package's own outcome rather than mutating shared state, so the caller can
     ---present results per package.
+    ---@private
     ---@param scriptType ScriptType The package's script type (ScriptType.Automation or .Module).
     ---@param packageNamespace string The namespaced identifier of the package to update (e.g. "l0.Functional").
     ---@param channel? string The channel to update (default: the package's default channel).
     ---@return { namespace: string, scriptType: integer, channel?: string, changed: boolean, errors: string[] } result
-    updatePackage: (scriptType, packageNamespace, channel) =>
+    __updatePackage: (scriptType, packageNamespace, channel) =>
         result = {namespace: packageNamespace, :scriptType, changed: false, errors: {}}
         errors = result.errors
 
@@ -648,7 +654,7 @@ class UpdateFeed
             errors[#errors + 1] = msgs.update.notInRaw\format packageNamespace
             return result
 
-        channelName, err = @@resolveChannel rawPkg.channels, channel
+        channelName, err = @@__resolveChannel rawPkg.channels, channel
         unless channelName
             errors[#errors + 1] = msgs.update.channelError\format packageNamespace, err
             return result
@@ -658,10 +664,10 @@ class UpdateFeed
         expandedSection = @data[section] and @data[section][packageNamespace]
         expandedChannel = expandedSection and expandedSection.channels[channelName]
 
-        depsChanged, depErr = @refreshVersionRecord scriptType, packageNamespace, rawChannel
-        errors[#errors + 1] = msgs.updatePackage.failedRefreshVersionRecord\format depErr if depErr
+        depsChanged, depErr = @__refreshVersionRecord scriptType, packageNamespace, rawChannel
+        errors[#errors + 1] = msgs.__updatePackage.failedRefreshVersionRecord\format depErr if depErr
 
-        filesChanged, fileErrors = @refreshFiles rawChannel, expandedChannel
+        filesChanged, fileErrors = @__refreshFiles rawChannel, expandedChannel
         errors[#errors + 1] = e for e in *fileErrors
 
         if depsChanged or filesChanged
@@ -696,14 +702,14 @@ class UpdateFeed
         stats = changed: 0, errored: 0, packages: {}
         for pkg, scriptType in @walkPackages filter
             -- isolate per-package processing so one package's failure doesn't abort the whole run
-            ok, result = pcall @updatePackage, @, scriptType, pkg.namespace, opts.channel
+            ok, result = pcall @__updatePackage, @, scriptType, pkg.namespace, opts.channel
             result = {namespace: pkg.namespace, :scriptType, changed: false, errors: {tostring result}} unless ok
             stats.packages[#stats.packages + 1] = result
             stats.changed += 1 if result.changed
             stats.errored += 1 if #result.errors > 0
 
         if stats.changed > 0 and not dryRun
-            wrote, writeErr = @writeRawFeed outPath
+            wrote, writeErr = @__writeRawFeed outPath
             return nil, writeErr unless wrote
             @logger\hint msgs.update.wrote, stats.changed, outPath
 

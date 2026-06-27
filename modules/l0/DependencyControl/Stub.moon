@@ -74,7 +74,7 @@ class Stub
             }
 
     __call: (...) =>
-        @_fail msgs.calledAfterRestore, @_targetMethodKey if @_restored[1]
+        @__fail msgs.calledAfterRestore, @_targetMethodKey if @_restored[1]
         @_calls[#@_calls + 1] = table.pack ...
         repl = @_replacement
         return repl ...
@@ -100,47 +100,49 @@ class Stub
             @_targetTable[@_targetMethodKey] = @_originalMethod
             @_restored[1] = true
 
-    _fail: (msg, ...) =>
+    ---@private
+    __fail: (msg, ...) =>
         if @unitTest
             @unitTest\assert false, msg, ...
         else
             error string.format(msg, ...), 2
 
-    _dump: (val) =>
+    ---@private
+    __dump: (val) =>
         return @unitTest.logger\dumpToString val if @unitTest
         return tostring val
 
     assertCalled: =>
-        @_fail msgs.notCalled unless #@_calls > 0
+        @__fail msgs.notCalled unless #@_calls > 0
 
     assertNotCalled: =>
-        @_fail msgs.wasCalled, #@_calls unless #@_calls == 0
+        @__fail msgs.wasCalled, #@_calls unless #@_calls == 0
 
     assertCalledTimes: (n) =>
-        @_fail msgs.wrongCallCount, n, #@_calls unless #@_calls == n
+        @__fail msgs.wrongCallCount, n, #@_calls unless #@_calls == n
 
     assertCalledOnce: =>
-        @_fail msgs.wrongCallCount, 1, #@_calls unless #@_calls == 1
+        @__fail msgs.wrongCallCount, 1, #@_calls unless #@_calls == 1
 
     assertCalledOnceWith: (...) =>
-        @_fail msgs.wrongCallCount, 1, #@_calls unless #@_calls == 1
+        @__fail msgs.wrongCallCount, 1, #@_calls unless #@_calls == 1
         expected = table.pack ...
-        @_fail msgs.wrongCall, 1, @_dump(expected), @_dump(@_calls[1]) unless _stubMatch @_calls[1], expected
+        @__fail msgs.wrongCall, 1, @__dump(expected), @__dump(@_calls[1]) unless _stubMatch @_calls[1], expected
 
     assertCalledWith: (...) =>
         expected = table.pack ...
         for call in *@_calls
             return if _stubMatch call, expected
-        @_fail msgs.notCalledWith, #@_calls, @_dump expected
+        @__fail msgs.notCalledWith, #@_calls, @__dump expected
 
     assertLastCalledWith: (...) =>
         expected = table.pack ...
         last = @_calls[#@_calls]
-        @_fail msgs.notCalled unless last != nil
-        @_fail msgs.wrongCall, #@_calls, @_dump(expected), @_dump last unless _stubMatch last, expected
+        @__fail msgs.notCalled unless last != nil
+        @__fail msgs.wrongCall, #@_calls, @__dump(expected), @__dump last unless _stubMatch last, expected
 
     assertNthCalledWith: (n, ...) =>
         expected = table.pack ...
         call = @_calls[n]
-        @_fail msgs.noNthCall, n, #@_calls unless call != nil
-        @_fail msgs.wrongCall, n, @_dump(expected), @_dump call unless _stubMatch call, expected
+        @__fail msgs.noNthCall, n, #@_calls unless call != nil
+        @__fail msgs.wrongCall, n, @__dump(expected), @__dump call unless _stubMatch call, expected

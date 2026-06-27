@@ -315,3 +315,11 @@ class DependencyControlCommon
     ---@param value any The value to hash.
     ---@return string hash A 40-character lowercase SHA-1 hex digest.
     @getObjectHash = (value) -> Crypto.sha1 canonicalize value
+
+    ---Generates a random RFC-4122 version-4 UUID string.
+    ---@return string uuid
+    @uuid = ->
+        -- https://gist.github.com/jrus/3197011
+        "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx"\gsub "[xy]", (c) ->
+            v = c == "x" and math.random(0, 0xf) or math.random 8, 0xb
+            return "%x"\format v

@@ -147,32 +147,32 @@
       feed = {data: {macros: {}}, logger: DepCtrl.logger, __class: UpdateFeed}
       ut\assertEquals #UpdateFeed.getProviders(feed, "json"), 0
 
-    -- normalizeModuleAliases: expands bare strings to ModuleAlias tables and preserves table fields
+    -- __normalizeModuleAliases: expands bare strings to ModuleAlias tables and preserves table fields
 
     normalizeModuleAliases_bareStringsToTables: (ut) ->
-      result = UpdateFeed\normalizeModuleAliases {"json", "dkjson"}
+      result = UpdateFeed\__normalizeModuleAliases {"json", "dkjson"}
       ut\assertEquals #result, 2
       ut\assertEquals result[1].name, "json"
       ut\assertEquals result[2].name, "dkjson"
 
     normalizeModuleAliases_preservesFields: (ut) ->
       input = {{name: "json", version: "1.2.0"}}
-      result = UpdateFeed\normalizeModuleAliases input
+      result = UpdateFeed\__normalizeModuleAliases input
       ut\assertEquals result[1].name, "json"
       ut\assertEquals result[1].version, "1.2.0"
       sameRef = result[1] == input[1]
       ut\assertFalse sameRef   -- copied, not the caller's table
 
     normalizeModuleAliases_dropsNonSchemaFields: (ut) ->
-      result = UpdateFeed\normalizeModuleAliases {{name: "json", version: "1.0.0", optional: true, bogus: "x"}}
+      result = UpdateFeed\__normalizeModuleAliases {{name: "json", version: "1.0.0", optional: true, bogus: "x"}}
       ut\assertEquals result[1].name, "json"
       ut\assertEquals result[1].version, "1.0.0"
       ut\assertNil result[1].optional
       ut\assertNil result[1].bogus
 
     normalizeModuleAliases_nilAndEmpty: (ut) ->
-      ut\assertEquals #UpdateFeed\normalizeModuleAliases(nil), 0
-      ut\assertEquals #UpdateFeed\normalizeModuleAliases({}), 0
+      ut\assertEquals #UpdateFeed\__normalizeModuleAliases(nil), 0
+      ut\assertEquals #UpdateFeed\__normalizeModuleAliases({}), 0
 
     -- getFileDeployPath
 
@@ -315,14 +315,14 @@
       feed = {data: data, expansionMode: UpdateFeed.ExpansionMode.Local, fileName: "x.json", __class: UpdateFeed}
       ut\assertIs UpdateFeed.ensureLoaded(feed, UpdateFeed.ExpansionMode.Local), data
 
-    -- refreshFiles: returns (changed, errors) and mutates the raw channel in place
+    -- __refreshFiles: returns (changed, errors) and mutates the raw channel in place
 
     refreshFiles_updatesChangedSha: (ut) ->
       (ut\stub FILEOPS_MODULE_NAME, "exists")\returns true
       (ut\stub FILEOPS_MODULE_NAME, "getHash")\returns "deadbeef"
       rawChannel = {files: {{name: "a.moon", sha1: "OLDHASH"}}}
       expandedChannel = {files: {{localFilePath: "/x/a.moon"}}}
-      changed, errors = UpdateFeed.refreshFiles {__class: UpdateFeed}, rawChannel, expandedChannel
+      changed, errors = UpdateFeed.__refreshFiles {__class: UpdateFeed}, rawChannel, expandedChannel
       ut\assertTrue changed
       ut\assertEquals #errors, 0
       ut\assertEquals rawChannel.files[1].sha1, "DEADBEEF"
@@ -331,14 +331,14 @@
       (ut\stub FILEOPS_MODULE_NAME, "exists")\returns true
       (ut\stub FILEOPS_MODULE_NAME, "getHash")\returns "abc123"
       rawChannel = {files: {{name: "a.moon", sha1: "ABC123"}}}
-      changed, errors = UpdateFeed.refreshFiles {__class: UpdateFeed}, rawChannel, {files: {{localFilePath: "/x/a.moon"}}}
+      changed, errors = UpdateFeed.__refreshFiles {__class: UpdateFeed}, rawChannel, {files: {{localFilePath: "/x/a.moon"}}}
       ut\assertFalse changed
       ut\assertEquals #errors, 0
 
     refreshFiles_missingFileFlagsDelete: (ut) ->
       (ut\stub FILEOPS_MODULE_NAME, "exists")\returns false   -- vanished from disk
       rawChannel = {files: {{name: "gone.moon", sha1: "X"}}}
-      changed, errors = UpdateFeed.refreshFiles {__class: UpdateFeed}, rawChannel, {files: {{localFilePath: "/x/gone.moon"}}}
+      changed, errors = UpdateFeed.__refreshFiles {__class: UpdateFeed}, rawChannel, {files: {{localFilePath: "/x/gone.moon"}}}
       ut\assertTrue changed
       ut\assertTrue rawChannel.files[1].delete
       ut\assertEquals #errors, 0
@@ -347,22 +347,22 @@
       (ut\stub FILEOPS_MODULE_NAME, "exists")\returns true
       (ut\stub FILEOPS_MODULE_NAME, "getHash")\returns nil, "boom"
       rawChannel = {files: {{name: "a.moon", sha1: "X"}}}
-      changed, errors = UpdateFeed.refreshFiles {__class: UpdateFeed}, rawChannel, {files: {{localFilePath: "/x/a.moon"}}}
+      changed, errors = UpdateFeed.__refreshFiles {__class: UpdateFeed}, rawChannel, {files: {{localFilePath: "/x/a.moon"}}}
       ut\assertFalse changed
       ut\assertEquals #errors, 1
       ut\assertContains errors[1], "a.moon"
 
     refreshFiles_noLocalPathCollectsError: (ut) ->
       rawChannel = {files: {{name: "a.moon", sha1: "X"}}}
-      changed, errors = UpdateFeed.refreshFiles {__class: UpdateFeed}, rawChannel, {files: {{}}}
+      changed, errors = UpdateFeed.__refreshFiles {__class: UpdateFeed}, rawChannel, {files: {{}}}
       ut\assertFalse changed
       ut\assertEquals #errors, 1
 
-    -- updatePackage: returns a per-package result rather than mutating shared state
+    -- __updatePackage: returns a per-package result rather than mutating shared state
 
     updatePackage_notInRaw: (ut) ->
       feed = {rawFeedData: {modules: {}}, data: {modules: {}}, __class: UpdateFeed}
-      result = UpdateFeed.updatePackage feed, Common.ScriptType.Module, "no.Such", nil
+      result = UpdateFeed.__updatePackage feed, Common.ScriptType.Module, "no.Such", nil
       ut\assertFalse result.changed
       ut\assertEquals #result.errors, 1
       ut\assertContains result.errors[1], "no.Such"
@@ -374,9 +374,9 @@
         data: {modules: {[ns]: {channels: {release: {files: {}}}}}},
         __class: UpdateFeed
       }
-      (ut\stub feed, "refreshVersionRecord")\returns true       -- version/deps changed
-      (ut\stub feed, "refreshFiles")\returns false, {}
-      result = UpdateFeed.updatePackage feed, Common.ScriptType.Module, ns, nil
+      (ut\stub feed, "__refreshVersionRecord")\returns true       -- version/deps changed
+      (ut\stub feed, "__refreshFiles")\returns false, {}
+      result = UpdateFeed.__updatePackage feed, Common.ScriptType.Module, ns, nil
       ut\assertEquals result.namespace, ns
       ut\assertEquals result.channel, "release"
       ut\assertTrue result.changed
@@ -390,9 +390,9 @@
         data: {modules: {[ns]: {channels: {release: {files: {}}}}}},
         __class: UpdateFeed
       }
-      (ut\stub feed, "refreshVersionRecord")\returns nil, "no record"
-      (ut\stub feed, "refreshFiles")\returns false, {}
-      result = UpdateFeed.updatePackage feed, Common.ScriptType.Module, ns, nil
+      (ut\stub feed, "__refreshVersionRecord")\returns nil, "no record"
+      (ut\stub feed, "__refreshFiles")\returns false, {}
+      result = UpdateFeed.__updatePackage feed, Common.ScriptType.Module, ns, nil
       ut\assertEquals #result.errors, 1
       ut\assertContains result.errors[1], "no record"
 

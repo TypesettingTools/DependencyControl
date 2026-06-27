@@ -194,7 +194,7 @@ msgs = {
         unsetVirtual: "Update initiated by another macro already fetched %s '%s', switching to update mode."
         otherUpdate: "Update initiated by another macro already updated %s '%s' to v%s."
     }
-    promptTrustFeed: {
+    __promptTrustFeed: {
         trustOnce: "Trust this time"
         trustAlways: "Always trust this feed"
         trustNever: "Never (block this feed)"
@@ -266,7 +266,8 @@ class UpdateTask
     ---@param feedUrl string
     ---@return UpdateFeed? feed The loaded feed, or nil on download failure.
     ---@return string? err Error message on failure.
-    loadFeed: (feedUrl) =>
+    ---@private
+    __loadFeed: (feedUrl) =>
         feed = UpdateFeed feedUrl, false, nil, @feedConfig, @logger
         unless feed.data -- no cached data available, perform download
             success, err = feed\fetch!
@@ -275,10 +276,11 @@ class UpdateTask
 
     ---Looks up this task's module in an already-loaded feed (matched by namespace), returning its
     ---update record on the task's channel along with the parsed release version.
-    ---@param feed UpdateFeed A feed loaded via loadFeed.
+    ---@param feed UpdateFeed A feed loaded via __loadFeed.
     ---@return ScriptUpdateRecord|nil record The module's update record, or nil if absent/unusable.
     ---@return string? err Error message worth reporting (nil when the module simply isn't in this feed).
     ---@return number? version The candidate's parsed version number.
+    ---@private
     checkFeed: (feed) =>
         updateRecord, err = feed\getScript @record.namespace, @record.scriptType, @record.config, false
         return nil, err unless updateRecord   -- err is nil for "not in this feed", set for a real error
@@ -329,7 +331,8 @@ class UpdateTask
     ---current state, so a remembered choice survives a feed-URL migration.
     ---@param previousSource SourceChoiceRecord A persisted `currentSource` table.
     ---@return string? feedUrl The derived feed URL, or nil if it can't be determined.
-    resolveRememberedFeedUrl: (previousSource) =>
+    ---@private
+    __resolveRememberedFeedUrl: (previousSource) =>
         switch previousSource.feedSource
             when SourceFeedKind.SelfDeclared then @record.feed
             when SourceFeedKind.UserFeed then @record.config.c.userFeed
@@ -344,8 +347,9 @@ class UpdateTask
     ---@param candidates CandidatePackageSource[] Pooled candidates.
     ---@param previousSource SourceChoiceRecord A persisted `currentSource` table.
     ---@return CandidatePackageSource? candidate The matching, eligible candidate, or nil if none matches or it's no longer eligible.
-    matchRememberedCandidate: (candidates, previousSource) =>
-        wantUrl = @resolveRememberedFeedUrl previousSource
+    ---@private
+    __matchRememberedCandidate: (candidates, previousSource) =>
+        wantUrl = @__resolveRememberedFeedUrl previousSource
         return nil unless wantUrl
         viaProvider = previousSource.feedSource == SourceFeedKind.Provider
         for candidate in *candidates
@@ -355,13 +359,14 @@ class UpdateTask
                 continue unless previousSource.provider and candidate.updateRecord.namespace == previousSource.provider.namespace
             else
                 continue unless candidate.isDirect
-            return candidate if @getCandidateRankVersion candidate
+            return candidate if @__getCandidateRankVersion candidate
         return nil
 
     ---Classifies which kind of source a provided candidate came from.
     ---@param candidate CandidatePackageSource The candidate to classify.
     ---@return SourceFeedKind
-    feedSourceOf: (candidate) =>
+    ---@private
+    __feedSourceOf: (candidate) =>
         return SourceFeedKind.Provider unless candidate.isDirect
         return SourceFeedKind.SelfDeclared if candidate.feedUrl == @record.feed
         return SourceFeedKind.UserFeed if candidate.feedUrl == @record.config.c.userFeed
@@ -371,10 +376,11 @@ class UpdateTask
     ---`currentSource` config, so later resolutions can honor it. Writes only when something changed.
     ---@param selectedCandidate CandidatePackageSource The chosen candidate.
     ---@param stickiness? SourceChoiceStickiness The stickiness to record (defaults to the existing one, else `unset`).
-    persistSource: (selectedCandidate, stickiness) =>
+    ---@private
+    __persistSource: (selectedCandidate, stickiness) =>
         return unless @record.config
         existing = @record.config.c.currentSource
-        feedSource = @feedSourceOf selectedCandidate
+        feedSource = @__feedSourceOf selectedCandidate
         currentSource = {
             :feedSource
             channel: selectedCandidate.updateRecord.activeChannel or @channel
@@ -399,7 +405,8 @@ class UpdateTask
     ---declares (or any version when it declares ranked by the highest version that range covers.
     ---@param candidate CandidatePackageSource
     ---@return number? rankVersion The ranking version, or nil if the candidate is ineligible.
-    getCandidateRankVersion: (candidate) =>
+    ---@private
+    __getCandidateRankVersion: (candidate) =>
         local rankVersion
         if candidate.isDirect
             versionNumber = SemanticVersioning\toNumber candidate.updateRecord.version
@@ -421,10 +428,11 @@ class UpdateTask
     ---@return CandidatePackageSource? selected The chosen candidate, or nil when none is eligible.
     ---@return CandidatePackageSource[]? tied The selected candidate plus any others tied with it on band and version (for an interactive chooser); nil when none is eligible.
     ---@return CandidatePackageSource[]? eligible All eligible candidates, sorted best-first (for the offer-all-sources chooser); nil when none is eligible.
-    selectCandidate: (candidates) =>
+    ---@private
+    __selectCandidate: (candidates) =>
         eligibleCandidates = {}
         for candidate in *candidates
-            rankVersion = @getCandidateRankVersion candidate
+            rankVersion = @__getCandidateRankVersion candidate
             eligibleCandidates[#eligibleCandidates + 1] = {:candidate, :rankVersion} if rankVersion
         return nil if #eligibleCandidates == 0
 
@@ -450,7 +458,8 @@ class UpdateTask
     ---@return any ref The loaded provider module reference, or nil on failure.
     ---@return number? code Updater status code on failure.
     ---@return string? detail Error detail on failure.
-    installProvider: (provider, feedUrl) =>
+    ---@private
+    __installProvider: (provider, feedUrl) =>
         DependencyControl or= require "l0.DependencyControl"
         providerRecord = DependencyControl {
             moduleName: provider.namespace, name: provider.name or provider.namespace,
@@ -464,7 +473,8 @@ class UpdateTask
     ---e.g. to approve an untrusted feed or choose among multiple eligible candidates.
     ---@param threshold? PromptThreshold The configured threshold for this prompt kind.
     ---@return boolean
-    shouldPrompt: (threshold) =>
+    ---@private
+    __shouldPrompt: (threshold) =>
         return false unless @reason
         reasonPromptThreshold[@reason] <= (threshold or PromptThreshold.UserRequested)
 
@@ -490,22 +500,23 @@ class UpdateTask
     ---the feed may be added to the trusted or blocked lists.
     ---@param selectedCandidate CandidatePackageSource A candidate source from an untrusted feed.
     ---@return FeedTrustDecision? decision The user's decision, or nil if they cancelled.
-    promptTrustFeed: (selectedCandidate) =>
+    ---@private
+    __promptTrustFeed: (selectedCandidate) =>
         msg = msgs.run.untrustedPrompt\format Common.terms.isInstall[@record.virtual],
                                               Common.terms.scriptType.singular[@record.scriptType],
                                               @record.name, selectedCandidate.feedUrl
         dlg = {{class: "label", label: msg, x: 0, y: 0, width: 1, height: 1}}
-        buttons = {msgs.dialogCommon.cancel, msgs.promptTrustFeed.trustOnce, msgs.promptTrustFeed.trustAlways,
-                   msgs.promptTrustFeed.trustNever}
+        buttons = {msgs.dialogCommon.cancel, msgs.__promptTrustFeed.trustOnce, msgs.__promptTrustFeed.trustAlways,
+                   msgs.__promptTrustFeed.trustNever}
 
         btn = aegisub.dialog.display dlg, buttons, {cancel: msgs.dialogCommon.cancel}
         return nil if not btn or btn == msgs.dialogCommon.cancel
 
         switch btn
-            when msgs.promptTrustFeed.trustAlways
+            when msgs.__promptTrustFeed.trustAlways
                 @addTrustedFeed selectedCandidate.feedUrl
                 return FeedTrustDecision.Always
-            when msgs.promptTrustFeed.trustNever
+            when msgs.__promptTrustFeed.trustNever
                 @addBlockedFeed selectedCandidate.feedUrl
                 return FeedTrustDecision.Never
         FeedTrustDecision.Once
@@ -517,7 +528,8 @@ class UpdateTask
     ---@param noLongerAvailable? boolean Show the "remembered source unavailable" prompt instead of the default one.
     ---@return CandidatePackageSource? chosen The picked candidate, or nil if the user aborted.
     ---@return SourceChoiceStickiness? stickiness How sticky the pick should be, or nil if the user aborted.
-    promptSelectPackageSource: (candidates, selectedCandidate = candidates[1], noLongerAvailable) =>
+    ---@private
+    __promptSelectPackageSource: (candidates, selectedCandidate = candidates[1], noLongerAvailable) =>
         labelFor = (candidate) ->
             label = "#{candidate.updateRecord.name or candidate.updateRecord.namespace} (#{candidate.feedUrl})"
             label ..= msgs.run.choiceUntrustedFlag if candidate.trustBand and candidate.trustBand >= TrustBand.UntrustedDirect
@@ -550,12 +562,12 @@ class UpdateTask
                                                        Common.terms.scriptType.singular[.scriptType], .name
 
         -- don't perform update of a script when another one is already running for the same script
-        return @logUpdateError -10 if @running
+        return @__logUpdateError -10 if @running
 
         -- don't shadow scripts installed to the ?data automation dir with a ?user copy
         entryPath, isUserPath = @record\getEntryPointPath!
         if isUserPath == false
-            return @logUpdateError -9, entryPath
+            return @__logUpdateError -9, entryPath
 
         -- check if the script was already updated
         if @updated and @record\checkVersion @targetVersion
@@ -563,18 +575,18 @@ class UpdateTask
             return 2
 
         -- check internet connection
-        return @logUpdateError -7 unless downloader\isInternetConnected!
+        return @__logUpdateError -7 unless downloader\isInternetConnected!
 
         -- get a lock on the updater
         success, otherHost = @updater\acquireLock waitLock
-        return @logUpdateError -5, otherHost unless success
+        return @__logUpdateError -5, otherHost unless success
 
-        resolution = @resolve!
+        resolution = @__resolve!
         return resolution.statusCode, resolution.statusDetailMessage unless resolution.installRequired
         selectedSource, stickiness, maxVersion = resolution.selectedSource, resolution.stickiness, resolution.maxVersion
 
         -- remember which source satisfied this package and how sticky the choice is, for next time
-        @persistSource selectedSource, stickiness
+        @__persistSource selectedSource, stickiness
 
         -- an installed module already satisfies the chosen (trusted) version
         if selectedSource.isDirect and not @record.virtual and @record\checkVersion selectedSource.updateRecord.version
@@ -585,13 +597,13 @@ class UpdateTask
         wasVirtual = @record.virtual
         if selectedSource.isDirect
             code, res = @performUpdate selectedSource.updateRecord
-            return @logUpdateError code, res, wasVirtual
+            return @__logUpdateError code, res, wasVirtual
 
-        -- indirect: install the chosen provider in place of the required module
-        ref, code, extErr = @installProvider selectedSource.updateRecord, selectedSource.feedUrl
+        -- for an indirect source, install the chosen provider in place of the required module
+        ref, code, extErr = @__installProvider selectedSource.updateRecord, selectedSource.feedUrl
         unless ref
             @logger\trace msgs.run.providerInstallFailed, @record.namespace, selectedSource.updateRecord.namespace, tostring extErr
-            code, detail = @reportNoSuitablePackage maxVersion
+            code, detail = @__reportNoSuitablePackage maxVersion
             return code, detail
         @ref, @updated = ref, true
         @logger\log msgs.run.providerResolved, @record.namespace, Common.terms.scriptType.singular[Common.ScriptType.Module],
@@ -605,7 +617,8 @@ class UpdateTask
     ---@param virtual? boolean Whether this is a fresh install (default: the record's current virtual flag).
     ---@return number statusCode the same code passed in.
     ---@return string? statusDetailMessage  the same status detail message passed in, if any.
-    logUpdateError: (statusCode, statusDetailMessage, virtual = @record.virtual) =>
+    ---@private
+    __logUpdateError: (statusCode, statusDetailMessage, virtual = @record.virtual) =>
         if statusCode < 0
             @logger\log UpdateTask.getUpdaterErrorMsg statusCode, @record.name, @record.scriptType, virtual, statusDetailMessage
         return statusCode, statusDetailMessage
@@ -614,7 +627,8 @@ class UpdateTask
     ---@param maxVersion number The highest candidate version seen during resolution (0 when none was found).
     ---@return number statusCode A negative failure code for a required dependency, or the skip code (3) for an optional one.
     ---@return string? statusDetailMessage The availability summary for a failure; nil for an optional skip.
-    reportNoSuitablePackage: (maxVersion) =>
+    ---@private
+    __reportNoSuitablePackage: (maxVersion) =>
         detail = msgs.run.noFeedAvailExt\format @targetVersion == 0 and "any" or SemanticVersioning\toString(@targetVersion),
                                                 @record.virtual and "no" or SemanticVersioning\toString(@record.version),
                                                 maxVersion < 1 and "none" or SemanticVersioning\toString maxVersion
@@ -622,13 +636,14 @@ class UpdateTask
             @logger\log msgs.run.skippedOptional, @record.name, Common.terms.isInstall[@record.virtual],
                                                   msgs.run.optionalNoUpdate\format detail
             return 3
-        return @logUpdateError -6, detail
+        return @__logUpdateError -6, detail
 
     ---Resolves which package source should satisfy this task, without installing anything. May fetch feeds
     ---and prompt the user (to choose a package source or to approve an untrusted feed). The updater lock
     ---must already be held.
     ---@return UpdaterResolution resolution The source to install, or a status code to return when no install is needed.
-    resolve: =>
+    ---@private
+    __resolve: =>
         withoutInstall = (statusCode, statusDetailMessage) -> {installRequired: false, :statusCode, :statusDetailMessage}
 
         -- Candidates are ranked by trust band. Feeds are fetched lazily per band, so we only reach for
@@ -657,7 +672,7 @@ class UpdateTask
                 @triedFeeds[feedUrl] = true
                 @updater\renewLock!
                 @logger\trace msgs.run.feedChecking, feedUrl
-                feed, errMsg = @loadFeed feedUrl
+                feed, errMsg = @__loadFeed feedUrl
                 unless feed
                     @logger\log errMsg
                     continue
@@ -686,10 +701,10 @@ class UpdateTask
         -- An exclusive userFeed still constrains it, so a remembered source outside userFeed counts as gone.
         reuse = nil
         if stickiness == SourceChoiceStickiness.Pinned or stickiness == SourceChoiceStickiness.Retain
-            rememberedUrl = @resolveRememberedFeedUrl remembered
+            rememberedUrl = @__resolveRememberedFeedUrl remembered
             if rememberedUrl and (not userFeed or rememberedUrl == userFeed)
                 gather {rememberedUrl}
-                reuse = @matchRememberedCandidate candidates, remembered
+                reuse = @__matchRememberedCandidate candidates, remembered
 
         if reuse
             selected = reuse
@@ -698,11 +713,11 @@ class UpdateTask
             selected = nil
         elseif userFeed
             gather {userFeed}
-            selected, tied, eligible = @selectCandidate candidates
+            selected, tied, eligible = @__selectCandidate candidates
         else
             -- tier 1: the feed declared by / advertised in the record
             gather {declaredFeed}
-            selected, tied, eligible = @selectCandidate candidates
+            selected, tied, eligible = @__selectCandidate candidates
 
             unless selected and selected.trustBand == TrustBand.DeclaredDirect
                 -- tier 2: trusted feeds (official and user-added)
@@ -710,12 +725,12 @@ class UpdateTask
                 gather config.trustedFeeds
                 gather [url for url in *@addFeeds when trusted[url]]
                 gather [url for url in pairs(@updater\getOfficialTrustedFeeds!)] unless @optional -- don't trigger a registry-wide crawl for a nice-to-have
-                selected, tied, eligible = @selectCandidate candidates
+                selected, tied, eligible = @__selectCandidate candidates
 
                 unless selected and selected.trustBand <= TrustBand.TrustedProvider
                     -- tier 3: untrusted feeds
                     gather [url for url in *@addFeeds when not trusted[url]]
-                    selected, tied, eligible = @selectCandidate candidates
+                    selected, tied, eligible = @__selectCandidate candidates
         @logger.indent -= 1
 
         abortResolution = ->
@@ -723,7 +738,7 @@ class UpdateTask
                 @logger\log msgs.run.skippedOptional, @record.name, Common.terms.isInstall[@record.virtual],
                                                       msgs.run.optionalAborted
                 return 3
-            return @logUpdateError -18
+            return @__logUpdateError -18
 
         -- a hard pin whose remembered source vanished aborts (required) or skips (optional)
         if stickiness == SourceChoiceStickiness.Pinned and not reuse
@@ -731,7 +746,7 @@ class UpdateTask
                 @logger\log msgs.run.skippedOptional, @record.name, Common.terms.isInstall[@record.virtual],
                                                       msgs.run.optionalPinnedUnavailable
                 return withoutInstall 3
-            code, detail = @logUpdateError -17
+            code, detail = @__logUpdateError -17
             return withoutInstall code, detail
 
         unless selected
@@ -741,7 +756,7 @@ class UpdateTask
                                                @record.name, SemanticVersioning\toString @record.version
                 return withoutInstall 0
 
-            code, detail = @reportNoSuitablePackage maxVer
+            code, detail = @__reportNoSuitablePackage maxVer
             return withoutInstall code, detail
 
         -- consult the remembered source choice to decide whether to let the user pick a package source.
@@ -749,13 +764,13 @@ class UpdateTask
         unless reuse or stickiness == SourceChoiceStickiness.Auto
             -- present every eligible candidate when configured to, otherwise only an exact band/version tie
             choices = config.packageChoiceOfferAllSources and eligible or tied
-            allowPrompt = @shouldPrompt config.packageChoicePromptThreshold
-            remPick = remembered and @matchRememberedCandidate candidates, remembered
+            allowPrompt = @__shouldPrompt config.packageChoicePromptThreshold
+            remPick = remembered and @__matchRememberedCandidate candidates, remembered
 
             if stickiness == SourceChoiceStickiness.Retain
                 -- the soft-remembered pick is gone: re-ask in interactive mode, downgrade to `once` otherwise
                 if allowPrompt
-                    pick, pickType = @promptSelectPackageSource choices, selected, true
+                    pick, pickType = @__promptSelectPackageSource choices, selected, true
                     unless pick
                         code, detail = abortResolution!
                         return withoutInstall code, detail
@@ -763,7 +778,7 @@ class UpdateTask
                 else
                     stickiness = SourceChoiceStickiness.Once
             elseif choices and #choices > 1 and allowPrompt
-                pick, pickType = @promptSelectPackageSource choices, (remPick or selected)
+                pick, pickType = @__promptSelectPackageSource choices, (remPick or selected)
                 unless pick
                     code, detail = abortResolution!
                     return withoutInstall code, detail
@@ -771,14 +786,14 @@ class UpdateTask
 
         -- the chosen candidate is from an untrusted feed: install it only if the user is asked and approves
         if selected.trustBand >= TrustBand.UntrustedDirect
-            trustDecision = @shouldPrompt(@updater.config.c.feedTrustPromptThreshold) and @promptTrustFeed selected
+            trustDecision = @__shouldPrompt(@updater.config.c.feedTrustPromptThreshold) and @__promptTrustFeed selected
             unless trustDecision == FeedTrustDecision.Once or trustDecision == FeedTrustDecision.Always
                 userBlockedFeed = trustDecision == FeedTrustDecision.Never
                 if @optional
                     reason = (userBlockedFeed and msgs.run.optionalBlocked or msgs.run.optionalUntrusted)\format selected.feedUrl
                     @logger\log msgs.run.skippedOptional, @record.name, Common.terms.isInstall[@record.virtual], reason
                     return withoutInstall 3
-                code, detail = @logUpdateError (userBlockedFeed and -19 or -16), selected.feedUrl
+                code, detail = @__logUpdateError (userBlockedFeed and -19 or -16), selected.feedUrl
                 return withoutInstall code, detail
 
         return {installRequired: true, selectedSource: selected, :stickiness, maxVersion: maxVer}
@@ -787,6 +802,7 @@ class UpdateTask
     ---@param update ScriptUpdateRecord
     ---@return number statusCode
     ---@return table|string|nil detail
+    ---@private
     performUpdate: (update) =>
         finish = (...) ->
             @running = false
@@ -940,6 +956,7 @@ class UpdateTask
         return finish 1, SemanticVersioning\toString @record.version
 
 
+    ---@private
     refreshRecord: =>
         with @record
             wasVirtual, oldVersion = .virtual, .version

@@ -681,7 +681,7 @@ class UnitTestSuiteControls
     ---Resolved against the test suite identifier, so the same call works for both the Aegisub-default and custom test locations (e.g. in CI environments).
     ---@param leaf string The module name relative to the test root (e.g. "FileOps").
     ---@return any module The loaded test module.
-    requireTest: (leaf) => @_suite\requireTestLeaf leaf
+    requireTest: (leaf) => @_suite\__requireTestLeaf leaf
 
 ---A DependencyControl unit test suite.
 ---Your test file/module must return a UnitTestSuite object in order to be recognized as a test suite.
@@ -822,7 +822,8 @@ class UnitTestSuite
     ---Used by multi-file test suites to load their sibling test modules without hard-coding environment-specific paths.
     ---@param leafIdentifier string The module name relative to the test root (e.g. "FileOps").
     ---@return any module The loaded test module.
-    requireTestLeaf: (leafIdentifier) =>
+    ---@private
+    __requireTestLeaf: (leafIdentifier) =>
         @logger\assert @suiteRequireIdentifier, "test suite must have a suite require identifier configured in order to resolve sibling test '#{leafIdentifier}'" 
         require "#{@suiteRequireIdentifier}.#{leafIdentifier}"
 

@@ -105,12 +105,13 @@ class ZipArchiver
     write: =>
         return nil, msgs.errors.noEntries if #@entries == 0
         FileOps.remove @outputPath  -- ZipArchive 'Create' mode requires the target to be absent
-        return @_writeWindows! if isWindows
-        return @_writeUnix!
+        return @__writeWindows! if isWindows
+        return @__writeUnix!
 
     -- on Windows, write a JSON manifest plus the helper script to the temp dir, then run
     -- it via -File (only path arguments to quote, avoiding cmd.exe quoting pitfalls).
-    _writeWindows: =>
+    ---@private
+    __writeWindows: =>
         token        = "%04X"\format math.random 0, 16^4 - 1
         tmpDir       = aegisub.decode_path "?temp"
         manifestPath = "#{tmpDir}#{pathSep}depctrl-ziparchiver-#{token}.json"
@@ -137,7 +138,8 @@ class ZipArchiver
 
     -- on Unix, the `zip` CLI can't rename entries, so stage each file into a temp tree at
     -- its archive name, then archive that tree from the inside.
-    _writeUnix: =>
+    ---@private
+    __writeUnix: =>
         token    = "%04X"\format math.random 0, 16^4 - 1
         stageDir = "#{aegisub.decode_path '?temp'}#{pathSep}depctrl-ziparchiver-#{token}"
         FileOps.mkdir stageDir, false, true
