@@ -541,7 +541,8 @@
           "Updater: The package picker now also lets you decide how long your choice should stick — use the source only this once, remember it while it stays available, pin it so DependencyControl never switches silently, or hand the decision back to DependencyControl for good. The remembered choice is stored per package and follows the source across feed-URL changes; a pinned source that becomes unavailable fails a required dependency (so you can fix the pin) and skips an optional one. A new global `packageChoiceOfferAllSources` setting offers every eligible source (including lower-ranked and untrusted ones) whenever there's more than one, so you can override the ranking.",
           "Unit test framework: `assertContains` now honors its case-insensitive option (it previously always compared case-sensitively) and reports a proper message when the assertion fails.",
           "Unit test framework: a failing test-class setup is now reported as a failure instead of aborting the entire test run with an internal error.",
-          "Unit test framework: a failing `assertNegative` now says \"negative\" rather than \"positive\" in its message."
+          "Unit test framework: a failing `assertNegative` now says \"negative\" rather than \"positive\" in its message.",
+          "Updater: the temporary download directory is now removed after a successful install instead of being left behind."
         ]
       }
     },

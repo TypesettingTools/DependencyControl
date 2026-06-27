@@ -895,7 +895,7 @@ class UpdateTask
 
         if #moveErrors>0
             return finish -50, @logger\format moveErrors, 1
-        else lfs.rmdir tmpDir
+        else fileOps.rmdir tmpDir   -- recurses by default: the temp dir still holds the per-type subdirectories
         os.remove file.fullName for file in *update.files when file.delete and not file.unknown
 
         -- Nuke old module refs and reload
