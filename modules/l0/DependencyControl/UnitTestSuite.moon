@@ -496,10 +496,10 @@ class UnitTest
                          caseSensitive: {caseSensitive, "boolean"}, init: {init, "number"}
                        }
 
-        _str, _needle = if caseSensitive
-            str\lower!, needle\lower!
-        else str, needle
-        @assert str\find(needle, init, true), str, needle,
+        haystack, target = if caseSensitive
+            str, needle
+        else str\lower!, needle\lower!
+        @assert haystack\find(target, init, true), @@msgs.assert.contains, str, needle,
                        caseSensitive and "sensitive" or "insensitive"
 
     -- function asserts
