@@ -8,6 +8,7 @@
   Lock = require "l0.DependencyControl.Lock"
   UpdateTask = require "l0.DependencyControl.UpdateTask"
   DependencyControl = require "l0.DependencyControl"
+  UpdateStatus = Updater.UpdateStatus
 
   -- A stub updater self for require(): @addTask returns the supplied task (whose run() yields the
   -- scripted code/detail), so require's dispatch is exercised without constructing a real UpdateTask.
@@ -48,46 +49,46 @@
 
     -- require: dispatches on the task's run() result.
 
-    -- run reports up-to-date (0) for a module that wasn't (re)installed → load the existing module
+    -- run reports up-to-date for a module that wasn't (re)installed → load the existing module
     require_upToDateLoadsModule: (ut) ->
       loadedRef = {loaded: true}
       ut\stub(ModuleLoader, "loadModule")\returns loadedRef
-      task = {updated: false, ref: {wrong: true}, record: {namespace: "l0.dep", name: "Dep"}, run: ((wait) => 0)}
+      task = {updated: false, ref: {wrong: true}, record: {namespace: "l0.dep", name: "Dep"}, run: ((wait) => UpdateStatus.UpToDate)}
       record = {scriptType: Common.ScriptType.Module, name: "Dep", namespace: "l0.dep", virtual: false}
       ut\assertEquals (Updater.require makeRequireUpdater(task), record, 0), loadedRef
 
     -- a successful (re)install returns the task's freshly-loaded ref
     require_successReturnsRef: (ut) ->
-      task = {updated: true, ref: {the: "ref"}, record: {namespace: "l0.dep", name: "Dep"}, run: ((wait) => 1)}
+      task = {updated: true, ref: {the: "ref"}, record: {namespace: "l0.dep", name: "Dep"}, run: ((wait) => UpdateStatus.Installed)}
       record = {scriptType: Common.ScriptType.Module, name: "Dep", namespace: "l0.dep", virtual: false}
       ut\assertEquals (Updater.require makeRequireUpdater(task), record, 0), task.ref
 
     -- an update error (negative code) is passed through to the caller
     require_errorPropagates: (ut) ->
-      task = {updated: false, ref: {}, record: {namespace: "l0.dep", name: "Dep"}, run: ((wait) => return -6, "boom")}
+      task = {updated: false, ref: {}, record: {namespace: "l0.dep", name: "Dep"}, run: ((wait) => return UpdateStatus.NoSuitablePackage, "boom")}
       record = {scriptType: Common.ScriptType.Module, name: "Dep", namespace: "l0.dep", virtual: false}
       ref, code, detail = Updater.require makeRequireUpdater(task), record, 0
       ut\assertNil ref
-      ut\assertEquals code, -6
+      ut\assertEquals code, UpdateStatus.NoSuitablePackage
       ut\assertEquals detail, "boom"
 
     -- scheduleUpdate: guards, then runs a due update.
 
-    scheduleUpdate_disabledReturnsMinus1: (ut) ->
+    scheduleUpdate_disabledRejected: (ut) ->
       updater = makeScheduleUpdater {updaterEnabled: false}
-      ut\assertEquals (Updater.scheduleUpdate updater, {name: "X", namespace: "l0.x"}), -1
+      ut\assertEquals (Updater.scheduleUpdate updater, {name: "X", namespace: "l0.x"}), UpdateStatus.UpdaterDisabled
 
-    scheduleUpdate_virtualReturnsMinus3: (ut) ->
+    scheduleUpdate_virtualRejected: (ut) ->
       updater = makeScheduleUpdater {updaterEnabled: true}
-      ut\assertEquals (Updater.scheduleUpdate updater, {virtual: true, name: "X", namespace: "l0.x"}), -3
+      ut\assertEquals (Updater.scheduleUpdate updater, {virtual: true, name: "X", namespace: "l0.x"}), UpdateStatus.Unmanaged
 
-    scheduleUpdate_withinIntervalReturns0: (ut) ->
+    scheduleUpdate_withinIntervalSkips: (ut) ->
       updater = makeScheduleUpdater {updaterEnabled: true, updateInterval: 100000}
       record = {virtual: false, name: "X", namespace: "l0.x", config: {c: {lastUpdateCheck: os.time!}}}
-      ut\assertEquals (Updater.scheduleUpdate updater, record), 0
+      ut\assertEquals (Updater.scheduleUpdate updater, record), UpdateStatus.UpToDate
 
-    -- the entry point is in Aegisub's ?data automation dir (isUserPath false) → don't shadow it (-9)
-    scheduleUpdate_protectedInstallReturnsMinus9: (ut) ->
+    -- the entry point is in Aegisub's ?data automation dir (isUserPath false) → don't shadow it
+    scheduleUpdate_protectedInstallRejected: (ut) ->
       updater = makeScheduleUpdater {updaterEnabled: true, updateInterval: 0}
       record = {
         virtual: false, name: "X", namespace: "l0.x", scriptType: Common.ScriptType.Module
@@ -95,18 +96,18 @@
         getEntryPointPath: (=> "data/path", false)
       }
       code, path = Updater.scheduleUpdate updater, record
-      ut\assertEquals code, -9
+      ut\assertEquals code, UpdateStatus.ProtectedInstall
       ut\assertEquals path, "data/path"
 
     scheduleUpdate_runsTaskWhenDue: (ut) ->
-      task = {run: (=> 1)}
+      task = {run: (=> UpdateStatus.Installed)}
       updater = makeScheduleUpdater {updaterEnabled: true, updateInterval: 0, :task}
       record = {
         virtual: false, name: "X", namespace: "l0.x", scriptType: Common.ScriptType.Module
         config: {c: {}, write: (=>)}
         getEntryPointPath: (=> "user/path", true)
       }
-      ut\assertEquals (Updater.scheduleUpdate updater, record), 1
+      ut\assertEquals (Updater.scheduleUpdate updater, record), UpdateStatus.Installed
 
     -- acquireLock / releaseLock / renewLock: the lock state machine.
 
@@ -158,7 +159,7 @@
       record = {__class: DependencyControl, scriptType: Common.ScriptType.Module, namespace: "l0.x"}
       task, code, err = Updater.addTask updater, record, "not-a-version"
       ut\assertNil task
-      ut\assertEquals code, -8
+      ut\assertEquals code, UpdateStatus.InvalidVersion
       ut\assertNotNil err
 
     -- a record with a queued task updates that task in place rather than creating a new one
@@ -175,26 +176,47 @@
 
     -- a record with no queued task gets a fresh UpdateTask, which is cached under its scriptType/namespace
     addTask_createsNewTask: (ut) ->
-      record = {__class: DependencyControl, scriptType: Common.ScriptType.Module, namespace: "l0.new"}
+      record = {__class: DependencyControl, scriptType: Common.ScriptType.Module, namespace: "l0.new", validateNamespace: => true}
       updater = setmetatable {
         tasks: {[Common.ScriptType.Module]: {}}
         logger: {log: ->, trace: ->}
-        config: {c: {dumpFeeds: false}}
+        config: {c: {dumpFeeds: false, updaterEnabled: true}}
       }, __index: Updater.__base
       task = Updater.addTask updater, record, "1.0.0"
       ut\assertNotNil task
       ut\assertIs task.__class, UpdateTask
       ut\assertIs updater.tasks[Common.ScriptType.Module][record.namespace], task
 
+    -- the updaterEnabled / namespace guards (moved out of UpdateTask.new, where a constructor's return is
+    -- discarded) now reject task creation through addTask
+    addTask_disabledUpdaterRejects: (ut) ->
+      record = {__class: DependencyControl, scriptType: Common.ScriptType.Module, namespace: "l0.new", validateNamespace: => true}
+      updater = setmetatable {
+        tasks: {[Common.ScriptType.Module]: {}}, config: {c: {updaterEnabled: false}}
+      }, __index: Updater.__base
+      task, code = Updater.addTask updater, record, "1.0.0"
+      ut\assertNil task
+      ut\assertEquals code, UpdateStatus.UpdaterDisabled
+
+    addTask_invalidNamespaceRejects: (ut) ->
+      record = {__class: DependencyControl, scriptType: Common.ScriptType.Module, namespace: "bad ns", validateNamespace: => false}
+      updater = setmetatable {
+        tasks: {[Common.ScriptType.Module]: {}}, config: {c: {updaterEnabled: true}}
+      }, __index: Updater.__base
+      task, code = Updater.addTask updater, record, "1.0.0"
+      ut\assertNil task
+      ut\assertEquals code, UpdateStatus.InvalidNamespace
+
     _order: {
       "getOfficialTrustedFeeds_usesCacheWhenPresent", "getOfficialBlockedFeeds_usesCacheWhenPresent"
       "require_upToDateLoadsModule", "require_successReturnsRef", "require_errorPropagates"
-      "scheduleUpdate_disabledReturnsMinus1", "scheduleUpdate_virtualReturnsMinus3"
-      "scheduleUpdate_withinIntervalReturns0", "scheduleUpdate_protectedInstallReturnsMinus9"
+      "scheduleUpdate_disabledRejected", "scheduleUpdate_virtualRejected"
+      "scheduleUpdate_withinIntervalSkips", "scheduleUpdate_protectedInstallRejected"
       "scheduleUpdate_runsTaskWhenDue"
       "acquireLock_returnsTrueWhenAlreadyHeld", "acquireLock_acquiresAndSetsHasLock"
       "acquireLock_failsWhenHeldByOther", "releaseLock_releasesWhenHeld", "releaseLock_noopWhenNotHeld"
       "renewLock_renewsWhenHeld"
       "addTask_versionParseErrorReturns", "addTask_updatesExistingTask", "addTask_createsNewTask"
+      "addTask_disabledUpdaterRejects", "addTask_invalidNamespaceRejects"
     }
   }

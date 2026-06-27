@@ -35,7 +35,7 @@ TrustBand = Enum "UpdaterTrustBand", {
 ---The outcome of resolving a package source: either a source to install or a status to return.
 ---@class UpdaterResolution
 ---@field installRequired boolean Whether the caller must perform an install/update.
----@field statusCode? number Status code to return when no install is required (e.g. 0 up-to-date, 3 skipped optional, or a negative error code).
+---@field statusCode? UpdateStatus The status to return when no install is required (installRequired false).
 ---@field statusDetailMessage? any Detail accompanying statusCode (e.g. an untrusted feed URL or an error string).
 ---@field selectedSource? CandidatePackageSource The source to install; set when installRequired is true.
 ---@field stickiness? SourceChoiceStickiness The source-choice stickiness to persist; set when installRequired is true.
@@ -118,33 +118,95 @@ SourceFeedKind = Enum "SourceFeedKind", {
 ---@field provider? { namespace: string, version?: string } The provider that satisfied the requirement, when resolved indirectly.
 ---@field stickiness SourceChoiceStickiness How sticky the choice is.
 
+-- The outcome of an install/update operation. A non-negative value is a success/skip outcome; a
+-- negative value is a failure whose message template is `updateError[value]`.
+---@alias UpdateStatus
+---| 0 # UpToDate: the installed version already satisfies the target
+---| 1 # Installed: the install or update succeeded
+---| 2 # AlreadyUpdated: another in-flight update already brought the package to the target version
+---| 3 # SkippedOptional: an optional dependency couldn't be satisfied and was skipped
+---| -1 # UpdaterDisabled: the updater is disabled in the config
+---| -2 # InvalidNamespace: the record's namespace doesn't conform to the rules
+---| -3 # Unmanaged: the record is virtual or unmanaged, so it isn't updated
+---| -5 # AnotherUpdateRunning: another script or process holds the updater lock
+---| -6 # NoSuitablePackage: no feed offered a package satisfying the requirement
+---| -7 # NoInternet: no internet connection is available
+---| -8 # InvalidVersion: the requested version string couldn't be parsed
+---| -9 # ProtectedInstall: the entry point is in Aegisub's ?data automation directory
+---| -10 # TaskAlreadyRunning: this update task is already running
+---| -15 # RequirementsUnmet: the package's own required modules couldn't be satisfied
+---| -16 # UntrustedFeed: the only suitable package is in an untrusted feed
+---| -17 # PinnedUnavailable: the pinned package source is no longer available
+---| -18 # UserAborted: the user aborted the update
+---| -19 # BlockedFeed: the only suitable package is in a feed the user blocked
+---| -30 # TempDirFailed: the temporary download directory couldn't be created
+---| -33 # PathTraversal: a feed file tried to deploy outside its namespaced path
+---| -35 # BadHash: a feed file carried a missing or malformed SHA-1 hash
+---| -50 # MoveFailed: some downloaded files couldn't be moved into place
+---| -55 # ModuleNotFound: the install succeeded but the module loader couldn't find the module
+---| -56 # ModuleLoadFailed: the install succeeded but the module raised while loading
+---| -57 # MissingVersionRecord: the installed module exposes no version record
+---| -58 # RecordCreateFailed: creating an unmanaged record for the installed module failed
+---| -140 # DownloadAddFailed: a file download couldn't be queued
+---| -245 # DownloadFailed: one or more file downloads failed
+UpdateStatus = Enum "UpdateStatus", {
+    UpToDate:               0
+    Installed:              1
+    AlreadyUpdated:         2
+    SkippedOptional:        3
+    UpdaterDisabled:       -1
+    InvalidNamespace:      -2
+    Unmanaged:             -3
+    AnotherUpdateRunning:  -5
+    NoSuitablePackage:     -6
+    NoInternet:            -7
+    InvalidVersion:        -8
+    ProtectedInstall:      -9
+    TaskAlreadyRunning:   -10
+    RequirementsUnmet:    -15
+    UntrustedFeed:        -16
+    PinnedUnavailable:    -17
+    UserAborted:          -18
+    BlockedFeed:          -19
+    TempDirFailed:        -30
+    PathTraversal:        -33
+    BadHash:              -35
+    MoveFailed:           -50
+    ModuleNotFound:       -55
+    ModuleLoadFailed:     -56
+    MissingVersionRecord: -57
+    RecordCreateFailed:   -58
+    DownloadAddFailed:   -140
+    DownloadFailed:      -245
+}
+
 msgs = {
     updateError: {
-        [0]: "Couldn't %s %s '%s' because of a paradox: module not found but updater says up-to-date (%s)"
-        [1]: "Couldn't %s %s '%s' because the updater is disabled."
-        [2]: "Skipping %s of %s '%s': namespace '%s' doesn't conform to rules."
-        [3]: "Skipping %s of unmanaged %s '%s'."
-        [4]: "No remaining feed available to %s %s '%s' from."
-        [6]: "The %s of %s '%s' failed because no suitable package could be found %s."
-        [5]: "Skipped %s of %s '%s': Another update initiated by %s is already running."
-        [7]: "Skipped %s of %s '%s': An internet connection is currently not available."
-        [8]: "Couldn't %s %s '%s' because the requested version is invalid: %s"
-        [9]: "Skipped %s of %s '%s' because its entry point (%s) is in Aegisub's data automation directory. If it's managed by a system package manager, please update it through that instead."
-        [10]: "Skipped %s of %s '%s': the update task is already running."
-        [15]: "Couldn't %s %s '%s' because its requirements could not be satisfied:"
-        [16]: "Couldn't %s %s '%s' because a suitable package was only found in an untrusted feed (%s). Add it to your trusted feeds to proceed."
-        [17]: "Couldn't %s %s '%s' because its pinned package source is no longer available. Update or clear the pin to proceed."
-        [18]: "Aborted %s of %s '%s' at your request."
-        [19]: "Couldn't %s %s '%s' because you blocked the feed (%s) it would be installed from."
-        [30]: "Couldn't %s %s '%s': failed to create temporary download directory %s"
-        [33]: "Aborted %s of %s '%s' because it attempted to deploy a file (%s) outside of its namespaced path."
-        [35]: "Aborted %s of %s '%s' because the feed contained a missing or malformed SHA-1 hash for file %s."
-        [50]: "Couldn't finish %s of %s '%s' because some files couldn't be moved to their target location:\n"
-        [55]: "%s of %s '%s' succeeded, couldn't be located by the module loader."
-        [56]: "%s of %s '%s' succeeded, but an error occurred while loading the module:\n%s"
-        [57]: "%s of %s '%s' succeeded, but it's missing a version record."
-        [58]: "%s of unmanaged %s '%s' succeeded, but an error occurred while creating a DependencyControl record: %s",
-        [100]: "Error (%d) in component %s during %s of %s '%s':\n— %s"
+        [UpdateStatus.UpToDate]:             "Couldn't %s %s '%s' because of a paradox: module not found but updater says up-to-date (%s)"
+        [UpdateStatus.UpdaterDisabled]:      "Couldn't %s %s '%s' because the updater is disabled."
+        [UpdateStatus.InvalidNamespace]:     "Skipping %s of %s '%s': namespace '%s' doesn't conform to rules."
+        [UpdateStatus.Unmanaged]:            "Skipping %s of unmanaged %s '%s'."
+        [UpdateStatus.AnotherUpdateRunning]: "Skipped %s of %s '%s': Another update initiated by %s is already running."
+        [UpdateStatus.NoSuitablePackage]:    "The %s of %s '%s' failed because no suitable package could be found %s."
+        [UpdateStatus.NoInternet]:           "Skipped %s of %s '%s': An internet connection is currently not available."
+        [UpdateStatus.InvalidVersion]:       "Couldn't %s %s '%s' because the requested version is invalid: %s"
+        [UpdateStatus.ProtectedInstall]:     "Skipped %s of %s '%s' because its entry point (%s) is in Aegisub's data automation directory. If it's managed by a system package manager, please update it through that instead."
+        [UpdateStatus.TaskAlreadyRunning]:   "Skipped %s of %s '%s': the update task is already running."
+        [UpdateStatus.RequirementsUnmet]:    "Couldn't %s %s '%s' because its requirements could not be satisfied:"
+        [UpdateStatus.UntrustedFeed]:        "Couldn't %s %s '%s' because a suitable package was only found in an untrusted feed (%s). Add it to your trusted feeds to proceed."
+        [UpdateStatus.PinnedUnavailable]:    "Couldn't %s %s '%s' because its pinned package source is no longer available. Update or clear the pin to proceed."
+        [UpdateStatus.UserAborted]:          "Aborted %s of %s '%s' at your request."
+        [UpdateStatus.BlockedFeed]:          "Couldn't %s %s '%s' because you blocked the feed (%s) it would be installed from."
+        [UpdateStatus.TempDirFailed]:        "Couldn't %s %s '%s': failed to create temporary download directory %s"
+        [UpdateStatus.PathTraversal]:        "Aborted %s of %s '%s' because it attempted to deploy a file (%s) outside of its namespaced path."
+        [UpdateStatus.BadHash]:              "Aborted %s of %s '%s' because the feed contained a missing or malformed SHA-1 hash for file %s."
+        [UpdateStatus.MoveFailed]:           "Couldn't finish %s of %s '%s' because some files couldn't be moved to their target location:\n"
+        [UpdateStatus.ModuleNotFound]:       "%s of %s '%s' succeeded, couldn't be located by the module loader."
+        [UpdateStatus.ModuleLoadFailed]:     "%s of %s '%s' succeeded, but an error occurred while loading the module:\n%s"
+        [UpdateStatus.MissingVersionRecord]: "%s of %s '%s' succeeded, but it's missing a version record."
+        [UpdateStatus.RecordCreateFailed]:   "%s of unmanaged %s '%s' succeeded, but an error occurred while creating a DependencyControl record: %s"
+        -- shared template for component-encoded statuses (value <= -100, e.g. DownloadAddFailed/DownloadFailed)
+        component:                           "Error (%d) in component %s during %s of %s '%s':\n— %s"
     }
     updaterErrorComponent: {"DownloadManager (adding download)", "DownloadManager"}
     checkFeed: {
@@ -229,14 +291,13 @@ class UpdateTask
     ---@return string
     @getUpdaterErrorMsg = (code, name, scriptType, isInstall, detailMsg) ->
         if code <= -100
-            -- Generic downstream error
-            return msgs.updateError[100]\format -code, msgs.updaterErrorComponent[math.floor(-code/100)],
+            -- a component-encoded status packs its component id as floor(-code / 100)
+            return msgs.updateError.component\format -code, msgs.updaterErrorComponent[math.floor(-code/100)],
                    Common.terms.isInstall[isInstall], Common.terms.scriptType.singular[scriptType], name, detailMsg
         else
-            -- Updater error:
-            return msgs.updateError[-code]\format Common.terms.isInstall[isInstall],
-                                                  Common.terms.scriptType.singular[scriptType],
-                                                  name, detailMsg
+            return msgs.updateError[code]\format Common.terms.isInstall[isInstall],
+                                                 Common.terms.scriptType.singular[scriptType],
+                                                 name, detailMsg
 
     ---Creates an update task for one record.
     ---@param record Record
@@ -261,9 +322,6 @@ class UpdateTask
             downloadPath: aegisub.decode_path "?user/feedDump/"
             dumpExpanded: true
         } if @updater.config.c.dumpFeeds
-
-        return nil, -1 unless @updater.config.c.updaterEnabled -- TODO: check if this even works
-        return nil, -2 unless @record\validateNamespace!
 
     ---Loads a candidate feed, downloading it if necessary.
     ---@param feedUrl string
@@ -459,7 +517,7 @@ class UpdateTask
     ---@param provider ScriptUpdateRecord The selected provider's feed record.
     ---@param feedUrl string The feed the provider was found in, used as its primary feed.
     ---@return any ref The loaded provider module reference, or nil on failure.
-    ---@return number? code Updater status code on failure.
+    ---@return UpdateStatus? code Updater status code on failure.
     ---@return string? detail Error detail on failure.
     ---@private
     __installProvider: (provider, feedUrl) =>
@@ -558,31 +616,31 @@ class UpdateTask
 
     ---Runs the full update/install flow for this task.
     ---@param waitLock? boolean Wait for a concurrent update to finish instead of bailing.
-    ---@return number statusCode
+    ---@return UpdateStatus statusCode
     ---@return any detail
     run: (waitLock) =>
         with @record do @logger\log msgs.run.starting, Common.terms.isInstall[.virtual],
                                                        Common.terms.scriptType.singular[.scriptType], .name
 
         -- don't perform update of a script when another one is already running for the same script
-        return @__logUpdateError -10 if @running
+        return @__logUpdateError UpdateStatus.TaskAlreadyRunning if @running
 
         -- don't shadow scripts installed to the ?data automation dir with a ?user copy
         entryPath, isUserPath = @record\getEntryPointPath!
         if isUserPath == false
-            return @__logUpdateError -9, entryPath
+            return @__logUpdateError UpdateStatus.ProtectedInstall, entryPath
 
         -- check if the script was already updated
         if @updated and @record\checkVersion @targetVersion
             @logger\log msgs.run.alreadyUpdated, @record.name, SemanticVersioning\toString @record.version
-            return 2
+            return UpdateStatus.AlreadyUpdated
 
         -- check internet connection
-        return @__logUpdateError -7 unless @@__downloader\isInternetConnected!
+        return @__logUpdateError UpdateStatus.NoInternet unless @@__downloader\isInternetConnected!
 
         -- get a lock on the updater
         success, otherHost = @updater\acquireLock waitLock
-        return @__logUpdateError -5, otherHost unless success
+        return @__logUpdateError UpdateStatus.AnotherUpdateRunning, otherHost unless success
 
         resolution = @__resolve!
         return resolution.statusCode, resolution.statusDetailMessage unless resolution.installRequired
@@ -595,7 +653,7 @@ class UpdateTask
         if selectedSource.isDirect and not @record.virtual and @record\checkVersion selectedSource.updateRecord.version
             @logger\log msgs.run.upToDate, Common.terms.scriptType.singular[@record.scriptType],
                                            @record.name, SemanticVersioning\toString @record.version
-            return 0
+            return UpdateStatus.UpToDate
 
         wasVirtual = @record.virtual
         if selectedSource.isDirect
@@ -611,14 +669,14 @@ class UpdateTask
         @ref, @updated = ref, true
         @logger\log msgs.run.providerResolved, @record.namespace, Common.terms.scriptType.singular[Common.ScriptType.Module],
                     selectedSource.updateRecord.name or selectedSource.updateRecord.namespace, selectedSource.updateRecord.version
-        return 1, selectedSource.updateRecord.version
+        return UpdateStatus.Installed, selectedSource.updateRecord.version
 
     ---Logs the error message for a negative status code and returns the code and detail unchanged.
     ---Non-negative (success/skip) codes are returned without logging.
-    ---@param statusCode number The updater status code.
+    ---@param statusCode UpdateStatus The updater status code.
     ---@param statusDetailMessage? string a message with further explanation of the outcome, if any.
     ---@param virtual? boolean Whether this is a fresh install (default: the record's current virtual flag).
-    ---@return number statusCode the same code passed in.
+    ---@return UpdateStatus statusCode the same code passed in.
     ---@return string? statusDetailMessage  the same status detail message passed in, if any.
     ---@private
     __logUpdateError: (statusCode, statusDetailMessage, virtual = @record.virtual) =>
@@ -628,7 +686,7 @@ class UpdateTask
 
     ---Logs and returns this task's "no suitable package" status — a skip if optional, else a failure.
     ---@param maxVersion number The highest candidate version seen during resolution (0 when none was found).
-    ---@return number statusCode A negative failure code for a required dependency, or the skip code (3) for an optional one.
+    ---@return UpdateStatus statusCode A negative failure code for a required dependency, or the skip code (3) for an optional one.
     ---@return string? statusDetailMessage The availability summary for a failure; nil for an optional skip.
     ---@private
     __reportNoSuitablePackage: (maxVersion) =>
@@ -638,8 +696,8 @@ class UpdateTask
         if @optional
             @logger\log msgs.run.skippedOptional, @record.name, Common.terms.isInstall[@record.virtual],
                                                   msgs.run.optionalNoUpdate\format detail
-            return 3
-        return @__logUpdateError -6, detail
+            return UpdateStatus.SkippedOptional
+        return @__logUpdateError UpdateStatus.NoSuitablePackage, detail
 
     ---Resolves which package source should satisfy this task, without installing anything. May fetch feeds
     ---and prompt the user (to choose a package source or to approve an untrusted feed). The updater lock
@@ -740,16 +798,16 @@ class UpdateTask
             if @optional
                 @logger\log msgs.run.skippedOptional, @record.name, Common.terms.isInstall[@record.virtual],
                                                       msgs.run.optionalAborted
-                return 3
-            return @__logUpdateError -18
+                return UpdateStatus.SkippedOptional
+            return @__logUpdateError UpdateStatus.UserAborted
 
         -- a hard pin whose remembered source vanished aborts (required) or skips (optional)
         if stickiness == SourceChoiceStickiness.Pinned and not reuse
             if @optional
                 @logger\log msgs.run.skippedOptional, @record.name, Common.terms.isInstall[@record.virtual],
                                                       msgs.run.optionalPinnedUnavailable
-                return withoutInstall 3
-            code, detail = @__logUpdateError -17
+                return withoutInstall UpdateStatus.SkippedOptional
+            code, detail = @__logUpdateError UpdateStatus.PinnedUnavailable
             return withoutInstall code, detail
 
         unless selected
@@ -757,7 +815,7 @@ class UpdateTask
                 -- dependency is already up-to-date, so no matter we don't have a candidate to install
                 @logger\log msgs.run.upToDate, Common.terms.scriptType.singular[@record.scriptType],
                                                @record.name, SemanticVersioning\toString @record.version
-                return withoutInstall 0
+                return withoutInstall UpdateStatus.UpToDate
 
             code, detail = @__reportNoSuitablePackage maxVer
             return withoutInstall code, detail
@@ -795,15 +853,15 @@ class UpdateTask
                 if @optional
                     reason = (userBlockedFeed and msgs.run.optionalBlocked or msgs.run.optionalUntrusted)\format selected.feedUrl
                     @logger\log msgs.run.skippedOptional, @record.name, Common.terms.isInstall[@record.virtual], reason
-                    return withoutInstall 3
-                code, detail = @__logUpdateError (userBlockedFeed and -19 or -16), selected.feedUrl
+                    return withoutInstall UpdateStatus.SkippedOptional
+                code, detail = @__logUpdateError (userBlockedFeed and UpdateStatus.BlockedFeed or UpdateStatus.UntrustedFeed), selected.feedUrl
                 return withoutInstall code, detail
 
         return {installRequired: true, selectedSource: selected, :stickiness, maxVersion: maxVer}
 
     ---Downloads and installs files for a selected update entry.
     ---@param update ScriptUpdateRecord
-    ---@return number statusCode
+    ---@return UpdateStatus statusCode
     ---@return table|string|nil detail
     ---@private
     performUpdate: (update) =>
@@ -814,7 +872,7 @@ class UpdateTask
             return ...
 
         -- don't perform update of a script when another one is already running for the same script
-        return finish -10 if @running
+        return finish UpdateStatus.TaskAlreadyRunning if @running
         @running = true
 
         -- set a dummy ref (which hasn't yet been set for virtual and unmanaged modules)
@@ -835,11 +893,11 @@ class UpdateTask
                 @logger.indent += 1
                 @logger\log err
                 @logger.indent -= 1
-                return finish -15, err
+                return finish UpdateStatus.RequirementsUnmet, err
 
             -- since circular dependencies are possible, our task may have completed in the meantime
             -- so check again if we still need to update
-            return finish 2 if @updated and @record\checkVersion update.version
+            return finish UpdateStatus.AlreadyUpdated if @updated and @record\checkVersion update.version
 
 
         -- download updated scripts to temp directory
@@ -848,7 +906,7 @@ class UpdateTask
         tmpDir = fileOps.getTempDir!
         res, dir = fileOps.mkdir tmpDir
 
-        return finish -30, "#{tmpDir} (#{dir})" if res == nil
+        return finish UpdateStatus.TempDirFailed, "#{tmpDir} (#{dir})" if res == nil
 
         @logger\log msgs.performUpdate.updateReady, tmpDir
 
@@ -863,7 +921,7 @@ class UpdateTask
             tmpName, prettyName = "#{tmpDir}/#{file.type}/#{baseName}", baseName
             switch file.type
                 when "script", "test"
-                    return finish -33, file.name if file.name\match "%.%."
+                    return finish UpdateStatus.PathTraversal, file.name if file.name\match "%.%."
                     file.fullName = UpdateFeed\getFileDeployPath @record.namespace, @record.scriptType, file.name, file.type
 
                     prettyName ..= " (Unit Test)" if file.type == "test"
@@ -874,14 +932,14 @@ class UpdateTask
             continue if file.delete
 
             unless type(file.sha1)=="string" and #file.sha1 == 40 and tonumber(file.sha1, 16)
-                return finish -35, "#{prettyName} (#{tostring(file.sha1)\lower!})"
+                return finish UpdateStatus.BadHash, "#{prettyName} (#{tostring(file.sha1)\lower!})"
 
             if fileOps.verifyHash file.fullName, file.sha1
                 @logger\trace msgs.performUpdate.fileUnchanged, prettyName
                 continue
 
             dl, err = @@__downloader\addDownload file.url, tmpName, file.sha1
-            return finish -140, err unless dl
+            return finish UpdateStatus.DownloadAddFailed, err unless dl
             dl.targetFile = file.fullName
             @logger\trace msgs.performUpdate.fileAddDownload, file.url, prettyName
 
@@ -893,7 +951,7 @@ class UpdateTask
         failedDownloads = [dl for dl in *@@__downloader.downloads when dl.status == Downloader.Download.Status.Failed]
         if #failedDownloads>0
             err = @logger\format ["#{dl.url}: #{dl.error}" for dl in *failedDownloads], 1
-            return finish -245, err
+            return finish UpdateStatus.DownloadFailed, err
 
 
         -- move files to their destination directory and clean up
@@ -913,7 +971,7 @@ class UpdateTask
         @logger.indent -= 1
 
         if #moveErrors>0
-            return finish -50, @logger\format moveErrors, 1
+            return finish UpdateStatus.MoveFailed, @logger\format moveErrors, 1
         else fileOps.rmdir tmpDir   -- recurses by default: the temp dir still holds the per-type subdirectories
         os.remove file.fullName for file in *update.files when file.delete and not file.unknown
 
@@ -925,18 +983,18 @@ class UpdateTask
             ref = ModuleLoader.loadModule @record, @record, false, true
             unless ref
                 if @record._error
-                    return finish -56, @logger\format @record._error, 1
-                else return finish -55
+                    return finish UpdateStatus.ModuleLoadFailed, @logger\format @record._error, 1
+                else return finish UpdateStatus.ModuleNotFound
 
             -- get a fresh version record
             if type(ref.version) == "table" and ref.version.__class.__name == @@__DependencyControl.__name
                 @record = ref.version
             else
                 -- look for any compatible non-DepCtrl version records and create an unmanaged record
-                return finish -57 unless ref.version
+                return finish UpdateStatus.MissingVersionRecord unless ref.version
                 success, rec = pcall @@__DependencyControl, { moduleName: @record.moduleName, version: ref.version,
                                                           recordType: Common.RecordType.Unmanaged, name: @record.name }
-                return finish -58, rec unless success
+                return finish UpdateStatus.RecordCreateFailed, rec unless success
                 @record = rec
             @ref = ref
 
@@ -956,7 +1014,7 @@ class UpdateTask
         @logger\log msgs.performUpdate.reloadNotice
 
         -- TODO: check handling of private module copies (need extra return value?)
-        return finish 1, SemanticVersioning\toString @record.version
+        return finish UpdateStatus.Installed, SemanticVersioning\toString @record.version
 
 
     ---@private
@@ -973,6 +1031,7 @@ class UpdateTask
                     @logger\log msgs.refreshRecord.otherUpdate, Common.terms.scriptType.singular[.scriptType], .name,
                                 SemanticVersioning\toString @record.version
 
+UpdateTask.UpdateStatus = UpdateStatus
 UpdateTask.PromptThreshold = PromptThreshold
 UpdateTask.UpdateReason = UpdateReason
 UpdateTask.SourceChoiceStickiness = SourceChoiceStickiness

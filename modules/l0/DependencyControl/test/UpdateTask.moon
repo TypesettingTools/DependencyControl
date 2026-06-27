@@ -10,6 +10,7 @@
   Downloader = require "l0.DependencyControl.Downloader"
   ModuleLoader = require "l0.DependencyControl.ModuleLoader"
 
+  UpdateStatus = UpdateTask.UpdateStatus
   PromptThreshold = UpdateTask.PromptThreshold
   UpdateReason = UpdateTask.UpdateReason
   SourceChoiceStickiness = UpdateTask.SourceChoiceStickiness
@@ -621,7 +622,7 @@
       }
       d = UpdateTask.__resolve task
       ut\assertFalse d.installRequired
-      ut\assertEquals d.statusCode, -16
+      ut\assertEquals d.statusCode, UpdateStatus.UntrustedFeed
 
     -- trust gate: the same untrusted winner proceeds once the user approves it (Trust this time)
     resolve_untrustedApprovedProceeds: (ut) ->
@@ -642,21 +643,21 @@
       }
       d = UpdateTask.__resolve task
       ut\assertFalse d.installRequired
-      ut\assertEquals d.statusCode, 3
+      ut\assertEquals d.statusCode, UpdateStatus.SkippedOptional
 
     -- no candidate: a required install with no source anywhere fails with -6
     resolve_noCandidateRequiredFails: (ut) ->
       task = makeResolveTask {declaredFeed: "feed://decl", feeds: {"feed://decl": {}}}
       d = UpdateTask.__resolve task
       ut\assertFalse d.installRequired
-      ut\assertEquals d.statusCode, -6
+      ut\assertEquals d.statusCode, UpdateStatus.NoSuitablePackage
 
     -- no candidate: an optional install with no source is skipped (3)
     resolve_noCandidateOptionalSkips: (ut) ->
       task = makeResolveTask {declaredFeed: "feed://decl", optional: true, feeds: {"feed://decl": {}}}
       d = UpdateTask.__resolve task
       ut\assertFalse d.installRequired
-      ut\assertEquals d.statusCode, 3
+      ut\assertEquals d.statusCode, UpdateStatus.SkippedOptional
 
     -- pinned: the remembered source is reused directly and the pin is preserved, no prompt
     resolve_pinnedReuseProceeds: (ut) ->
@@ -677,7 +678,7 @@
       task = makeResolveTask {declaredFeed: "feed://decl", currentSource: cs, feeds: {"feed://decl": {}}}
       d = UpdateTask.__resolve task
       ut\assertFalse d.installRequired
-      ut\assertEquals d.statusCode, -17
+      ut\assertEquals d.statusCode, UpdateStatus.PinnedUnavailable
 
     -- pinned: the same vanished pin only skips (3) for an optional dependency
     resolve_pinnedMissingOptionalSkips: (ut) ->
@@ -685,7 +686,7 @@
       task = makeResolveTask {declaredFeed: "feed://decl", optional: true, currentSource: cs, feeds: {"feed://decl": {}}}
       d = UpdateTask.__resolve task
       ut\assertFalse d.installRequired
-      ut\assertEquals d.statusCode, 3
+      ut\assertEquals d.statusCode, UpdateStatus.SkippedOptional
 
     -- retain: a still-eligible remembered source is reused without prompting
     resolve_retainReuseProceeds: (ut) ->
@@ -739,7 +740,7 @@
       }
       d = UpdateTask.__resolve task
       ut\assertFalse d.installRequired
-      ut\assertEquals d.statusCode, -18
+      ut\assertEquals d.statusCode, UpdateStatus.UserAborted
 
     -- auto: never prompts even when several equally-ranked candidates tie; takes the algorithm's pick
     resolve_autoNeverPrompts: (ut) ->
@@ -775,7 +776,7 @@
       }
       d = UpdateTask.__resolve task
       ut\assertFalse d.installRequired
-      ut\assertEquals d.statusCode, -6
+      ut\assertEquals d.statusCode, UpdateStatus.NoSuitablePackage
       ut\assertNil task.triedFeeds["feed://blocked"]   -- skipped before being fetched
 
     -- userFeed: an exclusive override feed is consulted in place of the declared-feed cascade
@@ -799,7 +800,7 @@
         }
       }
       code = UpdateTask.run task
-      ut\assertEquals code, 1
+      ut\assertEquals code, UpdateStatus.Installed
       ut\assertNotNil task.calls.persisted
       ut\assertNotNil task.calls.performUpdate
       ut\assertNil task.calls.installProvider
@@ -818,7 +819,7 @@
         }
       }
       code, detail = UpdateTask.run task
-      ut\assertEquals code, 1
+      ut\assertEquals code, UpdateStatus.Installed
       ut\assertEquals detail, "2.0.0"
       ut\assertNotNil task.calls.installProvider
       ut\assertNil task.calls.performUpdate
@@ -833,26 +834,26 @@
         }
       }
       code = UpdateTask.run task
-      ut\assertEquals code, 0
+      ut\assertEquals code, UpdateStatus.UpToDate
       ut\assertNil task.calls.performUpdate   -- no install performed
       ut\assertNotNil task.calls.persisted    -- but the source choice is still recorded
 
     -- run(): a terminal resolution (no install required) returns its status without dispatching
     run_terminalResolutionReturnsStatus: (ut) ->
       task = makeRunTask {
-        resolution: {installRequired: false, statusCode: -16, statusDetailMessage: "feed://x"}
+        resolution: {installRequired: false, statusCode: UpdateStatus.UntrustedFeed, statusDetailMessage: "feed://x"}
       }
       code, detail = UpdateTask.run task
-      ut\assertEquals code, -16
+      ut\assertEquals code, UpdateStatus.UntrustedFeed
       ut\assertEquals detail, "feed://x"
       ut\assertNil task.calls.persisted
       ut\assertNil task.calls.performUpdate
 
     -- run(): the internet-connectivity guard fails (-7) before resolution is even attempted
     run_noInternetGuard: (ut) ->
-      task = makeRunTask {online: false, resolution: {installRequired: false, statusCode: 0}}
+      task = makeRunTask {online: false, resolution: {installRequired: false, statusCode: UpdateStatus.UpToDate}}
       code = UpdateTask.run task
-      ut\assertEquals code, -7
+      ut\assertEquals code, UpdateStatus.NoInternet
       ut\assertNil task.calls.resolved   -- the guard returns before resolve()
 
     -- __installProvider: builds a virtual provider record from the feed entry, appends the provider's
@@ -885,7 +886,7 @@
       ut\stub(FileOps, "getTempDir")\returns "tmp"
       ut\stub(FileOps, "mkdir")\returns nil, "denied"
       code = UpdateTask.performUpdate makePerformTask!, {version: 0x10000, files: {}}
-      ut\assertEquals code, -30
+      ut\assertEquals code, UpdateStatus.TempDirFailed
 
     -- performUpdate: a file name containing ".." is rejected as a path-traversal attempt (-33)
     performUpdate_rejectsPathTraversal: (ut) ->
@@ -893,7 +894,7 @@
       ut\stub(FileOps, "mkdir")\returns true, "tmp"
       update = {version: 0x10000, files: {{name: "../evil.moon", type: "script"}}}
       code, detail = UpdateTask.performUpdate makePerformTask!, update
-      ut\assertEquals code, -33
+      ut\assertEquals code, UpdateStatus.PathTraversal
       ut\assertEquals detail, "../evil.moon"
 
     -- performUpdate: a file with a malformed sha1 hash is rejected (-35)
@@ -903,7 +904,7 @@
       ut\stub(UpdateFeed, "getFileDeployPath")\returns "deploy/x.moon"
       update = {version: 0x10000, files: {{name: "x.moon", type: "script", sha1: "abc"}}}   -- not 40 hex chars
       code = UpdateTask.performUpdate makePerformTask!, update
-      ut\assertEquals code, -35
+      ut\assertEquals code, UpdateStatus.BadHash
 
     -- performUpdate: a download that ends in a Failed status is reported (-245)
     performUpdate_reportsFailedDownloads: (ut) ->
@@ -914,7 +915,7 @@
       task = makePerformTask {downloadStatus: Downloader.Download.Status.Failed}
       update = {version: 0x10000, files: {{name: "x.moon", type: "script", url: "http://x", sha1: string.rep "a", 40}}}
       code = UpdateTask.performUpdate task, update
-      ut\assertEquals code, -245
+      ut\assertEquals code, UpdateStatus.DownloadFailed
 
     -- performUpdate: a failed file move (after a successful download) is reported (-50)
     performUpdate_reportsMoveFailures: (ut) ->
@@ -926,7 +927,7 @@
       task = makePerformTask {downloadStatus: Downloader.Download.Status.Finished}
       update = {version: 0x10000, files: {{name: "x.moon", type: "script", url: "http://x", sha1: string.rep "a", 40}}}
       code = UpdateTask.performUpdate task, update
-      ut\assertEquals code, -50
+      ut\assertEquals code, UpdateStatus.MoveFailed
 
     -- performUpdate happy path (module): after a successful download+move, the module is reloaded and the
     -- task's record is swapped to the fresh DependencyControl version record; returns 1 and the new version
@@ -945,7 +946,7 @@
         files: {{name: "x.moon", type: "script", url: "http://x", sha1: string.rep "a", 40}}
       }
       code, detail = UpdateTask.performUpdate task, update
-      ut\assertEquals code, 1
+      ut\assertEquals code, UpdateStatus.Installed
       ut\assertEquals detail, "1.0.0"
       ut\assertTrue task.updated
       ut\assertIs task.record, newRecord   -- record swapped to the freshly-loaded version record

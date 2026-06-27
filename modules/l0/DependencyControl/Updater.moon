@@ -11,8 +11,8 @@ DependencyControl = nil
 UPDATER_LOCK_NAMESPACE = "#{constants.DEPCTRL_NAMESPACE}.Updater"
 UPDATER_LOCK_RESOURCE_RUN  = "run"
 
--- the reason an update runs (see UpdateTask), used here for the addTask/require defaults
 UpdateReason = UpdateTask.UpdateReason
+UpdateStatus = UpdateTask.UpdateStatus
 
 -- Lazily loads and caches DependencyControl's own feed trust lists onto the given updater. Best-effort:
 -- if the feed can't be loaded, only DepCtrl's own feed URL is treated as trusted and nothing as blocked.
@@ -72,7 +72,7 @@ class Updater
     ---@param channel? string Update channel to use.
     ---@param reason? UpdateReason Why the task runs (gates interactive prompts). Defaults to `AutoUpdate`, the least interactive.
     ---@return UpdateTask? task
-    ---@return number? code
+    ---@return UpdateStatus? code
     ---@return string? detail
     addTask: (record, targetVersion, addFeeds = {}, optional, channel, reason = UpdateReason.AutoUpdate) =>
         DependencyControl or= require "l0.DependencyControl"
@@ -82,16 +82,20 @@ class Updater
             record = DependencyControl depRec
 
         targetVersionNumber, err = SemanticVersioning\toNumber targetVersion
-        if (err) then return nil, -8, err
+        if (err) then return nil, UpdateStatus.InvalidVersion, err
 
         task = @tasks[record.scriptType][record.namespace]
         return if task then with task
             .targetVersion = targetVersionNumber
             .addFeeds, .optional, .channel, .reason = addFeeds, optional, channel, reason
 
-        task, code = UpdateTask record, targetVersionNumber, addFeeds, optional, channel, reason, @
+        -- UpdateTask.new can't reject construction (a constructor's return value is discarded), so guard here
+        return nil, UpdateStatus.UpdaterDisabled unless @config.c.updaterEnabled
+        return nil, UpdateStatus.InvalidNamespace unless record\validateNamespace!
+
+        task = UpdateTask record, targetVersionNumber, addFeeds, optional, channel, reason, @
         @tasks[record.scriptType][record.namespace] = task
-        return task, code
+        return task
 
     ---Ensures a module dependency is installed/updated and loadable.
     ---@param record Record
@@ -101,7 +105,7 @@ class Updater
     ---@param channel? string Update channel to use.
     ---@param reason? UpdateReason Defaults to `DependencyResolution` — the reason this method exists; a caller (e.g. an installed provider) may pass another to carry its own reason through.
     ---@return any ref The loaded module reference, or nil on error.
-    ---@return number? code
+    ---@return UpdateStatus? code
     ---@return string? detail
     require: (record, targetVersion, addFeeds, optional, channel, reason = UpdateReason.DependencyResolution) =>
         @logger\assert record.scriptType == Common.ScriptType.Module, msgs.require, record.name or record.namespace
@@ -109,31 +113,31 @@ class Updater
         task, code, res = @addTask record, targetVersion, addFeeds, optional, channel, reason
         code, res = task\run true if task
 
-        if code == 0 and not task.updated
+        if code == UpdateStatus.UpToDate and not task.updated
             -- usually we know in advance if a module is up to date so there's no reason to block other updaters
             -- but we'll make sure to handle this case gracefully, anyway
             @logger\debug msgs.require.upToDate, task.record.name or task.record.namespace
             return ModuleLoader.loadModule task.record, task.record.namespace
-        elseif code >= 0
+        elseif code >= 0  -- any other non-negative outcome (Installed / AlreadyUpdated / SkippedOptional)
             return task.ref
         else -- pass on update errors
             return nil, code, res
 
     ---Performs a periodic non-blocking update check for a managed record.
     ---@param record Record
-    ---@return number|boolean status A status code, or the task's run result.
+    ---@return UpdateStatus|boolean status The status code, or the task's run result.
     scheduleUpdate: (record) =>
         unless @config.c.updaterEnabled
             @logger\trace msgs.scheduleUpdate.updaterDisabled, record.name or record.namespace
-            return -1
+            return UpdateStatus.UpdaterDisabled
 
         -- no regular updates for non-existing or unmanaged modules
         if record.virtual or record.recordType == Common.RecordType.Unmanaged
-            return -3
+            return UpdateStatus.Unmanaged
 
         -- the update interval has not yet been passed since the last update check
         if record.config.c.lastUpdateCheck and (record.config.c.lastUpdateCheck + @config.c.updateInterval > os.time!)
-            return 0
+            return UpdateStatus.UpToDate
 
         record.config.c.lastUpdateCheck = os.time!
         record.config\write!
@@ -143,7 +147,7 @@ class Updater
         if isUserPath == false
             @logger\trace msgs.scheduleUpdate.protectedInstall, Common.terms.scriptType.singular[record.scriptType],
                           record.name or record.namespace, entryPath
-            return -9, entryPath
+            return UpdateStatus.ProtectedInstall, entryPath
 
         task = @addTask record -- no need to check for errors, because we've already accounted for those case
         @logger\trace msgs.scheduleUpdate.runningUpdate, Common.terms.scriptType.singular[record.scriptType], record.name
@@ -208,6 +212,7 @@ class Updater
 
 -- Re-expose UpdateTask, its version-related enums, and its error-message decoder on the public API,
 -- so callers holding only an Updater reference (e.g. ModuleLoader, the Toolbox) can reach them.
+Updater.UpdateStatus = UpdateTask.UpdateStatus
 Updater.PromptThreshold = UpdateTask.PromptThreshold
 Updater.UpdateReason = UpdateTask.UpdateReason
 Updater.SourceChoiceStickiness = UpdateTask.SourceChoiceStickiness
