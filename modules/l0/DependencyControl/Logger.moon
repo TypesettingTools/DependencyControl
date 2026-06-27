@@ -37,7 +37,7 @@ class Logger
         unless seeded
             timer.sleep 10 for i=1,50
             math.randomseed(timer\timeElapsed!*1000000)
-            math.random, math.random, math.random
+            math.random! for i = 1, 3
             seeded = true
             -- timer gets freed on garbage collection
             timer = nil
