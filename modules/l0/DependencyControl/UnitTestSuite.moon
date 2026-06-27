@@ -848,7 +848,10 @@ class UnitTestSuite
             success, failed = cls\run abortOnFail
             unless success
                 failedCnt += 1
-                allFailed[#allFailed+1] = test for test in *failed
+                -- a failed setup returns the sentinel -1 rather than a list of tests; that case is
+                -- surfaced separately via collectResults, so only fold in an actual list here
+                if "table" == type failed
+                    allFailed[#allFailed+1] = test for test in *failed
                 if abortOnFail
                     @logger.indent -= 1
                     @logger\warn msgs.run.abort, i
