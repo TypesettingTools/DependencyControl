@@ -234,8 +234,6 @@ msgs = {
         choosePrompt: "More than one source can supply '%s'. Choose which one to install:"
         choiceUnavailable: "Your remembered source for '%s' is no longer available. Please choose again:"
         choiceUntrustedFlag: " [untrusted]"
-        trustedFeedAdded: "Added '%s' to your trusted feeds."
-        blockedFeedAdded: "Added '%s' to your blocked feeds."
     }
 
     performUpdate: {
@@ -354,39 +352,6 @@ class UpdateTask
             return nil, msgs.checkFeed.invalidVersion\format Common.terms.scriptType.singular[@record.scriptType],
                                                              @record.name, currentChannel, tostring updateRecord.version
         return updateRecord, nil, version
-
-    ---Returns this task's merged trusted feed-URL set: DependencyControl's officially trusted feeds plus
-    ---the user's `extraFeeds` and `trustedFeeds`.
-    ---@return table<string,boolean> trustedFeeds Trusted feed URLs.
-    getTrustedFeeds: =>
-        config = @updater.config.c
-        trustedFeeds = {url, true for url in pairs(@updater\getOfficialTrustedFeeds!)}
-        Common.makeSet config.extraFeeds or {}, trustedFeeds
-        Common.makeSet config.trustedFeeds or {}, trustedFeeds
-        return trustedFeeds
-
-    ---Returns this task's merged blocked feed-URL prefix list: DependencyControl's official block list plus
-    ---the user's `blockedFeeds`. A matching prefix overrides any trust.
-    ---@return string[] blockedFeeds Block-listed feed URL prefixes.
-    getBlockedFeeds: =>
-        config = @updater.config.c
-        blockedFeeds = [prefix for prefix in *(@updater\getOfficialBlockedFeeds!)]
-        blockedFeeds[#blockedFeeds + 1] = prefix for prefix in *(config.blockedFeeds or {})
-        return blockedFeeds
-
-    ---Reports whether a feed URL is matched by any of the given prefixes.
-    ---Matching is case-insensitive to align with the case-insensitive nature of domain names (and at least some path systems).
-    ---Used for evasion-resistant feed block list matching.
-    ---@param url? string The feed URL to test.
-    ---@param prefixes? string[] The URL prefixes to match against.
-    ---@return boolean matches True if the URL matches any prefix, false otherwise.
-    @feedMatchesPrefix = (url, prefixes = {}) =>
-        return false unless url
-        url = url\lower!
-        for prefix in *prefixes
-            prefix = prefix\lower!
-            return true if #prefix > 0 and url\sub(1, #prefix) == prefix
-        return false
 
     ---Resolves the feed URL a remembered source maps to. Every kind but `Other` derives its URL from
     ---current state, so a remembered choice survives a feed-URL migration.
@@ -539,24 +504,6 @@ class UpdateTask
         return false unless @reason
         reasonPromptThreshold[@reason] <= (threshold or PromptThreshold.UserRequested)
 
-    ---Adds a feed URL to the user's `trustedFeeds` config and persists it.
-    ---@param feedUrl string The exact (case-sensitive) feed URL to trust.
-    addTrustedFeed: (feedUrl) =>
-        trustedFeeds = [url for url in *(@updater.config.c.trustedFeeds or {})]
-        trustedFeeds[#trustedFeeds + 1] = feedUrl
-        @updater.config.c.trustedFeeds = trustedFeeds
-        @updater.config\save!
-        @logger\log msgs.run.trustedFeedAdded, feedUrl
-
-    ---Adds a feed URL to the user's `blockedFeeds` config and persists it.
-    ---@param feedUrl string The exact (case-sensitive) feed URL to block.
-    addBlockedFeed: (feedUrl) =>
-        blockedFeeds = [url for url in *(@updater.config.c.blockedFeeds or {})]
-        blockedFeeds[#blockedFeeds + 1] = feedUrl
-        @updater.config.c.blockedFeeds = blockedFeeds
-        @updater.config\save!
-        @logger\log msgs.run.blockedFeedAdded, feedUrl
-
     ---Asks the user whether to proceed with a candidate from an untrusted feed. Depending on the user's choice,
     ---the feed may be added to the trusted or blocked lists.
     ---@param selectedCandidate CandidatePackageSource A candidate source from an untrusted feed.
@@ -575,10 +522,10 @@ class UpdateTask
 
         switch btn
             when msgs.__promptTrustFeed.trustAlways
-                @addTrustedFeed selectedCandidate.feedUrl
+                @updater.feedTrust\trust selectedCandidate.feedUrl
                 return FeedTrustDecision.Always
             when msgs.__promptTrustFeed.trustNever
-                @addBlockedFeed selectedCandidate.feedUrl
+                @updater.feedTrust\block selectedCandidate.feedUrl
                 return FeedTrustDecision.Never
         FeedTrustDecision.Once
 
@@ -710,8 +657,11 @@ class UpdateTask
         -- Candidates are ranked by trust band. Feeds are fetched lazily per band, so we only reach for
         -- less-trusted feeds when no closer source can satisfy.
         config, userFeed, declaredFeed = @updater.config.c, @record.config.c.userFeed, @record.feed
-        trusted, blocked = @getTrustedFeeds!, @getBlockedFeeds!
-        isBlocked = (url) -> @@feedMatchesPrefix url, blocked
+        feedTrust = @updater.feedTrust
+        isBlocked = (url) -> feedTrust\isBlocked url
+        -- a user override feed counts as trusted for this resolution (unless block-listed), without polluting the shared set
+        userFeedTrusted = userFeed and not isBlocked userFeed
+        isTrusted = (url) -> feedTrust\isTrusted(url) or (userFeedTrusted and url == userFeed)
 
         -- the remembered package source for this package, and how sticky the user's last choice was
         remembered = @record.config.c.currentSource
@@ -720,7 +670,7 @@ class UpdateTask
         stickyProvider = remembered and remembered.provider and remembered.provider.namespace
 
         bandOf = (feedUrl, direct) ->
-            if trusted[feedUrl]
+            if isTrusted feedUrl
                 return direct and (feedUrl == declaredFeed and TrustBand.DeclaredDirect or TrustBand.TrustedDirect) or TrustBand.TrustedProvider
             return direct and TrustBand.UntrustedDirect or TrustBand.UntrustedProvider
 
@@ -749,12 +699,10 @@ class UpdateTask
                         -- the version range this provider declares for the required alias, if any
                         providesVersions = [e.version for e in *(provider.provides or {}) when type(e) == "table" and e.name == @record.namespace]
                         -- a trusted candidate from the sticky (remembered/installed) provider stays pinned (declared-direct band)
-                        trustBand = (provider.namespace == stickyProvider and trusted[feedUrl]) and TrustBand.DeclaredDirect or bandOf(feedUrl, false)
+                        trustBand = (provider.namespace == stickyProvider and isTrusted feedUrl) and TrustBand.DeclaredDirect or bandOf(feedUrl, false)
                         candidates[#candidates + 1] = {updateRecord: provider, feedUrl: feedUrl, isDirect: false, :trustBand, providesVersion: providesVersions[1]}
 
         @logger.indent += 1
-        -- a user-provided override feed is used exclusively and counts as trusted unless block-listed
-        trusted[userFeed] = true if userFeed and not isBlocked userFeed
 
         local selected, tied, eligible
         -- A hard pin or soft-remember reuses the remembered source directly: load its feed first (it may
@@ -784,13 +732,13 @@ class UpdateTask
                 -- tier 2: trusted feeds (official and user-added)
                 gather config.extraFeeds
                 gather config.trustedFeeds
-                gather [url for url in *@addFeeds when trusted[url]]
-                gather [url for url in pairs(@updater\getOfficialTrustedFeeds!)] unless @optional -- don't trigger a registry-wide crawl for a nice-to-have
+                gather [url for url in *@addFeeds when isTrusted url]
+                gather [url for url in pairs(feedTrust\getOfficialTrustedFeeds!)] unless @optional -- don't trigger a registry-wide crawl for a nice-to-have
                 selected, tied, eligible = @__selectCandidate candidates
 
                 unless selected and selected.trustBand <= TrustBand.TrustedProvider
                     -- tier 3: untrusted feeds
-                    gather [url for url in *@addFeeds when not trusted[url]]
+                    gather [url for url in *@addFeeds when not isTrusted url]
                     selected, tied, eligible = @__selectCandidate candidates
         @logger.indent -= 1
 

@@ -1,5 +1,5 @@
 constants = require "l0.DependencyControl.Constants"
-UpdateFeed = require "l0.DependencyControl.UpdateFeed"
+FeedTrust =  require "l0.DependencyControl.FeedTrust"
 Logger =     require "l0.DependencyControl.Logger"
 Common =     require "l0.DependencyControl.Common"
 Lock =       require "l0.DependencyControl.Lock"
@@ -14,19 +14,9 @@ UPDATER_LOCK_RESOURCE_RUN  = "run"
 UpdateReason = UpdateTask.UpdateReason
 UpdateStatus = UpdateTask.UpdateStatus
 
--- Lazily loads and caches DependencyControl's own feed trust lists onto the given updater. Best-effort:
--- if the feed can't be loaded, only DepCtrl's own feed URL is treated as trusted and nothing as blocked.
-loadOfficialFeedTrust = () =>
-    return if @officialFeedTrust
-    trusted, blocked = {[constants.DEPCTRL_FEED_URL]: true}, {}
-    feed = UpdateFeed constants.DEPCTRL_FEED_URL, false, nil, nil, @logger
-    if feed\ensureLoaded!
-        Common.makeSet feed\getKnownFeeds!, trusted
-        blocked = feed.data.blockedFeeds or {}
-    @officialFeedTrust = {:trusted, :blocked}
-
 ---Coordinates background update checks and update task lifecycle.
 ---@class Updater
+---@field feedTrust FeedTrust The feed-trust model (official + user trust merge, trust queries, mutations).
 class Updater
     @logger = Logger fileBaseName: "DependencyControl.Updater"
     msgs = {
@@ -50,19 +40,9 @@ class Updater
     ---@param logger? Logger
     new: (@host = script_namespace, @config, @logger = @@logger) =>
         @tasks = {scriptType, {} for scriptType in *Common.ScriptType.values}
-
-    ---Returns the feed URLs DependencyControl officially trusts (its own feed URL plus the feeds it
-    ---advertises).
-    ---@return table<string,boolean> trustedFeeds Officially trusted feed URLs.
-    getOfficialTrustedFeeds: =>
-        loadOfficialFeedTrust @
-        @officialFeedTrust.trusted
-
-    ---Returns the feed URL prefixes DependencyControl officially block-lists.
-    ---@return string[] blockedFeeds Officially block-listed feed URL prefixes.
-    getOfficialBlockedFeeds: =>
-        loadOfficialFeedTrust @
-        @officialFeedTrust.blocked
+        -- singleton feed trust avoids redundant feed loads and keeps a single cache that trust/block invalidations are visible through
+        @@feedTrust or= FeedTrust @config, @@logger
+        @feedTrust = @@feedTrust
 
     ---Creates or updates a queued update task for a record.
     ---@param record Record|table A record, or a plain table to construct one from.

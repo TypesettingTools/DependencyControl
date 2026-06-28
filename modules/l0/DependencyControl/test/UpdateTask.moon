@@ -9,6 +9,7 @@
   UpdateFeed = require "l0.DependencyControl.UpdateFeed"
   Downloader = require "l0.DependencyControl.Downloader"
   ModuleLoader = require "l0.DependencyControl.ModuleLoader"
+  FeedTrust = require "l0.DependencyControl.FeedTrust"
 
   UpdateStatus = UpdateTask.UpdateStatus
   PromptThreshold = UpdateTask.PromptThreshold
@@ -67,26 +68,16 @@
     }, __index: UpdateTask.__base
 
   -- A stub task self for __shouldPrompt and the prompt methods. opts: reason (the task's UpdateReason,
-  -- for __shouldPrompt), trustedFeeds, onSave (called by config\save!). The metatable lets the methods
-  -- resolve self-calls (e.g. __promptTrustFeed -> addTrustedFeed).
+  -- for __shouldPrompt), trustedFeeds, blockedFeeds, onSave (called by config\save!). __promptTrustFeed routes
+  -- its trust/block through @updater.feedTrust, so the stub carries a real FeedTrust over the same config.
   makeInteractiveTask = (opts = {}) ->
+    config = {c: {trustedFeeds: opts.trustedFeeds, blockedFeeds: opts.blockedFeeds}, save: (=> opts.onSave! if opts.onSave)}
+    feedTrust = setmetatable {:config, logger: {log: ->}}, __index: FeedTrust.__base
     setmetatable {
       reason: opts.reason
       record: {name: "TestMod", namespace: "l0.testmod", virtual: true, scriptType: Common.ScriptType.Module}
       logger: {log: ->}
-      updater: {config: {c: {trustedFeeds: opts.trustedFeeds, blockedFeeds: opts.blockedFeeds}, save: (=> opts.onSave! if opts.onSave)}}
-      __class: UpdateTask
-    }, __index: UpdateTask.__base
-
-  -- A stub task self for getTrustedFeeds/getBlockedFeeds: its updater supplies the official trust lists
-  -- (via the getOfficial* methods) and the user config (extraFeeds/trustedFeeds/blockedFeeds).
-  makeTrustTask = (opts = {}) ->
-    setmetatable {
-      updater: {
-        config: {c: {extraFeeds: opts.extraFeeds, trustedFeeds: opts.trustedFeeds, blockedFeeds: opts.blockedFeeds}}
-        getOfficialTrustedFeeds: => opts.officialTrusted or {}
-        getOfficialBlockedFeeds: => opts.officialBlocked or {}
-      }
+      updater: {:config, :feedTrust}
       __class: UpdateTask
     }, __index: UpdateTask.__base
 
@@ -110,6 +101,22 @@
   makeResolveTask = (opts = {}) ->
     cfg = opts.config or {}
     calls = {select: 0, trust: 0}
+    updaterConfig = {
+      c: {
+        extraFeeds: cfg.extraFeeds, trustedFeeds: cfg.trustedFeeds, blockedFeeds: cfg.blockedFeeds
+        packageChoiceOfferAllSources: cfg.offerAllSources
+        packageChoicePromptThreshold: cfg.packageChoicePromptThreshold or PromptThreshold.UserRequested
+        feedTrustPromptThreshold: cfg.feedTrustPromptThreshold or PromptThreshold.UserRequested
+      }
+      getSectionHandler: (_, section) -> {c: opts.modules or {}}
+    }
+    -- a real FeedTrust seeded with the official sets (so it never loads the live DepCtrl feed) over the
+    -- updater config, exactly as Updater wires it
+    feedTrust = setmetatable {
+      config: updaterConfig
+      __official: {trusted: opts.officialTrusted or {}, blocked: opts.officialBlocked or {}}
+      logger: {log: ->}
+    }, __index: FeedTrust.__base
     task = setmetatable {
       __class: UpdateTask
       :calls
@@ -129,20 +136,7 @@
         scriptType: Common.ScriptType.Module
         config: {c: {userFeed: opts.userFeed, currentSource: opts.currentSource}}
       }
-      updater: {
-        renewLock: ->
-        getOfficialTrustedFeeds: => opts.officialTrusted or {}
-        getOfficialBlockedFeeds: => opts.officialBlocked or {}
-        config: {
-          c: {
-            extraFeeds: cfg.extraFeeds, trustedFeeds: cfg.trustedFeeds, blockedFeeds: cfg.blockedFeeds
-            packageChoiceOfferAllSources: cfg.offerAllSources
-            packageChoicePromptThreshold: cfg.packageChoicePromptThreshold or PromptThreshold.UserRequested
-            feedTrustPromptThreshold: cfg.feedTrustPromptThreshold or PromptThreshold.UserRequested
-          }
-          getSectionHandler: (_, section) -> {c: opts.modules or {}}
-        }
-      }
+      updater: {renewLock: ->, :feedTrust, config: updaterConfig}
       logger: {log: ->, trace: ->, indent: 0}
       __loadFeed: (url) =>
         return nil, "feed not found: #{url}" unless @_feeds[url]
@@ -429,24 +423,6 @@
       ut\stub(aegisub.dialog, "display")\calls -> msgs.promptSelectSource.abort, {}
       ut\assertNil UpdateTask.__promptSelectPackageSource task, {winner, other}, winner
 
-    -- UpdateTask.feedMatchesPrefix: case-insensitive, prefix-based block-list matching
-
-    feedMatchesPrefix_exactAndCaseInsensitive: (ut) ->
-      ut\assertTrue UpdateTask\feedMatchesPrefix "https://example.com/feed.json", {"https://example.com/feed.json"}
-      ut\assertTrue UpdateTask\feedMatchesPrefix "https://Example.COM/Feed.json", {"https://example.com/feed.json"}
-
-    feedMatchesPrefix_hostPrefixBlocksEverythingUnder: (ut) ->
-      ut\assertTrue UpdateTask\feedMatchesPrefix "https://example.com/a/b.json", {"https://example.com/"}
-
-    feedMatchesPrefix_noMatch: (ut) ->
-      ut\assertFalse UpdateTask\feedMatchesPrefix "https://other.com/feed.json", {"https://example.com/"}
-
-    -- guards: nil url, no entries, and an empty entry (which must not match everything)
-    feedMatchesPrefix_guards: (ut) ->
-      ut\assertFalse UpdateTask\feedMatchesPrefix nil, {"https://example.com/"}
-      ut\assertFalse UpdateTask\feedMatchesPrefix "https://example.com/x", {}
-      ut\assertFalse UpdateTask\feedMatchesPrefix "https://example.com/x", {""}
-
     -- UpdateTask.__resolveRememberedFeedUrl: derives the feed URL of a remembered source for every kind
     -- but `other` (which stores it), so a remembered choice survives a feed-URL migration.
 
@@ -554,36 +530,6 @@
       selected = {isDirect: true, feedUrl: "feed://declared", updateRecord: {namespace: "l0.x", activeChannel: "main"}}
       UpdateTask.__persistSource task, selected, SourceChoiceStickiness.Retain
       ut\assertEquals saves.n, 0
-
-    -- UpdateTask.getTrustedFeeds: merges the officially trusted feeds with the user's extraFeeds and trustedFeeds.
-
-    getTrustedFeeds_mergesOfficialAndUser: (ut) ->
-      task = makeTrustTask officialTrusted: {"feed://official": true}, extraFeeds: {"feed://extra"}, trustedFeeds: {"feed://trusted"}
-      trusted = UpdateTask.getTrustedFeeds task
-      ut\assertTrue trusted["feed://official"]
-      ut\assertTrue trusted["feed://extra"]
-      ut\assertTrue trusted["feed://trusted"]
-
-    getTrustedFeeds_officialOnlyWhenNoUserFeeds: (ut) ->
-      task = makeTrustTask officialTrusted: {"feed://official": true}
-      trusted = UpdateTask.getTrustedFeeds task
-      ut\assertTrue trusted["feed://official"]
-      ut\assertNil trusted["feed://extra"]
-
-    -- UpdateTask.getBlockedFeeds: official block list first, then the user's blockedFeeds appended.
-
-    getBlockedFeeds_mergesOfficialThenUser: (ut) ->
-      task = makeTrustTask officialBlocked: {"https://bad.example/"}, blockedFeeds: {"https://evil.example/"}
-      blocked = UpdateTask.getBlockedFeeds task
-      ut\assertEquals #blocked, 2
-      ut\assertEquals blocked[1], "https://bad.example/"
-      ut\assertEquals blocked[2], "https://evil.example/"
-
-    getBlockedFeeds_officialOnlyWhenNoUserFeeds: (ut) ->
-      task = makeTrustTask officialBlocked: {"https://bad.example/"}
-      blocked = UpdateTask.getBlockedFeeds task
-      ut\assertEquals #blocked, 1
-      ut\assertEquals blocked[1], "https://bad.example/"
 
     -- UpdateTask.__resolve: walks the lazy trust-ranked feed cascade and the currentSource stickiness tree,
     -- running prompts inline, and returns either a candidate to install or a terminal status code. It
@@ -989,8 +935,6 @@
       "promptTrustFeed_neverBlocks",
       "promptSelectPackageSource_picksSelection", "promptSelectPackageSource_autoKeepsWinner",
       "promptSelectPackageSource_abortReturnsNil",
-      "feedMatchesPrefix_exactAndCaseInsensitive", "feedMatchesPrefix_hostPrefixBlocksEverythingUnder",
-      "feedMatchesPrefix_noMatch", "feedMatchesPrefix_guards",
       "resolveRememberedFeedUrl_selfDeclared", "resolveRememberedFeedUrl_userFeed", "resolveRememberedFeedUrl_other",
       "resolveRememberedFeedUrl_provider", "resolveRememberedFeedUrl_providerMissing",
       "matchRememberedCandidate_direct", "matchRememberedCandidate_provider",
@@ -998,8 +942,6 @@
       "feedSourceOf_provider", "feedSourceOf_selfDeclared", "feedSourceOf_userFeed", "feedSourceOf_other",
       "persistSource_writesDirect", "persistSource_recordsProvider", "persistSource_storesFeedUrlForOther",
       "persistSource_skipsUnchanged",
-      "getTrustedFeeds_mergesOfficialAndUser", "getTrustedFeeds_officialOnlyWhenNoUserFeeds",
-      "getBlockedFeeds_mergesOfficialThenUser", "getBlockedFeeds_officialOnlyWhenNoUserFeeds",
       "resolve_cascadeShortCircuitsOnDeclaredDirect", "resolve_fallsThroughToTrustedDirect",
       "resolve_untrustedRequiredFailsWithoutPrompt", "resolve_untrustedApprovedProceeds",
       "resolve_untrustedOptionalSkips", "resolve_noCandidateRequiredFails", "resolve_noCandidateOptionalSkips",

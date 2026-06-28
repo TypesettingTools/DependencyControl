@@ -27,25 +27,7 @@
     }, __index: Updater.__base
 
   {
-    _description: "Tests for Updater: feed-trust getters, require/scheduleUpdate dispatch, and lock handling."
-
-    -- Updater.getOfficialTrustedFeeds / getOfficialBlockedFeeds return DependencyControl's officially
-    -- trusted feed set and blocked-prefix list, loading the feed once and caching it on the instance.
-    -- With a pre-seeded cache the getters must short-circuit (loadOfficialFeedTrust returns early)
-    -- instead of rebuilding it: assertIs checks the cache is the *same* table after the call (reference
-    -- equality), which a rebuild would replace.
-
-    getOfficialTrustedFeeds_usesCacheWhenPresent: (ut) ->
-      cached = {trusted: {"feed://a": true}, blocked: {}}
-      updater = {officialFeedTrust: cached}
-      ut\assertTrue Updater.getOfficialTrustedFeeds(updater)["feed://a"]
-      ut\assertIs updater.officialFeedTrust, cached
-
-    getOfficialBlockedFeeds_usesCacheWhenPresent: (ut) ->
-      cached = {trusted: {}, blocked: {"https://bad.example/"}}
-      updater = {officialFeedTrust: cached}
-      ut\assertEquals Updater.getOfficialBlockedFeeds(updater), {"https://bad.example/"}
-      ut\assertIs updater.officialFeedTrust, cached
+    _description: "Tests for Updater: require/scheduleUpdate dispatch, addTask, and lock handling."
 
     -- require: dispatches on the task's run() result.
 
@@ -207,8 +189,13 @@
       ut\assertNil task
       ut\assertEquals code, UpdateStatus.InvalidNamespace
 
+    -- the feed-trust model is a process-wide singleton: every Updater shares the one instance
+    feedTrust_isSharedSingleton: (ut) ->
+      cfg = {c: {extraFeeds: {}, trustedFeeds: {}, blockedFeeds: {}}}
+      a, b = Updater("hostA", cfg), Updater("hostB", cfg)
+      ut\assertIs a.feedTrust, b.feedTrust
+
     _order: {
-      "getOfficialTrustedFeeds_usesCacheWhenPresent", "getOfficialBlockedFeeds_usesCacheWhenPresent"
       "require_upToDateLoadsModule", "require_successReturnsRef", "require_errorPropagates"
       "scheduleUpdate_disabledRejected", "scheduleUpdate_virtualRejected"
       "scheduleUpdate_withinIntervalSkips", "scheduleUpdate_protectedInstallRejected"
@@ -218,5 +205,6 @@
       "renewLock_renewsWhenHeld"
       "addTask_versionParseErrorReturns", "addTask_updatesExistingTask", "addTask_createsNewTask"
       "addTask_disabledUpdaterRejects", "addTask_invalidNamespaceRejects"
+      "feedTrust_isSharedSingleton"
     }
   }
