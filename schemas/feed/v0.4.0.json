@@ -49,12 +49,9 @@
       }
     },
     "blockedFeeds": {
-      "description": "Feed URLs that must never be used as a package source. Only honored in DependencyControl's own feed, where it acts as an official block list (a last line of defense against compromised feeds). Each entry is matched case-insensitively as a URL prefix, so a host root like 'https://example.com/' blocks every feed under it.",
+      "description": "Feeds that must never be used as a package source. Only honored in DependencyControl's own feed, where it acts as an official block list (a last line of defense against compromised feeds). Each entry specifies a URL (or, for a 'prefix' block, a URL prefix like 'https://example.com/' that blocks every feed under it), how to match it, and optionally why. Added in v0.4.0.",
       "type": "array",
-      "items": {
-        "description": "Case-insensitive URL prefix of the feed(s) to block.",
-        "type": "string"
-      }
+      "items": { "$ref": "#/$defs/BlockedFeed" }
     },
     "macros": {
       "description": "Aegisub automation scripts keyed by their namespaced identifiers.",
@@ -71,6 +68,28 @@
     }
   },
   "$defs": {
+    "BlockedFeed": {
+      "description": "A blocked feed entry: the URL/prefix to match, how to match it, and why.",
+      "type": "object",
+      "required": ["url"],
+      "additionalProperties": false,
+      "properties": {
+        "url": {
+          "type": "string",
+          "description": "The feed URL or URL prefix to match (case-insensitive)."
+        },
+        "matchMode": {
+          "description": "How `url` is matched: 'prefix' (default) blocks every feed whose URL starts with `url`; 'exact' blocks only that exact URL.",
+          "enum": ["prefix", "exact"],
+          "default": "prefix"
+        },
+        "reason": {
+          "type": "string",
+          "description": "Human-readable explanation of why the feed is blocked."
+        }
+      }
+    },
+
     "NamespacedIdentifier": {
       "description": "A dot-separated namespaced identifier (e.g. 'l0.DependencyControl.Toolbox', 'a-mo.LineCollection').",
       "type": "string",
