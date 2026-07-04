@@ -130,6 +130,15 @@
       ut\assertEquals flat[2], "b"
       ut\assertEquals flat[3], "x"
 
+    -- listIncludes: exact (==) membership in an array
+
+    listIncludes_found: (ut) ->
+      ut\assertTrue Common.listIncludes {"a", "b", "c"}, "b"
+
+    listIncludes_notFoundAndEmpty: (ut) ->
+      ut\assertFalse Common.listIncludes {"a", "b"}, "z"
+      ut\assertFalse Common.listIncludes {}, "a"
+
     -- getObjectHash: deterministic, order-independent SHA-1 of a (nested) value
 
     getObjectHash_isHexString: (ut) ->
@@ -166,6 +175,7 @@
       "getTestDir_automation", "getTestDir_module", "getTestDir_customRoot",
       "flatten_depth2Array", "flatten_depth1StopsEarly", "flatten_depth0NoFlatten",
       "flatten_scalar", "flatten_returnsCount", "flatten_toArrayTable",
+      "listIncludes_found", "listIncludes_notFoundAndEmpty",
       "getObjectHash_isHexString", "getObjectHash_deterministic", "getObjectHash_ignoresKeyOrder",
       "getObjectHash_nestedOrderIndependent", "getObjectHash_distinguishesContent",
       "getObjectHash_typeTagged"

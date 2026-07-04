@@ -3,8 +3,12 @@ UpdateFeed = require "l0.DependencyControl.UpdateFeed"
 Common =     require "l0.DependencyControl.Common"
 
 msgs = {
-    trustedFeedAdded: "Added '%s' to your trusted feeds."
-    blockedFeedAdded: "Added '%s' to your blocked feeds."
+    trustedFeedAdded:   "Added '%s' to your trusted feeds."
+    trustedFeedRemoved: "Removed '%s' from your trusted feeds."
+    blockedFeedAdded:   "Added '%s' to your blocked feeds."
+    blockedFeedRemoved: "Removed '%s' from your blocked feeds."
+    extraFeedAdded:     "Added '%s' to your extra feeds."
+    extraFeedRemoved:   "Removed '%s' from your extra feeds."
 }
 
 ---Owns DependencyControl's feed-trust model: the official trust lists (loaded from DepCtrl's own feed),
@@ -68,25 +72,87 @@ class FeedTrust
     ---@return boolean blocked
     isBlocked: (url) => @@urlMatchesPrefix url, @getBlockedFeeds!
 
-    ---Adds a feed URL to the user's `trustedFeeds` config and persists it.
-    ---@param feedUrl string The exact (case-sensitive) feed URL to trust.
-    trust: (feedUrl) =>
-        trustedFeeds = [url for url in *(@config.c.trustedFeeds or {})]
-        trustedFeeds[#trustedFeeds + 1] = feedUrl
-        @config.c.trustedFeeds = trustedFeeds
-        @__trusted = nil
+    ---Appends a feed URL to one of the user's config lists (skipping an exact duplicate), invalidates the
+    ---given cached set, and persists.
+    ---@private
+    ---@param configKey string The user config array field ("trustedFeeds"/"blockedFeeds"/"extraFeeds").
+    ---@param cacheField string The cached field to invalidate ("__trusted"/"__blocked").
+    ---@param feedUrl string The exact feed URL to add.
+    ---@return boolean added False when the URL was already present.
+    __addUserFeed: (configKey, cacheField, feedUrl) =>
+        list = [url for url in *(@config.c[configKey] or {})]
+        return false if Common.listIncludes list, feedUrl
+        list[#list + 1] = feedUrl
+        @config.c[configKey] = list
+        self[cacheField] = nil
         @config\save!
-        @logger\log msgs.trustedFeedAdded, feedUrl if @logger
+        return true
 
-    ---Adds a feed URL to the user's `blockedFeeds` config and persists it.
-    ---@param feedUrl string The exact (case-sensitive) feed URL to block.
-    block: (feedUrl) =>
-        blockedFeeds = [url for url in *(@config.c.blockedFeeds or {})]
-        blockedFeeds[#blockedFeeds + 1] = feedUrl
-        @config.c.blockedFeeds = blockedFeeds
-        @__blocked = nil
+    ---Removes every exact match of a feed URL from one of the user's config lists, invalidates the given
+    ---cached set, and persists when something changed.
+    ---@private
+    ---@param configKey string The user config array field ("trustedFeeds"/"blockedFeeds"/"extraFeeds").
+    ---@param cacheField string The cached field to invalidate ("__trusted"/"__blocked").
+    ---@param feedUrl string The exact feed URL to remove.
+    ---@return boolean removed False when no entry matched.
+    __removeUserFeed: (configKey, cacheField, feedUrl) =>
+        list = @config.c[configKey] or {}
+        kept = [url for url in *list when url != feedUrl]
+        return false if #kept == #list
+        @config.c[configKey] = kept
+        self[cacheField] = nil
         @config\save!
-        @logger\log msgs.blockedFeedAdded, feedUrl if @logger
+        return true
+
+    ---Adds a feed URL to the user's `trustedFeeds` config (ignoring an exact duplicate) and persists it.
+    ---@param feedUrl string The exact (case-sensitive) feed URL to trust.
+    ---@return boolean added False when the feed was already in the user's `trustedFeeds`.
+    trust: (feedUrl) =>
+        added = @__addUserFeed "trustedFeeds", "__trusted", feedUrl
+        @logger\log msgs.trustedFeedAdded, feedUrl if added and @logger
+        return added
+
+    ---Removes a feed URL from the user's `trustedFeeds` config and persists it. Feeds trusted through the
+    ---official list or `extraFeeds` are unaffected; block the feed to override those.
+    ---@param feedUrl string The exact (case-sensitive) feed URL to untrust.
+    ---@return boolean removed False when the feed was not in the user's `trustedFeeds`.
+    untrust: (feedUrl) =>
+        removed = @__removeUserFeed "trustedFeeds", "__trusted", feedUrl
+        @logger\log msgs.trustedFeedRemoved, feedUrl if removed and @logger
+        return removed
+
+    ---Adds a feed URL prefix to the user's `blockedFeeds` config (ignoring an exact duplicate) and persists it.
+    ---@param feedUrl string The feed URL prefix to block (stored verbatim; matched case-insensitively as a prefix).
+    ---@return boolean added False when the prefix was already in the user's `blockedFeeds`.
+    block: (feedUrl) =>
+        added = @__addUserFeed "blockedFeeds", "__blocked", feedUrl
+        @logger\log msgs.blockedFeedAdded, feedUrl if added and @logger
+        return added
+
+    ---Removes a blocked prefix from the user's `blockedFeeds` config and persists it. The official block list is unaffected.
+    ---@param feedUrl string The exact blocked-prefix string to remove (as stored).
+    ---@return boolean removed False when the prefix was not in the user's `blockedFeeds`.
+    unblock: (feedUrl) =>
+        removed = @__removeUserFeed "blockedFeeds", "__blocked", feedUrl
+        @logger\log msgs.blockedFeedRemoved, feedUrl if removed and @logger
+        return removed
+
+    ---Adds a feed URL to the user's `extraFeeds` config (ignoring an exact duplicate) and persists it. Extra
+    ---feeds are trusted and act as discovery roots.
+    ---@param feedUrl string The exact (case-sensitive) feed URL to add.
+    ---@return boolean added False when the feed was already in the user's `extraFeeds`.
+    addExtraFeed: (feedUrl) =>
+        added = @__addUserFeed "extraFeeds", "__trusted", feedUrl
+        @logger\log msgs.extraFeedAdded, feedUrl if added and @logger
+        return added
+
+    ---Removes a feed URL from the user's `extraFeeds` config and persists it.
+    ---@param feedUrl string The exact (case-sensitive) feed URL to remove.
+    ---@return boolean removed False when the feed was not in the user's `extraFeeds`.
+    removeExtraFeed: (feedUrl) =>
+        removed = @__removeUserFeed "extraFeeds", "__trusted", feedUrl
+        @logger\log msgs.extraFeedRemoved, feedUrl if removed and @logger
+        return removed
 
     ---Reports whether a URL is matched (case-insensitively) by any of the given prefixes. Case-insensitive
     ---to align with domain-name casing; used for evasion-resistant block-list matching.

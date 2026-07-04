@@ -93,6 +93,75 @@
       ut\assertTrue saved[1]
       ut\assertTrue FeedTrust.isBlocked ft, "https://bad/x"
 
+    -- trust/block/addExtraFeed ignore an exact duplicate: no second entry, no save, return false.
+    trust_ignoresDuplicate: (ut) ->
+      saved = {}
+      ft = make trustedFeeds: {"feed://a"}, onSave: -> saved[1] = true
+      ut\assertFalse FeedTrust.trust ft, "feed://a"
+      ut\assertEquals ft.config.c.trustedFeeds, {"feed://a"}
+      ut\assertNil saved[1]
+
+    block_ignoresDuplicate: (ut) ->
+      saved = {}
+      ft = make blockedFeeds: {"https://bad/"}, onSave: -> saved[1] = true
+      ut\assertFalse FeedTrust.block ft, "https://bad/"
+      ut\assertEquals ft.config.c.blockedFeeds, {"https://bad/"}
+      ut\assertNil saved[1]
+
+    -- untrust removes only the user's trustedFeeds entry, persists, and invalidates the cached set.
+    untrust_removesPersistsAndInvalidates: (ut) ->
+      saved = {}
+      ft = make trustedFeeds: {"feed://a", "feed://b"}, onSave: -> saved[1] = true
+      FeedTrust.getTrustedFeeds ft   -- prime the cache
+      ut\assertTrue FeedTrust.untrust ft, "feed://a"
+      ut\assertEquals ft.config.c.trustedFeeds, {"feed://b"}
+      ut\assertTrue saved[1]
+      ut\assertFalse FeedTrust.isTrusted ft, "feed://a"
+
+    untrust_returnsFalseWhenAbsent: (ut) ->
+      saved = {}
+      ft = make trustedFeeds: {"feed://a"}, onSave: -> saved[1] = true
+      ut\assertFalse FeedTrust.untrust ft, "feed://missing"
+      ut\assertNil saved[1]
+      ut\assertEquals ft.config.c.trustedFeeds, {"feed://a"}
+
+    -- untrust can't remove a feed trusted only through the official set (block it to override).
+    untrust_leavesOfficialTrusted: (ut) ->
+      ft = make officialTrusted: {"feed://o": true}, trustedFeeds: {}
+      ut\assertFalse FeedTrust.untrust ft, "feed://o"
+      ut\assertTrue FeedTrust.isTrusted ft, "feed://o"
+
+    unblock_removesPersistsAndInvalidates: (ut) ->
+      saved = {}
+      ft = make blockedFeeds: {"https://bad/", "https://evil/"}, onSave: -> saved[1] = true
+      FeedTrust.getBlockedFeeds ft   -- prime the cache
+      ut\assertTrue FeedTrust.unblock ft, "https://bad/"
+      ut\assertEquals ft.config.c.blockedFeeds, {"https://evil/"}
+      ut\assertTrue saved[1]
+      ut\assertFalse FeedTrust.isBlocked ft, "https://bad/x"
+
+    unblock_leavesOfficialBlocked: (ut) ->
+      ft = make officialBlocked: {"https://bad/"}, blockedFeeds: {}
+      ut\assertFalse FeedTrust.unblock ft, "https://bad/"
+      ut\assertTrue FeedTrust.isBlocked ft, "https://bad/x"
+
+    -- addExtraFeed adds a trusted discovery root, persists, and invalidates the merged trusted set.
+    addExtraFeed_addsPersistsAndInvalidates: (ut) ->
+      saved = {}
+      ft = make extraFeeds: {}, onSave: -> saved[1] = true
+      FeedTrust.getTrustedFeeds ft   -- prime the cache
+      ut\assertTrue FeedTrust.addExtraFeed ft, "feed://extra"
+      ut\assertEquals ft.config.c.extraFeeds, {"feed://extra"}
+      ut\assertTrue saved[1]
+      ut\assertTrue FeedTrust.isTrusted ft, "feed://extra"
+
+    removeExtraFeed_removesAndInvalidates: (ut) ->
+      ft = make extraFeeds: {"feed://x"}
+      FeedTrust.getTrustedFeeds ft   -- prime the cache
+      ut\assertTrue FeedTrust.removeExtraFeed ft, "feed://x"
+      ut\assertEquals ft.config.c.extraFeeds, {}
+      ut\assertFalse FeedTrust.isTrusted ft, "feed://x"
+
     -- urlMatchesPrefix: case-insensitive, prefix-based block-list matching (the evasion-resistant primitive).
     urlMatchesPrefix_exactAndCaseInsensitive: (ut) ->
       ut\assertTrue FeedTrust\urlMatchesPrefix "https://example.com/feed.json", {"https://example.com/feed.json"}
@@ -116,6 +185,10 @@
       "getBlockedFeeds_mergesOfficialThenUser", "getBlockedFeeds_officialOnlyWhenNoUserFeeds"
       "isTrusted_checksMergedSet", "isBlocked_prefixMatch"
       "trust_appendsPersistsAndInvalidates", "block_appendsPersistsAndInvalidates"
+      "trust_ignoresDuplicate", "block_ignoresDuplicate"
+      "untrust_removesPersistsAndInvalidates", "untrust_returnsFalseWhenAbsent", "untrust_leavesOfficialTrusted"
+      "unblock_removesPersistsAndInvalidates", "unblock_leavesOfficialBlocked"
+      "addExtraFeed_addsPersistsAndInvalidates", "removeExtraFeed_removesAndInvalidates"
       "urlMatchesPrefix_exactAndCaseInsensitive", "urlMatchesPrefix_hostPrefixBlocksEverythingUnder"
       "urlMatchesPrefix_noMatch", "urlMatchesPrefix_guards"
     }

@@ -282,6 +282,15 @@ class DependencyControlCommon
         target[v] = value for v in *source when overwrite or not target[v]
         return target
 
+    ---Reports whether an array contains a value (compared with `==`).
+    ---@param list any[] The array to search.
+    ---@param value any The value to look for.
+    ---@return boolean included Whether `value` is an element of `list`.
+    @listIncludes = (list, value) ->
+        for entry in *list
+            return true if entry == value
+        return false
+
     ---Fills in missing entries of `tbl` from `defaults`, mutating `tbl` in place.
     ---@param tbl table The table to fill in.
     ---@param defaults table Default key/value pairs.
