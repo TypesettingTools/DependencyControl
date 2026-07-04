@@ -91,6 +91,7 @@ class Record
                          feedTrustPromptThreshold: Updater.PromptThreshold.AutoUpdates,
                          packageChoicePromptThreshold: Updater.PromptThreshold.UserRequested,
                          packageChoiceOfferAllSources: false,
+                         updaterBlockPrivateHosts: true,
                          dumpFeeds:true, configDir:"?user/config",
                          logMaxFiles: 200, logMaxAge: 604800, logMaxSize:10*(10^6),
                          updateWaitTimeout: 60, updateOrphanTimeout: 50,

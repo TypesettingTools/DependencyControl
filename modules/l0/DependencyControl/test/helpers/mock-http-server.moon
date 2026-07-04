@@ -11,6 +11,7 @@
 --   GET /fast/<name>                      full-speed response (Content-Length)
 --   GET /slow/<name>?delay=<ms>&chunk=<n>  chunked response, <n> bytes every <ms> ms
 --   GET /status/<code>                    respond with the given HTTP status
+--   GET /redirect-to/<path>               302 with a relative Location of /<path>
 --   GET /__quit                           stop the server (the clean shutdown route)
 --
 -- Flags: --port <n> (loopback port to listen on), --dir <d>, --max-lifetime <s> (orphan
@@ -83,6 +84,12 @@ handleRequest = (req, res) ->
     if code = path\match "^/status/(%d+)$"
         res\statusCode tonumber code
         res\write "status #{code}"
+        return res\close!
+
+    if target = path\match "^/redirect%-to/(.+)$"
+        res\statusCode 302
+        res\addHeader "Location", "/#{target}"   -- relative, so it also exercises redirect resolution
+        res\write "redirecting to /#{target}"
         return res\close!
 
     if name = path\match "^/fast/(.+)$"

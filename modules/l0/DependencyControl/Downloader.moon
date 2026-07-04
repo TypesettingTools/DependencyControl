@@ -9,6 +9,7 @@ lfs = require "lfs"
 Enum    = require "l0.DependencyControl.Enum"
 FileOps = require "l0.DependencyControl.FileOps"
 EventEmitter = require "l0.DependencyControl.EventEmitter"
+Host    = require "l0.DependencyControl.Host"
 
 msgs = {
     addMissingArgs:  "Required arguments #1 (url) and #2 (outfile) had the wrong type. Expected string, got '%s' and '%s'."
@@ -19,7 +20,24 @@ msgs = {
     openUrlFailed:   "Could not open URL '%s'."
     curlInit:        "Failed to initialize curl."
     stalled:         "Download stalled: no data received for %d seconds."
+    privateHostBlocked: "Refusing to download from a private, loopback, or link-local address as an SSRF safeguard (a feed or package could otherwise point DependencyControl at an internal host): %s. To allow this for local development/testing, set updates.blockPrivateHosts = false in the DependencyControl config."
+    nonHttpScheme:   "Refusing to download from a non-http(s) URL as an SSRF safeguard (a feed or package could otherwise point DependencyControl at a local file or other scheme): %s."
+    tooManyRedirects: "Gave up following redirects while downloading '%s' (too many hops)."
+    redirectNoLocation: "Redirect response from '%s' had no Location header."
 }
+
+-- Resolves a redirect Location (which may be relative) against the URL it came from. An absolute URL is
+-- returned unchanged; "//host/path" inherits the base's scheme; "/path" keeps the base authority; anything
+-- else is resolved against the base's directory. Used by the WinINet backend, which follows redirects by
+-- hand (libcurl resolves them internally).
+resolveRedirect = (base, location) ->
+    return location if location\match "^%a[%w+.%-]*://"
+    proto, authority, path = base\match "^(%a[%w+.%-]*)://([^/]*)(.*)$"
+    return location unless proto
+    return "#{proto}:#{location}" if location\sub(1, 2) == "//"
+    return "#{proto}://#{authority}#{location}" if location\sub(1, 1) == "/"
+    dir = path\match("^(.*/)") or "/"
+    "#{proto}://#{authority}#{dir}#{location}"
 
 -- Lifecycle state of a single download.
 DownloadStatus = Enum "DownloadStatus", {
@@ -186,6 +204,13 @@ if ffi.os != "Windows"
         CURLOPT_URL            = 10002 -- set the URL to fetch
         CURLOPT_USERAGENT      = 10018 -- set the User-Agent header
         CURLOPT_FOLLOWLOCATION = 52 -- follow HTTP redirects
+        CURLOPT_MAXREDIRS      = 68 -- cap how many redirects are followed
+        CURLOPT_PROTOCOLS      = 181 -- bitmask of protocols the transfer may use
+        CURLOPT_REDIR_PROTOCOLS = 182 -- bitmask of protocols a redirect may switch to
+        CURLPROTO_HTTP  = 1
+        CURLPROTO_HTTPS = 2
+        CURLOPT_PREREQFUNCTION = 20312 -- called before each connection (incl. every redirect hop); may abort it
+        CURL_PREREQFUNC_OK, CURL_PREREQFUNC_ABORT = 0, 1
         CURLOPT_FAILONERROR    = 45 -- treat HTTP 4xx/5xx responses as errors
         CURLOPT_NOPROGRESS     = 43 -- disable curl's built-in progress meter
         CURLOPT_CONNECTTIMEOUT = 78 -- abort if connecting takes longer than the specified number of seconds
@@ -202,6 +227,13 @@ if ffi.os != "Windows"
         setLong = (h, opt, v) -> curl.curl_easy_setopt h, opt, ffi.cast "long", v
         -- cdata pointers can't be table keys reliably; key by address string instead.
         key = (h) -> tostring ffi.cast "void *", h
+
+        -- Fires before each connection (including every redirect hop), so a redirect to a private/internal
+        -- host is refused even though libcurl follows redirects itself. Requires curl >= 7.80, otherwise ignored.
+        pcall ffi.cdef, "typedef int (*dc_curl_prereq_cb)(void* clientp, char* conn_primary_ip, char* conn_local_ip, int conn_primary_port, int conn_local_port);"
+        prereqBlockPrivate = ffi.cast "dc_curl_prereq_cb", (_, primaryIp) ->
+            ok, private = pcall -> Host(ffi.string primaryIp)\isPrivate!
+            ok and private and CURL_PREREQFUNC_ABORT or CURL_PREREQFUNC_OK
 
         getDouble = (h, info) ->
             out = ffi.new "double[1]"
@@ -233,6 +265,13 @@ if ffi.os != "Windows"
                 curl.curl_easy_setopt handle, CURLOPT_USERAGENT, "DependencyControl"
                 curl.curl_easy_setopt handle, CURLOPT_WRITEDATA, file
                 setLong handle, CURLOPT_FOLLOWLOCATION, 1
+                setLong handle, CURLOPT_MAXREDIRS, 10   -- bound redirect fan-out
+                -- confine the transfer and any redirect to http(s), so a redirect can't reach file:// etc.
+                if manager.blockPrivateHosts
+                    httpOnly = bit.bor CURLPROTO_HTTP, CURLPROTO_HTTPS
+                    setLong handle, CURLOPT_PROTOCOLS, httpOnly
+                    setLong handle, CURLOPT_REDIR_PROTOCOLS, httpOnly
+                    curl.curl_easy_setopt handle, CURLOPT_PREREQFUNCTION, prereqBlockPrivate
                 setLong handle, CURLOPT_FAILONERROR, 1
                 setLong handle, CURLOPT_NOPROGRESS, 1
                 setLong handle, CURLOPT_CONNECTTIMEOUT, 30
@@ -314,6 +353,7 @@ else
         int InternetCloseHandle(void* h);
         int InternetSetOptionW(void* hInternet, unsigned long option, void* buffer, unsigned long bufferLen);
         int HttpQueryInfoW(void* hRequest, unsigned long infoLevel, void* buffer, unsigned long* bufferLen, unsigned long* index);
+        int HttpQueryInfoA(void* hRequest, unsigned long infoLevel, void* buffer, unsigned long* bufferLen, unsigned long* index);
         int InternetGetConnectedState(unsigned long* flags, unsigned long reserved);
     ]]
 
@@ -324,11 +364,14 @@ else
 
     INTERNET_FLAG_RELOAD         = 0x80000000 -- force a reload from the server even if the content is cached
     INTERNET_FLAG_NO_CACHE_WRITE = 0x04000000 -- don't commit this download to the cache
+    INTERNET_FLAG_NO_AUTO_REDIRECT = 0x00200000 -- don't auto-follow redirects; we validate each hop ourselves
     INTERNET_OPTION_MAX_CONNS_PER_SERVER = 73 -- max simultaneous connections to the same HTTP/1.1 server
     INTERNET_OPTION_MAX_CONNS_PER_1_0_SERVER = 74 -- max simultaneous connections to the same HTTP/1.0 server
     HTTP_QUERY_STATUS_CODE       = 19 -- HTTP response status code (e.g. 200)
     HTTP_QUERY_CONTENT_LENGTH    = 5 -- total expected size of the download, or -1 if unknown
+    HTTP_QUERY_LOCATION          = 33 -- the Location response header (a redirect's target URL)
     HTTP_QUERY_FLAG_NUMBER       = 0x20000000 -- return the queried information as a number instead of a string (e.g. for status code or content length)
+    MAX_REDIRECTS = 10 -- cap on redirect hops we follow before giving up
     CHUNK_SIZE = 16384 -- bytes to read for each running download per iteration of the scheduler loop (max WinINet buffer size)
 
     queryNumber = (request, info) ->
@@ -338,10 +381,18 @@ else
         ok = winInet.HttpQueryInfoW request, bit.bor(info, HTTP_QUERY_FLAG_NUMBER), out, len, nil
         ok != 0 and tonumber(out[0]) or nil
 
+    -- Reads a response header as a string (ANSI). A fixed buffer is plenty for a Location URL; the
+    -- private-host check tolerates a truncated value (it just fails to parse and refuses/loads elsewhere).
+    queryString = (request, info) ->
+        buf = ffi.new "char[2048]"
+        len = ffi.new "unsigned long[1]", 2048
+        ok = winInet.HttpQueryInfoA request, info, buf, len, nil
+        ok != 0 and ffi.string(buf, len[0]) or nil
+
     if haveKernel32 and haveWinInet
         -- A WinINet driver for `multiplex`: one request + output file per download,
         -- advanced one chunk per step. The scheduler round-robins across them.
-        makeWinINetDriver = (maxConnectionsPerServer = 8) ->
+        makeWinINetDriver = (manager, maxConnectionsPerServer = 8) ->
             do
                 -- Lift the Windows-default 2-connections-per-server cap so all queued transfers can run at once;
                 -- otherwise a 3rd concurrent InternetOpenUrlW to the same host blocks and times out. 
@@ -355,16 +406,37 @@ else
                 start: (dl) ->
                     outFileHandle, err = io.open dl.outfile, "wb"
                     return false, (err or msgs.failedToOpen\format dl.outfile) unless outFileHandle
-                    request = winInet.InternetOpenUrlW session, toWide(dl.url), nil, 0,
-                        bit.bor(INTERNET_FLAG_RELOAD, INTERNET_FLAG_NO_CACHE_WRITE), 0
-                    if request == nil
+
+                    -- Follow redirects by hand (NO_AUTO_REDIRECT) so we can validate each hop's host: WinINet
+                    -- would otherwise re-resolve and connect to a redirect target with no hook to inspect it.
+                    fail = (msg) ->
                         outFileHandle\close!
-                        return false, msgs.openUrlFailed\format dl.url
-                    status = queryNumber request, HTTP_QUERY_STATUS_CODE
-                    if status and status >= 400
-                        winInet.InternetCloseHandle request
-                        outFileHandle\close!
-                        return false, msgs.httpStatus\format status
+                        false, msg
+                    url, redirectsLeft, request = dl.url, MAX_REDIRECTS, nil
+                    while true
+                        if manager.blockPrivateHosts
+                            return fail msgs.nonHttpScheme\format url unless url\match "^https?://"
+                            host = Host.fromUrl url
+                            return fail msgs.privateHostBlocked\format url if host and host\isPrivate!
+
+                        request = winInet.InternetOpenUrlW session, toWide(url), nil, 0,
+                            bit.bor(INTERNET_FLAG_RELOAD, INTERNET_FLAG_NO_CACHE_WRITE, INTERNET_FLAG_NO_AUTO_REDIRECT), 0
+                        return fail msgs.openUrlFailed\format url if request == nil
+
+                        status = queryNumber request, HTTP_QUERY_STATUS_CODE
+                        if status and status >= 300 and status < 400
+                            location = queryString request, HTTP_QUERY_LOCATION
+                            winInet.InternetCloseHandle request
+                            request = nil
+                            return fail msgs.tooManyRedirects\format dl.url if redirectsLeft <= 0
+                            return fail msgs.redirectNoLocation\format url unless location
+                            url, redirectsLeft = resolveRedirect(url, location), redirectsLeft - 1
+                        elseif status and status >= 400
+                            winInet.InternetCloseHandle request
+                            return fail msgs.httpStatus\format status
+                        else
+                            break
+
                     dl._request, dl._outFileHandle = request, outFileHandle
                     dl.totalBytes = queryNumber request, HTTP_QUERY_CONTENT_LENGTH
                     true
@@ -387,7 +459,7 @@ else
             }
 
         defaultRunner = (manager) ->
-            multiplex manager, makeWinINetDriver manager.maxConnections
+            multiplex manager, makeWinINetDriver manager, manager.maxConnections
 
     else
         defaultRunner = (manager) ->
@@ -456,6 +528,12 @@ class Download extends EventEmitter
         @_emit @@Event.Finish
 
 
+---Options accepted by the Downloader constructor.
+---@class DownloaderOptions
+---@field stallTimeout? number Seconds a transfer may receive no data before it's aborted; 0/false disables stall detection.
+---@field maxConnections? integer Maximum simultaneous transfers (also the per-server connection limit); excess transfers queue.
+---@field blockPrivateHosts? boolean Refuse URLs whose host is a private/loopback/link-local address (an SSRF guard).
+
 ---Manages a set of concurrent downloads. This is DepCtrl's own engine; the
 ---DM.DownloadManager-compatible API lives in l0.DependencyControl.DownloadManager.
 ---Events (see Downloader.Event): Progress (overall %), Finished (await completed).
@@ -477,12 +555,13 @@ class Downloader extends EventEmitter
 
     ---Creates a downloader.
     ---@param runner? fun(downloader: Downloader) Overrides the transfer implementation (defaults to the platform backend).
-    ---@param options? { stallTimeout?: number, maxConnections?: integer } Additional options.
+    ---@param options? DownloaderOptions Optional downloader settings.
     new: (runner, options = {}) =>
         super!
-        
+
         @stallTimeout = options.stallTimeout if options.stallTimeout != nil
         @maxConnections = options.maxConnections if options.maxConnections != nil
+        @blockPrivateHosts = options.blockPrivateHosts if options.blockPrivateHosts != nil
 
         @downloads = {}
         @cancelled = false
@@ -498,6 +577,13 @@ class Downloader extends EventEmitter
     addDownload: (url, outfile, sha1) =>
         unless type(url) == "string" and type(outfile) == "string"
             return nil, msgs.addMissingArgs\format type(url), type(outfile)
+
+        -- as an opt-in per-instance SSRF guard, confine fetches to http(s) and reject private/internal hosts
+        -- The scheme check also covers URLs with no host (file://, ...) that the private-IP check can't see.
+        if @blockPrivateHosts
+            return nil, msgs.nonHttpScheme\format url unless url\match "^https?://"
+            host = Host.fromUrl url
+            return nil, msgs.privateHostBlocked\format url if host and host\isPrivate!
 
         FileOps.mkdir outfile, true, true
 
@@ -547,4 +633,5 @@ class Downloader extends EventEmitter
     ---@return boolean connected Whether an internet connection appears to be available.
     isInternetConnected: => isInternetConnected!
 
-return Downloader
+UnitTestSuite = require "l0.DependencyControl.UnitTestSuite"
+return UnitTestSuite\withTestExports Downloader, {:resolveRedirect}

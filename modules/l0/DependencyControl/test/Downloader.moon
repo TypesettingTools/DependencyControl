@@ -3,6 +3,8 @@
 -- Called from Tests.moon as: (require "...test.Downloader") basePath
 (basePath) ->
   Downloader = require "l0.DependencyControl.Downloader"
+  UnitTestSuite = require "l0.DependencyControl.UnitTestSuite"
+  {:resolveRedirect} = UnitTestSuite\getTestExports Downloader
 
   -- Fake transfer driver for Downloader.multiplex: each download completes after
   -- `steps` step() calls (1 byte each), recording the order step() is called so
@@ -206,6 +208,39 @@
       ut\assertEquals #dm.downloads, 0
       ut\assertIs dm.downloads, downloadsRef   -- same table, emptied in place
 
+    -- the private-host SSRF guard (enabled per-instance) refuses literal private/loopback addresses,
+    -- lets public addresses through, and is skippable via the option (all with literal IPs, so offline)
+
+    blockPrivateHosts_refusesPrivateLiteral: (ut) ->
+      dm = Downloader nil, {blockPrivateHosts: true}
+      dl, err = dm\addDownload "http://127.0.0.1/x", "#{basePath}_blk"
+      ut\assertNil dl
+      ut\assertString err
+
+    blockPrivateHosts_allowsPublicLiteral: (ut) ->
+      dm = Downloader nil, {blockPrivateHosts: true}
+      dl = dm\addDownload "http://93.184.216.34/x", "#{basePath}_pub"
+      ut\assertNotNil dl
+
+    blockPrivateHosts_optOutAllowsPrivate: (ut) ->
+      dm = Downloader nil, {blockPrivateHosts: false}
+      dl = dm\addDownload "http://127.0.0.1/x", "#{basePath}_optout"
+      ut\assertNotNil dl
+
+    -- with the guard on, a non-http(s) URL is refused even though it has no host for the private-IP check
+    blockPrivateHosts_refusesNonHttpScheme: (ut) ->
+      dm = Downloader nil, {blockPrivateHosts: true}
+      dl, err = dm\addDownload "file:///etc/passwd", "#{basePath}_file"
+      ut\assertNil dl
+      ut\assertString err
+
+    -- resolveRedirect: a Location header may be absolute, protocol-relative, root-relative, or path-relative
+    resolveRedirect_resolvesAllForms: (ut) ->
+      ut\assertEquals resolveRedirect("http://a/b/c", "https://x/y"), "https://x/y"        -- absolute wins
+      ut\assertEquals resolveRedirect("http://a.com/b/c", "/new"), "http://a.com/new"      -- root-relative
+      ut\assertEquals resolveRedirect("https://a.com/b", "//o.com/z"), "https://o.com/z"   -- protocol-relative
+      ut\assertEquals resolveRedirect("https://a.com/d/p.json", "s.json"), "https://a.com/d/s.json"  -- path-relative
+
     _order: {
       "roundRobin_interleaves", "roundRobin_detectsConcurrencyThenCancels",
       "finishEvent_canMarkFailed", "on_off", "on_rejectsUnknownEvent",
@@ -213,6 +248,9 @@
       "downloaderEvents", "await_onProgressAutoBinds",
       "runner_recordsStartFailure", "individualCancel",
       "addDownload_queues", "addDownload_badArgs",
-      "clear_emptiesInPlace"
+      "clear_emptiesInPlace",
+      "blockPrivateHosts_refusesPrivateLiteral", "blockPrivateHosts_allowsPublicLiteral",
+      "blockPrivateHosts_optOutAllowsPrivate", "blockPrivateHosts_refusesNonHttpScheme",
+      "resolveRedirect_resolvesAllForms"
     }
   }

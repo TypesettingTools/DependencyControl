@@ -315,11 +315,11 @@ class UpdateTask
         @status = nil
         @targetVersion = targetVersionNumber
 
-        -- set UpdateFeed settings
-        @feedConfig = {
-            downloadPath: aegisub.decode_path "?user/feedDump/"
-            dumpExpanded: true
-        } if @updater.config.c.dumpFeeds
+        -- UpdateFeed settings
+        @feedConfig = {blockPrivateHosts: @updater.config.c.updaterBlockPrivateHosts}
+        if @updater.config.c.dumpFeeds
+            @feedConfig.downloadPath = aegisub.decode_path "?user/feedDump/"
+            @feedConfig.dumpExpanded = true
 
     ---Loads a candidate feed, downloading it if necessary.
     ---@param feedUrl string
@@ -861,6 +861,7 @@ class UpdateTask
         scriptSubDir = @record.namespace
         scriptSubDir = scriptSubDir\gsub "%.","/" if @record.scriptType == Common.ScriptType.Module
 
+        @@__downloader.blockPrivateHosts = @updater.config.c.updaterBlockPrivateHosts
         @@__downloader\clear!
         for file in *update.files
             file.type or= "script"

@@ -82,5 +82,14 @@
       dm\await!
       ut\assertEquals dl.status, Downloader.Download.Status.Failed
 
-    _order: { "concurrentFast", "concurrentSlow", "queuedBeyondLimit", "httpError" }
+    -- a 302 (with a relative Location) is followed to the target and the file arrives intact. Exercises
+    -- curl's own redirect following on Unix and the WinINet backend's hand-rolled redirect loop on Windows.
+    followsRedirect: (ut, ctx) ->
+      f = ctx.fixtures[1]
+      dm = Downloader!
+      dl = dm\addDownload "#{ctx.server.baseUrl}/redirect-to/fast/#{f.name}", "#{ctx.downloadDir}/redir_#{f.name}", f.sha1
+      dm\await!
+      ut\assertEquals dl.status, Downloader.Download.Status.Finished
+
+    _order: { "concurrentFast", "concurrentSlow", "queuedBeyondLimit", "httpError", "followsRedirect" }
   }

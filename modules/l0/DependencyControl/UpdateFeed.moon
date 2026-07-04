@@ -249,7 +249,7 @@ class UpdateFeed
             @config.downloadPath or= aegisub.decode_path "?temp/#{constants.DEPCTRL_NAMESPACE}_feedCache"
             feedsHaveBeenTrimmed or= Logger(fileMatchTemplate: fileMatchTemplate, logDir: @config.downloadPath, maxFiles: 20)\trimFiles!
             @fileName or= table.concat {@config.downloadPath, fileBaseName, "%04X"\format(math.random 0, 16^4-1), ".json"}
-            @downloader = Downloader!
+            @downloader = Downloader nil, {blockPrivateHosts: @config.blockPrivateHosts}
         @fileName = fileName if fileName
 
         dl, err = @downloader\addDownload @url, @fileName
