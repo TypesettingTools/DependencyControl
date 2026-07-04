@@ -37,6 +37,7 @@ UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
     UpdateTask:         (controls\requireTest "UpdateTask")!
     Updater:            (controls\requireTest "Updater")!
     FeedTrust:          (controls\requireTest "FeedTrust")!
+    Host:               (controls\requireTest "Host")!
     ScriptUpdateRecord: (controls\requireTest "ScriptUpdateRecord")!
     UpdateFeed:         (controls\requireTest "UpdateFeed") basePath, DepCtrl
     GitRepository:      (controls\requireTest "GitRepository")!
