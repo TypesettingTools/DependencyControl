@@ -112,7 +112,8 @@ local function setupDepCtrl(taskName)
 
     -- Disable the self-updater so loading DepCtrl does not trigger a network
     -- fetch of its own feed (slow, flaky, pointless outside Aegisub).
-    local globalConfigPath = aegisub.decode_path("?user/config/l0.Record.json")
+    local constants = require "l0.DependencyControl.Constants"
+    local globalConfigPath = aegisub.decode_path("?user/config/" .. constants.DEPCTRL_NAMESPACE .. ".json")
     FileOps.mkdir(globalConfigPath, true, true)
     do
         local json = require "l0.dkjson"
