@@ -1,6 +1,7 @@
 ffi = require "ffi"
 Crypto = require "l0.DependencyControl.Crypto"
 Enum = require "l0.DependencyControl.Enum"
+constants = require "l0.DependencyControl.Constants"
 
 ---Serializes a value into a canonical string for hashing: table keys are emitted in sorted
 ---order so field ordering never affects the result, and every value is tagged with its type
@@ -238,6 +239,11 @@ class DependencyControlCommon
             when @ScriptType.Automation then aegisub.decode_path("#{rootDir}/automation/tests/DepUnit/macros")
             when @ScriptType.Module then aegisub.decode_path("#{rootDir}/automation/tests/DepUnit/modules")
             else nil
+
+    ---Whether DependencyControl is running headless — outside a real Aegisub session, on the Aegisub
+    ---shims (the CLI and unit test runner). Lets a script skip Aegisub-session-only startup work.
+    ---@return boolean headless
+    @isHeadless = -> aegisub[constants.DEPCTRL_PRIVATE_GLOBAL_VAR_PREFIX] != nil
 
 
     ---Deep equality comparison. Tables compared recursively; other types use ==.
