@@ -32,13 +32,28 @@ class FeedTrust
         Exact:  "exact"
     }
 
+    ---@alias FeedTrustStatus
+    ---| "trusted-official" # TrustedOfficial: trusted only through DependencyControl's official set
+    ---| "trusted-user" # TrustedUser: trusted only through one of the user's own lists (extraFeeds or trustedFeeds)
+    ---| "trusted-both" # TrustedBoth: trusted through both the official set and one of the user's own lists
+    ---| "untrusted" # Untrusted: neither trusted nor blocked (the default)
+    ---| "blocked" # Blocked: matched by the block list, which overrides trust
+    @TrustStatus = Enum "FeedTrustStatus", {
+        TrustedOfficial: "trusted-official"
+        TrustedUser:     "trusted-user"
+        TrustedBoth:     "trusted-both"
+        Untrusted:       "untrusted"
+        Blocked:         "blocked"
+    }
+
     ---@param config ConfigView The updater's config view; its `c` holds `extraFeeds`/`trustedFeeds`/`blockedFeeds`.
     ---@param logger? Logger Logger for the trust/block confirmations.
     new: (@config, @logger) =>
 
-    -- Lazily loads and caches DependencyControl's official trust lists from its own feed. Best-effort: if
-    -- the feed can't be loaded, only DepCtrl's own feed URL is trusted and nothing is blocked.
+    ---Lazily loads and caches DependencyControl's official trust lists from its own feed. Best-effort: if the
+    ---feed can't be loaded, only DepCtrl's own feed URL is trusted and nothing is blocked.
     ---@private
+    ---@return { trusted: table<string,boolean>, blocked: table[] } official Cached official trusted-feed set and raw block-list entries.
     __loadOfficial: =>
         return @__official if @__official
         trusted, blocked = {[constants.DEPCTRL_FEED_URL]: true}, {}
@@ -58,15 +73,26 @@ class FeedTrust
     ---@return BlockedFeedEntry[] blockedFeeds
     getOfficialBlockedFeeds: => @__loadOfficial!.blocked
 
-    ---Returns the merged trusted feed-URL set: the official feeds plus the user's `extraFeeds` and
-    ---`trustedFeeds`. Cached; invalidated when `trust` adds a feed.
+    ---Returns the user's own trusted feeds: the union of `extraFeeds` (discovery roots) and `trustedFeeds`
+    ---(trust-only). Cached; invalidated when the user's lists change.
+    ---@return table<string,boolean> userTrustedFeeds
+    getUserTrustedFeeds: =>
+        unless @__userTrusted
+            c = @config.c
+            set = {}
+            Common.makeSet c.extraFeeds or {}, set
+            Common.makeSet c.trustedFeeds or {}, set
+            @__userTrusted = set
+        return @__userTrusted
+
+    ---Returns the merged trusted feed-URL set: the official feeds plus the user's own trusted feeds
+    ---(`extraFeeds` and `trustedFeeds`). Cached; invalidated when the user's lists change.
     ---@return table<string,boolean> trustedFeeds
     getTrustedFeeds: =>
         unless @__trusted
-            c = @config.c
-            @__trusted = {url, true for url in pairs @getOfficialTrustedFeeds!}
-            Common.makeSet c.extraFeeds or {}, @__trusted
-            Common.makeSet c.trustedFeeds or {}, @__trusted
+            merged = {url, true for url in pairs @getOfficialTrustedFeeds!}
+            merged[url] = true for url in pairs @getUserTrustedFeeds!
+            @__trusted = merged
         return @__trusted
 
     ---Returns a merged, normalized list of the "officially" blocked feeds (as per DependencyControls own feed),
@@ -93,6 +119,18 @@ class FeedTrust
     ---@return boolean trusted True when the feed URL is trusted, false otherwise.
     isTrusted: (url) => url and @getTrustedFeeds![url] and true or false
 
+    ---Reports whether a feed URL is trusted through one of the user's own lists (`extraFeeds` or `trustedFeeds`),
+    ---as opposed to DependencyControl's official set. A block does not factor into this.
+    ---@param url? string The feed URL to check.
+    ---@return boolean userTrusted True when the feed URL is in one of the user's trust lists.
+    isUserTrusted: (url) => url and @getUserTrustedFeeds![url] and true or false
+
+    ---Reports whether a feed URL is in DependencyControl's official trusted set (its own feed plus the feeds it
+    ---advertises), as opposed to the user's own lists. A block does not factor into this.
+    ---@param url? string The feed URL to check.
+    ---@return boolean officiallyTrusted True when the feed URL is officially trusted.
+    isOfficiallyTrusted: (url) => url and @getOfficialTrustedFeeds![url] and true or false
+
     ---Reports whether a feed URL is matched by any block entry (official or user).
     ---@param url? string The feed URL to check.
     ---@return boolean blocked True when the feed URL is blocked, false otherwise.
@@ -100,13 +138,28 @@ class FeedTrust
 
     ---Returns the block entry that matches a feed URL or nil if none does.
     ---Useful to get the reason for a block.
-    ---@param url? string
+    ---@param url? string The feed URL to check.
     ---@return BlockedFeedEntry? entry The first matching block entry, or nil.
     getBlockingEntry: (url) =>
         return nil unless url
         for entry in *@getBlockedFeeds!
             return entry if @@matchesBlockEntry url, entry
         return nil
+
+    ---Classifies a feed URL's trust: a block overrides any trust, and official vs user trust are reported
+    ---independently (a feed in both is `TrustedBoth`).
+    ---@param url? string The feed URL to classify.
+    ---@return FeedTrustStatus status
+    ---@return BlockedFeedEntry? blockingEntry The block entry that matched when the feed is blocked, else nil.
+    getTrustStatus: (url) =>
+        blockingEntry = @getBlockingEntry url
+        return @@TrustStatus.Blocked, blockingEntry if blockingEntry
+        official = @isOfficiallyTrusted url
+        user =     @isUserTrusted url
+        return @@TrustStatus.TrustedBoth if official and user
+        return @@TrustStatus.TrustedUser if user
+        return @@TrustStatus.TrustedOfficial if official
+        @@TrustStatus.Untrusted
 
     ---Appends a feed URL to one of the user's config lists (skipping an exact duplicate), invalidates the
     ---cached trusted set, and persists.
@@ -119,7 +172,7 @@ class FeedTrust
         return false if Common.listIncludes list, feedUrl
         list[#list + 1] = feedUrl
         @config.c[configKey] = list
-        @__trusted = nil
+        @__trusted, @__userTrusted = nil, nil
         @config\save!
         return true
 
@@ -134,7 +187,7 @@ class FeedTrust
         kept = [url for url in *list when url != feedUrl]
         return false if #kept == #list
         @config.c[configKey] = kept
-        @__trusted = nil
+        @__trusted, @__userTrusted = nil, nil
         @config\save!
         return true
 

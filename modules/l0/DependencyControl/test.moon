@@ -38,6 +38,8 @@ UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
     Updater:            (controls\requireTest "Updater")!
     FeedTrust:          (controls\requireTest "FeedTrust")!
     Host:               (controls\requireTest "Host")!
+    FeedInventory:      (controls\requireTest "FeedInventory")!
+    FeedManager:        (controls\requireTest "FeedManager")!
     ScriptUpdateRecord: (controls\requireTest "ScriptUpdateRecord")!
     UpdateFeed:         (controls\requireTest "UpdateFeed") basePath, DepCtrl
     GitRepository:      (controls\requireTest "GitRepository")!
@@ -45,6 +47,7 @@ UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
     ZipArchiver:        (controls\requireTest "ZipArchiver") basePath
     JsonSchema:         (controls\requireTest "JsonSchema") basePath
     FfiPosix:           (controls\requireTest "ffi-posix")!
+    OpenUrl:            (controls\requireTest "open-url")!
     DownloaderIntegration: (controls\requireTest "integration.Downloader") basePath
     ZipArchiverIntegration: (controls\requireTest "integration.ZipArchiver") basePath
   }

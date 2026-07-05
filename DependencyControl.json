@@ -33,14 +33,14 @@
       "localFileBasePath": "@{localFileBasePath}macros/@{namespace}",
       "channels": {
         "alpha": {
-          "version": "0.2.0",
+          "version": "0.3.0",
           "released": null,
           "default": true,
           "files": [
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "3C5950707D01B356431A6BD1B859ACC355054394"
+              "sha1": "B993DDEE553CF5A8860FBB22304BB4FC44F670C5"
             }
           ],
           "requiredModules": [
@@ -66,6 +66,9 @@
         "0.2.0": [
           "Centralized automatic update scheduling for all installed scripts, including modules not loaded by any automation script, eliminating redundant per-environment checks at startup.",
           "Unit test menus for installed modules with a DependencyControl test suite are now registered automatically at startup."
+        ],
+        "0.3.0": [
+          "Added a Manage Feeds macro to review and manage the feeds DependencyControl knows about and their trust status: trust, block (with a reason), unblock, or remove feeds; discover feeds advertised by other feeds; and manage your extra feeds and block list in dedicated panels. It warns before an action would change an installed package's update source, opens feed details in the DepCtrl Browser, and won't let you block DependencyControl's own feed."
         ]
       }
     }
@@ -93,12 +96,12 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "E6922A7F81B2F6474FF160CFB0BF45CB23F318C4"
+              "sha1": "A63135DFF9EED1AC3582279EA9E04EC5EC0DD399"
             },
             {
               "name": "/Common.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "91CD6730F6ABFDBC2AD2143206AC2B317CDB18EF"
+              "sha1": "AC2221F9E79E71CC7E8F8FB34B32E30306477526"
             },
             {
               "name": "/Constants.moon",
@@ -108,12 +111,12 @@
             {
               "name": "/ConfigHandler.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "7E42448EED793895845DD7B53B481B752490EE36"
+              "sha1": "572BDC2400E9C8A0E39B597EBF0AB6791AEF15B5"
             },
             {
               "name": "/ConfigView.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "B5266BD7A03FAC66E95D2356CEDA208620A7BBA7"
+              "sha1": "583D90844CA4DE391C3D575AB62AD27B893C1421"
             },
             {
               "name": "/Crypto.moon",
@@ -123,17 +126,32 @@
             {
               "name": "/Downloader.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "B5051F30040C2BE95789D836D95BCBB68DD5D6D5"
+              "sha1": "D2A85C738FEE492235928C44240FF81FEFA3BF39"
             },
             {
               "name": "/Enum.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "0C60962AF286FAEB3E3326A004C18A8E24EF7EA4"
+              "sha1": "567FC08D8755935C9B595D0A6AF55BD1AEA405B1"
             },
             {
               "name": "/EventEmitter.moon",
               "url": "@{fileBaseUrl}@{fileName}",
               "sha1": "ECD301C2EA0A74111981A6A0E2EAC6ADB2B32AB9"
+            },
+            {
+              "name": "/FeedInventory.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "AB7F5549BE08E1EA93D161D491A58747AF038E45"
+            },
+            {
+              "name": "/FeedManager.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "EE1CD14A6CD385BF4EB2B0302DE375F4EE457536"
+            },
+            {
+              "name": "/FeedTrust.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "A864DF7B5E2E6485947F154BC5AFDA4C6F7D1448"
             },
             {
               "name": "/FileLock.moon",
@@ -143,12 +161,17 @@
             {
               "name": "/FileOps.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "0BE6B42CAD0184AC05A3A0ABA312C7491D28A9B6"
+              "sha1": "E12FB6539B6CC7E12751B9C5AFD4E61ABDA60B2C"
             },
             {
               "name": "/GitRepository.moon",
               "url": "@{fileBaseUrl}@{fileName}",
               "sha1": "2D23AAA1BD2A16555F3374253A36475114E2F650"
+            },
+            {
+              "name": "/Host.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "DB00CB6086812586A3E1A096EE274870CF76BDB4"
             },
             {
               "name": "/JsonSchema.moon",
@@ -158,12 +181,12 @@
             {
               "name": "/Lock.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "FC8A3B58F4A6FEE4ADFBBFD4343EE862580C9BAB"
+              "sha1": "01C190CABEB961B7C4D79FF995B4815CFD0C8151"
             },
             {
               "name": "/Logger.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "1315A1B66FCA9E850F95BCB529174F2ABEADAFD9"
+              "sha1": "DC505B34A15126541223065417AE3C9785C96104"
             },
             {
               "name": "/ModuleLoader.moon",
@@ -183,7 +206,7 @@
             {
               "name": "/Record.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "60FF08C0DBA77E827795532E8EEB2454A58CE128"
+              "sha1": "5F72C456F342E9710065391485CFB6D5BB26A277"
             },
             {
               "name": "/ScriptTargetFilter.moon",
@@ -203,7 +226,7 @@
             {
               "name": "/Stub.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "EBBE07FF72CD2DA24A71424087EA31947073B0AC"
+              "sha1": "D28F02C65B29C6C29A6329A433E72E416E323356"
             },
             {
               "name": "/BadMutex.moon",
@@ -219,27 +242,27 @@
             {
               "name": "/UnitTestSuite.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "4E458609CEFD71F8927C86894F1B858EB5FA5206"
+              "sha1": "DBAD906996EE5E1980E0B9EB34AC410E297B6051"
             },
             {
               "name": "/UpdateFeed.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "BFFC535DD1ECFFDBC1F443C4341379B3E3F9A156"
+              "sha1": "255F7FCCD7640351E38D1B66C0084C209FCAD695"
             },
             {
               "name": "/UpdateTask.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "7CE416DD78B83221088BA48118DF7E502092A73B"
+              "sha1": "FB18396EFFDE6781CC1446CDC87CC4B594C3D854"
             },
             {
               "name": "/Updater.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "045869155790D1DD656DF7DEFA370317FE013C4C"
+              "sha1": "CC7E02780FF928FCFEBD283D76769D47A42A388E"
             },
             {
               "name": "/ZipArchiver.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "0957979B1112933C9EF2B7AEE919F7CC884DCE78"
+              "sha1": "03F2629903107C97B514D3B85E8DA07268D6241B"
             },
             {
               "name": "/helpers/ffi-posix.moon",
@@ -249,7 +272,17 @@
             {
               "name": "/helpers/ffi-windows.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "49B3E5CAFF38C141FB52D950000F785F5D91DFA4"
+              "sha1": "BF0B05684EF8B96B6657C60C4AE6B057A8CBDC55"
+            },
+            {
+              "name": "/helpers/open-url.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "859D51EEF853D22ED6B1C26049EBDBF080B07B84"
+            },
+            {
+              "name": "/helpers/resolve-host.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "5FCBB1F4EE1F919D8D23FFBFB70B4AFDF653E0AA"
             },
             {
               "name": "/shims/BadMutex.moon",
@@ -269,7 +302,7 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "F6BAD5A4B175241353FADF4D69F2907C43130319",
+              "sha1": "2CC8D4C2043E8BE21CC1C6E710DC303A36EA474E",
               "type": "test"
             },
             {
@@ -281,13 +314,13 @@
             {
               "name": "/Common.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "39F56240D8B1449FAE755643E46A26D1A8309545",
+              "sha1": "DDE1F2618560C2661B897B7A5210114626077F92",
               "type": "test"
             },
             {
               "name": "/ConfigHandler.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "9C693333EDAA5DAC499138EBD3AA3E6786A3D7CB",
+              "sha1": "AA1FE5A7096924247B0C1DC746DD6A99A25BC5F3",
               "type": "test"
             },
             {
@@ -305,13 +338,31 @@
             {
               "name": "/Downloader.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "9F24F6B158BB30DCB1BC726A7469B889B80D353C",
+              "sha1": "192E5AE5AA4D8E5583392F297A58545CBDCBFCE1",
               "type": "test"
             },
             {
               "name": "/Enum.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "73E1277D5172F2D14C3279EF9B1542E3DC336D8D",
+              "sha1": "1BF9FF97C5668EB5046EE80B24F52F9C53F54A02",
+              "type": "test"
+            },
+            {
+              "name": "/FeedInventory.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "968499DA3E2D10278372C2556F7FCE9CF39D602A",
+              "type": "test"
+            },
+            {
+              "name": "/FeedManager.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "3F3C639F82DEAC6F5288597D094D8325A276785C",
+              "type": "test"
+            },
+            {
+              "name": "/FeedTrust.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "58AA946E5AD06735AD7A0A98D4CE89C7F3AB8641",
               "type": "test"
             },
             {
@@ -321,15 +372,27 @@
               "type": "test"
             },
             {
+              "name": "/FileLock.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "FDC65E7FD7EB3190C2F7B888A6D48DD6CE3C1407",
+              "type": "test"
+            },
+            {
               "name": "/FileOps.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "08813FF2E65B5D20418A70CA73FE1D7310E24BD9",
+              "sha1": "1C054620FD0F2B139DC1772BE9D3E89EF19FD806",
               "type": "test"
             },
             {
               "name": "/GitRepository.moon",
               "url": "@{fileBaseUrl}@{fileName}",
               "sha1": "F7E43D74EF6574408DFD1B851EF40F18BDB64FFA",
+              "type": "test"
+            },
+            {
+              "name": "/Host.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "8EAB0F381760D886D88C93787FD415CD429899A3",
               "type": "test"
             },
             {
@@ -341,7 +404,7 @@
             {
               "name": "/Lock.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "7AE20FBFD526FE42965AADDD738A88BDD143E8F6",
+              "sha1": "B333BB9C78AFF5E3EF8CF5C5A94FFCA57185E937",
               "type": "test"
             },
             {
@@ -353,13 +416,25 @@
             {
               "name": "/ModuleLoader.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "DB4546BE809DC855EB690883164F51F5F5D5D649",
+              "sha1": "EAB97CE45571F6A490AB5CAFBAE25C6C4B6F3C66",
               "type": "test"
             },
             {
               "name": "/ModuleProvider.moon",
               "url": "@{fileBaseUrl}@{fileName}",
               "sha1": "19B4A2217D237F9803DE6C6E1B6A486BE45EED73",
+              "type": "test"
+            },
+            {
+              "name": "/NamedSemaphore.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "95C13F8E5A8005565BB7D2186BA52BB2C98A2935",
+              "type": "test"
+            },
+            {
+              "name": "/open-url.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "59D8DE4A8C4AC8154293A61EA8BF95E1571D2E81",
               "type": "test"
             },
             {
@@ -393,27 +468,33 @@
               "type": "test"
             },
             {
+              "name": "/UnitTestSuite.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "74C9D4D6CA22CD8570B6BA44720940DFB4CEF5CF",
+              "type": "test"
+            },
+            {
               "name": "/UpdateFeed.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "085E3EAC6854720EA54E16F7754F33FC9F5296C9",
+              "sha1": "2038EE45312609CC22CE0A1727C1C681D19A87F7",
               "type": "test"
             },
             {
               "name": "/UpdateTask.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "7F6575EE145328C432859531970C964DACB3706A",
+              "sha1": "1D303427773A98F785EEE0996435F9541CC62DFC",
               "type": "test"
             },
             {
               "name": "/Updater.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "B3BD84E44AC9D57EE56BFDEC35A2D1FCB14B9D69",
+              "sha1": "2456B084ABA72230AD1A516D5D5444362BC02587",
               "type": "test"
             },
             {
               "name": "/ZipArchiver.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "F4AD66241B9B6DD75873557E3932CC23456F91B8",
+              "sha1": "02A5F4F29EBE807A2F1FCB7BF8264CCB44F70FE5",
               "type": "test"
             },
             {
@@ -536,7 +617,7 @@
           "Timer: Exposed a shared monotonic `Timer.getTime()` clock, added stopwatch-style `start()`, `stop()`, and `reset()` methods, and PT.PreciseTimer is now provided through the same bundled-provider mechanism as BM.BadMutex and DM.DownloadManager (set DEPCTRL_FORCE_BUILTIN_TIMER=1 to force DepCtrl's implementation).",
           "Updater: Scripts and modules installed in Aegisub's data automation directory (e.g. native modules installed by a system package manager) are no longer updated by DependencyControl — scheduled checks skip them with a debug log, while manual installs/updates and dependency resolution report a descriptive error. Portable / \"Local Config\" setups, where the user and data directories are the same, are unaffected.",
           "Updater: A required module that no feed offers directly can now be satisfied by installing a module that declares it in `provides`  — for example, a script requiring `json` is satisfied by installing `dkjson`. Providers are only used when no feed offers the module by name; a candidate must be installable on your platform and meet the required version, and a directly-named module is always preferred over a provider. Once a provider is installed for a requirement, it keeps being used and updated instead of switching to a different provider (as long as it can still satisfy the requirement). Feeds can now advertise `provides` per release, and `update-feed` mirrors a module's declared aliases into the feed automatically. A provider can pin a provided alias to an npm-style version range (e.g. `~1.2`), so it keeps satisfying requirements within that range without having to be re-published for every patch release of the provided module.",
-          "Updater: Package sources are now selected by trust to harden against supply-chain attacks. Feeds are consulted closest-first (the feed a script declares for a dependency, then feeds DependencyControl trusts — those in its own feed plus your `extraFeeds`/`trustedFeeds` — then any others), and the install is refused if a requirement can only be met from an untrusted feed. A new `blockedFeeds` config (and an official block list in DependencyControl's own feed) lets a compromised feed be rejected outright. The obsolete `tryAllFeeds` setting and its exhaustive update mode have been removed.",
+          "Updater: Package sources are now selected by trust to harden against supply-chain attacks. Feeds are consulted closest-first (the feed a script declares for a dependency, then feeds DependencyControl trusts — those in its own feed plus your `extraFeeds` — then any others), and the install is refused if a requirement can only be met from an untrusted feed. Your `extraFeeds` are discovery roots that are also searched for updates, while your `trustedFeeds` only grant trust to feeds reached another way and are never themselves searched. A new `blockedFeeds` config (and an official block list in DependencyControl's own feed) lets a compromised feed be rejected outright. The obsolete `tryAllFeeds` setting and its exhaustive update mode have been removed.",
           "Updater: When an install would otherwise be refused because it can only be satisfied from an untrusted feed, DependencyControl can now ask you to confirm and either use it just this once, add it to your trusted feeds, or block it outright; and when several equally-ranked packages can satisfy a requirement it can ask you to pick one. How freely it may prompt is controlled by two new settings: `feedTrustPromptThreshold` for trusting an untrusted feed (defaults to prompting in all situations, since it decides whether an update succeeds) and `packageChoicePromptThreshold` for picking between equally-ranked packages (defaults to only actions you start yourself).",
           "Updater: The package picker now also lets you decide how long your choice should stick — use the source only this once, remember it while it stays available, pin it so DependencyControl never switches silently, or hand the decision back to DependencyControl for good. The remembered choice is stored per package and follows the source across feed-URL changes; a pinned source that becomes unavailable fails a required dependency (so you can fix the pin) and skips an optional one. A new global `packageChoiceOfferAllSources` setting offers every eligible source (including lower-ranked and untrusted ones) whenever there's more than one, so you can override the ranking.",
           "Unit test framework: `assertContains` now honors its case-insensitive option (it previously always compared case-sensitively) and reports a proper message when the assertion fails.",
@@ -544,7 +625,13 @@
           "Unit test framework: a failing `assertNegative` now says \"negative\" rather than \"positive\" in its message.",
           "Updater: the temporary download directory is now removed after a successful install instead of being left behind.",
           "FileOps: `mkdir` no longer reports success when the directory could not actually be created.",
-          "Logger: the download progress bar now fills incrementally instead of jumping from empty to full at the halfway point."
+          "Logger: the download progress bar now fills incrementally instead of jumping from empty to full at the halfway point.",
+          "Unit test framework: a failing `assertPositive`/`assertNegative` no longer errors while formatting its failure message.",
+          "The 'updater enabled' setting is now fully honored: while disabled it also prevents installing or updating modules on demand, not just scheduled background update checks.",
+          "Updater: Feed and package downloads now refuse hosts that resolve to a private, loopback, or link-local address (an SSRF safeguard), controlled by the new `updaterBlockPrivateHosts` setting (on by default; turn it off to use feeds on your local network).",
+          "Added `FeedInventory` and `FeedManager` — building blocks that list the feeds DependencyControl knows about, each with its provenance and trust status, and apply feed-trust actions. They back the Toolbox's new Manage Feeds macro and are available to other tooling.",
+          "Feed discovery can now follow feeds' advertised `knownFeeds` transitively to surface feeds beyond the ones you've configured, with untrusted expansion bounded so a hostile feed can't drive unbounded fetches (new `fetchUntrustedFeeds` and `feedCrawlLimits` settings).",
+          "UpdateFeed: a file marked for deletion in a feed is no longer reported as a missing-source error when deploying, and is now removed from the output directory when present."
         ]
       }
     },

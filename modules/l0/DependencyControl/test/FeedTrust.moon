@@ -2,6 +2,7 @@
 -- Called from test.moon as: (controls\requireTest "FeedTrust")!
 () ->
   FeedTrust = require "l0.DependencyControl.FeedTrust"
+  TrustStatus = FeedTrust.TrustStatus
 
   -- A FeedTrust seeded with the official sets (so it never loads the live DepCtrl feed) over a stub config.
   -- opts: officialTrusted (set), officialBlocked (list), extraFeeds, trustedFeeds, blockedFeeds, onSave.
@@ -75,6 +76,39 @@
       ft = make officialBlocked: {{url: "https://bad.example/"}}
       ut\assertTrue FeedTrust.isBlocked ft, "https://bad.example/a/b.json"
       ut\assertFalse FeedTrust.isBlocked ft, "https://ok.example/"
+
+    -- isUserTrusted is true only for the user's own lists (extraFeeds/trustedFeeds), never the official set.
+    isUserTrusted_userListsOnly: (ut) ->
+      ft = make officialTrusted: {"feed://o": true}, extraFeeds: {"feed://e"}, trustedFeeds: {"feed://t"}
+      ut\assertTrue FeedTrust.isUserTrusted ft, "feed://e"
+      ut\assertTrue FeedTrust.isUserTrusted ft, "feed://t"
+      ut\assertFalse FeedTrust.isUserTrusted ft, "feed://o"   -- official, not one of the user's lists
+      ut\assertFalse FeedTrust.isUserTrusted ft, "feed://x"
+      ut\assertFalse FeedTrust.isUserTrusted ft, nil
+
+    -- isOfficiallyTrusted is the complement: true only for the official set, never the user's own lists.
+    isOfficiallyTrusted_officialSetOnly: (ut) ->
+      ft = make officialTrusted: {"feed://o": true}, extraFeeds: {"feed://e"}, trustedFeeds: {"feed://t"}
+      ut\assertTrue FeedTrust.isOfficiallyTrusted ft, "feed://o"
+      ut\assertFalse FeedTrust.isOfficiallyTrusted ft, "feed://e"   -- a user list, not the official set
+      ut\assertFalse FeedTrust.isOfficiallyTrusted ft, "feed://t"
+      ut\assertFalse FeedTrust.isOfficiallyTrusted ft, nil
+
+    -- getTrustStatus classifies official and user trust independently: official-only, user-only, both, or neither.
+    getTrustStatus_classifiesTrust: (ut) ->
+      ft = make officialTrusted: {"feed://o": true, "feed://both": true}, extraFeeds: {"feed://u"}, trustedFeeds: {"feed://both"}
+      ut\assertEquals FeedTrust.getTrustStatus(ft, "feed://o"),    TrustStatus.TrustedOfficial
+      ut\assertEquals FeedTrust.getTrustStatus(ft, "feed://u"),    TrustStatus.TrustedUser
+      ut\assertEquals FeedTrust.getTrustStatus(ft, "feed://both"), TrustStatus.TrustedBoth
+      ut\assertEquals FeedTrust.getTrustStatus(ft, "feed://x"),    TrustStatus.Untrusted
+
+    -- a block overrides any trust, and getTrustStatus returns the matching entry as its second value.
+    getTrustStatus_blockOverridesAndReturnsEntry: (ut) ->
+      ft = make officialTrusted: {"feed://bad": true}, officialBlocked: {{url: "feed://bad", reason: "malware"}}
+      status, entry = FeedTrust.getTrustStatus ft, "feed://bad"
+      ut\assertEquals status, TrustStatus.Blocked
+      ut\assertEquals entry.reason, "malware"
+      ut\assertTrue entry.isOfficial
 
     -- trust/block append to the user config, persist, and invalidate the cached merged set so the new
     -- feed is immediately reflected.
@@ -218,7 +252,9 @@
       "getOfficialTrustedFeeds_usesCacheWhenPresent", "getOfficialBlockedFeeds_usesCacheWhenPresent"
       "getTrustedFeeds_mergesOfficialAndUser", "getTrustedFeeds_officialOnlyWhenNoUserFeeds"
       "getBlockedFeeds_mergesOfficialThenUser", "getBlockedFeeds_officialOnlyWhenNoUserFeeds"
-      "isTrusted_checksMergedSet", "isBlocked_prefixMatch"
+      "isTrusted_checksMergedSet", "isBlocked_prefixMatch", "isUserTrusted_userListsOnly"
+      "isOfficiallyTrusted_officialSetOnly"
+      "getTrustStatus_classifiesTrust", "getTrustStatus_blockOverridesAndReturnsEntry"
       "trust_appendsPersistsAndInvalidates", "block_appendsPersistsAndInvalidates"
       "trust_ignoresDuplicate", "block_ignoresDuplicate"
       "untrust_removesPersistsAndInvalidates", "untrust_returnsFalseWhenAbsent", "untrust_leavesOfficialTrusted"

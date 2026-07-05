@@ -353,21 +353,30 @@ class UpdateTask
                                                              @record.name, currentChannel, tostring updateRecord.version
         return updateRecord, nil, version
 
+    ---Resolves the feed URL a persisted source record maps to, given the owning package's feed fields.
+    ---@param source SourceChoiceRecord The persisted source record.
+    ---@param selfFeed? string The package's declared feed (used for a self-declared source).
+    ---@param userFeed? string The package's per-package override feed (used for a user-feed source).
+    ---@param modulesSection? table<string, table> The modules config section (used to resolve a provider source).
+    ---@return string? url The resolved feed URL, or nil if it can't be determined.
+    @resolveSourceUrl = (source, selfFeed, userFeed, modulesSection) ->
+        switch source.feedSource
+            when SourceFeedKind.SelfDeclared then selfFeed
+            when SourceFeedKind.UserFeed then userFeed
+            when SourceFeedKind.Other then source.feedUrl
+            when SourceFeedKind.Provider
+                return nil unless source.provider and source.provider.namespace
+                provider = modulesSection and modulesSection[source.provider.namespace]
+                provider and provider.feed
+
     ---Resolves the feed URL a remembered source maps to. Every kind but `Other` derives its URL from
     ---current state, so a remembered choice survives a feed-URL migration.
     ---@param previousSource SourceChoiceRecord A persisted `currentSource` table.
     ---@return string? feedUrl The derived feed URL, or nil if it can't be determined.
     ---@private
     __resolveRememberedFeedUrl: (previousSource) =>
-        switch previousSource.feedSource
-            when SourceFeedKind.SelfDeclared then @record.feed
-            when SourceFeedKind.UserFeed then @record.config.c.userFeed
-            when SourceFeedKind.Other then previousSource.feedUrl
-            when SourceFeedKind.Provider
-                return nil unless previousSource.provider and previousSource.provider.namespace
-                view = @updater.config\getSectionHandler Common.ScriptTypeSection[Common.ScriptType.Module]
-                providerRecord = view and view.c and view.c[previousSource.provider.namespace]
-                providerRecord and providerRecord.feed
+        view = @updater.config\getSectionHandler Common.ScriptTypeSection[Common.ScriptType.Module]
+        @@.resolveSourceUrl previousSource, @record.feed, @record.config.c.userFeed, view and view.c
 
     ---Finds the candidate corresponding to a remembered source that is still eligible to satisfy this task.
     ---@param candidates CandidatePackageSource[] Pooled candidates.
@@ -729,9 +738,9 @@ class UpdateTask
             selected, tied, eligible = @__selectCandidate candidates
 
             unless selected and selected.trustBand == TrustBand.DeclaredDirect
-                -- tier 2: trusted feeds (official and user-added)
+                -- tier 2: the trusted discovery feeds — the user's extra feeds, trusted add-feeds, and the
+                -- official set.
                 gather config.extraFeeds
-                gather config.trustedFeeds
                 gather [url for url in *@addFeeds when isTrusted url]
                 gather [url for url in pairs(feedTrust\getOfficialTrustedFeeds!)] unless @optional -- don't trigger a registry-wide crawl for a nice-to-have
                 selected, tied, eligible = @__selectCandidate candidates

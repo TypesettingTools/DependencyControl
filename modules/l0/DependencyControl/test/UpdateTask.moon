@@ -231,7 +231,7 @@
         name: "TestMod", namespace: "l0.test", automationDir: "auto", version: 0
         scriptType: Common.ScriptType.Module, virtual: false
       }
-      updater: {renewLock: (=>)}
+      updater: {renewLock: (=>), config: {c: {}}}
       logger: {
         log: ->, trace: ->, progress: ->, indent: 0
         format: (arr) => table.concat (arr or {}), "; "
@@ -391,7 +391,7 @@
       task = makeInteractiveTask blockedFeeds: {}, onSave: -> saved[1] = true
       ut\stub(aegisub.dialog, "display")\calls -> msgs.__promptTrustFeed.trustNever
       ut\assertEquals UpdateTask.__promptTrustFeed(task, {feedUrl: "feed://bad"}), FeedTrustDecision.Never
-      ut\assertEquals task.updater.config.c.blockedFeeds[1], "feed://bad"
+      ut\assertEquals task.updater.config.c.blockedFeeds[1], {url: "feed://bad", matchMode: "prefix"}
       ut\assertTrue saved[1]
 
     -- UpdateTask.__promptSelectPackageSource: shows the dialog (callers gate it), returning the picked
@@ -717,7 +717,7 @@
     resolve_blockedFeedSkipped: (ut) ->
       task = makeResolveTask {
         declaredFeed: "feed://blocked", officialTrusted: {"feed://blocked": true}
-        config: {blockedFeeds: {"feed://blocked"}}
+        config: {blockedFeeds: {{url: "feed://blocked"}}}
         feeds: {"feed://blocked": {direct: directRec version: "1.0.0"}}
       }
       d = UpdateTask.__resolve task

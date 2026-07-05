@@ -11,6 +11,7 @@ ModuleLoader =   require "l0.DependencyControl.ModuleLoader"
 ModuleProvider = require "l0.DependencyControl.ModuleProvider"
 SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
 UnitTestSuite =  require "l0.DependencyControl.UnitTestSuite"
+FeedInventory =  require "l0.DependencyControl.FeedInventory"
 
 -- Global registry of live DepCtrl version records keyed by namespace, backed by a global table
 --  so it survives DepCtrl self-update reloads. Required to reach the DepCtrl version records
@@ -92,6 +93,10 @@ class Record
                          packageChoicePromptThreshold: Updater.PromptThreshold.UserRequested,
                          packageChoiceOfferAllSources: false,
                          updaterBlockPrivateHosts: true,
+                         fetchUntrustedFeeds: "always",
+                         feedCrawlLimits: {[FeedInventory.CrawlLimit.Depth]:   7,
+                                           [FeedInventory.CrawlLimit.PerRoot]: 50,
+                                           [FeedInventory.CrawlLimit.PerFeed]: 25},
                          dumpFeeds:true, configDir:"?user/config",
                          logMaxFiles: 200, logMaxAge: 604800, logMaxSize:10*(10^6),
                          updateWaitTimeout: 60, updateOrphanTimeout: 50,
