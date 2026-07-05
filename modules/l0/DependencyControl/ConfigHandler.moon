@@ -5,6 +5,7 @@ Logger = require "l0.DependencyControl.Logger"
 Lock = require "l0.DependencyControl.Lock"
 ConfigView = require "l0.DependencyControl.ConfigView"
 Common = require "l0.DependencyControl.Common"
+JsonSchema = require "l0.DependencyControl.JsonSchema"
 
 ---JSON-backed configuration manager with cooperative cross-script locking.
 ---Manages one JSON file per instance. Use ConfigView (via getView or ConfigView.get)
@@ -46,6 +47,7 @@ Reload your automation scripts to generate a new configuration file.]]
         load: {
             noFilePath: "Can't load because no config file is set."
             noFile:     "Starting with a fresh config because the config file '%s' is missing (%s)..."
+            migrationSaveFailed: "Migrated config '%s' to the current schema, but couldn't save it (%s); will retry on next load."
         }
         save: {
             failedWhole:  "Failed to save complete config to file '%s': %s"
@@ -76,15 +78,16 @@ Reload your automation scripts to generate a new configuration file.]]
     ---@param filePath string
     ---@param logger? Logger
     ---@param noLoad? boolean Don't load the file immediately (default false).
+    ---@param schemaOpts? { schemaId: string, migrate: fun(config: table, current?: string, target: string): boolean } Schema id this handler targets and the migration callback run when a loaded file's `$schema` differs. Applied on first creation; a cached handler keeps the opts it was created with.
     ---@return ConfigHandler? handler
     ---@return string? err
-    @get = (filePath, logger = @logger, noLoad = false) =>
+    @get = (filePath, logger = @logger, noLoad = false, schemaOpts) =>
         return handler for path, handler in pairs @@handlers when path == filePath
 
         path, msg = fileOps.validateFullPath filePath, true
         return nil, msgs.new.badPath\format filePath, msg unless path
 
-        success, handler = pcall ConfigHandler, path, logger
+        success, handler = pcall ConfigHandler, path, logger, schemaOpts
         unless success
             return nil, msgs.get.failedCreate\format filePath, handler
 
@@ -114,9 +117,14 @@ Reload your automation scripts to generate a new configuration file.]]
     ---Creates a ConfigHandler for the given file. Does not load from disk.
     ---@param filePath? string
     ---@param logger? Logger
-    new: (filePath, @logger = Logger fileBaseName: @@__name) =>
+    ---@param schemaOpts? { schemaId: string, migrate: fun(config: table, current?: string, target: string): boolean } The `$schema` this handler targets and the migration callback invoked on load when a file's `$schema` differs.
+    new: (filePath, @logger = Logger(fileBaseName: @@__name), schemaOpts = {}) =>
         @views = setmetatable {}, {__mode: 'k'}
         @config = {}
+        -- the loaded file's `$schema`, exposed so views can see which schema their values conform to
+        @schemaId = nil
+        @__targetSchemaId = schemaOpts.schemaId
+        @__migrate = schemaOpts.migrate
         if filePath
             path, msg = fileOps.validateFullPath filePath, true
             @logger\assert path, msgs.new.badPath, filePath, msg
@@ -359,8 +367,21 @@ Reload your automation scripts to generate a new configuration file.]]
         config or= {}
 
         if views == nil or @config == nil
+            -- bring a pre-target config up to the handler's schema, then persist the one-time change
+            migrated = false
+            if @__migrate and @__targetSchemaId
+                currentSchema = config[JsonSchema.JSON_SCHEMA_ID_KEYWORD]
+                if currentSchema != @__targetSchemaId and @.__migrate config, currentSchema, @__targetSchemaId
+                    config[JsonSchema.JSON_SCHEMA_ID_KEYWORD] = @__targetSchemaId
+                    migrated = true
+            @schemaId = config[JsonSchema.JSON_SCHEMA_ID_KEYWORD]
+
             @config = config
             view\refresh! for view, _ in pairs @views
+
+            if migrated
+                ok, msg = @save!
+                @logger\warn msgs.load.migrationSaveFailed, @filePath, msg unless ok
             return true
 
         viewsToRefresh = Common.makeSet views

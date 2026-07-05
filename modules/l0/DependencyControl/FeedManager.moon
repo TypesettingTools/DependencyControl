@@ -34,6 +34,7 @@ browserFeedBase = "https://typesettingtools.github.io/depctrl-browser/feeds/"
 ---@field advertisedBy string[] Feeds that advertise this feed (crawl only).
 ---@field blockedBy? BlockedFeedEntry The matching block entry when the feed is blocked.
 ---@field reachable? boolean Whether a crawl fetched the feed (nil when not crawled).
+---@field lastFetchedAt? integer Unix time the feed was last fetched into the persistent cache (nil if never cached).
 ---@field inUse? boolean Whether the feed is the effective update source of an installed package.
 ---@field actions FeedAction[] The actions offered for this feed.
 ---@field browserUrl string The feed's DepCtrl Browser deep-link.
@@ -94,6 +95,7 @@ class FeedManager
                 advertisedBy: entry.advertisedBy
                 blockedBy: entry.blockedBy
                 reachable: entry.fetched
+                lastFetchedAt: entry.lastFetchedAt
                 inUse: entry.inUse
                 actions: acts
                 browserUrl: FeedManager.getBrowserUrl entry.url

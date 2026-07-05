@@ -326,7 +326,15 @@
       ut\assertEquals ModuleProvider\getProvider(alias), ns
       ut\assertEquals ModuleProvider\getProvider("bare.#{ns}"), ns
 
+    -- getFileCache: a shared cache under the configured cache base, this script's namespace, and the given name
+    getFileCache_namespacedUnderConfigBase: (ut) ->
+      fakeSelf = {namespace: "l0.test.script", __class: {config: {c: {paths: {cache: "?user/cache"}}}}}
+      cache = Record.getFileCache fakeSelf, "thumbnails"
+      ut\assertNotNil cache
+      ut\assertMatches cache.cacheDir, "l0%.test%.script/thumbnails$"
+
     _order: {
+      "getFileCache_namespacedUnderConfigBase",
       "module_dataOnly", "module_initLayout", "module_alsoUnderUser", "module_userOnly",
       "notInstalled", "portable", "macro_dataOnly",
       "checkVersion_equal", "checkVersion_greater", "checkVersion_older", "checkVersion_recordArg",

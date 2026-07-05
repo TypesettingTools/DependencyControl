@@ -190,6 +190,15 @@ class UnitTest
         @stubs[#@stubs+1] = s
         return s
 
+    ---Replaces a whole module in the require cache with a stub, so a later `require` of that name yields the
+    ---stub instead (configure it with `\returns`/`\calls`). Restored automatically after the test.
+    ---Reach for this to swap a lazily-required collaborator wholesale, such as a class the code constructs; to
+    ---intercept a single method of an already-required class, stub its `__base` field instead.
+    ---@param name string The module name, as passed to `require`.
+    ---@return Stub stub Standing in for the module until the test ends.
+    stubModule: (name) =>
+        @stub package.loaded, name
+
     ---Helper method to mark a test as failed by assertion and throw a specified error message.
     ---@private
     ---@param condition any A falsy value causes the assertion to fail.

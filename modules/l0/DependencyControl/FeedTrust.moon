@@ -1,15 +1,29 @@
 constants = require "l0.DependencyControl.Constants"
-UpdateFeed = require "l0.DependencyControl.UpdateFeed"
-Common =     require "l0.DependencyControl.Common"
-Enum =       require "l0.DependencyControl.Enum"
+Common = require "l0.DependencyControl.Common"
+Enum = require "l0.DependencyControl.Enum"
 
 msgs = {
-    trustedFeedAdded:   "Added '%s' to your trusted feeds."
-    trustedFeedRemoved: "Removed '%s' from your trusted feeds."
-    blockedFeedAdded:   "Added '%s' to your blocked feeds."
-    blockedFeedRemoved: "Removed '%s' from your blocked feeds."
-    extraFeedAdded:     "Added '%s' to your extra feeds."
-    extraFeedRemoved:   "Removed '%s' from your extra feeds."
+    addExtraFeed: {
+        feedAdded:     "Added '%s' to your extra feeds."
+    }
+    block: {
+        feedAdded:   "Added '%s' to your blocked feeds."
+    }
+    fetchUntrustedFeeds: {
+        invalidPolicy: "Invalid fetchUntrustedFeeds policy '%s'; must be one of 'always', 'never' or 'prompt'."
+    }
+    removeExtraFeed: {
+        removed: "Removed '%s' from your extra feeds."
+    }
+    trust: {
+        feedAdded:   "Added '%s' to your trusted feeds."
+    }
+    unblock: {
+        feedRemoved: "Removed '%s' from your blocked feeds."
+    }
+    untrust: {
+        feedRemoved: "Removed '%s' from your trusted feeds."
+    }
 }
 
 ---A normalized feed block entry: the URL/prefix to match, how to match it, and why.
@@ -46,9 +60,24 @@ class FeedTrust
         Blocked:         "blocked"
     }
 
+    ---@alias FeedFetchDecision
+    ---| "allow" # Allow: fetch without asking (trusted, or untrusted under fetchUntrustedFeeds = always)
+    ---| "deny" # Deny: never fetch (blocked, or untrusted under fetchUntrustedFeeds = never)
+    ---| "prompt" # Prompt: ask the user before fetching (untrusted under fetchUntrustedFeeds = prompt)
+    @FetchDecision = Enum "FeedFetchDecision", {
+        Allow:  "allow"
+        Deny:   "deny"
+        Prompt: "prompt"
+    }
+
+    -- Default fetch policy for untrusted feeds, applied when the config key is unset.
+    ---@type FetchUntrustedFeeds
+    @defaultFetchUntrustedFeeds = Common.FetchUntrustedFeeds.Always
+
     ---@param config ConfigView The updater's config view; its `c` holds `extraFeeds`/`trustedFeeds`/`blockedFeeds`.
     ---@param logger? Logger Logger for the trust/block confirmations.
-    new: (@config, @logger) =>
+    ---@param feedLoader FeedLoader Loads DependencyControl's own feed for the official trust lists.
+    new: (@config, @logger, @feedLoader) =>
 
     ---Lazily loads and caches DependencyControl's official trust lists from its own feed. Best-effort: if the
     ---feed can't be loaded, only DepCtrl's own feed URL is trusted and nothing is blocked.
@@ -57,7 +86,7 @@ class FeedTrust
     __loadOfficial: =>
         return @__official if @__official
         trusted, blocked = {[constants.DEPCTRL_FEED_URL]: true}, {}
-        feed = UpdateFeed constants.DEPCTRL_FEED_URL, false, nil, nil, @logger
+        feed = @feedLoader\load constants.DEPCTRL_FEED_URL, {autoLoad: false}
         if feed\ensureLoaded!
             Common.makeSet feed\getKnownFeeds!, trusted
             blocked = feed.data.blockedFeeds or {}
@@ -78,7 +107,7 @@ class FeedTrust
     ---@return table<string,boolean> userTrustedFeeds
     getUserTrustedFeeds: =>
         unless @__userTrusted
-            c = @config.c
+            c = @config.c.feeds
             set = {}
             Common.makeSet c.extraFeeds or {}, set
             Common.makeSet c.trustedFeeds or {}, set
@@ -106,7 +135,7 @@ class FeedTrust
                 if entry
                     entry.isOfficial = true
                     entries[#entries + 1] = entry
-            for raw in *(@config.c.blockedFeeds or {})
+            for raw in *(@config.c.feeds.blockedFeeds or {})
                 entry = @@__normalizeBlockEntry raw
                 if entry
                     entry.isOfficial = false
@@ -161,6 +190,51 @@ class FeedTrust
         return @@TrustStatus.TrustedOfficial if official
         @@TrustStatus.Untrusted
 
+    ---Classifies whether a feed may be fetched, from its block/trust status and the `fetchUntrustedFeeds`
+    ---policy: a blocked feed is always denied, a trusted feed always allowed, and an untrusted feed follows
+    ---the policy (always → allow, never → deny, prompt → prompt); an unrecognized policy fails closed (deny).
+    ---It neither prompts nor mutates trust state.
+    ---@param url? string The feed URL to classify.
+    ---@return FeedFetchDecision decision
+    getFetchDecision: (url) =>
+        return @@FetchDecision.Deny if @isBlocked url
+        return @@FetchDecision.Allow if @isTrusted url
+        switch @config.c.feeds.fetchUntrustedFeeds or @@defaultFetchUntrustedFeeds
+            when Common.FetchUntrustedFeeds.Never  then @@FetchDecision.Deny
+            when Common.FetchUntrustedFeeds.Prompt then @@FetchDecision.Prompt
+            when Common.FetchUntrustedFeeds.Always then @@FetchDecision.Allow
+            else
+                @logger\warn msgs.fetchUntrustedFeeds.invalidPolicy, @config.c.feeds.fetchUntrustedFeeds
+                @@FetchDecision.Deny
+
+    ---Resolves whether a feed may be fetched now, asking through the prompter (see setPrompter) when the
+    ---policy is `prompt`. A prompt answer is remembered for the session so the same feed isn't asked twice;
+    ---with no prompter available (e.g. headless), a `prompt` policy denies — the safe default.
+    ---@param url? string The feed URL to check.
+    ---@return boolean fetch True when the feed may be fetched.
+    shouldFetch: (url) =>
+        switch @getFetchDecision url
+            when @@FetchDecision.Allow then true
+            when @@FetchDecision.Deny then false
+            else @__resolvePrompt url
+
+    ---Sets the callback consulted for an untrusted feed under the `prompt` policy. It receives the feed URL
+    ---and this FeedTrust (so it may trust/block the feed) and returns whether to fetch it now.
+    ---@param prompter? fun(url: string, feedTrust: FeedTrust): boolean The prompter, or nil to remove it.
+    setPrompter: (@prompter) =>
+
+    ---@private
+    ---@param url string
+    ---@return boolean fetch
+    __resolvePrompt: (url) =>
+        @__promptAnswers or= {}
+        answer = @__promptAnswers[url]
+        return answer unless answer == nil
+        prompter = @prompter
+        answer = prompter and prompter(url, @) and true or false
+        @__promptAnswers[url] = answer
+        return answer
+
     ---Appends a feed URL to one of the user's config lists (skipping an exact duplicate), invalidates the
     ---cached trusted set, and persists.
     ---@private
@@ -168,10 +242,10 @@ class FeedTrust
     ---@param feedUrl string The exact feed URL to add.
     ---@return boolean added True when the URL was added, false when it was already present.
     __addUserFeed: (configKey, feedUrl) =>
-        list = [url for url in *(@config.c[configKey] or {})]
+        list = [url for url in *(@config.c.feeds[configKey] or {})]
         return false if Common.listIncludes list, feedUrl
         list[#list + 1] = feedUrl
-        @config.c[configKey] = list
+        @config.c.feeds[configKey] = list
         @__trusted, @__userTrusted = nil, nil
         @config\save!
         return true
@@ -183,10 +257,10 @@ class FeedTrust
     ---@param feedUrl string The exact feed URL to remove.
     ---@return boolean removed True when a feed was removed from the user's config, false when no entry matched.
     __removeUserFeed: (configKey, feedUrl) =>
-        list = @config.c[configKey] or {}
+        list = @config.c.feeds[configKey] or {}
         kept = [url for url in *list when url != feedUrl]
         return false if #kept == #list
-        @config.c[configKey] = kept
+        @config.c.feeds[configKey] = kept
         @__trusted, @__userTrusted = nil, nil
         @config\save!
         return true
@@ -196,7 +270,7 @@ class FeedTrust
     ---@return boolean added True when the feed was added to the user's `trustedFeeds`, false when it was already present.
     trust: (feedUrl) =>
         added = @__addUserFeed "trustedFeeds", feedUrl
-        @logger\log msgs.trustedFeedAdded, feedUrl if added and @logger
+        @logger\log msgs.trust.feedAdded, feedUrl if added and @logger
         return added
 
     ---Removes a feed URL from the user's `trustedFeeds` list in the DependencyControl config file. 
@@ -205,7 +279,7 @@ class FeedTrust
     ---@return boolean removed True, when the feed was removed from the user's `trustedFeeds`, false when it wasn't present.
     untrust: (feedUrl) =>
         removed = @__removeUserFeed "trustedFeeds", feedUrl
-        @logger\log msgs.trustedFeedRemoved, feedUrl if removed and @logger
+        @logger\log msgs.untrust.feedRemoved, feedUrl if removed and @logger
         return removed
 
     ---Adds a new entry to the user's `blockedFeeds` in the DependencyControl config file,
@@ -215,15 +289,15 @@ class FeedTrust
     ---@return boolean added False when an equivalent block (same url and match mode) was already present.
     block: (feedUrl, opts = {}) =>
         matchMode = opts.matchMode or @@BlockMatchMode.Prefix
-        entries = [e for e in *(@config.c.blockedFeeds or {})]
+        entries = [e for e in *(@config.c.feeds.blockedFeeds or {})]
         for raw in *entries
             norm = @@__normalizeBlockEntry raw
             return false if norm and norm.url == feedUrl and norm.matchMode == matchMode
         entries[#entries + 1] = {url: feedUrl, :matchMode, reason: opts.reason}
-        @config.c.blockedFeeds = entries
+        @config.c.feeds.blockedFeeds = entries
         @__blocked = nil
         @config\save!
-        @logger\log msgs.blockedFeedAdded, feedUrl if @logger
+        @logger\log msgs.block.feedAdded, feedUrl if @logger
         return true
 
     ---Removes every entry from the user's `blockedFeeds` list in the DependencyControl config file, 
@@ -231,13 +305,13 @@ class FeedTrust
     ---@param feedUrl string The blocked url/prefix to remove.
     ---@return boolean removed True when a user block was removed, false when no user block matched.
     unblock: (feedUrl) =>
-        list = @config.c.blockedFeeds or {}
+        list = @config.c.feeds.blockedFeeds or {}
         kept = [raw for raw in *list when (@@__normalizeBlockEntry(raw) or {}).url != feedUrl]
         return false if #kept == #list
-        @config.c.blockedFeeds = kept
+        @config.c.feeds.blockedFeeds = kept
         @__blocked = nil
         @config\save!
-        @logger\log msgs.blockedFeedRemoved, feedUrl if @logger
+        @logger\log msgs.unblock.feedRemoved, feedUrl if @logger
         return true
 
     ---Adds a feed URL to the user's `extraFeeds` config (ignoring an exact duplicate) and persists it. Extra
@@ -246,7 +320,7 @@ class FeedTrust
     ---@return boolean added False when the feed was already in the user's `extraFeeds`.
     addExtraFeed: (feedUrl) =>
         added = @__addUserFeed "extraFeeds", feedUrl
-        @logger\log msgs.extraFeedAdded, feedUrl if added and @logger
+        @logger\log msgs.addExtraFeed.feedAdded, feedUrl if added and @logger
         return added
 
     ---Removes a feed URL from the user's `extraFeeds` config and persists it.
@@ -254,7 +328,7 @@ class FeedTrust
     ---@return boolean removed False when the feed was not in the user's `extraFeeds`.
     removeExtraFeed: (feedUrl) =>
         removed = @__removeUserFeed "extraFeeds", feedUrl
-        @logger\log msgs.extraFeedRemoved, feedUrl if removed and @logger
+        @logger\log msgs.removeExtraFeed.feedRemoved, feedUrl if removed and @logger
         return removed
 
     ---Reports whether a URL is matched by any of the given prefixes.

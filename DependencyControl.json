@@ -46,12 +46,12 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "08E01AF118F87A4556272446FCCE9CADD6FB8222"
+              "sha1": "C3DB67970FD16BC5A03CAA809E4901A0470F66E0"
             },
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "636E1AC8F4E128E882FD6B4A9CCBC2451B27DF4E",
+              "sha1": "272D45C73246CC869106C705E217C8B32AE9D3FF",
               "type": "test"
             }
           ],
@@ -81,6 +81,7 @@
         ],
         "0.3.0": [
           "Added a Manage Feeds macro to review and manage the feeds DependencyControl knows about and their trust status: trust, block (with a reason), unblock, or remove feeds; discover feeds advertised by other feeds; and manage your extra feeds and block list in dedicated panels. It warns before an action would change an installed package's update source, opens feed details in the DepCtrl Browser, and won't let you block DependencyControl's own feed.",
+          "Manage Feeds now shows a Fetched column with how long ago each feed was last retrieved into the cache, read straight from the cache so it's visible even before Discover — letting you see at a glance which feeds have recent data.",
           "The Toolbox now ships a DependencyControl unit test suite, adding it to the Run Tests menu."
         ]
       }
@@ -114,7 +115,7 @@
             {
               "name": "/Common.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "AC2221F9E79E71CC7E8F8FB34B32E30306477526"
+              "sha1": "695084AB63F2DFB4051E512147981CBD16D2DABF"
             },
             {
               "name": "/Constants.moon",
@@ -152,19 +153,24 @@
               "sha1": "ECD301C2EA0A74111981A6A0E2EAC6ADB2B32AB9"
             },
             {
+              "name": "/FileCache.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "DE67AB15432485EE81D6CCB0FEC4AA039E5C7788"
+            },
+            {
               "name": "/FeedInventory.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "AB7F5549BE08E1EA93D161D491A58747AF038E45"
+              "sha1": "50926D379CD32DD00C334781A3F8F53DEAFD169E"
             },
             {
               "name": "/FeedManager.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "EE1CD14A6CD385BF4EB2B0302DE375F4EE457536"
+              "sha1": "2F2D3DE5329929F7E996634B623BF85F622733B5"
             },
             {
               "name": "/FeedTrust.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "A864DF7B5E2E6485947F154BC5AFDA4C6F7D1448"
+              "sha1": "9FC31E9B83AFA1D6987A55243557A11528BD9696"
             },
             {
               "name": "/FileLock.moon",
@@ -219,7 +225,7 @@
             {
               "name": "/Record.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "5F72C456F342E9710065391485CFB6D5BB26A277"
+              "sha1": "201CB6B4000043935398BC467B01682DF1566292"
             },
             {
               "name": "/ScriptTargetFilter.moon",
@@ -255,17 +261,17 @@
             {
               "name": "/UnitTestSuite.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "DBAD906996EE5E1980E0B9EB34AC410E297B6051"
+              "sha1": "C2C355B5622870FCA7E903375FE598682AC9D3C7"
             },
             {
               "name": "/UpdateFeed.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "255F7FCCD7640351E38D1B66C0084C209FCAD695"
+              "sha1": "A97EDD41EBA28C26265C00F5BFCCDF34D176FAE3"
             },
             {
               "name": "/UpdateTask.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "FB18396EFFDE6781CC1446CDC87CC4B594C3D854"
+              "sha1": "10558BBB9291B7B5B75061D6CE5FCC0705D62450"
             },
             {
               "name": "/Updater.moon",
@@ -290,7 +296,7 @@
             {
               "name": "/helpers/open-url.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "859D51EEF853D22ED6B1C26049EBDBF080B07B84"
+              "sha1": "7F8313A28BF027859DA51871CADB384261D63F03"
             },
             {
               "name": "/helpers/resolve-host.moon",
@@ -315,7 +321,7 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "2CC8D4C2043E8BE21CC1C6E710DC303A36EA474E",
+              "sha1": "EA95E00DC7D3E310C7D53B5E92C68936D82C9805",
               "type": "test"
             },
             {
@@ -361,21 +367,27 @@
               "type": "test"
             },
             {
+              "name": "/FileCache.moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "675F23FE2B6A6D26280EB93FB6E9A9DA4B349A6A",
+              "type": "test"
+            },
+            {
               "name": "/FeedInventory.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "968499DA3E2D10278372C2556F7FCE9CF39D602A",
+              "sha1": "16AD4348385D81BFBF4591909A7DB9A913970130",
               "type": "test"
             },
             {
               "name": "/FeedManager.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "3F3C639F82DEAC6F5288597D094D8325A276785C",
+              "sha1": "25F0A52E1A4B5E0E035772C636E0C67660A886C2",
               "type": "test"
             },
             {
               "name": "/FeedTrust.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "58AA946E5AD06735AD7A0A98D4CE89C7F3AB8641",
+              "sha1": "3CC685E4472A2F667C7DDFAF4251F727F2962566",
               "type": "test"
             },
             {
@@ -447,13 +459,13 @@
             {
               "name": "/open-url.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "59D8DE4A8C4AC8154293A61EA8BF95E1571D2E81",
+              "sha1": "A6ADC29FF30AB670AB2D0D8ED2A18740B591CD66",
               "type": "test"
             },
             {
               "name": "/Record.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "81AF42E361A64BE16CAF0693D7FD3A4278DAC18B",
+              "sha1": "2FDDE5146C44F276E0267835068A1430B82B464C",
               "type": "test"
             },
             {
@@ -489,19 +501,19 @@
             {
               "name": "/UpdateFeed.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "2038EE45312609CC22CE0A1727C1C681D19A87F7",
+              "sha1": "175CA233E43EFDFE148CA5DAFBB83A966366FAD8",
               "type": "test"
             },
             {
               "name": "/UpdateTask.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "1D303427773A98F785EEE0996435F9541CC62DFC",
+              "sha1": "696ACA941219681F0F3391B438ACCF966D8544D0",
               "type": "test"
             },
             {
               "name": "/Updater.moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "2456B084ABA72230AD1A516D5D5444362BC02587",
+              "sha1": "0E5D0A3F4C50715F5C350AFC01EB2AC2A2671AA9",
               "type": "test"
             },
             {
@@ -633,7 +645,7 @@
           "Updater: A required module that no feed offers directly can now be satisfied by installing a module that declares it in `provides`  — for example, a script requiring `json` is satisfied by installing `dkjson`. Providers are only used when no feed offers the module by name; a candidate must be installable on your platform and meet the required version, and a directly-named module is always preferred over a provider. Once a provider is installed for a requirement, it keeps being used and updated instead of switching to a different provider (as long as it can still satisfy the requirement). Feeds can now advertise `provides` per release, and `update-feed` mirrors a module's declared aliases into the feed automatically. A provider can pin a provided alias to an npm-style version range (e.g. `~1.2`), so it keeps satisfying requirements within that range without having to be re-published for every patch release of the provided module.",
           "Updater: Package sources are now selected by trust to harden against supply-chain attacks. Feeds are consulted closest-first (the feed a script declares for a dependency, then feeds DependencyControl trusts — those in its own feed plus your `extraFeeds` — then any others), and the install is refused if a requirement can only be met from an untrusted feed. Your `extraFeeds` are discovery roots that are also searched for updates, while your `trustedFeeds` only grant trust to feeds reached another way and are never themselves searched. A new `blockedFeeds` config (and an official block list in DependencyControl's own feed) lets a compromised feed be rejected outright. The obsolete `tryAllFeeds` setting and its exhaustive update mode have been removed.",
           "Updater: When an install would otherwise be refused because it can only be satisfied from an untrusted feed, DependencyControl can now ask you to confirm and either use it just this once, add it to your trusted feeds, or block it outright; and when several equally-ranked packages can satisfy a requirement it can ask you to pick one. How freely it may prompt is controlled by two new settings: `feedTrustPromptThreshold` for trusting an untrusted feed (defaults to prompting in all situations, since it decides whether an update succeeds) and `packageChoicePromptThreshold` for picking between equally-ranked packages (defaults to only actions you start yourself).",
-          "Updater: The package picker now also lets you decide how long your choice should stick — use the source only this once, remember it while it stays available, pin it so DependencyControl never switches silently, or hand the decision back to DependencyControl for good. The remembered choice is stored per package and follows the source across feed-URL changes; a pinned source that becomes unavailable fails a required dependency (so you can fix the pin) and skips an optional one. A new global `packageChoiceOfferAllSources` setting offers every eligible source (including lower-ranked and untrusted ones) whenever there's more than one, so you can override the ranking.",
+          "Updater: The package picker now also lets you decide how long your choice should stick — use the source only this once, remember it while it stays available, pin it so DependencyControl never switches silently, or hand the decision back to DependencyControl for good. The remembered choice is stored per package and follows the source across feed-URL changes; a pinned source that becomes unavailable fails a required dependency (so you can fix the pin) and skips an optional one. A new global `offerAllSources` setting offers every eligible source (including lower-ranked and untrusted ones) whenever there's more than one, so you can override the ranking.",
           "Unit test framework: `assertContains` now honors its case-insensitive option (it previously always compared case-sensitively) and reports a proper message when the assertion fails.",
           "Unit test framework: a failing test-class setup is now reported as a failure instead of aborting the entire test run with an internal error.",
           "Unit test framework: a failing `assertNegative` now says \"negative\" rather than \"positive\" in its message.",
@@ -641,11 +653,14 @@
           "FileOps: `mkdir` no longer reports success when the directory could not actually be created.",
           "Logger: the download progress bar now fills incrementally instead of jumping from empty to full at the halfway point.",
           "Unit test framework: a failing `assertPositive`/`assertNegative` no longer errors while formatting its failure message.",
-          "The 'updater enabled' setting is now fully honored: while disabled it also prevents installing or updating modules on demand, not just scheduled background update checks.",
-          "Updater: Feed and package downloads now refuse hosts that resolve to a private, loopback, or link-local address (an SSRF safeguard), controlled by the new `updaterBlockPrivateHosts` setting (on by default; turn it off to use feeds on your local network).",
+          "Disabling updates is now fully honored: it also prevents installing or updating modules on demand, not just scheduled background update checks.",
+          "Updater: Feed and package downloads now refuse hosts that resolve to a private, loopback, or link-local address (an SSRF safeguard), controlled by the new `blockPrivateHosts` setting (on by default; turn it off to use feeds on your local network).",
           "Added `FeedInventory` and `FeedManager` — building blocks that list the feeds DependencyControl knows about, each with its provenance and trust status, and apply feed-trust actions. They back the Toolbox's new Manage Feeds macro and are available to other tooling.",
-          "Feed discovery can now follow feeds' advertised `knownFeeds` transitively to surface feeds beyond the ones you've configured, with untrusted expansion bounded so a hostile feed can't drive unbounded fetches (new `fetchUntrustedFeeds` and `feedCrawlLimits` settings).",
-          "UpdateFeed: a file marked for deletion in a feed is no longer reported as a missing-source error when deploying, and is now removed from the output directory when present."
+          "Feed discovery can now follow feeds' advertised `knownFeeds` transitively to surface feeds beyond the ones you've configured, with untrusted expansion bounded so a hostile feed can't drive unbounded fetches (new `fetchUntrustedFeeds` and `crawlLimits` settings).",
+          "Fetched feeds are now cached to disk as timestamped snapshots (under `?user/cache/l0.DependencyControl/feeds`), so a recently-fetched feed is served from the cache instead of being re-downloaded, and a failed fetch falls back to the last cached copy for offline resilience. The freshness window is configurable via the new `cacheMaxAge` setting and the location via the shared `cache` path, replacing the former `dumpFeeds` debug dump.",
+          "DependencyControl's settings file is now organized into topic sections (`updates`, `feeds`, `logging`, `paths`), and an existing config is migrated into the new layout automatically on first load, so no manual edits are needed. Several settings were renamed for consistency in the process (e.g. `updaterEnabled` became `updates.mode`, `updaterBlockPrivateHosts` became `updates.blockPrivateHosts`, and `feedCacheMaxAge` became `feeds.cacheMaxAge`), and the separate feed-cache directory gave way to a single `paths.cache` location that DependencyControl organizes by namespace internally.",
+          "UpdateFeed: a file marked for deletion in a feed is no longer reported as a missing-source error when deploying, and is now removed from the output directory when present.",
+          "Updater: The on/off switch grew into an update mode: `updates.mode` takes 'off', 'user-requested', 'dependency-resolution', or 'auto-update' to control which contexts may install and update — for example, disable background update checks while still allowing manual installs and dependency resolution. An existing `updaterEnabled` setting migrates automatically ('auto-update' when true, 'off' when false). The two prompt-threshold settings now take the same context values in place of their former numeric levels, plus 'off' to disable a prompt kind entirely."
         ]
       }
     },

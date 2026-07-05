@@ -4,6 +4,7 @@
 (basePath, DepCtrl) ->
   Common            = require "l0.DependencyControl.Common"
   FileOps           = require "l0.DependencyControl.FileOps"
+  FileCache         = require "l0.DependencyControl.FileCache"
   UpdateFeed        = require "l0.DependencyControl.UpdateFeed"
   FILEOPS_MODULE_NAME = "l0.DependencyControl.FileOps"
 
@@ -189,6 +190,22 @@
       ut\assertString result
       ut\assertContains result, "DepUnit"
 
+    -- expand rebuilds @data from the unexpanded data each call and never mutates that (possibly shared) source
+    expand_rebuildsFromUnexpandedDataWithoutMutatingIt: (ut) ->
+      unexpandedData = {name: "TestFeed", description: "made for @{feedName}", macros: {}, modules: {}, knownFeeds: {}}
+      feed = setmetatable {
+        _url: "https://example.com/f.json", :unexpandedData, __class: UpdateFeed, logger: DepCtrl.logger
+      }, __index: UpdateFeed.__base
+
+      data = UpdateFeed.expand feed
+      ut\assertEquals data.description, "made for TestFeed"               -- template expanded in the working copy
+      ut\assertEquals unexpandedData.description, "made for @{feedName}"   -- pristine source left untouched
+      ut\assertFalse data == unexpandedData                               -- @data is a fresh copy, not the source
+
+      again = UpdateFeed.expand feed                                      -- a second expand rebuilds from the source
+      ut\assertFalse again == data                                        -- a new working copy each call
+      ut\assertEquals unexpandedData.description, "made for @{feedName}"   -- source still pristine
+
     -- walkFiles
 
     walkFiles_yieldsProxies: (ut) ->
@@ -214,8 +231,8 @@
       ut\assertEquals results[1].scriptType, Common.ScriptType.Module
       ensureLoadedStub\assertCalledOnce!
 
-    -- walkFiles yields files untouched; the localFilePath accessor itself is attached by `expand`
-    -- (covered by expand_attachesLocalFilePath), so here it's supplied directly on the file record.
+    -- walkFiles yields files untouched; the localFilePath accessor is attached by `expand` in local mode,
+    -- so here it's supplied directly on the file record.
     walkFiles_passesThroughLocalFilePath: (ut) ->
       feed = {
         data: {
@@ -364,6 +381,38 @@
       feed = {data: data, expansionMode: UpdateFeed.ExpansionMode.Local, fileName: "x.json", __class: UpdateFeed}
       ut\assertIs UpdateFeed.ensureLoaded(feed, UpdateFeed.ExpansionMode.Local), data
 
+    -- a fresh on-disk snapshot is served straight from the cache, never touching the network
+    ensureLoaded_readsFreshDiskCache: (ut) ->
+      cacheDir = FileOps.joinPath basePath, "uf-cache-fresh"
+      url = "https://example.com/fresh.json"
+      cache = FileCache cacheDir, "test", "feeds", {deserialize: UpdateFeed.deserialize}
+      cache\put url, '{"name":"FreshCache"}', "FreshCache"   -- default lifetime → fresh right after writing
+
+      feed = setmetatable {
+        _url: url, url: url, __class: UpdateFeed, logger: DepCtrl.logger
+        config: {cache: cache}
+      }, __index: UpdateFeed.__base
+      data = UpdateFeed.ensureLoaded feed
+      ut\assertEquals data.name, "FreshCache"
+      ut\assertNil feed.stale
+
+    -- when the fetch fails and only a stale snapshot exists, ensureLoaded serves it and flags staleness
+    ensureLoaded_fallsBackToStaleCacheOffline: (ut) ->
+      cacheDir = FileOps.joinPath basePath, "uf-cache-stale"
+      url = "https://example.com/stale.json"
+      cache = FileCache cacheDir, "test", "feeds", {deserialize: UpdateFeed.deserialize}
+      cache\put url, '{"name":"StaleCache"}', "StaleCache", 0   -- expiresAfter 0 → immediately stale
+
+      feed = setmetatable {
+        _url: url, url: url, __class: UpdateFeed, logger: DepCtrl.logger
+        config: {cache: cache}                          -- stale entry ⇒ attempts a fetch first
+        fetch: (...) -> false, "network down"           -- which fails, forcing the offline fallback
+      }, __index: UpdateFeed.__base
+      data = UpdateFeed.ensureLoaded feed
+      ut\assertEquals data.name, "StaleCache"
+      ut\assertTrue feed.stale
+      ut\assertNotNil feed.lastFetchedAt
+
     -- __refreshFiles: returns (changed, errors) and mutates the raw channel in place
 
     refreshFiles_updatesChangedSha: (ut) ->
@@ -455,10 +504,12 @@
       "normalizeModuleAliases_bareStringsToTables", "normalizeModuleAliases_preservesFields",
       "normalizeModuleAliases_dropsNonSchemaFields", "normalizeModuleAliases_nilAndEmpty",
       "getFileDeployPath_module", "getFileDeployPath_test",
+      "expand_rebuildsFromUnexpandedDataWithoutMutatingIt",
       "walkFiles_yieldsProxies", "walkFiles_passesThroughLocalFilePath",
       "deployFiles_copiesToDist", "deployFiles_skipExistingNoClobber",
       "deployFiles_countsMissingSource", "deployFiles_removesDeleted", "deployFiles_deleteMissingIsNoOp",
       "ensureLoaded_localWithoutFileName_errors", "ensureLoaded_reusesMatchingExpansion",
+      "ensureLoaded_readsFreshDiskCache", "ensureLoaded_fallsBackToStaleCacheOffline",
       "refreshFiles_updatesChangedSha", "refreshFiles_unchangedSha", "refreshFiles_missingFileFlagsDelete",
       "refreshFiles_sha1FailureCollectsError", "refreshFiles_noLocalPathCollectsError",
       "updatePackage_notInRaw", "updatePackage_collectsResultAndResetsReleased",

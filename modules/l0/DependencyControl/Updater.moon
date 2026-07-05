@@ -1,4 +1,5 @@
 constants = require "l0.DependencyControl.Constants"
+FeedLoader = require "l0.DependencyControl.FeedLoader"
 FeedTrust =  require "l0.DependencyControl.FeedTrust"
 Logger =     require "l0.DependencyControl.Logger"
 Common =     require "l0.DependencyControl.Common"
@@ -17,8 +18,17 @@ UpdateStatus = UpdateTask.UpdateStatus
 ---Coordinates background update checks and update task lifecycle.
 ---@class Updater
 ---@field feedTrust FeedTrust The feed-trust model (official + user trust merge, trust queries, mutations).
+---@field feedLoader FeedLoader The shared feed loader (owns the feed cache; builds every `UpdateFeed`).
 class Updater
     @logger = Logger fileBaseName: "DependencyControl.Updater"
+
+    -- Defaults for the config's `updates` section settings this class owns, applied when the key is unset.
+    ---@type UpdateContextCeiling
+    @defaultMode          = UpdateTask.ContextCeiling.AutoUpdate
+    @defaultCheckInterval = 302400
+    @defaultWaitTimeout   = 60
+    @defaultOrphanTimeout = 50
+
     msgs = {
         acquireLock: {
             waiting: "Waiting for update initiated by %s to finish..."
@@ -40,9 +50,18 @@ class Updater
     ---@param logger? Logger
     new: (@host = script_namespace, @config, @logger = @@logger) =>
         @tasks = {scriptType, {} for scriptType in *Common.ScriptType.values}
-        -- singleton feed trust avoids redundant feed loads and keeps a single cache that trust/block invalidations are visible through
-        @@feedTrust or= FeedTrust @config, @@logger
+        -- one shared feed loader owns the on-disk feed cache and every UpdateFeed construction; feed trust
+        -- is likewise a singleton so its cache and trust/block invalidations are visible across all consumers
+        @@feedLoader or= FeedLoader @config, @@logger
+        @feedLoader = @@feedLoader
+        @@feedTrust or= FeedTrust @config, @@logger, @@feedLoader
         @feedTrust = @@feedTrust
+
+    ---@private
+    ---@param reason UpdateReason The context asking to run updates.
+    ---@return boolean enabled True when the configured update mode (`updates.mode`, or its default when unset) allows that context.
+    __isEnabledFor: (reason) =>
+        UpdateTask.isWithinContextCeiling reason, @config.c.updates.mode or @@defaultMode
 
     ---Creates or updates a queued update task for a record.
     ---@param record Record|table A record, or a plain table to construct one from.
@@ -50,7 +69,7 @@ class Updater
     ---@param addFeeds? string[]
     ---@param optional? boolean Treat this as an optional dependency.
     ---@param channel? string Update channel to use.
-    ---@param reason? UpdateReason Why the task runs (gates interactive prompts). Defaults to `AutoUpdate`, the least interactive.
+    ---@param reason? UpdateReason Why the task runs; the configured update mode must allow it, and it gates interactive prompts. Defaults to `AutoUpdate`, the least interactive.
     ---@return UpdateTask? task
     ---@return UpdateStatus? code
     ---@return string? detail
@@ -70,7 +89,7 @@ class Updater
             .addFeeds, .optional, .channel, .reason = addFeeds, optional, channel, reason
 
         -- UpdateTask.new can't reject construction (a constructor's return value is discarded), so guard here
-        return nil, UpdateStatus.UpdaterDisabled unless @config.c.updaterEnabled
+        return nil, UpdateStatus.UpdaterDisabled unless @__isEnabledFor reason
         return nil, UpdateStatus.InvalidNamespace unless record\validateNamespace!
 
         task = UpdateTask record, targetVersionNumber, addFeeds, optional, channel, reason, @
@@ -107,7 +126,7 @@ class Updater
     ---@param record Record
     ---@return UpdateStatus|boolean status The status code, or the task's run result.
     scheduleUpdate: (record) =>
-        unless @config.c.updaterEnabled
+        unless @__isEnabledFor UpdateReason.AutoUpdate
             @logger\trace msgs.scheduleUpdate.updaterDisabled, record.name or record.namespace
             return UpdateStatus.UpdaterDisabled
 
@@ -116,7 +135,7 @@ class Updater
             return UpdateStatus.Unmanaged
 
         -- the update interval has not yet been passed since the last update check
-        if record.config.c.lastUpdateCheck and (record.config.c.lastUpdateCheck + @config.c.updateInterval > os.time!)
+        if record.config.c.lastUpdateCheck and (record.config.c.lastUpdateCheck + (@config.c.updates.checkInterval or @@defaultCheckInterval) > os.time!)
             return UpdateStatus.UpToDate
 
         record.config.c.lastUpdateCheck = os.time!
@@ -134,24 +153,20 @@ class Updater
         return task\run!
 
 
-    -- Lazily builds this updater's handle to the shared, cross-process updater lock.
-    ---@private
-    __getLockHandle: =>
-        @lock or= Lock {
-            namespace: UPDATER_LOCK_NAMESPACE, resource: UPDATER_LOCK_RESOURCE_RUN
-            scope: Lock.Scope.Global, holderName: @host, logger: @logger
-            expiresAfter: @config.c.updateOrphanTimeout
-        }
-        return @lock
-
     ---Acquires the global updater lock shared across scripts and processes.
     ---@param doWait boolean Wait for a concurrent update to finish instead of bailing out.
     ---@param waitTimeout? number Seconds to wait when doWait is set.
     ---@return boolean acquired
     ---@return string? lockOwner The holder script's name when acquisition failed.
-    acquireLock: (doWait, waitTimeout = @config.c.updateWaitTimeout) =>
+    acquireLock: (doWait, waitTimeout = @config.c.updates.waitTimeout or @@defaultWaitTimeout) =>
         return true if @hasLock
-        lock = @__getLockHandle!
+        -- lazily build this updater's handle to the shared, cross-process lock on first acquire
+        @lock or= Lock {
+            namespace: UPDATER_LOCK_NAMESPACE, resource: UPDATER_LOCK_RESOURCE_RUN
+            scope: Lock.Scope.Global, holderName: @host, logger: @logger
+            expiresAfter: @config.c.updates.orphanTimeout or @@defaultOrphanTimeout
+        }
+        lock = @lock
 
         if doWait
             holder = lock\getActiveHolder!
@@ -163,6 +178,9 @@ class Updater
             return false, holder and holder.holderName
 
         @hasLock = true
+        -- a freshly acquired lock starts a new update pass: expire the feed cache so each feed is refetched
+        -- once this pass (its snapshot is kept as an offline fallback), then reused by the pass's other tasks
+        @feedLoader.cache\expireAll!
         -- if we actually had to wait, another updater may have updated modules in the meantime
         if timePassed > 0
             task\refreshRecord! for _,task in pairs @tasks[Common.ScriptType.Module]
@@ -193,7 +211,7 @@ class Updater
 -- Re-expose UpdateTask, its version-related enums, and its error-message decoder on the public API,
 -- so callers holding only an Updater reference (e.g. ModuleLoader, the Toolbox) can reach them.
 Updater.UpdateStatus = UpdateTask.UpdateStatus
-Updater.PromptThreshold = UpdateTask.PromptThreshold
+Updater.ContextCeiling = UpdateTask.ContextCeiling
 Updater.UpdateReason = UpdateTask.UpdateReason
 Updater.SourceChoiceStickiness = UpdateTask.SourceChoiceStickiness
 Updater.SourceFeedKind = UpdateTask.SourceFeedKind

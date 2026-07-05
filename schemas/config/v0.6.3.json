@@ -1,0 +1,210 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/master/schemas/config/v0.6.3.json",
+  "title": "DependencyControl Config File v0.6.3 (legacy)",
+  "description": "The pre-0.7.0 DependencyControl configuration file, whose global settings under `config` use a flat, un-sectioned layout.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "config": { "$ref": "#/$defs/LegacyGlobalConfig" },
+    "macros": {
+      "description": "Installed automation scripts, keyed by their namespaced identifier.",
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/NamespacedIdentifier" },
+      "additionalProperties": { "$ref": "#/$defs/ScriptRecord" }
+    },
+    "modules": {
+      "description": "Installed modules, keyed by their namespaced identifier.",
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/NamespacedIdentifier" },
+      "additionalProperties": { "$ref": "#/$defs/ScriptRecord" }
+    }
+  },
+  "$defs": {
+    "LegacyGlobalConfig": {
+      "description": "Global DependencyControl settings in the flat, pre-0.7.0 layout. Unknown keys are tolerated, since older releases stored assorted additional flags here. Each key's v0.7.0 destination is noted in its description.",
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "updaterEnabled": {
+          "description": "Master update switch. Migrates to `updates.mode` ('auto-update' when true, 'off' when false).",
+          "type": "boolean"
+        },
+        "updateInterval": {
+          "description": "Minimum seconds between automatic update checks for a given script. Migrates to `updates.checkInterval`.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "updateWaitTimeout": {
+          "description": "Seconds to wait for another process's in-progress update before giving up. Migrates to `updates.waitTimeout`.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "updateOrphanTimeout": {
+          "description": "Seconds after which a held updater lock whose owner vanished is treated as stale. Migrates to `updates.orphanTimeout`.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "extraFeeds": {
+          "description": "Your own feeds, searched for updates and crawled for discovery. Migrates to `feeds.extraFeeds`.",
+          "type": "array",
+          "items": { "type": "string", "format": "uri" }
+        },
+        "traceLevel": {
+          "description": "Default log verbosity; higher levels log more. Migrates to `logging.defaultLevel`.",
+          "type": "integer"
+        },
+        "writeLogs": {
+          "description": "Whether to write logs to file. Migrates to `logging.toFile`.",
+          "type": "boolean"
+        },
+        "logMaxFiles": {
+          "description": "Maximum number of log files to retain before the oldest are trimmed. Migrates to `logging.maxFiles`.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "logMaxAge": {
+          "description": "Maximum age, in seconds, of a log file before it is trimmed. Migrates to `logging.maxAge`.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "logMaxSize": {
+          "description": "Maximum total size, in bytes, of retained log files before trimming. Migrates to `logging.maxSize`.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "configDir": {
+          "description": "Directory holding DependencyControl's config files (supports Aegisub path tokens). Migrates to `paths.config`.",
+          "type": "string"
+        },
+        "logDir": {
+          "description": "Directory holding DependencyControl's log files (supports Aegisub path tokens). Migrates to `paths.log`.",
+          "type": "string"
+        },
+        "tryAllFeeds": {
+          "description": "Obsolete: enabled an exhaustive update mode that consulted every known feed. Removed in 0.7.0 in favor of trust-ranked source selection.",
+          "type": "boolean"
+        },
+        "dumpFeeds": {
+          "description": "Obsolete: a debug toggle that dumped fetched feeds to disk. Removed in 0.7.0, superseded by the on-disk feed cache.",
+          "type": "boolean"
+        },
+        "updaterRunning": {
+          "description": "Obsolete transient flag marking an in-progress update. No longer stored in 0.7.0, where concurrent updates are coordinated by a cross-process lock; a leftover value is harmless.",
+          "type": "boolean"
+        }
+      }
+    },
+
+    "NamespacedIdentifier": {
+      "description": "A dot-separated namespaced identifier (e.g. 'l0.DependencyControl.Toolbox', 'a-mo.LineCollection').",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+)+$",
+      "lpegPattern": "[A-Za-z0-9_-]+ ('.' [A-Za-z0-9_-]+)+ !."
+    },
+
+    "ScriptRecord": {
+      "description": "The persisted installation record for one managed or unmanaged script/module. Beyond the fields below, DependencyControl may store additional bookkeeping here, so unknown keys are tolerated.",
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "namespace": {
+          "$ref": "#/$defs/NamespacedIdentifier",
+          "description": "The script's namespaced identifier (matches its key in `macros`/`modules`)."
+        },
+        "name": {
+          "description": "Human-readable script name.",
+          "type": "string"
+        },
+        "version": {
+          "description": "Installed version as DependencyControl's packed version number (a single integer encoding major.minor.patch), not a version string.",
+          "type": "integer"
+        },
+        "author": {
+          "description": "Script author.",
+          "type": "string"
+        },
+        "description": {
+          "description": "Short description of the script.",
+          "type": "string"
+        },
+        "feed": {
+          "description": "The feed this script declares for its own updates.",
+          "type": "string",
+          "format": "uri"
+        },
+        "url": {
+          "description": "The script's homepage or project URL.",
+          "type": "string",
+          "format": "uri"
+        },
+        "configFile": {
+          "description": "Name of this script's own per-script config file.",
+          "type": "string"
+        },
+        "moduleName": {
+          "description": "The Lua module name for a module; `false` for an automation script.",
+          "type": ["string", "boolean"]
+        },
+        "channels": {
+          "description": "Update channels available for this script.",
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "lastChannel": {
+          "description": "The update channel last installed from.",
+          "type": "string"
+        },
+        "requiredModules": {
+          "description": "The script's declared module dependencies.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/ModuleDependency" }
+        },
+        "lastUpdateCheck": {
+          "description": "Unix time of the last automatic update check for this script.",
+          "type": "integer"
+        },
+        "unmanaged": {
+          "description": "True for a script present but installed/managed outside DependencyControl (never auto-updated).",
+          "type": "boolean"
+        }
+      }
+    },
+
+    "ModuleDependency": {
+      "description": "A declared dependency on another module.",
+      "type": "object",
+      "required": ["moduleName"],
+      "additionalProperties": true,
+      "properties": {
+        "moduleName": {
+          "description": "Lua require-path of the dependency — a bare module name ('ffi', 'json', 'Yutils') or a dotted path ('aegisub.util', 'l0.Functional').",
+          "type": "string"
+        },
+        "version": {
+          "description": "Minimum required version (a semantic version string, or an npm-style range).",
+          "type": "string"
+        },
+        "url": {
+          "description": "The required module's homepage or project URL.",
+          "type": "string",
+          "format": "uri"
+        },
+        "feed": {
+          "description": "A feed to install the required module from.",
+          "type": "string",
+          "format": "uri"
+        },
+        "name": {
+          "description": "Human-readable name of the required module.",
+          "type": "string"
+        },
+        "optional": {
+          "description": "When true, DependencyControl skips (rather than fails) if the dependency can't be satisfied.",
+          "type": "boolean",
+          "default": false
+        }
+      }
+    }
+  }
+}

@@ -197,6 +197,19 @@ class DependencyControlCommon
         [ScriptType.Module]: "modules"
     }
 
+    ---@alias FetchUntrustedFeeds
+    ---| "always" # Always: fetch untrusted feeds without asking (the default)
+    ---| "never" # Never: never fetch untrusted feeds
+    ---| "prompt" # Prompt: ask before fetching an untrusted feed; falls back to Never where no prompter is available (e.g. headless)
+    ---User policy for whether DependencyControl fetches feeds that are neither trusted nor blocked. 
+    ---`prompt`only applies to feed discovery; dependency resolution always fetches and instead
+    ---gates *installing* from an untrusted feed via the `feedTrustPromptThreshold` setting.
+    @FetchUntrustedFeeds = Enum "FetchUntrustedFeeds", {
+        Always: "always"
+        Never:  "never"
+        Prompt: "prompt"
+    }
+
     @terms = {
         scriptType: {
             singular: {

@@ -9,6 +9,8 @@
   UpdateTask = require "l0.DependencyControl.UpdateTask"
   DependencyControl = require "l0.DependencyControl"
   UpdateStatus = Updater.UpdateStatus
+  UpdateReason = UpdateTask.UpdateReason
+  ContextCeiling = UpdateTask.ContextCeiling
 
   -- A stub updater self for require(): @addTask returns the supplied task (whose run() yields the
   -- scripted code/detail), so require's dispatch is exercised without constructing a real UpdateTask.
@@ -21,7 +23,7 @@
   -- A stub updater self for scheduleUpdate(): its config gates the run and @addTask returns opts.task.
   makeScheduleUpdater = (opts = {}) ->
     setmetatable {
-      config: {c: {updaterEnabled: opts.updaterEnabled, updateInterval: opts.updateInterval or 0}}
+      config: {c: {updates: {mode: opts.mode, checkInterval: opts.updateInterval or 0}}}
       logger: {trace: ->, log: ->}
       addTask: ((record) => opts.task)
     }, __index: Updater.__base
@@ -57,21 +59,26 @@
     -- scheduleUpdate: guards, then runs a due update.
 
     scheduleUpdate_disabledRejected: (ut) ->
-      updater = makeScheduleUpdater {updaterEnabled: false}
+      updater = makeScheduleUpdater {mode: ContextCeiling.Off}
+      ut\assertEquals (Updater.scheduleUpdate updater, {name: "X", namespace: "l0.x"}), UpdateStatus.UpdaterDisabled
+
+    -- background checks sit on the auto-update rung: any lower mode refuses them
+    scheduleUpdate_belowAutoUpdateModeRejected: (ut) ->
+      updater = makeScheduleUpdater {mode: ContextCeiling.DependencyResolution}
       ut\assertEquals (Updater.scheduleUpdate updater, {name: "X", namespace: "l0.x"}), UpdateStatus.UpdaterDisabled
 
     scheduleUpdate_virtualRejected: (ut) ->
-      updater = makeScheduleUpdater {updaterEnabled: true}
+      updater = makeScheduleUpdater {mode: ContextCeiling.AutoUpdate}
       ut\assertEquals (Updater.scheduleUpdate updater, {virtual: true, name: "X", namespace: "l0.x"}), UpdateStatus.Unmanaged
 
     scheduleUpdate_withinIntervalSkips: (ut) ->
-      updater = makeScheduleUpdater {updaterEnabled: true, updateInterval: 100000}
+      updater = makeScheduleUpdater {mode: ContextCeiling.AutoUpdate, updateInterval: 100000}
       record = {virtual: false, name: "X", namespace: "l0.x", config: {c: {lastUpdateCheck: os.time!}}}
       ut\assertEquals (Updater.scheduleUpdate updater, record), UpdateStatus.UpToDate
 
     -- the entry point is in Aegisub's ?data automation dir (isUserPath false) → don't shadow it
     scheduleUpdate_protectedInstallRejected: (ut) ->
-      updater = makeScheduleUpdater {updaterEnabled: true, updateInterval: 0}
+      updater = makeScheduleUpdater {mode: ContextCeiling.AutoUpdate, updateInterval: 0}
       record = {
         virtual: false, name: "X", namespace: "l0.x", scriptType: Common.ScriptType.Module
         config: {c: {}, save: (=>)}
@@ -83,7 +90,7 @@
 
     scheduleUpdate_runsTaskWhenDue: (ut) ->
       task = {run: (=> UpdateStatus.Installed)}
-      updater = makeScheduleUpdater {updaterEnabled: true, updateInterval: 0, :task}
+      updater = makeScheduleUpdater {mode: ContextCeiling.AutoUpdate, updateInterval: 0, :task}
       record = {
         virtual: false, name: "X", namespace: "l0.x", scriptType: Common.ScriptType.Module
         config: {c: {}, save: (=>)}
@@ -94,15 +101,16 @@
     -- acquireLock / releaseLock / renewLock: the lock state machine.
 
     acquireLock_returnsTrueWhenAlreadyHeld: (ut) ->
-      updater = setmetatable {hasLock: true, config: {c: {updateWaitTimeout: 5}}}, __index: Updater.__base
+      updater = setmetatable {hasLock: true, config: {c: {updates: {waitTimeout: 5}}}}, __index: Updater.__base
       ut\assertTrue Updater.acquireLock updater, false
 
     acquireLock_acquiresAndSetsHasLock: (ut) ->
       fakeLock = {lock: ((timeout) => Lock.LockState.Held, 0), getActiveHolder: (=>)}
       updater = setmetatable {
-        hasLock: false, config: {c: {updateWaitTimeout: 5}}, logger: {log: ->}
+        hasLock: false, config: {c: {updates: {waitTimeout: 5}}}, logger: {log: ->}
         tasks: {[Common.ScriptType.Module]: {}}
-        __getLockHandle: (=> fakeLock)
+        feedLoader: {cache: {expireAll: ->}}
+        lock: fakeLock   -- pre-set so the lazy `@lock or= Lock{…}` in acquireLock skips construction
       }, __index: Updater.__base
       ut\assertTrue Updater.acquireLock updater, false
       ut\assertTrue updater.hasLock
@@ -110,8 +118,8 @@
     acquireLock_failsWhenHeldByOther: (ut) ->
       fakeLock = {lock: ((timeout) => Lock.LockState.Unavailable, 0), getActiveHolder: (=> {holderName: "OtherScript"})}
       updater = setmetatable {
-        hasLock: false, config: {c: {updateWaitTimeout: 5}}, logger: {log: ->}
-        __getLockHandle: (=> fakeLock)
+        hasLock: false, config: {c: {updates: {waitTimeout: 5}}}, logger: {log: ->}
+        lock: fakeLock
       }, __index: Updater.__base
       ok, owner = Updater.acquireLock updater, false
       ut\assertFalse ok
@@ -162,28 +170,43 @@
       updater = setmetatable {
         tasks: {[Common.ScriptType.Module]: {}}
         logger: {log: ->, trace: ->}
-        config: {c: {dumpFeeds: false, updaterEnabled: true}}
+        config: {c: {updates: {mode: ContextCeiling.AutoUpdate}, paths: {cache: "?user/cache"}}}
       }, __index: Updater.__base
       task = Updater.addTask updater, record, "1.0.0"
       ut\assertNotNil task
       ut\assertIs task.__class, UpdateTask
       ut\assertIs updater.tasks[Common.ScriptType.Module][record.namespace], task
 
-    -- the updaterEnabled / namespace guards (moved out of UpdateTask.new, where a constructor's return is
-    -- discarded) now reject task creation through addTask
+    -- addTask rejects creation for a disabled updater or an invalid namespace: a constructor's return value is
+    -- discarded, so the guards live in addTask rather than UpdateTask.new
     addTask_disabledUpdaterRejects: (ut) ->
       record = {__class: DependencyControl, scriptType: Common.ScriptType.Module, namespace: "l0.new", validateNamespace: => true}
       updater = setmetatable {
-        tasks: {[Common.ScriptType.Module]: {}}, config: {c: {updaterEnabled: false}}
+        tasks: {[Common.ScriptType.Module]: {}}, config: {c: {updates: {mode: ContextCeiling.Off}}}
       }, __index: Updater.__base
       task, code = Updater.addTask updater, record, "1.0.0"
       ut\assertNil task
       ut\assertEquals code, UpdateStatus.UpdaterDisabled
 
+    -- the update mode gates addTask by the task's reason: a user-requested action still passes a mode
+    -- that blocks background checks
+    addTask_modeGatesByReason: (ut) ->
+      record = {__class: DependencyControl, scriptType: Common.ScriptType.Module, namespace: "l0.new", validateNamespace: => true}
+      makeUpdater = -> setmetatable {
+        tasks: {[Common.ScriptType.Module]: {}}
+        logger: {log: ->, trace: ->}
+        config: {c: {updates: {mode: ContextCeiling.UserRequested}, paths: {cache: "?user/cache"}}}
+      }, __index: Updater.__base
+      task, code = Updater.addTask makeUpdater!, record, "1.0.0"   -- default reason: AutoUpdate
+      ut\assertNil task
+      ut\assertEquals code, UpdateStatus.UpdaterDisabled
+      task = Updater.addTask makeUpdater!, record, "1.0.0", nil, nil, nil, UpdateReason.UserRequested
+      ut\assertNotNil task
+
     addTask_invalidNamespaceRejects: (ut) ->
       record = {__class: DependencyControl, scriptType: Common.ScriptType.Module, namespace: "bad ns", validateNamespace: => false}
       updater = setmetatable {
-        tasks: {[Common.ScriptType.Module]: {}}, config: {c: {updaterEnabled: true}}
+        tasks: {[Common.ScriptType.Module]: {}}, config: {c: {updates: {mode: ContextCeiling.AutoUpdate}}}
       }, __index: Updater.__base
       task, code = Updater.addTask updater, record, "1.0.0"
       ut\assertNil task
@@ -191,20 +214,37 @@
 
     -- the feed-trust model is a process-wide singleton: every Updater shares the one instance
     feedTrust_isSharedSingleton: (ut) ->
-      cfg = {c: {extraFeeds: {}, trustedFeeds: {}, blockedFeeds: {}}}
+      cfg = {c: {feeds: {extraFeeds: {}, trustedFeeds: {}, blockedFeeds: {}}}}
       a, b = Updater("hostA", cfg), Updater("hostB", cfg)
       ut\assertIs a.feedTrust, b.feedTrust
 
+    -- an unset `updates.mode` defaults to auto-update: every context is enabled
+    isEnabledFor_defaultsToAllContexts: (ut) ->
+      make = (mode) -> setmetatable {config: {c: {updates: {:mode}}}}, __index: Updater.__base
+      for reason in *{UpdateReason.UserRequested, UpdateReason.DependencyResolution, UpdateReason.AutoUpdate}
+        ut\assertTrue Updater.__isEnabledFor make!, reason
+
+    -- each mode enables exactly the contexts at or below its rung; off enables none
+    isEnabledFor_modeGatesByContext: (ut) ->
+      make = (mode) -> setmetatable {config: {c: {updates: {:mode}}}}, __index: Updater.__base
+      ut\assertFalse Updater.__isEnabledFor make(ContextCeiling.Off), UpdateReason.UserRequested
+      ut\assertTrue  Updater.__isEnabledFor make(ContextCeiling.UserRequested), UpdateReason.UserRequested
+      ut\assertFalse Updater.__isEnabledFor make(ContextCeiling.UserRequested), UpdateReason.DependencyResolution
+      ut\assertTrue  Updater.__isEnabledFor make(ContextCeiling.DependencyResolution), UpdateReason.DependencyResolution
+      ut\assertFalse Updater.__isEnabledFor make(ContextCeiling.DependencyResolution), UpdateReason.AutoUpdate
+      ut\assertTrue  Updater.__isEnabledFor make(ContextCeiling.AutoUpdate), UpdateReason.AutoUpdate
+
     _order: {
       "require_upToDateLoadsModule", "require_successReturnsRef", "require_errorPropagates"
-      "scheduleUpdate_disabledRejected", "scheduleUpdate_virtualRejected"
+      "scheduleUpdate_disabledRejected", "scheduleUpdate_belowAutoUpdateModeRejected"
+      "scheduleUpdate_virtualRejected"
       "scheduleUpdate_withinIntervalSkips", "scheduleUpdate_protectedInstallRejected"
       "scheduleUpdate_runsTaskWhenDue"
       "acquireLock_returnsTrueWhenAlreadyHeld", "acquireLock_acquiresAndSetsHasLock"
       "acquireLock_failsWhenHeldByOther", "releaseLock_releasesWhenHeld", "releaseLock_noopWhenNotHeld"
       "renewLock_renewsWhenHeld"
       "addTask_versionParseErrorReturns", "addTask_updatesExistingTask", "addTask_createsNewTask"
-      "addTask_disabledUpdaterRejects", "addTask_invalidNamespaceRejects"
-      "feedTrust_isSharedSingleton"
+      "addTask_disabledUpdaterRejects", "addTask_modeGatesByReason", "addTask_invalidNamespaceRejects"
+      "feedTrust_isSharedSingleton", "isEnabledFor_defaultsToAllContexts", "isEnabledFor_modeGatesByContext"
     }
   }

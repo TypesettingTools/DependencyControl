@@ -11,7 +11,8 @@ ModuleLoader =   require "l0.DependencyControl.ModuleLoader"
 ModuleProvider = require "l0.DependencyControl.ModuleProvider"
 SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
 UnitTestSuite =  require "l0.DependencyControl.UnitTestSuite"
-FeedInventory =  require "l0.DependencyControl.FeedInventory"
+FileCache =      require "l0.DependencyControl.FileCache"
+configSchema =   require "l0.DependencyControl.config-schema"
 
 -- Global registry of live DepCtrl version records keyed by namespace, backed by a global table
 --  so it survives DepCtrl self-update reloads. Required to reach the DepCtrl version records
@@ -86,21 +87,7 @@ class Record
     @depConf = {
         file: aegisub.decode_path "?user/config/#{constants.DEPCTRL_NAMESPACE}.json",
         scriptFields: {"author", "configFile", "feed", "moduleName", "name", "namespace", "url", -- REMOVE
-                       "requiredModules", "version", "unmanaged", "provides"},
-        globalDefaults: {updaterEnabled:true, updateInterval:302400, traceLevel:3, extraFeeds:{},
-                         trustedFeeds:{}, blockedFeeds:{},
-                         feedTrustPromptThreshold: Updater.PromptThreshold.AutoUpdates,
-                         packageChoicePromptThreshold: Updater.PromptThreshold.UserRequested,
-                         packageChoiceOfferAllSources: false,
-                         updaterBlockPrivateHosts: true,
-                         fetchUntrustedFeeds: "always",
-                         feedCrawlLimits: {[FeedInventory.CrawlLimit.Depth]:   7,
-                                           [FeedInventory.CrawlLimit.PerRoot]: 50,
-                                           [FeedInventory.CrawlLimit.PerFeed]: 25},
-                         dumpFeeds:true, configDir:"?user/config",
-                         logMaxFiles: 200, logMaxAge: 604800, logMaxSize:10*(10^6),
-                         updateWaitTimeout: 60, updateOrphanTimeout: 50,
-                         logDir: "?user/log", writeLogs: true}
+                       "requiredModules", "version", "unmanaged", "provides"}
     }
 
     ---Returns the live, installed record registered for a namespace, or nil if none is registered
@@ -119,13 +106,14 @@ class Record
     init = =>
         FileOps.mkdir @depConf.file, true
         @loadConfig!
+        {:logging, :paths} = @config.c
         @logger = Logger { fileBaseName: constants.DEPCTRL_SHORT_NAME, fileSubName: script_namespace, prefix: "[#{constants.DEPCTRL_SHORT_NAME}] ",
-                             toFile: @config.c.writeLogs, defaultLevel: @config.c.traceLevel,
-                             maxAge: @config.c.logMaxAge,maxSize: @config.c.logMaxSize, maxFiles: @config.c.logMaxFiles,
-                             logDir: @config.c.logDir }
+                             toFile: logging.toFile, defaultLevel: logging.defaultLevel,
+                             maxAge: logging.maxAge, maxSize: logging.maxSize, maxFiles: logging.maxFiles,
+                             logDir: paths.log }
 
         @updater = Updater script_namespace, @config, @logger
-        @configDir = @config.c.configDir
+        @configDir = paths.config
 
         FileOps.mkdir aegisub.decode_path @configDir
         logsHaveBeenTrimmed or= @logger\trimFiles!
@@ -223,7 +211,9 @@ class Record
     @loadConfig = =>
         if @config
             @config\load!
-        else @config = ConfigView\get @depConf.file, {"config"}, @depConf.globalDefaults, @logger
+        else
+            @config = ConfigView\get @depConf.file, {"config"}, configSchema.sections, @logger, false,
+                {schemaId: configSchema.CONFIG_SCHEMA_ID_CURRENT, migrate: configSchema.migration.migrate}
 
     ---Loads this record's script/module configuration hive.
     ---@param importRecord? boolean Overwrite this record's fields from the stored config (default false).
@@ -299,6 +289,15 @@ class Record
         args.prefix or= @moduleName and "[#{@name}]"
 
         return Logger args
+
+    ---Returns a shared, persistent on-disk cache for this script, under the user's configured cache location.
+    ---It lives at `<the configured cache dir>/<this script's namespace>/<name>`, so each script gets its own
+    ---namespaced caches and honors the DependencyControl config. Repeated calls for the same name share one instance.
+    ---@param name string A short name for the cache's purpose (e.g. "thumbnails").
+    ---@param opts? FileCacheOptions Default cache options; applied only when the cache is first created.
+    ---@return FileCache
+    getFileCache: (name, opts) =>
+        FileCache.get @@config.c.paths.cache, @namespace, name, opts
 
     ---Checks whether this record's version satisfies a minimum version.
     ---@param value number|string|Record Version, or record, to compare against.

@@ -75,20 +75,19 @@ Changes made in the `config` section of the configuration file will affect all s
 
 **Available Fields**:
 
-- _bool_ **updaterEnabled [true]:** Turns the updater on/off
+- _str_ **updates.mode ["auto-update"]:** Which update contexts may install and update at all. Each value includes the ones before it:
+  - `"off"` — no installs or updates at all
+  - `"user-requested"` — only actions you start yourself (e.g. via the Toolbox)
+  - `"dependency-resolution"` — also installing/updating modules a script depends on
+  - `"auto-update"` (default) — also background scheduled update checks
 - _int_ **updateInterval [3 Days]:** The time in seconds between two update checks of a script
 - _int_ **traceLevel [3]:** Sets the Trace level of DependencyControl update messages. Setting this higher than your _Trace level_ setting in Aegisub will prevent any of the messages from littering your log window.
 - _bool_ **dumpFeeds [true]:** Debug option that will make DependencyControl dump updater feeds (original and expanded) to your Aegisub folder.
 - _arr_ **extraFeeds:** lets you provide additional update feeds that will be used when checking any script for updates. Feeds you list here are treated as trusted.
 - _arr_ **trustedFeeds:** additional feed URLs you trust as package sources, on top of the feeds DependencyControl trusts by default (those advertised in its own feed). Unlike `extraFeeds`, these aren't crawled for updates on their own — they only mark a feed as trusted so packages can be installed from it without a warning.
 - _arr_ **blockedFeeds:** feed URLs that must never be used as a package source. A blocked feed is rejected regardless of any other setting (including `userFeed`). Applied on top of DependencyControl's own block list. Each entry is matched case-insensitively as a URL prefix, so a host root like `https://example.com/` blocks every feed under it.
-- _int_ **feedTrustPromptThreshold [3]:** When DependencyControl may ask you to approve installing from a feed not (yet) on the trusted list. The levels are:
-  - `1` only for actions you start yourself (e.g. via the Toolbox)
-  - `2` also while a module is installed as a dependency
-  - `3` (default) also during background update checks
-  
-  When a situation isn't allowed to prompt, the install fails or is skipped rather than using the untrusted feed.
-- _int_ **packageChoicePromptThreshold [1]:** When DependencyControl may ask you to pick between equally-ranked packages that can satisfy a requirement. Same `1`/`2`/`3` situations as above. When a situation isn't allowed to prompt, a stable but arbitrary tie-breaker is used.
+- _str_ **feedTrustPromptThreshold ["auto-update"]:** When DependencyControl may ask you to approve installing from a feed not (yet) on the trusted list. Takes the same context values as `updates.mode` (`"off"` never asks; defaults to `"auto-update"`, i.e. asking is allowed in every context). When a situation isn't allowed to prompt, the install fails or is skipped rather than using the untrusted feed.
+- _str_ **packageChoicePromptThreshold ["user-requested"]:** When DependencyControl may ask you to pick between equally-ranked packages that can satisfy a requirement. Same context values as above (default `"user-requested"`: only for actions you start yourself). When a situation isn't allowed to prompt, a stable but arbitrary tie-breaker is used.
 - _bool_ **packageChoiceOfferAllSources [false]:** By default the package picker only appears when two or more sources are genuinely tied (same trust band and version). Set this to `true` to be offered _every_ eligible source whenever there's more than one (including lower-ranked and untrusted ones).
 - _str_ **configDir ["?user/config"]:** Sets the configuration directory that will be "offered" to automation scripts (they may or may not actually use it)
 - _str_ **writeLogs [true]:** When enabled, DependencyControl log messages will be written to a file in the Aegisub log folder. This is a valuable resource for debugging, especially since the Aegisub log window is not available during script initialization.
@@ -316,7 +315,7 @@ Examples:
 
 **Modules** use the `?user/automation/include` folder, which has a nested file structure. To determine the base name for your main entry point file and sub-directory, the dots in your namespace are replaced with the path separator (`\` on Windows, `/` on other platforms).
 
-**Tests** use the `?user/automation/tests/DepUnit/modules` or `?user/automation/tests/DepUnit/macros` folder depending on whether a macro or automation is being tested and mirror the directory structure of the respective `include` and `autoload` folders.
+**Tests** live under `?user/automation/tests/DepUnit/modules` or `?user/automation/tests/DepUnit/macros`, depending on whether a module or an automation script is being tested. Test files are resolved as `require` identifiers (`DepUnit.modules.<namespace>` / `DepUnit.macros.<namespace>`), so the dots in the namespace always become path separators — the tree is **nested** for both modules and macros, even though the `autoload` folder itself is flat. A test suite is a single file at the root of the namespace path; a multi-file suite adds sibling files under a folder of the same name.
 
 Our example module _ASSFoundation_ with namespace `l0.ASSFoundation` writes (among others) the following files:
 
@@ -324,6 +323,8 @@ Our example module _ASSFoundation_ with namespace `l0.ASSFoundation` writes (amo
 - `?user/automation/include/l0/ASSFoundation/ClassFactory.lua`
 - `?user/automation/include/l0/ASSFoundation/Draw/Bezier.lua`
 - `?user/automation/tests/DepUnit/modules/l0/ASSFoundation.lua`
+
+An automation script _MyScript_ with namespace `l0.MyScript` lives at `?user/automation/autoload/l0.MyScript.lua` (flat) but its test suite is nested at `?user/automation/tests/DepUnit/macros/l0/MyScript.lua`.
 
 ---
 
@@ -607,14 +608,17 @@ If the script entry in the DependencyControl configuration file contains a **cus
 
 For the other arguments, please refer to the [aegisub.register_macro](http://docs.aegisub.org/latest/Automation/Lua/Registration/#aegisub.register_macro) API documentation.
 
-**:registerMacros(_tbl_ macros, _bool|string_ [submenuDefault=true])**
+**:registerMacros(_tbl_ macros, _bool|string_ [submenuDefault=true], _tbl_ [testExports])**
 
-Registers multiple macros, where **macros** is a list of tables containing the arguments to a **:registerMacro()** call for each automation menu entry. a single macro using script name and description by default.
+Registers multiple macros, where **macros** is a list of tables containing the arguments to a **:registerMacro()** call for each automation menu entry.
 Use **submenuDefault** to specify a submenu all macros will be placed in unless overridden on a per-macro basis. Defaults to `true` which causes the automation script name to be used as the submenu name.
+Pass **testExports** to expose the script's internal values (helpers, etc.) to its unit test suite; they are forwarded to the suite's import function so an automation script can be unit-tested (see **:registerTests**).
 
 **:registerTests(unitTestArgs...)**
 
-Registers unit tests for automation modules, passing in any of specified **unitTestArgs**. Registration of modules is done automatically upon calling **:register**
+Loads and registers this script's or module's DependencyControl unit test suite when one is present, forwarding any **unitTestArgs** to the suite's import function. You rarely call it directly: modules register their tests automatically through **:register**, and automation scripts through **:registerMacro**/**:registerMacros** (an automation script passes its internals via the **testExports** argument of **:registerMacros**).
+
+The suite's import function is called with, in order: the subject under test (for a module its own reference; for an automation script a map of its registered macros keyed by name, each carrying the macro's unhooked `process`/`validate`/`isActive`), the script's dependencies, any extra arguments (a module's own table, or an automation script's `testExports`), and a controls object as the final argument.
 
 **:requireModules([modules=@requiredModules], _bool_ [forceUpdate], _bool_ [updateMode], _tbl_ [addFeeds={@feed})] --> ...**
 

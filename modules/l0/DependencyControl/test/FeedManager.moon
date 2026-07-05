@@ -118,10 +118,10 @@
       ut\assertFalse mgr\applyAction FeedAction.OpenBrowser, entry
       ut\assertEquals #calls, 0
 
-    -- rows attach actions, the browser link, removability and reachability, sorted by URL
+    -- rows attach actions, the browser link, removability, reachability and last-fetch time, sorted by URL
     buildRows_assemblesAndSorts: (ut) ->
       entries = {
-        {url: "feed://b", provenance: {Provenance.OfficialKnown}, trustStatus: TrustStatus.Untrusted, fetched: true}
+        {url: "feed://b", provenance: {Provenance.OfficialKnown}, trustStatus: TrustStatus.Untrusted, fetched: true, lastFetchedAt: 1700000000}
         {url: "feed://a", provenance: {Provenance.UserExtra}, trustStatus: TrustStatus.TrustedUser, inUse: true}
       }
       rows = FeedManager.buildRows entries
@@ -134,6 +134,8 @@
       ut\assertNil rows[1].reachable
       ut\assertTrue rows[1].inUse               -- surfaced from entry.inUse
       ut\assertNil rows[2].inUse
+      ut\assertEquals rows[2].lastFetchedAt, 1700000000   -- surfaced from entry.lastFetchedAt
+      ut\assertNil rows[1].lastFetchedAt
 
     -- regression: a trust-only feed (no provenance) keeps inTrustedFeeds on its row, so the row round-trips
     -- back through applyAction and Remove actually fires — previously the row dropped it and Remove no-op'd

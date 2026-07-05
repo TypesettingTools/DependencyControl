@@ -9,11 +9,11 @@ FileOps = require "l0.DependencyControl.FileOps"
 Downloader = require "l0.DependencyControl.Downloader"
 ModuleProvider = require "l0.DependencyControl.ModuleProvider"
 SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
-
-defaultLogger = Logger fileBaseName: "DepCtrl.UpdateFeed"
 ScriptUpdateRecord = require "l0.DependencyControl.ScriptUpdateRecord"
 ScriptTargetFilter = require "l0.DependencyControl.ScriptTargetFilter"
 JsonSchema = nil
+
+defaultLogger = Logger fileBaseName: "DepCtrl.UpdateFeed"
 
 ScriptType = Common.ScriptType
 
@@ -99,6 +99,9 @@ class UpdateFeed
             usingCached: "Using cached feed."
             downloaded:  "Downloaded feed to %s."
         }
+        warn: {
+            usingStale: "Couldn't refresh feed %s (%s); using the cached copy."
+        }
         errors: {
             urlOrFilePathRequired: "Either a URL or a file path must be provided."
             downloadAdd:     "Couldn't initiate download of %s to %s (%s)."
@@ -163,16 +166,11 @@ class UpdateFeed
     @defaultConfig = {
         dumpExpanded: false
     }
-    @cache = {}
-
-    ---@alias UpdateFeedExpansionMode
-    ---| "remote" # Expand `fileBaseUrl`/`url` to their download URLs.
-    ---| "local" # Additionally resolve `localFileBasePath`/`localFilePath` to on-disk paths.
 
     ---Variable-expansion modes for expand().
-    ---Remote (default): expand `fileBaseUrl`/`url` to their download URLs.
-    ---Local: additionally resolve the `localFileBasePath`/`localFilePath` sister fields to
-    ---on-disk paths (used by tooling such as the bundler). The remote fields are left intact.
+    ---@alias UpdateFeedExpansionMode
+    ---| "remote" # Remote (default): expand `fileBaseUrl`/`url` to their download URLs.
+    ---| "local" # Local: additionally resolve the `localFileBasePath`/`localFilePath` sister fields to on-disk paths (used by the bundler), leaving the remote fields intact.
     @ExpansionMode = Enum "UpdateFeedExpansionMode", {
         Remote: "remote"
         Local:  "local"
@@ -214,7 +212,7 @@ class UpdateFeed
     ---@param _url? string Feed URL (or nil when loading from a local file via fileName).
     ---@param autoLoad? boolean Fetch/load the feed immediately (default true).
     ---@param fileName? string Local feed file path.
-    ---@param config? table Feed config overrides.
+    ---@param config? table Feed-fetch settings, normally supplied by `FeedLoader`: `cache` (the on-disk `FileCache`) and `blockPrivateHosts`.
     ---@param logger? Logger
     new: (@_url, autoLoad = true, @fileName, @config = {}, @logger = defaultLogger) =>
         error msgs.errors.urlOrFilePathRequired if not @_url and not fileName
@@ -240,6 +238,21 @@ class UpdateFeed
         return [url for _, url in pairs @data.knownFeeds]
         -- TODO: maybe also search all requirements for feed URLs
 
+    ---Decodes a feed's JSON into its unexpanded working data — null sentinels stripped and the macros/modules/
+    ---knownFeeds sections ensured present — alongside the raw null-preserving decode kept for write-back. Shared
+    ---by loadFile and the feed cache's L1 layer so both agree on the shape.
+    ---@param content string The raw feed JSON.
+    ---@return table? unexpandedData The working feed data, before template expansion (nil on a JSON parse error).
+    ---@return table? raw The pristine decode with `dkjson.null` sentinels intact, for write-back.
+    @deserialize = (content) ->
+        ok, raw = pcall dkjson.decode, content, nil, dkjson.null
+        return nil unless ok and raw
+        unexpandedData = stripNulls raw
+        for section in *{ Common.ScriptTypeSection[ScriptType.Automation],
+                          Common.ScriptTypeSection[ScriptType.Module], "knownFeeds" }
+            unexpandedData[section] or= {}
+        return unexpandedData, raw
+
     ---Downloads feed to a temporary JSON file and sets the .fileName property for subsequent loading.
     ---@param fileName? string Destination path (defaults to a generated temp path).
     ---@param expansionMode? UpdateFeedExpansionMode
@@ -263,7 +276,14 @@ class UpdateFeed
             return false, msgs.errors.downloadFailed\format @url, @fileName, dl.error
 
         @logger\trace msgs.trace.downloaded, @fileName
-        return @loadFile @fileName, expansionMode
+        result, loadErr = @loadFile @fileName, expansionMode
+        -- persist the freshly fetched feed to the on-disk cache (best-effort; a failure just skips caching)
+        if result and @_url
+            rawJson = FileOps.readFile @fileName
+            if rawJson
+                cacheMeta = @config.cache\put @_url, rawJson, @data.name
+                @lastFetchedAt = cacheMeta and cacheMeta.cachedAt or @lastFetchedAt
+        return result, loadErr
 
     ---Loads and parses a local feed JSON file, expanding all template variables in-place.
     ---Use this to load a feed already on disk without going through the network.
@@ -276,32 +296,20 @@ class UpdateFeed
     ---@return table|boolean dataOrSuccess The expanded feed data, or false on failure.
     ---@return string? err Error message on failure.
     loadFile: (srcPath = @fileName, expansionMode) =>
-        handle, err = io.open srcPath
-        unless handle
-            return false, msgs.errors.cantOpen\format err
+        content, err = FileOps.readFile srcPath
+        return false, msgs.errors.cantOpen\format err unless content
 
-        -- Decode JSON null to the dkjson.null sentinel (rather than dropping it) so that
-        -- `released: null` and friends survive a load/write round-trip in @rawFeedData.
-        decoded, data = pcall dkjson.decode, handle\read("*a"), nil, dkjson.null
-        handle\close!
-        unless decoded and data
-            -- luajson errors are useless dumps of whatever, no use to pass them on to the user
-            return false, msgs.errors.parse
+        unexpandedData, raw = @@.deserialize content
+        -- luajson errors are useless dumps of whatever, no use to pass them on to the user
+        return false, msgs.errors.parse unless unexpandedData
 
-        -- Keep the pristine decoded feed with null sentinels for write-back;
-        @rawFeedData = data
-        -- Hide null sentinels from the working copy exposed to consumers
-        data = stripNulls data
-
-        data[key] = {} for key in *{ Common.ScriptTypeSection[ScriptType.Automation],
-                                     Common.ScriptTypeSection[ScriptType.Module],
-                                     "knownFeeds"} when not data[key]
-        @data, @@cache[@url] = data, data
+        -- keep the pristine null-preserving decode for write-back (see deserialize)
+        @rawFeedData = raw
+        @unexpandedData = unexpandedData
         @feedPath = srcPath
         @feedDir = srcPath\match("^(.*)[/\\][^/\\]*$") or "."
 
-        @expand expansionMode
-        return @data
+        return @expand expansionMode
 
     ---Fetches the feed (or loads it from disk if local) in case it hasn't been loaded yet.
     ---@param expansionMode? UpdateFeedExpansionMode The expansion mode required for the operation.
@@ -318,18 +326,34 @@ class UpdateFeed
 
         -- when not yet loaded, fetch a remote feed by its real URL, otherwise load the local file
         if @_url
-            @data = @@cache[@_url]
-            if @data
+            -- the feed cache serves the unexpanded data from its in-memory L1, else the on-disk snapshot.
+            -- expand copies it into @data for the requested mode
+            unexpandedData, meta, fresh = @config.cache\get @_url
+            if unexpandedData and fresh
+                @unexpandedData = unexpandedData
+                @lastFetchedAt = meta.cachedAt
                 @logger\trace msgs.trace.usingCached
-                return @data
-            return @fetch nil, expansionMode
+                return @expand expansionMode
+
+            -- fetch; on failure, fall back to the stale cached data when one exists (offline resilience)
+            data, err = @fetch nil, expansionMode
+            return data if data
+            if unexpandedData
+                @unexpandedData = unexpandedData
+                @stale, @lastFetchedAt = true, meta.cachedAt
+                @logger\warn msgs.warn.usingStale, @_url, err
+                return @expand expansionMode
+            return data, err
 
         return @loadFile @fileName, expansionMode
 
-    ---Walks the parsed feed JSON and expands template variables in-place.
+    ---Expands and returns @data for the requested mode, rebuilt each call from a fresh deep copy of
+    ---@unexpandedData, so the shared source (the feed cache's L1 memo for this URL) is never mutated by
+    ---another consumer's expansion. The feed must be loaded (@unexpandedData set) first.
     ---@param mode? UpdateFeedExpansionMode Expansion mode; local mode additionally resolves rolling templates for local source file paths.
     ---@return table data
     expand: (mode = @expansionMode or (@_url and @@ExpansionMode.Remote or @@ExpansionMode.Local)) =>
+        @data = Common.deepCopy @unexpandedData
         {:templates, :maxDepth, :sourceAt, :rolling, :sourceKeys} = templateData
         isLocalMode = mode == @@ExpansionMode.Local
         vars, rvars = {}, {i, {} for i=0, maxDepth}
@@ -528,7 +552,7 @@ class UpdateFeed
     ---schema-permissible fields (`name`, `version`).
     ---@private
     ---@param provides? (string|ModuleAlias)[]
-    ---@return ModuleAlias[]
+    ---@return ModuleAlias[] aliases The normalized alias tables, each carrying `name` plus optional `version`.
     @__normalizeModuleAliases = (provides) =>
         aliases = {}
         for entry in *(provides or {})

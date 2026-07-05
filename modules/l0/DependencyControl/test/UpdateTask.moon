@@ -12,7 +12,7 @@
   FeedTrust = require "l0.DependencyControl.FeedTrust"
 
   UpdateStatus = UpdateTask.UpdateStatus
-  PromptThreshold = UpdateTask.PromptThreshold
+  ContextCeiling = UpdateTask.ContextCeiling
   UpdateReason = UpdateTask.UpdateReason
   SourceChoiceStickiness = UpdateTask.SourceChoiceStickiness
   SourceFeedKind = UpdateTask.SourceFeedKind
@@ -71,7 +71,7 @@
   -- for __shouldPrompt), trustedFeeds, blockedFeeds, onSave (called by config\save!). __promptTrustFeed routes
   -- its trust/block through @updater.feedTrust, so the stub carries a real FeedTrust over the same config.
   makeInteractiveTask = (opts = {}) ->
-    config = {c: {trustedFeeds: opts.trustedFeeds, blockedFeeds: opts.blockedFeeds}, save: (=> opts.onSave! if opts.onSave)}
+    config = {c: {feeds: {trustedFeeds: opts.trustedFeeds, blockedFeeds: opts.blockedFeeds}, updates: {}}, save: (=> opts.onSave! if opts.onSave)}
     feedTrust = setmetatable {:config, logger: {log: ->}}, __index: FeedTrust.__base
     setmetatable {
       reason: opts.reason
@@ -103,10 +103,12 @@
     calls = {select: 0, trust: 0}
     updaterConfig = {
       c: {
-        extraFeeds: cfg.extraFeeds, trustedFeeds: cfg.trustedFeeds, blockedFeeds: cfg.blockedFeeds
-        packageChoiceOfferAllSources: cfg.offerAllSources
-        packageChoicePromptThreshold: cfg.packageChoicePromptThreshold or PromptThreshold.UserRequested
-        feedTrustPromptThreshold: cfg.feedTrustPromptThreshold or PromptThreshold.UserRequested
+        feeds: {extraFeeds: cfg.extraFeeds, trustedFeeds: cfg.trustedFeeds, blockedFeeds: cfg.blockedFeeds}
+        updates: {
+          offerAllSources: cfg.offerAllSources
+          packageChoicePromptThreshold: cfg.packageChoicePromptThreshold or ContextCeiling.UserRequested
+          feedTrustPromptThreshold: cfg.feedTrustPromptThreshold or ContextCeiling.UserRequested
+        }
       }
       getSectionHandler: (_, section) -> {c: opts.modules or {}}
     }
@@ -231,7 +233,7 @@
         name: "TestMod", namespace: "l0.test", automationDir: "auto", version: 0
         scriptType: Common.ScriptType.Module, virtual: false
       }
-      updater: {renewLock: (=>), config: {c: {}}}
+      updater: {renewLock: (=>), config: {c: {updates: {}}}}
       logger: {
         log: ->, trace: ->, progress: ->, indent: 0
         format: (arr) => table.concat (arr or {}), "; "
@@ -353,17 +355,37 @@
          makeCandidate(3, "1.0.0", namespace: "l0.c", platform: false)}
       ut\assertEquals #tied, 2   -- the platform-ineligible one is excluded
 
+    -- UpdateTask.isWithinContextCeiling: the shared context-ladder gate — each ceiling admits exactly the
+    -- contexts at or below its rung; off, unset, and unrecognized ceilings admit none
+    isWithinContextCeiling_ranksLadder: (ut) ->
+      ut\assertTrue UpdateTask.isWithinContextCeiling UpdateReason.UserRequested, ContextCeiling.UserRequested
+      ut\assertFalse UpdateTask.isWithinContextCeiling UpdateReason.DependencyResolution, ContextCeiling.UserRequested
+      ut\assertTrue UpdateTask.isWithinContextCeiling UpdateReason.AutoUpdate, ContextCeiling.AutoUpdate
+      ut\assertFalse UpdateTask.isWithinContextCeiling UpdateReason.UserRequested, ContextCeiling.Off
+      ut\assertFalse UpdateTask.isWithinContextCeiling UpdateReason.UserRequested, nil
+      ut\assertFalse UpdateTask.isWithinContextCeiling UpdateReason.UserRequested, "garbage"
+
     -- UpdateTask.__shouldPrompt: a task may prompt only when its reason is permitted by the given threshold
 
     shouldPrompt_withinThreshold: (ut) ->
-      ut\assertTrue UpdateTask.__shouldPrompt makeInteractiveTask({reason: UpdateReason.DependencyResolution}), PromptThreshold.DependencyResolution
-      ut\assertTrue UpdateTask.__shouldPrompt makeInteractiveTask({reason: UpdateReason.UserRequested}), PromptThreshold.AutoUpdates
+      ut\assertTrue UpdateTask.__shouldPrompt makeInteractiveTask({reason: UpdateReason.DependencyResolution}), ContextCeiling.DependencyResolution
+      ut\assertTrue UpdateTask.__shouldPrompt makeInteractiveTask({reason: UpdateReason.UserRequested}), ContextCeiling.AutoUpdate
 
     shouldPrompt_aboveThreshold: (ut) ->
-      ut\assertFalse UpdateTask.__shouldPrompt makeInteractiveTask({reason: UpdateReason.AutoUpdate}), PromptThreshold.UserRequested
+      ut\assertFalse UpdateTask.__shouldPrompt makeInteractiveTask({reason: UpdateReason.AutoUpdate}), ContextCeiling.UserRequested
+
+    shouldPrompt_offNeverPrompts: (ut) ->
+      ut\assertFalse UpdateTask.__shouldPrompt makeInteractiveTask({reason: UpdateReason.UserRequested}), ContextCeiling.Off
 
     shouldPrompt_noReason: (ut) ->
-      ut\assertFalse UpdateTask.__shouldPrompt makeInteractiveTask({reason: nil}), PromptThreshold.AutoUpdates
+      ut\assertFalse UpdateTask.__shouldPrompt makeInteractiveTask({reason: nil}), ContextCeiling.AutoUpdate
+
+    -- feedTrustPromptThreshold defaults to the auto-update ceiling, so an untrusted-feed prompt still shows
+    -- during a background (auto-update) install; a user-requested ceiling (see shouldPrompt_aboveThreshold)
+    -- would suppress it.
+    shouldPrompt_feedTrustDefaultAllowsAutoUpdate: (ut) ->
+      ut\assertEquals UpdateTask.defaultFeedTrustPromptThreshold, ContextCeiling.AutoUpdate
+      ut\assertTrue UpdateTask.__shouldPrompt makeInteractiveTask({reason: UpdateReason.AutoUpdate}), UpdateTask.defaultFeedTrustPromptThreshold
 
     -- UpdateTask.__promptTrustFeed: shows the dialog (callers gate it); "always" trusts the feed, "never"
     -- blocks it, and a cancelled prompt returns nil.
@@ -383,7 +405,7 @@
       task = makeInteractiveTask trustedFeeds: {}, onSave: -> saved[1] = true
       ut\stub(aegisub.dialog, "display")\calls -> msgs.__promptTrustFeed.trustAlways
       ut\assertEquals UpdateTask.__promptTrustFeed(task, {feedUrl: "feed://new"}), FeedTrustDecision.Always
-      ut\assertEquals task.updater.config.c.trustedFeeds[1], "feed://new"
+      ut\assertEquals task.updater.config.c.feeds.trustedFeeds[1], "feed://new"
       ut\assertTrue saved[1]
 
     promptTrustFeed_neverBlocks: (ut) ->
@@ -391,7 +413,7 @@
       task = makeInteractiveTask blockedFeeds: {}, onSave: -> saved[1] = true
       ut\stub(aegisub.dialog, "display")\calls -> msgs.__promptTrustFeed.trustNever
       ut\assertEquals UpdateTask.__promptTrustFeed(task, {feedUrl: "feed://bad"}), FeedTrustDecision.Never
-      ut\assertEquals task.updater.config.c.blockedFeeds[1], {url: "feed://bad", matchMode: "prefix"}
+      ut\assertEquals task.updater.config.c.feeds.blockedFeeds[1], {url: "feed://bad", matchMode: "prefix"}
       ut\assertTrue saved[1]
 
     -- UpdateTask.__promptSelectPackageSource: shows the dialog (callers gate it), returning the picked
@@ -547,6 +569,18 @@
       ut\assertTrue d.installRequired
       ut\assertEquals d.selectedSource.feedUrl, "feed://decl"
       ut\assertNil task.triedFeeds["feed://extra"]   -- tier 2 was never reached
+
+    -- cascade: an empty declared feed falls through to a user extra feed (trusted discovery, tier 2).
+    -- Guards that extraFeeds is read from the `feeds` config section, not `updates`.
+    resolve_fallsThroughToExtraFeed: (ut) ->
+      task = makeResolveTask {
+        declaredFeed: "feed://decl"
+        config: {extraFeeds: {"feed://extra"}}
+        feeds: {"feed://decl": {}, "feed://extra": {direct: directRec version: "2.0.0"}}
+      }
+      d = UpdateTask.__resolve task
+      ut\assertTrue d.installRequired
+      ut\assertEquals d.selectedSource.feedUrl, "feed://extra"
 
     -- cascade: an empty declared feed falls through to a trusted feed (TrustedDirect, band 2)
     resolve_fallsThroughToTrustedDirect: (ut) ->
@@ -922,7 +956,19 @@
       UpdateTask.refreshRecord task
       ut\assertFalse task.updated
 
+    -- __loadFeed refuses a blocked/never feed before any network fetch, surfacing a reason
+    loadFeed_refusesDeniedFeed: (ut) ->
+      feedTrust = {getFetchDecision: (url) => FeedTrust.FetchDecision.Deny}
+      task = setmetatable {
+        updater: {feedTrust: feedTrust}
+        logger: {trace: (->), log: (->)}
+      }, __index: UpdateTask.__base
+      feed, err = UpdateTask.__loadFeed task, "feed://untrusted"
+      ut\assertNil feed
+      ut\assertString err
+
     _order: {
+      "loadFeed_refusesDeniedFeed",
       "selectCandidate_filtersByVersion", "selectCandidate_noneSatisfiesVersion",
       "selectCandidate_skipsUnsupportedPlatform", "selectCandidate_skipsEmptyFiles", "selectCandidate_noneEligible",
       "selectCandidate_lowerBandBeatsHigherVersion", "selectCandidate_highestVersionWithinBand",
@@ -930,7 +976,9 @@
       "selectCandidate_providesVersionRangeSatisfies", "selectCandidate_providesVersionRangeRejects",
       "selectCandidate_providesVersionRangeAboveTarget", "selectCandidate_providerNoRangeMatchesAny",
       "selectCandidate_providerRankedByRangeMaxNotRelease", "selectCandidate_returnsTiedSet",
-      "shouldPrompt_withinThreshold", "shouldPrompt_aboveThreshold", "shouldPrompt_noReason",
+      "isWithinContextCeiling_ranksLadder",
+      "shouldPrompt_withinThreshold", "shouldPrompt_aboveThreshold", "shouldPrompt_offNeverPrompts",
+      "shouldPrompt_noReason", "shouldPrompt_feedTrustDefaultAllowsAutoUpdate",
       "promptTrustFeed_trustOnce", "promptTrustFeed_cancelReturnsNil", "promptTrustFeed_trustAlwaysPersists",
       "promptTrustFeed_neverBlocks",
       "promptSelectPackageSource_picksSelection", "promptSelectPackageSource_autoKeepsWinner",
@@ -942,7 +990,8 @@
       "feedSourceOf_provider", "feedSourceOf_selfDeclared", "feedSourceOf_userFeed", "feedSourceOf_other",
       "persistSource_writesDirect", "persistSource_recordsProvider", "persistSource_storesFeedUrlForOther",
       "persistSource_skipsUnchanged",
-      "resolve_cascadeShortCircuitsOnDeclaredDirect", "resolve_fallsThroughToTrustedDirect",
+      "resolve_cascadeShortCircuitsOnDeclaredDirect", "resolve_fallsThroughToExtraFeed",
+      "resolve_fallsThroughToTrustedDirect",
       "resolve_untrustedRequiredFailsWithoutPrompt", "resolve_untrustedApprovedProceeds",
       "resolve_untrustedOptionalSkips", "resolve_noCandidateRequiredFails", "resolve_noCandidateOptionalSkips",
       "resolve_pinnedReuseProceeds", "resolve_pinnedMissingRequiredAborts", "resolve_pinnedMissingOptionalSkips",

@@ -1,6 +1,7 @@
 lfs = require "lfs"
 Downloader = require "l0.DependencyControl.Downloader"
 UpdateFeed = require "l0.DependencyControl.UpdateFeed"
+FeedTrust =  require "l0.DependencyControl.FeedTrust"
 fileOps =    require "l0.DependencyControl.FileOps"
 Common =     require "l0.DependencyControl.Common"
 Enum =       require "l0.DependencyControl.Enum"
@@ -41,19 +42,8 @@ TrustBand = Enum "UpdaterTrustBand", {
 ---@field stickiness? SourceChoiceStickiness The source-choice stickiness to persist; set when installRequired is true.
 ---@field maxVersion? number The highest candidate version found during resolution; set when installRequired is true.
 
----A ceiling on which updates are allowed to prompt the user for approval, in order of decreasing
----interactivity requirements.
----@alias PromptThreshold
----| 1 # UserRequested: prompt only for user-initiated actions (e.g. a UI like the Toolbox)
----| 2 # DependencyResolution: also prompt while installing/updating a module as a dependency
----| 3 # AutoUpdates: also prompt during background scheduled update checks
-PromptThreshold = Enum "UpdaterPromptThreshold", {
-    UserRequested:        1
-    DependencyResolution: 2
-    AutoUpdates:          3
-}
-
--- Why a given update is running.
+-- Why a given update is running. The values double as the rungs of the update-context ladder,
+-- ordered by autonomy (see UpdateContextCeiling).
 ---@alias UpdateReason
 ---| "user-requested" # UserRequested: an explicit user/UI request (e.g. the Toolbox)
 ---| "dependency-resolution" # DependencyResolution: installing/updating a module as a dependency of another
@@ -64,11 +54,27 @@ UpdateReason = Enum "UpdateReason", {
     AutoUpdate:           "auto-update"
 }
 
--- The lowest prompt threshold at which an update of each reason is allowed to prompt.
-reasonPromptThreshold = {
-    [UpdateReason.UserRequested]:        PromptThreshold.UserRequested
-    [UpdateReason.DependencyResolution]: PromptThreshold.DependencyResolution
-    [UpdateReason.AutoUpdate]:           PromptThreshold.AutoUpdates
+---A ceiling on the update-context ladder: names the most autonomous context for which a gated behavior —
+---running at all (`updates.mode`) or prompting the user (the prompt thresholds) — still applies.
+---Every value includes all less autonomous contexts; `off` includes none.
+---@alias UpdateContextCeiling
+---| "off" # Off: no context at all
+---| "user-requested" # UserRequested: only actions the user starts themselves (e.g. via the Toolbox)
+---| "dependency-resolution" # DependencyResolution: also installing/updating a module as a dependency
+---| "auto-update" # AutoUpdate: also background scheduled update checks
+ContextCeiling = Enum "UpdateContextCeiling", {
+    Off:                  "off"
+    UserRequested:        UpdateReason.UserRequested
+    DependencyResolution: UpdateReason.DependencyResolution
+    AutoUpdate:           UpdateReason.AutoUpdate
+}
+
+-- Each context's rank on the ladder, for ceiling comparisons (`off` ranks below every context).
+contextRank = {
+    [ContextCeiling.Off]:                  0
+    [ContextCeiling.UserRequested]:        1
+    [ContextCeiling.DependencyResolution]: 2
+    [ContextCeiling.AutoUpdate]:           3
 }
 
 -- The user's decision when asked to trust a candidate from an untrusted feed (a cancelled prompt is nil).
@@ -210,6 +216,7 @@ msgs = {
     }
     updaterErrorComponent: {"DownloadManager (adding download)", "DownloadManager"}
     checkFeed: {
+        fetchDenied: "Skipped feed %s: it's blocked, or untrusted while fetchUntrustedFeeds is 'never'. Trust the feed to update from it."
         downloadFailed: "Failed to download feed: %s"
         badChannel: "The specified update channel '%s' wasn't present in the feed."
         invalidVersion: "The feed contains an invalid version record for %s '%s' (channel: %s): %s."
@@ -280,13 +287,27 @@ class UpdateTask
     ---@private
     @__DependencyControl = nil
 
+    -- Defaults for the prompt-threshold `updates` settings this class owns, applied when the config key is unset.
+    ---@type UpdateContextCeiling
+    @defaultFeedTrustPromptThreshold     = ContextCeiling.AutoUpdate
+    ---@type UpdateContextCeiling
+    @defaultPackageChoicePromptThreshold = ContextCeiling.UserRequested
+
+    ---Reports whether an update context is allowed under a ceiling on the context ladder.
+    ---@param reason UpdateReason The context asking to act.
+    ---@param ceiling? UpdateContextCeiling The most autonomous context still allowed.
+    ---@return boolean within True when the context sits at or below the ceiling; false when the ceiling is `off`, unset, or unrecognized.
+    @isWithinContextCeiling = (reason, ceiling) ->
+        ceilingRank = contextRank[ceiling]
+        ceilingRank != nil and (contextRank[reason] or math.huge) <= ceilingRank
+
     ---Converts updater status/error codes into user-facing error messages.
     ---@param code number
     ---@param name string
     ---@param scriptType ScriptType A Common.ScriptType value.
     ---@param isInstall boolean
     ---@param detailMsg? string
-    ---@return string
+    ---@return string message The user-facing error text for the status code.
     @getUpdaterErrorMsg = (code, name, scriptType, isInstall, detailMsg) ->
         if code <= -100
             -- a component-encoded status packs its component id as floor(-code / 100)
@@ -315,22 +336,22 @@ class UpdateTask
         @status = nil
         @targetVersion = targetVersionNumber
 
-        -- UpdateFeed settings
-        @feedConfig = {blockPrivateHosts: @updater.config.c.updaterBlockPrivateHosts}
-        if @updater.config.c.dumpFeeds
-            @feedConfig.downloadPath = aegisub.decode_path "?user/feedDump/"
-            @feedConfig.dumpExpanded = true
-
     ---Loads a candidate feed, downloading it if necessary.
     ---@param feedUrl string
     ---@return UpdateFeed? feed The loaded feed, or nil on download failure.
     ---@return string? err Error message on failure.
     ---@private
     __loadFeed: (feedUrl) =>
-        feed = UpdateFeed feedUrl, false, nil, @feedConfig, @logger
-        unless feed.data -- no cached data available, perform download
-            success, err = feed\fetch!
-            return nil, msgs.checkFeed.downloadFailed\format err unless success
+        -- Refuse a blocked feed outright, and an untrusted one while fetchUntrustedFeeds is 'never'; the
+        -- surfaced reason keeps a skipped update from being silent. Untrusted feeds under always/prompt are
+        -- still fetched — the install-trust prompt (feedTrustPromptThreshold) gates acting on them.
+        feedTrust = @updater.feedTrust
+        return nil, msgs.checkFeed.fetchDenied\format feedUrl if feedTrust and feedTrust\getFetchDecision(feedUrl) == FeedTrust.FetchDecision.Deny
+
+        feed = @updater.feedLoader\load feedUrl, {autoLoad: false}
+        -- ensureLoaded reuses an in-memory/on-disk copy where valid, otherwise downloads
+        data, err = feed\ensureLoaded!
+        return nil, msgs.checkFeed.downloadFailed\format err unless data
         return feed
 
     ---Looks up this task's module in an already-loaded feed (matched by namespace), returning its
@@ -399,7 +420,7 @@ class UpdateTask
 
     ---Classifies which kind of source a provided candidate came from.
     ---@param candidate CandidatePackageSource The candidate to classify.
-    ---@return SourceFeedKind
+    ---@return SourceFeedKind kind The candidate's source kind (self-declared, user-feed, provider, or other).
     ---@private
     __feedSourceOf: (candidate) =>
         return SourceFeedKind.Provider unless candidate.isDirect
@@ -435,9 +456,8 @@ class UpdateTask
         @record.config.c.currentSource = currentSource
         @record.config\save!
 
-    ---Reports whether a candidate can satisfy this task's requirements and, if so, the version used to rank it. 
-    ---A direct candidate is judged and ranked by its release version; a provider by the alias version range it 
-    ---declares (or any version when it declares ranked by the highest version that range covers.
+    ---The version this candidate is ranked by, or nil when it can't satisfy the task. A direct candidate ranks by
+    ---its release version, a provider by the highest version its declared alias range covers (any version if none).
     ---@param candidate CandidatePackageSource
     ---@return number? rankVersion The ranking version, or nil if the candidate is ineligible.
     ---@private
@@ -506,12 +526,12 @@ class UpdateTask
 
     ---Reports whether this task may prompt the user for a given kind of prompt,
     ---e.g. to approve an untrusted feed or choose among multiple eligible candidates.
-    ---@param threshold? PromptThreshold The configured threshold for this prompt kind.
-    ---@return boolean
+    ---@param threshold? UpdateContextCeiling The configured ceiling for this prompt kind.
+    ---@return boolean allowed True when a prompt of this kind is permitted for this task's reason.
     ---@private
     __shouldPrompt: (threshold) =>
         return false unless @reason
-        reasonPromptThreshold[@reason] <= (threshold or PromptThreshold.UserRequested)
+        @@.isWithinContextCeiling @reason, threshold
 
     ---Asks the user whether to proceed with a candidate from an untrusted feed. Depending on the user's choice,
     ---the feed may be added to the trusted or blocked lists.
@@ -665,7 +685,7 @@ class UpdateTask
 
         -- Candidates are ranked by trust band. Feeds are fetched lazily per band, so we only reach for
         -- less-trusted feeds when no closer source can satisfy.
-        config, userFeed, declaredFeed = @updater.config.c, @record.config.c.userFeed, @record.feed
+        config, userFeed, declaredFeed = @updater.config.c.updates, @record.config.c.userFeed, @record.feed
         feedTrust = @updater.feedTrust
         isBlocked = (url) -> feedTrust\isBlocked url
         -- a user override feed counts as trusted for this resolution (unless block-listed), without polluting the shared set
@@ -739,8 +759,8 @@ class UpdateTask
 
             unless selected and selected.trustBand == TrustBand.DeclaredDirect
                 -- tier 2: the trusted discovery feeds — the user's extra feeds, trusted add-feeds, and the
-                -- official set.
-                gather config.extraFeeds
+                -- official set. (extraFeeds lives in the `feeds` section, not `updates`.)
+                gather @updater.config.c.feeds.extraFeeds
                 gather [url for url in *@addFeeds when isTrusted url]
                 gather [url for url in pairs(feedTrust\getOfficialTrustedFeeds!)] unless @optional -- don't trigger a registry-wide crawl for a nice-to-have
                 selected, tied, eligible = @__selectCandidate candidates
@@ -781,8 +801,8 @@ class UpdateTask
         -- `auto` never asks and the reuse path already settled the pick, so neither prompts here.
         unless reuse or stickiness == SourceChoiceStickiness.Auto
             -- present every eligible candidate when configured to, otherwise only an exact band/version tie
-            choices = config.packageChoiceOfferAllSources and eligible or tied
-            allowPrompt = @__shouldPrompt config.packageChoicePromptThreshold
+            choices = config.offerAllSources and eligible or tied
+            allowPrompt = @__shouldPrompt(config.packageChoicePromptThreshold or @@defaultPackageChoicePromptThreshold)
             remPick = remembered and @__matchRememberedCandidate candidates, remembered
 
             if stickiness == SourceChoiceStickiness.Retain
@@ -804,7 +824,7 @@ class UpdateTask
 
         -- the chosen candidate is from an untrusted feed: install it only if the user is asked and approves
         if selected.trustBand >= TrustBand.UntrustedDirect
-            trustDecision = @__shouldPrompt(@updater.config.c.feedTrustPromptThreshold) and @__promptTrustFeed selected
+            trustDecision = @__shouldPrompt(@updater.config.c.updates.feedTrustPromptThreshold or @@defaultFeedTrustPromptThreshold) and @__promptTrustFeed selected
             unless trustDecision == FeedTrustDecision.Once or trustDecision == FeedTrustDecision.Always
                 userBlockedFeed = trustDecision == FeedTrustDecision.Never
                 if @optional
@@ -870,7 +890,7 @@ class UpdateTask
         scriptSubDir = @record.namespace
         scriptSubDir = scriptSubDir\gsub "%.","/" if @record.scriptType == Common.ScriptType.Module
 
-        @@__downloader.blockPrivateHosts = @updater.config.c.updaterBlockPrivateHosts
+        @@__downloader.blockPrivateHosts = @updater.config.c.updates.blockPrivateHosts
         @@__downloader\clear!
         for file in *update.files
             file.type or= "script"
@@ -990,7 +1010,7 @@ class UpdateTask
                                 SemanticVersioning\toString @record.version
 
 UpdateTask.UpdateStatus = UpdateStatus
-UpdateTask.PromptThreshold = PromptThreshold
+UpdateTask.ContextCeiling = ContextCeiling
 UpdateTask.UpdateReason = UpdateReason
 UpdateTask.SourceChoiceStickiness = SourceChoiceStickiness
 UpdateTask.SourceFeedKind = SourceFeedKind

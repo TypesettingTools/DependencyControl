@@ -1,0 +1,430 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/master/schemas/config/v0.7.0.json",
+  "title": "DependencyControl Config File v0.7.0",
+  "description": "DependencyControl's on-disk configuration file (by default `<Aegisub user dir>/config/l0.DependencyControl.json`).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema"],
+  "properties": {
+    "$schema": {
+      "description": "Identifies the config format: the URL of the DependencyControl config schema this file conforms to. DependencyControl stamps it when it migrates a pre-0.7.0 config, and editors use it to validate.",
+      "const": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/master/schemas/config/v0.7.0.json"
+    },
+    "config": { "$ref": "#/$defs/GlobalConfig" },
+    "macros": {
+      "description": "Installed automation scripts, keyed by their namespaced identifier.",
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/NamespacedIdentifier" },
+      "additionalProperties": { "$ref": "#/$defs/ScriptRecord" }
+    },
+    "modules": {
+      "description": "Installed modules, keyed by their namespaced identifier.",
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/NamespacedIdentifier" },
+      "additionalProperties": { "$ref": "#/$defs/ScriptRecord" }
+    }
+  },
+  "$defs": {
+    "GlobalConfig": {
+      "description": "Global DependencyControl settings, organized into topic sections.",
+      "type": "object",
+      "properties": {
+        "updates": {
+          "description": "Update-engine settings.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "mode": {
+              "$ref": "#/$defs/UpdateContextCeiling",
+              "description": "Which update contexts may install/update at all: 'auto-update' (default) enables everything, 'dependency-resolution' disables background checks while keeping manual actions and dependency installs, 'user-requested' allows only actions you start yourself, and 'off' disables installs and updates entirely.",
+              "default": "auto-update"
+            },
+            "checkInterval": {
+              "description": "Minimum seconds between automatic update checks for a given script.",
+              "type": "integer",
+              "minimum": 0,
+              "default": 302400
+            },
+            "waitTimeout": {
+              "description": "Seconds to wait for another process's in-progress update to finish before giving up.",
+              "type": "integer",
+              "minimum": 0,
+              "default": 60
+            },
+            "orphanTimeout": {
+              "description": "Seconds after which a held updater lock whose owner has vanished (e.g. a crashed process) is treated as stale and may be taken over.",
+              "type": "integer",
+              "minimum": 0,
+              "default": 50
+            },
+            "feedTrustPromptThreshold": {
+              "$ref": "#/$defs/UpdateContextCeiling",
+              "description": "How freely DependencyControl may prompt to trust an untrusted feed before installing from it. Defaults to prompting in all contexts, since it gates whether an update can succeed; with 'off' (or in a context above the ceiling) the install fails or is skipped instead.",
+              "default": "auto-update"
+            },
+            "packageChoicePromptThreshold": {
+              "$ref": "#/$defs/UpdateContextCeiling",
+              "description": "How freely DependencyControl may prompt to choose among several equally-ranked package sources. Defaults to only actions you start yourself; with 'off' (or in a context above the ceiling) a stable tie-breaker picks instead.",
+              "default": "user-requested"
+            },
+            "offerAllSources": {
+              "description": "When more than one source qualifies, offer every eligible one (including lower-ranked and untrusted sources) so you can override the ranking, instead of only the top-ranked candidates.",
+              "type": "boolean",
+              "default": false
+            },
+            "blockPrivateHosts": {
+              "description": "Refuse feed and package downloads from hosts that resolve to a private, loopback, or link-local address (an SSRF safeguard). Turn off to use feeds on your local network.",
+              "type": "boolean",
+              "default": true
+            }
+          }
+        },
+        "feeds": {
+          "description": "Feed trust, discovery, and caching settings.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "extraFeeds": {
+              "description": "Your own feeds, trusted and used as discovery roots: they are searched for updates and their advertised `knownFeeds` are crawled.",
+              "type": "array",
+              "items": { "type": "string", "format": "uri" },
+              "default": []
+            },
+            "trustedFeeds": {
+              "description": "Feeds you trust but that are not discovery roots: they grant trust to feeds reached another way and are never themselves crawled.",
+              "type": "array",
+              "items": { "type": "string", "format": "uri" },
+              "default": []
+            },
+            "blockedFeeds": {
+              "description": "Feeds that must never be used as a package source, overriding trust. Merged with the official block list in DependencyControl's own feed.",
+              "type": "array",
+              "items": { "$ref": "#/$defs/BlockedFeed" },
+              "default": []
+            },
+            "fetchUntrustedFeeds": {
+              "$ref": "#/$defs/FetchUntrustedFeeds",
+              "description": "Policy for fetching untrusted feeds encountered during discovery.",
+              "default": "always"
+            },
+            "crawlLimits": {
+              "$ref": "#/$defs/CrawlLimits",
+              "description": "Bounds on untrusted feed-graph expansion during discovery. Any unset budget falls back to its built-in default."
+            },
+            "cacheMaxAge": {
+              "description": "Default lifetime, in seconds, of a cached feed snapshot before it is refetched.",
+              "type": "integer",
+              "minimum": 0,
+              "default": 3600
+            }
+          }
+        },
+        "logging": {
+          "description": "Logging and log-retention settings.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "defaultLevel": {
+              "description": "Default log verbosity; higher levels log more (mirrors the Logger's `defaultLevel`).",
+              "type": "integer",
+              "default": 3
+            },
+            "toFile": {
+              "description": "Whether to write logs to file (mirrors the Logger's `toFile`).",
+              "type": "boolean",
+              "default": true
+            },
+            "maxFiles": {
+              "description": "Maximum number of log files to retain before the oldest are trimmed.",
+              "type": "integer",
+              "minimum": 0,
+              "default": 200
+            },
+            "maxAge": {
+              "description": "Maximum age, in seconds, of a log file before it is trimmed.",
+              "type": "integer",
+              "minimum": 0,
+              "default": 604800
+            },
+            "maxSize": {
+              "description": "Maximum total size, in bytes, of retained log files before trimming.",
+              "type": "integer",
+              "minimum": 0,
+              "default": 10000000
+            }
+          }
+        },
+        "paths": {
+          "description": "Base directories for DependencyControl's files. Each supports Aegisub path tokens such as `?user` and `?data`.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "config": {
+              "description": "Directory holding DependencyControl's config files.",
+              "type": "string",
+              "default": "?user/config"
+            },
+            "log": {
+              "description": "Directory holding DependencyControl's log files.",
+              "type": "string",
+              "default": "?user/log"
+            },
+            "cache": {
+              "description": "Base directory for DependencyControl's on-disk caches. Each cache lives in a `<namespace>/<name>` subdirectory beneath it (e.g. the feed cache at `<cache>/l0.DependencyControl/feeds`).",
+              "type": "string",
+              "default": "?user/cache"
+            }
+          }
+        }
+      }
+    },
+
+    "UpdateContextCeiling": {
+      "description": "A ceiling on the ladder of update contexts, naming the most autonomous context for which the gated behavior still applies. Each value includes all less autonomous contexts: 'off' (none at all) < 'user-requested' (actions you start yourself, e.g. via the Toolbox) < 'dependency-resolution' (also installing/updating a module as a dependency) < 'auto-update' (also background scheduled update checks).",
+      "enum": ["off", "user-requested", "dependency-resolution", "auto-update"]
+    },
+
+    "FetchUntrustedFeeds": {
+      "description": "Policy for fetching an untrusted feed: 'always' fetches without asking; 'never' skips it; 'prompt' asks first, falling back to 'never' where no prompter is available (e.g. headless).",
+      "enum": ["always", "never", "prompt"]
+    },
+
+    "CrawlLimits": {
+      "description": "Per-budget caps on untrusted feed-graph expansion during discovery, keyed by budget name.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "per-feed": {
+          "description": "Cap on how many untrusted feeds a single feed may contribute.",
+          "type": "integer",
+          "minimum": 0,
+          "default": 25
+        },
+        "per-root": {
+          "description": "Per-subtree budget for untrusted expansion out from one config-derived feed.",
+          "type": "integer",
+          "minimum": 0,
+          "default": 50
+        },
+        "depth": {
+          "description": "Crawl-depth limit; a feed reached at this depth is left unfetched.",
+          "type": "integer",
+          "minimum": 0,
+          "default": 7
+        }
+      }
+    },
+
+    "BlockedFeed": {
+      "description": "A blocked feed entry: the URL/prefix to match, how to match it, and why.",
+      "type": "object",
+      "required": ["url"],
+      "additionalProperties": false,
+      "properties": {
+        "url": {
+          "description": "The feed URL or URL prefix to match (case-insensitive).",
+          "type": "string"
+        },
+        "matchMode": {
+          "description": "How `url` is matched: 'prefix' (default) blocks every feed whose URL starts with `url`; 'exact' blocks only that exact URL.",
+          "enum": ["prefix", "exact"],
+          "default": "prefix"
+        },
+        "reason": {
+          "description": "Human-readable explanation of why the feed is blocked.",
+          "type": "string"
+        }
+      }
+    },
+
+    "NamespacedIdentifier": {
+      "description": "A dot-separated namespaced identifier (e.g. 'l0.DependencyControl.Toolbox', 'a-mo.LineCollection').",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+)+$",
+      "lpegPattern": "[A-Za-z0-9_-]+ ('.' [A-Za-z0-9_-]+)+ !."
+    },
+
+    "ScriptRecord": {
+      "description": "The persisted installation record for one managed or unmanaged script/module. Beyond the fields below, DependencyControl may store additional bookkeeping here, so unknown keys are tolerated.",
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "namespace": {
+          "$ref": "#/$defs/NamespacedIdentifier",
+          "description": "The script's namespaced identifier (matches its key in `macros`/`modules`)."
+        },
+        "name": {
+          "description": "Human-readable script name.",
+          "type": "string"
+        },
+        "version": {
+          "description": "Installed version as DependencyControl's packed version number (a single integer encoding major.minor.patch), not a version string.",
+          "type": "integer"
+        },
+        "author": {
+          "description": "Script author.",
+          "type": "string"
+        },
+        "description": {
+          "description": "Short description of the script.",
+          "type": "string"
+        },
+        "feed": {
+          "description": "The feed this script declares for its own updates.",
+          "type": "string",
+          "format": "uri"
+        },
+        "userFeed": {
+          "description": "A per-script feed override you set, taking precedence over the declared `feed`.",
+          "type": "string",
+          "format": "uri"
+        },
+        "url": {
+          "description": "The script's homepage or project URL.",
+          "type": "string",
+          "format": "uri"
+        },
+        "configFile": {
+          "description": "Name of this script's own per-script config file.",
+          "type": "string"
+        },
+        "moduleName": {
+          "description": "The Lua module name for a module; `false` for an automation script.",
+          "type": ["string", "boolean"]
+        },
+        "channels": {
+          "description": "Update channels available for this script.",
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "lastChannel": {
+          "description": "The update channel last installed from.",
+          "type": "string"
+        },
+        "requiredModules": {
+          "description": "The script's declared module dependencies.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/ModuleDependency" }
+        },
+        "provides": {
+          "description": "Module aliases this module satisfies for `require` (a bare string is shorthand for `{ \"name\": <string> }`).",
+          "type": "array",
+          "items": { "$ref": "#/$defs/ModuleAlias" }
+        },
+        "lastUpdateCheck": {
+          "description": "Unix time of the last automatic update check for this script.",
+          "type": "integer"
+        },
+        "currentSource": {
+          "$ref": "#/$defs/SourceChoiceRecord",
+          "description": "The remembered source this script effectively updates from, and how sticky that choice is."
+        },
+        "unmanaged": {
+          "description": "True for a script present but installed/managed outside DependencyControl (never auto-updated).",
+          "type": "boolean"
+        }
+      }
+    },
+
+    "ModuleDependency": {
+      "description": "A declared dependency on another module.",
+      "type": "object",
+      "required": ["moduleName"],
+      "additionalProperties": true,
+      "properties": {
+        "moduleName": {
+          "description": "Lua require-path of the dependency — a bare module name ('ffi', 'json', 'Yutils') or a dotted path ('aegisub.util', 'l0.Functional').",
+          "type": "string"
+        },
+        "version": {
+          "description": "Minimum required version (a semantic version string, or an npm-style range).",
+          "type": "string"
+        },
+        "url": {
+          "description": "The required module's homepage or project URL.",
+          "type": "string",
+          "format": "uri"
+        },
+        "feed": {
+          "description": "A feed to install the required module from.",
+          "type": "string",
+          "format": "uri"
+        },
+        "name": {
+          "description": "Human-readable name of the required module.",
+          "type": "string"
+        },
+        "optional": {
+          "description": "When true, DependencyControl skips (rather than fails) if the dependency can't be satisfied.",
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+
+    "ModuleAlias": {
+      "description": "An alias a module provides for `require`. Either a bare alias name, or an object naming the alias and (optionally) the version range it satisfies.",
+      "oneOf": [
+        { "type": "string" },
+        {
+          "type": "object",
+          "required": ["name"],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "description": "The provided alias name.",
+              "type": "string"
+            },
+            "version": {
+              "description": "The version (or npm-style range) the alias satisfies. Omit for any version.",
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+
+    "SourceChoiceRecord": {
+      "description": "A remembered package-source choice, persisted so DependencyControl keeps using and updating the same source.",
+      "type": "object",
+      "required": ["feedSource", "channel", "stickiness"],
+      "additionalProperties": false,
+      "properties": {
+        "feedSource": {
+          "description": "Where the source came from: 'self-declared' (the record's own feed), 'user-feed' (a per-script override), 'provider' (another module that provides the required one), or 'other' (a third-party trusted/extra feed, whose URL is stored in `feedUrl`).",
+          "enum": ["self-declared", "user-feed", "provider", "other"]
+        },
+        "feedUrl": {
+          "description": "The literal feed URL; stored (and required) only when `feedSource` is 'other'.",
+          "type": "string",
+          "format": "uri"
+        },
+        "channel": {
+          "description": "The update channel the source was resolved on.",
+          "type": "string"
+        },
+        "provider": {
+          "description": "The provider that satisfied the requirement, when resolved indirectly through a `provides` alias.",
+          "type": "object",
+          "required": ["namespace"],
+          "additionalProperties": false,
+          "properties": {
+            "namespace": {
+              "$ref": "#/$defs/NamespacedIdentifier",
+              "description": "Namespace of the providing module."
+            },
+            "version": {
+              "description": "The provided alias version range, if the provider declared one.",
+              "type": "string"
+            }
+          }
+        },
+        "stickiness": {
+          "description": "How sticky the choice is on later resolutions: 'unset' (resolve normally, prompt only if interactive); 'once' (prompt again but preselect this pick); 'retain' (reuse without prompting while still eligible); 'pinned' (always reuse; fail a required dependency if it's gone, skip an optional one); 'auto' (never prompt, always re-resolve by ranking).",
+          "enum": ["unset", "once", "retain", "pinned", "auto"]
+        }
+      }
+    }
+  }
+}

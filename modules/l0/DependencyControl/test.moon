@@ -32,14 +32,17 @@ UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
     NamedSemaphore:     (controls\requireTest "NamedSemaphore")!
     ConfigHandler:      (controls\requireTest "ConfigHandler")!
     ConfigView:         (controls\requireTest "ConfigView")!
+    ConfigSchema:       (controls\requireTest "config-schema")!
     ModuleLoader:       (controls\requireTest "ModuleLoader")!
     Record:             (controls\requireTest "Record")!
     UpdateTask:         (controls\requireTest "UpdateTask")!
     Updater:            (controls\requireTest "Updater")!
     FeedTrust:          (controls\requireTest "FeedTrust")!
+    FeedLoader:         (controls\requireTest "FeedLoader") basePath, DepCtrl
     Host:               (controls\requireTest "Host")!
     FeedInventory:      (controls\requireTest "FeedInventory")!
     FeedManager:        (controls\requireTest "FeedManager")!
+    FileCache:          (controls\requireTest "FileCache") basePath
     ScriptUpdateRecord: (controls\requireTest "ScriptUpdateRecord")!
     UpdateFeed:         (controls\requireTest "UpdateFeed") basePath, DepCtrl
     GitRepository:      (controls\requireTest "GitRepository")!

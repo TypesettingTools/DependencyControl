@@ -3,6 +3,7 @@ Logger  = require "l0.DependencyControl.Logger"
 FileOps = require "l0.DependencyControl.FileOps"
 SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
 
+JSON_SCHEMA_ID_KEYWORD = "$schema"
 defaultLogger = Logger fileBaseName: "DepCtrl.JsonSchema"
 
 -- Lazily resolve lua-schema because it's only available on luarocks, not DepCtrl
@@ -28,6 +29,8 @@ shadowPatternKeyword = (luaSchemaLib) ->
         (schema, _, dataPtr) -> schema\_mk_output true, nil, "pattern", dataPtr, schema.validation
     patternKeywordShadowed = true
 
+---Loads and memoizes the lua-schema library, installing the `pattern`-keyword shadow on first successful load.
+---@return table|false luaSchemaLib The lua-schema library, or false when it isn't installed.
 loadLuaSchemaLib = ->
     return luaSchema unless luaSchema == nil
     ok, lib = pcall require, "schema"
@@ -35,9 +38,10 @@ loadLuaSchemaLib = ->
     shadowPatternKeyword luaSchema if luaSchema
     return luaSchema
 
--- Flattens lua-schema's `detailed` validation output into a list of "<location>: <error>" strings.
--- A failed result either carries a leaf `.error` (at `.instanceLocation`) or nests further failures
--- under `.errors`.
+---Flattens lua-schema's `detailed` validation output into a list of "<location>: <error>" strings.
+---@param result table A lua-schema result node: a leaf carrying `.error` at `.instanceLocation`, or a branch nesting further results under `.errors`.
+---@param acc? string[] Accumulator for the recursive descent (callers omit it).
+---@return string[] errors The flattened "<location>: <error>" messages, empty when the node carries none.
 collectValidationErrors = (result, acc = {}) ->
     if result.errors
         collectValidationErrors sub, acc for sub in *result.errors
@@ -83,9 +87,14 @@ class JsonSchema
         }
     }
 
-    -- Whether the no-op `pattern` keyword has already been installed (see validate).
-    @patternKeywordShadowed = false
+    -- The JSON Schema keyword whose value declares which schema a document conforms to (`$schema`).
+    @JSON_SCHEMA_ID_KEYWORD = JSON_SCHEMA_ID_KEYWORD
 
+    ---Finds the versioned schema files in a directory, mapping each file's declared version to its path.
+    ---@param schemaDir string Directory to scan.
+    ---@param fileNamePattern? string Lua pattern matched against each filename, capturing the version (default matches `vX.Y.Z.json`).
+    ---@return table<string, string>? schemaPathsByVersion Version → full file path, or nil when the directory can't be read or holds no matching file.
+    ---@return string? err The failure message accompanying a nil result.
     @getSchemasInDirectory = (schemaDir, fileNamePattern = "^v(%d+%.%d+%.%d+)%.json$") =>
         schemaDirContents, listErr = FileOps.listDir schemaDir
         unless schemaDirContents
@@ -102,6 +111,15 @@ class JsonSchema
             return nil, msgs.getSchemasInDirectory.errors.noSchemasFound\format schemaDir, fileNamePattern
         return schemaPathsByVersion
 
+    ---Validates data against the best-matching schema from the provided versions. A document's own root
+    ---`$schema` names its version authoritatively; otherwise the given version hint is tried first, 
+    ---then each remaining schema highest-version-first.
+    ---@param data table The value to validate.
+    ---@param schemasByVersion table<string, string|JsonSchema> Version → schema file path or ready instance.
+    ---@param dataSchemaVersion? string|fun(data: table): string? Version hint for data with no `$schema`: a fixed version, or a function that derives it from the data (e.g. a feed reading its own `dependencyControlFeedFormatVersion`, a field that predates `$schema`).
+    ---@return boolean? valid True/false on a completed validation, nil if none could run.
+    ---@return string? version The schema version validated against, or nil when none matched.
+    ---@return string? err Validation errors on failure, or a message when validation couldn't run.
     @validateAny: (data, schemasByVersion, dataSchemaVersion) =>
         trySchemaVersion = (version) ->
             entry = schemasByVersion[version]
@@ -122,6 +140,13 @@ class JsonSchema
             if valid == false
                 return false, version, msgs.validateAny.errors.invalid\format version, err
             return true, version
+
+        -- a document's own root `$schema` names its version authoritatively; otherwise fall back to the hint 
+        declaredVersion = type(data) == "table" and type(data[JSON_SCHEMA_ID_KEYWORD]) == "string" and
+                          data[JSON_SCHEMA_ID_KEYWORD]\match "v(%d+%.%d+%.%d+)%.json"
+        unless declaredVersion
+            declaredVersion = if type(dataSchemaVersion) == "function" then dataSchemaVersion(data) else dataSchemaVersion
+        dataSchemaVersion = declaredVersion
 
         errors = {}
         if dataSchemaVersion
@@ -144,7 +169,7 @@ class JsonSchema
 
     ---Loads and parses a JSON schema, ready to validate against.
     ---@param schemaOrSchemaPath table|string The JSON schema, either as a path to the schema file or a pre-parsed table.
-    ---@param logger? Logger
+    ---@param logger? Logger Logger for load/parse errors (defaults to a shared JsonSchema logger).
     new: (schemaOrSchemaPath, @logger = defaultLogger) =>
         dataType = type schemaOrSchemaPath
         @data = schemaOrSchemaPath
@@ -175,7 +200,7 @@ class JsonSchema
     validate: (data) =>
         lib = loadLuaSchemaLib!
         return nil, msgs.validate.errors.libMissing unless lib
-        @logger\debug msgs.validate.noPcre if @patternKeywordShadowed
+        @logger\debug msgs.validate.noPcre if patternKeywordShadowed
             
         ok, result = pcall -> lib.new(@data)\validate data
         return nil, result unless ok

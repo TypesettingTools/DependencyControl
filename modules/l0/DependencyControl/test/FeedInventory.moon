@@ -13,8 +13,9 @@
   SourceFeedKind = UpdateTask.SourceFeedKind
 
   -- a fake FeedTrust; opts: official (set), trusted (set), blocked (set), status (url -> FeedTrustStatus),
-  -- blockEntries (url -> entry). getTrustStatus returns (status, blockEntry): a blocked url yields Blocked and
-  -- its entry, else the opts.status mapping (default Untrusted). official/isTrusted/isBlocked back the crawl.
+  -- blockEntries (url -> entry), fetchUntrustedFeeds (policy string), prompter (url -> bool for the prompt
+  -- policy). getTrustStatus returns (status, blockEntry). isTrusted/isBlocked/shouldFetch back the crawl's
+  -- follow decision; shouldFetch mirrors the real gate (Allow -> true, Deny -> false, Prompt -> prompter).
   makeFeedTrust = (opts = {}) ->
     {
       getOfficialTrustedFeeds: => opts.official or {}
@@ -23,13 +24,48 @@
       getTrustStatus: (url) =>
         return TrustStatus.Blocked, (opts.blockEntries or {})[url] if (opts.blocked or {})[url]
         (opts.status or {})[url] or TrustStatus.Untrusted
+      getFetchDecision: (url) =>
+        return FeedTrust.FetchDecision.Deny if (opts.blocked or {})[url]
+        return FeedTrust.FetchDecision.Allow if (opts.trusted or {})[url]
+        switch opts.fetchUntrustedFeeds
+          when "never" then FeedTrust.FetchDecision.Deny
+          when "prompt" then FeedTrust.FetchDecision.Prompt
+          else FeedTrust.FetchDecision.Allow
+      shouldFetch: (url) =>
+        switch @getFetchDecision url
+          when FeedTrust.FetchDecision.Allow then true
+          when FeedTrust.FetchDecision.Deny then false
+          else opts.prompter and opts.prompter(url) and true or false
     }
 
-  makeInventory = (configC, feedTrustOpts) -> FeedInventory {c: configC}, makeFeedTrust feedTrustOpts
+  -- a fake feed loader: `.cache\getMeta` reports last-fetch metadata and `\load url` returns a fake feed.
+  -- Both default to "nothing known"; override per test via opts.meta (url -> meta) and opts.load (url -> feed).
+  makeFeedLoader = (opts = {}) ->
+    {
+      cache: {getMeta: (_, key) -> opts.meta and opts.meta[key]}
+      load: (_, url) -> opts.load and opts.load url
+    }
+
+  -- section a flat test config into the live sectioned layout (feeds/updates/paths + the macros/modules registries)
+  makeInventory = (configC = {}, feedTrustOpts, feedLoader) ->
+    sectioned = {
+      feeds:   {extraFeeds: configC.extraFeeds, trustedFeeds: configC.trustedFeeds, crawlLimits: configC.feedCrawlLimits}
+      updates: {blockPrivateHosts: configC.updaterBlockPrivateHosts}
+      paths:   {cache: "?user/cache"}
+      macros:  configC.macros
+      modules: configC.modules
+    }
+    FeedInventory {c: sectioned}, (makeFeedTrust feedTrustOpts), (feedLoader or makeFeedLoader!)
   gatherFeeds = (configC, feedTrustOpts) -> makeInventory(configC, feedTrustOpts)\gather!
 
-  -- a fake feed loader over a fixed {url -> knownFeeds list} map; an unmapped url is unreachable (nil)
-  knownFeedsLoader = (map) -> (url) -> map[url]
+  -- a fake FeedLoader over a fixed {url -> knownFeeds list} map: load(url) yields a feed exposing those
+  -- knownFeeds; an unmapped url yields a feed with no `.data`, i.e. unreachable (like a failed fetch)
+  crawlLoader = (map) ->
+    makeFeedLoader {
+      load: (url) ->
+        known = map[url]
+        {data: known, getKnownFeeds: => known or {}}
+    }
 
   -- index a gathered feed list by url for assertions
   byUrl = (feeds) -> {f.url, f for f in *feeds}
@@ -144,8 +180,9 @@
 
     -- crawl discovers transitively-advertised feeds, tagging them TransitiveKnown and recording the advertiser
     crawl_discoversTransitively: (ut) ->
-      inv = makeInventory {extraFeeds: {"root"}}, trusted: {"root": true, "mid": true}
-      feeds, stats = inv\crawl knownFeedsLoader {"root": {"mid", "leaf"}, "mid": {"deep"}}
+      loader = crawlLoader {"root": {"mid", "leaf"}, "mid": {"deep"}}
+      inv = makeInventory {extraFeeds: {"root"}}, {trusted: {"root": true, "mid": true}}, loader
+      feeds, stats = inv\crawl!
       m = byUrl feeds
       ut\assertEquals m["mid"].provenance, {Provenance.TransitiveKnown}
       ut\assertEquals m["leaf"].provenance, {Provenance.TransitiveKnown}
@@ -156,18 +193,39 @@
 
     -- with fetchUntrustedFeeds="never", an untrusted feed is recorded (advertised) but not fetched/expanded
     crawl_neverDoesNotFetchUntrusted: (ut) ->
-      inv = makeInventory {extraFeeds: {"root"}, fetchUntrustedFeeds: "never"}, trusted: {"root": true}
-      m = byUrl inv\crawl knownFeedsLoader {"root": {"untrusted"}, "untrusted": {"deep"}}
+      loader = crawlLoader {"root": {"untrusted"}, "untrusted": {"deep"}}
+      inv = makeInventory {extraFeeds: {"root"}}, {trusted: {"root": true}, fetchUntrustedFeeds: "never"}, loader
+      m = byUrl inv\crawl!
       ut\assertEquals m["untrusted"].provenance, {Provenance.TransitiveKnown}   -- recorded (advertised)
       ut\assertNil m["deep"]                                           -- not fetched -> not discovered
 
+    -- with fetchUntrustedFeeds="prompt", an untrusted feed is followed only when the prompter confirms it
+    crawl_promptFollowsOnlyConfirmedUntrusted: (ut) ->
+      asked = {}
+      prompter = (url) ->
+        asked[#asked + 1] = url
+        url == "yes"
+      -- deepYes is trusted so following the confirmed "yes" doesn't itself prompt again
+      loader = crawlLoader {
+        "root": {"yes", "no"}
+        "yes": {"deepYes"}, "no": {"deepNo"}
+      }
+      inv = makeInventory {extraFeeds: {"root"}}, {trusted: {"root": true, "deepYes": true}, fetchUntrustedFeeds: "prompt", :prompter}, loader
+      m = byUrl inv\crawl!
+      ut\assertNotNil m["yes"]      -- both untrusted feeds are recorded (advertised)
+      ut\assertNotNil m["no"]
+      ut\assertNotNil m["deepYes"]  -- confirmed -> followed -> its child is discovered
+      ut\assertNil m["deepNo"]      -- declined -> not followed
+      ut\assertEquals #asked, 2     -- only the two untrusted feeds were asked, once each
+
     -- the per-subtree budget caps how many untrusted feeds are fetched from one root
     crawl_boundsUntrustedPerRoot: (ut) ->
-      inv = makeInventory {extraFeeds: {"root"}, feedCrawlLimits: {[CrawlLimit.PerRoot]: 2}}, trusted: {"root": true}
-      feeds, stats = inv\crawl knownFeedsLoader {
+      loader = crawlLoader {
         "root": {"u1", "u2", "u3"}
         "u1": {"d1"}, "u2": {"d2"}, "u3": {"d3"}
       }
+      inv = makeInventory {extraFeeds: {"root"}, feedCrawlLimits: {[CrawlLimit.PerRoot]: 2}}, {trusted: {"root": true}}, loader
+      feeds, stats = inv\crawl!
       m = byUrl feeds
       -- all three untrusted feeds are recorded; only two are fetched, so only two children are discovered
       reached = 0
@@ -182,8 +240,9 @@
 
     -- the per-feed cap bounds how many untrusted feeds a single feed contributes
     crawl_boundsUntrustedPerFeed: (ut) ->
-      inv = makeInventory {extraFeeds: {"root"}, feedCrawlLimits: {[CrawlLimit.PerFeed]: 1}}, trusted: {"root": true}
-      feeds, stats = inv\crawl knownFeedsLoader {"root": {"u1", "u2"}}
+      loader = crawlLoader {"root": {"u1", "u2"}}
+      inv = makeInventory {extraFeeds: {"root"}, feedCrawlLimits: {[CrawlLimit.PerFeed]: 1}}, {trusted: {"root": true}}, loader
+      feeds, stats = inv\crawl!
       m = byUrl feeds
       ut\assertNotNil m["u1"]
       ut\assertNil m["u2"]
@@ -197,8 +256,9 @@
 
     -- a feed at the depth cap is left unfetched and reported with its route from the root
     crawl_reportsDepthTruncation: (ut) ->
-      inv = makeInventory {extraFeeds: {"root"}, feedCrawlLimits: {[CrawlLimit.Depth]: 1}}, trusted: {"root": true, "a": true}
-      feeds, stats = inv\crawl knownFeedsLoader {"root": {"a"}, "a": {"b"}}
+      loader = crawlLoader {"root": {"a"}, "a": {"b"}}
+      inv = makeInventory {extraFeeds: {"root"}, feedCrawlLimits: {[CrawlLimit.Depth]: 1}}, {trusted: {"root": true, "a": true}}, loader
+      feeds, stats = inv\crawl!
       m = byUrl feeds
       ut\assertNil m["b"]   -- "a" sat at the depth cap, so its knownFeeds were never read
       t = truncationFor stats, "a"
@@ -206,24 +266,11 @@
       ut\assertEquals t.route, {"root", "a"}
       ut\assertEquals t.dropped, 0
 
-    -- called with no loader, crawl fetches through the UpdateFeed class (faked here); a URL whose fake
-    -- feed has no `.data` is treated as unreachable
-    crawl_defaultLoaderUsesUpdateFeed: (ut) ->
-      knownByUrl = {"root": {"k1", "k2"}}
-      FeedInventory.__updateFeedClass = (url) ->
-        known = knownByUrl[url]
-        {data: known, getKnownFeeds: => known or {}}
-      inv = makeInventory {extraFeeds: {"root"}}, trusted: {"root": true, "k1": true, "k2": true}
-      m = byUrl inv\crawl!
-      FeedInventory.__updateFeedClass = nil
-      ut\assertEquals m["k1"].provenance, {Provenance.TransitiveKnown}
-      ut\assertEquals m["k2"].provenance, {Provenance.TransitiveKnown}
-      ut\assertEquals m["k1"].advertisedBy, {"root"}
-
     -- crawl marks each feed it successfully fetched; an advertised feed it can't load stays unmarked
     crawl_marksFetched: (ut) ->
-      inv = makeInventory {extraFeeds: {"root"}}, trusted: {"root": true, "mid": true}
-      m = byUrl inv\crawl knownFeedsLoader {"root": {"mid", "dead"}, "mid": {}}
+      loader = crawlLoader {"root": {"mid", "dead"}, "mid": {}}
+      inv = makeInventory {extraFeeds: {"root"}}, {trusted: {"root": true, "mid": true}}, loader
+      m = byUrl inv\crawl!
       ut\assertTrue m["root"].fetched   -- config root, loaded
       ut\assertTrue m["mid"].fetched    -- trusted, loaded (even with empty knownFeeds)
       ut\assertNil m["dead"].fetched    -- advertised but the loader returns nil -> unreachable
@@ -231,28 +278,37 @@
     -- a feed known only through trustedFeeds is trust-only: visible in the inventory but not a crawl root,
     -- so its knownFeeds are never expanded
     crawl_trustedFeedsNotCrawlRoot: (ut) ->
-      inv = makeInventory {trustedFeeds: {"tf"}}, trusted: {"tf": true}
-      m = byUrl inv\crawl knownFeedsLoader {"tf": {"child"}}
+      loader = crawlLoader {"tf": {"child"}}
+      inv = makeInventory {trustedFeeds: {"tf"}}, {trusted: {"tf": true}}, loader
+      m = byUrl inv\crawl!
       ut\assertTrue m["tf"].inTrustedFeeds
       ut\assertEquals m["tf"].provenance, {}   -- not a discovery source
       ut\assertNil m["tf"].fetched             -- never fetched (not a root)
       ut\assertNil m["child"]                  -- so its advertised feed isn't discovered
 
+    -- gather stamps each feed with its last-fetch time from the persistent cache; an uncached feed has none
+    gather_stampsLastFetchedFromCache: (ut) ->
+      loader = makeFeedLoader {meta: {"feed://cached": {key: "feed://cached", cachedAt: 1700000000, latestFile: "x.json"}}}
+      m = byUrl (makeInventory {extraFeeds: {"feed://cached", "feed://uncached"}}, {}, loader)\gather!
+      ut\assertEquals m["feed://cached"].lastFetchedAt, 1700000000
+      ut\assertNil m["feed://uncached"].lastFetchedAt
+
     -- a feed advertised by DepCtrl's own feed is official-known, not transitive-known
     crawl_depCtrlFeedTagsOfficialKnown: (ut) ->
+      loader = crawlLoader {[constants.DEPCTRL_FEED_URL]: {"known"}}
       inv = makeInventory {}, {
         official: {[constants.DEPCTRL_FEED_URL]: true}
         trusted: {[constants.DEPCTRL_FEED_URL]: true, "known": true}
-      }
-      m = byUrl inv\crawl knownFeedsLoader {[constants.DEPCTRL_FEED_URL]: {"known"}}
+      }, loader
+      m = byUrl inv\crawl!
       ut\assertEquals m["known"].provenance, {Provenance.OfficialKnown}
 
     _order: {
       "gather_tagsEachSource", "gather_mergesProvenance", "gather_surfacesTrustStatus", "gather_blockedByEntry"
       "gather_marksInUse", "getPackagesSourcedFrom_getEffectiveSource", "gather_empty"
-      "crawl_discoversTransitively", "crawl_neverDoesNotFetchUntrusted"
+      "crawl_discoversTransitively", "crawl_neverDoesNotFetchUntrusted", "crawl_promptFollowsOnlyConfirmedUntrusted"
       "crawl_boundsUntrustedPerRoot", "crawl_boundsUntrustedPerFeed", "crawl_reportsDepthTruncation"
-      "crawl_defaultLoaderUsesUpdateFeed", "crawl_marksFetched", "crawl_trustedFeedsNotCrawlRoot"
-      "crawl_depCtrlFeedTagsOfficialKnown"
+      "crawl_marksFetched", "crawl_trustedFeedsNotCrawlRoot"
+      "gather_stampsLastFetchedFromCache", "crawl_depCtrlFeedTagsOfficialKnown"
     }
   }

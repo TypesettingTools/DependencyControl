@@ -39,15 +39,47 @@ msgs = {
         }
     }
     manageFeeds: {
-        scanning:       "Discovering feeds — this fetches each known feed and may take a moment..."
+        scanning:       "Fetching all feeds — this may take a moment..."
         noFeeds:        "DependencyControl doesn't know about any feeds yet."
         openFailed:     "Couldn't open a browser for %s."
         sourcedWarning: "%s %s will change the update source of these installed packages:\n%s\n\nProceed?"
         cantBlockBootstrap: "Refusing that block — it would match DependencyControl's own feed and disable all trust."
+        promptUntrusted: "This untrusted feed is advertised by another feed:\n%s\n\nFetch it to discover the feeds it lists? \"Trust\" remembers it for next time; \"Block\" hides it."
     }
 }
 
 -- Shared Functions
+
+FeedAction = DepCtrl.FeedManager.FeedAction
+
+-- Dialog button labels the code branches on, centralized so a caption can be reworded in one place without
+-- touching dispatch logic — and shared with the tests through testExports, so a rename needs no test edits.
+buttons = {
+    apply:      "Apply"
+    close:      "Close"
+    discover:   "Fetch/Discover"
+    extraFeeds: "Extra Feeds"
+    blockList:  "Block List"
+    help:       "Help"
+    yes:        "Yes"
+    no:         "No"
+    trust:      "Trust"
+    fetchOnce:  "Fetch once"
+    block:      "Block"
+    skip:       "Skip"
+    cancel:     "Cancel"
+}
+
+-- Manage Feeds action-dropdown labels per FeedAction, with the reverse lookup that turns a picked label back
+-- into its action. Shared with the tests through testExports.
+feedActionLabels = {
+    [FeedAction.Trust]:       "Trust"
+    [FeedAction.Block]:       "Block"
+    [FeedAction.Unblock]:     "Unblock"
+    [FeedAction.Remove]:      "Remove"
+    [FeedAction.OpenBrowser]: "Browser"
+}
+feedActionByLabel = {label, action for action, label in pairs feedActionLabels}
 
 buildInstalledDlgList = (scriptType, config, isUninstall) ->
     list, map, protectedModules = {}, {}, {}
@@ -69,25 +101,18 @@ getConfig = (section) ->
     config.c.macros or= {} if not section or #section == 0
     return config
 
-getKnownFeeds = (config) ->
-    getScriptFeeds = (t) -> [v.userFeed or v.feed for _,v in pairs config.c[t] when v.feed or v.userFeed]
-
-    -- fetch all feeds and look for further known feeds
-    recurse = (feeds, knownFeeds = {}, feedList = {}) ->
-        for url in *feeds
-            feed = DepCtrl.UpdateFeed url
-            continue if knownFeeds[url] or not feed.data
-            feedList[#feedList+1], knownFeeds[url] = feed, true
-            recurse feed\getKnownFeeds!, knownFeeds, feedList
-        return knownFeeds, feedList
-
-    -- get additional feeds added by the user
-    knownFeeds, feedList = recurse DepCtrl.config.c.extraFeeds
-    -- collect feeds from all installed automation scripts and modules
-    recurse getScriptFeeds("modules"), knownFeeds, feedList
-    recurse getScriptFeeds("macros"), knownFeeds, feedList
-
-    return feedList
+-- Builds a FeedInventory over a merged config view: the installed macros/modules sections come from their
+-- own handlers, while the feed lists and fetch policy are read from the live global config. Shared by the
+-- install browser's feed discovery and the Manage Feeds macro.
+buildFeedInventory = ->
+    macrosKey  = Common.ScriptTypeSection[Common.ScriptType.Automation]
+    modulesKey = Common.ScriptTypeSection[Common.ScriptType.Module]
+    getSectionData = (key) ->
+        view = DepCtrl.config\getSectionHandler key
+        view and view.c or {}
+    mergedC = setmetatable {[macrosKey]: getSectionData(macrosKey), [modulesKey]: getSectionData(modulesKey)},
+                           {__index: DepCtrl.config.c}
+    DepCtrl.FeedInventory {c: mergedC}, DepCtrl.updater.feedTrust, DepCtrl.updater.feedLoader
 
 getScriptListDlg = (macros, modules) ->
     {
@@ -106,6 +131,35 @@ runUpdaterTask = (scriptData, isInstall) ->
     with scriptData
          logger\log DepCtrl.Updater.getUpdaterErrorMsg code, .moduleName or .name,
             .moduleName and Common.ScriptType.Module or Common.ScriptType.Automation, isInstall, extErr
+
+-- our feeds all live under raw.githubusercontent.com; abbreviate that host in the UI and expand it back on input
+shortenUrl = (url) -> (url\gsub "^https://raw%.githubusercontent%.com/", "ghuc://")
+expandUrl  = (url) -> (url\gsub "^ghuc://", "https://raw.githubusercontent.com/")
+
+-- Under fetchUntrustedFeeds = "prompt", a crawl asks before fetching each untrusted feed: Trust remembers
+-- the feed, Block hides it, Fetch once follows it this time only, Skip leaves it unfetched.
+promptUntrustedFeed = (url, ft) ->
+    btn = aegisub.dialog.display {
+        {class: "label", x: 0, y: 0, width: 3, height: 1, label: msgs.manageFeeds.promptUntrusted\format shortenUrl url}
+    }, {buttons.trust, buttons.fetchOnce, buttons.block, buttons.skip}, {ok: buttons.fetchOnce, cancel: buttons.skip}
+    switch btn
+        when buttons.trust
+            ft\trust url
+            true
+        when buttons.fetchOnce then true
+        when buttons.block
+            ft\block url
+            false
+        else false
+
+-- Crawls the feed inventory with the untrusted-feed prompter active (so the `prompt` policy asks), scoped
+-- so the prompter never leaks into background fetches. Shared by install discovery and Manage Feeds.
+crawlWithPrompt = (inventory) ->
+    feedTrust = DepCtrl.updater.feedTrust
+    feedTrust\setPrompter promptUntrustedFeed
+    entries = inventory\crawl!
+    feedTrust\setPrompter nil
+    entries
 
 -- Macros
 
@@ -143,12 +197,17 @@ install = ->
 
         return list, map
 
-    -- get a list of the highest versions of automation scripts and modules
-    -- we can install but wich are not yet installed
-    macros, modules, feeds = {}, {}, getKnownFeeds config
+    -- get the highest versions of automation scripts and modules we can install but don't have yet.
+    -- FeedInventory crawls the known feeds, which are trust-gated and bounded. The shared feed loader then
+    -- serves each reachable feed's data from the cache the crawl just populated.
+    macros, modules = {}, {}
+    entries = crawlWithPrompt buildFeedInventory!
 
-    logger\log msgs.install.scanning, #feeds
-    for feed in *feeds
+    logger\log msgs.install.scanning, #entries
+    for entry in *entries
+        continue unless entry.fetched
+        feed = DepCtrl.updater.feedLoader\load entry.url
+        continue unless feed.data
         macros = addAvailableToInstall macros, feed, Common.ScriptType.Automation
         modules = addAvailableToInstall modules, feed, Common.ScriptType.Module
 
@@ -216,9 +275,9 @@ update = ->
 macroConfig = ->
     config = getConfig "macros"
 
-    dlg, i = {}, 1
+    dlg, i = {}, 0
     for nsp, macro in pairs config.userConfig
-        dlg[i*5+t-1] = tbl for t, tbl in ipairs {
+        dlg[i*5+t] = tbl for t, tbl in ipairs {
             {label: macro.name,              class: "label",  x: 0, y: i, width: 1,  height: 1  },
             {label: "Menu Group: ",          class: "label",  x: 1, y: i, width: 1,  height: 1  },
             {name:  "#{nsp}.customMenu",     class: "edit",   x: 2, y: i, width: 1,  height: 1,
@@ -243,23 +302,19 @@ macroConfig = ->
 -- A simple yes/no confirmation dialog. Returns true only when the user chooses Yes.
 confirmDialog = (message) ->
     btn = aegisub.dialog.display {{class: "label", x: 0, y: 0, width: 1, height: 1, label: message}},
-                                 {"Yes", "No"}, {ok: "Yes", cancel: "No"}
-    btn == "Yes"
+                                 {buttons.yes, buttons.no}, {ok: buttons.yes, cancel: buttons.no}
+    btn == buttons.yes
 
--- our feeds all live under raw.githubusercontent.com; abbreviate that host in the UI and expand it back on input
-shortenUrl = (url) -> (url\gsub "^https://raw%.githubusercontent%.com/", "ghuc://")
-expandUrl  = (url) -> (url\gsub "^ghuc://", "https://raw.githubusercontent.com/")
-
--- Add/remove the user's extraFeeds (discovery roots): check feeds to drop and/or type a new one, Apply, re-open.
+-- Add/remove the user's extraFeeds: check feeds to drop and/or type a new one, Apply, re-open.
 manageExtraFeeds = (feedTrust) ->
     while true
-        feeds = [url for url in *(DepCtrl.config.c.extraFeeds or {})]
+        feeds = [url for url in *(DepCtrl.config.c.feeds.extraFeeds or {})]
         table.sort feeds
         dlg = {}
         if #feeds == 0
             dlg[#dlg + 1] = {class: "label", x: 0, y: 0, width: 3, height: 1, label: "You have no extra feeds."}
         else
-            dlg[#dlg + 1] = {class: "label", x: 0, y: 0, width: 3, height: 1, label: "Your extra feeds (discovery roots):"}
+            dlg[#dlg + 1] = {class: "label", x: 0, y: 0, width: 3, height: 1, label: "Your extra feeds:"}
             for i, url in ipairs feeds
                 dlg[#dlg + 1] = {class: "label",    x: 0, y: i, width: 2, height: 1, label: shortenUrl url}
                 dlg[#dlg + 1] = {class: "checkbox", x: 2, y: i, width: 1, height: 1, name: "remove#{i}", label: "Remove", value: false}
@@ -267,8 +322,8 @@ manageExtraFeeds = (feedTrust) ->
         dlg[#dlg + 1] = {class: "label", x: 0, y: addY, width: 1, height: 1, label: "Add feed URL:"}
         dlg[#dlg + 1] = {class: "edit",  x: 1, y: addY, width: 2, height: 1, name: "newFeed", text: "", hint: "full URL or ghuc:// shorthand"}
 
-        btn, res = aegisub.dialog.display dlg, {"Apply", "Close"}, {ok: "Apply", cancel: "Close"}
-        break if not btn or btn == "Close"
+        btn, res = aegisub.dialog.display dlg, {buttons.apply, buttons.close}, {ok: buttons.apply, cancel: buttons.close}
+        break if not btn or btn == buttons.close
 
         for i = 1, #feeds
             feedTrust\removeExtraFeed feeds[i] if res["remove#{i}"]
@@ -305,8 +360,8 @@ manageBlockList = (feedTrust) ->
         dlg[#dlg + 1] = {class: "label",    x: 0, y: addY + 1, width: 1, height: 1, label: "Reason:"}
         dlg[#dlg + 1] = {class: "edit",     x: 1, y: addY + 1, width: 4, height: 1, name: "newReason", text: ""}
 
-        btn, res = aegisub.dialog.display dlg, {"Apply", "Close"}, {ok: "Apply", cancel: "Close"}
-        break if not btn or btn == "Close"
+        btn, res = aegisub.dialog.display dlg, {buttons.apply, buttons.close}, {ok: buttons.apply, cancel: buttons.close}
+        break if not btn or btn == buttons.close
 
         for i, entry in ipairs blocks
             feedTrust\unblock entry.url if not entry.isOfficial and res["remove#{i}"]
@@ -319,6 +374,17 @@ manageBlockList = (feedTrust) ->
             else
                 reason = res.newReason and #res.newReason > 0 and res.newReason or nil
                 feedTrust\block expanded, {matchMode: res.newMode, :reason}
+
+-- Compact "time since" label for a Unix timestamp, for the Manage Feeds "Fetched" column. Falls back to an
+-- em dash when the feed has never been fetched into the cache.
+formatAge = (fetchedAt) ->
+    return "—" unless fetchedAt
+    delta = os.time! - fetchedAt
+    return "now" if delta < 60
+    return "#{math.floor delta / 60}m" if delta < 3600
+    return "#{math.floor delta / 3600}h" if delta < 86400
+    return "#{math.floor delta / 86400}d" if delta < 604800
+    "#{math.floor delta / 604800}w"
 
 -- Single source of truth for the Manage Feeds glyphs, shared by the feed-list rendering (`manageFeeds`) and
 -- the Help legend (`manageFeedsHelp`). Change a glyph here and both follow.
@@ -350,10 +416,11 @@ glyphs = {
 -- A read-only reference explaining the feed-list columns and their glyphs, opened from the Help button.
 manageFeedsHelp = ->
     sections = {
-        {"OK",     "Feed reachability, filled in after Discover: ❬ #{glyphs.reachable} ❭ reachable · ❬ #{glyphs.unreachable} ❭ unreachable · ❬ #{glyphs.unknown} ❭ not checked yet"}
+        {"OK",     "Feed reachability, filled in after fetch: ❬ #{glyphs.reachable} ❭ reachable · ❬ #{glyphs.unreachable} ❭ unreachable · ❬ #{glyphs.unknown} ❭ not checked yet"}
+        {"Fetched", "How long ago each feed was last fetched into the cache (e.g. 5m, 2h, 3d, 4w); ❬ — ❭ never fetched. Read from the cache, so it's shown before fetch too."}
         {"Trust",  "How DependencyControl treats the feed: ❬ #{glyphs.untrusted} ❭ untrusted · ❬ #{glyphs.trustOfficial} ❭ officially trusted · ❬ #{glyphs.trustUser} ❭ user-trusted · ❬ #{glyphs.trustBoth} ❭ official + user · ❬ #{glyphs.blocked} ❭ blocked"}
         {"Known",  "How the feed is known to DependencyControl: ❬ #{glyphs.ownFeed} ❭ its own feed · ❬ #{glyphs.officialKnown} ❭ official (listed in its feed) · ❬ #{glyphs.transitive} ❭ transitive (advertised by another feed) · ❬ #{glyphs.unknown} ❭ not checked yet"}
-        {"Cust",   "Your customizations: ❬ #{glyphs.extraFeed} ❭ a feed in your extraFeeds (a discovery root) · ❬ #{glyphs.override} ❭ your per-package feed override"}
+        {"Cust",   "Your customizations: ❬ #{glyphs.extraFeed} ❭ a feed in your extraFeeds · ❬ #{glyphs.override} ❭ your per-package feed override"}
         {"Pkg",    "A package's own feed references: ❬ #{glyphs.declared} ❭ declared by an installed package · ❬ #{glyphs.advertised} ❭ advertised by a package's dependency"}
         {"Use",    "Whether the feed is the effective update source of an installed package: ❬ #{glyphs.inUse} ❭ yes"}
         {"Action", "Trust, Block, Unblock, Remove the feed, or open the feed in the DepCtrl Browser for details."}
@@ -362,7 +429,7 @@ manageFeedsHelp = ->
     for i, s in ipairs sections
         dlg[#dlg + 1] = {class: "label", x: 0, y: i + 1, width: 1, height: 1, label: s[1]}
         dlg[#dlg + 1] = {class: "label", x: 1, y: i + 1, width: 7, height: 1, label: s[2]}
-    aegisub.dialog.display dlg, {"Close"}, {ok: "Close", cancel: "Close"}
+    aegisub.dialog.display dlg, {buttons.close}, {ok: buttons.close, cancel: buttons.close}
 
 -- Lets the user see and manage the feeds DependencyControl knows about and their trust status. The reachable
 -- feeds are gathered (or crawled) via FeedInventory; FeedManager computes the per-feed actions and executes
@@ -372,34 +439,13 @@ manageFeeds = ->
     feedTrust     = DepCtrl.updater.feedTrust
     FeedInventory = DepCtrl.FeedInventory
     FeedManager   = DepCtrl.FeedManager
-    FeedAction    = FeedManager.FeedAction
     TrustStatus   = DepCtrl.FeedTrust.TrustStatus
     Provenance    = FeedInventory.Provenance
     openUrl       = require "l0.DependencyControl.helpers.open-url"
 
-    -- The config splits feed lists (under the "config" section that DepCtrl.config points at) from the installed
-    -- packages (the top-level "macros"/"modules" sections). FeedInventory/FeedManager expect both under one `.c`,
-    -- so present a merged view: package sections by their handler, everything else via the live config.
-    macrosKey  = Common.ScriptTypeSection[Common.ScriptType.Automation]
-    modulesKey = Common.ScriptTypeSection[Common.ScriptType.Module]
-    getSectionData = (key) ->
-        view = DepCtrl.config\getSectionHandler key
-        view and view.c or {}
-    mergedC = setmetatable {[macrosKey]: getSectionData(macrosKey), [modulesKey]: getSectionData(modulesKey)},
-                           {__index: DepCtrl.config.c}
-    mergedConfig = {c: mergedC}
-
-    inventory = FeedInventory mergedConfig, feedTrust
+    inventory = buildFeedInventory!
     manager   = FeedManager   feedTrust
 
-    actionLabels = {
-        [FeedAction.Trust]:       "Trust"
-        [FeedAction.Block]:       "Block"
-        [FeedAction.Unblock]:     "Unblock"
-        [FeedAction.Remove]:      "Remove"
-        [FeedAction.OpenBrowser]: "Browser"
-    }
-    actionByLabel = {label, action for action, label in pairs actionLabels}
     trustGlyphs = {
         [TrustStatus.TrustedOfficial]: glyphs.trustOfficial
         [TrustStatus.TrustedUser]:     glyphs.trustUser
@@ -442,20 +488,23 @@ manageFeeds = ->
         btn, res = aegisub.dialog.display {
             {class: "label", x: 0, y: 0, width: 2, height: 1, label: "Reason for blocking #{url} (optional):"}
             {class: "edit",  x: 0, y: 1, width: 2, height: 1, name: "reason", text: ""}
-        }, {"Block", "Cancel"}, {ok: "Block", cancel: "Cancel"}
-        return nil unless btn == "Block"
+        }, {buttons.block, buttons.cancel}, {ok: buttons.block, cancel: buttons.cancel}
+        return nil unless btn == buttons.block
         res.reason
 
     buildDialog = (rows, discovered) ->
-        feedCol   = 2                                   -- feed URL sits after the OK (x0) and Trust (x1) columns
-        feedWidth = 4
-        provStart = feedCol + feedWidth
-        actionCol = provStart + #provColumns
+        feedCol      = 2                                    -- feed URL sits after the OK (x0) and Trust (x1) columns
+        feedWidth    = 4
+        fetchedCol   = feedCol + feedWidth                 -- when each feed was last fetched into the cache
+        fetchedWidth = 2
+        provStart    = fetchedCol + fetchedWidth
+        actionCol    = provStart + #provColumns
         dlg = {
-            {class: "label", x: 0,         y: 0, width: 1,         height: 1, label: "OK"}
-            {class: "label", x: 1,         y: 0, width: 1,         height: 1, label: "Trust"}
-            {class: "label", x: feedCol,   y: 0, width: feedWidth, height: 1, label: "Feed"}
-            {class: "label", x: actionCol, y: 0, width: 1,         height: 1, label: "Action"}
+            {class: "label", x: 0,          y: 0, width: 1,            height: 1, label: "OK"}
+            {class: "label", x: 1,          y: 0, width: 1,            height: 1, label: "Trust"}
+            {class: "label", x: feedCol,    y: 0, width: feedWidth,    height: 1, label: "Feed"}
+            {class: "label", x: fetchedCol, y: 0, width: fetchedWidth, height: 1, label: "Fetched"}
+            {class: "label", x: actionCol,  y: 0, width: 1,            height: 1, label: "Action"}
         }
         for j, col in ipairs provColumns
             dlg[#dlg + 1] = {class: "label", x: provStart + j - 1, y: 0, width: 1, height: 1, label: col.header}
@@ -463,10 +512,11 @@ manageFeeds = ->
             has = {p, true for p in *row.provenance}
             reach = discovered and (row.reachable and glyphs.reachable or glyphs.unreachable) or glyphs.unknown   -- unknown until a Discover has fetched
             items = {"—"}
-            items[#items + 1] = actionLabels[a] for a in *row.actions
-            dlg[#dlg + 1] = {class: "label", x: 0,       y: i, width: 1,         height: 1, label: reach}
-            dlg[#dlg + 1] = {class: "label", x: 1,       y: i, width: 1,         height: 1, label: trustGlyphs[row.trustStatus] or glyphs.unknown}
-            dlg[#dlg + 1] = {class: "label", x: feedCol, y: i, width: feedWidth, height: 1, label: shortenUrl row.url}
+            items[#items + 1] = feedActionLabels[a] for a in *row.actions
+            dlg[#dlg + 1] = {class: "label", x: 0,          y: i, width: 1,            height: 1, label: reach}
+            dlg[#dlg + 1] = {class: "label", x: 1,          y: i, width: 1,            height: 1, label: trustGlyphs[row.trustStatus] or glyphs.unknown}
+            dlg[#dlg + 1] = {class: "label", x: feedCol,    y: i, width: feedWidth,    height: 1, label: shortenUrl row.url}
+            dlg[#dlg + 1] = {class: "label", x: fetchedCol, y: i, width: fetchedWidth, height: 1, label: formatAge row.lastFetchedAt}
             for j, col in ipairs provColumns
                 dlg[#dlg + 1] = {class: "label", x: provStart + j - 1, y: i, width: 1, height: 1, label: col.glyph(has, row, discovered)}
             dlg[#dlg + 1] = {class: "dropdown", x: actionCol, y: i, width: 1, height: 1, name: "action#{i}",
@@ -477,7 +527,7 @@ manageFeeds = ->
         for i, row in ipairs rows
             label = res["action#{i}"]
             continue if not label or label == "—"
-            action = actionByLabel[label]
+            action = feedActionByLabel[label]
             continue unless action
 
             if action == FeedAction.OpenBrowser
@@ -503,19 +553,20 @@ manageFeeds = ->
     discovered = false
     while true
         logger\log msgs.manageFeeds.scanning if discovered
-        entries = discovered and inventory\crawl! or inventory\gather!
+        entries = discovered and crawlWithPrompt(inventory) or inventory\gather!
         rows = FeedManager.buildRows entries
         if #rows == 0
             logger\log msgs.manageFeeds.noFeeds
             return
         btn, res = aegisub.dialog.display buildDialog(rows, discovered),
-                                          {"Apply", "Discover", "Extra Feeds", "Block List", "Help", "Close"}, {ok: "Apply", cancel: "Close"}
-        break if not btn or btn == "Close"
+                                          {buttons.apply, buttons.discover, buttons.extraFeeds, buttons.blockList, buttons.help, buttons.close},
+                                          {ok: buttons.apply, cancel: buttons.close}
+        break if not btn or btn == buttons.close
         switch btn
-            when "Discover"    then discovered = true
-            when "Extra Feeds" then manageExtraFeeds feedTrust
-            when "Block List"  then manageBlockList feedTrust
-            when "Help"        then manageFeedsHelp!
+            when buttons.discover then discovered = true
+            when buttons.extraFeeds then manageExtraFeeds feedTrust
+            when buttons.blockList then manageBlockList feedTrust
+            when buttons.help then manageFeedsHelp!
             else applySelections res, rows
 
 depRec\registerMacros {
@@ -524,7 +575,8 @@ depRec\registerMacros {
     {"Uninstall Script", "Removes an automation script or module from your system.", uninstall},
     {"Manage Feeds", "See and manage the feeds DependencyControl knows about and their trust status.", manageFeeds},
     {"Macro Configuration", "Lets you change per-automation script settings.", macroConfig},
-}, "DependencyControl", {:shortenUrl, :expandUrl}
+}, "DependencyControl", {:shortenUrl, :expandUrl, :formatAge, :buildInstalledDlgList, :promptUntrustedFeed,
+                         :confirmDialog, :manageExtraFeeds, :manageBlockList, :buttons, :feedActionLabels}
 
 -- Force-loads all installed modules, then sweeps the live record registry to schedule
 -- periodic update checks for every record and register unit test menus for modules.

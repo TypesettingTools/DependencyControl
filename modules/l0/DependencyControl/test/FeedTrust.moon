@@ -9,11 +9,11 @@
   make = (opts = {}) ->
     setmetatable {
       config: {
-        c: {extraFeeds: opts.extraFeeds, trustedFeeds: opts.trustedFeeds, blockedFeeds: opts.blockedFeeds}
+        c: {feeds: {extraFeeds: opts.extraFeeds, trustedFeeds: opts.trustedFeeds, blockedFeeds: opts.blockedFeeds, fetchUntrustedFeeds: opts.fetchUntrustedFeeds}}
         save: (=> opts.onSave! if opts.onSave)
       }
       __official: {trusted: opts.officialTrusted or {}, blocked: opts.officialBlocked or {}}
-      logger: {log: ->}
+      logger: {warn: ->, log: ->}
     }, __index: FeedTrust.__base
 
   {
@@ -117,7 +117,7 @@
       ft = make trustedFeeds: {}, onSave: -> saved[1] = true
       FeedTrust.getTrustedFeeds ft   -- prime the cache
       FeedTrust.trust ft, "feed://new"
-      ut\assertEquals ft.config.c.trustedFeeds[1], "feed://new"
+      ut\assertEquals ft.config.c.feeds.trustedFeeds[1], "feed://new"
       ut\assertTrue saved[1]
       ut\assertTrue FeedTrust.isTrusted ft, "feed://new"
 
@@ -126,7 +126,7 @@
       ft = make blockedFeeds: {}, onSave: -> saved[1] = true
       FeedTrust.getBlockedFeeds ft   -- prime the cache
       FeedTrust.block ft, "https://bad/"
-      ut\assertEquals ft.config.c.blockedFeeds[1], {url: "https://bad/", matchMode: "prefix"}
+      ut\assertEquals ft.config.c.feeds.blockedFeeds[1], {url: "https://bad/", matchMode: "prefix"}
       ut\assertTrue saved[1]
       ut\assertTrue FeedTrust.isBlocked ft, "https://bad/x"
 
@@ -135,14 +135,14 @@
       saved = {}
       ft = make trustedFeeds: {"feed://a"}, onSave: -> saved[1] = true
       ut\assertFalse FeedTrust.trust ft, "feed://a"
-      ut\assertEquals ft.config.c.trustedFeeds, {"feed://a"}
+      ut\assertEquals ft.config.c.feeds.trustedFeeds, {"feed://a"}
       ut\assertNil saved[1]
 
     block_ignoresDuplicate: (ut) ->
       saved = {}
       ft = make blockedFeeds: {{url: "https://bad/", matchMode: "prefix"}}, onSave: -> saved[1] = true
       ut\assertFalse FeedTrust.block ft, "https://bad/"
-      ut\assertEquals ft.config.c.blockedFeeds, {{url: "https://bad/", matchMode: "prefix"}}
+      ut\assertEquals ft.config.c.feeds.blockedFeeds, {{url: "https://bad/", matchMode: "prefix"}}
       ut\assertNil saved[1]
 
     -- untrust removes only the user's trustedFeeds entry, persists, and invalidates the cached set.
@@ -151,7 +151,7 @@
       ft = make trustedFeeds: {"feed://a", "feed://b"}, onSave: -> saved[1] = true
       FeedTrust.getTrustedFeeds ft   -- prime the cache
       ut\assertTrue FeedTrust.untrust ft, "feed://a"
-      ut\assertEquals ft.config.c.trustedFeeds, {"feed://b"}
+      ut\assertEquals ft.config.c.feeds.trustedFeeds, {"feed://b"}
       ut\assertTrue saved[1]
       ut\assertFalse FeedTrust.isTrusted ft, "feed://a"
 
@@ -160,7 +160,7 @@
       ft = make trustedFeeds: {"feed://a"}, onSave: -> saved[1] = true
       ut\assertFalse FeedTrust.untrust ft, "feed://missing"
       ut\assertNil saved[1]
-      ut\assertEquals ft.config.c.trustedFeeds, {"feed://a"}
+      ut\assertEquals ft.config.c.feeds.trustedFeeds, {"feed://a"}
 
     -- untrust can't remove a feed trusted only through the official set (block it to override).
     untrust_leavesOfficialTrusted: (ut) ->
@@ -173,7 +173,7 @@
       ft = make blockedFeeds: {{url: "https://bad/", matchMode: "prefix"}, {url: "https://evil/", matchMode: "prefix"}}, onSave: -> saved[1] = true
       FeedTrust.getBlockedFeeds ft   -- prime the cache
       ut\assertTrue FeedTrust.unblock ft, "https://bad/"
-      ut\assertEquals ft.config.c.blockedFeeds, {{url: "https://evil/", matchMode: "prefix"}}
+      ut\assertEquals ft.config.c.feeds.blockedFeeds, {{url: "https://evil/", matchMode: "prefix"}}
       ut\assertTrue saved[1]
       ut\assertFalse FeedTrust.isBlocked ft, "https://bad/x"
 
@@ -188,7 +188,7 @@
       ft = make extraFeeds: {}, onSave: -> saved[1] = true
       FeedTrust.getTrustedFeeds ft   -- prime the cache
       ut\assertTrue FeedTrust.addExtraFeed ft, "feed://extra"
-      ut\assertEquals ft.config.c.extraFeeds, {"feed://extra"}
+      ut\assertEquals ft.config.c.feeds.extraFeeds, {"feed://extra"}
       ut\assertTrue saved[1]
       ut\assertTrue FeedTrust.isTrusted ft, "feed://extra"
 
@@ -196,7 +196,7 @@
       ft = make extraFeeds: {"feed://x"}
       FeedTrust.getTrustedFeeds ft   -- prime the cache
       ut\assertTrue FeedTrust.removeExtraFeed ft, "feed://x"
-      ut\assertEquals ft.config.c.extraFeeds, {}
+      ut\assertEquals ft.config.c.feeds.extraFeeds, {}
       ut\assertFalse FeedTrust.isTrusted ft, "feed://x"
 
     -- an exact block matches only the exact URL (case-insensitively), not sub-paths.
@@ -211,8 +211,8 @@
       ft = make blockedFeeds: {}
       FeedTrust.block ft, "https://a/", {reason: "bad"}
       FeedTrust.block ft, "https://b/"
-      ut\assertEquals ft.config.c.blockedFeeds[1], {url: "https://a/", matchMode: "prefix", reason: "bad"}
-      ut\assertEquals ft.config.c.blockedFeeds[2], {url: "https://b/", matchMode: "prefix"}
+      ut\assertEquals ft.config.c.feeds.blockedFeeds[1], {url: "https://a/", matchMode: "prefix", reason: "bad"}
+      ut\assertEquals ft.config.c.feeds.blockedFeeds[2], {url: "https://b/", matchMode: "prefix"}
 
     -- block dedups by url + match mode: the same prefix is ignored, but the same url at a different mode is allowed.
     block_dedupsByUrlAndMatchMode: (ut) ->
@@ -248,6 +248,42 @@
       ut\assertFalse FeedTrust\urlMatchesPrefix "https://example.com/x", {}
       ut\assertFalse FeedTrust\urlMatchesPrefix "https://example.com/x", {""}
 
+    -- the fetch gate: block always denies, trust always allows, untrusted follows fetchUntrustedFeeds
+    getFetchDecision_blockDeniesEvenUnderAlways: (ut) ->
+      ft = make blockedFeeds: {{url: "feed://bad", matchMode: "exact"}}, fetchUntrustedFeeds: "always"
+      ut\assertEquals FeedTrust.getFetchDecision(ft, "feed://bad"), FeedTrust.FetchDecision.Deny
+
+    getFetchDecision_trustAllowsEvenUnderNever: (ut) ->
+      ft = make trustedFeeds: {"feed://t"}, fetchUntrustedFeeds: "never"
+      ut\assertEquals FeedTrust.getFetchDecision(ft, "feed://t"), FeedTrust.FetchDecision.Allow
+
+    getFetchDecision_untrustedFollowsPolicy: (ut) ->
+      ut\assertEquals FeedTrust.getFetchDecision(make(fetchUntrustedFeeds: "always"), "feed://u"), FeedTrust.FetchDecision.Allow
+      ut\assertEquals FeedTrust.getFetchDecision(make(fetchUntrustedFeeds: "never"), "feed://u"), FeedTrust.FetchDecision.Deny
+      ut\assertEquals FeedTrust.getFetchDecision(make(fetchUntrustedFeeds: "prompt"), "feed://u"), FeedTrust.FetchDecision.Prompt
+
+    -- an unrecognized/corrupted policy value fails closed (deny) rather than silently allowing untrusted fetches
+    getFetchDecision_unknownPolicyFailsClosed: (ut) ->
+      ut\assertEquals FeedTrust.getFetchDecision(make(fetchUntrustedFeeds: "bogus"), "feed://u"), FeedTrust.FetchDecision.Deny
+
+    -- shouldFetch resolves Allow/Deny to booleans; a prompt policy with no prompter denies (headless-safe)
+    shouldFetch_resolvesAllowDenyAndHeadlessPrompt: (ut) ->
+      ut\assertTrue FeedTrust.shouldFetch make(trustedFeeds: {"feed://t"}), "feed://t"
+      ut\assertFalse FeedTrust.shouldFetch make(fetchUntrustedFeeds: "never"), "feed://u"
+      ut\assertFalse FeedTrust.shouldFetch make(fetchUntrustedFeeds: "prompt"), "feed://u"
+
+    -- under the prompt policy the prompter is consulted, and its answer is remembered for the session
+    shouldFetch_promptConsultsPrompterOnceAndCaches: (ut) ->
+      calls = 0
+      prompter = (url, feedTrust) ->
+        calls += 1
+        true
+      ft = make fetchUntrustedFeeds: "prompt"
+      FeedTrust.setPrompter ft, prompter
+      ut\assertTrue FeedTrust.shouldFetch ft, "feed://u"
+      ut\assertTrue FeedTrust.shouldFetch ft, "feed://u"
+      ut\assertEquals calls, 1
+
     _order: {
       "getOfficialTrustedFeeds_usesCacheWhenPresent", "getOfficialBlockedFeeds_usesCacheWhenPresent"
       "getTrustedFeeds_mergesOfficialAndUser", "getTrustedFeeds_officialOnlyWhenNoUserFeeds"
@@ -264,5 +300,9 @@
       "block_dedupsByUrlAndMatchMode", "getBlockingEntry_surfacesReasonAndOfficial"
       "urlMatchesPrefix_exactAndCaseInsensitive", "urlMatchesPrefix_hostPrefixBlocksEverythingUnder"
       "urlMatchesPrefix_noMatch", "urlMatchesPrefix_guards"
+      "getFetchDecision_blockDeniesEvenUnderAlways", "getFetchDecision_trustAllowsEvenUnderNever"
+      "getFetchDecision_untrustedFollowsPolicy", "getFetchDecision_unknownPolicyFailsClosed",
+      "shouldFetch_resolvesAllowDenyAndHeadlessPrompt"
+      "shouldFetch_promptConsultsPrompterOnceAndCaches"
     }
   }

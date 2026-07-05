@@ -34,6 +34,7 @@ Downloader =     require "l0.DependencyControl.Downloader"
 Enum =           require "l0.DependencyControl.Enum"
 EventEmitter =   require "l0.DependencyControl.EventEmitter"
 FeedInventory =  require "l0.DependencyControl.FeedInventory"
+FeedLoader =     require "l0.DependencyControl.FeedLoader"
 FeedManager =    require "l0.DependencyControl.FeedManager"
 FeedTrust =      require "l0.DependencyControl.FeedTrust"
 FileOps =        require "l0.DependencyControl.FileOps"
@@ -60,6 +61,7 @@ class DependencyControl extends Record
     @Enum = Enum
     @EventEmitter = EventEmitter
     @FeedInventory = FeedInventory
+    @FeedLoader = FeedLoader
     @FeedManager = FeedManager
     @FeedTrust = FeedTrust
     @FileOps = FileOps

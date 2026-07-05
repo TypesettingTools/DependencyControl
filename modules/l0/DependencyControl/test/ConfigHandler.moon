@@ -163,6 +163,51 @@
       ut\assertEquals handler.config.key, "value"
       openStub\assertCalledOnceWith "/config/test.json", "r"
 
+    -- load runs the migration callback when the loaded file's $schema differs from the handler's target,
+    -- then stamps the target $schema and persists the change
+    load_migratesOnSchemaMismatch: (ut) ->
+      captured = {}
+      handler = ConfigHandler nil
+      handler.filePath = "/config/test.json"
+      handler.lock = {}
+      handler.__targetSchemaId = "schema://v2"
+      handler.__migrate = (config, current, target) ->
+        captured.current, captured.target = current, target
+        config.config = {migrated: true}
+        return true
+      (ut\stub handler.lock, "lock")\returns Lock.LockState.Held, 0
+      ut\stub handler.lock, "release"
+      (ut\stub FILEOPS_MODULE_NAME, "attributes")\returns "file", "/config/test.json"
+      (ut\stub io, "open")\calls -> {read: ((h, f) -> "{}"), close: (->)}
+      (ut\stub JSON_MODULE_NAME, "decode")\returns {config: {flatKey: 1}}  -- legacy: no $schema
+      saveStub = (ut\stub handler, "save")\returns true
+      ut\assertTrue handler\load!
+      ut\assertNil captured.current                     -- the legacy file carried no $schema
+      ut\assertEquals captured.target, "schema://v2"
+      ut\assertEquals handler.schemaId, "schema://v2"   -- exposed on the handler
+      ut\assertEquals handler.config["$schema"], "schema://v2"  -- stamped into the config
+      ut\assertTrue handler.config.config.migrated
+      saveStub\assertCalledOnce!                          -- migration persisted
+
+    -- load skips migration (and the persist) when the file already carries the target $schema
+    load_skipsMigrationWhenSchemaMatches: (ut) ->
+      handler = ConfigHandler nil
+      handler.filePath = "/config/test.json"
+      handler.lock = {}
+      handler.__targetSchemaId = "schema://v2"
+      migrated = false
+      handler.__migrate = (config, current, target) -> migrated = true
+      (ut\stub handler.lock, "lock")\returns Lock.LockState.Held, 0
+      ut\stub handler.lock, "release"
+      (ut\stub FILEOPS_MODULE_NAME, "attributes")\returns "file", "/config/test.json"
+      (ut\stub io, "open")\calls -> {read: ((h, f) -> "{}"), close: (->)}
+      (ut\stub JSON_MODULE_NAME, "decode")\returns {["$schema"]: "schema://v2", config: {}}
+      saveStub = (ut\stub handler, "save")\returns true
+      ut\assertTrue handler\load!
+      ut\assertFalse migrated                    -- current == target: callback never invoked
+      ut\assertEquals handler.schemaId, "schema://v2"
+      saveStub\assertNotCalled!
+
     -- save: stubs fileOps.attributes, lock, io.open, json.encode
 
     save_noFilePath: (ut) ->
@@ -263,6 +308,7 @@
       "getView_success", "getView_failure",
       "getOverlappingViews_wrongHandler", "getOverlappingViews_found", "getOverlappingViews_notFound",
       "load_noFilePath", "load_fileNotFound", "load_success",
+      "load_migratesOnSchemaMismatch", "load_skipsMigrationWhenSchemaMatches",
       "save_noFilePath", "save_lockFailed", "save_success",
       "save_withViewMissingHive", "save_withViewPopulatedHive",
       "purgeHive_removesPath"

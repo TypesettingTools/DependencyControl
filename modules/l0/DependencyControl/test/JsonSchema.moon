@@ -62,10 +62,35 @@
       ut\assertContains err, "err A"
       ut\assertContains err, "err B"
 
+    -- a document's own root `$schema` names its version, overriding the caller's hint
+    validateAny_readsVersionFromSchemaId: (ut) ->
+      data = {["$schema"]: "https://host/schemas/config/v0.7.0.json"}
+      -- the hint says 0.6.3, but the data's $schema says 0.7.0, so 0.7.0 wins
+      isValid, version = JsonSchema\validateAny data, {"0.7.0": mockSchema(true), "0.6.3": mockSchema(false, "no")}, "0.6.3"
+      ut\assertTrue isValid
+      ut\assertEquals version, "0.7.0"
+
+    -- the version named by `$schema` is authoritative even when it rejects: no fallthrough to a lenient schema
+    validateAny_schemaIdRejectionDoesNotFallThrough: (ut) ->
+      data = {["$schema"]: "https://host/v0.7.0.json"}
+      isValid, version = JsonSchema\validateAny data, {"0.7.0": mockSchema(false, "bad"), "0.6.3": mockSchema true}, nil
+      ut\assertFalse isValid
+      ut\assertEquals version, "0.7.0"   -- did not fall through to the lenient 0.6.3
+
+    -- for data without a `$schema`, the hint may be a function that derives the version from the data itself
+    -- (e.g. a feed reading its legacy `dependencyControlFeedFormatVersion` field)
+    validateAny_versionHintFunction: (ut) ->
+      data = {feedFormat: "0.3.0"}
+      isValid, version = JsonSchema\validateAny data, {"0.3.0": mockSchema(true)}, ((d) -> d.feedFormat)
+      ut\assertTrue isValid
+      ut\assertEquals version, "0.3.0"
+
     _order: {
       "getSchemasInDirectory_mapsVersionsToPaths", "getSchemasInDirectory_noneFound",
       "getSchemasInDirectory_dirReadError",
       "validateAny_exactVersionValid", "validateAny_reportsInvalidWithError",
-      "validateAny_fallsThroughToOtherVersions", "validateAny_aggregatesAllFailures"
+      "validateAny_fallsThroughToOtherVersions", "validateAny_aggregatesAllFailures",
+      "validateAny_readsVersionFromSchemaId", "validateAny_schemaIdRejectionDoesNotFallThrough",
+      "validateAny_versionHintFunction"
     }
   }

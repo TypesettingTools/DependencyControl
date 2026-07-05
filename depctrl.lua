@@ -59,6 +59,13 @@ deployCmd:flag("--clobber",    "Overwrite existing files (default)"):target("clo
 deployCmd:flag("--no-clobber", "Skip files that already exist at the destination"):target("clobber"):action("store_false")
 addTargets(deployCmd)
 
+local validateCmd = parser:command("validate-schema",
+    "Validate a config or feed JSON file against its DependencyControl JSON schema")
+validateCmd:option("-f --file", "JSON file to validate"):argname("<path>")
+validateCmd:option("-t --type", "Schema family to validate against: 'config' or 'feed'"):argname("<type>")
+validateCmd:option("--schema-version",
+    "Validate against a specific schema version (e.g. 0.7.0) instead of auto-selecting the best match"):argname("<ver>")
+
 local updateFeedCmd = parser:command("update-feed",
     "Refresh SHA-1 hashes, version info, and file presence in a feed channel")
 updateFeedCmd:option("-f --feed",    "Feed JSON path"):default("DependencyControl.json")
@@ -118,7 +125,7 @@ local function setupDepCtrl(taskName)
     do
         local json = require "l0.dkjson"
         local h = assert(io.open(globalConfigPath, "w"))
-        h:write(json.encode({ config = { updaterEnabled = false } }))
+        h:write(json.encode({ config = { updates = { mode = "off" } } }))
         h:close()
     end
 
@@ -393,4 +400,66 @@ elseif args.command == "update-feed" then
         io.stdout:write(("%d package(s) had errors (see above).\n"):format(stats.errored))
     end
     os.exit(stats.errored > 0 and 1 or 0)
+
+elseif args.command == "validate-schema" then
+    if args.type ~= "config" and args.type ~= "feed" then
+        io.stderr:write("--type must be 'config' or 'feed'.\n"); os.exit(2)
+    end
+    if not args.file then
+        io.stderr:write("--file <path> is required.\n"); os.exit(2)
+    end
+    local filePath = resolveAbsPath(args.file)
+
+    -- Loads DependencyControl, which registers its provides searcher so the vendored dkjson resolves as
+    -- 'json' — the module JsonSchema (and hence lua-schema) needs to parse schema files.
+    setupDepCtrl("validate-schema")
+
+    local FileOps    = require "l0.DependencyControl.FileOps"
+    local json       = require "l0.dkjson"
+    local JsonSchema = require "l0.DependencyControl.JsonSchema"
+
+    local raw, readErr = FileOps.readFile(filePath)
+    if not raw then
+        io.stderr:write(("Couldn't read '%s': %s\n"):format(filePath, tostring(readErr))); os.exit(1)
+    end
+    local data, _, decErr = json.decode(raw)
+    if type(data) ~= "table" then
+        io.stderr:write(("Couldn't parse '%s' as JSON: %s\n"):format(filePath, tostring(decErr or "not a JSON object")))
+        os.exit(1)
+    end
+
+    local schemaDir = table.concat({ launcherDir, "schemas", args.type }, pathSep)
+    local schemasByVersion, schemasErr = JsonSchema:getSchemasInDirectory(schemaDir)
+    if not schemasByVersion then
+        io.stderr:write(tostring(schemasErr) .. "\n"); os.exit(1)
+    end
+
+    local valid, version, message
+    if args.schema_version then
+        local schemaPath = schemasByVersion[args.schema_version]
+        if not schemaPath then
+            io.stderr:write(("No %s schema for version '%s' in %s\n"):format(args.type, args.schema_version, schemaDir))
+            os.exit(1)
+        end
+        version = args.schema_version
+        valid, message = JsonSchema(schemaPath):validate(data)
+    else
+        -- validateAny selects the schema from the file itself: a config by its root `$schema`; a feed carries no
+        -- `$schema`, so it's given a function that reads the feed's legacy `dependencyControlFeedFormatVersion`
+        -- field instead. A file with neither falls back through the available schemas, highest version first.
+        local hint
+        if args.type == "feed" then
+            hint = function(feed) return feed.dependencyControlFeedFormatVersion end
+        end
+        valid, version, message = JsonSchema:validateAny(data, schemasByVersion, hint)
+    end
+
+    if valid then
+        io.stdout:write(("'%s' is valid against the %s schema v%s.\n"):format(filePath, args.type, tostring(version)))
+        os.exit(0)
+    else
+        io.stderr:write(("'%s' failed %s schema validation%s:\n%s\n"):format(
+            filePath, args.type, version and (" (v" .. version .. ")") or "", tostring(message)))
+        os.exit(1)
+    end
 end
