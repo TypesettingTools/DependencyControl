@@ -303,6 +303,55 @@
       ut\assertEquals fileCount, 0
       ut\assertEquals errCount, 1
 
+    -- a file marked for deletion is removed from the dist (when present), not deployed
+    deployFiles_removesDeleted: (ut) ->
+      feed = {
+        data: {modules: {}, macros: {}},
+        feedDir: basePath, logger: DepCtrl.logger, __class: UpdateFeed
+      }
+      dstPath = "#{basePath}/dst/Old.moon"
+      fakeFile = setmetatable {}, {__index: (_, k) ->
+        if k == "delete" then true
+        elseif k == "name" then "Old.moon"
+      }
+      fakeChan = setmetatable {}, {__index: (_, k) -> k == "name" and "release" or nil}
+      fakePkg  = setmetatable {}, {__index: (_, k) -> k == "namespace" and "test.NS" or nil}
+      (ut\stub feed, "walkFiles")\calls (self, scriptTypes) ->
+        coroutine.wrap ->
+          coroutine.yield fakeFile, fakeChan, fakePkg, "modules", Common.ScriptType.Module
+      (ut\stub UpdateFeed, "getFileDeployPath")\returns dstPath
+      (ut\stub FILEOPS_MODULE_NAME, "exists")\returns true
+      removeStub = (ut\stub FILEOPS_MODULE_NAME, "remove")\returns true
+      copyStub   = (ut\stub FILEOPS_MODULE_NAME, "copy")\returns true
+      fileCount, errCount = UpdateFeed.deployFiles feed, basePath
+      ut\assertEquals fileCount, 0
+      ut\assertEquals errCount, 0
+      removeStub\assertCalledOnce!
+      copyStub\assertNotCalled!
+
+    -- a file marked for deletion whose target isn't in the dist is a clean no-op
+    deployFiles_deleteMissingIsNoOp: (ut) ->
+      feed = {
+        data: {modules: {}, macros: {}},
+        feedDir: basePath, logger: DepCtrl.logger, __class: UpdateFeed
+      }
+      fakeFile = setmetatable {}, {__index: (_, k) ->
+        if k == "delete" then true
+        elseif k == "name" then "Old.moon"
+      }
+      fakeChan = setmetatable {}, {__index: (_, k) -> k == "name" and "release" or nil}
+      fakePkg  = setmetatable {}, {__index: (_, k) -> k == "namespace" and "test.NS" or nil}
+      (ut\stub feed, "walkFiles")\calls (self, scriptTypes) ->
+        coroutine.wrap ->
+          coroutine.yield fakeFile, fakeChan, fakePkg, "modules", Common.ScriptType.Module
+      (ut\stub UpdateFeed, "getFileDeployPath")\returns "#{basePath}/dst/Old.moon"
+      (ut\stub FILEOPS_MODULE_NAME, "exists")\returns false
+      removeStub = (ut\stub FILEOPS_MODULE_NAME, "remove")\returns true
+      fileCount, errCount = UpdateFeed.deployFiles feed, basePath
+      ut\assertEquals fileCount, 0
+      ut\assertEquals errCount, 0
+      removeStub\assertNotCalled!
+
     -- ensureLoaded
 
     ensureLoaded_localWithoutFileName_errors: (ut) ->
@@ -408,7 +457,7 @@
       "getFileDeployPath_module", "getFileDeployPath_test",
       "walkFiles_yieldsProxies", "walkFiles_passesThroughLocalFilePath",
       "deployFiles_copiesToDist", "deployFiles_skipExistingNoClobber",
-      "deployFiles_countsMissingSource",
+      "deployFiles_countsMissingSource", "deployFiles_removesDeleted", "deployFiles_deleteMissingIsNoOp",
       "ensureLoaded_localWithoutFileName_errors", "ensureLoaded_reusesMatchingExpansion",
       "refreshFiles_updatesChangedSha", "refreshFiles_unchangedSha", "refreshFiles_missingFileFlagsDelete",
       "refreshFiles_sha1FailureCollectsError", "refreshFiles_noLocalPathCollectsError",

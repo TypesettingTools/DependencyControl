@@ -114,6 +114,8 @@ class UpdateFeed
             copyFailed:  "error copying %s: %s"
             copied:      "%s -> %s"
             skipped:     "skipped (already exists): %s"
+            deleted:      "removed from dist (marked for deletion): %s"
+            removeFailed: "couldn't remove %s from dist (%s)"
         }
         ensureLoaded: {
             noLocalPath: "Local expansion mode require a local feed file path to resolve local path templates against."
@@ -715,17 +717,32 @@ class UpdateFeed
 
         return stats
 
-    ---Copies every file listed in the feed to distDir using the Updater's install layout.
+    ---Copies every file listed in the feed to distDir using the Updater's install layout. A file the feed marks
+    ---for deletion (`delete: true`) is removed from distDir if present, rather than deployed.
     ---The feed must have been loaded with ExpansionMode.Local so localFileBasePath is populated.
     ---@param distDir string Absolute path of the output dist directory.
     ---@param filter? ScriptTargetFilter Restricts which packages are deployed (default: all).
     ---@param clobber? boolean Overwrite existing destination files (default false).
     ---@return number fileCount Number of files successfully copied.
-    ---@return number errCount Number of files that failed to copy (e.g. missing source file or copy error).
+    ---@return number errCount Number of files that failed to deploy — a missing source, a copy error, or a deletion that couldn't be performed.
     deployFiles: (distDir, filter, clobber = false) =>
         fileCount, errCount = 0, 0
 
         for file, channel, pkg, _, scriptType in @walkFiles filter
+            if file.delete
+                dstPath, errMsg = @@getFileDeployPath pkg.namespace, scriptType, file.name, file.type or "script", distDir
+                unless dstPath
+                    @logger\warn msgs.bundle.invalidDeployPath, pkg.namespace, channel.name, file.name, distDir, tostring errMsg
+                    errCount += 1
+                    continue
+                if FileOps.exists dstPath, "file"
+                    removed, _, remErr = FileOps.remove dstPath
+                    if removed
+                        @logger\hint msgs.bundle.deleted, dstPath
+                    else
+                        @logger\warn msgs.bundle.removeFailed, dstPath, tostring remErr
+                        errCount += 1
+                continue
             unless file.localFilePath
                 @logger\warn msgs.bundle.invalidSourcePath, pkg.namespace, channel.name, tostring file.name
                 errCount += 1
