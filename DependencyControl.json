@@ -29,8 +29,14 @@
       "description": "Provides DependencyControl maintenance and configuration utilities.",
       "author": "line0",
       "url": "@{baseUrl}#@{namespace}",
-      "fileBaseUrl": "@{fileBaseUrl}macros-v@{version}-@{channel}/macros/@{namespace}",
-      "localFileBasePath": "@{localFileBasePath}macros/@{namespace}",
+      "fileBaseUrl": {
+        "script": "@{fileBaseUrl}macros-v@{version}-@{channel}/macros/@{namespace}",
+        "test": "@{fileBaseUrl}macros-v@{version}-@{channel}/macros/@{namespace}/test"
+      },
+      "localFileBasePath": {
+        "script": "@{localFileBasePath}macros/@{namespace}",
+        "test": "@{localFileBasePath}macros/@{namespace}/test"
+      },
       "channels": {
         "alpha": {
           "version": "0.3.0",
@@ -40,7 +46,13 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "B993DDEE553CF5A8860FBB22304BB4FC44F670C5"
+              "sha1": "08E01AF118F87A4556272446FCCE9CADD6FB8222"
+            },
+            {
+              "name": ".moon",
+              "url": "@{fileBaseUrl}@{fileName}",
+              "sha1": "636E1AC8F4E128E882FD6B4A9CCBC2451B27DF4E",
+              "type": "test"
             }
           ],
           "requiredModules": [
@@ -68,7 +80,8 @@
           "Unit test menus for installed modules with a DependencyControl test suite are now registered automatically at startup."
         ],
         "0.3.0": [
-          "Added a Manage Feeds macro to review and manage the feeds DependencyControl knows about and their trust status: trust, block (with a reason), unblock, or remove feeds; discover feeds advertised by other feeds; and manage your extra feeds and block list in dedicated panels. It warns before an action would change an installed package's update source, opens feed details in the DepCtrl Browser, and won't let you block DependencyControl's own feed."
+          "Added a Manage Feeds macro to review and manage the feeds DependencyControl knows about and their trust status: trust, block (with a reason), unblock, or remove feeds; discover feeds advertised by other feeds; and manage your extra feeds and block list in dedicated panels. It warns before an action would change an installed package's update source, opens feed details in the DepCtrl Browser, and won't let you block DependencyControl's own feed.",
+          "The Toolbox now ships a DependencyControl unit test suite, adding it to the Run Tests menu."
         ]
       }
     }
@@ -610,6 +623,7 @@
           "Automatic update scheduling is now centralized in the DependencyControl Toolbox and runs in a single Aegisub environment at startup, covering all installed scripts including modules not loaded by any automation script. Previously, each automation script's environment scheduled redundant checks for every module it loaded.",
           "Record: Added `getAllRegisteredRecords()` to expose the full live record registry to tooling.",
           "Modules with a DependencyControl unit test suite now have their test menus registered automatically by the Toolbox. Automation scripts register their own test menus when they call `registerMacros` through DependencyControl.",
+          "Automation scripts can now ship a DependencyControl unit test suite, just like modules. `registerMacros` accepts an optional table of test exports (the script's internal values to test), which — together with the script's registered macros, now exposed to the suite by name — is passed to the suite's import function.",
           "Lock: Locks are now per-resource — distinct namespace/resource pairs can be held at the same time instead of contending over a single global mutex — and accept an optional `Global` scope that enforces mutual exclusion across separate Aegisub instances (now used when reading and writing shared config files). A Global lock is backed by an OS advisory file lock that the system releases automatically if the holder crashes, so a crashed process can never leave a config file permanently locked.",
           "Lock: While a lock is held it records its holder (name, process id, and lease expiry) in a side file for troubleshooting, and logs a warning when it is waiting on a holder whose lease has lapsed (a likely crash or stall). The recorded lease is honored by waiters; an `overrideExpiry` option lets a waiter apply its own expiry instead.",
           "Lock: Added `renew(threshold)` to extend a held lock's lease during long operations (refreshing only when the remaining lease drops below the threshold, so it is cheap to call from a busy loop), and a `Lock.guard` helper that acquires a lock, runs a function, and always releases it (even if the function errors).",
