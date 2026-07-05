@@ -257,12 +257,16 @@
         description: "desc",
         config: {c: {customMenu: "Automation"}},
         registerTests: registerTestsStub,
+        registeredMacros: {},
         __class: {updater: updaterMock}
       }
-      Record.registerMacro rec, "MyMacro", "My macro", (->)
+      process = (->)
+      Record.registerMacro rec, "MyMacro", "My macro", process
       ut\assertEquals #registered, 1
       ut\assertContains registered[1][1], "MyMacro"
       registerTestsStub\assertCalledOnceWith rec
+      -- the macro is recorded under its name, exposing the unhooked process to the test suite
+      ut\assertIs rec.registeredMacros.MyMacro.process, process
 
     -- namespace registry: getRegisteredRecord is the public lookup; registration happens
     -- internally (via the constructor), so these seed the process-global registry directly

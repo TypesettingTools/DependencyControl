@@ -143,6 +143,8 @@ class Record
          :readGlobalScriptVars, :saveRecordToConfig} = args
 
         @recordType or= Common.RecordType.Managed
+        -- {name, description, process, validate, isActive} of each registered macro, keyed by name
+        @registeredMacros = {}
         -- also support name key (as used in configuration) for required modules
         @requiredModules or= args.requiredModules
 
@@ -343,10 +345,14 @@ class Record
 
         modules = table.pack @requireModules!
         success, errMsg = nil, nil
+
+        -- The test import receives the subject under test first: 
+        -- modules hand over their own ref
+        -- automation scripts hand over their currently registered macros
         if @moduleName
             success, errMsg = pcall @tests\import, @ref, modules, ...
         else
-            success, errMsg = pcall @tests\import, modules, ...
+            success, errMsg = pcall @tests\import, @registeredMacros, modules, ...
 
         if success
             @testSuiteInitialized = true
@@ -401,11 +407,15 @@ class Record
 
         aegisub.register_macro table.concat(menuName, "/"), description, processHooked, validate, isActive
 
+        -- record the unhooked process so this script's test suite can drive the macro without triggering an update check
+        @registeredMacros[name] = {:name, :description, :process, :validate, :isActive}
+
     ---Registers multiple macros declared in table form.
     ---@param macros? table[] Macro definitions, each an argument list for registerMacro.
-    ---@param submenuDefault? boolean Default submenu value applied when a macro omits it (default true).
-    registerMacros: (macros = {}, submenuDefault = true) =>
-        @registerTests!
+    ---@param submenuDefault? string|boolean Default submenu value applied when a macro omits it (default true).
+    ---@param testExports? table Internals to expose to this record's DepUnit test suite, forwarded to its test import function.
+    registerMacros: (macros = {}, submenuDefault = true, testExports) =>
+        @registerTests testExports
         for macro in *macros
             -- allow macro table to omit name and description
             submenuIdx = type(macro[1])=="function" and 4 or 6
