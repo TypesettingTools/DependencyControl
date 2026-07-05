@@ -138,6 +138,21 @@
       "type": "string"
     },
 
+    "FileBaseTemplate": {
+      "description": "A rolling base for `fileBaseUrl`/`localFileBasePath`: either a single template string applied to every file, or a per-file-type map giving separate bases so test files can live under a different path than script files. In the map form, files with `type: \"test\"` use the `test` base and all other files use the `script` base.",
+      "oneOf": [
+        { "$ref": "#/$defs/TemplateString" },
+        {
+          "type": "object",
+          "properties": {
+            "script": { "$ref": "#/$defs/TemplateString" },
+            "test":   { "$ref": "#/$defs/TemplateString" }
+          },
+          "required": ["script"]
+        }
+      ]
+    },
+
     "Sha1Hash": {
       "description": "SHA-1 digest as 40 hexadecimal characters (case-insensitive).",
       "type": "string",
@@ -262,11 +277,11 @@
           "default": false
         },
         "fileBaseUrl": {
-          "$ref": "#/$defs/TemplateString",
+          "$ref": "#/$defs/FileBaseTemplate",
           "description": "Base URL prepended to each file's name to form its download URL. Overrides any `@{fileBaseUrl}` template variable inherited from the script entry or feed root. This is a 'rolling' template variable: once set at a given depth it propagates to all nested levels until overridden."
         },
         "localFileBasePath": {
-          "$ref": "#/$defs/TemplateString",
+          "$ref": "#/$defs/FileBaseTemplate",
           "description": "Local-tooling counterpart of `@{fileBaseUrl}`. Rolling base path used only when a feed is expanded in 'local' mode, where file paths are resolved on disk instead of as download URLs. Added in v0.4.0"
         },
         "files": {
@@ -315,11 +330,11 @@
           "description": "Project or homepage URL. May reference the `@{baseUrl}` or `@{namespace}` template variables."
         },
         "fileBaseUrl": {
-          "$ref": "#/$defs/TemplateString",
+          "$ref": "#/$defs/FileBaseTemplate",
           "description": "Default base URL for file downloads within this script. Overrides the feed-level `@{fileBaseUrl}` for this entry's channels."
         },
         "localFileBasePath": {
-          "$ref": "#/$defs/TemplateString",
+          "$ref": "#/$defs/FileBaseTemplate",
           "description": "Local-tooling counterpart of `@{fileBaseUrl}`. Rolling base path used only when a feed is expanded in 'local' mode, where file paths are resolved on disk instead of as download URLs. Added in v0.4.0"
         },
         "channels": {
