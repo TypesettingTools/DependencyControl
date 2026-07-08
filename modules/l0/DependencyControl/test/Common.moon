@@ -173,6 +173,13 @@
       ut\assertFalse Common.equals cyc(1), cyc(2)   -- a differing sibling key still makes them unequal
       ut\assertTrue Common.equals cyc(1), cyc(1)
 
+    -- itemsEqual counts occurrences, so duplicate scalar items match by multiplicity
+    itemsEqual_duplicateScalars: (ut) ->
+      ut\assertTrue Common.itemsEqual {1, 1}, {1, 1}
+      ut\assertTrue Common.itemsEqual {1, 2}, {1, 2}
+      ut\assertFalse Common.itemsEqual {1, 1}, {1, 2}
+      ut\assertFalse Common.itemsEqual {1, 1, 2}, {1, 2, 2}
+
     _order: {
       "capitalizeTerms",
       "validateNamespace_valid", "validateNamespace_multiPart",
@@ -187,6 +194,6 @@
       "listIncludes_found", "listIncludes_notFoundAndEmpty",
       "getObjectHash_isHexString", "getObjectHash_deterministic", "getObjectHash_ignoresKeyOrder",
       "getObjectHash_nestedOrderIndependent", "getObjectHash_distinguishesContent",
-      "getObjectHash_typeTagged", "equals_cyclicRefs"
+      "getObjectHash_typeTagged", "equals_cyclicRefs", "itemsEqual_duplicateScalars"
     }
   }

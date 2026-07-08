@@ -84,7 +84,7 @@ _itemsEqual = (a, b, onlyNumKeys = true, ignoreExtraAItems, requireIdenticalItem
         for i, aTbl in ipairs aTbls
             if _equals aTbl, bTbl
                 table.remove aTbls, i
-                seen[aTbl] = nil
+                seen[aTbl] -= 1
                 return true
         return false
 
@@ -93,14 +93,14 @@ _itemsEqual = (a, b, onlyNumKeys = true, ignoreExtraAItems, requireIdenticalItem
         return false if not ignoreExtraAItems and aCnt != bCnt
 
         for v in *a
-            seen[v] = true
+            seen[v] = (seen[v] or 0) + 1   -- multiset: track occurrences so duplicate items match by count
             if "table" == type v
                 aTblCnt += 1
                 aTbls[aTblCnt] = v
 
         for v in *b
-            if seen[v]
-                seen[v] = nil
+            if (seen[v] or 0) > 0
+                seen[v] -= 1
                 continue
 
             if type(v) != "table" or requireIdenticalItems or not findEqualTable v
@@ -109,15 +109,15 @@ _itemsEqual = (a, b, onlyNumKeys = true, ignoreExtraAItems, requireIdenticalItem
     else
         for _, v in pairs a
             aCnt += 1
-            seen[v] = true
+            seen[v] = (seen[v] or 0) + 1   -- multiset: track occurrences so duplicate items match by count
             if "table" == type v
                 aTblCnt += 1
                 aTbls[aTblCnt] = v
 
         for _, v in pairs b
             bCnt += 1
-            if seen[v]
-                seen[v] = nil
+            if (seen[v] or 0) > 0
+                seen[v] -= 1
                 continue
 
             if type(v) != "table" or requireIdenticalItems or not findEqualTable v
