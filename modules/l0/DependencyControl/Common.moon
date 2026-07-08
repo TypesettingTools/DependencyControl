@@ -46,10 +46,16 @@ _equals = (a, b, aType, bType) ->
                 tablesSeenAtKeys or= {}
                 tablesSeenAtKeys[k] = true
 
+            -- this key's value cycles back to a table already being compared up the stack; treat the key
+            -- as matched and move on to the remaining keys (returning true here would wrongly declare the
+            -- whole tables equal and would also skip the depth decrement)
+            cyclic = false
             for i = 1, depth
-                return true if v == treeA[i] and b[k] == treeB[i]
+                if v == treeA[i] and b[k] == treeB[i]
+                    cyclic = true
+                    break
 
-            unless recurse v, b[k], vType
+            unless cyclic or recurse v, b[k], vType
                 depth -= 1
                 return false
 

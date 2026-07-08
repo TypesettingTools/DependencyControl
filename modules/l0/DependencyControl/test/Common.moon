@@ -164,6 +164,15 @@
     getObjectHash_typeTagged: (ut) ->
       ut\assertNotEquals Common.getObjectHash({v: 1}), Common.getObjectHash {v: "1"}
 
+    -- equals: a cyclic value is treated as matched at that key, not as making the whole tables equal
+    equals_cyclicRefs: (ut) ->
+      cyc = (x) ->
+        t = {:x}
+        t.self = t
+        t
+      ut\assertFalse Common.equals cyc(1), cyc(2)   -- a differing sibling key still makes them unequal
+      ut\assertTrue Common.equals cyc(1), cyc(1)
+
     _order: {
       "capitalizeTerms",
       "validateNamespace_valid", "validateNamespace_multiPart",
@@ -178,6 +187,6 @@
       "listIncludes_found", "listIncludes_notFoundAndEmpty",
       "getObjectHash_isHexString", "getObjectHash_deterministic", "getObjectHash_ignoresKeyOrder",
       "getObjectHash_nestedOrderIndependent", "getObjectHash_distinguishesContent",
-      "getObjectHash_typeTagged"
+      "getObjectHash_typeTagged", "equals_cyclicRefs"
     }
   }
