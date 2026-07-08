@@ -322,6 +322,16 @@
       ut\assertTrue result
       ut\assertTable details
 
+    -- a directory is removed non-recursively unless recurse is passed, so a stray directory path can't
+    -- silently delete a whole tree (the recurse flag forwarded to rmdir must be false by default)
+    remove_dirNonRecursiveByDefault: (ut) ->
+      recurseArgs = {}
+      (ut\stub lfs, "attributes")\calls (path, key) -> "directory"
+      (ut\stub FileOps, "rmdir")\calls (path, recurse) -> recurseArgs[#recurseArgs + 1] = recurse; true
+      FileOps.remove FileOps.joinPath basePath, "d"
+      FileOps.remove FileOps.joinPath(basePath, "d"), true
+      ut\assertEquals recurseArgs, {false, true}
+
     -- validateFullPath with basePath
 
     validateFullPath_withBasePath: (ut) ->
@@ -420,7 +430,7 @@
       "verifyHash_match", "verifyHash_mismatch", "verifyHash_badArg",
       "copy_success", "copy_targetExists",
       "move_overwrite",
-      "remove_success", "remove_notFound",
+      "remove_success", "remove_notFound", "remove_dirNonRecursiveByDefault",
       "validateFullPath_withBasePath",
       "getPathRoot_windowsPath", "getPathRoot_posixPath", "getPathRoot_relative",
       "joinPath_segmentsArray", "joinPath_segmentsVarargs", "joinPath_segmentsMixed",

@@ -223,12 +223,12 @@ class FileOps
 
     ---Removes one or more files/directories and optionally reschedules failed removals.
     ---@param paths string|(string|string[])[] Path, or list of paths (each a string or an array of path segments).
-    ---@param recurse? boolean Recurse into directories.
+    ---@param recurse? boolean Recurse into directories (default false, so a non-empty directory is not removed).
     ---@param reSchedule? boolean Reschedule failed removals for the next restart.
     ---@return boolean? overallSuccess True if all succeeded, false if any were rescheduled, nil on hard failure.
     ---@return table details Per-path result tables keyed by path.
     ---@return string? firstErr The first error encountered.
-    remove: (paths, recurse, reSchedule) ->
+    remove: (paths, recurse = false, reSchedule) ->
         config, configLoaded, overallSuccess, details, firstErr = nil, false, true, {}
         paths = {paths} unless type(paths) == "table"
 
