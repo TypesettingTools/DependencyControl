@@ -1,6 +1,24 @@
 Common = require "l0.DependencyControl.Common"
 local ConfigHandler
 
+-- A read/write view over a user section that holds only some of its keys, falling through per key to the
+-- section default: a user-set value wins, an absent key reads the default. Needed because the top-level
+-- default fallback is whole-section, so a partially-populated section (e.g. what the flat->sectioned config
+-- migration leaves behind, `updates = {enabled}`) would otherwise read nil for its unset sibling keys.
+-- Writes go straight to the user section, so defaults are never materialized into stored config.
+mergeSection = (userSection, defaultSection) ->
+    setmetatable {}, {
+        __index: (_, k) -> if userSection[k] != nil then userSection[k] else defaultSection[k]
+        __newindex: (_, k, v) -> userSection[k] = v
+        __len: -> 0
+        __ipairs: -> error "numerically indexed config hive keys are not supported"
+        __pairs: ->
+            merged = {}
+            merged[k] = v for k, v in pairs defaultSection
+            merged[k] = v for k, v in pairs userSection
+            return next, merged
+    }
+
 ---A view into a hive (nested path) of a ConfigHandler's JSON config file.
 ---Holds the proxy/defaults machinery and exposes @c / @config / @userConfig.
 ---Multiple views on the same file are coordinated through their shared ConfigHandler.
@@ -21,13 +39,14 @@ class ConfigView
     ---@param defaults? table Default values for the hive.
     ---@param logger? Logger
     ---@param noLoad? boolean Don't load the file immediately (default false).
+    ---@param schemaOpts? { schemaId: string, migrate: fun(config: table, current?: string, target: string): boolean } Schema id/migration for the backing handler (see ConfigHandler.get); applied only when the handler is first created for this file.
     ---@return ConfigView? view
     ---@return string? err
-    @get = (filePath, hivePath, defaults, logger, noLoad = false) =>
+    @get = (filePath, hivePath, defaults, logger, noLoad = false, schemaOpts) =>
         ConfigHandler or= require "l0.DependencyControl.ConfigHandler"
 
         if filePath
-            handler, msg = ConfigHandler\get filePath, logger, noLoad
+            handler, msg = ConfigHandler\get filePath, logger, noLoad, schemaOpts
             return nil, msg unless handler
             return handler\getView hivePath, defaults
         else
@@ -59,9 +78,12 @@ class ConfigView
         setDefaults @, defaults
         @config = setmetatable {}, {
             __index: (_, k) ->
-                if @userConfig[k] ~= nil
-                    return @userConfig[k]
-                else return @defaults[k]
+                uc = @userConfig[k]
+                return @defaults[k] if uc == nil
+                def = @defaults[k]
+                -- a partially-populated user section still resolves its unset keys from the section default
+                return mergeSection uc, def if type(uc) == "table" and type(def) == "table"
+                return uc
             __newindex: (_, k, v) ->
                 @userConfig[k] = v
             __len: (tbl) -> return 0
@@ -74,46 +96,30 @@ class ConfigView
         @c = @config -- shortcut
 
 
+    -- Wraps each top-level default section in a copy-on-write proxy: reads fall through to the section's
+    -- defaults, and the first write into a section not yet present in the user config deep-copies that
+    -- section's defaults into it before applying the write. Only the top level is wrapped -- a section
+    -- already present in the user config is served per-key by mergeSection through @config. The proxy must
+    -- never be iterated here: its __pairs yields the underlying default keys, so descending into it would
+    -- fire the copy-on-write __newindex and materialize every default over the user's config on load.
     setDefaults = (defaults) =>
         @defaults = defaults and Common.deepCopy(defaults) or {}
-        -- rig defaults in a way that writing to contained tables deep-copies the whole default
-        -- into the user configuration and sets the requested property there
-        recurse = (tbl) ->
-            for k,v in pairs tbl
-                continue if type(v)~="table" or type(k)=="string" and k\match "^__"
-                -- replace every table reference with an empty proxy table
-                -- this ensures all writes to the table get intercepted
-                tbl[k] = setmetatable {__targetMethodKey: k, __parent: tbl, __targetTable: v}, {
-                    -- make the original table the index of the proxy so that defaults can be read
-                    __index: v
-                    __len: (tbl) -> return #tbl.__targetTable
-                    __newindex: (tbl, k, v) ->
-                        upKeys, parent = {}, tbl.__parent
-                        -- trace back to defaults entry, pick up the keys along the path
-                        while parent.__parent
-                            tbl = parent
-                            upKeys[#upKeys+1] = tbl.__targetMethodKey
-                            parent = tbl.__parent
-
-                        -- deep copy the whole defaults node into the user configuration
-                        -- (util.deep_copy does not copy attached metatable references)
-                        -- make sure we copy the actual table, not the proxy
-                        @userConfig[tbl.__targetMethodKey] = Common.deepCopy @defaults[tbl.__targetMethodKey].__targetTable
-                        -- finally perform requested write on userdata
-                        tbl = @userConfig[tbl.__targetMethodKey]
-                        for i = #upKeys-1, 1, -1
-                            tbl = tbl[upKeys[i]]
-                        tbl[k] = v
-                    __pairs: (tbl) -> return next, tbl.__targetTable
-                    __ipairs: (tbl) ->
-                        i, n, orgTbl = 0, #tbl.__targetTable, tbl.__targetTable
-                        ->
-                            i += 1
-                            return i, orgTbl[i] if i <= n
-                }
-                recurse tbl[k]
-
-        recurse @defaults
+        for section, contents in pairs @defaults
+            continue if type(contents) != "table" or type(section) == "string" and section\match "^__"
+            @defaults[section] = setmetatable {__targetMethodKey: section, __targetTable: contents}, {
+                __index: contents  -- reads of unset keys fall through to the real defaults
+                __len: (proxy) -> #proxy.__targetTable
+                __newindex: (proxy, key, value) ->
+                    -- first write into an absent section: copy its defaults into the user config, then write
+                    @userConfig[proxy.__targetMethodKey] = Common.deepCopy proxy.__targetTable
+                    @userConfig[proxy.__targetMethodKey][key] = value
+                __pairs: (proxy) -> next, proxy.__targetTable
+                __ipairs: (proxy) ->
+                    i, n, orgTbl = 0, #proxy.__targetTable, proxy.__targetTable
+                    ->
+                        i += 1
+                        return i, orgTbl[i] if i <= n
+            }
 
 
     ---Removes this view's hive from the config file.

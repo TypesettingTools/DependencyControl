@@ -86,6 +86,35 @@
       view.config.newKey = "written"
       ut\assertEquals view.userConfig.newKey, "written"
 
+    -- a partially-populated user section still resolves its unset keys from the section default (the
+    -- flat->sectioned config migration leaves partial sections behind, so this guards against nil reads)
+    config_partialSectionFallsThrough: (ut) ->
+      handler = ConfigHandler nil
+      handler.config = {section: {nested: {a: "userA"}}}   -- only 'a' is set within 'nested'
+      view = ConfigView handler, {"section"}, {nested: {a: "defA", b: "defB"}}
+      ut\assertEquals view.config.nested.a, "userA"   -- a user-set key wins
+      ut\assertEquals view.config.nested.b, "defB"    -- an unset sibling falls through to the default
+
+    -- writing into a partial section targets the user section only, never materializing the other defaults
+    config_writeIntoPartialSection: (ut) ->
+      handler = ConfigHandler nil
+      handler.config = {section: {nested: {a: "userA"}}}
+      view = ConfigView handler, {"section"}, {nested: {a: "defA", b: "defB"}}
+      view.config.nested.b = "newB"
+      ut\assertEquals view.userConfig.nested.b, "newB"    -- written to the user section
+      ut\assertEquals view.userConfig.nested.a, "userA"   -- the existing user value is preserved
+      ut\assertNil rawget view.userConfig.nested, "c"     -- an untouched default is not stored
+
+    -- regression: constructing a view must not overwrite a populated section that holds table-valued keys.
+    -- The default proxies must not be iterated on load, or their __pairs fires the copy-on-write and
+    -- replaces the user's section with defaults (silently wiping trusted/blocked/extra feeds on every load).
+    config_populatedSectionSurvivesConstruction: (ut) ->
+      handler = ConfigHandler nil
+      handler.config = {root: {sect: {list: {"userA"}, mode: "never"}}}
+      view = ConfigView handler, {"root"}, {sect: {list: {}, mode: "always"}}
+      ut\assertEquals view.userConfig.sect.list, {"userA"}   -- user list intact, not replaced by default {}
+      ut\assertEquals view.userConfig.sect.mode, "never"     -- user scalar intact, not reset to "always"
+
     -- refresh: re-links userConfig to handler's current hive table
 
     refresh_success: (ut) ->
@@ -177,6 +206,8 @@
       "isOverlappingView_differentHandler", "isOverlappingView_root",
       "isOverlappingView_overlap", "isOverlappingView_disjoint",
       "config_readUser", "config_readDefault", "config_write",
+      "config_partialSectionFallsThrough", "config_writeIntoPartialSection",
+      "config_populatedSectionSurvivesConstruction",
       "refresh_success",
       "import_simple", "import_updateOnly", "import_skipPrivate",
       "load_noFilePath", "load_delegatesToHandler",
