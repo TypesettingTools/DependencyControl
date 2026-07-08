@@ -263,7 +263,9 @@ class UpdateFeed
         unless @downloader
             @config.downloadPath or= aegisub.decode_path "?temp/#{constants.DEPCTRL_NAMESPACE}_feedCache"
             feedsHaveBeenTrimmed or= Logger(fileMatchTemplate: fileMatchTemplate, logDir: @config.downloadPath, maxFiles: 20)\trimFiles!
-            @fileName or= table.concat {@config.downloadPath, fileBaseName, "%04X"\format(math.random 0, 16^4-1), ".json"}
+            -- land the temp file inside downloadPath (joinPath adds the separator) so trimFiles can bound it
+            rand = "%04X"\format math.random 0, 16^4 - 1
+            @fileName or= FileOps.joinPath @config.downloadPath, "#{fileBaseName}#{rand}.json"
             @downloader = Downloader nil, {blockPrivateHosts: @config.blockPrivateHosts}
         @fileName = fileName if fileName
 
