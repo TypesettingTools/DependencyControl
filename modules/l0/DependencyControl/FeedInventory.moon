@@ -269,6 +269,9 @@ class FeedInventory
         for url, entry in pairs inventoryEntriesByUrl
             -- don't crawl feeds with no discovery provenance (e.g. orphaned `trustedFeeds` entries)
             continue unless next entry.provenance
+            -- gate the root itself the same way its advertised children are: a blocked root is never
+            -- fetched, and an untrusted root honors the fetch policy (recorded above, just not crawled)
+            continue unless @feedTrust\shouldFetch url
             queue[#queue + 1] = {:url, root: url, depth: 0, route: {url}}
             visited[url] = true
 

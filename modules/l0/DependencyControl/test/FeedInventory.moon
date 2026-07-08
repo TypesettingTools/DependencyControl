@@ -199,6 +199,15 @@
       ut\assertEquals m["untrusted"].provenance, {Provenance.TransitiveKnown}   -- recorded (advertised)
       ut\assertNil m["deep"]                                           -- not fetched -> not discovered
 
+    -- a blocked root is gated like any other feed: recorded but never fetched, so what it advertises
+    -- isn't discovered (a blocked feed is always denied, even when it's a configured discovery root)
+    crawl_blockedRootNotFetched: (ut) ->
+      loader = crawlLoader {"blockedRoot": {"child"}}
+      inv = makeInventory {extraFeeds: {"blockedRoot"}}, {blocked: {"blockedRoot": true}}, loader
+      m = byUrl inv\crawl!
+      ut\assertNotNil m["blockedRoot"]   -- still listed (user extra feed)
+      ut\assertNil m["child"]            -- root not fetched -> its advertised feed not discovered
+
     -- with fetchUntrustedFeeds="prompt", an untrusted feed is followed only when the prompter confirms it
     crawl_promptFollowsOnlyConfirmedUntrusted: (ut) ->
       asked = {}
@@ -306,7 +315,8 @@
     _order: {
       "gather_tagsEachSource", "gather_mergesProvenance", "gather_surfacesTrustStatus", "gather_blockedByEntry"
       "gather_marksInUse", "getPackagesSourcedFrom_getEffectiveSource", "gather_empty"
-      "crawl_discoversTransitively", "crawl_neverDoesNotFetchUntrusted", "crawl_promptFollowsOnlyConfirmedUntrusted"
+      "crawl_discoversTransitively", "crawl_neverDoesNotFetchUntrusted", "crawl_blockedRootNotFetched"
+      "crawl_promptFollowsOnlyConfirmedUntrusted"
       "crawl_boundsUntrustedPerRoot", "crawl_boundsUntrustedPerFeed", "crawl_reportsDepthTruncation"
       "crawl_marksFetched", "crawl_trustedFeedsNotCrawlRoot"
       "gather_stampsLastFetchedFromCache", "crawl_depCtrlFeedTagsOfficialKnown"
