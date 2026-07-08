@@ -201,6 +201,17 @@
       saveStub\assertCalledOnce!
       ut\assertEquals view.userConfig, newHive
 
+    -- setFile registers the view with the new handler and detaches it from the old, so the handler's
+    -- whole-file refreshes reach the view (it was previously left out of the handler's view set)
+    setFile_registersWithNewHandler: (ut) ->
+      old = ConfigHandler nil
+      view = ConfigView old, {"config"}
+      old.views[view] = true   -- as getView would register it
+      target = "#{aegisub.decode_path '?temp'}/dc_m12b_setfile.json"
+      ut\assertTrue view\setFile target
+      ut\assertTrue view.__configHandler.views[view]   -- registered with the new handler
+      ut\assertNil old.views[view]                      -- and detached from the old one
+
     _order: {
       "new_orphan", "new_withHandler", "new_stringHivePath", "new_tableHivePath",
       "isOverlappingView_differentHandler", "isOverlappingView_root",
@@ -212,6 +223,6 @@
       "import_simple", "import_updateOnly", "import_skipPrivate",
       "load_noFilePath", "load_delegatesToHandler",
       "save_noFilePath", "save_delegatesToHandler",
-      "delete_purgesAndSaves"
+      "delete_purgesAndSaves", "setFile_registersWithNewHandler"
     }
   }

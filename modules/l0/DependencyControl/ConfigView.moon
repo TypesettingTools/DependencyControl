@@ -214,10 +214,12 @@ class ConfigView
     ---@return string? err
     setFile: (filePath) =>
         ConfigHandler or= require "l0.DependencyControl.ConfigHandler"
-        logger = @__configHandler and @__configHandler.logger
-        handler, msg = ConfigHandler\get filePath, logger, true  -- noLoad: caller loads separately
+        oldHandler = @__configHandler
+        handler, msg = ConfigHandler\get filePath, (oldHandler and oldHandler.logger), true  -- noLoad: caller loads separately
         return nil, msg unless handler
+        oldHandler.views[@] = nil if oldHandler   -- detach from the previous handler
         @__configHandler = handler
+        handler.views[@] = true                   -- register so the handler's whole-file refreshes reach this view
         @file = handler.filePath
         return true
 
@@ -225,7 +227,10 @@ class ConfigView
     ---@return boolean success
     unsetFile: =>
         ConfigHandler or= require "l0.DependencyControl.ConfigHandler"
-        @__configHandler = ConfigHandler nil, @__configHandler and @__configHandler.logger
+        oldHandler = @__configHandler
+        oldHandler.views[@] = nil if oldHandler   -- detach from the previous handler
+        @__configHandler = ConfigHandler nil, oldHandler and oldHandler.logger
+        @__configHandler.views[@] = true          -- register with the fresh in-memory handler
         @file = nil
         @userConfig = {}
         return true
