@@ -358,7 +358,7 @@ class FileOps
         flatPathSegments = Common.flatten args, 3, (value, typ) ->
             if typ != "string"
                 invalidPathSegmentType = typ
-                return nil
+                return {}, true   -- error is raised below via invalidPathSegmentType; contribute nothing here
 
             firstSegment, moreSegments = nil, nil
             for segment in FileOps.pathSegments value
@@ -366,6 +366,9 @@ class FileOps
                     moreSegments or= {firstSegment}
                     table.insert moreSegments, segment
                 else firstSegment = segment
+            -- an empty or separator-only segment has no components: return {} so it adds nothing, rather
+            -- than a nil that would leave a hole and stop the ipairs walk over the flattened segments
+            return {}, true unless firstSegment
             return moreSegments or firstSegment, moreSegments
         return nil, msgs.joinPath.invalidSegment\format invalidPathSegmentType if invalidPathSegmentType
 

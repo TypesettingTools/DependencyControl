@@ -186,6 +186,12 @@
       result = FileOps.joinPath {"path", "to"}, "file.txt"
       ut\assertEquals result, "path#{pathSep}to#{pathSep}file.txt"
 
+    -- an empty or separator-only segment contributes nothing and must not truncate later segments
+    joinPath_skipsEmptySegments: (ut) ->
+      ut\assertEquals FileOps.joinPath("path", "", "file.txt"), "path#{pathSep}file.txt"
+      ut\assertEquals FileOps.joinPath("path", {}, "file.txt"), "path#{pathSep}file.txt"
+      ut\assertEquals FileOps.joinPath("a", "b/c", "d"), "a#{pathSep}b#{pathSep}c#{pathSep}d"
+
     -- mkdir: stubs lfs.attributes + lfs.mkdir
 
     mkdir_new: (ut) ->
@@ -417,7 +423,8 @@
       "remove_success", "remove_notFound",
       "validateFullPath_withBasePath",
       "getPathRoot_windowsPath", "getPathRoot_posixPath", "getPathRoot_relative",
-      "joinPath_resolvesDotDot", "joinPath_invalidSegment",
+      "joinPath_segmentsArray", "joinPath_segmentsVarargs", "joinPath_segmentsMixed",
+      "joinPath_skipsEmptySegments", "joinPath_resolvesDotDot", "joinPath_invalidSegment",
       "exists_fileFound", "exists_notFound", "exists_wrongType", "exists_noTypeCheck",
       "listDir_success", "listDir_notDirectory"
     }
