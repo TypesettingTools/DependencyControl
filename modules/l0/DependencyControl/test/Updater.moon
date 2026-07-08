@@ -36,10 +36,12 @@
     -- run reports up-to-date for a module that wasn't (re)installed → load the existing module
     require_upToDateLoadsModule: (ut) ->
       loadedRef = {loaded: true}
-      ut\stub(ModuleLoader, "loadModule")\returns loadedRef
+      loadStub = ut\stub(ModuleLoader, "loadModule")\returns loadedRef
       task = {updated: false, ref: {wrong: true}, record: {namespace: "l0.dep", name: "Dep"}, run: ((wait) => UpdateStatus.UpToDate)}
       record = {scriptType: Common.ScriptType.Module, name: "Dep", namespace: "l0.dep", virtual: false}
       ut\assertEquals (Updater.require makeRequireUpdater(task), record, 0), loadedRef
+      -- loadModule must receive the record as its module spec, not the namespace string (a string would crash)
+      loadStub\assertCalledWith task.record, task.record
 
     -- a successful (re)install returns the task's freshly-loaded ref
     require_successReturnsRef: (ut) ->

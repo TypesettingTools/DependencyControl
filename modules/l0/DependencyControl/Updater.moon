@@ -116,7 +116,7 @@ class Updater
             -- usually we know in advance if a module is up to date so there's no reason to block other updaters
             -- but we'll make sure to handle this case gracefully, anyway
             @logger\debug msgs.require.upToDate, task.record.name or task.record.namespace
-            return ModuleLoader.loadModule task.record, task.record.namespace
+            return ModuleLoader.loadModule task.record, task.record
         elseif code >= 0  -- any other non-negative outcome (Installed / AlreadyUpdated / SkippedOptional)
             return task.ref
         else -- pass on update errors
