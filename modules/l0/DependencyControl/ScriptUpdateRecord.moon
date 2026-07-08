@@ -133,10 +133,12 @@ class ScriptUpdateRecord
 
         changelog = {}
         for ver, entry in pairs @changelog
-            ver = SemanticVersioning\toNumber ver
-            verStr = SemanticVersioning\toString ver
-            if ver >= minVer and ver <= maxVer
-                changelog[#changelog+1] = {ver, verStr, entry}
+            verNum = SemanticVersioning\toNumber ver
+            -- skip a malformed changelog version key (feed changelog keys aren't schema-validated); toNumber
+            -- returns false for those, and toString false / false >= minVer would otherwise raise
+            continue unless verNum
+            if verNum >= minVer and verNum <= maxVer
+                changelog[#changelog+1] = {verNum, SemanticVersioning\toString(verNum), entry}
 
         return "" if #changelog == 0
         table.sort changelog, (a,b) -> a[1]>b[1]

@@ -77,10 +77,22 @@
       sur = ScriptUpdateRecord "test.NS", data, {c:{}}, Common.ScriptType.Module
       ut\assertEquals sur\getChangelog(nil, "2.0.0"), ""
 
+    -- a malformed changelog version key (unvalidated feed data) is skipped, not crashed on
+    getChangelog_skipsMalformedKey: (ut) ->
+      data = {
+        channels: {release: {default: true, version: "1.0.0", files: {}}}, name: "TestScript"
+        changelog: {["1.0.0"]: {"Initial release"}, ["not-a-version"]: {"Bogus"}}
+      }
+      sur = ScriptUpdateRecord "test.NS", data, {c:{}}, Common.ScriptType.Module
+      result = sur\getChangelog nil
+      ut\assertContains result, "Initial release"   -- valid entry still rendered
+      ut\assertString result                         -- and no crash on the malformed key
+
     _order: {
       "getChannels_basic", "getChannels_noDefault",
       "setChannel_valid", "setChannel_invalid",
       "checkPlatform_noConstraint", "checkPlatform_currentPlatform", "checkPlatform_notMatching",
-      "getChangelog_noTable", "getChangelog_inRange", "getChangelog_allOutOfRange"
+      "getChangelog_noTable", "getChangelog_inRange", "getChangelog_allOutOfRange",
+      "getChangelog_skipsMalformedKey"
     }
   }
