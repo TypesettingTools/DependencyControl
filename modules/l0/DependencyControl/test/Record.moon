@@ -333,8 +333,17 @@
       ut\assertNotNil cache
       ut\assertMatches cache.cacheDir, "l0%.test%.script/thumbnails$"
 
+    -- getVersionNumber/getVersionString: deprecated <=0.6.x compat methods — callable on an instance and
+    -- defaulting to the record's own version (regression: they'd been class fields, unreachable via rec\method)
+    getVersion_compatMethods: (ut) ->
+      SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
+      fakeSelf = setmetatable {version: SemanticVersioning\toNumber "1.2.3"}, __index: Record.__base
+      ut\assertEquals fakeSelf\getVersionString!, "1.2.3"                                 -- defaults to @version
+      ut\assertEquals fakeSelf\getVersionNumber("2.0.0"), SemanticVersioning\toNumber "2.0.0"
+      ut\assertEquals fakeSelf\getVersionString(SemanticVersioning\toNumber "3.1.0"), "3.1.0"
+
     _order: {
-      "getFileCache_namespacedUnderConfigBase",
+      "getFileCache_namespacedUnderConfigBase", "getVersion_compatMethods",
       "module_dataOnly", "module_initLayout", "module_alsoUnderUser", "module_userOnly",
       "notInstalled", "portable", "macro_dataOnly",
       "checkVersion_equal", "checkVersion_greater", "checkVersion_older", "checkVersion_recordArg",

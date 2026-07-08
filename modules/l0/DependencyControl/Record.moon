@@ -260,10 +260,19 @@ class Record
         assert success, msgs.writeConfig.error\format errMsg
 
 
-    -- retained for compatibility with DepCtrl <= v0.6.3
-    -- TODO: deprecate w/ v0.7.0 and remove in next major release
-    @getVersionNumber = SemanticVersioning.toNumber
-    @getVersionString = SemanticVersioning.toString
+    ---@deprecated Use `SemanticVersioning.toNumber`.
+    ---Converts a version to its packed-integer form, defaulting to this record's version.
+    ---@param value? number|string Version to convert (default: this record's version).
+    ---@return number? versionNumber nil on an invalid version string.
+    ---@return string? err
+    getVersionNumber: (value = @version) => SemanticVersioning\toNumber value
+
+    ---@deprecated Use `SemanticVersioning.toString`.
+    ---Converts a version to its string form, defaulting to this record's version.
+    ---@param version? number|string Version to convert (default: this record's version).
+    ---@return string? versionString nil on an invalid version.
+    ---@return string? err
+    getVersionString: (version = @version) => SemanticVersioning\toString version
 
 
     ---Resolves this record's external config file path.
