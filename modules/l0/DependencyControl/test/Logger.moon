@@ -84,6 +84,15 @@
       ut\assertTrue result
       logStub\assertCalledOnce!
 
+    -- a log file that can't be opened disables file logging instead of crashing on every subsequent call
+    log_fileOpenFailureDisablesToFile: (ut) ->
+      logger = Logger toFile: true, toWindow: false, logDir: "?temp"
+      (ut\stub io, "open")\calls -> nil    -- simulate the log file failing to open
+      ut\stub aegisub, "log"               -- swallow the one-time warning
+      ok = pcall -> logger\log 4, "hello"
+      ut\assertTrue ok                     -- no crash
+      ut\assertFalse logger.toFile         -- file logging disabled after the failure
+
     -- assert/assertNotNil: success path returns values, failure path throws
 
     assert_truthy: (ut) ->
@@ -113,7 +122,7 @@
       "format_string", "format_printf", "format_table", "format_indent",
       "dumpToString_scalar", "dumpToString_flatTable", "dumpToString_ignoreKey",
       "dumpToString_maxDepth", "dumpToString_circular",
-      "log_dispatches", "log_emptyMsg", "log_nonNumberLevel",
+      "log_dispatches", "log_emptyMsg", "log_nonNumberLevel", "log_fileOpenFailureDisablesToFile",
       "assert_truthy", "assert_falsy",
       "assertNotNil_value", "assertNotNil_nil"
     }

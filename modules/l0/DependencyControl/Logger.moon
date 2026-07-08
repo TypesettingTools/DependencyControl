@@ -70,10 +70,18 @@ class Logger
 
         show = aegisub.log and @toWindow
         if @toFile and level <= @maxToFileLevel
-            @handle = io.open(@fileName, "a") unless @handle
-            linePre = @lastHadLineFeed and "#{indentStr}[#{levels[level+1]\upper!}] #{os.date '%H:%M:%S'} #{show and '+' or '•'} " or ""
-            line = table.concat({linePre, @usePrefixFile and prefix or "", msg, lineFeed})
-            @handle\write(line)\flush!
+            unless @handle
+                lfs.mkdir aegisub.decode_path @logDir   -- best-effort: create the log dir (parent ?user exists)
+                @handle = io.open @fileName, "a"
+                unless @handle
+                    -- missing dir / permissions / disk full: disable file logging rather than crash on every
+                    -- subsequent call, and note it once in the window (this message still reaches the window below)
+                    @toFile = false
+                    aegisub.log 2, "[#{@fileBaseName}] Couldn't open log file '#{@fileName}'; file logging disabled.\n" if aegisub.log
+            if @handle
+                linePre = @lastHadLineFeed and "#{indentStr}[#{levels[level+1]\upper!}] #{os.date '%H:%M:%S'} #{show and '+' or '•'} " or ""
+                line = table.concat({linePre, @usePrefixFile and prefix or "", msg, lineFeed})
+                @handle\write(line)\flush!
 
         -- for some reason the stack trace gets swallowed when not doing the replace
         assert level > 1,"#{indentStr}Error: #{prefixWin}#{msg\gsub ':', ': '}"
