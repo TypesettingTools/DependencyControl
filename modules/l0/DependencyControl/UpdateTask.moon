@@ -844,7 +844,7 @@ class UpdateTask
     performUpdate: (update) =>
         finish = (...) ->
             @running = false
-            if @record.virtual or @record.updateRecordType == Common.RecordType.Unmanaged
+            if @record.virtual or @record.recordType == Common.RecordType.Unmanaged
                 ModuleLoader.removeDummyRef @record
             return ...
 
