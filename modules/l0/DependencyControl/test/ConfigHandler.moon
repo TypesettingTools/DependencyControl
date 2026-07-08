@@ -57,6 +57,15 @@
       ok, err = pcall -> ConfigHandler "/bad/path.json"
       ut\assertFalse ok
 
+    -- @get caches by the validated path, so two raw spellings that normalize to one file share a handler
+    get_cachesByValidatedPath: (ut) ->
+      canon = "#{aegisub.decode_path '?temp'}/dc_m12a_get_cache.json"
+      (ut\stub FILEOPS_MODULE_NAME, "validateFullPath")\calls (p) -> canon, nil
+      h1 = ConfigHandler\get "raw-spelling-one", nil, true
+      h2 = ConfigHandler\get "raw-spelling-two", nil, true   -- validates to the same canonical path
+      ut\assertNotNil h1
+      ut\assertEquals h1, h2   -- same handler, not a duplicate
+
     -- getHive: exercises traverseHive + mergeHive internally
 
     getHive_exists: (ut) ->
@@ -303,7 +312,7 @@
     _order: {
       "getSerializableCopy_simple", "getSerializableCopy_privateKeys",
       "getSerializableCopy_nested", "getSerializableCopy_circular",
-      "new_noPath", "new_withPath", "new_badPath",
+      "new_noPath", "new_withPath", "new_badPath", "get_cachesByValidatedPath",
       "getHive_exists", "getHive_missing", "getHive_badParent",
       "getView_success", "getView_failure",
       "getOverlappingViews_wrongHandler", "getOverlappingViews_found", "getOverlappingViews_notFound",

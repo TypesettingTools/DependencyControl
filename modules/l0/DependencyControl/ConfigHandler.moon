@@ -82,10 +82,12 @@ Reload your automation scripts to generate a new configuration file.]]
     ---@return ConfigHandler? handler
     ---@return string? err
     @get = (filePath, logger = @logger, noLoad = false, schemaOpts) =>
-        return handler for path, handler in pairs @@handlers when path == filePath
-
+        -- normalize first, then look up by the canonical path: the cache is keyed by the validated path,
+        -- so comparing against the raw filePath would miss and construct a duplicate handler for one file
         path, msg = fileOps.validateFullPath filePath, true
         return nil, msgs.new.badPath\format filePath, msg unless path
+
+        return @@handlers[path] if @@handlers[path]
 
         success, handler = pcall ConfigHandler, path, logger, schemaOpts
         unless success
