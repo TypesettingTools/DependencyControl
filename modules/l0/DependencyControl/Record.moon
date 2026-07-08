@@ -202,7 +202,7 @@ class Record
         -- ramp up the random wait time on first initialization (many scripts may want to write configuration data)
         -- we can't really profit from write concerting here because we don't know which module loads last
         shouldWriteConfig = @loadConfig!
-        @writeConfig if shouldWriteConfig and saveRecordToConfig
+        @writeConfig! if shouldWriteConfig and saveRecordToConfig
 
     checkOptionalModules: ModuleLoader.checkOptionalModules
 
