@@ -222,6 +222,14 @@
       ut\assertNil saved[1]
       ut\assertTrue FeedTrust.block ft, "https://d/", {matchMode: "exact"}
 
+    -- a url differing only in case is a duplicate (matching is case-insensitive), and a bogus mode defaults to prefix
+    block_dedupsCaseInsensitivelyAndValidatesMode: (ut) ->
+      ft = make blockedFeeds: {{url: "https://Bad/", matchMode: "prefix"}}
+      ut\assertFalse FeedTrust.block ft, "https://bad/"          -- case-only difference -> duplicate
+      ft2 = make blockedFeeds: {}
+      FeedTrust.block ft2, "https://x/", {matchMode: "bogus"}
+      ut\assertEquals ft2.config.c.feeds.blockedFeeds[1].matchMode, "prefix"   -- unknown mode -> prefix
+
     -- getBlockingEntry surfaces the matching entry's reason and marks official blocks.
     getBlockingEntry_surfacesReasonAndOfficial: (ut) ->
       ft = make officialBlocked: {{url: "https://bad/", reason: "malware"}}
@@ -292,7 +300,7 @@
       "isOfficiallyTrusted_officialSetOnly"
       "getTrustStatus_classifiesTrust", "getTrustStatus_blockOverridesAndReturnsEntry"
       "trust_appendsPersistsAndInvalidates", "block_appendsPersistsAndInvalidates"
-      "trust_ignoresDuplicate", "block_ignoresDuplicate"
+      "trust_ignoresDuplicate", "block_ignoresDuplicate", "block_dedupsCaseInsensitivelyAndValidatesMode"
       "untrust_removesPersistsAndInvalidates", "untrust_returnsFalseWhenAbsent", "untrust_leavesOfficialTrusted"
       "unblock_removesPersistsAndInvalidates", "unblock_leavesOfficialBlocked"
       "addExtraFeed_addsPersistsAndInvalidates", "removeExtraFeed_removesAndInvalidates"

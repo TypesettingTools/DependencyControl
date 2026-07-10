@@ -288,11 +288,14 @@ class FeedTrust
     ---@param opts? { matchMode?: BlockedFeedMatchMode, reason?: string } The match mode (default prefix) and an optional reason.
     ---@return boolean added False when an equivalent block (same url and match mode) was already present.
     block: (feedUrl, opts = {}) =>
-        matchMode = opts.matchMode or @@BlockMatchMode.Prefix
+        -- validate the mode at the mutation boundary (an unknown mode defaults to prefix, matching the
+        -- read-time normalization) so a bogus value isn't persisted
+        matchMode = @@BlockMatchMode\validate(opts.matchMode) and opts.matchMode or @@BlockMatchMode.Prefix
         entries = [e for e in *(@config.c.feeds.blockedFeeds or {})]
         for raw in *entries
             norm = @@__normalizeBlockEntry raw
-            return false if norm and norm.url == feedUrl and norm.matchMode == matchMode
+            -- dedup case-insensitively, since matchesBlockEntry itself matches case-insensitively
+            return false if norm and norm.url\lower! == feedUrl\lower! and norm.matchMode == matchMode
         entries[#entries + 1] = {url: feedUrl, :matchMode, reason: opts.reason}
         @config.c.feeds.blockedFeeds = entries
         @__blocked = nil
