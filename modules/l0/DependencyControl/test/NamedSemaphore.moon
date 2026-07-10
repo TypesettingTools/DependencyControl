@@ -41,5 +41,20 @@
       ut\assertTrue b\tryLock!
       b\unlock!
 
-    _order: {"pidIsExposed", "acquiresExclusivelyAndReleases", "blockingLockAcquires", "sameNameContends"}
+    -- collecting one handle must not unlink a name another holder still owns: on POSIX a per-instance
+    -- sem_unlink would let the next sem_open create a separate semaphore, so a fresh handle could acquire
+    -- the "same" lock while the first holder still holds it (split-brain). Windows self-heals via refcount.
+    collectingOneHandleKeepsExclusion: (ut) ->
+      name = token!
+      a = NamedSemaphore name, true
+      ut\assertTrue a\tryLock!                 -- a holds it (value 0)
+      b = NamedSemaphore name, true            -- a second handle to the same name...
+      b = nil
+      collectgarbage "collect" for _ = 1, 3    -- ...is collected (loop forces the finalizer to run); the name must survive
+      c = NamedSemaphore name, true            -- a fresh open must see the same, still-held semaphore
+      ut\assertFalse c\tryLock!                -- so it cannot acquire while a holds it
+      a\unlock!
+
+    _order: {"pidIsExposed", "acquiresExclusivelyAndReleases", "blockingLockAcquires", "sameNameContends"
+             "collectingOneHandleKeepsExclusion"}
   }

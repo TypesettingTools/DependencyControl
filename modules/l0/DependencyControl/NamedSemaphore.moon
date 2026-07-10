@@ -1,7 +1,7 @@
 ffi = require "ffi"
 
 local formatName, openImpl, isOpenImpl, tryLockImpl, lockImpl, unlockImpl, closeImpl
-local pid, isAvailable
+local pid, isAvailable, unlinkAtExit
 
 msgs = {
     noImplementation: "No named semaphore implementation is available on this platform/build configuration."
@@ -57,6 +57,17 @@ else
     pid = okPid and p or 0
     isAvailable = true
 
+    -- Names to unlink when this Lua state tears down (≈ process exit for the main state). We deliberately
+    -- do NOT unlink when an individual instance is collected: unlinking a name another holder still owns
+    -- would let a later sem_open create a *separate* semaphore, so two holders could each believe they hold
+    -- the lock. Deferring the unlink to teardown keeps the name valid for the whole process while still
+    -- cleaning it up (so a reused pid can't inherit a stale semaphore) on a clean exit. The canary must be
+    -- kept alive for the module's lifetime (anchored on the class below) or it would be collected — and fire
+    -- the unlink — early.
+    namesToUnlink = {}
+    unlinkAtExit = newproxy true
+    (getmetatable unlinkAtExit).__gc = -> pcall(-> ffi.C.sem_unlink name) for name in pairs namesToUnlink
+
     -- POSIX names must start with a single '/' and contain no other slashes.
     formatName  = (token) -> "/#{token}"
     openImpl    = (name) -> ffi.C.sem_open name, ffiPosix.FileCreationFlags.Create, SEMAPHORE_FILE_MODE, BINARY_SEMAPHORE_INITIAL_VALUE
@@ -66,11 +77,7 @@ else
     unlockImpl  = (handle) -> ffi.C.sem_post handle
     closeImpl   = (name, handle, unlink) ->
         ffi.C.sem_close handle
-        -- Other process's already-open handles keep working after an unlink
-        -- but a subsequent *new* open with the same name would create a new
-        -- semaphore with a value entirely separate from the old one, resulting
-        -- in multiple handles thinking they hold the lock.
-        ffi.C.sem_unlink name if unlink
+        namesToUnlink[name] = true if unlink   -- unlinked at state teardown, not now (see above)
 
 
 ---A non-reentrant binary semaphore identified by a name.
@@ -83,9 +90,13 @@ class NamedSemaphore
     -- this process's id, exposed so callers can build process-scoped names and holder records
     @pid = pid
 
+    -- anchor the teardown-unlink canary to the class so it lives as long as the module (nil on Windows)
+    @__unlinkCanary = unlinkAtExit
+
     ---Gets a handle to the named semaphore for the given token, creating it if it doesn't exist.
     ---@param token string A name token restricted to [A-Za-z0-9_].
-    ---@param unlinkOnClose? boolean POSIX-only: remove the OS name when this instance is garbage-collected.
+    ---@param unlinkOnClose? boolean POSIX-only: remove the OS name when this Lua state tears down (not when
+    ---this instance is collected — that would break a name another holder still owns).
     ---Use true for process-private names so a reused PID can't inherit a stale semaphore.
     ---Use false for cross-process usage to prevent an exiting process from removing a name others still hold.
     ---No effect on Windows, where names are cleaned up automatically when the last handle closes.
