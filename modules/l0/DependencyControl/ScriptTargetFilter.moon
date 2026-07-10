@@ -17,7 +17,7 @@ table.sort scriptTypeList
 class ScriptTargetFilter
     @scriptTypeList = scriptTypeList
 
-    ---@param spec? table<integer, true | { include?: string[], exclude?: string[] }> Initial rules keyed by script type.
+    ---@param spec? table<ScriptType, true | { include?: string[], exclude?: string[] }> Initial rules keyed by script type.
     new: (spec) =>
         @rules = {}  -- [scriptType] = {all: bool, include: {ns -> true}, exclude: {ns -> true}}
         if spec
@@ -30,14 +30,14 @@ class ScriptTargetFilter
 
     ---Lazily creates and returns the rule table for a script type.
     ---@private
-    ---@param scriptType integer
+    ---@param scriptType ScriptType
     ---@return table rule
     ruleFor: (scriptType) =>
         @rules[scriptType] or= {include: {}, exclude: {}}
         @rules[scriptType]
 
     ---Includes a single namespace of the given script type.
-    ---@param scriptType integer
+    ---@param scriptType ScriptType
     ---@param namespace string
     ---@return ScriptTargetFilter self
     include: (scriptType, namespace) =>
@@ -46,7 +46,7 @@ class ScriptTargetFilter
 
     ---Includes every namespace of the given script type, or — when called without an
     ---argument — every namespace of every script type.
-    ---@param scriptType? integer Script type to include all of; omit to include everything.
+    ---@param scriptType? ScriptType Script type to include all of; omit to include everything.
     ---@return ScriptTargetFilter self
     includeAll: (scriptType) =>
         if scriptType
@@ -56,7 +56,7 @@ class ScriptTargetFilter
         @
 
     ---Excludes a single namespace of the given script type (takes precedence over includes).
-    ---@param scriptType integer
+    ---@param scriptType ScriptType
     ---@param namespace string
     ---@return ScriptTargetFilter self
     exclude: (scriptType, namespace) =>
@@ -64,12 +64,12 @@ class ScriptTargetFilter
         @
 
     ---Returns the script types this filter would process (those carrying any rule), sorted.
-    ---@return integer[] scriptTypes
+    ---@return ScriptType[] scriptTypes
     scriptTypes: =>
         [t for t in *@@scriptTypeList when @rules[t]]
 
     ---Tests whether a script of the given type and namespace should be processed.
-    ---@param scriptType integer
+    ---@param scriptType ScriptType
     ---@param namespace string
     ---@return boolean
     matches: (scriptType, namespace) =>

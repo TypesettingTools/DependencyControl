@@ -67,7 +67,7 @@ class ScriptUpdateRecord
     ---@param namespace string
     ---@param data FeedScriptData
     ---@param config? {c: {activeChannel?: string}}
-    ---@param scriptType integer
+    ---@param scriptType ScriptType
     ---@param autoChannel? boolean Select the default channel on construction (default true).
     ---@param logger? Logger
     new: (@namespace, data, @config = {c:{}}, scriptType, autoChannel = true, @logger = defaultLogger) =>

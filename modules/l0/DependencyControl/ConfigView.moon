@@ -235,10 +235,10 @@ class ConfigView
         @userConfig = {}
         return true
 
-    ---Returns a ConfigView for a child hive of this view's config.
-    ---@param hivePath string|string[] Path to the child hive, relative to this view.
-    ---@param defaults? table Default values for the child view.
-    ---@param noLoad? boolean Skip loading the child view (the caller loads it separately).
+    ---Returns a ConfigView for another hive of the same config file, sharing this view's handler.
+    ---@param hivePath string|string[] The hive path within the config file (from the file root, not relative to this view).
+    ---@param defaults? table Default values for the returned view's hive.
+    ---@param noLoad? boolean Skip loading the returned view (the caller loads it separately).
     ---@return ConfigView? view
     ---@return string? err
     getSectionHandler: (hivePath, defaults, noLoad) =>

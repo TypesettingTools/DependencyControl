@@ -96,9 +96,9 @@ class Enum
 
   ---Returns a human-readable description of the given value(s) in this enum.
   ---@param values? any A single value, or a list of values to look up. If not provided, returns all keys.
-  ---@param join? string|boolean Separator string for joining multiple keys, true for ", ", or false to return a list (default true).
   ---@param pattern? fun(key: string, value: any): string A function to format the key/value pair for display (default "<value> (<key>)").
-  ---@return string|string[] A single string when a single value is provided, or a list of strings when multiple values are provided (or join is false).
+  ---@param join? string|boolean Separator string for joining multiple keys, true for ", ", or false to return a list (default true).
+  ---@return string|string[] result A single string when joining, or a list of the formatted keys when join is false.
   describe: (values = @values, pattern = ((key, value) -> "#{value} (#{key})"), join = true) =>
     values = {values} if "table" != type values
   

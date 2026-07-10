@@ -124,7 +124,8 @@ class Updater
 
     ---Performs a periodic non-blocking update check for a managed record.
     ---@param record Record
-    ---@return UpdateStatus|boolean status The status code, or the task's run result.
+    ---@return UpdateStatus status The status code (the task's run result when an update actually runs).
+    ---@return string? entryPath The resolved entry-point path, returned only with a ProtectedInstall status.
     scheduleUpdate: (record) =>
         unless @__isEnabledFor UpdateReason.AutoUpdate
             @logger\trace msgs.scheduleUpdate.updaterDisabled, record.name or record.namespace

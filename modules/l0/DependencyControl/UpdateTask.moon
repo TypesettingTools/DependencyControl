@@ -995,7 +995,9 @@ class UpdateTask
         return finish UpdateStatus.Installed, SemanticVersioning\toString @record.version
 
 
-    ---@private
+    ---Reloads this task's record from its config file to pick up an install/update another updater performed
+    ---concurrently: on a version bump (or a virtual record becoming real) it reloads the module and marks the
+    ---task updated. Called after waiting on the updater lock, so a task doesn't redo work already done.
     refreshRecord: =>
         with @record
             wasVirtual, oldVersion = .virtual, .version

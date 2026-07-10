@@ -670,7 +670,7 @@ class UpdateFeed
     ---@param scriptType ScriptType The package's script type (ScriptType.Automation or .Module).
     ---@param packageNamespace string The namespaced identifier of the package to update (e.g. "l0.Functional").
     ---@param channel? string The channel to update (default: the package's default channel).
-    ---@return { namespace: string, scriptType: integer, channel?: string, changed: boolean, errors: string[] } result
+    ---@return { namespace: string, scriptType: ScriptType, channel?: string, changed: boolean, errors: string[] } result
     __updatePackage: (scriptType, packageNamespace, channel) =>
         result = {namespace: packageNamespace, :scriptType, changed: false, errors: {}}
         errors = result.errors
