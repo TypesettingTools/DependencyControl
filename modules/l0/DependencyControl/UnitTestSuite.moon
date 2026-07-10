@@ -7,6 +7,8 @@ Timer = require "l0.DependencyControl.Timer"
 DependencyControl = nil
 
 HIDDEN_TEST_EXPORTS_KEY = "#{constants.DEPCTRL_PRIVATE_GLOBAL_VAR_PREFIX}TestExports"
+-- unique key a ut\skip call tags its raised error table with, so run() can tell it  apart from a real error
+SKIP_SENTINEL = "#{constants.DEPCTRL_PRIVATE_GLOBAL_VAR_PREFIX}UnitTestSkipSentinel"
 
 package.path ..= "#{package.path\sub(-1) == ";" and "" or ";"}#{aegisub.decode_path "?user/automation/tests"}/?.lua;"
 
@@ -21,6 +23,7 @@ class UnitTest
             test: "Running test '%s'... "
             ok: "✓"
             failed: "✗"
+            skipped: "⊘"
             reason: "Reason: %s"
         }
         new: {
@@ -85,17 +88,28 @@ class UnitTest
     ---@return string? errMsg The error message describing how the test failed.
     run: (...) =>
         @assertFailed = false
+        @skipped = false
         @ran = true
         @stubs = {}
         @logStart!
         startTime = Timer.getTime!
-        @success, res = xpcall @f, debug.traceback, @, ...
+        ok, res = xpcall @f, debug.traceback, @, ...
         @duration = Timer.getTime! - startTime
         for i = #@stubs, 1, -1
             @stubs[i]\restore!
-        @logResult res
 
+        if not ok and type(res) == "table" and res[SKIP_SENTINEL]
+            @skipped, @skipReason, @success = true, res.reason, true
+        else @success = ok
+
+        @logResult res
         return @success, @errMsg
+
+    ---Aborts the running test immediately and marks it skipped with the given reason.
+    ---Call from within a test to gate it at runtime, e.g. on an unmet environment precondition.
+    ---@param reason? string Why the test is skipped; shown beside the skip marker and in the report.
+    skip: (reason) =>
+        error {[SKIP_SENTINEL]: true, :reason}
 
     ---Formats and writes a "running test x" message to the log.
     ---@private
@@ -112,7 +126,11 @@ class UnitTest
         -- restate the name beside the marker so it isn't stranded on a line by itself
         restate = Logger.isAtLineStart!
         indent = restate and @logger.indent or 0
-        if @success
+        if @skipped
+            mark = restate and "#{@@msgs.run.skipped} #{@name}" or @@msgs.run.skipped
+            mark ..= " (#{@skipReason})" if @skipReason
+            @logger\logEx nil, mark, nil, nil, indent
+        elseif @success
             ok = restate and "#{@@msgs.run.ok} #{@name}" or @@msgs.run.ok
             @logger\logEx nil, ok, nil, nil, indent
         else
@@ -612,7 +630,10 @@ class UnitTestClass
         @description = args._description
         @condition = args._condition
         @order or= args._order
-        @tests = [UnitTest(name, f, @) for name, f in pairs args when "_" != name\sub 1,1]
+        -- sort the test names so they run in a stable order when no explicit order is specified
+        testNames = [name for name in pairs args when "_" != name\sub 1,1]
+        table.sort testNames
+        @tests = [UnitTest(name, args[name], @) for name in *testNames]
 
     ---Runs all tests in the unit test class in the specified order.
     ---@param abortOnFail? boolean Stop testing once a test fails (default false).
@@ -620,7 +641,7 @@ class UnitTestClass
     ---@return boolean success
     ---@return UnitTest[]|integer failed On failure, the failed tests (or -1 when setup failed).
     run: (abortOnFail, order = @order) =>
-        -- class-level skip condition: when the predicate returns falsy, skip the whole class
+        -- when the class predicate returns falsy, skip the whole class
         -- and mark its tests as skipped so they still surface (as skipped) in the report.
         -- Call without `self` (plain `cond!`, not `@condition!`) so the predicate isn't handed
         -- the class as an unexpected first argument.
@@ -635,10 +656,15 @@ class UnitTestClass
 
         tests, failed = @tests, {}
         if order
-            tests, mappings = {}, {test.name, test for test in *@tests}
-            for i, name in ipairs order
-                @logger\assert mappings[name], msgs.run.testNotFound, name
-                tests[i] = mappings[name]
+            byName = {test.name, test for test in *@tests}
+            tests, seen = {}, {}
+            for name in *order
+                @logger\assert byName[name], msgs.run.testNotFound, name
+                tests[#tests+1] = byName[name]
+                seen[name] = true
+            -- a test missing from _order still runs, appended (in name order) after the listed ones:
+            -- _order sets the run/report order, not which tests run (use ut\skip to skip a test)
+            tests[#tests+1] = test for test in *@tests when not seen[test.name]
         testCnt, failedCnt = #tests, 0
 
         @logger\log msgs.run.runningTests, @name, testCnt
@@ -652,7 +678,7 @@ class UnitTestClass
             return false, -1
 
         aborted = false
-        for i, test in pairs tests
+        for i, test in ipairs tests
             unless test\run unpack res
                 failedCnt += 1
                 failed[#failed+1] = test
@@ -794,7 +820,10 @@ class UnitTestSuite
     ---Use this to add additional test classes to an existing UnitTestSuite object.
     ---@param classes table<string, table> UnitTestClass constructor tables by name.
     addClasses: (classes) =>
-        @classes[#@classes+1] = UnitTestClass(name, args, args._order, @) for name, args in pairs classes when "_" != name\sub 1,1
+        -- add classes in a stable order
+        classNames = [name for name in pairs classes when "_" != name\sub 1,1]
+        table.sort classNames
+        @classes[#@classes+1] = UnitTestClass(name, classes[name], classes[name]._order, @) for name in *classNames
         if classes._order
             @order or= {}
             @order[#@order+1] = clsName for clsName in *classes._order
@@ -855,7 +884,7 @@ class UnitTestSuite
         @logger.indent += 1
 
         @startTime = os.time! * 1000   -- epoch ms, for the CTRF report summary
-        for i, cls in pairs classes
+        for i, cls in ipairs classes
             success, failed = cls\run abortOnFail
             unless success
                 failedCnt += 1

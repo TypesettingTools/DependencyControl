@@ -53,6 +53,4 @@
       perms = lfs.attributes path, "permissions"
       os.remove path
       ut\assertEquals perms, "rw-r--r--"   -- 0o644
-
-    _order: { "create_makesFile", "exclusive_failsOnExisting", "getFileMode_setsPermissions" }
   }

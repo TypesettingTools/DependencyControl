@@ -67,6 +67,4 @@
 
       data = FileOps.readFile "#{ctx.extractDir}/sub/c.txt"
       ut\assertEquals data, "nested file contents"
-
-    _order: { "roundTrip_preservesNestedEntries" }
   }

@@ -68,8 +68,6 @@ UnitTestSuite "l0.DependencyControl.Toolbox", (macros, dependencies, testExports
         ut\assertNotNil testExports
         ut\assertFunction testExports.shortenUrl
         ut\assertFunction testExports.expandUrl
-
-      _order: {"receivesRegisteredMacros", "receivesTestExports"}
     }
 
     Urls: {
@@ -111,8 +109,6 @@ UnitTestSuite "l0.DependencyControl.Toolbox", (macros, dependencies, testExports
         ut\assertEquals formatAge(now - 7200), "2h"
         ut\assertEquals formatAge(now - 172800), "2d"
         ut\assertEquals formatAge(now - 1209600), "2w"
-
-      _order: {"never_isDash", "picksCoarsestUnit"}
     }
 
     InstalledList: {
@@ -305,8 +301,6 @@ UnitTestSuite "l0.DependencyControl.Toolbox", (macros, dependencies, testExports
         macros["Update Script"].process!
         ut\assertEquals #ran, 1
         ut\assertEquals ran[1], macroEntry
-
-      _order: {"cancel_runsNoTask", "selectsMacro_runsItsTask"}
     }
 
     Uninstall: {
@@ -318,8 +312,6 @@ UnitTestSuite "l0.DependencyControl.Toolbox", (macros, dependencies, testExports
         dlg = queueDialog ut, {{false}}
         macros["Uninstall Script"].process!
         dlg\assertCalledOnce!
-
-      _order: {"cancel_uninstallsNothing"}
     }
 
     Install: {
@@ -374,8 +366,6 @@ UnitTestSuite "l0.DependencyControl.Toolbox", (macros, dependencies, testExports
         built = dlg._calls[1][1]
         ut\assertNotNil built[1]
         ut\assertEquals built[1].y, 0
-
-      _order: {"appliesEditsAndSaves"}
     }
 
     ManageFeeds: {

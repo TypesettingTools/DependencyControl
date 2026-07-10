@@ -77,10 +77,45 @@
       ut\assertTrue ok        -- previously raised on `for … in *(-1)`
       ut\assertFalse success  -- the failed setup is reported as a suite failure
 
-    _order: {
-      "assertContains_caseInsensitiveMatches", "assertContains_caseSensitiveRejectsWrongCase",
-      "assertContains_failureUsesContainsMessage",
-      "assertNegative_failureMessage",
-      "setupFailureDoesNotCrashRun"
-    }
+    -- ut\skip: a test that skips itself is marked skipped (not failed), aborts the rest of its body,
+    -- and is reported as skipped with its reason; the suite run still succeeds.
+    skip_marksSkippedAbortsAndReports: (ut) ->
+      suite = UnitTestSuite "test.regression.skip", {
+        Skipping: {
+          skips: (t) ->
+            t\skip "unmet precondition"
+            t\assertTrue false   -- unreachable: skip aborts the body before this would fail
+          passes: (t) -> t\assertTrue true
+        }
+      }
+      silence suite
+      ok, success = pcall -> suite\run!
+      ut\assertTrue ok
+      ut\assertTrue success   -- a skip is not a failure
+
+      byName = {t.name, t for t in *suite.classes[1].tests}
+      ut\assertTrue byName.skips.skipped
+      ut\assertEquals byName.skips.skipReason, "unmet precondition"
+      ut\assertFalse byName.passes.skipped
+
+      summary = suite\toCtrf!.results.summary
+      ut\assertEquals summary.skipped, 1
+      ut\assertEquals summary.passed, 1
+      ut\assertEquals summary.failed, 0
+
+    -- a test absent from a class's _order still runs, appended (name-sorted) after the listed ones:
+    -- _order sets the run order, not which tests run.
+    runsTestsMissingFromOrder: (ut) ->
+      ran = {}
+      suite = UnitTestSuite "test.regression.orderMembership", {
+        Partial: {
+          _order: {"bbb", "aaa"}   -- non-alphabetical, and deliberately omits "ccc"
+          aaa: (t) -> ran[#ran+1] = "aaa"
+          bbb: (t) -> ran[#ran+1] = "bbb"
+          ccc: (t) -> ran[#ran+1] = "ccc"
+        }
+      }
+      silence suite
+      suite\run!
+      ut\assertEquals ran, {"bbb", "aaa", "ccc"}   -- listed order first, then the unlisted test appended
   }
