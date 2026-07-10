@@ -86,8 +86,8 @@ class Record
 
     @depConf = {
         file: aegisub.decode_path "?user/config/#{constants.DEPCTRL_NAMESPACE}.json",
-        scriptFields: {"author", "configFile", "feed", "moduleName", "name", "namespace", "url", -- REMOVE
-                       "requiredModules", "version", "unmanaged", "provides"}
+        scriptFields: {"author", "configFile", "feed", "moduleName", "name", "namespace", "url",
+                       "requiredModules", "version", "recordType", "provides"}
     }
 
     ---Returns the live, installed record registered for a namespace, or nil if none is registered

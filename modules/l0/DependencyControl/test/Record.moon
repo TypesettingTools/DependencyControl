@@ -342,8 +342,19 @@
       ut\assertEquals fakeSelf\getVersionNumber("2.0.0"), SemanticVersioning\toNumber "2.0.0"
       ut\assertEquals fakeSelf\getVersionString(SemanticVersioning\toNumber "3.1.0"), "3.1.0"
 
+    -- loadConfig imports recordType from the stored config like any other persisted field
+    loadConfig_importsRecordType: (ut) ->
+      -- __base.loadConfig: the instance method (Record.loadConfig is a distinct static for the global config)
+      record = setmetatable {
+        __class: Record, virtual: false, namespace: "l0.x", scriptType: Common.ScriptType.Module
+        config: {load: (=> true), c: {recordType: Common.RecordType.Unmanaged}}
+      }, __index: Record.__base
+      Record.__base.loadConfig record, true
+      ut\assertEquals record.recordType, Common.RecordType.Unmanaged
+
     _order: {
       "getFileCache_namespacedUnderConfigBase", "getVersion_compatMethods",
+      "loadConfig_importsRecordType",
       "module_dataOnly", "module_initLayout", "module_alsoUnderUser", "module_userOnly",
       "notInstalled", "portable", "macro_dataOnly",
       "checkVersion_equal", "checkVersion_greater", "checkVersion_older", "checkVersion_recordArg",
