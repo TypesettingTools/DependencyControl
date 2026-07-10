@@ -3,6 +3,8 @@
 -- on that class (e.g. Updater.defaultCheckInterval, FileCache.defaultMaxAge). Only settings shared across
 -- subsystems default here.
 
+Common = require "l0.DependencyControl.Common"
+
 CONFIG_SCHEMA_ID_CURRENT = "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/master/schemas/config/v0.7.0.json"
 
 -- Per-section defaults. Each section under `sections` is loaded as its own ConfigView with these defaults
@@ -47,10 +49,11 @@ keyMap = {
 droppedKeys = {"tryAllFeeds", "dumpFeeds"}
 
 ---Migrates a whole config-file table up to the current schema, in place, when its root `$schema` predates it.
----The only migration so far lifts a flat pre-0.7.0 `config` hive into topic sections; a config that already
----carries any `$schema` is sectioned and left untouched. Keys the map/drop list don't cover stay put.
+---For a pre-`$schema` config it lifts flat `config`-hive keys into topic sections and rewrites each record's
+---pre-0.7 boolean `unmanaged` flag into its recordType; a config that already carries a `$schema`, and any
+---keys neither lift covers, are left untouched.
 ---Shaped as ConfigHandler's migration callback: the handler stamps the new `$schema` when this returns true.
----@param config table The whole config-file table (mutated in place); its `config` hive is what's lifted.
+---@param config table The whole config-file table, mutated in place (the `config` hive and the record sections).
 ---@param currentSchemaId? string The `$schema` found in the file, or nil for a pre-`$schema` (flat) config.
 ---@param targetSchemaId? string The schema being migrated to (unused here; the handler applies it).
 ---@return boolean migrated Whether a migration was applied.
@@ -70,6 +73,16 @@ migrate = (config, currentSchemaId, targetSchemaId) ->
 
         configHive[k] = nil for k in *droppedKeys
         configHive.formatVersion = nil   -- obsolete pre-`$schema` marker, superseded by the root `$schema`
+
+    -- pre-0.7 recorded a script/module's type as a boolean `unmanaged` flag on its macros/modules entry;
+    -- rewrite it as the recordType value and drop the flag (an entry without it loads as managed)
+    for section in *Common.ScriptTypeSection.values
+        records = config[section]
+        continue unless type(records) == "table"
+        for _, record in pairs records
+            continue unless type(record) == "table"
+            record.recordType = Common.RecordType.Unmanaged if record.unmanaged
+            record.unmanaged = nil
     return true
 
 {

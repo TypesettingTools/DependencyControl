@@ -3,6 +3,7 @@
 -- keys, is idempotent, and preserves unknown keys.
 () ->
   schema = require "l0.DependencyControl.config-schema"
+  Common = require "l0.DependencyControl.Common"
 
   {:migrate, :keyMap, :droppedKeys} = schema.migration
 
@@ -85,6 +86,26 @@
       ut\assertNil cfg.feeds
       ut\assertEquals cfg.updates.mode, "auto-update"
 
+    -- a pre-$schema config rewrites each record's boolean `unmanaged` flag into its recordType and drops the
+    -- flag; a record without the flag keeps no recordType (loads as managed), and its other fields are untouched
+    migratesLegacyUnmanagedFlag: (ut) ->
+      c = {
+        macros: {
+          ["l0.old"]: {unmanaged: true, version: 1}
+          ["l0.managed"]: {version: 2}
+        }
+        modules: {
+          ["l0.mod"]: {unmanaged: true}
+        }
+      }
+      migrate c, nil, schema.CONFIG_SCHEMA_ID_CURRENT
+      ut\assertEquals c.macros["l0.old"].recordType, Common.RecordType.Unmanaged
+      ut\assertNil c.macros["l0.old"].unmanaged        -- flag dropped
+      ut\assertEquals c.macros["l0.old"].version, 1    -- sibling fields left alone
+      ut\assertNil c.macros["l0.managed"].recordType   -- no flag -> stays managed
+      ut\assertEquals c.modules["l0.mod"].recordType, Common.RecordType.Unmanaged
+      ut\assertNil c.modules["l0.mod"].unmanaged
+
     -- the migration handles exactly the v0.6.3 keys: each is either lifted or dropped, and nothing else is
     handlesExactlyV063Keys: (ut) ->
       handled = {k, true for k in *droppedKeys}
@@ -96,6 +117,6 @@
     _order: {
       "hasAllSections", "hasPolicyLiterals"
       "migratesFlatKeys", "dropsObsoleteKeys", "dropsObsoleteFormatVersion", "skipsWhenSchemaPresent"
-      "preservesUnknownKeys", "handlesExactlyV063Keys"
+      "migratesLegacyUnmanagedFlag", "preservesUnknownKeys", "handlesExactlyV063Keys"
     }
   }
