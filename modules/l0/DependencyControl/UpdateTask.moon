@@ -591,6 +591,9 @@ class UpdateTask
         return nil, nil
 
     ---Runs the full update/install flow for this task.
+    ---Acquires the global updater lock but does not release it — the caller (a Record.requireModules /
+    ---macro-hook / Toolbox entry point) must call `updater\releaseLock` once its whole operation is done,
+    ---or the lock is held until its lease lapses (orphanTimeout), blocking other scripts' updates.
     ---@param waitLock? boolean Wait for a concurrent update to finish instead of bailing.
     ---@return UpdateStatus statusCode
     ---@return any detail
