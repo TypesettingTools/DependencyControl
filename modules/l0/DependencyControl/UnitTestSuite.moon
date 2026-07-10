@@ -3,6 +3,7 @@ Logger = require "l0.DependencyControl.Logger"
 Common = require "l0.DependencyControl.Common"
 Stub = require "l0.DependencyControl.Stub"
 constants = require "l0.DependencyControl.Constants"
+Timer = require "l0.DependencyControl.Timer"
 DependencyControl = nil
 
 HIDDEN_TEST_EXPORTS_KEY = "#{constants.DEPCTRL_PRIVATE_GLOBAL_VAR_PREFIX}TestExports"
@@ -87,9 +88,9 @@ class UnitTest
         @ran = true
         @stubs = {}
         @logStart!
-        startTime = os.clock!
+        startTime = Timer.getTime!
         @success, res = xpcall @f, debug.traceback, @, ...
-        @duration = os.clock! - startTime
+        @duration = Timer.getTime! - startTime
         for i = #@stubs, 1, -1
             @stubs[i]\restore!
         @logResult res
@@ -552,9 +553,9 @@ class UnitTestSetup extends UnitTest
         @ran = true
         @logger\logEx nil, @@msgs.run.setup, false
 
-        startTime = os.clock!
+        startTime = Timer.getTime!
         res = table.pack pcall @f, @
-        @duration = os.clock! - startTime
+        @duration = Timer.getTime! - startTime
         @success = table.remove res, 1
         @logResult res[1]
 
