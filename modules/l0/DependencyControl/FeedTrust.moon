@@ -87,9 +87,12 @@ class FeedTrust
         return @__official if @__official
         trusted, blocked = {[constants.DEPCTRL_FEED_URL]: true}, {}
         feed = @feedLoader\load constants.DEPCTRL_FEED_URL, {autoLoad: false}
-        if feed\ensureLoaded!
-            Common.makeSet feed\getKnownFeeds!, trusted
-            blocked = feed.data.blockedFeeds or {}
+        unless feed\ensureLoaded!
+            -- when the load fails (e.g. offline), return the best-effort fallback without caching, so a
+            -- later call retries once the feed becomes reachable (e.g. after the updater fetches it into the cache)
+            return {:trusted, :blocked}
+        Common.makeSet feed\getKnownFeeds!, trusted
+        blocked = feed.data.blockedFeeds or {}
         @__official = {:trusted, :blocked}
         return @__official
 

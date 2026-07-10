@@ -33,6 +33,24 @@
       ut\assertEquals FeedTrust.getOfficialBlockedFeeds(ft), {{url: "https://bad.example/"}}
       ut\assertIs ft.__official, cached
 
+    -- a failed official-feed load is not cached: a later call retries and caches once the feed loads
+    loadOfficial_retriesAfterFailure: (ut) ->
+      calls = 0
+      fakeFeed = {
+        ensureLoaded: =>
+          calls += 1
+          calls > 1                                -- fails first, succeeds thereafter
+        getKnownFeeds: => {"feed://known"}
+        data: {blockedFeeds: {}}
+      }
+      ft = setmetatable {feedLoader: {load: ((url, opts) => fakeFeed)}}, __index: FeedTrust.__base
+      first = FeedTrust.getOfficialTrustedFeeds ft
+      ut\assertNil ft.__official                   -- failed load -> not cached
+      ut\assertNil first["feed://known"]           -- fallback trusts only DepCtrl's own url
+      second = FeedTrust.getOfficialTrustedFeeds ft -- retries -> succeeds this time
+      ut\assertNotNil ft.__official                -- cached now
+      ut\assertTrue second["feed://known"]
+
     -- getTrustedFeeds merges the official trusted set with the user's extraFeeds and trustedFeeds.
     getTrustedFeeds_mergesOfficialAndUser: (ut) ->
       ft = make officialTrusted: {"feed://official": true}, extraFeeds: {"feed://extra"}, trustedFeeds: {"feed://trusted"}
@@ -294,6 +312,7 @@
 
     _order: {
       "getOfficialTrustedFeeds_usesCacheWhenPresent", "getOfficialBlockedFeeds_usesCacheWhenPresent"
+      "loadOfficial_retriesAfterFailure"
       "getTrustedFeeds_mergesOfficialAndUser", "getTrustedFeeds_officialOnlyWhenNoUserFeeds"
       "getBlockedFeeds_mergesOfficialThenUser", "getBlockedFeeds_officialOnlyWhenNoUserFeeds"
       "isTrusted_checksMergedSet", "isBlocked_prefixMatch", "isUserTrusted_userListsOnly"
