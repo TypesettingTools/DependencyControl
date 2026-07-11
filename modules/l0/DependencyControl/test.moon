@@ -26,7 +26,8 @@ UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
     Logger:             (controls\requireTest "Logger")!
     UnitTestSuite:      (controls\requireTest "UnitTestSuite")!
     Enum:               (controls\requireTest "Enum")!
-    SemanticVersion: (controls\requireTest "SemanticVersion")!
+    Accessors:          (controls\requireTest "Accessors")!
+    SemanticVersion:    (controls\requireTest "SemanticVersion")!
     Lock:               (controls\requireTest "Lock")!
     FileLock:           (controls\requireTest "FileLock")!
     NamedSemaphore:     (controls\requireTest "NamedSemaphore")!
