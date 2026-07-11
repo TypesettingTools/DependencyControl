@@ -255,7 +255,7 @@ if args.command == "test" then
             ran = ran + 1
             if not success then
                 failed = failed + 1
-                for _, f in ipairs(record.tests:getFailures()) do
+                for _, f in ipairs(record.tests.failures) do
                     f.namespace = ns
                     allFailures[#allFailures + 1] = f
                 end

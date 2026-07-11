@@ -7,6 +7,7 @@ Common = require "l0.DependencyControl.Common"
 Enum   = require "l0.DependencyControl.Enum"
 Crypto = require "l0.DependencyControl.Crypto"
 FileOps = require "l0.DependencyControl.FileOps"
+Accessors = require "l0.DependencyControl.Accessors"
 json   = require "json"
 
 DEFAULT_LOCK_WAIT_INTERVAL = 250
@@ -19,10 +20,6 @@ RENEW_SAFETY_MARGIN_MS = 2000
 
 -- separates namespace from resource when hashing them into a single name token
 NAMESPACE_RESOURCE_SEPARATOR = "\31"
-
----@alias LockScope
----| "process" # Only Lua states within this process contend.
----| "global" # Every process in the session contends (advisory file lock).
 
 ---@class LockArgs
 ---@field namespace? string Logical namespace component of the locked resource (default "").
@@ -55,6 +52,7 @@ NAMESPACE_RESOURCE_SEPARATOR = "\31"
 ---diagnostics. Long operations should call renew! periodically to extend the recorded lease
 ---so waiters don't mistake a busy holder for a crashed one.
 ---@class Lock
+---@field state LockState Held when this instance holds the lock, otherwise Unknown (a foreign holder's state can't be told without acquiring). Read-only.
 class Lock
     msgs = {
         new: {
@@ -85,6 +83,11 @@ class Lock
 
     @logger = Logger fileBaseName: "DependencyControl.Lock"
 
+    ---@alias LockState
+    ---| -1 # Unknown: the state can't be determined without trying to acquire (e.g. a foreign holder)
+    ---| 0 # Unavailable: the lock is held elsewhere and couldn't be acquired
+    ---| 1 # Available: the lock is free to acquire
+    ---| 2 # Held: this instance holds the lock
     @LockState = Enum "LockState", {
         Unknown:     -1
         Unavailable:  0
@@ -93,6 +96,9 @@ class Lock
     }, @logger
     LockState or= @LockState
 
+    ---@alias LockScope
+    ---| "process" # Process: only Lua states within this process contend
+    ---| "global" # Global: every process in the session contends via an advisory file lock
     @Scope = Enum "LockScope", {
         Process: "process"
         Global:  "global"
@@ -236,18 +242,15 @@ class Lock
         return nil if deadline and os.time! > deadline
         return record
 
-    ---Returns the current lock state for this instance.
-    ---Returns Held if this instance holds the lock, Unknown otherwise (the OS lock
-    ---can't be queried for foreign holders without attempting to acquire it).
-    ---@return integer state A Lock.LockState value.
-    getState: =>
-        return @@LockState.Held if @_state.held
-        @@LockState.Unknown
+    state: Accessors.property
+        get: =>
+            return @@LockState.Held if @_state.held
+            @@LockState.Unknown
 
     ---Attempts to acquire the lock, waiting up to timeout milliseconds.
     ---@param timeout? number Maximum time to wait in milliseconds (default math.huge).
     ---@param lockWaitInterval? number Poll interval in milliseconds while waiting (default 250).
-    ---@return integer state A Lock.LockState value (Held on success, Unavailable on timeout).
+    ---@return LockState state Held on success, Unavailable on timeout.
     ---@return number timePassed Milliseconds spent waiting.
     lock: (timeout = math.huge, lockWaitInterval = DEFAULT_LOCK_WAIT_INTERVAL) =>
         -- Without a working OS primitive we can't coordinate across states/processes;
@@ -265,7 +268,7 @@ class Lock
             @logger\trace msgs.lock.trying, @namespace, @resource, @holderName, @instanceId,
                           timeout == math.huge and math.huge or timeout - timePassed
 
-            state = @getState!
+            state = @state
             switch state
                 when @@LockState.Held
                     @logger\trace msgs.lock.alreadyHeld, @holderName, @instanceId, @namespace, @resource
@@ -296,14 +299,14 @@ class Lock
         return @@LockState.Unavailable, timePassed
 
     ---Attempts to acquire the lock without waiting.
-    ---@return integer state A Lock.LockState value.
+    ---@return LockState state Held if the lock was acquired, Unavailable if it's held elsewhere.
     ---@return number timePassed Milliseconds spent waiting (always 0).
     tryLock: =>
         return @lock 0
 
     ---Releases the lock held by this instance.
     ---@return boolean? released True on success, nil if the lock wasn't held by this instance.
-    ---@return integer|string statusOrErr A Lock.LockState value on success, or an error message when not held.
+    ---@return LockState|string statusOrErr Available on success, or an error message when the lock wasn't held.
     release: =>
         unless @_state.held
             return nil, msgs.release.failed\format @namespace, @resource, @holderName, @instanceId, msgs.release.notHeld
@@ -349,3 +352,5 @@ class Lock
         lock\release!
         error results[2], 0 unless results[1]
         return unpack results, 2, results.n
+
+Accessors.install Lock

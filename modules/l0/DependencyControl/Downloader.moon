@@ -10,6 +10,7 @@ Enum    = require "l0.DependencyControl.Enum"
 FileOps = require "l0.DependencyControl.FileOps"
 EventEmitter = require "l0.DependencyControl.EventEmitter"
 Host    = require "l0.DependencyControl.Host"
+Accessors = require "l0.DependencyControl.Accessors"
 
 msgs = {
     addMissingArgs:  "Required arguments #1 (url) and #2 (outfile) had the wrong type. Expected string, got '%s' and '%s'."
@@ -232,7 +233,7 @@ if ffi.os != "Windows"
         -- host is refused even though libcurl follows redirects itself. Requires curl >= 7.80, otherwise ignored.
         pcall ffi.cdef, "typedef int (*dc_curl_prereq_cb)(void* clientp, char* conn_primary_ip, char* conn_local_ip, int conn_primary_port, int conn_local_port);"
         prereqBlockPrivate = ffi.cast "dc_curl_prereq_cb", (_, primaryIp) ->
-            ok, private = pcall -> Host(ffi.string primaryIp)\isPrivate!
+            ok, private = pcall -> Host(ffi.string primaryIp).isPrivate
             ok and private and CURL_PREREQFUNC_ABORT or CURL_PREREQFUNC_OK
 
         getDouble = (h, info) ->
@@ -417,7 +418,7 @@ else
                         if manager.blockPrivateHosts
                             return fail msgs.nonHttpScheme\format url unless url\match "^https?://"
                             host = Host.fromUrl url
-                            return fail msgs.privateHostBlocked\format url if host and host\isPrivate!
+                            return fail msgs.privateHostBlocked\format url if host and host.isPrivate
 
                         request = winInet.InternetOpenUrlW session, toWide(url), nil, 0,
                             bit.bor(INTERNET_FLAG_RELOAD, INTERNET_FLAG_NO_CACHE_WRITE, INTERNET_FLAG_NO_AUTO_REDIRECT), 0
@@ -538,6 +539,7 @@ class Download extends EventEmitter
 ---DM.DownloadManager-compatible API lives in l0.DependencyControl.DownloadManager.
 ---Events (see Downloader.Event): Progress (overall %), Finished (await completed).
 ---@class Downloader: EventEmitter
+---@field progress number Current aggregate download progress across all queued transfers, 0-100 (read-only).
 class Downloader extends EventEmitter
     @Download = Download
     @Event = Enum "DownloaderEvent", { Progress: "progress", Finished: "finished" }
@@ -583,7 +585,7 @@ class Downloader extends EventEmitter
         if @blockPrivateHosts
             return nil, msgs.nonHttpScheme\format url unless url\match "^https?://"
             host = Host.fromUrl url
-            return nil, msgs.privateHostBlocked\format url if host and host\isPrivate!
+            return nil, msgs.privateHostBlocked\format url if host and host.isPrivate
 
         FileOps.mkdir outfile, true, true
 
@@ -613,8 +615,8 @@ class Downloader extends EventEmitter
         @_emit @@Event.Finished
         return @
 
-    ---@return number progress Current aggregate progress (0-100).
-    getProgress: => computeProgress @downloads
+    progress: Accessors.property
+        get: => computeProgress @downloads
 
     ---Part of the download-runner callback contract: a runner calls this to report the manager's
     ---aggregate progress and fire the Downloader's Progress listeners.
@@ -633,5 +635,6 @@ class Downloader extends EventEmitter
     ---@return boolean connected Whether an internet connection appears to be available.
     isInternetConnected: => isInternetConnected!
 
+Accessors.install Downloader
 UnitTestSuite = require "l0.DependencyControl.UnitTestSuite"
 return UnitTestSuite\withTestExports Downloader, {:resolveRedirect}

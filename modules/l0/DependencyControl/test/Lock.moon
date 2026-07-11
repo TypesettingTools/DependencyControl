@@ -74,18 +74,18 @@
       lock = Lock namespace: "ns", resource: "res", logger: customLogger
       ut\assertEquals lock.logger, customLogger
 
-    -- getState
+    -- state
 
-    getState_initial: (ut) ->
+    state_initial: (ut) ->
       lock = Lock namespace: "ns", resource: "res"
-      ut\assertEquals lock\getState!, Lock.LockState.Unknown
+      ut\assertEquals lock.state, Lock.LockState.Unknown
 
-    getState_held: (ut) ->
+    state_held: (ut) ->
       installFakeSemaphore ut, true
       ut\stub Lock.logger, "trace"
       lock = Lock namespace: "ns", resource: "res", recordHolder: false
       lock\lock!
-      ut\assertEquals lock\getState!, Lock.LockState.Held
+      ut\assertEquals lock.state, Lock.LockState.Held
       lock\release!
 
     -- LockScope enum
@@ -411,7 +411,7 @@
       "lockState_values", "lockState_name",
       "classLogger_fileBaseName",
       "new_defaults", "new_customLogger",
-      "getState_initial", "getState_held",
+      "state_initial", "state_held",
       "scope_values", "scope_defaultsToProcess", "scope_globalOption",
       "lock_success", "lock_alreadyHeld", "lock_timeout", "lock_retry",
       "lock_primitiveUnavailable",

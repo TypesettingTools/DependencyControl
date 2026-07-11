@@ -49,7 +49,7 @@ class DownloadManager
         return
 
     ---@return number progress Current aggregate progress (0-100).
-    progress: => @downloader\getProgress!
+    progress: => @downloader.progress
 
     cancel: => @downloader\cancel!
     clear:  => @downloader\clear!

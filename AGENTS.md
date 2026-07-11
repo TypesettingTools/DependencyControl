@@ -29,7 +29,7 @@ Why: prose reads more easily, and LuaCATS has no inline reference/link syntax �
 
 Name a method by what it is to the caller, not by a part-of-speech rule:
 
-- **Commands** (do work, have effects) take a **verb**: `reportNoSuitablePackage`, `getFailures`, `persistSource`.
+- **Commands** (do work, have effects) take a **verb**: `reportNoSuitablePackage`, `getEffectiveSource`, `persistSource`.
 - **Value producers** — constructors, converters, selectors, predicates — may lead with a preposition or copula that signals the transformation or relationship: `toString`, `fromJSON`, `withoutInstall`, `withTestExports`, `atIndex`, `isBlocked`, `hasTeardown`.
 
 The one hard ban: a **bare noun for a method that acts** — `failures`, `noSuitablePackage` read as fields, not operations. Litmus: read the name as a field access (`obj.name`); if the method does work but the name looks like stored data, rename it.

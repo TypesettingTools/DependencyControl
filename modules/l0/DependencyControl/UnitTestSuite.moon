@@ -4,6 +4,7 @@ Common = require "l0.DependencyControl.Common"
 Stub = require "l0.DependencyControl.Stub"
 constants = require "l0.DependencyControl.Constants"
 Timer = require "l0.DependencyControl.Timer"
+Accessors = require "l0.DependencyControl.Accessors"
 DependencyControl = nil
 
 HIDDEN_TEST_EXPORTS_KEY = "#{constants.DEPCTRL_PRIVATE_GLOBAL_VAR_PREFIX}TestExports"
@@ -722,6 +723,7 @@ class UnitTestSuiteControls
 ---A DependencyControl unit test suite.
 ---Your test file/module must return a UnitTestSuite object in order to be recognized as a test suite.
 ---@class UnitTestSuite
+---@field failures { classname: string, name: string, error: string, isAssertion: boolean }[] The most recent run's failures as a flat list, each tagged as an assertion failure or an unexpected error (read-only).
 class UnitTestSuite
     msgs = {
         run: {
@@ -935,21 +937,19 @@ class UnitTestSuite
             suites[#suites+1] = { name: cls.name, :cases }
         return suites
 
-    ---Returns the failures from the most recent run as a flat list, each tagged as an assertion
-    ---failure or an unexpected error. Intended for printing a failure summary after a run.
-    ---@return { classname: string, name: string, error: string, isAssertion: boolean }[] failures
-    getFailures: =>
-        failures = {}
-        for suite in *@collectResults!
-            for c in *suite.cases
-                if c.failure or c.error
-                    failures[#failures+1] = {
-                        classname: c.classname
-                        name: c.name
-                        error: c.failure or c.error
-                        isAssertion: c.failure != nil
-                    }
-        return failures
+    failures: Accessors.property
+        get: =>
+            failures = {}
+            for suite in *@collectResults!
+                for c in *suite.cases
+                    if c.failure or c.error
+                        failures[#failures+1] = {
+                            classname: c.classname
+                            name: c.name
+                            error: c.failure or c.error
+                            isAssertion: c.failure != nil
+                        }
+            return failures
 
     ---Builds a CTRF (Common Test Report Format) report of the most recent run.
     ---CTRF is a JSON test report schema understood by ready-made CI reporters
@@ -1008,3 +1008,5 @@ class UnitTestSuite
         handle\write json.encode @toCtrf!, { indent: true }
         handle\close!
         return true
+
+Accessors.install UnitTestSuite
