@@ -158,7 +158,7 @@
       rec = {}
       result = Record.setVersion rec, "2.3.4"
       ut\assertEquals result, 131844
-      ut\assertEquals rec.version, 131844
+      ut\assertEquals rec.semanticVersion\toPacked!, 131844   -- stored on the canonical instance
 
     setVersion_validNumber: (ut) ->
       rec = {}
@@ -170,6 +170,16 @@
       result, err = Record.setVersion rec, "x.y.z"
       ut\assertNil result
       ut\assertString err
+
+    -- the `version` accessor: a packed-int view over the canonical @semanticVersion instance
+    version_accessorGetsAndSets: (ut) ->
+      SemanticVersion = require "l0.DependencyControl.SemanticVersion"
+      -- a real Record-metatabled instance so `version` dispatches through the installed accessor
+      rec = setmetatable {semanticVersion: SemanticVersion "1.2.3"}, Record.__base
+      ut\assertEquals rec.version, SemanticVersion\toPacked "1.2.3"   -- getter yields the packed int
+      rec.version = "2.0.0"                                            -- setter accepts a string
+      ut\assertEquals tostring(rec.semanticVersion), "2.0.0"          -- rebuilt the canonical instance
+      ut\assertEquals rec.version, SemanticVersion\toPacked "2.0.0"
 
     validateNamespace_valid: (ut) ->
       rec = {namespace: "l0.DependencyControl", virtual: false, __class: Record}
@@ -358,7 +368,7 @@
       "module_dataOnly", "module_initLayout", "module_alsoUnderUser", "module_userOnly",
       "notInstalled", "portable", "macro_dataOnly",
       "checkVersion_equal", "checkVersion_greater", "checkVersion_older", "checkVersion_recordArg",
-      "setVersion_validString", "setVersion_validNumber", "setVersion_invalid",
+      "setVersion_validString", "setVersion_validNumber", "setVersion_invalid", "version_accessorGetsAndSets",
       "validateNamespace_valid", "validateNamespace_invalid_noDot",
       "validateNamespace_invalid_trailingDot", "validateNamespace_virtual",
       "uninstall_virtual", "uninstall_unmanaged",

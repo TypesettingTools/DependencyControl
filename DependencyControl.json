@@ -664,7 +664,9 @@
           "Unit test framework: Added `ut\\skip(reason)` to skip a single test from within its body — it aborts the test and is reported as skipped (with the reason) instead of passed or failed.",
           "Unit test framework: A test class's `_order` now sets only the run and report order; a test omitted from it still runs (appended after the listed ones) instead of being silently skipped. Use `ut\\skip` to skip a test.",
           "SemanticVersion can now be used as a version value object: construct it from a version string or from major/minor/patch components, compare instances with the standard operators, read its major/minor/patch, produce bumped copies, and test it against a version range. The static helpers additionally accept an instance anywhere they take a version.",
-          "Added the Accessors module: a class can declare metatable-backed get/set computed properties through one standardized transform (instead of hand-rolling metatable code), and each property is recorded on the class for inspection tooling. Available to other tooling built on DependencyControl."
+          "Added the Accessors module: a class can declare metatable-backed get/set computed properties through one standardized transform (instead of hand-rolling metatable code), and each property is recorded on the class for inspection tooling. Available to other tooling built on DependencyControl.",
+          "Record: a record's version is now backed by a SemanticVersion value object, exposed as `record.semanticVersion` for the richer version API; `record.version` continues to return the packed integer as before.",
+          "The config file now stores each installed script's version as a semantic version string (e.g. \"1.2.3\") instead of a packed integer, so it is readable at a glance; existing configs are migrated automatically on first load."
         ]
       }
     },

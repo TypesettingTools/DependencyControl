@@ -86,13 +86,13 @@
       ut\assertNil cfg.feeds
       ut\assertEquals cfg.updates.mode, "auto-update"
 
-    -- a pre-$schema config rewrites each record's boolean `unmanaged` flag into its recordType and drops the
-    -- flag; a record without the flag keeps no recordType (loads as managed), and its other fields are untouched
-    migratesLegacyUnmanagedFlag: (ut) ->
+    -- a pre-$schema config rewrites each record's boolean `unmanaged` flag into its recordType and its
+    -- packed-integer version into a semver string. the flag is then dropped, and a record lacking it loads as managed
+    migratesLegacyRecordFields: (ut) ->
       c = {
         macros: {
-          ["l0.old"]: {unmanaged: true, version: 1}
-          ["l0.managed"]: {version: 2}
+          ["l0.old"]: {unmanaged: true, version: 66051, author: "x"}   -- 66051 == 1.2.3
+          ["l0.managed"]: {version: 2}                                 -- 2 == 0.0.2
         }
         modules: {
           ["l0.mod"]: {unmanaged: true}
@@ -100,9 +100,11 @@
       }
       migrate c, nil, schema.CONFIG_SCHEMA_ID_CURRENT
       ut\assertEquals c.macros["l0.old"].recordType, Common.RecordType.Unmanaged
-      ut\assertNil c.macros["l0.old"].unmanaged        -- flag dropped
-      ut\assertEquals c.macros["l0.old"].version, 1    -- sibling fields left alone
-      ut\assertNil c.macros["l0.managed"].recordType   -- no flag -> stays managed
+      ut\assertNil c.macros["l0.old"].unmanaged            -- flag dropped
+      ut\assertEquals c.macros["l0.old"].version, "1.2.3"  -- packed int -> semver string
+      ut\assertEquals c.macros["l0.old"].author, "x"       -- unrelated fields untouched
+      ut\assertEquals c.macros["l0.managed"].version, "0.0.2"
+      ut\assertNil c.macros["l0.managed"].recordType       -- no flag -> stays managed
       ut\assertEquals c.modules["l0.mod"].recordType, Common.RecordType.Unmanaged
       ut\assertNil c.modules["l0.mod"].unmanaged
 
@@ -117,6 +119,6 @@
     _order: {
       "hasAllSections", "hasPolicyLiterals"
       "migratesFlatKeys", "dropsObsoleteKeys", "dropsObsoleteFormatVersion", "skipsWhenSchemaPresent"
-      "migratesLegacyUnmanagedFlag", "preservesUnknownKeys", "handlesExactlyV063Keys"
+      "migratesLegacyRecordFields", "preservesUnknownKeys", "handlesExactlyV063Keys"
     }
   }

@@ -259,8 +259,8 @@
           "type": "string"
         },
         "version": {
-          "description": "Installed version as DependencyControl's packed version number (a single integer encoding major.minor.patch), not a version string.",
-          "type": "integer"
+          "description": "Installed version as a semantic version string (major.minor.patch).",
+          "type": "string"
         },
         "author": {
           "description": "Script author.",

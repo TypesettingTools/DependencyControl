@@ -4,6 +4,7 @@
 -- subsystems default here.
 
 Common = require "l0.DependencyControl.Common"
+SemanticVersion = require "l0.DependencyControl.SemanticVersion"
 
 CONFIG_SCHEMA_ID_CURRENT = "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/master/schemas/config/v0.7.0.json"
 
@@ -50,8 +51,8 @@ droppedKeys = {"tryAllFeeds", "dumpFeeds"}
 
 ---Migrates a whole config-file table up to the current schema, in place, when its root `$schema` predates it.
 ---For a pre-`$schema` config it lifts flat `config`-hive keys into topic sections and rewrites each record's
----pre-0.7 boolean `unmanaged` flag into its recordType; a config that already carries a `$schema`, and any
----keys neither lift covers, are left untouched.
+---pre-0.7 `unmanaged` flag into its recordType and its packed-integer version into a semver string; a config
+---that already carries a `$schema`, and any keys none of these cover, are left untouched.
 ---Shaped as ConfigHandler's migration callback: the handler stamps the new `$schema` when this returns true.
 ---@param config table The whole config-file table, mutated in place (the `config` hive and the record sections).
 ---@param currentSchemaId? string The `$schema` found in the file, or nil for a pre-`$schema` (flat) config.
@@ -74,8 +75,9 @@ migrate = (config, currentSchemaId, targetSchemaId) ->
         configHive[k] = nil for k in *droppedKeys
         configHive.formatVersion = nil   -- obsolete pre-`$schema` marker, superseded by the root `$schema`
 
-    -- pre-0.7 recorded a script/module's type as a boolean `unmanaged` flag on its macros/modules entry;
-    -- rewrite it as the recordType value and drop the flag (an entry without it loads as managed)
+    -- pre-0.7 recorded a script/module's type as a boolean `unmanaged` flag on its macros/modules entry
+    -- and its installed version as a packed integer; rewrite the flag as the recordType value (an entry
+    -- without it loads as managed) and the integer version as a semver string
     for section in *Common.ScriptTypeSection.values
         records = config[section]
         continue unless type(records) == "table"
@@ -83,6 +85,7 @@ migrate = (config, currentSchemaId, targetSchemaId) ->
             continue unless type(record) == "table"
             record.recordType = Common.RecordType.Unmanaged if record.unmanaged
             record.unmanaged = nil
+            record.version = SemanticVersion\toString record.version if type(record.version) == "number"
     return true
 
 {

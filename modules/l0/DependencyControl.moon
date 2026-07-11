@@ -43,6 +43,7 @@ Host =           require "l0.DependencyControl.Host"
 Lock =           require "l0.DependencyControl.Lock"
 Logger =         require "l0.DependencyControl.Logger"
 Record =         require "l0.DependencyControl.Record"
+Accessors =      require "l0.DependencyControl.Accessors"
 Stub =           require "l0.DependencyControl.Stub"
 Timer =          require "l0.DependencyControl.Timer"
 UnitTestSuite =  require "l0.DependencyControl.UnitTestSuite"
@@ -76,6 +77,9 @@ class DependencyControl extends Record
     @Updater = Updater
     @UnitTestSuite = UnitTestSuite
     @SemanticVersion = SemanticVersion
+
+-- extend Record's `version` accessor onto this subclass before any instance is constructed below
+Accessors.install DependencyControl
 
 rec = DependencyControl{
     name: "DependencyControl",

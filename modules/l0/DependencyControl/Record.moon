@@ -10,6 +10,7 @@ Updater =        require "l0.DependencyControl.Updater"
 ModuleLoader =   require "l0.DependencyControl.ModuleLoader"
 ModuleProvider = require "l0.DependencyControl.ModuleProvider"
 SemanticVersion = require "l0.DependencyControl.SemanticVersion"
+Accessors =      require "l0.DependencyControl.Accessors"
 UnitTestSuite =  require "l0.DependencyControl.UnitTestSuite"
 FileCache =      require "l0.DependencyControl.FileCache"
 configSchema =   require "l0.DependencyControl.config-schema"
@@ -63,6 +64,8 @@ unregisterRecord = (namespace) -> recordsByNamespace[namespace] = nil
 
 ---DependencyControl record representing one managed or unmanaged script/module.
 ---@class Record
+---@field semanticVersion SemanticVersion This record's version as a value object (the canonical store).
+---@field version integer This record's version as a packed integer; assignable from a string, packed integer, or SemanticVersion.
 class Record
     msgs = {
         new: {
@@ -125,6 +128,10 @@ class Record
     new: (args) =>
         init Record unless @@logger
 
+        -- a valid version from the outset: createDummyRef below can expose this record to a
+        -- circular-dependency resolver that reads its version before the real one is parsed
+        @semanticVersion = SemanticVersion.fromPacked 0
+
         Common.addDefaults args, {
             readGlobalScriptVars: true
             saveRecordToConfig: true
@@ -175,8 +182,9 @@ class Record
         @configFile = configFile or "#{@namespace}.json"
         @automationDir = Common\getAutomationDir @scriptType
         @testDir = Common\getTestDir @scriptType
-        @version, err = SemanticVersion\toPacked version
-        assert @version, msgs.new.badRecordError\format msgs.new.badRecord.badVersion\format err
+        packed, err = SemanticVersion\toPacked version
+        assert packed, msgs.new.badRecordError\format msgs.new.badRecord.badVersion\format err
+        @semanticVersion = SemanticVersion.fromPacked packed
 
         @requiredModules or= {}
         -- normalize short format module tables
@@ -255,6 +263,9 @@ class Record
 
         @@logger\trace msgs.writeConfig.writing, Common.terms.scriptType.singular[@scriptType]
         @config\import @, @@depConf.scriptFields, false, true
+        -- version is a computed accessor, so import (which copies raw fields) skips it; persist it
+        -- explicitly as a semver string
+        @config.c.version = tostring @semanticVersion
         success, errMsg = @config\save!
 
         assert success, msgs.writeConfig.error\format errMsg
@@ -435,16 +446,25 @@ class Record
             macro[submenuIdx] = submenuDefault if macro[submenuIdx] == nil
             @registerMacro unpack(macro, 1, 6)
 
-    ---Parses and sets this record's semantic version.
+    -- `version`: a packed-integer view over the canonical @semanticVersion instance. Reads return the
+    -- packed int (so existing comparisons stay unchanged); writes accept a string, packed int, or instance
+    -- and raise on an invalid value. See setVersion for a non-raising setter.
+    version: Accessors.property
+        get: => @semanticVersion\toPacked!
+        set: (value) =>
+            packed, err = SemanticVersion\toPacked value
+            error err, 0 unless packed
+            @semanticVersion = SemanticVersion.fromPacked packed
+
+    ---Parses and sets this record's semantic version without raising on invalid input.
     ---@param version number|string
     ---@return number? version The parsed integer version, or nil on error.
     ---@return string? err
     setVersion: (version) =>
-        version, err = SemanticVersion\toPacked version
-        if version
-            @version = version
-            return version
-        else return nil, err
+        packed, err = SemanticVersion\toPacked version
+        return nil, err unless packed
+        @semanticVersion = SemanticVersion.fromPacked packed
+        return packed
 
     ---Validates this record's namespace, always passing for virtual records.
     ---@return boolean valid
@@ -522,3 +542,6 @@ class Record
         -- drop the record from the registry so tooling no longer sees the removed script
         unregisterRecord @namespace
         return FileOps.remove toRemove, true, true
+
+-- wire the computed `version` accessor (returns Record, so the module still yields the class)
+Accessors.install Record
