@@ -662,7 +662,8 @@
           "UpdateFeed: a file marked for deletion in a feed is no longer reported as a missing-source error when deploying, and is now removed from the output directory when present.",
           "Updater: The on/off switch grew into an update mode: `updates.mode` takes 'off', 'user-requested', 'dependency-resolution', or 'auto-update' to control which contexts may install and update — for example, disable background update checks while still allowing manual installs and dependency resolution. An existing `updaterEnabled` setting migrates automatically ('auto-update' when true, 'off' when false). The two prompt-threshold settings now take the same context values in place of their former numeric levels, plus 'off' to disable a prompt kind entirely.",
           "Unit test framework: Added `ut\\skip(reason)` to skip a single test from within its body — it aborts the test and is reported as skipped (with the reason) instead of passed or failed.",
-          "Unit test framework: A test class's `_order` now sets only the run and report order; a test omitted from it still runs (appended after the listed ones) instead of being silently skipped. Use `ut\\skip` to skip a test."
+          "Unit test framework: A test class's `_order` now sets only the run and report order; a test omitted from it still runs (appended after the listed ones) instead of being silently skipped. Use `ut\\skip` to skip a test.",
+          "SemanticVersion can now be used as a version value object: construct it from a version string or from major/minor/patch components, compare instances with the standard operators, read its major/minor/patch, produce bumped copies, and test it against a version range. The static helpers additionally accept an instance anywhere they take a version."
         ]
       }
     },

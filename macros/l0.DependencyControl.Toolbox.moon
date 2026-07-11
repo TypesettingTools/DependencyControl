@@ -179,7 +179,7 @@ install = ->
             tbl[namespace] or= {}
             for channel in *channels
                 record = scriptData.data.channels[channel]
-                verNum = DepCtrl.SemanticVersion\toNumber record.version
+                verNum = DepCtrl.SemanticVersion\toPacked record.version
                 unless config.c[scriptTypeConfigAndFeedKeyName][namespace] or (tbl[namespace][channel] and verNum < tbl[namespace][channel].verNum)
                     tbl[namespace][channel] = { name: scriptData.name, version: record.version, verNum: verNum, feed: feed.url,
                                                 default: defaultChannel == channel, moduleName: scriptType == Common.ScriptType.Module and namespace }

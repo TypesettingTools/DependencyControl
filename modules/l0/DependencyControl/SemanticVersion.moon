@@ -65,7 +65,7 @@ Op = ComparisonOperator
 ---@field max integer Exclusive upper bound (encoded version).
 
 msgs = {
-  toNumber: {
+  toPacked: {
     badString: "Can't parse version string '%s'. Make sure it conforms to semantic versioning standards."
     badType: "Argument had the wrong type: expected a string or number, got a %s."
     overflow: "Error: %s version must be an integer <= 255, got %s."
@@ -73,6 +73,15 @@ msgs = {
   range: {
     badType: "Version range must be a string, got a %s."
     invalidVersion: "Invalid version '%s' in range."
+  }
+  new: {
+    badComponent: "Invalid %s version component: expected an integer in [0, 255], got %s."
+  }
+  fromPacked: {
+    badType: "Packed version must be an integer in [0, 0xFFFFFF], got %s."
+  }
+  parse: {
+    badType: "Version to parse must be a string, got a %s."
   }
 }
 
@@ -272,10 +281,55 @@ parseRangeToIntervals = (range) ->
     intervals[#intervals + 1] = interval if interval.min < interval.max
   intervals
 
----Semantic versioning utilities.
+---A semantic version value (major.minor.patch) plus the static semantic-versioning utilities. Construct
+---one from a version string or from numeric components; instances compare with `<`/`==`, stringify to
+---"major.minor.patch", and bump. The static helpers additionally accept an instance wherever they take a
+---`number|string` version. Packed integers are an internal encoding, exposed only via `fromPacked`/`toPacked`.
 ---@class SemanticVersion
+---@field major integer The major version (0-255).
+---@field minor integer The minor version (0-255).
+---@field patch integer The patch version (0-255).
 class SemanticVersion
   semParts = {{"major", 16}, {"minor", 8}, {"patch", 0}}
+
+  ---@param major integer|string A full version string ("1.2.3"), or the major version (0-255) with the
+  ---  minor and patch supplied as the next two arguments. Raises on an invalid string or component.
+  ---@param minor? integer The minor version (0-255); ignored when the first argument is a string.
+  ---@param patch? integer The patch version (0-255); ignored when the first argument is a string.
+  new: (major, minor, patch) =>
+    if type(major) == "string"
+      packed, err = @@toPacked major
+      error err, 0 unless packed
+      @major, @minor, @patch = bit.rshift(packed, 16) % 256, bit.rshift(packed, 8) % 256, packed % 256
+    else
+      components = {{"major", major or 0}, {"minor", minor or 0}, {"patch", patch or 0}}
+      for part in *components
+        unless type(part[2]) == "number" and part[2] % 1 == 0 and part[2] >= 0 and part[2] <= 255
+          error msgs.new.badComponent\format(part[1], tostring part[2]), 0
+      @major, @minor, @patch = components[1][2], components[2][2], components[3][2]
+
+  ---@return integer packed This version in the internal packed encoding (major<<16 | minor<<8 | patch).
+  toPacked: => encodeVersion @major, @minor, @patch
+
+  ---Reports whether this version satisfies an npm-style range (see the static parseRange for the syntax).
+  ---@param range string The version range.
+  ---@return boolean? satisfies True/false, or nil on a malformed range.
+  ---@return string? err Error message on a malformed range.
+  satisfies: (range) => @@satisfiesRange @toPacked!, range
+
+  ---@return SemanticVersion bumped A new version with the major incremented and minor/patch reset to 0.
+  bumpMajor: => SemanticVersion @major + 1, 0, 0
+  ---@return SemanticVersion bumped A new version with the minor incremented and patch reset to 0.
+  bumpMinor: => SemanticVersion @major, @minor + 1, 0
+  ---@return SemanticVersion bumped A new version with the patch incremented.
+  bumpPatch: => SemanticVersion @major, @minor, @patch + 1
+
+  __tostring: => "#{@major}.#{@minor}.#{@patch}"
+  __eq: (other) => @major == other.major and @minor == other.minor and @patch == other.patch
+  -- coerce both sides through toPacked so a version compares against another instance, a string, or a
+  -- packed number (self is the left operand, which Lua may hand us as the non-instance in `n < version`)
+  __lt: (other) => SemanticVersion\toPacked(@) < SemanticVersion\toPacked other
+  __le: (other) => SemanticVersion\toPacked(@) <= SemanticVersion\toPacked other
 
   --- Converts a version number or string to a semantic version string.
   ---@param version number|string
@@ -284,7 +338,7 @@ class SemanticVersion
   ---@return string|nil err
   @toString = (version, precision = "patch") =>
     if type(version) == "string"
-      version, err = @toNumber version
+      version, err = @toPacked version
       return nil, err unless version
     
     parts = {0, 0, 0}
@@ -295,30 +349,51 @@ class SemanticVersion
     return "%d.%d.%d"\format unpack parts
 
 
-  ---Converts a semantic version string or number to an integer.
-  ---@param value string|number|nil The version as a string (e.g. "1.2.3"), a number, or nil.
-  ---@return number|false version The integer version, or false on error.
+  ---Converts a semantic version string, number, or SemanticVersion instance to a packed integer.
+  ---@param value string|number|SemanticVersion|nil The version as a string ("1.2.3"), a packed number, an instance, or nil.
+  ---@return number|false version The packed integer version, or false on error.
   ---@return string? err Error message if conversion failed.
-  @toNumber = (value) =>
+  @toPacked = (value) =>
+    return value\toPacked! if type(value) == "table" and value.__class == SemanticVersion
     return switch type value
       when "number" then math.max value, 0
       when "nil" then 0
       when "string"
         matches = {value\match "^(%d+)%.(%d+)%.(%d+)$"}
         if #matches != 3
-          return false, msgs.toNumber.badString\format value
+          return false, msgs.toPacked.badString\format value
 
         version = 0
         for i, part in ipairs semParts
           value = tonumber matches[i]
           if type(value) != "number" or value > 255
-            return false, msgs.toNumber.overflow\format part[1], tostring value
+            return false, msgs.toPacked.overflow\format part[1], tostring value
 
           version += bit.lshift value, part[2]
         version
 
-      else false, msgs.toNumber.badType\format type value
+      else false, msgs.toPacked.badType\format type value
 
+
+  ---Builds a version from the internal packed encoding (as returned by toPacked). Raises on a value
+  ---outside [0, 0xFFFFFF]. Call as a plain static (`SemanticVersion.fromPacked packed`).
+  ---@param packed integer A packed version in [0, 0xFFFFFF].
+  ---@return SemanticVersion version The version the packed integer encodes.
+  @fromPacked = (packed) ->
+    unless type(packed) == "number" and packed % 1 == 0 and packed >= 0 and packed <= 0xFFFFFF
+      error msgs.fromPacked.badType\format(tostring packed), 0
+    SemanticVersion bit.rshift(packed, 16) % 256, bit.rshift(packed, 8) % 256, packed % 256
+
+  ---Parses a version string into an instance without raising, for untrusted input (the constructor raises
+  ---instead). Call as a plain static (`SemanticVersion.parse str`).
+  ---@param str string The version string (e.g. "1.2.3").
+  ---@return SemanticVersion? version The parsed version, or nil on error.
+  ---@return string? err Error message if parsing failed.
+  @parse = (str) ->
+    return nil, msgs.parse.badType\format(type str) unless type(str) == "string"
+    packed, err = SemanticVersion\toPacked str
+    return nil, err unless packed
+    SemanticVersion.fromPacked packed
 
   ---Checks whether version `a` is greater than or equal to version `b`, up to the given precision.
   ---When `precision` is "range", `b` is instead an npm-style version range string and the result is
@@ -330,13 +405,13 @@ class SemanticVersion
   ---@return number|string masked The masked value of b on success (absent for ranges), or the error message on failure.
   @check: (a, b, precision = "patch") =>
     if type(a) != "number"
-      a, err = @toNumber a
+      a, err = @toPacked a
       return nil, err unless a
 
     return @satisfiesRange a, b if precision == "range"
 
     if type(b) != "number"
-      b, err = @toNumber b
+      b, err = @toPacked b
       return nil, err unless b
 
     mask = 0
@@ -372,7 +447,7 @@ class SemanticVersion
   ---@return string? err Error message on failure.
   @satisfiesRange = (version, range) =>
     unless type(version) == "number"
-      version, err = @toNumber version
+      version, err = @toPacked version
       return nil, err unless version
     intervals, err = @parseRange range
     return nil, err unless intervals
@@ -413,9 +488,9 @@ class SemanticVersion
   ---@param reference number|string
   ---@return boolean
   @isHigher = (version, reference) ->
-    version, errMsg = SemanticVersion\toNumber version
+    version, errMsg = SemanticVersion\toPacked version
     assert version, errMsg
-    referenceVersionNumber, errMsg = SemanticVersion\toNumber reference
+    referenceVersionNumber, errMsg = SemanticVersion\toPacked reference
     assert referenceVersionNumber, errMsg
 
     return version > referenceVersionNumber
@@ -426,9 +501,9 @@ class SemanticVersion
   ---@param reference number|string
   ---@return boolean
   @isLower = (version, reference) ->
-    version, errMsg = SemanticVersion\toNumber version
+    version, errMsg = SemanticVersion\toPacked version
     assert version, errMsg
-    referenceVersionNumber, errMsg = SemanticVersion\toNumber reference
+    referenceVersionNumber, errMsg = SemanticVersion\toPacked reference
     assert referenceVersionNumber, errMsg
 
     return version < referenceVersionNumber

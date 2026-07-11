@@ -215,7 +215,7 @@
       recClass = setmetatable {ScriptType: Common.ScriptType, __name: "DependencyControl", :updater},
                               {__call: (cls, args) -> {}}
       rec = {feed: nil, moduleName: "host.Module", name: "host", __class: recClass}
-      mdl = {moduleName: ns, name: ns, version: SemanticVersion\toNumber "2.0.0"}
+      mdl = {moduleName: ns, name: ns, version: SemanticVersion\toPacked "2.0.0"}
       (ut\stub ModuleLoader, "loadModule")\calls (self, m, usePrivate) -> m._ref = loadedRef unless usePrivate
       ut\stub(ModuleProvider, "isDepCtrlVersionRecord")\returns true
       success, err = ModuleLoader.loadModules rec, {mdl}
@@ -232,7 +232,7 @@
       recClass = setmetatable {ScriptType: Common.ScriptType, __name: "DependencyControl", :updater},
                               {__call: (cls, args) -> {}}
       rec = {feed: nil, moduleName: "host.Module", name: "host", __class: recClass}
-      mdl = {moduleName: ns, name: ns, version: SemanticVersion\toNumber "2.0.0", optional: false}
+      mdl = {moduleName: ns, name: ns, version: SemanticVersion\toPacked "2.0.0", optional: false}
       (ut\stub ModuleLoader, "loadModule")\calls (self, m, usePrivate) -> m._ref = loadedRef unless usePrivate
       ut\stub(ModuleProvider, "isDepCtrlVersionRecord")\returns true
       success, err = ModuleLoader.loadModules rec, {mdl}

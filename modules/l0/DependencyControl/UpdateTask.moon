@@ -368,7 +368,7 @@ class UpdateTask
         success, currentChannel = updateRecord\setChannel @channel
         return nil, msgs.checkFeed.badChannel\format currentChannel unless success
 
-        version = SemanticVersion\toNumber updateRecord.version
+        version = SemanticVersion\toPacked updateRecord.version
         unless version
             return nil, msgs.checkFeed.invalidVersion\format Common.terms.scriptType.singular[@record.scriptType],
                                                              @record.name, currentChannel, tostring updateRecord.version
@@ -464,7 +464,7 @@ class UpdateTask
     __getCandidateRankVersion: (candidate) =>
         local rankVersion
         if candidate.isDirect
-            versionNumber = SemanticVersion\toNumber candidate.updateRecord.version
+            versionNumber = SemanticVersion\toPacked candidate.updateRecord.version
             return nil unless versionNumber and SemanticVersion\check versionNumber, @targetVersion
             rankVersion = versionNumber
         else
@@ -982,7 +982,7 @@ class UpdateTask
         else with @record
             .name = @record.name
             .virtual = false
-            .version = SemanticVersion\toNumber update.version
+            .version = SemanticVersion\toPacked update.version
             @record\writeConfig!
 
         @updated = true
@@ -991,7 +991,7 @@ class UpdateTask
                                                    @record.name, SemanticVersion\toString @record.version
 
         -- Display changelog
-        @logger\log update\getChangelog @record, (SemanticVersion\toNumber oldVer) + 1
+        @logger\log update\getChangelog @record, (SemanticVersion\toPacked oldVer) + 1
         @logger\log msgs.performUpdate.reloadNotice
 
         -- TODO: check handling of private module copies (need extra return value?)

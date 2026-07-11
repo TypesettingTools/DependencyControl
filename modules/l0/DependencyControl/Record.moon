@@ -175,7 +175,7 @@ class Record
         @configFile = configFile or "#{@namespace}.json"
         @automationDir = Common\getAutomationDir @scriptType
         @testDir = Common\getTestDir @scriptType
-        @version, err = SemanticVersion\toNumber version
+        @version, err = SemanticVersion\toPacked version
         assert @version, msgs.new.badRecordError\format msgs.new.badRecord.badVersion\format err
 
         @requiredModules or= {}
@@ -260,12 +260,12 @@ class Record
         assert success, msgs.writeConfig.error\format errMsg
 
 
-    ---@deprecated Use `SemanticVersion.toNumber`.
+    ---@deprecated Use `SemanticVersion.toPacked`.
     ---Converts a version to its packed-integer form, defaulting to this record's version.
     ---@param value? number|string Version to convert (default: this record's version).
     ---@return number? versionNumber nil on an invalid version string.
     ---@return string? err
-    getVersionNumber: (value = @version) => SemanticVersion\toNumber value
+    getVersionNumber: (value = @version) => SemanticVersion\toPacked value
 
     ---@deprecated Use `SemanticVersion.toString`.
     ---Converts a version to its string form, defaulting to this record's version.
@@ -440,7 +440,7 @@ class Record
     ---@return number? version The parsed integer version, or nil on error.
     ---@return string? err
     setVersion: (version) =>
-        version, err = SemanticVersion\toNumber version
+        version, err = SemanticVersion\toPacked version
         if version
             @version = version
             return version

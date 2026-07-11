@@ -163,7 +163,7 @@
       }, __index: Updater.__base
       task = Updater.addTask updater, record, "2.0.0", {"feed://a"}, true
       ut\assertIs task, existing
-      ut\assertEquals existing.targetVersion, SemanticVersion\toNumber "2.0.0"
+      ut\assertEquals existing.targetVersion, SemanticVersion\toPacked "2.0.0"
       ut\assertTrue existing.optional
 
     -- a record with no queued task gets a fresh UpdateTask, which is cached under its scriptType/namespace

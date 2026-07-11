@@ -80,7 +80,7 @@ class Updater
             depRec[k] = v for k, v in pairs record
             record = DependencyControl depRec
 
-        targetVersionNumber, err = SemanticVersion\toNumber targetVersion
+        targetVersionNumber, err = SemanticVersion\toPacked targetVersion
         if (err) then return nil, UpdateStatus.InvalidVersion, err
 
         task = @tasks[record.scriptType][record.namespace]

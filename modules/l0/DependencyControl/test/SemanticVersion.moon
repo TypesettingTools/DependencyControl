@@ -1,43 +1,44 @@
--- SemanticVersion tests: toNumber, toString, and check.
+-- SemanticVersion tests: the static utilities (toPacked, toString, check, ranges) and the version
+-- value instance (construction, comparison, bumping, and interop with the static layer).
 -- Called from Tests.moon as: (require "...test.SemanticVersion")!
 ->
   SemanticVersion = require "l0.DependencyControl.SemanticVersion"
 
   {
-    _description: "Tests for SemanticVersion covering toNumber, toString, and check."
+    _description: "Tests for SemanticVersion: static version/range utilities plus the version value instance."
 
-    -- toNumber
+    -- toPacked
 
-    toNumber_string: (ut) ->
-      result, err = SemanticVersion\toNumber "1.2.3"
+    toPacked_string: (ut) ->
+      result, err = SemanticVersion\toPacked "1.2.3"
       ut\assertEquals result, 66051
       ut\assertNil err
 
-    toNumber_zero: (ut) ->
-      result, err = SemanticVersion\toNumber "0.0.0"
+    toPacked_zero: (ut) ->
+      result, err = SemanticVersion\toPacked "0.0.0"
       ut\assertEquals result, 0
       ut\assertNil err
 
-    toNumber_number: (ut) ->
-      result = SemanticVersion\toNumber 66051
+    toPacked_number: (ut) ->
+      result = SemanticVersion\toPacked 66051
       ut\assertEquals result, 66051
 
-    toNumber_nil: (ut) ->
-      result = SemanticVersion\toNumber nil
+    toPacked_nil: (ut) ->
+      result = SemanticVersion\toPacked nil
       ut\assertEquals result, 0
 
-    toNumber_badString: (ut) ->
-      result, err = SemanticVersion\toNumber "1.2"
+    toPacked_badString: (ut) ->
+      result, err = SemanticVersion\toPacked "1.2"
       ut\assertFalse result
       ut\assertString err
 
-    toNumber_overflow: (ut) ->
-      result, err = SemanticVersion\toNumber "1.256.0"
+    toPacked_overflow: (ut) ->
+      result, err = SemanticVersion\toPacked "1.256.0"
       ut\assertFalse result
       ut\assertString err
 
-    toNumber_badType: (ut) ->
-      result, err = SemanticVersion\toNumber {}
+    toPacked_badType: (ut) ->
+      result, err = SemanticVersion\toPacked {}
       ut\assertFalse result
       ut\assertString err
 
@@ -155,8 +156,8 @@
     parseRange_intervals: (ut) ->
       intervals = SemanticVersion\parseRange "~1.2.3"
       ut\assertEquals #intervals, 1
-      ut\assertEquals intervals[1].min, SemanticVersion\toNumber "1.2.3"
-      ut\assertEquals intervals[1].max, SemanticVersion\toNumber "1.3.0"   -- exclusive upper
+      ut\assertEquals intervals[1].min, SemanticVersion\toPacked "1.2.3"
+      ut\assertEquals intervals[1].max, SemanticVersion\toPacked "1.3.0"   -- exclusive upper
 
     parseRange_unsatisfiableIsEmpty: (ut) ->
       intervals = SemanticVersion\parseRange ">2.0.0 <1.0.0"
@@ -197,12 +198,12 @@
     -- getRangeMaxVersion: the highest version a range can supply (for ranking competing ranges)
 
     getRangeMaxVersion_bounds: (ut) ->
-      ut\assertEquals SemanticVersion\getRangeMaxVersion("^1"), SemanticVersion\toNumber "1.255.255"
-      ut\assertEquals SemanticVersion\getRangeMaxVersion("~1.2"), SemanticVersion\toNumber "1.2.255"
-      ut\assertEquals SemanticVersion\getRangeMaxVersion("*"), SemanticVersion\toNumber "255.255.255"
+      ut\assertEquals SemanticVersion\getRangeMaxVersion("^1"), SemanticVersion\toPacked "1.255.255"
+      ut\assertEquals SemanticVersion\getRangeMaxVersion("~1.2"), SemanticVersion\toPacked "1.2.255"
+      ut\assertEquals SemanticVersion\getRangeMaxVersion("*"), SemanticVersion\toPacked "255.255.255"
 
     getRangeMaxVersion_unionTakesHighest: (ut) ->
-      ut\assertEquals SemanticVersion\getRangeMaxVersion("^1.0.0 || ^2.0.0"), SemanticVersion\toNumber "2.255.255"
+      ut\assertEquals SemanticVersion\getRangeMaxVersion("^1.0.0 || ^2.0.0"), SemanticVersion\toPacked "2.255.255"
 
     getRangeMaxVersion_emptyAndError: (ut) ->
       ut\assertNil SemanticVersion\getRangeMaxVersion ">2.0.0 <1.0.0"   -- empty range supplies nothing
@@ -210,9 +211,77 @@
       ut\assertNil r
       ut\assertString e
 
+    -- instance API: construction, comparison, bumping, and interop with the static layer
+
+    new_fromString: (ut) ->
+      v = SemanticVersion "1.2.3"
+      ut\assertEquals {v.major, v.minor, v.patch}, {1, 2, 3}
+      ut\assertEquals tostring(v), "1.2.3"
+
+    new_fromComponents: (ut) ->
+      full = SemanticVersion 1, 2, 3
+      ut\assertEquals {full.major, full.minor, full.patch}, {1, 2, 3}
+      ut\assertEquals tostring(SemanticVersion(1, 2)), "1.2.0"   -- patch defaults to 0
+      ut\assertEquals tostring(SemanticVersion(1)), "1.0.0"      -- minor and patch default to 0
+
+    new_raisesOnInvalid: (ut) ->
+      ut\assertFalse (pcall -> SemanticVersion "nope")           -- unparseable string
+      ut\assertFalse (pcall -> SemanticVersion 1, 2, 999)        -- component out of range
+      ut\assertFalse (pcall -> SemanticVersion 1, -1, 0)         -- negative component
+
+    fromPacked_roundTripsAndValidates: (ut) ->
+      v = SemanticVersion "3.4.5"
+      ut\assertEquals tostring(SemanticVersion.fromPacked v\toPacked!), "3.4.5"
+      ut\assertFalse (pcall SemanticVersion.fromPacked, -1)
+      ut\assertFalse (pcall SemanticVersion.fromPacked, 0x1000000)
+
+    parse_returnsInstanceOrError: (ut) ->
+      ut\assertEquals tostring(SemanticVersion.parse "1.2.3"), "1.2.3"
+      r, err = SemanticVersion.parse "garbage"
+      ut\assertNil r
+      ut\assertString err
+      r2, err2 = SemanticVersion.parse 5                         -- non-string input
+      ut\assertNil r2
+      ut\assertString err2
+
+    toPacked_andStaticUnwrap: (ut) ->
+      v = SemanticVersion "1.2.3"
+      ut\assertEquals v\toPacked!, SemanticVersion\toPacked "1.2.3"
+      ut\assertEquals SemanticVersion\toPacked(v), v\toPacked!    -- static toPacked unwraps an instance
+      ut\assertTrue SemanticVersion.isHigher SemanticVersion("2.0.0"), v  -- statics accept instances too
+
+    compare_operators: (ut) ->
+      a = SemanticVersion "1.2.3"
+      ut\assertTrue a < SemanticVersion "1.2.4"
+      ut\assertTrue a <= SemanticVersion "1.2.3"
+      ut\assertTrue a == SemanticVersion "1.2.3"
+      ut\assertTrue a != SemanticVersion "2.0.0"
+      ut\assertFalse a > SemanticVersion "1.2.4"
+
+    compare_mixedOperands: (ut) ->
+      a = SemanticVersion "1.2.3"
+      ut\assertTrue a < "1.2.4"                                   -- against a string
+      ut\assertTrue a < SemanticVersion("1.2.4")\toPacked!        -- against a packed number
+      ut\assertTrue (SemanticVersion("1.2.2")\toPacked!) < a      -- number on the left operand
+
+    bump_immutableAndResets: (ut) ->
+      a = SemanticVersion "1.2.3"
+      ut\assertEquals tostring(a\bumpMajor!), "2.0.0"            -- minor/patch reset
+      ut\assertEquals tostring(a\bumpMinor!), "1.3.0"            -- patch reset
+      ut\assertEquals tostring(a\bumpPatch!), "1.2.4"
+      ut\assertEquals tostring(a), "1.2.3"                        -- original is untouched
+
+    satisfies_delegatesToRange: (ut) ->
+      v = SemanticVersion "1.2.3"
+      ut\assertTrue v\satisfies "^1.2.0"
+      ut\assertFalse v\satisfies "^2.0.0"
+      r, err = v\satisfies "garbage"
+      ut\assertNil r
+      ut\assertString err
+
     _order: {
-      "toNumber_string", "toNumber_zero", "toNumber_number", "toNumber_nil",
-      "toNumber_badString", "toNumber_overflow", "toNumber_badType",
+      "toPacked_string", "toPacked_zero", "toPacked_number", "toPacked_nil",
+      "toPacked_badString", "toPacked_overflow", "toPacked_badType",
       "toString_fromNumber", "toString_roundtrip", "toString_majorPrecision",
       "check_equal", "check_greater", "check_less", "check_majorPrecision", "check_badArg",
       "check_rangeMode", "check_rangeBadRange",
@@ -222,6 +291,9 @@
       "parseRange_intervals", "parseRange_unsatisfiableIsEmpty", "parseRange_badType",
       "rangesIntersect_overlap", "rangesIntersect_disjoint", "rangesIntersect_unionGroups",
       "rangesIntersect_emptyAndExactBounds", "rangesIntersect_error",
-      "getRangeMaxVersion_bounds", "getRangeMaxVersion_unionTakesHighest", "getRangeMaxVersion_emptyAndError"
+      "getRangeMaxVersion_bounds", "getRangeMaxVersion_unionTakesHighest", "getRangeMaxVersion_emptyAndError",
+      "new_fromString", "new_fromComponents", "new_raisesOnInvalid",
+      "fromPacked_roundTripsAndValidates", "parse_returnsInstanceOrError", "toPacked_andStaticUnwrap",
+      "compare_operators", "compare_mixedOperands", "bump_immutableAndResets", "satisfies_delegatesToRange"
     }
   }

@@ -128,14 +128,14 @@ class ScriptUpdateRecord
     ---@return string changelog Formatted multi-line string, or "" if nothing to show.
     getChangelog: (versionRecord, minVer = 0) =>
         return "" unless "table" == type @changelog
-        maxVer = SemanticVersion\toNumber @version
-        minVer = SemanticVersion\toNumber minVer
+        maxVer = SemanticVersion\toPacked @version
+        minVer = SemanticVersion\toPacked minVer
 
         changelog = {}
         for ver, entry in pairs @changelog
-            verNum = SemanticVersion\toNumber ver
-            -- skip a malformed changelog version key (feed changelog keys aren't schema-validated); toNumber
-            -- returns false for those, and toString false / false >= minVer would otherwise raise
+            verNum = SemanticVersion\toPacked ver
+            -- skip a malformed changelog version key. feed changelog keys aren't schema-validated, so toPacked
+            -- returns false for them, and toString(false) or comparing false >= minVer would otherwise raise
             continue unless verNum
             if verNum >= minVer and verNum <= maxVer
                 changelog[#changelog+1] = {verNum, SemanticVersion\toString(verNum), entry}

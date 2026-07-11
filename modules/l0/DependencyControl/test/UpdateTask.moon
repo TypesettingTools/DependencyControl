@@ -147,7 +147,7 @@
       checkFeed: (feed) =>
         d = @_feeds[feed.__url].direct
         return nil, nil unless d
-        return d, nil, SemanticVersion\toNumber d.version
+        return d, nil, SemanticVersion\toPacked d.version
       __shouldPrompt: (threshold) => opts.allowPrompt and true or false
       __promptSelectPackageSource: (choices, preselect, noLongerAvail) =>
         calls.select += 1
@@ -248,13 +248,13 @@
 
     -- eligibility: release version must meet the target version
     selectCandidate_filtersByVersion: (ut) ->
-      task = makeSelectTask SemanticVersion\toNumber "1.0.0"
+      task = makeSelectTask SemanticVersion\toPacked "1.0.0"
       chosen = UpdateTask.__selectCandidate task, {makeCandidate(2, "0.9.0", namespace: "l0.old"), makeCandidate(2, "1.5.0", namespace: "l0.ok")}
       ut\assertNotNil chosen
       ut\assertEquals chosen.updateRecord.namespace, "l0.ok"
 
     selectCandidate_noneSatisfiesVersion: (ut) ->
-      task = makeSelectTask SemanticVersion\toNumber "3.0.0"
+      task = makeSelectTask SemanticVersion\toPacked "3.0.0"
       ut\assertNil UpdateTask.__selectCandidate task, {makeCandidate(2, "1.0.0"), makeCandidate(2, "2.9.0")}
 
     -- eligibility: a candidate whose channel can't run on the current platform is skipped
@@ -314,26 +314,26 @@
     -- a provider is judged by the alias range it declares, not its own release version: the unrelated
     -- release 9.9.9 is ignored, and ~1.2 still covers the 1.2.4 target
     selectCandidate_providesVersionRangeSatisfies: (ut) ->
-      task = makeSelectTask SemanticVersion\toNumber "1.2.4"
+      task = makeSelectTask SemanticVersion\toPacked "1.2.4"
       chosen = UpdateTask.__selectCandidate task, {makeCandidate(3, "9.9.9", namespace: "l0.prov", isDirect: false, providesVersion: "~1.2")}
       ut\assertNotNil chosen
       ut\assertEquals chosen.updateRecord.namespace, "l0.prov"
 
     -- conversely, a high release version can't rescue a provider once its declared range no longer reaches the target
     selectCandidate_providesVersionRangeRejects: (ut) ->
-      task = makeSelectTask SemanticVersion\toNumber "1.5.0"
+      task = makeSelectTask SemanticVersion\toPacked "1.5.0"
       ut\assertNil UpdateTask.__selectCandidate task, {makeCandidate(3, "9.9.9", namespace: "l0.prov", isDirect: false, providesVersion: "~1.2")}
 
     -- a target below the declared range stays satisfiable: the provider can still supply a version >= target
     selectCandidate_providesVersionRangeAboveTarget: (ut) ->
-      task = makeSelectTask SemanticVersion\toNumber "1.0.0"
+      task = makeSelectTask SemanticVersion\toPacked "1.0.0"
       chosen = UpdateTask.__selectCandidate task, {makeCandidate(3, "1.0.0", namespace: "l0.prov", isDirect: false, providesVersion: "~1.2")}
       ut\assertNotNil chosen
       ut\assertEquals chosen.updateRecord.namespace, "l0.prov"
 
     -- a provider that declares no range stands in for any version
     selectCandidate_providerNoRangeMatchesAny: (ut) ->
-      task = makeSelectTask SemanticVersion\toNumber "5.0.0"
+      task = makeSelectTask SemanticVersion\toPacked "5.0.0"
       chosen = UpdateTask.__selectCandidate task, {makeCandidate(3, "1.0.0", namespace: "l0.prov", isDirect: false)}
       ut\assertNotNil chosen
       ut\assertEquals chosen.updateRecord.namespace, "l0.prov"
@@ -341,7 +341,7 @@
     -- among providers, the release version doesn't drive rank: the wider declared range (higher covered
     -- version) wins even though its provider has the lower release version
     selectCandidate_providerRankedByRangeMaxNotRelease: (ut) ->
-      task = makeSelectTask SemanticVersion\toNumber "1.0.0"
+      task = makeSelectTask SemanticVersion\toPacked "1.0.0"
       chosen = UpdateTask.__selectCandidate task,
         {makeCandidate(3, "9.9.9", namespace: "l0.a", isDirect: false, providesVersion: "^1"),
          makeCandidate(3, "1.0.0", namespace: "l0.b", isDirect: false, providesVersion: "^2")}
@@ -489,7 +489,7 @@
       ut\assertFalse m.isDirect
 
     matchRememberedCandidate_ineligibleVersion: (ut) ->
-      task = makeSourceTask feed: "feed://declared", targetVersion: SemanticVersion\toNumber "5.0.0"
+      task = makeSourceTask feed: "feed://declared", targetVersion: SemanticVersion\toPacked "5.0.0"
       candidates = {makeCandidate(1, "1.0.0", feedUrl: "feed://declared")}
       ut\assertNil UpdateTask.__matchRememberedCandidate task, candidates, {feedSource: SourceFeedKind.SelfDeclared}
 
@@ -918,7 +918,7 @@
       ut\stub(FileOps, "verifyHash")\returns false
       ut\stub(FileOps, "move")\returns true
       ut\stub(FileOps, "rmdir")\returns true
-      newRecord = {__class: {__name: "DependencyControl"}, version: SemanticVersion\toNumber "1.0.0"}
+      newRecord = {__class: {__name: "DependencyControl"}, version: SemanticVersion\toPacked "1.0.0"}
       ut\stub(ModuleLoader, "loadModule")\returns {version: newRecord}
       task = makePerformTask {downloadStatus: Downloader.Download.Status.Finished}
       update = {
@@ -939,7 +939,7 @@
         virtual: true, version: 0, scriptType: Common.ScriptType.Module, name: "Dep"
         loadConfig: (force) =>
           @virtual = false
-          @version = SemanticVersion\toNumber "1.0.0"
+          @version = SemanticVersion\toPacked "1.0.0"
       }
       task = setmetatable {updated: false, logger: {log: ->}, :record}, __index: UpdateTask.__base
       UpdateTask.refreshRecord task
@@ -949,7 +949,7 @@
     -- refreshRecord: nothing changed since the last check → the task is left untouched
     refreshRecord_noChangeStaysUntouched: (ut) ->
       record = {
-        virtual: false, version: SemanticVersion\toNumber "1.0.0"
+        virtual: false, version: SemanticVersion\toPacked "1.0.0"
         scriptType: Common.ScriptType.Module, name: "Dep", loadConfig: (force) => nil
       }
       task = setmetatable {updated: false, logger: {log: ->}, :record}, __index: UpdateTask.__base
