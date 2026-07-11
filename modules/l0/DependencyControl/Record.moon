@@ -89,8 +89,10 @@ class Record
 
     @depConf = {
         file: aegisub.decode_path "?user/config/#{constants.DEPCTRL_NAMESPACE}.json",
+        -- version is a packed integer at runtime but a semver string in the config, so loadConfig and
+        -- writeConfig convert it explicitly
         scriptFields: {"author", "configFile", "feed", "moduleName", "name", "namespace", "url",
-                       "requiredModules", "version", "recordType", "provides"}
+                       "requiredModules", "recordType", "provides"}
     }
 
     ---Returns the live, installed record registered for a namespace, or nil if none is registered
@@ -128,8 +130,7 @@ class Record
     new: (args) =>
         init Record unless @@logger
 
-        -- a valid version from the outset: createDummyRef below can expose this record to a
-        -- circular-dependency resolver that reads its version before the real one is parsed
+        -- createDummyRef below can expose this record before its real version is parsed, so set a valid one now
         @semanticVersion = SemanticVersion.fromPacked 0
 
         Common.addDefaults args, {
@@ -247,6 +248,8 @@ class Record
             -- only need to refresh data if the record was changed by an update
             if haveConfig
                 @[key] = @config.c[key] for key in *@@depConf.scriptFields
+                -- version isn't in scriptFields, so read it explicitly
+                @version = @config.c.version if @config.c.version != nil
 
         elseif not @virtual
             --  copy script information to the config
@@ -263,8 +266,7 @@ class Record
 
         @@logger\trace msgs.writeConfig.writing, Common.terms.scriptType.singular[@scriptType]
         @config\import @, @@depConf.scriptFields, false, true
-        -- version is a computed accessor, so import (which copies raw fields) skips it; persist it
-        -- explicitly as a semver string
+        -- version isn't a scriptField, so store it as a semver string
         @config.c.version = tostring @semanticVersion
         success, errMsg = @config\save!
 
@@ -446,9 +448,6 @@ class Record
             macro[submenuIdx] = submenuDefault if macro[submenuIdx] == nil
             @registerMacro unpack(macro, 1, 6)
 
-    -- `version`: a packed-integer view over the canonical @semanticVersion instance. Reads return the
-    -- packed int (so existing comparisons stay unchanged); writes accept a string, packed int, or instance
-    -- and raise on an invalid value. See setVersion for a non-raising setter.
     version: Accessors.property
         get: => @semanticVersion\toPacked!
         set: (value) =>

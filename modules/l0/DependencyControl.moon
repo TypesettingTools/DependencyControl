@@ -78,7 +78,7 @@ class DependencyControl extends Record
     @UnitTestSuite = UnitTestSuite
     @SemanticVersion = SemanticVersion
 
--- extend Record's `version` accessor onto this subclass before any instance is constructed below
+-- inherit Record's version accessor before constructing any instance below
 Accessors.install DependencyControl
 
 rec = DependencyControl{

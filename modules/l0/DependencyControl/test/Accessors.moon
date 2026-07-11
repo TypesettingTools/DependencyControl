@@ -76,10 +76,19 @@
       ut\assertEquals Derived.__accessors.doubled, {get: true, set: false}
       ut\assertEquals Derived.__accessors.tripled, {get: true, set: false}
 
+    install_readablePropertiesAppearInPairs: (ut) ->
+      Widget = makeWidget!
+      w = Widget 10
+      seen = {k, v for k, v in pairs w}
+      ut\assertEquals seen.__v, 10        -- raw fields still iterate
+      ut\assertEquals seen.doubled, 20    -- a computed property surfaces its getter value
+      ut\assertEquals seen.readonly, 10   -- a getter-only property surfaces too
+
     _order: {
       "property_rejectsBadSpec"
       "install_getterDispatches", "install_setterDispatches", "install_readOnlyRaises"
       "install_fallsThroughToMethodsAndRawFields", "install_recordsRegistry"
       "install_removesSpecFromBase", "install_rejectsNonClass", "install_inheritsParentAccessors"
+      "install_readablePropertiesAppearInPairs"
     }
   }

@@ -75,9 +75,8 @@ migrate = (config, currentSchemaId, targetSchemaId) ->
         configHive[k] = nil for k in *droppedKeys
         configHive.formatVersion = nil   -- obsolete pre-`$schema` marker, superseded by the root `$schema`
 
-    -- pre-0.7 recorded a script/module's type as a boolean `unmanaged` flag on its macros/modules entry
-    -- and its installed version as a packed integer; rewrite the flag as the recordType value (an entry
-    -- without it loads as managed) and the integer version as a semver string
+    -- pre-0.7 stored a record's type as a boolean `unmanaged` flag and its version as a packed integer.
+    -- rewrite the flag as a recordType and the version as a semver string
     for section in *Common.ScriptTypeSection.values
         records = config[section]
         continue unless type(records) == "table"

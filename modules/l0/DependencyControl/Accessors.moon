@@ -48,29 +48,27 @@ class Accessors
     base = type(cls) == "table" and cls.__base
     error msgs.install.badClass\format type cls unless type(base) == "table"
 
-    -- this class's own property specs, taken from the sentinels the class body left in __base
+    -- a subclass's __base has the parent __base as its metatable, so plain pairs here would run the inherited
+    -- __pairs against the base table, whose getters have no instance to read. next avoids that
     own, specKeys = {}, {}
-    for key, value in pairs base
+    for key, value in next, base
       if type(value) == "table" and value[ACCESSOR_TAG]
         own[key] = {get: value.get, set: value.set}
         specKeys[#specKeys + 1] = key
     base[key] = nil for key in *specKeys -- drop the sentinels so they aren't served as raw fields
 
-    -- merge in the parent's accessors (own take precedence): a subclass needs the full set dispatched from
-    -- its own __base, because a function __index doesn't reach a child instance with the right self through
-    -- the parent chain
+    -- a function __index doesn't reach a child instance with the right self through the parent chain, so a
+    -- subclass must dispatch its inherited accessors from its own __base
     accessors = {}
     if parent = cls.__parent
       if inherited = parent.__accessorSpecs
         accessors[name] = spec for name, spec in pairs inherited
     accessors[name] = spec for name, spec in pairs own
 
-    cls.__accessorSpecs = accessors -- the getter/setter functions, for a subclass's install to inherit
+    cls.__accessorSpecs = accessors -- for a subclass's install to inherit
     cls.__accessors = {name, {get: spec.get != nil, set: spec.set != nil} for name, spec in pairs accessors}
-    return cls unless next accessors -- nothing to dispatch, own or inherited
+    return cls unless next accessors
 
-    -- the normal method/field lookup this class had (the __base table, whose own metatable carries any
-    -- inherited methods); accessor keys are checked first, everything else defers to it unchanged
     fallback = base.__index
     base.__index = (self, key) ->
       accessor = accessors[key]
@@ -83,4 +81,17 @@ class Accessors
         error msgs.install.readOnly\format(key), 2 unless accessor.set
         return accessor.set self, value
       rawset self, key, value
+
+    -- makes computed properties appear in pairs(instance), which requires LUAJIT_ENABLE_LUA52COMPAT
+    readable = [name for name, spec in pairs accessors when spec.get]
+    base.__pairs = (self) ->
+      i, key, rawDone = 0, nil, false
+      ->
+        unless rawDone
+          key, value = next self, key
+          return key, value if key != nil
+          rawDone = true
+        i += 1
+        name = readable[i]
+        return name, accessors[name].get self if name
     cls
