@@ -211,14 +211,12 @@ install = ->
         macros = addAvailableToInstall macros, feed, Common.ScriptType.Automation
         modules = addAvailableToInstall modules, feed, Common.ScriptType.Module
 
-    -- build macro and module lists as well as reverse mappings
     moduleList, moduleMap = buildDlgList modules
     macroList, macroMap = buildDlgList macros
 
     btn, res = aegisub.dialog.display getScriptListDlg macroList, moduleList
     return unless btn
 
-    -- create and run the update tasks
     macro, mdl = macroMap[res.macro], moduleMap[res.module]
     runUpdaterTask mdl, true
     runUpdaterTask macro, true
@@ -246,7 +244,6 @@ uninstall = ->
 
     config = getConfig!
 
-    -- build macro and module lists as well as reverse mappings
     moduleList, moduleMap = buildInstalledDlgList "modules", config, true
     macroList, macroMap = buildInstalledDlgList "macros", config, true
 
@@ -260,14 +257,12 @@ uninstall = ->
 update = ->
     config = getConfig!
 
-    -- build macro and module lists as well as reverse mappings
     moduleList, moduleMap = buildInstalledDlgList "modules", config
     macroList, macroMap = buildInstalledDlgList "macros", config
 
     btn, res = aegisub.dialog.display getScriptListDlg macroList, moduleList
     return unless btn
 
-    -- create and run the update tasks
     macro, mdl = macroMap[res.macro], moduleMap[res.module]
     runUpdaterTask mdl, false
     runUpdaterTask macro, false
