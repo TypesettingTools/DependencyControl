@@ -1,6 +1,6 @@
 Logger            = require "l0.DependencyControl.Logger"
 Common            = require "l0.DependencyControl.Common"
-SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
+SemanticVersion = require "l0.DependencyControl.SemanticVersion"
 
 defaultLogger = Logger fileBaseName: "DepCtrl.ScriptUpdateRecord"
 
@@ -128,22 +128,22 @@ class ScriptUpdateRecord
     ---@return string changelog Formatted multi-line string, or "" if nothing to show.
     getChangelog: (versionRecord, minVer = 0) =>
         return "" unless "table" == type @changelog
-        maxVer = SemanticVersioning\toNumber @version
-        minVer = SemanticVersioning\toNumber minVer
+        maxVer = SemanticVersion\toNumber @version
+        minVer = SemanticVersion\toNumber minVer
 
         changelog = {}
         for ver, entry in pairs @changelog
-            verNum = SemanticVersioning\toNumber ver
+            verNum = SemanticVersion\toNumber ver
             -- skip a malformed changelog version key (feed changelog keys aren't schema-validated); toNumber
             -- returns false for those, and toString false / false >= minVer would otherwise raise
             continue unless verNum
             if verNum >= minVer and verNum <= maxVer
-                changelog[#changelog+1] = {verNum, SemanticVersioning\toString(verNum), entry}
+                changelog[#changelog+1] = {verNum, SemanticVersion\toString(verNum), entry}
 
         return "" if #changelog == 0
         table.sort changelog, (a,b) -> a[1]>b[1]
 
-        msg = {msgs.changelog.header\format @name, SemanticVersioning\toString(@version), @released or "<no date>"}
+        msg = {msgs.changelog.header\format @name, SemanticVersion\toString(@version), @released or "<no date>"}
         for chg in *changelog
             chg[3] = {chg[3]} if type(chg[3]) ~= "table"
             if #chg[3] > 0

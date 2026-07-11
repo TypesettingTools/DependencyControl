@@ -1,7 +1,7 @@
 json    = require "json"
 Logger  = require "l0.DependencyControl.Logger"
 FileOps = require "l0.DependencyControl.FileOps"
-SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
+SemanticVersion = require "l0.DependencyControl.SemanticVersion"
 
 JSON_SCHEMA_ID_KEYWORD = "$schema"
 defaultLogger = Logger fileBaseName: "DepCtrl.JsonSchema"
@@ -158,7 +158,7 @@ class JsonSchema
         -- no exact match for the feed's version: try the other available ones, highest version
         -- first to avoid skipping validation of fields not present in earlier schema versions
         otherVersions = [version for version in pairs schemasByVersion when version != dataSchemaVersion]
-        table.sort otherVersions, SemanticVersioning.isHigher
+        table.sort otherVersions, SemanticVersion.isHigher
         for version in *otherVersions
             isValid, validationVersion, validationErr = trySchemaVersion version
             return isValid, validationVersion if isValid

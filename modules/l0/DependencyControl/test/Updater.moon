@@ -4,7 +4,7 @@
   Updater = require "l0.DependencyControl.Updater"
   Common = require "l0.DependencyControl.Common"
   ModuleLoader = require "l0.DependencyControl.ModuleLoader"
-  SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
+  SemanticVersion = require "l0.DependencyControl.SemanticVersion"
   Lock = require "l0.DependencyControl.Lock"
   UpdateTask = require "l0.DependencyControl.UpdateTask"
   DependencyControl = require "l0.DependencyControl"
@@ -163,7 +163,7 @@
       }, __index: Updater.__base
       task = Updater.addTask updater, record, "2.0.0", {"feed://a"}, true
       ut\assertIs task, existing
-      ut\assertEquals existing.targetVersion, SemanticVersioning\toNumber "2.0.0"
+      ut\assertEquals existing.targetVersion, SemanticVersion\toNumber "2.0.0"
       ut\assertTrue existing.optional
 
     -- a record with no queued task gets a fresh UpdateTask, which is cached under its scriptType/namespace

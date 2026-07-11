@@ -67,7 +67,7 @@ ensureWinsock2 = ->
 ---@return integer[][]? addresses One byte array per resolved address (4 bytes IPv4, 16 bytes IPv6).
 resolveHost = (host) ->
     return nil unless lib and type(host) == "string" and #host > 0
-    return nil unless not ensureWinsock2 or ensureWinsock2!
+    return nil if ensureWinsock2 and not ensureWinsock2!
 
     res = ffi.new "struct dc_addrinfo*[1]"
     ok, rc = pcall lib.getaddrinfo, host, nil, nil, res

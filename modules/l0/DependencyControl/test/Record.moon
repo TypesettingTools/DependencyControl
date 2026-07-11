@@ -336,11 +336,11 @@
     -- getVersionNumber/getVersionString: deprecated <=0.6.x compat methods — callable on an instance and
     -- defaulting to the record's own version (regression: they'd been class fields, unreachable via rec\method)
     getVersion_compatMethods: (ut) ->
-      SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
-      fakeSelf = setmetatable {version: SemanticVersioning\toNumber "1.2.3"}, __index: Record.__base
+      SemanticVersion = require "l0.DependencyControl.SemanticVersion"
+      fakeSelf = setmetatable {version: SemanticVersion\toNumber "1.2.3"}, __index: Record.__base
       ut\assertEquals fakeSelf\getVersionString!, "1.2.3"                                 -- defaults to @version
-      ut\assertEquals fakeSelf\getVersionNumber("2.0.0"), SemanticVersioning\toNumber "2.0.0"
-      ut\assertEquals fakeSelf\getVersionString(SemanticVersioning\toNumber "3.1.0"), "3.1.0"
+      ut\assertEquals fakeSelf\getVersionNumber("2.0.0"), SemanticVersion\toNumber "2.0.0"
+      ut\assertEquals fakeSelf\getVersionString(SemanticVersion\toNumber "3.1.0"), "3.1.0"
 
     -- loadConfig imports recordType from the stored config like any other persisted field
     loadConfig_importsRecordType: (ut) ->

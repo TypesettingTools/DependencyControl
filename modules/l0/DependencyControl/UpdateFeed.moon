@@ -8,7 +8,7 @@ Enum = require "l0.DependencyControl.Enum"
 FileOps = require "l0.DependencyControl.FileOps"
 Downloader = require "l0.DependencyControl.Downloader"
 ModuleProvider = require "l0.DependencyControl.ModuleProvider"
-SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
+SemanticVersion = require "l0.DependencyControl.SemanticVersion"
 ScriptUpdateRecord = require "l0.DependencyControl.ScriptUpdateRecord"
 ScriptTargetFilter = require "l0.DependencyControl.ScriptTargetFilter"
 JsonSchema = nil
@@ -586,7 +586,7 @@ class UpdateFeed
                 msgs.__refreshVersionRecord.loadFailed\format scriptType, packageNamespace, mod
 
         changed = false
-        newVer, verErr = SemanticVersioning\toString record.version
+        newVer, verErr = SemanticVersion\toString record.version
         return nil, verErr unless newVer
         if newVer != rawChannel.version
             rawChannel.version = newVer

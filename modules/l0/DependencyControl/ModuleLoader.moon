@@ -3,7 +3,7 @@
 -- and calling any method is guaranteed to interfere with DependencyControl operation
 
 constants = require "l0.DependencyControl.Constants"
-SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
+SemanticVersion = require "l0.DependencyControl.SemanticVersion"
 ModuleProvider = require "l0.DependencyControl.ModuleProvider"
 Common = require "l0.DependencyControl.Common"
 
@@ -34,7 +34,7 @@ class ModuleLoader
     url = url and ": #{url}" or ""
     if ref
       -- unmanaged records have refs whose .version is a string instead of a DepCtrl record
-      version = SemanticVersioning\toString type(ref.version) == "table" and ref.version.version or ref.version
+      version = SemanticVersion\toString type(ref.version) == "table" and ref.version.version or ref.version
       return msgs.formatVersionErrorTemplate.outdated\format name, version, reqVersion, url, reason
     else
       reqVersion = reqVersion and " (v#{reqVersion})" or ""

@@ -5,14 +5,14 @@
   Common       = require "l0.DependencyControl.Common"
   ModuleLoader = require "l0.DependencyControl.ModuleLoader"
   ModuleProvider = require "l0.DependencyControl.ModuleProvider"
-  SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
+  SemanticVersion = require "l0.DependencyControl.SemanticVersion"
 
   DEPCTRL_DUMMY_MODULE_MARKER = "#{constants.DEPCTRL_PRIVATE_GLOBAL_VAR_PREFIX}Dummy"
 
   {
     _description: "Tests for ModuleLoader internal module loading helpers."
 
-    -- formatVersionErrorTemplate: pure computation, uses SemanticVersioning.toString
+    -- formatVersionErrorTemplate: pure computation, uses SemanticVersion.toString
 
     formatVersionErrorTemplate_missing_bare: (ut) ->
       result = ModuleLoader.formatVersionErrorTemplate nil, "MyModule", nil, nil, "not found"
@@ -215,7 +215,7 @@
       recClass = setmetatable {ScriptType: Common.ScriptType, __name: "DependencyControl", :updater},
                               {__call: (cls, args) -> {}}
       rec = {feed: nil, moduleName: "host.Module", name: "host", __class: recClass}
-      mdl = {moduleName: ns, name: ns, version: SemanticVersioning\toNumber "2.0.0"}
+      mdl = {moduleName: ns, name: ns, version: SemanticVersion\toNumber "2.0.0"}
       (ut\stub ModuleLoader, "loadModule")\calls (self, m, usePrivate) -> m._ref = loadedRef unless usePrivate
       ut\stub(ModuleProvider, "isDepCtrlVersionRecord")\returns true
       success, err = ModuleLoader.loadModules rec, {mdl}
@@ -232,7 +232,7 @@
       recClass = setmetatable {ScriptType: Common.ScriptType, __name: "DependencyControl", :updater},
                               {__call: (cls, args) -> {}}
       rec = {feed: nil, moduleName: "host.Module", name: "host", __class: recClass}
-      mdl = {moduleName: ns, name: ns, version: SemanticVersioning\toNumber "2.0.0", optional: false}
+      mdl = {moduleName: ns, name: ns, version: SemanticVersion\toNumber "2.0.0", optional: false}
       (ut\stub ModuleLoader, "loadModule")\calls (self, m, usePrivate) -> m._ref = loadedRef unless usePrivate
       ut\stub(ModuleProvider, "isDepCtrlVersionRecord")\returns true
       success, err = ModuleLoader.loadModules rec, {mdl}

@@ -9,7 +9,7 @@ FileOps =        require "l0.DependencyControl.FileOps"
 Updater =        require "l0.DependencyControl.Updater"
 ModuleLoader =   require "l0.DependencyControl.ModuleLoader"
 ModuleProvider = require "l0.DependencyControl.ModuleProvider"
-SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
+SemanticVersion = require "l0.DependencyControl.SemanticVersion"
 UnitTestSuite =  require "l0.DependencyControl.UnitTestSuite"
 FileCache =      require "l0.DependencyControl.FileCache"
 configSchema =   require "l0.DependencyControl.config-schema"
@@ -175,7 +175,7 @@ class Record
         @configFile = configFile or "#{@namespace}.json"
         @automationDir = Common\getAutomationDir @scriptType
         @testDir = Common\getTestDir @scriptType
-        @version, err = SemanticVersioning\toNumber version
+        @version, err = SemanticVersion\toNumber version
         assert @version, msgs.new.badRecordError\format msgs.new.badRecord.badVersion\format err
 
         @requiredModules or= {}
@@ -260,19 +260,19 @@ class Record
         assert success, msgs.writeConfig.error\format errMsg
 
 
-    ---@deprecated Use `SemanticVersioning.toNumber`.
+    ---@deprecated Use `SemanticVersion.toNumber`.
     ---Converts a version to its packed-integer form, defaulting to this record's version.
     ---@param value? number|string Version to convert (default: this record's version).
     ---@return number? versionNumber nil on an invalid version string.
     ---@return string? err
-    getVersionNumber: (value = @version) => SemanticVersioning\toNumber value
+    getVersionNumber: (value = @version) => SemanticVersion\toNumber value
 
-    ---@deprecated Use `SemanticVersioning.toString`.
+    ---@deprecated Use `SemanticVersion.toString`.
     ---Converts a version to its string form, defaulting to this record's version.
     ---@param version? number|string Version to convert (default: this record's version).
     ---@return string? versionString nil on an invalid version.
     ---@return string? err
-    getVersionString: (version = @version) => SemanticVersioning\toString version
+    getVersionString: (version = @version) => SemanticVersion\toString version
 
 
     ---Resolves this record's external config file path.
@@ -316,7 +316,7 @@ class Record
     checkVersion: (value, precision = "patch") =>
         if type(value) == "table" and value.__class == @@
             value = value.version
-        return SemanticVersioning\check @version, value, precision
+        return SemanticVersion\check @version, value, precision
 
 
     ---Retrieves managed submodules registered under this module namespace.
@@ -440,7 +440,7 @@ class Record
     ---@return number? version The parsed integer version, or nil on error.
     ---@return string? err
     setVersion: (version) =>
-        version, err = SemanticVersioning\toNumber version
+        version, err = SemanticVersion\toNumber version
         if version
             @version = version
             return version

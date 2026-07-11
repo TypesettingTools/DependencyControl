@@ -6,7 +6,7 @@ fileOps =    require "l0.DependencyControl.FileOps"
 Common =     require "l0.DependencyControl.Common"
 Enum =       require "l0.DependencyControl.Enum"
 ModuleLoader = require "l0.DependencyControl.ModuleLoader"
-SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
+SemanticVersion = require "l0.DependencyControl.SemanticVersion"
 UnitTestSuite = require "l0.DependencyControl.UnitTestSuite"
 
 -- How preferred a candidate package source is, in highest-to-lowest trust order.
@@ -368,7 +368,7 @@ class UpdateTask
         success, currentChannel = updateRecord\setChannel @channel
         return nil, msgs.checkFeed.badChannel\format currentChannel unless success
 
-        version = SemanticVersioning\toNumber updateRecord.version
+        version = SemanticVersion\toNumber updateRecord.version
         unless version
             return nil, msgs.checkFeed.invalidVersion\format Common.terms.scriptType.singular[@record.scriptType],
                                                              @record.name, currentChannel, tostring updateRecord.version
@@ -464,14 +464,14 @@ class UpdateTask
     __getCandidateRankVersion: (candidate) =>
         local rankVersion
         if candidate.isDirect
-            versionNumber = SemanticVersioning\toNumber candidate.updateRecord.version
-            return nil unless versionNumber and SemanticVersioning\check versionNumber, @targetVersion
+            versionNumber = SemanticVersion\toNumber candidate.updateRecord.version
+            return nil unless versionNumber and SemanticVersion\check versionNumber, @targetVersion
             rankVersion = versionNumber
         else
             -- a provider is matched and ranked by its declared alias range, defaulting to any version
             range = candidate.providesVersion or "*"
-            return nil unless SemanticVersioning\rangesIntersect range, ">=#{SemanticVersioning\toString @targetVersion}"
-            rankVersion = SemanticVersioning\getRangeMaxVersion range
+            return nil unless SemanticVersion\rangesIntersect range, ">=#{SemanticVersion\toString @targetVersion}"
+            rankVersion = SemanticVersion\getRangeMaxVersion range
             return nil unless rankVersion
         return nil unless candidate.updateRecord\checkPlatform!
         return nil unless candidate.updateRecord.files and #candidate.updateRecord.files > 0
@@ -611,7 +611,7 @@ class UpdateTask
 
         -- check if the script was already updated
         if @updated and @record\checkVersion @targetVersion
-            @logger\log msgs.run.alreadyUpdated, @record.name, SemanticVersioning\toString @record.version
+            @logger\log msgs.run.alreadyUpdated, @record.name, SemanticVersion\toString @record.version
             return UpdateStatus.AlreadyUpdated
 
         -- check internet connection
@@ -631,7 +631,7 @@ class UpdateTask
         -- an installed module already satisfies the chosen (trusted) version
         if selectedSource.isDirect and not @record.virtual and @record\checkVersion selectedSource.updateRecord.version
             @logger\log msgs.run.upToDate, Common.terms.scriptType.singular[@record.scriptType],
-                                           @record.name, SemanticVersioning\toString @record.version
+                                           @record.name, SemanticVersion\toString @record.version
             return UpdateStatus.UpToDate
 
         wasVirtual = @record.virtual
@@ -669,9 +669,9 @@ class UpdateTask
     ---@return string? statusDetailMessage The availability summary for a failure; nil for an optional skip.
     ---@private
     __reportNoSuitablePackage: (maxVersion) =>
-        detail = msgs.run.noFeedAvailExt\format @targetVersion == 0 and "any" or SemanticVersioning\toString(@targetVersion),
-                                                @record.virtual and "no" or SemanticVersioning\toString(@record.version),
-                                                maxVersion < 1 and "none" or SemanticVersioning\toString maxVersion
+        detail = msgs.run.noFeedAvailExt\format @targetVersion == 0 and "any" or SemanticVersion\toString(@targetVersion),
+                                                @record.virtual and "no" or SemanticVersion\toString(@record.version),
+                                                maxVersion < 1 and "none" or SemanticVersion\toString maxVersion
         if @optional
             @logger\log msgs.run.skippedOptional, @record.name, Common.terms.isInstall[@record.virtual],
                                                   msgs.run.optionalNoUpdate\format detail
@@ -794,7 +794,7 @@ class UpdateTask
             if maxVer > 0 and not @record.virtual and @targetVersion <= @record.version
                 -- dependency is already up-to-date, so no matter we don't have a candidate to install
                 @logger\log msgs.run.upToDate, Common.terms.scriptType.singular[@record.scriptType],
-                                               @record.name, SemanticVersioning\toString @record.version
+                                               @record.name, SemanticVersion\toString @record.version
                 return withoutInstall UpdateStatus.UpToDate
 
             code, detail = @__reportNoSuitablePackage maxVer
@@ -982,20 +982,20 @@ class UpdateTask
         else with @record
             .name = @record.name
             .virtual = false
-            .version = SemanticVersioning\toNumber update.version
+            .version = SemanticVersion\toNumber update.version
             @record\writeConfig!
 
         @updated = true
         @logger\log msgs.performUpdate.updSuccess, Common.terms.capitalize(Common.terms.isInstall[wasVirtual or false]),
                                                    Common.terms.scriptType.singular[@record.scriptType],
-                                                   @record.name, SemanticVersioning\toString @record.version
+                                                   @record.name, SemanticVersion\toString @record.version
 
         -- Display changelog
-        @logger\log update\getChangelog @record, (SemanticVersioning\toNumber oldVer) + 1
+        @logger\log update\getChangelog @record, (SemanticVersion\toNumber oldVer) + 1
         @logger\log msgs.performUpdate.reloadNotice
 
         -- TODO: check handling of private module copies (need extra return value?)
-        return finish UpdateStatus.Installed, SemanticVersioning\toString @record.version
+        return finish UpdateStatus.Installed, SemanticVersion\toString @record.version
 
 
     ---Reloads this task's record from its config file to pick up an install/update another updater performed
@@ -1012,7 +1012,7 @@ class UpdateTask
                     @logger\log msgs.refreshRecord.unsetVirtual, Common.terms.scriptType.singular[.scriptType], .name
                 else
                     @logger\log msgs.refreshRecord.otherUpdate, Common.terms.scriptType.singular[.scriptType], .name,
-                                SemanticVersioning\toString @record.version
+                                SemanticVersion\toString @record.version
 
 UpdateTask.UpdateStatus = UpdateStatus
 UpdateTask.ContextCeiling = ContextCeiling

@@ -238,7 +238,7 @@
               "sha1": "8F236016F7ECC216C93ED5D99E7A27DA457D621B"
             },
             {
-              "name": "/SemanticVersioning.moon",
+              "name": "/SemanticVersion.moon",
               "url": "@{fileBaseUrl}@{fileName}",
               "sha1": "5A5D88058A616584A2A9EC9EFFB5F8FAFD5575BF"
             },
@@ -481,7 +481,7 @@
               "type": "test"
             },
             {
-              "name": "/SemanticVersioning.moon",
+              "name": "/SemanticVersion.moon",
               "url": "@{fileBaseUrl}@{fileName}",
               "sha1": "93A0E08D48764E73366E7CB096C02836B609E017",
               "type": "test"
@@ -623,7 +623,7 @@
           "Logger/UpdateFeed: Fixed chained method calls on file handles (`handle:write():flush()` and `handle:write():close()`) that could silently swallow errors"
         ],
         "0.7.0": [
-          "The previously monolithic `DependencyControl.moon` has been broken up into focused sub-modules as groundwork for a future SQLite-based script registry backend: `Record` (version record management), `ModuleLoader` (module loading and dependency resolution), `SemanticVersioning` (version number handling), and `Common` (shared enums and utilities).",
+          "The previously monolithic `DependencyControl.moon` has been broken up into focused sub-modules as groundwork for a future SQLite-based script registry backend: `Record` (version record management), `ModuleLoader` (module loading and dependency resolution), `SemanticVersion` (version number handling), and `Common` (shared enums and utilities).",
           "Script types (automation macros vs. modules) and record types are now represented by proper enums (`ScriptType`, `RecordType`) instead of bare booleans, making the API more explicit and extensible.",
           "UpdateFeed: Fixed two regressions caused by the refactoring, both of which caused the update process to fail.",
           "Global initialization has been moved into a dedicated setup method, reducing implicit global state for loggers and configuration.",

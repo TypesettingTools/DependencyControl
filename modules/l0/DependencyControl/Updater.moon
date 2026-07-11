@@ -5,7 +5,7 @@ Logger =     require "l0.DependencyControl.Logger"
 Common =     require "l0.DependencyControl.Common"
 Lock =       require "l0.DependencyControl.Lock"
 ModuleLoader = require "l0.DependencyControl.ModuleLoader"
-SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
+SemanticVersion = require "l0.DependencyControl.SemanticVersion"
 UpdateTask = require "l0.DependencyControl.UpdateTask"
 DependencyControl = nil
 
@@ -80,7 +80,7 @@ class Updater
             depRec[k] = v for k, v in pairs record
             record = DependencyControl depRec
 
-        targetVersionNumber, err = SemanticVersioning\toNumber targetVersion
+        targetVersionNumber, err = SemanticVersion\toNumber targetVersion
         if (err) then return nil, UpdateStatus.InvalidVersion, err
 
         task = @tasks[record.scriptType][record.namespace]

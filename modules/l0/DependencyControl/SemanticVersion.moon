@@ -1,7 +1,7 @@
 Enum = require "l0.DependencyControl.Enum"
 Common = require "l0.DependencyControl.Common"
 
-SemanticVersioning = nil
+SemanticVersion = nil
 
 ---@alias SemverPrecision
 ---| "major"
@@ -249,7 +249,7 @@ reduceToInterval = (comparators) ->
 
 
 ---Splits a range string into `||` groups, reduces each to an interval, and drops empty ones. The
----public entry point (with the type guard and full syntax docs) is SemanticVersioning.parseRange.
+---public entry point (with the type guard and full syntax docs) is SemanticVersion.parseRange.
 ---@param range string The version range.
 ---@return SemverInterval[]? intervals The range's non-empty intervals, or nil on a malformed range.
 ---@return string? err Error message on failure.
@@ -273,8 +273,8 @@ parseRangeToIntervals = (range) ->
   intervals
 
 ---Semantic versioning utilities.
----@class SemanticVersioning
-class SemanticVersioning
+---@class SemanticVersion
+class SemanticVersion
   semParts = {{"major", 16}, {"minor", 8}, {"patch", 0}}
 
   --- Converts a version number or string to a semantic version string.
@@ -408,27 +408,27 @@ class SemanticVersioning
     highest
 
   ---Reports whether `version` is strictly higher than `reference`. Raises on invalid input.
-  ---Call as a plain static (`SemanticVersioning.isHigher a, b`), e.g. as a table.sort comparator.
+  ---Call as a plain static (`SemanticVersion.isHigher a, b`), e.g. as a table.sort comparator.
   ---@param version number|string
   ---@param reference number|string
   ---@return boolean
   @isHigher = (version, reference) ->
-    version, errMsg = SemanticVersioning\toNumber version
+    version, errMsg = SemanticVersion\toNumber version
     assert version, errMsg
-    referenceVersionNumber, errMsg = SemanticVersioning\toNumber reference
+    referenceVersionNumber, errMsg = SemanticVersion\toNumber reference
     assert referenceVersionNumber, errMsg
 
     return version > referenceVersionNumber
 
   ---Reports whether `version` is strictly lower than `reference`. Raises on invalid input.
-  ---Call as a plain static (`SemanticVersioning.isLower a, b`), e.g. as a table.sort comparator.
+  ---Call as a plain static (`SemanticVersion.isLower a, b`), e.g. as a table.sort comparator.
   ---@param version number|string
   ---@param reference number|string
   ---@return boolean
   @isLower = (version, reference) ->
-    version, errMsg = SemanticVersioning\toNumber version
+    version, errMsg = SemanticVersion\toNumber version
     assert version, errMsg
-    referenceVersionNumber, errMsg = SemanticVersioning\toNumber reference
+    referenceVersionNumber, errMsg = SemanticVersion\toNumber reference
     assert referenceVersionNumber, errMsg
 
     return version < referenceVersionNumber

@@ -1,8 +1,8 @@
 MIN_MOONSCRIPT_VERSION = "0.3.0"
 
-SemanticVersioning = require "l0.DependencyControl.SemanticVersioning"
+SemanticVersion = require "l0.DependencyControl.SemanticVersion"
 moonscript = require 'moonscript.version'
-assert SemanticVersioning\check(moonscript.version, MIN_MOONSCRIPT_VERSION), 
+assert SemanticVersion\check(moonscript.version, MIN_MOONSCRIPT_VERSION), 
     [[ DependencyControl requires Moonscript v%s or later to work, 
 however the Version %s provided by your Aegisub installation is outdated.
 Update to a recent Aegisub build to resolve this issue. 
@@ -75,7 +75,7 @@ class DependencyControl extends Record
     @UpdateFeed = UpdateFeed
     @Updater = Updater
     @UnitTestSuite = UnitTestSuite
-    @SemanticVersioning = SemanticVersioning
+    @SemanticVersion = SemanticVersion
 
 rec = DependencyControl{
     name: "DependencyControl",

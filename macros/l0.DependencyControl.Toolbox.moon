@@ -89,7 +89,7 @@ buildInstalledDlgList = (scriptType, config, isUninstall) ->
 
     for namespace, script in pairs config.c[scriptType]
         continue if protectedModules[namespace]
-        item = "%s v%s%s"\format script.name, DepCtrl.SemanticVersioning\toString(script.version),
+        item = "%s v%s%s"\format script.name, DepCtrl.SemanticVersion\toString(script.version),
                                  script.activeChannel and " [#{script.activeChannel}]" or ""
         list[#list+1] = item
         table.sort list, (a, b) -> a\lower! < b\lower!
@@ -179,7 +179,7 @@ install = ->
             tbl[namespace] or= {}
             for channel in *channels
                 record = scriptData.data.channels[channel]
-                verNum = DepCtrl.SemanticVersioning\toNumber record.version
+                verNum = DepCtrl.SemanticVersion\toNumber record.version
                 unless config.c[scriptTypeConfigAndFeedKeyName][namespace] or (tbl[namespace][channel] and verNum < tbl[namespace][channel].verNum)
                     tbl[namespace][channel] = { name: scriptData.name, version: record.version, verNum: verNum, feed: feed.url,
                                                 default: defaultChannel == channel, moduleName: scriptType == Common.ScriptType.Module and namespace }
