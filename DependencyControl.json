@@ -121,7 +121,7 @@
             {
               "name": "/Common.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "F1830211787EAE822D979B997A31407F0E1C1A9A"
+              "sha1": "6CDE9DEC2AEEE4F7621F5215D64EA0E9FF61B302"
             },
             {
               "name": "/Constants.moon",
@@ -186,7 +186,7 @@
             {
               "name": "/FileOps.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "F1EAB11B4FF62C0827CB1349728DAF1B00BF6268"
+              "sha1": "EEDDD1F82ACB8C6915F641FC20124DD83888E013"
             },
             {
               "name": "/GitRepository.moon",
@@ -231,7 +231,7 @@
             {
               "name": "/Record.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "7631C2EDF7BBFC89D4653B19E3D9D4A95EE863EF"
+              "sha1": "B5C2B411129AE53CF750B77FB23D4BDBE4FFC3AC"
             },
             {
               "name": "/ScriptTargetFilter.moon",
@@ -277,7 +277,7 @@
             {
               "name": "/UpdateTask.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "113AB494198E62826BC80C99BD2281540759B499"
+              "sha1": "E3A71E5630DF006B96D850BBCC66019BEDF4CBFE"
             },
             {
               "name": "/Updater.moon",
@@ -342,7 +342,7 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "5A4DB5CF1C3EA020D5545A27898F987AF76429C2",
+              "sha1": "66C439C44C29099FA1AAF735BEEE26A1905840FD",
               "type": "test"
             },
             {
@@ -354,7 +354,7 @@
             {
               "name": "/Common.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "F7D3C7C7C092CBC8060CEBA60C3770D59D412FE6",
+              "sha1": "13A19DB1AA485B34FEFD692C58CEC6F2705012C0",
               "type": "test"
             },
             {
@@ -426,7 +426,7 @@
             {
               "name": "/FileOps.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "5146894724A61E7EE6099A626AA039090E11DF1B",
+              "sha1": "883E8AC0C67E1335584AFA63D0C899EAB7DF0398",
               "type": "test"
             },
             {
@@ -486,7 +486,7 @@
             {
               "name": "/Record.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "9EFDC1295F7D055D861D4A86247DA60ADBCB8E06",
+              "sha1": "F60CC86DDD58627C5D9E5A5D83F5D7758CE846BC",
               "type": "test"
             },
             {
@@ -669,7 +669,7 @@
           "DepCtrl now refuses to load if the installed Moonscript is below the minimum required version with a helpful error message directing users to update their Aegisub build.",
           "ModuleLoader: Fixed a regression where DepCtrl init hooks were called again on already-initialized modules, causing errors in modules that mutate their exported state on first call (e.g. BadMutex).",
           "Common: Fixed a long-standing bug that guaranteed the `capitalize()` function to fail, that  was never caught because it was unused until the refactoring.",
-          "Common: Added the `makeSet()`, `addDefaults()`, and `trim()` utility helpers (building a set from a list, filling in missing table defaults, and stripping surrounding whitespace from a string), shared with the Functional module.",
+          "Common: Added the `makeSet()`, `addDefaults()`, `trim()`, and `escapePattern()` utility helpers (building a set from a list, filling in missing table defaults, stripping surrounding whitespace from a string, and escaping Lua pattern magic characters), shared with the Functional module.",
           "Updater: Fixed a potential issue where a multi-assignment statement could corrupt record fields after an unsuccessful update.",
           "Automatic update scheduling is now centralized in the DependencyControl Toolbox and runs in a single Aegisub environment at startup, covering all installed scripts including modules not loaded by any automation script. Previously, each automation script's environment scheduled redundant checks for every module it loaded.",
           "Record: Added `getAllRegisteredRecords()` to expose the full live record registry to tooling.",
@@ -708,7 +708,10 @@
           "The config file now stores each installed script's version as a semantic version string (e.g. \"1.2.3\") instead of a packed integer, so it is readable at a glance; existing configs are migrated automatically on first load.",
           "Update feed format v0.4.0: per-file-type URL and local path templates (fileBaseUrls/localFileBasePaths) can be set once at the feed root or on a macros/modules section container and roll down to every package, so file locations no longer need to be repeated per package. The single-string fileBaseUrl/localFileBasePath properties keep working unchanged and act as the fallback for file types without a map entry.",
           "Update feed format v0.4.0: feeds can define their own template variables in a root-level vars object, including lookup tables indexed by a computed key (e.g. @{tagSuffix:@{channel}} to derive per-channel release-tag names), and the new @{scriptType}/@{scriptTypeSection} variables expose each package's script type and feed section to templates.",
-          "The update-feed CLI task can now discover files present on disk but missing from the feed and add complete entries for them (--add-files), by inverting the feed's per-file-type local path templates. A new UpdateFeed.findUnlistedFiles() exposes the discovery to other tooling."
+          "The update-feed CLI task can now discover files present on disk but missing from the feed and add complete entries for them (--add-files), by inverting the feed's per-file-type local path templates. A new UpdateFeed.findUnlistedFiles() exposes the discovery to other tooling.",
+          "Uninstalling a package no longer removes files belonging to a sibling package whose name shares a prefix (e.g. uninstalling l0.Functional could delete a module named l0.FunctionalExtras along with all of its files), and namespaces containing hyphens now match only their own files during uninstall.",
+          "Fixed installations and updates inside Aegisub failing with 'failed to create temporary download directory ... (unknown error)': Aegisub's bundled lfs signals mkdir/rmdir success differently from stock LuaFileSystem, which the directory-creation error checking misread as a failure.",
+          "Update and install progress messages no longer read 'Starting nil of ...' for already-installed packages."
         ]
       }
     },

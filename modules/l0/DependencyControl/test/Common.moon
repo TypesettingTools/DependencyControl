@@ -180,6 +180,15 @@
       ut\assertFalse Common.itemsEqual {1, 1}, {1, 2}
       ut\assertFalse Common.itemsEqual {1, 1, 2}, {1, 2, 2}
 
+    escapePattern_matchesLiterally: (ut) ->
+      s = "a-mo.Line[1] (v2)+?*^$%"
+      escaped = Common.escapePattern s
+      ut\assertEquals (s\find escaped), 1
+      ut\assertNil ("amo.Line[1] (v2)+?*^$%")\find "^" .. escaped   -- hyphen no longer quantifies
+
+    escapePattern_plainStringUnchanged: (ut) ->
+      ut\assertEquals Common.escapePattern("l0_Functional"), "l0_Functional"
+
     _order: {
       "capitalizeTerms",
       "validateNamespace_valid", "validateNamespace_multiPart",
@@ -194,6 +203,7 @@
       "listIncludes_found", "listIncludes_notFoundAndEmpty",
       "getObjectHash_isHexString", "getObjectHash_deterministic", "getObjectHash_ignoresKeyOrder",
       "getObjectHash_nestedOrderIndependent", "getObjectHash_distinguishesContent",
-      "getObjectHash_typeTagged", "equals_cyclicRefs", "itemsEqual_duplicateScalars"
+      "getObjectHash_typeTagged", "equals_cyclicRefs", "itemsEqual_duplicateScalars",
+      "escapePattern_matchesLiterally", "escapePattern_plainStringUnchanged"
     }
   }

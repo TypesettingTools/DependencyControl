@@ -9,6 +9,12 @@ ModuleLoader = require "l0.DependencyControl.ModuleLoader"
 SemanticVersion = require "l0.DependencyControl.SemanticVersion"
 UnitTestSuite = require "l0.DependencyControl.UnitTestSuite"
 
+---The "installation"/"update" term for a record's task. Common.terms.isInstall is keyed by
+---true/false, while an installed record leaves `virtual` nil.
+---@param record Record
+---@return string term
+getInstallTerm = (record) -> Common.terms.isInstall[record.virtual or false]
+
 -- How preferred a candidate package source is, in highest-to-lowest trust order.
 ---@alias UpdaterTrustBand
 ---| 1 # DeclaredDirect: the declared/own feed, trusted, offering the module by name
@@ -309,6 +315,7 @@ class UpdateTask
     ---@param detailMsg? string
     ---@return string message The user-facing error text for the status code.
     @getUpdaterErrorMsg = (code, name, scriptType, isInstall, detailMsg) ->
+        isInstall or= false  -- terms.isInstall is keyed by true/false; tolerate a nil argument
         if code <= -100
             -- a component-encoded status packs its component id as floor(-code / 100)
             return msgs.updateError.component\format -code, msgs.updaterErrorComponent[math.floor(-code/100)],
@@ -539,7 +546,7 @@ class UpdateTask
     ---@return FeedTrustDecision? decision The user's decision, or nil if they cancelled.
     ---@private
     __promptTrustFeed: (selectedCandidate) =>
-        msg = msgs.run.untrustedPrompt\format Common.terms.isInstall[@record.virtual],
+        msg = msgs.run.untrustedPrompt\format getInstallTerm(@record),
                                               Common.terms.scriptType.singular[@record.scriptType],
                                               @record.name, selectedCandidate.feedUrl
         dlg = {{class: "label", label: msg, x: 0, y: 0, width: 1, height: 1}}
@@ -598,7 +605,7 @@ class UpdateTask
     ---@return UpdateStatus statusCode
     ---@return any detail
     run: (waitLock) =>
-        with @record do @logger\log msgs.run.starting, Common.terms.isInstall[.virtual],
+        with @record do @logger\log msgs.run.starting, getInstallTerm(@record),
                                                        Common.terms.scriptType.singular[.scriptType], .name
 
         -- don't perform update of a script when another one is already running for the same script
@@ -673,7 +680,7 @@ class UpdateTask
                                                 @record.virtual and "no" or SemanticVersion\toString(@record.version),
                                                 maxVersion < 1 and "none" or SemanticVersion\toString maxVersion
         if @optional
-            @logger\log msgs.run.skippedOptional, @record.name, Common.terms.isInstall[@record.virtual],
+            @logger\log msgs.run.skippedOptional, @record.name, getInstallTerm(@record),
                                                   msgs.run.optionalNoUpdate\format detail
             return UpdateStatus.SkippedOptional
         return @__logUpdateError UpdateStatus.NoSuitablePackage, detail
@@ -776,7 +783,7 @@ class UpdateTask
 
         abortResolution = ->
             if @optional
-                @logger\log msgs.run.skippedOptional, @record.name, Common.terms.isInstall[@record.virtual],
+                @logger\log msgs.run.skippedOptional, @record.name, getInstallTerm(@record),
                                                       msgs.run.optionalAborted
                 return UpdateStatus.SkippedOptional
             return @__logUpdateError UpdateStatus.UserAborted
@@ -784,7 +791,7 @@ class UpdateTask
         -- a hard pin whose remembered source vanished aborts (required) or skips (optional)
         if stickiness == SourceChoiceStickiness.Pinned and not reuse
             if @optional
-                @logger\log msgs.run.skippedOptional, @record.name, Common.terms.isInstall[@record.virtual],
+                @logger\log msgs.run.skippedOptional, @record.name, getInstallTerm(@record),
                                                       msgs.run.optionalPinnedUnavailable
                 return withoutInstall UpdateStatus.SkippedOptional
             code, detail = @__logUpdateError UpdateStatus.PinnedUnavailable
@@ -832,7 +839,7 @@ class UpdateTask
                 userBlockedFeed = trustDecision == FeedTrustDecision.Never
                 if @optional
                     reason = (userBlockedFeed and msgs.run.optionalBlocked or msgs.run.optionalUntrusted)\format selected.feedUrl
-                    @logger\log msgs.run.skippedOptional, @record.name, Common.terms.isInstall[@record.virtual], reason
+                    @logger\log msgs.run.skippedOptional, @record.name, getInstallTerm(@record), reason
                     return withoutInstall UpdateStatus.SkippedOptional
                 code, detail = @__logUpdateError (userBlockedFeed and UpdateStatus.BlockedFeed or UpdateStatus.UntrustedFeed), selected.feedUrl
                 return withoutInstall code, detail

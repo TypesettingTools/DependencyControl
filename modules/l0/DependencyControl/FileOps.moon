@@ -550,8 +550,11 @@ class FileOps
 
         -- remove empty directory
         success, err = lfs.rmdir path
-        unless success
-            return nil, msgs.rmdir.couldntRemoveDir\format err
+        -- lfs implementations disagree on the success value (LuaFileSystem returns true,
+        -- Aegisub's lfs returns nothing), so only an explicit error or a directory that
+        -- still exists counts as failure
+        unless not err and (success or not lfs.attributes(path, "mode"))
+            return nil, msgs.rmdir.couldntRemoveDir\format(err or "unknown error")
 
         return true
 
@@ -589,7 +592,10 @@ class FileOps
         elseif not mode
             return mkdirRecursive dir if recurse
             res, err = lfs.mkdir dir
-            unless res -- can't create directory (some lfs builds signal failure with a bare nil)
+            -- lfs implementations disagree on the success value (LuaFileSystem returns true,
+            -- Aegisub's lfs returns nothing), so only an explicit error or a directory that
+            -- is still missing counts as failure
+            unless not err and (res or "directory" == lfs.attributes(dir, "mode"))
                 return nil, msgs.mkdir.createError\format(err or "unknown error")
             return true, dir
         elseif isFile and mode == "file" -- if the file already exists, so does the directory

@@ -1,6 +1,6 @@
 -- Record tests: extracted from the main test suite.
--- Called from test.moon as: (controls\requireTest "Record")!
-() ->
+-- Called from test.moon as: (controls\requireTest "Record") basePath
+(basePath) ->
   ffi       = require "ffi"
   constants = require "l0.DependencyControl.Constants"
   Common    = require "l0.DependencyControl.Common"
@@ -222,6 +222,58 @@
       ut\assertString err
       ut\assertContains err, "unmanaged"
 
+    -- uninstall removes only the record's own files: a module's directory must equal the last
+    -- namespace part exactly, so a sibling package sharing the name prefix survives the
+    -- recursive delete
+    uninstall_moduleSparesPrefixSiblings: (ut) ->
+      root = FileOps.joinPath basePath, "uninst-mod"
+      ut\assertString root
+      FileOps.mkdir FileOps.joinPath(root, "l0", "Functional"), false, true
+      FileOps.mkdir FileOps.joinPath(root, "l0", "FunctionalExtras"), false, true
+      FileOps.writeFile FileOps.joinPath(root, "l0", "Functional.moon"), "-- mod", true
+      FileOps.writeFile FileOps.joinPath(root, "l0", "Functional", "sub.moon"), "-- sub", true
+      FileOps.writeFile FileOps.joinPath(root, "l0", "FunctionalExtras.moon"), "-- sibling", true
+      FileOps.writeFile FileOps.joinPath(root, "l0", "FunctionalExtras", "sub.moon"), "-- sibling sub", true
+      rec = {
+        virtual: false, recordType: Common.RecordType.Managed,
+        scriptType: Common.ScriptType.Module,
+        namespace: "l0.Functional", moduleName: "l0.Functional",
+        automationDir: root,
+        config: {delete: ->}, getSubmodules: -> nil,
+        __class: {RecordType: Common.RecordType, terms: Common.terms}
+      }
+      success, results = Record.uninstall rec
+      ut\assertTrue success
+      ut\assertTable results
+      ut\assertFalse FileOps.exists FileOps.joinPath(root, "l0", "Functional.moon"), "file"
+      ut\assertFalse FileOps.exists FileOps.joinPath(root, "l0", "Functional"), "directory"
+      ut\assertTrue FileOps.exists FileOps.joinPath(root, "l0", "FunctionalExtras.moon"), "file"
+      ut\assertTrue FileOps.exists FileOps.joinPath(root, "l0", "FunctionalExtras", "sub.moon"), "file"
+
+    -- automation file matching anchors the namespace on both sides and escapes pattern magic
+    -- (a hyphen would otherwise act as a lazy quantifier)
+    uninstall_automationEscapesAndTerminates: (ut) ->
+      root = FileOps.joinPath basePath, "uninst-auto"
+      ut\assertString root
+      FileOps.mkdir root, false, true
+      FileOps.writeFile FileOps.joinPath(root, "a-mo.Script.moon"), "-- macro", true
+      FileOps.writeFile FileOps.joinPath(root, "a-mo.ScriptExtra.moon"), "-- other macro", true
+      FileOps.writeFile FileOps.joinPath(root, "amo.Script.moon"), "-- hyphen bait", true
+      rec = {
+        virtual: false, recordType: Common.RecordType.Managed,
+        scriptType: Common.ScriptType.Automation,
+        namespace: "a-mo.Script",
+        automationDir: root,
+        config: {delete: ->}, getSubmodules: -> nil,
+        __class: {RecordType: Common.RecordType, terms: Common.terms}
+      }
+      success, results = Record.uninstall rec
+      ut\assertTrue success
+      ut\assertTable results
+      ut\assertFalse FileOps.exists FileOps.joinPath(root, "a-mo.Script.moon"), "file"
+      ut\assertTrue FileOps.exists FileOps.joinPath(root, "a-mo.ScriptExtra.moon"), "file"
+      ut\assertTrue FileOps.exists FileOps.joinPath(root, "amo.Script.moon"), "file"
+
     getSubmodules_virtual: (ut) ->
       rec = {
         virtual: true,
@@ -372,6 +424,7 @@
       "validateNamespace_valid", "validateNamespace_invalid_noDot",
       "validateNamespace_invalid_trailingDot", "validateNamespace_virtual",
       "uninstall_virtual", "uninstall_unmanaged",
+      "uninstall_moduleSparesPrefixSiblings", "uninstall_automationEscapesAndTerminates",
       "getSubmodules_virtual", "getSubmodules_unmanaged", "getSubmodules_nonModule",
       "getConfigFileName_basic", "registerMacro_basic",
       "registry_getReturnsRegistered", "registry_getMissing",

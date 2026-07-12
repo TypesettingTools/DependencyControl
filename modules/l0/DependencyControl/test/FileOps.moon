@@ -208,6 +208,37 @@
       ut\assertFalse result
       ut\assertString dir
 
+    -- Aegisub's lfs.mkdir returns nothing on success; only an explicit error or a directory
+    -- that is still missing counts as failure
+    mkdir_acceptsSilentLfsSuccess: (ut) ->
+      created = false
+      (ut\stub lfs, "attributes")\calls (path, key) -> created and "directory" or nil
+      (ut\stub lfs, "mkdir")\calls (path) ->
+        created = true
+        nil
+      result, dir = FileOps.mkdir {basePath, "silent-new"}
+      ut\assertTrue result
+      ut\assertString dir
+
+    mkdir_silentLfsFailure: (ut) ->
+      (ut\stub lfs, "attributes")\calls (path, key) -> nil
+      (ut\stub lfs, "mkdir")\calls (path) -> nil
+      result, err = FileOps.mkdir {basePath, "silent-fail"}
+      ut\assertNil result
+      ut\assertString err
+
+    rmdir_acceptsSilentLfsSuccess: (ut) ->
+      removed = false
+      (ut\stub lfs, "attributes")\calls (path, key) ->
+        return nil if removed
+        "directory"
+      (ut\stub lfs, "rmdir")\calls (path) ->
+        removed = true
+        nil
+      result, err = FileOps.rmdir {basePath, "silent-rm"}, false
+      ut\assertTrue result
+      ut\assertNil err
+
     -- readFile: stubs lfs.attributes + io.open
 
     readFile_success: (ut) ->
@@ -448,6 +479,7 @@
       "getNamespacedPath_badNamespace", "getNamespacedPath_badBasePath",
       "attributes_file", "attributes_notFound",
       "mkdir_new", "mkdir_exists",
+      "mkdir_acceptsSilentLfsSuccess", "mkdir_silentLfsFailure", "rmdir_acceptsSilentLfsSuccess",
       "readFile_success", "readFile_isDirectory",
       "getHash_sha1", "getHash_defaultsToSha1", "getHash_unsupportedType",
       "verifyHash_match", "verifyHash_mismatch", "verifyHash_badArg",

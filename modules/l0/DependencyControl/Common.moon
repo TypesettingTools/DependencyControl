@@ -334,6 +334,11 @@ class DependencyControlCommon
     ---@return string trimmed The trimmed string.
     @trim = (str) -> (str\gsub "^%s*(.-)%s*$", "%1")
 
+    ---Escapes all Lua pattern magic characters in a string so it matches literally.
+    ---@param str string The string to escape.
+    ---@return string escaped The escaped string.
+    @escapePattern = (str) -> (str\gsub "[%^%$%(%)%%%.%[%]%*%+%-%?]", "%%%1")
+
     ---Flattens nested array tables into a single array up to the specified depth. Values that are not (or not converted to) pure array tables are included as-is.
     ---@param value any The value to flatten.
     ---@param depth? number Maximum depth to flatten (default 1).

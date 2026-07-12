@@ -338,7 +338,7 @@ class Record
     getSubmodules: =>
         return nil if @virtual or @recordType == Common.RecordType.Unmanaged or @scriptType != Common.ScriptType.Module
         mdlConfig = @@config\getSectionHandler Common.ScriptTypeSection[Common.ScriptType.Module]
-        pattern = "^#{@namespace}."\gsub "%.", "%%."
+        pattern = "^#{Common.escapePattern @namespace}%."
         return [mdl for mdl, _ in pairs mdlConfig.c when mdl\match pattern], mdlConfig
 
     ---Loads or updates required modules and returns their references.
@@ -523,17 +523,18 @@ class Record
         toRemove, pattern, dir = {}
         if @moduleName
             nsp, name = @namespace\match "(.+)%.(.+)"
-            pattern = "^#{name}"
+            pattern = "^#{Common.escapePattern name}"
             dir = "#{@automationDir}/#{nsp\gsub '%.', '/'}"
         else
-            pattern = "^#{@namespace}"\gsub "%.", "%%."
+            pattern = "^#{Common.escapePattern @namespace}"
             dir = @automationDir
 
         lfs.chdir dir
         for file in lfs.dir dir
             mode, path = FileOps.attributes file, "mode"
-            -- parent level module files must be <last part of namespace>.ext
-            currPattern = @moduleName and mode == "file" and pattern.."%." or pattern
+            -- a file must be "<stem>.<ext>" and a module directory exactly "<stem>", so a
+            -- sibling package sharing the name prefix never falls into the recursive delete
+            currPattern = mode == "file" and pattern .. "%." or pattern .. "$"
             -- automation scripts don't use any subdirectories
             if (@moduleName or mode == "file") and file\match currPattern
                 toRemove[#toRemove+1] = path
