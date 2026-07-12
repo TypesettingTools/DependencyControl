@@ -93,6 +93,20 @@
       ut\assertTrue ok                     -- no crash
       ut\assertFalse logger.toFile         -- file logging disabled after the failure
 
+    -- a progress bar's fill chunks continue the logger's own open window line, so they must
+    -- not repeat the indent prefix inside the bar
+    progress_noIndentInsideBar: (ut) ->
+      captured = {}
+      (ut\stub aegisub, "log")\calls (level, msg) -> captured[#captured + 1] = msg
+      logger = Logger toFile: false, toWindow: true, indent: 2
+      logger\progress 10, "Downloading..."
+      logger\progress 50
+      logger\progress!
+      out = table.concat captured
+      ut\assertContains out, "—— Downloading"     -- the opening chunk keeps its indent
+      bar = out\match "%[(.-)%]"
+      ut\assertEquals bar, "■"\rep 10
+
     -- assert/assertNotNil: success path returns values, failure path throws
 
     assert_truthy: (ut) ->
@@ -123,6 +137,7 @@
       "dumpToString_scalar", "dumpToString_flatTable", "dumpToString_ignoreKey",
       "dumpToString_maxDepth", "dumpToString_circular",
       "log_dispatches", "log_emptyMsg", "log_nonNumberLevel", "log_fileOpenFailureDisablesToFile",
+      "progress_noIndentInsideBar",
       "assert_truthy", "assert_falsy",
       "assertNotNil_value", "assertNotNil_nil"
     }

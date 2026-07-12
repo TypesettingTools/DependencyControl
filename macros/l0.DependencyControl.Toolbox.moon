@@ -590,8 +590,9 @@ scheduleUpdatesAndRegisterTests = ->
         if not success
             logger\trace msgs.scheduleUpdatesAndRegisterTests.scheduleError, record.name or record.namespace, errMsgOrErrCode
         elseif errMsgOrErrCode < 0
-            logger\trace msgs.scheduleUpdatesAndRegisterTests.scheduleError, record.name or record.namespace, 
-                DepCtrl.Updater.getUpdaterErrorMsg errMsgOrErrCode, record.name or record.namespace, record.scriptType, false, errDetail
+            -- a structured status is a deliberate refusal or an already-reported run result,
+            -- and its message stands on its own
+            logger\trace DepCtrl.Updater.getUpdaterErrorMsg errMsgOrErrCode, record.name or record.namespace, record.scriptType, false, errDetail
         
         if record.tests and record.scriptType == Common.ScriptType.Module
             success, errMsg = pcall record.tests\registerMacros

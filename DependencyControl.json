@@ -60,7 +60,7 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "EC75887F1E28A5CFE7B4280A5EF55B88DE0982DA"
+              "sha1": "A8A91B5B9E56C79B9010F6C51CBC0432E8DDB6E0"
             },
             {
               "name": ".moon",
@@ -96,7 +96,8 @@
         "0.3.0": [
           "Added a Manage Feeds macro to review and manage the feeds DependencyControl knows about and their trust status: trust, block (with a reason), unblock, or remove feeds; discover feeds advertised by other feeds; and manage your extra feeds and block list in dedicated panels. It warns before an action would change an installed package's update source, opens feed details in the DepCtrl Browser, and won't let you block DependencyControl's own feed.",
           "Manage Feeds now shows a Fetched column with how long ago each feed was last retrieved into the cache, read straight from the cache so it's visible even before Discover — letting you see at a glance which feeds have recent data.",
-          "The Toolbox now ships a DependencyControl unit test suite, adding it to the Run Tests menu."
+          "The Toolbox now ships a DependencyControl unit test suite, adding it to the Run Tests menu.",
+          "The startup update sweep no longer reports expected conditions, such as skipping the update of an unmanaged module, as unexpected scheduling errors."
         ]
       }
     }
@@ -211,7 +212,7 @@
             {
               "name": "/Logger.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "6783F53AA33C5A9E5CFF73D08F8AB7586B54717F"
+              "sha1": "0EC219D832BC8824AE5AC7C02F29F722B8813B18"
             },
             {
               "name": "/ModuleLoader.moon",
@@ -456,7 +457,7 @@
             {
               "name": "/Logger.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "770866DFACC151C118B821FD2874E0BDD1CC387E",
+              "sha1": "2E8AB839128F6837757C9EB396EFFBA2BCD7863F",
               "type": "test"
             },
             {
@@ -711,7 +712,8 @@
           "The update-feed CLI task can now discover files present on disk but missing from the feed and add complete entries for them (--add-files), by inverting the feed's per-file-type local path templates. A new UpdateFeed.findUnlistedFiles() exposes the discovery to other tooling.",
           "Uninstalling a package no longer removes files belonging to a sibling package whose name shares a prefix (e.g. uninstalling l0.Functional could delete a module named l0.FunctionalExtras along with all of its files), and namespaces containing hyphens now match only their own files during uninstall.",
           "Fixed installations and updates inside Aegisub failing with 'failed to create temporary download directory ... (unknown error)': Aegisub's bundled lfs signals mkdir/rmdir success differently from stock LuaFileSystem, which the directory-creation error checking misread as a failure.",
-          "Update and install progress messages no longer read 'Starting nil of ...' for already-installed packages."
+          "Update and install progress messages no longer read 'Starting nil of ...' for already-installed packages.",
+          "Logger: the log window no longer repeats the indentation prefix inside incrementally written output such as the download progress bar (log files were unaffected)."
         ]
       }
     },

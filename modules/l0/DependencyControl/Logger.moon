@@ -88,7 +88,10 @@ class Logger
         if show
             -- ensure this message starts clean instead of being glued onto unrelated output
             lineBreak = (not streamAtLineStart and streamOpenedBy != @) and "\n" or ""
-            aegisub.log level, table.concat({lineBreak, indentStr, prefixWin, msg, lineFeed})
+            -- a chunk continuing this logger's own open line (e.g. a progress bar fill) must
+            -- not repeat the indent
+            winIndent = (not streamAtLineStart and streamOpenedBy == @) and "" or indentStr
+            aegisub.log level, table.concat({lineBreak, winIndent, prefixWin, msg, lineFeed})
             streamAtLineStart = insertLineFeed
             streamOpenedBy = if insertLineFeed then nil else @
 
