@@ -337,7 +337,9 @@ _(`//` denotes a comment explaining the property above)_
 ```json
 {
   "dependencyControlFeedFormatVersion": "0.3.0",
-  // The version of the feed format. The current version is 0.3.0, don't touch this until further notice.
+  // The version of the feed format. This example uses the simple v0.3.0 layout, which remains fully supported.
+  // The current version is 0.4.0, which adds optional per-file-type template maps, author-defined
+  // variables and local path resolution for CI/CLI tooling (see the template section below).
   "name": "line0's Aegisub Scripts",
   "description": "Main repository for all of line0's automation macros.",
   "maintainer": "line0",
@@ -471,6 +473,7 @@ An automation script or module object looks like this:
 
 Full _JSON Schema_ documents (which you can use to validate your feeds) are provided for the following feed versions:
 
+- [v0.4.0](./schemas/feed/v0.4.0.json) (current; also validates _v0.3.0_ and legacy _v0.2.0_ feeds)
 - [v0.3.0](./schemas/feed/v0.3.0.json) (also validates legacy _v0.2.0_ feeds)
 
 ### Template Variables
@@ -486,6 +489,11 @@ _Depth 1:_ Feed Information
 1.  `@{feedName}`: The name of the feed
 2.  `@{baseUrl}`: The baseUrl field
 3.  `@{feed:<feedName>}`: A reference to a feed URL in the knownFeeds table
+
+_Depth 2:_ Section Information _(v0.4.0)_
+
+1.  `@{scriptTypeSection}`: the name of the feed section the package lives in (`macros` or `modules`)
+2.  `@{scriptType}`: the matching script type identifier (`automation` or `module`)
 
 _Depth 3:_ Script Information
 
@@ -503,11 +511,21 @@ _Depth 7:_ File Information
 1.  `@{platform}`: the platform defined for this file, otherwise an empty string
 2.  `@{fileName}`: the file name
 
-**"Rolling" Variables**: These variables can be defined at any depth in the JSON tree and are continuously expanded using the variables available. You can reference a rolling variable in itself, which will substitute the template for the contents the variable had at the parent-level.
+**"Rolling" Variables**: These variables can be defined at any depth in the JSON tree — the feed root, a `macros`/`modules` section container _(v0.4.0)_, a package, or a channel — and are continuously expanded using the variables available. You can reference a rolling variable in itself, which will substitute the template for the contents the variable had at the parent-level.
 
-Right now there's only one such variable: `@{fileBaseUrl}`, which you can use to construct the URL to a file using the template variables available.
+1.  `@{fileBaseUrl}`: the base URL to construct file download URLs from
+2.  `@{localFileBasePath}` _(v0.4.0)_: the on-disk counterpart of `@{fileBaseUrl}`, resolved relative to the feed file when a feed is expanded in local mode; it lets CI/CLI tooling (such as the [DepCtrl CLI](#cli)) locate every packaged file's source in your repository
 
-For an example to serve updates from the HEAD of a GitHub repository main branch, see [here](https://github.com/TypesettingTools/line0-Aegisub-Scripts/blob/master/DependencyControl.json). An example that shows a feed making use of tagged releases is [also available](https://github.com/TypesettingTools/ASSFoundation/blob/master/DependencyControl.json).
+**Per-file-type template maps** _(v0.4.0)_: the `fileBaseUrls` and `localFileBasePaths` properties hold one full URL/path template per file type (`script`, `test`), usually ending in `@{fileName}`. At each file record, the entry matching the file's `type` becomes the effective `@{fileBaseUrl}`/`@{localFileBasePath}` value, so file entries can simply declare `"url": "@{fileBaseUrl}"`. A file type without a map entry falls back to the scalar `fileBaseUrl`/`localFileBasePath`. The maps roll like the scalar variables, so defining them once at the feed root (or on a section container, when your macros and modules trees follow different layouts) describes every package's file locations in one place.
+
+**Author-defined variables** _(v0.4.0)_: a root-level `vars` object defines your own template variables. A string value is substituted as `@{name}`; an object value is a lookup table indexed as `@{name:key}`, where the key part may itself be a variable. DependencyControl's own feed uses this to derive release-tag names per channel:
+
+```json
+"vars": { "tagSuffix": { "alpha": "-alpha", "release": "" } },
+"fileBaseUrls": { "script": "@{fileBaseUrl}v@{version}@{tagSuffix:@{channel}}/@{scriptTypeSection}/@{namespacePath}@{fileName}" }
+```
+
+For an example to serve updates from the HEAD of a GitHub repository main branch, see [here](https://github.com/TypesettingTools/line0-Aegisub-Scripts/blob/master/DependencyControl.json). An example that shows a feed making use of tagged releases is [also available](https://github.com/TypesettingTools/ASSFoundation/blob/master/DependencyControl.json). DependencyControl's [own feed](./DependencyControl.json) exercises the full v0.4.0 feature set: root-level template maps, a section-scoped override for the differently-structured macros tree, and channel-keyed release-tag suffixes.
 
 ## Reference
 
@@ -730,8 +748,7 @@ Packages without a test suite are skipped with a notice; packages that fail to l
 as failures. Log files and config/feed caches are written to a per-run throwaway workspace under
 the system temp directory rather than touching your real Aegisub configuration.
 
-The feed must have correct `localFileBasePath` entries so the CLI can resolve source files on
-disk.
+The feed must have correct `localFileBasePaths` (or `localFileBasePath`) entries so the CLI can resolve source files on disk.
 
 | Option            | Default                         | Description                                              |
 | ----------------- | ------------------------------- | -------------------------------------------------------- |
@@ -783,3 +800,25 @@ without going through a full release build.
 | `--target-macro`  | _(all macros)_                  | Restrict to this macro namespace; repeatable           |
 
 Exit code `0` = success, `1` = one or more errors.
+
+### `update-feed` — Refresh and extend the feed
+
+```sh
+luajit depctrl.lua update-feed [--feed <path>] [--channel <name>] [--dry-run] [--add-files]
+                               [--target-module <ns>] [--target-macro <ns>]
+```
+
+Refreshes each targeted package's channel in place: recomputes SHA-1 hashes from the local source files, updates the version, dependencies and provided aliases from the package's DependencyControl record, and flags files that have vanished locally with `delete: true`. Any package that changed has its `released` date reset to `null` to mark the build as pending. The feed is validated against the bundled schema before processing.
+
+With `--add-files`, files found on disk that the targeted channel doesn't list are added to it, complete with computed SHA-1 hashes. Discovery works by inverting the effective per-file-type `localFileBasePaths` templates — every template whose only unexpanded variable is `@{fileName}` is matched against the files below it — so it requires the feed to declare `localFileBasePaths` (at any level; see the template section above). New _packages_ are not discovered; add those to the feed by hand.
+
+| Option            | Default                         | Description                                             |
+| ----------------- | ------------------------------- | ------------------------------------------------------- |
+| `--feed`          | `DependencyControl.json` in CWD | Path to the feed JSON file                              |
+| `--channel`       | _(each package's default)_      | Channel to update                                       |
+| `--dry-run`       | false                           | Print what would change without writing back            |
+| `--add-files`     | false                           | Add entries for on-disk files missing from the channel  |
+| `--target-module` | _(all modules)_                 | Restrict to this module namespace; repeatable           |
+| `--target-macro`  | _(all macros)_                  | Restrict to this macro namespace; repeatable            |
+
+Exit code `0` = success, `1` = one or more packages had errors.

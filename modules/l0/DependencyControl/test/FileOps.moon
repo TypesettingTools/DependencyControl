@@ -412,6 +412,29 @@
       ut\assertNil result
       ut\assertString err
 
+    -- listFilesRecursive
+
+    listFilesRecursive_collectsNestedFiles: (ut) ->
+      root = FileOps.joinPath basePath, "walk"
+      FileOps.mkdir FileOps.joinPath(root, "sub", "subsub"), false, true
+      FileOps.writeFile FileOps.joinPath(root, "a.txt"), "a", true
+      FileOps.writeFile FileOps.joinPath(root, "sub", "b.txt"), "b", true
+      FileOps.writeFile FileOps.joinPath(root, "sub", "subsub", "c.txt"), "c", true
+      files = FileOps.listFilesRecursive root
+      ut\assertTable files
+      ut\assertEquals #files, 3
+      found = {file\match("[^/\\]+$"), true for file in *files}
+      ut\assertTrue found["a.txt"]
+      ut\assertTrue found["b.txt"]
+      ut\assertTrue found["c.txt"]
+
+    listFilesRecursive_notDirectory: (ut) ->
+      filePath = FileOps.joinPath basePath, "walk-file.txt"
+      FileOps.writeFile filePath, "x", true
+      result, err = FileOps.listFilesRecursive filePath
+      ut\assertNil result
+      ut\assertString err
+
     _order: {
       "validateFullPath_nonString", "validateFullPath_parentDir", "validateFullPath_tooLong",
       "validateFullPath_segmentTooLong", "pathLimits_detected",
@@ -436,6 +459,7 @@
       "joinPath_segmentsArray", "joinPath_segmentsVarargs", "joinPath_segmentsMixed",
       "joinPath_skipsEmptySegments", "joinPath_resolvesDotDot", "joinPath_invalidSegment",
       "exists_fileFound", "exists_notFound", "exists_wrongType", "exists_noTypeCheck",
-      "listDir_success", "listDir_notDirectory"
+      "listDir_success", "listDir_notDirectory",
+      "listFilesRecursive_collectsNestedFiles", "listFilesRecursive_notDirectory"
     }
   }

@@ -8,7 +8,7 @@
   "properties": {
     "dependencyControlFeedFormatVersion": {
       "enum": ["0.2.0", "0.3.0", "0.4.0"],
-      "description": "Feed format version. This schema accepts '0.2.0', '0.3.0' and '0.4.0'; all are handled correctly by a v0.4.0-capable reader, as each version only adds backwards-compatible, optional fields. '0.3.0' introduced PackagedFile.type for test files; '0.4.0' added the optional localFileBasePath/localFilePath fields used by CI/CLI tooling and the optional Release.provides field for fallback package resolution."
+      "description": "Feed format version. This schema accepts '0.2.0', '0.3.0' and '0.4.0'; all are handled correctly by a v0.4.0-capable reader, as each version only adds backwards-compatible, optional fields. '0.3.0' introduced PackagedFile.type for test files. '0.4.0' added local-mode path resolution (localFileBasePath/localFilePath) for CI/CLI tooling, the per-file-type fileBaseUrls/localFileBasePaths template maps, author-defined template variables (vars) with computed-key lookups, the scriptType/scriptTypeSection variables, section-scoped rolling template overrides, Release.provides for fallback package resolution, and blockedFeeds."
     },
     "name": {
       "description": "Human-readable name of the feed (e.g. repository or collection name).",
@@ -28,12 +28,23 @@
     },
     "fileBaseUrl": {
       "$ref": "#/$defs/TemplateString",
-      "description": "Default base URL for file downloads. Becomes a rolling @{fileBaseUrl} variable: once set it propagates down to all channels that do not define their own fileBaseUrl."
+      "description": "Default base URL for file downloads. Becomes a rolling @{fileBaseUrl} variable: once set it propagates down until overridden, and serves as the fallback for file types without a fileBaseUrls entry."
+    },
+    "fileBaseUrls": {
+      "$ref": "#/$defs/FileTypeTemplateMap",
+      "description": "Per-file-type map of full download URL templates. At each file record, the entry matching the file's type becomes the effective @{fileBaseUrl} value."
     },
     "localFileBasePath": {
       "$ref": "#/$defs/TemplateString",
       "description": "Local-tooling counterpart of `@{fileBaseUrl}`. Rolling base path used only when a feed is expanded in 'local' mode, where file paths are resolved on disk instead of as download URLs. Added in v0.4.0",
       "default": "./"
+    },
+    "localFileBasePaths": {
+      "$ref": "#/$defs/FileTypeTemplateMap",
+      "description": "Local-mode counterpart of `fileBaseUrls`: per-file-type map of full on-disk path templates, resolved relative to the feed file."
+    },
+    "vars": {
+      "$ref": "#/$defs/Vars"
     },
     "maintainer": {
       "description": "Name of the person or organization maintaining this feed.",
@@ -54,17 +65,13 @@
       "items": { "$ref": "#/$defs/BlockedFeed" }
     },
     "macros": {
-      "description": "Aegisub automation scripts keyed by their namespaced identifiers.",
-      "type": "object",
-      "additionalProperties": { "$ref": "#/$defs/Package" },
-      "propertyNames": { "$ref": "#/$defs/NamespacedIdentifier" }
+      "$ref": "#/$defs/PackageSection",
+      "description": "Aegisub automation scripts keyed by their namespaced identifiers."
     },
 
     "modules": {
-      "description": "Lua module entries keyed by their namespaced identifiers.",
-      "type": "object",
-      "additionalProperties": { "$ref": "#/$defs/Package" },
-      "propertyNames": { "$ref": "#/$defs/NamespacedIdentifier" }
+      "$ref": "#/$defs/PackageSection",
+      "description": "Lua module entries keyed by their namespaced identifiers."
     }
   },
   "$defs": {
@@ -134,23 +141,50 @@
     },
 
     "TemplateString": {
-      "description": "A string that may contain `@{variableName}` or `@{feed:alias}` template substitutions. Variables are expanded before the value is used. Recognized variable names at each depth level: `baseUrl`, `fileBaseUrl` (rolling), `url`, `namespace`, `namespacePath`, `scriptName`, `channel`, `version`, `platform`, `fileName`. Cross-feed references use the `@{feed:alias}` form, where alias is a key in knownFeeds (e.g. `@{feed:a-mo}`).",
+      "description": "A string that may contain `@{variableName}` or `@{lookupName:key}` template substitutions, expanded before the value is used. Built-in variables: `feedName`, `baseUrl`, `scriptType`, `scriptTypeSection`, `namespace`, `namespacePath`, `scriptName`, `channel`, `version`, `platform`, `fileName`, plus the rolling `fileBaseUrl`/`localFileBasePath` values and any author-defined `vars` names. The two-part form indexes a lookup table: `@{feed:alias}` reads knownFeeds and `@{name:key}` reads a table-valued `vars` entry; the key part may itself be a variable (e.g. `@{tagSuffix:@{channel}}`), resolving once the inner variable is in scope. A variable that is not in scope where it appears is left in place and expands at a deeper level where it gains a value.",
       "type": "string"
     },
 
-    "FileBaseTemplate": {
-      "description": "A rolling base for `fileBaseUrl`/`localFileBasePath`: either a single template string applied to every file, or a per-file-type map giving separate bases so test files can live under a different path than script files. In the map form, files with `type: \"test\"` use the `test` base and all other files use the `script` base.",
-      "oneOf": [
-        { "$ref": "#/$defs/TemplateString" },
-        {
-          "type": "object",
-          "properties": {
-            "script": { "$ref": "#/$defs/TemplateString" },
-            "test":   { "$ref": "#/$defs/TemplateString" }
-          },
-          "required": ["script"]
-        }
-      ]
+    "FileTypeTemplateMap": {
+      "description": "A per-file-type map of full URL/path templates, usually ending in @{fileName}. At each file record, the entry matching the file's `type` ('script' when the field is absent) replaces the effective scalar @{fileBaseUrl}/@{localFileBasePath} value; a type with no entry keeps the scalar fallback. Rolling: may be set at the feed root, a section container, a package, or a channel, and propagates down until overridden. Added in v0.4.0.",
+      "type": "object",
+      "properties": {
+        "script": { "$ref": "#/$defs/TemplateString" },
+        "test":   { "$ref": "#/$defs/TemplateString" }
+      },
+      "additionalProperties": false
+    },
+
+    "Vars": {
+      "description": "Author-defined template variables. Each key becomes a @{name} variable available throughout the feed; a string value is substituted directly, while an object value defines a lookup table used through the computed-key form @{name:key} (e.g. @{tagSuffix:@{channel}}). Built-in variable names are reserved and ignored here. Added in v0.4.0.",
+      "type": "object",
+      "additionalProperties": {
+        "oneOf": [
+          { "$ref": "#/$defs/TemplateString" },
+          {
+            "type": "object",
+            "additionalProperties": { "$ref": "#/$defs/TemplateString" }
+          }
+        ]
+      }
+    },
+
+    "PackageSection": {
+      "description": "A map of packages keyed by their namespaced identifiers. The bare (dot-free) property names are reserved for rolling template values scoped to this section; a valid namespace always contains a dot, so the two can never collide.",
+      "type": "object",
+      "properties": {
+        "fileBaseUrl":        { "$ref": "#/$defs/TemplateString",      "description": "Section-scoped override of the rolling @{fileBaseUrl} value." },
+        "fileBaseUrls":       { "$ref": "#/$defs/FileTypeTemplateMap", "description": "Section-scoped override of the per-file-type URL templates." },
+        "localFileBasePath":  { "$ref": "#/$defs/TemplateString",      "description": "Section-scoped override of the rolling @{localFileBasePath} value." },
+        "localFileBasePaths": { "$ref": "#/$defs/FileTypeTemplateMap", "description": "Section-scoped override of the per-file-type local path templates." }
+      },
+      "additionalProperties": { "$ref": "#/$defs/Package" },
+      "propertyNames": {
+        "oneOf": [
+          { "$ref": "#/$defs/NamespacedIdentifier" },
+          { "enum": ["fileBaseUrl", "fileBaseUrls", "localFileBasePath", "localFileBasePaths"] }
+        ]
+      }
     },
 
     "Sha1Hash": {
@@ -168,18 +202,16 @@
       "required": ["name", "url", "sha1"],
       "properties": {
         "name": {
-          "description": "File path relative to the release channel's effective `@{fileBaseUrl}` template variable value. Conventionally starts with '.' for the primary module file (e.g. '.moon') or '/' for sub-files (e.g. '/Common.moon'). Template variables are NOT expanded in this field. It is provided verbatim as the `@{fileName}` template variable in the 'url' field.",
+          "description": "The file's path within its package, appended to the package's install directory on deployment. Conventionally starts with '.' for the primary file (e.g. '.moon') or '/' for sub-files (e.g. '/Common.moon'). Template variables are NOT expanded in this field; it is provided verbatim as the `@{fileName}` template variable.",
           "type": "string"
         },
         "url": {
           "$ref": "#/$defs/TemplateString",
-          "description": "Absolute download URL after template expansion. Defaults to the file name appended to the file base URL when omitted.",
-          "default": "@{fileBaseUrl}@{fileName}"
+          "description": "Absolute download URL after template expansion. With a fileBaseUrls map in effect this is simply `@{fileBaseUrl}`; with a scalar base the conventional form is `@{fileBaseUrl}@{fileName}`."
         },
         "localFilePath": {
           "$ref": "#/$defs/TemplateString",
-          "description": "Local-tooling counterpart of `@{url}`. Used only when a feed is expanded in 'local' mode, where file paths are resolved on disk instead of as download URLs. Added in v0.4.0",
-          "default": "@{localFileBasePath}@{fileName}"
+          "description": "Local-tooling counterpart of `@{url}`. Used only when a feed is expanded in 'local' mode, where file paths are resolved on disk instead of as download URLs. When omitted, it is resolved from the effective local path template: a collapsed localFileBasePaths entry is used as-is, while a scalar localFileBasePath gets the file name appended. Added in v0.4.0"
         },
         "sha1": {
           "$ref": "#/$defs/Sha1Hash",
@@ -277,12 +309,20 @@
           "default": false
         },
         "fileBaseUrl": {
-          "$ref": "#/$defs/FileBaseTemplate",
-          "description": "Base URL prepended to each file's name to form its download URL. Overrides any `@{fileBaseUrl}` template variable inherited from the script entry or feed root. This is a 'rolling' template variable: once set at a given depth it propagates to all nested levels until overridden."
+          "$ref": "#/$defs/TemplateString",
+          "description": "Base URL for this channel's file downloads. Overrides any `@{fileBaseUrl}` template variable inherited from the script entry or feed root. This is a 'rolling' template variable: once set at a given depth it propagates to all nested levels until overridden."
+        },
+        "fileBaseUrls": {
+          "$ref": "#/$defs/FileTypeTemplateMap",
+          "description": "Channel-scoped override of the per-file-type URL templates."
         },
         "localFileBasePath": {
-          "$ref": "#/$defs/FileBaseTemplate",
+          "$ref": "#/$defs/TemplateString",
           "description": "Local-tooling counterpart of `@{fileBaseUrl}`. Rolling base path used only when a feed is expanded in 'local' mode, where file paths are resolved on disk instead of as download URLs. Added in v0.4.0"
+        },
+        "localFileBasePaths": {
+          "$ref": "#/$defs/FileTypeTemplateMap",
+          "description": "Channel-scoped override of the per-file-type local path templates."
         },
         "files": {
           "description": "Files included in this release.",
@@ -330,12 +370,20 @@
           "description": "Project or homepage URL. May reference the `@{baseUrl}` or `@{namespace}` template variables."
         },
         "fileBaseUrl": {
-          "$ref": "#/$defs/FileBaseTemplate",
+          "$ref": "#/$defs/TemplateString",
           "description": "Default base URL for file downloads within this script. Overrides the feed-level `@{fileBaseUrl}` for this entry's channels."
         },
+        "fileBaseUrls": {
+          "$ref": "#/$defs/FileTypeTemplateMap",
+          "description": "Package-scoped override of the per-file-type URL templates."
+        },
         "localFileBasePath": {
-          "$ref": "#/$defs/FileBaseTemplate",
+          "$ref": "#/$defs/TemplateString",
           "description": "Local-tooling counterpart of `@{fileBaseUrl}`. Rolling base path used only when a feed is expanded in 'local' mode, where file paths are resolved on disk instead of as download URLs. Added in v0.4.0"
+        },
+        "localFileBasePaths": {
+          "$ref": "#/$defs/FileTypeTemplateMap",
+          "description": "Package-scoped override of the per-file-type local path templates."
         },
         "channels": {
           "description": "Available release channels keyed by channel name.",

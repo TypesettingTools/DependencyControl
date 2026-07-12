@@ -17,10 +17,16 @@ defaultLogger = Logger fileBaseName: "DepCtrl.UpdateFeed"
 
 ScriptType = Common.ScriptType
 
+scriptTypeBySection = {
+    [Common.ScriptTypeSection[ScriptType.Automation]]: ScriptType.Automation
+    [Common.ScriptTypeSection[ScriptType.Module]]: ScriptType.Module
+}
+sectionKeys = {section, true for section in pairs scriptTypeBySection}
+
 -- Iterates the real packages of a loaded feed that pass the given filter, yielding
 -- (pkgProxy, scriptType, section). pkgProxy exposes the package's `namespace` alongside its
--- raw fields. Rolling-template keys the expander writes into a section container (e.g.
--- fileBaseUrl/localFileBasePath) are skipped: real packages are tables carrying `channels`.
+-- raw fields. Rolling-template keys a feed sets on a section container (e.g.
+-- fileBaseUrls/localFileBasePaths) are skipped: real packages are tables carrying `channels`.
 walkPackages = (feed, filter) ->
     coroutine.wrap ->
         for scriptType in *filter\scriptTypes!
@@ -34,17 +40,32 @@ walkPackages = (feed, filter) ->
                 pkgProxy = setmetatable {}, __index: (_, k) -> k == "namespace" and namespace or pkg[k]
                 coroutine.yield pkgProxy, scriptType, section
 
----Gives an expanded file record a lazily-resolved `localFilePath` property
----by appending the file `name` to `localFileBasePath` and resolving that against the feed directory.
+---Inserts a new file entry into a channel's file list after the last entry of the same type;
+---a script entry with no peers lands before the first test entry.
+---@param files table[] The channel's file list, mutated in place.
+---@param entry table The file entry to insert.
+insertFileEntry = (files, entry) ->
+    entryType = entry.type or "script"
+    pos = 0
+    for i, file in ipairs files
+        pos = i if (file.type or "script") == entryType
+    pos = entryType == "script" and 0 or #files if pos == 0
+    table.insert files, pos + 1, entry
+
+---Gives an expanded file record a lazy `localFilePath` property resolved against the feed
+---directory. A collapsed per-type path is used as-is; a scalar base path gets the file `name`
+---appended.
 ---@param file table The file record to attach the accessor to.
 ---@param feedDirPath string The feed directory to resolve against.
----@param localFileBasePath string The resolved local base path for this file (captured from the rolling template state).
-attachLocalFilePath = (file, feedDirPath, localFileBasePath) ->
+---@param localPath string The file's local path (captured from the rolling template state).
+---@param isFullPath? boolean Whether localPath is already the complete path; when unset the file name is appended to it.
+attachLocalFilePath = (file, feedDirPath, localPath, isFullPath) ->
     setmetatable file, __index: (self, key) ->
         return unless key == "localFilePath"
+        return unless localPath
         name = rawget self, "name"
-        return unless localFileBasePath and name
-        path = FileOps.validateFullPath localFileBasePath .. name, false, feedDirPath
+        return unless isFullPath or name
+        path = FileOps.validateFullPath isFullPath and localPath or "#{localPath}#{name}", false, feedDirPath
         return path
 
 -- Deep-copies a decoded feed table while dropping any field whose value is the dkjson.null
@@ -53,15 +74,46 @@ attachLocalFilePath = (file, feedDirPath, localFileBasePath) ->
 stripNulls = (tbl) ->
     {k, (type(v) == "table" and stripNulls(v) or v) for k, v in pairs tbl when v != dkjson.null}
 
+---The rolling-template values in effect at one channel, captured during local-mode expansion
+---so the local path templates can be inverted for file discovery.
+---@class UpdateFeedChannelTemplateState
+---@field localFileBasePath? string Scalar local base path in effect.
+---@field localFileBasePaths? table<string, string> Per-file-type local path templates in effect.
+---@field fileBaseUrls? table<string, string> Per-file-type URL templates in effect.
+
 ---Downloaded and expanded update feed data source.
 ---@class UpdateFeed
+---@field private __channelTemplateState table<string, table<string, table<string, UpdateFeedChannelTemplateState>>> Captured channel template state, keyed by section, namespace, and channel name.
 class UpdateFeed
+    ---Declares one template variable. A regular template captures its value at a fixed tree
+    ---depth. A rolling template re-reads its key at every depth, so a value set at any level
+    ---(feed root, section container, package, channel) rolls down until overridden.
+    ---@class UpdateFeedTemplateSpec
+    ---@field depth? integer Tree depth the variable is captured at; absent for rolling templates.
+    ---@field order? integer Collection order among same-depth templates; a template's own key expansion can only reference lower-order variables of its depth.
+    ---@field key? string Field the value is read from on the visited object and written back to in expanded form.
+    ---@field parentKeys? table<string, boolean> Captures the visited object's own key as the value when the key of the object's parent container is in this set.
+    ---@field selfKeys? table<string, boolean> Captures the visited object's own key as the value when that key is in this set.
+    ---@field map? table<string, string> Translates a selfKeys-captured key into the variable value; without a matching entry the key itself is used.
+    ---@field repl? string Lua pattern replaced by `to` in the captured value.
+    ---@field to? string Replacement for `repl` matches.
+    ---@field rolling? boolean Marks a rolling template.
+    ---@field expansionModes? table<UpdateFeedExpansionMode, boolean> Expansion modes the template participates in; absent means all.
+    ---@field default? string Fallback value when no level of the feed sets the key.
+    ---@field keyBy? string Field of a record under `keyAt` whose value selects an entry of the rolling map (e.g. a file's `type`).
+    ---@field keyAt? string Container key whose records trigger the keyed collapse (e.g. "files").
+    ---@field keyDefault? string `keyBy` value assumed when the record lacks the field.
+    ---@field collapseInto? string Name of the scalar rolling template the selected map entry replaces; the scalar stays in place as the fallback when the map has no entry for the key.
+
     templateData = {
         maxDepth: 7
+        ---@type table<string, UpdateFeedTemplateSpec>
         templates: {
             feedName:      {depth: 1, order: 1, key: "name"                                                  }
             baseUrl:       {depth: 1, order: 2, key: "baseUrl"                                               }
-            feed:          {depth: 1, order: 3, key: "knownFeeds", isHashTable: true                         }
+            feed:          {depth: 1, order: 3, key: "knownFeeds"                                            }
+            scriptTypeSection: {depth: 2, order: 1, selfKeys: sectionKeys                                    }
+            scriptType:        {depth: 2, order: 2, selfKeys: sectionKeys, map: scriptTypeBySection          }
             namespace:     {depth: 3, order: 1, parentKeys: {macros:true, modules:true}                      }
             namespacePath: {depth: 3, order: 2, parentKeys: {macros:true, modules:true}, repl:"%.", to: "/"  }
             scriptName:    {depth: 3, order: 3, key: "name"                                                  }
@@ -69,26 +121,15 @@ class UpdateFeed
             version:       {depth: 5, order: 2, key: "version"                                               }
             platform:      {depth: 7, order: 1, key: "platform"                                              }
             fileName:      {depth: 7, order: 2, key: "name"                                                  }
-            -- rolling templates
-            localFileBasePath: {
-                key: "localFileBasePath",
-                rolling: true,
-                expansionModes: {local: true},
-                default: "./",
-
-                -- keyBy/keyAt/keyDefault: the JSON value may be a keyed object (e.g.
-                -- {script:…, test:…}) instead of a plain string. If the object selected
-                -- by keyAt doesn't have an entry for keyBy, entry[keyDefault] is used as a fallback.
-                keyBy: "type",
-                keyAt: "files",
-                keyDefault: "script"
+            localFileBasePath: {key: "localFileBasePath", rolling: true, expansionModes: {local: true}, default: "./"}
+            fileBaseUrl:       {key: "fileBaseUrl", rolling: true}
+            localFileBasePaths: {
+                key: "localFileBasePaths", rolling: true, expansionModes: {local: true},
+                keyBy: "type", keyAt: "files", keyDefault: "script", collapseInto: "localFileBasePath"
             }
-            fileBaseUrl: {
-                key: "fileBaseUrl",
-                rolling: true,
-                keyBy: "type",
-                keyAt: "files",
-                keyDefault: "script"
+            fileBaseUrls: {
+                key: "fileBaseUrls", rolling: true,
+                keyBy: "type", keyAt: "files", keyDefault: "script", collapseInto: "fileBaseUrl"
             }
         }
         sourceAt: {}
@@ -127,6 +168,11 @@ class UpdateFeed
             noLocalPath: "Feed has no local path required to check file '%s' for changes."
             sha1Failed: "Couldn't compute SHA-1 for file '%s' to check for changes: %s"
         }
+        findUnlistedFiles: {
+            channelError: "Skipping file discovery for '%s': %s."
+            notInvertible: "Skipping file discovery for '%s' (channel '%s'): local path template '%s' must contain @{fileName} and no other unexpanded variables."
+            badScanPath: "Skipping file discovery for '%s' (channel '%s'): can't resolve scan path '%s' (%s)."
+        }
         __refreshVersionRecord: {
             loadFailed: "Failed to load %s '%s' for getting a fresh DependencyControl version record: %s"
             missingDepctrlRecord: "No DependencyControl version record exposed by %s '%s'."
@@ -139,6 +185,7 @@ class UpdateFeed
             channelError:  "%s: %s"
             noRecord:      "%s: no DependencyControl record (%s), skipping version/dependency refresh."
             sha1Failed:    "  '%s': couldn't compute SHA-1 — %s"
+            addFileHashFailed: "couldn't add discovered file '%s': SHA-1 failed (%s)"
             schemaValid:   "Feed conforms to schema (format v%s)."
             schemaInvalid: "Feed fails schema validation (format v%s) — continuing anyway."
             wrote:         "Wrote %d updated package(s) to %s."
@@ -151,8 +198,8 @@ class UpdateFeed
     feedKeyOrder = {
         "dependencyControlFeedFormatVersion",
         "name", "description", "author",
-        "baseUrl", "url", "fileBaseUrl", "localFileBasePath",
-        "maintainer", "knownFeeds",
+        "baseUrl", "url", "fileBaseUrl", "fileBaseUrls", "localFileBasePath", "localFileBasePaths",
+        "vars", "maintainer", "knownFeeds",
         "moduleName",
         "version", "released", "default",
         "optional",
@@ -356,6 +403,7 @@ class UpdateFeed
     ---@return table data
     expand: (mode = @expansionMode or (@_url and @@ExpansionMode.Remote or @@ExpansionMode.Local)) =>
         @data = Common.deepCopy @unexpandedData
+        @__channelTemplateState = {}
         {:templates, :maxDepth, :sourceAt, :rolling, :sourceKeys} = templateData
         isLocalMode = mode == @@ExpansionMode.Local
         vars, rvars = {}, {i, {} for i=0, maxDepth}
@@ -363,10 +411,26 @@ class UpdateFeed
         expandTemplates = (val, depth, rOff=0) ->
             return switch type val
                 when "string"
-                    val = val\gsub "@{(.-):(.-)}", (name, key) ->
-                        if type(vars[name]) == "table" or type(rvars[depth+rOff]) == "table"
-                            vars[name] and vars[name][key] or rvars[depth+rOff][name] and rvars[depth+rOff][name][key]
-                    val\gsub "@{(.-)}", (name) -> vars[name] or rvars[depth+rOff][name]
+                    -- [^{}] keeps an outer @{name:key} from matching while an unexpanded variable
+                    -- remains in its key part, so inner variables expand first and the outer
+                    -- lookup resolves on a later pass. Passes repeat until nothing more resolves,
+                    -- bounded so a cyclic vars definition can't spin.
+                    substituted = 0
+                    substitute = (value) ->
+                        substituted += 1
+                        value
+                    for _ = 1, maxDepth
+                        substituted = 0
+                        val = val\gsub "@{([^{}]-):([^{}]-)}", (name, key) ->
+                            source = if type(vars[name]) == "table" then vars[name]
+                            elseif type(rvars[depth+rOff][name]) == "table" then rvars[depth+rOff][name]
+                            value = source and source[key]
+                            substitute value if type(value) == "string"
+                        val = val\gsub "@{([^{}]-)}", (name) ->
+                            value = vars[name] or rvars[depth+rOff][name]
+                            substitute value if value != nil and type(value) != "table"
+                        break if substituted == 0
+                    val
                 when "table"
                     {k, expandTemplates v, depth, rOff for k, v in pairs val}
                 else val
@@ -376,14 +440,23 @@ class UpdateFeed
             -- collect regular template variables first
             for name in *sourceAt[depth]
                 with templates[name]
-                    if not .key
+                    if .selfKeys
+                        vars[name] = .map and .map[parentKey] or parentKey if .selfKeys[parentKey]
+                    elseif not .key
                          -- template variables are not expanded if they are keys
                         vars[name] = parentKey if .parentKeys[upKey]
                     elseif .key and obj[.key]
                         -- expand other templates used in template variable
                         obj[.key] = expandTemplates obj[.key], depth
                         vars[name] = obj[.key]
-                    vars[name] = vars[name]\gsub(.repl, .to) if .repl
+                    vars[name] = vars[name]\gsub(.repl, .to) if .repl and vars[name]
+
+            -- Each key of a root-level `vars` object becomes a template variable; a table value
+            -- serves the @{name:key} lookup form. Built-in variable names are reserved and skipped.
+            if depth == 1 and type(obj.vars) == "table"
+                obj.vars = expandTemplates obj.vars, depth
+                for name, value in pairs obj.vars
+                    vars[name] = value unless templates[name]
 
             -- update rolling template variables last
             for name,_ in pairs rolling
@@ -391,23 +464,38 @@ class UpdateFeed
                 default = templates[name].default
                 rvars[depth][name] = obj[templates[name].key] or rvars[depth-1][name] or default
                 rvars[depth][name] = expandTemplates rvars[depth][name], depth, -1
-
-                -- Collapse a keyed rolling object to its plain string once it reaches an
-                -- object under the template's `keyAt` key (see template declaration).
-                with templates[name]
-                    if .keyBy and upKey == .keyAt and type(rvars[depth][name]) == "table"
-                        keyValue = obj[.keyBy] or .keyDefault
-                        resolved = rvars[depth][name][keyValue] if keyValue
-                        rvars[depth][name] = resolved if resolved
                 -- Only write back when the key is already present
                 obj[templates[name].key] = rvars[depth][name] if obj[templates[name].key] != nil
 
+            -- Collapse each keyed rolling map into its scalar counterpart at the records under
+            -- its `keyAt` key. Runs after all rolling updates so the collapse target's own roll
+            -- can't clobber the collapsed value.
+            collapsedFull = {}
+            for name,_ in pairs rolling
+                tmpl = templates[name]
+                if tmpl.collapseInto and upKey == tmpl.keyAt and type(rvars[depth][name]) == "table"
+                    resolved = rvars[depth][name][obj[tmpl.keyBy] or tmpl.keyDefault]
+                    if resolved
+                        rvars[depth][tmpl.collapseInto] = resolved
+                        collapsedFull[tmpl.collapseInto] = true
+
             -- file records (array entries under a `files` key) get a lazy localFilePath accessor
-            attachLocalFilePath obj, @feedDir, rvars[depth]["localFileBasePath"] if isLocalMode and upKey == "files"
+            if isLocalMode and upKey == "files"
+                attachLocalFilePath obj, @feedDir, rvars[depth].localFileBasePath, collapsedFull.localFileBasePath
+
+            -- capture each channel's effective rolling state for template inversion (file discovery)
+            if isLocalMode and upKey == "channels" and vars.namespace and vars.scriptTypeSection
+                @__channelTemplateState[vars.scriptTypeSection] or= {}
+                @__channelTemplateState[vars.scriptTypeSection][vars.namespace] or= {}
+                @__channelTemplateState[vars.scriptTypeSection][vars.namespace][parentKey] = {
+                    localFileBasePath:  rvars[depth].localFileBasePath
+                    localFileBasePaths: rvars[depth].localFileBasePaths
+                    fileBaseUrls:       rvars[depth].fileBaseUrls
+                }
 
             -- expand variables in non-template strings and recurse tables
             for k,v in pairs obj
-                if sourceKeys[k] ~= depth and not rolling[k]
+                if sourceKeys[k] ~= depth and not rolling[k] and not (depth == 1 and k == "vars")
                     switch type v
                         when "string"
                             obj[k] = expandTemplates obj[k], depth
@@ -707,7 +795,7 @@ class UpdateFeed
     ---Loads the feed (unless already loaded), optionally validates it, refreshes the targeted
     ---packages in place and writes the result back to disk. The feed path is the one supplied to
     ---the constructor; pre-load with loadFile() if you need to act on the feed before refresh.
-    ---@param opts? { channel?: string, filter?: ScriptTargetFilter, schemaDir?: string|string[], outPath?: string|boolean } Options. `outPath` false performs a dry run; nil/true defaults to the loaded feed's source path.
+    ---@param opts? { channel?: string, filter?: ScriptTargetFilter, schemaDir?: string|string[], outPath?: string|boolean, addFiles?: boolean } Options. `outPath` false performs a dry run; nil/true defaults to the loaded feed's source path. `addFiles` appends entries (with computed SHA-1s) for on-disk files missing from the targeted channel; the added names are reported per package in `addedFiles`.
     ---@return { changed: integer, errored: integer, packages: table[] }|nil stats Per-run statistics, or nil on a fatal load/write error.
     ---@return string? err
     updateFeed: (opts = {}) =>
@@ -733,6 +821,32 @@ class UpdateFeed
             ok, result = pcall @__updatePackage, @, scriptType, pkg.namespace, opts.channel
             result = {namespace: pkg.namespace, :scriptType, changed: false, errors: {tostring result}} unless ok
             stats.packages[#stats.packages + 1] = result
+
+        -- Runs after the refresh loop: __refreshFiles pairs raw and expanded file lists by
+        -- index, so new entries (complete with hashes) may only be appended once it is done.
+        if opts.addFiles
+            resultsByPackage = {result.scriptType .. "\0" .. result.namespace, result for result in *stats.packages}
+            for entry in *(@findUnlistedFiles(filter, opts.channel) or {})
+                result = resultsByPackage[entry.scriptType .. "\0" .. entry.namespace]
+                continue unless result
+                rawPkg = @rawFeedData[Common.ScriptTypeSection[entry.scriptType]]
+                rawChannel = rawPkg and rawPkg[entry.namespace]
+                rawChannel = rawChannel and rawChannel.channels and rawChannel.channels[entry.channel]
+                continue unless rawChannel
+                hash, hashErr = FileOps.getHash entry.localFilePath
+                unless hash
+                    result.errors[#result.errors + 1] = msgs.update.addFileHashFailed\format entry.name, tostring hashErr
+                    continue
+                fileEntry = {name: entry.name, url: entry.url, sha1: hash\upper!}
+                fileEntry.type = entry.type if entry.type
+                rawChannel.files or= {}
+                insertFileEntry rawChannel.files, fileEntry
+                rawChannel.released = dkjson.null
+                result.changed = true
+                result.addedFiles or= {}
+                result.addedFiles[#result.addedFiles + 1] = {name: entry.name, type: entry.type}
+
+        for result in *stats.packages
             stats.changed += 1 if result.changed
             stats.errored += 1 if #result.errors > 0
 
@@ -801,6 +915,79 @@ class UpdateFeed
                 errCount += 1
 
         return fileCount, errCount
+
+    ---Finds files present on disk that a package's targeted channel doesn't list, by inverting
+    ---the channel's effective per-file-type local path templates. Only `localFileBasePaths`
+    ---entries whose sole unexpanded variable is `@{fileName}` are scanned; a file matching
+    ---several types is attributed to the one with the longest literal prefix. Loads the feed
+    ---in local mode if needed.
+    ---@param filter? ScriptTargetFilter Restricts which packages are scanned (default: all).
+    ---@param channelName? string Channel whose file list is diffed (default: each package's default channel).
+    ---@return {namespace: string, scriptType: ScriptType, channel: string, name: string, type?: string, url: string, localFilePath: string}[]? unlisted Feed-ready entries for the discovered files, sorted by namespace, type, and name (empty when everything on disk is listed; nil on a load error).
+    ---@return string? err Error message on failure.
+    findUnlistedFiles: (filter = ScriptTargetFilter!\includeAll!, channelName) =>
+        loaded, err = @ensureLoaded @@ExpansionMode.Local
+        return nil, err unless loaded
+
+        unlisted = {}
+        for pkg, scriptType, section in walkPackages @, filter
+            resolvedChannel, chanErr = @@__resolveChannel pkg.channels, channelName
+            unless resolvedChannel
+                @logger\warn msgs.findUnlistedFiles.channelError, pkg.namespace, chanErr
+                continue
+            state = @__channelTemplateState[section]
+            state = state and state[pkg.namespace]
+            state = state and state[resolvedChannel]
+            continue unless state and state.localFileBasePaths
+
+            -- one scan spec per invertible file-type template
+            specs = {}
+            for fileType, template in pairs state.localFileBasePaths
+                prefix, suffix = template\match "^(.-)@{fileName}(.*)$"
+                if not prefix or prefix\find("@{", 1, true) or suffix\find("@{", 1, true)
+                    @logger\warn msgs.findUnlistedFiles.notInvertible, pkg.namespace, resolvedChannel, template
+                    continue
+                absPrefix, prefixErr = FileOps.validateFullPath prefix, false, @feedDir
+                unless absPrefix
+                    @logger\warn msgs.findUnlistedFiles.badScanPath, pkg.namespace, resolvedChannel, prefix, tostring prefixErr
+                    continue
+                specs[#specs + 1] = {:fileType, prefix: absPrefix, :suffix}
+            continue if #specs == 0
+
+            -- walk the directories containing the template prefixes; roots may nest, so the
+            -- `listed` set doubles as a guard against a file surfacing from two overlapping walks
+            scanRoots, seenRoots = {}, {}
+            for spec in *specs
+                root = spec.prefix\match "^(.*)[/\\]"
+                if root and not seenRoots[root]
+                    seenRoots[root] = true
+                    scanRoots[#scanRoots + 1] = root
+
+            listed = {file.name .. "\0" .. (file.type or "script"), true for file in *(pkg.channels[resolvedChannel].files or {})}
+            for root in *scanRoots
+                for filePath in *(FileOps.listFilesRecursive(root) or {})
+                    best = nil
+                    for spec in *specs
+                        matches = #filePath > #spec.prefix + #spec.suffix and
+                            filePath\sub(1, #spec.prefix) == spec.prefix and
+                            (spec.suffix == "" or filePath\sub(-#spec.suffix) == spec.suffix)
+                        best = spec if matches and (not best or #spec.prefix > #best.prefix)
+                    continue unless best
+                    name = filePath\sub(#best.prefix + 1, #filePath - #best.suffix)\gsub "[/\\]", "/"
+                    continue if listed[name .. "\0" .. best.fileType]
+                    listed[name .. "\0" .. best.fileType] = true
+                    unlisted[#unlisted + 1] = {
+                        namespace: pkg.namespace, :scriptType, channel: resolvedChannel, :name
+                        type: best.fileType != "script" and best.fileType or nil
+                        url: state.fileBaseUrls and state.fileBaseUrls[best.fileType] and "@{fileBaseUrl}" or "@{fileBaseUrl}@{fileName}"
+                        localFilePath: filePath
+                    }
+
+        table.sort unlisted, (a, b) ->
+            return a.namespace < b.namespace if a.namespace != b.namespace
+            return (a.type or "") < (b.type or "") if (a.type or "") != (b.type or "")
+            return a.name < b.name
+        return unlisted
 
     ---Returns a coroutine-based iterator over the packages of this feed that pass the filter.
     ---The feed must have been loaded before calling this method.

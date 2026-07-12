@@ -338,10 +338,32 @@ class FileOps
         else
             return false, msgs.copy.genericError\format sourceFullPath, targetFullPath, msg
 
+    ---Lists the names of a directory's entries, excluding `.` and `..`.
+    ---@param dirPath string|string[] Path or path segments of the directory.
+    ---@return string[]? entries The entry names, or nil when the path isn't a directory.
+    ---@return string? err
     listDir: (dirPath) ->
         mode, fullPath = FileOps.attributes dirPath, "mode"
         return nil, msgs.listDir.notADirectory\format fullPath, mode if mode != "directory"
         return [entry for entry in lfs.dir(fullPath) when entry != "." and entry != ".."]
+
+    ---Recursively collects all files below a directory.
+    ---@param dirPath string|string[] Path or path segments of the directory to walk.
+    ---@return string[]? files Full paths of every file below the directory (joined onto the given path), or nil when it can't be listed.
+    ---@return string? err
+    listFilesRecursive: (dirPath) ->
+        entries, err = FileOps.listDir dirPath
+        return nil, err unless entries
+        files = {}
+        for entry in *entries
+            fullPath = FileOps.joinPath dirPath, entry
+            mode = FileOps.attributes fullPath, "mode"
+            if mode == "directory"
+                for file in *(FileOps.listFilesRecursive(fullPath) or {})
+                    files[#files + 1] = file
+            elseif mode == "file"
+                files[#files + 1] = fullPath
+        return files
 
     ---Joins and resolves multiple path segments into a single path string.
     ---@param ... string|string[] One or more path segments, or arrays of path segments.

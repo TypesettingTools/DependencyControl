@@ -8,6 +8,19 @@
   UpdateFeed        = require "l0.DependencyControl.UpdateFeed"
   FILEOPS_MODULE_NAME = "l0.DependencyControl.FileOps"
 
+  -- Builds a stub feed around unexpanded data for driving expand directly.
+  makeExpandFeed = (unexpandedData, feedDir = basePath) ->
+    unexpandedData.macros or= {}
+    unexpandedData.modules or= {}
+    unexpandedData.knownFeeds or= {}
+    setmetatable {
+      _url: "https://example.com/f.json", :unexpandedData, :feedDir,
+      fileName: FileOps.joinPath(feedDir, "feed.json"),
+      __class: UpdateFeed, logger: DepCtrl.logger
+    }, __index: UpdateFeed.__base
+
+  normalizePath = (path) -> path\gsub "[/\\]", "/"
+
   {
     _description: "Tests for UpdateFeed feed data access, script record retrieval, and file deployment."
 
@@ -205,6 +218,231 @@
       again = UpdateFeed.expand feed                                      -- a second expand rebuilds from the source
       ut\assertFalse again == data                                        -- a new working copy each call
       ut\assertEquals unexpandedData.description, "made for @{feedName}"   -- source still pristine
+
+    -- a fileBaseUrls map collapses to the entry matching each file's type, with @{fileName} baked in
+    expand_fileBaseUrlsCollapsePerType: (ut) ->
+      feed = makeExpandFeed {
+        name: "F"
+        fileBaseUrl: "https://x.test/"
+        fileBaseUrls: {
+          script: "@{fileBaseUrl}v@{version}/@{scriptTypeSection}/@{namespacePath}@{fileName}"
+          test: "@{fileBaseUrl}v@{version}/@{scriptTypeSection}/@{namespacePath}/test@{fileName}"
+        }
+        modules: {
+          "l0.NS": {name: "NS", channels: {release: {version: "1.2.3", files: {
+            {name: ".moon", url: "@{fileBaseUrl}"}
+            {name: "/Sub.moon", url: "@{fileBaseUrl}"}
+            {name: ".moon", url: "@{fileBaseUrl}", type: "test"}
+          }}}}
+        }
+      }
+      files = UpdateFeed.expand(feed).modules["l0.NS"].channels.release.files
+      ut\assertEquals files[1].url, "https://x.test/v1.2.3/modules/l0/NS.moon"
+      ut\assertEquals files[2].url, "https://x.test/v1.2.3/modules/l0/NS/Sub.moon"
+      ut\assertEquals files[3].url, "https://x.test/v1.2.3/modules/l0/NS/test.moon"
+
+    -- a file type without a fileBaseUrls entry keeps the scalar fileBaseUrl as its base
+    expand_fileBaseUrlsFallbackToScalar: (ut) ->
+      feed = makeExpandFeed {
+        name: "F"
+        fileBaseUrl: "https://x.test/raw/"
+        fileBaseUrls: {
+          test: "@{fileBaseUrl}@{namespacePath}/test@{fileName}"
+        }
+        modules: {
+          "l0.NS": {name: "NS", channels: {release: {version: "1.0.0", files: {
+            {name: ".moon", url: "@{fileBaseUrl}@{fileName}"}
+            {name: ".moon", url: "@{fileBaseUrl}", type: "test"}
+          }}}}
+        }
+      }
+      files = UpdateFeed.expand(feed).modules["l0.NS"].channels.release.files
+      ut\assertEquals files[1].url, "https://x.test/raw/.moon"
+      ut\assertEquals files[2].url, "https://x.test/raw/l0/NS/test.moon"
+
+    -- a rolling map set on a section container applies to that section only
+    expand_sectionScopedOverride: (ut) ->
+      feed = makeExpandFeed {
+        name: "F"
+        fileBaseUrl: "https://x.test/"
+        fileBaseUrls: {
+          script: "@{fileBaseUrl}@{scriptTypeSection}/@{namespacePath}@{fileName}"
+        }
+        macros: {
+          fileBaseUrls: {
+            script: "@{fileBaseUrl}@{scriptTypeSection}/@{namespace}@{fileName}"
+          }
+          "l0.Macro.NS": {name: "M", channels: {release: {version: "1.0.0", files: {
+            {name: ".moon", url: "@{fileBaseUrl}"}
+          }}}}
+        }
+        modules: {
+          "l0.NS": {name: "NS", channels: {release: {version: "1.0.0", files: {
+            {name: ".moon", url: "@{fileBaseUrl}"}
+          }}}}
+        }
+      }
+      data = UpdateFeed.expand feed
+      ut\assertEquals data.macros["l0.Macro.NS"].channels.release.files[1].url, "https://x.test/macros/l0.Macro.NS.moon"
+      ut\assertEquals data.modules["l0.NS"].channels.release.files[1].url, "https://x.test/modules/l0/NS.moon"
+
+    expand_scriptTypeVariables: (ut) ->
+      feed = makeExpandFeed {
+        name: "F"
+        macros: {
+          "l0.Macro.NS": {name: "M", url: "https://x.test/@{scriptType}/@{scriptTypeSection}", channels: {release: {version: "1.0.0", files: {}}}}
+        }
+        modules: {
+          "l0.NS": {name: "NS", url: "https://x.test/@{scriptType}/@{scriptTypeSection}", channels: {release: {version: "1.0.0", files: {}}}}
+        }
+      }
+      data = UpdateFeed.expand feed
+      ut\assertEquals data.macros["l0.Macro.NS"].url, "https://x.test/#{Common.ScriptType.Automation}/macros"
+      ut\assertEquals data.modules["l0.NS"].url, "https://x.test/#{Common.ScriptType.Module}/modules"
+
+    -- vars entries become variables; a table-valued one serves @{name:key} lookups whose key
+    -- part may itself be a variable that only comes into scope at channel depth
+    expand_authorVarsAndComputedKeys: (ut) ->
+      feed = makeExpandFeed {
+        name: "F"
+        vars: {
+          host: "https://cdn.test"
+          tagSuffix: {alpha: "-alpha", release: ""}
+        }
+        fileBaseUrl: "@{host}/dl/"
+        modules: {
+          "l0.NS": {name: "NS", channels: {
+            alpha: {version: "1.1.0", files: {
+              {name: ".moon", url: "@{fileBaseUrl}v@{version}@{tagSuffix:@{channel}}@{fileName}"}
+            }}
+            release: {version: "1.0.0", files: {
+              {name: ".moon", url: "@{fileBaseUrl}v@{version}@{tagSuffix:@{channel}}@{fileName}"}
+            }}
+          }}
+        }
+      }
+      channels = UpdateFeed.expand(feed).modules["l0.NS"].channels
+      ut\assertEquals channels.alpha.files[1].url, "https://cdn.test/dl/v1.1.0-alpha.moon"
+      ut\assertEquals channels.release.files[1].url, "https://cdn.test/dl/v1.0.0.moon"
+
+    -- a collapsed localFileBasePaths entry is the complete path; an unmapped type appends the
+    -- file name to the scalar localFileBasePath (default "./")
+    expand_localFileBasePathsResolveFullPaths: (ut) ->
+      feed = makeExpandFeed {
+        name: "F"
+        localFileBasePaths: {
+          script: "@{localFileBasePath}@{scriptTypeSection}/@{namespacePath}@{fileName}"
+        }
+        modules: {
+          "l0.NS": {name: "NS", channels: {release: {version: "1.0.0", files: {
+            {name: ".moon"}
+            {name: "NS.moon", type: "test"}
+          }}}}
+        }
+      }
+      files = UpdateFeed.expand(feed, UpdateFeed.ExpansionMode.Local).modules["l0.NS"].channels.release.files
+      ut\assertEquals normalizePath(files[1].localFilePath), normalizePath "#{basePath}/modules/l0/NS.moon"
+      ut\assertEquals normalizePath(files[2].localFilePath), normalizePath "#{basePath}/NS.moon"
+
+    -- a v0.3.0-style feed (scalar fileBaseUrl, explicit @{fileBaseUrl}@{fileName} urls) expands unchanged
+    expand_legacyScalarBases: (ut) ->
+      feed = makeExpandFeed {
+        name: "F"
+        fileBaseUrl: "https://x.test/@{channel}/@{namespace}"
+        modules: {
+          "l0.NS": {name: "NS", channels: {release: {version: "1.0.0", files: {
+            {name: ".moon", url: "@{fileBaseUrl}@{fileName}"}
+          }}}}
+        }
+      }
+      data = UpdateFeed.expand feed
+      ut\assertEquals data.modules["l0.NS"].channels.release.files[1].url, "https://x.test/release/l0.NS.moon"
+
+    -- findUnlistedFiles inverts the per-type local path templates and reports on-disk files the
+    -- channel doesn't list; a file matching several types goes to the longest-prefix template,
+    -- and delete-flagged entries still count as listed
+    findUnlistedFiles_discoversUnlistedFiles: (ut) ->
+      root = FileOps.joinPath basePath, "discover1"
+      FileOps.mkdir FileOps.joinPath(root, "modules", "l0", "NS", "test"), false, true
+      FileOps.writeFile FileOps.joinPath(root, "modules", "l0", "NS.moon"), "-- main", true
+      FileOps.writeFile FileOps.joinPath(root, "modules", "l0", "NS", "New.moon"), "-- new", true
+      FileOps.writeFile FileOps.joinPath(root, "modules", "l0", "NS", "Del.moon"), "-- resurrected", true
+      FileOps.writeFile FileOps.joinPath(root, "modules", "l0", "NS", "test.moon"), "-- main test", true
+      FileOps.writeFile FileOps.joinPath(root, "modules", "l0", "NS", "test", "New.moon"), "-- new test", true
+      feed = makeExpandFeed {
+        name: "F"
+        fileBaseUrl: "https://x.test/"
+        fileBaseUrls: {script: "@{fileBaseUrl}@{namespacePath}@{fileName}"}
+        localFileBasePaths: {
+          script: "@{localFileBasePath}modules/@{namespacePath}@{fileName}"
+          test: "@{localFileBasePath}modules/@{namespacePath}/test@{fileName}"
+        }
+        modules: {
+          "l0.NS": {name: "NS", channels: {release: {version: "1.0.0", default: true, files: {
+            {name: ".moon", url: "@{fileBaseUrl}"}
+            {name: ".moon", url: "@{fileBaseUrl}", type: "test"}
+            {name: "/Del.moon", url: "@{fileBaseUrl}", delete: true}
+          }}}}
+        }
+      }, root
+      UpdateFeed.expand feed, UpdateFeed.ExpansionMode.Local
+      result = UpdateFeed.findUnlistedFiles feed
+      ut\assertEquals #result, 2
+      ut\assertEquals result[1].name, "/New.moon"
+      ut\assertNil result[1].type
+      ut\assertEquals result[1].url, "@{fileBaseUrl}"                -- script type has a fileBaseUrls entry
+      ut\assertEquals result[1].channel, "release"
+      ut\assertContains result[1].localFilePath, "New.moon"
+      ut\assertEquals result[2].name, "/New.moon"
+      ut\assertEquals result[2].type, "test"
+      ut\assertEquals result[2].url, "@{fileBaseUrl}@{fileName}"     -- no fileBaseUrls entry for tests
+
+    -- a local path template with an unexpanded variable besides @{fileName} can't be inverted
+    findUnlistedFiles_skipsUninvertibleTemplates: (ut) ->
+      root = FileOps.joinPath basePath, "discover2"
+      FileOps.mkdir FileOps.joinPath(root, "src"), false, true
+      FileOps.writeFile FileOps.joinPath(root, "src", "Stray.moon"), "-- stray", true
+      feed = makeExpandFeed {
+        name: "F"
+        localFileBasePaths: {script: "@{localFileBasePath}src/@{undeclared}@{fileName}"}
+        modules: {
+          "l0.NS": {name: "NS", channels: {release: {version: "1.0.0", default: true, files: {}}}}
+        }
+      }, root
+      UpdateFeed.expand feed, UpdateFeed.ExpansionMode.Local
+      result = UpdateFeed.findUnlistedFiles feed
+      ut\assertEquals #result, 0
+
+    -- updateFeed with addFiles appends discovered files to the raw channel, hashed and typed
+    updateFeed_addFilesAppendsEntries: (ut) ->
+      root = FileOps.joinPath basePath, "discover3"
+      FileOps.mkdir FileOps.joinPath(root, "modules", "l0", "NS"), false, true
+      FileOps.writeFile FileOps.joinPath(root, "modules", "l0", "NS.moon"), "-- main", true
+      FileOps.writeFile FileOps.joinPath(root, "modules", "l0", "NS", "New.moon"), "-- new", true
+      feedPath = FileOps.joinPath root, "feed.json"
+      FileOps.writeFile feedPath, [[{
+        "dependencyControlFeedFormatVersion": "0.4.0",
+        "name": "T",
+        "fileBaseUrl": "https://x.test/",
+        "fileBaseUrls": {"script": "@{fileBaseUrl}@{namespacePath}@{fileName}"},
+        "localFileBasePaths": {"script": "@{localFileBasePath}modules/@{namespacePath}@{fileName}"},
+        "modules": {"l0.NS": {"name": "NS", "author": "a", "channels": {"release": {"version": "1.0.0", "default": true,
+          "files": [{"name": ".moon", "url": "@{fileBaseUrl}", "sha1": "0000000000000000000000000000000000000000"}]}}}}
+      }]], true
+      feed = UpdateFeed nil, false, feedPath
+      (ut\stub feed, "__refreshVersionRecord")\returns false
+      stats = feed\updateFeed {addFiles: true, outPath: false}
+      ut\assertTable stats
+      files = feed.rawFeedData.modules["l0.NS"].channels.release.files
+      ut\assertEquals #files, 2
+      ut\assertEquals files[2].name, "/New.moon"
+      ut\assertEquals files[2].url, "@{fileBaseUrl}"
+      ut\assertMatches files[2].sha1, "^%x+$"
+      ut\assertEquals #files[2].sha1, 40
+      result = stats.packages[1]
+      ut\assertTrue result.changed
+      ut\assertEquals result.addedFiles[1].name, "/New.moon"
+      ut\assertEquals stats.changed, 1
 
     -- walkFiles
 
@@ -505,6 +743,12 @@
       "normalizeModuleAliases_dropsNonSchemaFields", "normalizeModuleAliases_nilAndEmpty",
       "getFileDeployPath_module", "getFileDeployPath_test",
       "expand_rebuildsFromUnexpandedDataWithoutMutatingIt",
+      "expand_fileBaseUrlsCollapsePerType", "expand_fileBaseUrlsFallbackToScalar",
+      "expand_sectionScopedOverride", "expand_scriptTypeVariables",
+      "expand_authorVarsAndComputedKeys", "expand_localFileBasePathsResolveFullPaths",
+      "expand_legacyScalarBases",
+      "findUnlistedFiles_discoversUnlistedFiles", "findUnlistedFiles_skipsUninvertibleTemplates",
+      "updateFeed_addFilesAppendsEntries",
       "walkFiles_yieldsProxies", "walkFiles_passesThroughLocalFilePath",
       "deployFiles_copiesToDist", "deployFiles_skipExistingNoClobber",
       "deployFiles_countsMissingSource", "deployFiles_removesDeleted", "deployFiles_deleteMissingIsNoOp",

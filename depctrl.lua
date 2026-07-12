@@ -72,6 +72,8 @@ updateFeedCmd:option("-f --feed",    "Feed JSON path"):default("DependencyContro
 updateFeedCmd:option("-c --channel", "Channel to update (default: the channel marked default: true)")
     :argname("<name>")
 updateFeedCmd:flag("-n --dry-run", "Print what would change without writing back")
+updateFeedCmd:flag("-a --add-files",
+    "Discover files on disk that the targeted channel doesn't list and add entries for them")
 addTargets(updateFeedCmd)
 
 local args = parser:parse()
@@ -362,7 +364,8 @@ elseif args.command == "update-feed" then
         channel   = args.channel,
         filter    = buildFilter(args),
         schemaDir = table.concat({ launcherDir, "schemas", "feed" }, pathSep),
-        outPath   = args.dry_run and false or nil,
+        outPath   = not args.dry_run,  -- false = dry run; true = write back to the feed's own path
+        addFiles  = args.add_files,
     })
 
     if not stats then
@@ -383,6 +386,9 @@ elseif args.command == "update-feed" then
             status = "no changes"
         end
         io.stdout:write(("  %-48s %s\n"):format(label, status))
+        for _, added in ipairs(pkg.addedFiles or {}) do
+            io.stdout:write(("      + %s%s\n"):format(added.name, added.type and (" [" .. added.type .. "]") or ""))
+        end
         for _, e in ipairs(pkg.errors) do
             io.stderr:write("      ! " .. (tostring(e):gsub("\n", "\n        ")) .. "\n")
         end
