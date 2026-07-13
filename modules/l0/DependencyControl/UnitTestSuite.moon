@@ -378,7 +378,7 @@ class UnitTest
         @checkArgTypes actual: {actual, "number"}, value: {value, "number"}, max: {margin, "number"}
 
         margin = math.abs margin
-        @assert math.abs(actual-value) > margin, @@msgs.assert.almostEquals, value, margin, actual
+        @assert math.abs(actual-value) > margin, @@msgs.assert.notAlmostEquals, value, margin, actual
 
     ---Fails the assertion if a number is not equal to 0 (zero).
     ---@param actual number The value.
@@ -464,11 +464,12 @@ class UnitTest
     ---@param expected table The second table.
     ---@param onlyNumKeys? boolean Disable to also compare items with non-numerical keys, at a performance cost (default true).
     assertItemsEqual: (actual, expected, onlyNumKeys = true) =>
-        @checkArgTypes { actual: {actual, "table"}, expected: {actual, "table"},
+        @checkArgTypes { actual: {actual, "table"}, expected: {expected, "table"},
                          onlyNumKeys: {onlyNumKeys, "boolean"}
                        }
 
         @assert self.itemsEqual(actual, expected, onlyNumKeys),
+                       @@msgs.assert.itemsEqual, "equal",
                        @@msgs.assert[onlyNumKeys and "itemsEqualNumericKeys" or "itemsEqualAllKeys"],
                        @logger\dumpToString(actual), @logger\dumpToString expected
 
@@ -480,11 +481,12 @@ class UnitTest
     ---@param expected table The second table.
     ---@param onlyNumKeys? boolean Disable to also compare items with non-numerical keys (default true).
     assertItemsAre: (actual, expected, onlyNumKeys = true) =>
-        @checkArgTypes { actual: {actual, "table"}, expected: {actual, "table"},
+        @checkArgTypes { actual: {actual, "table"}, expected: {expected, "table"},
                          onlyNumKeys: {onlyNumKeys, "boolean"}
                        }
 
         @assert self.itemsEqual(actual, expected, onlyNumKeys, nil, true),
+                       @@msgs.assert.itemsEqual, "identical",
                        @@msgs.assert[onlyNumKeys and "itemsEqualNumericKeys" or "itemsEqualAllKeys"],
                        @logger\dumpToString(actual), @logger\dumpToString expected
 
@@ -496,8 +498,8 @@ class UnitTest
         @checkArgTypes { tbl: {tbl, "table"} }
 
         realCnt, contCnt = 0, #tbl
-        for _, v in pairs tbl
-            if type(v) == "number" and math.floor(v) == v
+        for k in pairs tbl
+            if type(k) == "number" and math.floor(k) == k
                 realCnt += 1
 
         @assert realCnt == contCnt, @@msgs.assert.continuous, contCnt+1, realCnt
@@ -542,7 +544,8 @@ class UnitTest
         @checkArgTypes { func: {func, "function"} }
 
         res = table.pack pcall func, ...
-        retCnt, success = res.n, table.remove res, 1
+        success = table.remove res, 1
+        retCnt = res.n - 1  -- res.n still counts the pcall status flag just removed
         res.n = nil
         @assert success == false, @@msgs.assert.error, retCnt, @logger\dumpToString res
         return res[1]
@@ -570,6 +573,7 @@ class UnitTestSetup extends UnitTest
     ---@return table|string retValsOrErr All returned values packed into a table on success, or the error message on failure.
     run: =>
         @ran = true
+        @stubs = {}
         @logger\logEx nil, @@msgs.run.setup, false
 
         startTime = Timer.getTime!
@@ -582,6 +586,9 @@ class UnitTestSetup extends UnitTest
             @retVals = res
             return true, @retVals
 
+        -- a failed setup aborts the class, so its stubs are restored right away
+        for i = #@stubs, 1, -1
+            @stubs[i]\restore!
         return false, @errMsg
 
 ---A special case of the UnitTest class for a teardown routine.
@@ -693,6 +700,9 @@ class UnitTestClass
         -- doesn't change the class result. Setup's return values are passed through to it.
         if @hasTeardown
             @logger\warn msgs.run.teardownFailed, @name unless @teardown\run unpack res
+
+        for i = #@setup.stubs, 1, -1
+            @setup.stubs[i]\restore!
 
         @logger.indent -= 1
         @success = failedCnt == 0
@@ -895,8 +905,10 @@ class UnitTestSuite
                 if "table" == type failed
                     allFailed[#allFailed+1] = test for test in *failed
                 if abortOnFail
+                    @endTime = os.time! * 1000
+                    @success = false
                     @logger.indent -= 1
-                    @logger\warn msgs.run.abort, i
+                    @logger\warn msgs.run.aborted, i
                     return false, allFailed
 
         @endTime = os.time! * 1000

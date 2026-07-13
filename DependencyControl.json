@@ -269,7 +269,7 @@
             {
               "name": "/UnitTestSuite.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "C2CAA559E71FEC786942D15BF27638B96C75AAFC"
+              "sha1": "DD3D6BFBE78DBA869E8D15A87A26F87AE982CCAD"
             },
             {
               "name": "/UpdateFeed.moon",
@@ -518,7 +518,7 @@
             {
               "name": "/UnitTestSuite.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "52BE159237F4F50C63116F1A71F58B4ABCCCCC1B",
+              "sha1": "637B340273487957B5EF1ECEA69087F0BD1FF1F2",
               "type": "test"
             },
             {
@@ -715,7 +715,10 @@
           "Fixed installations and updates inside Aegisub failing with 'failed to create temporary download directory ... (unknown error)': Aegisub's bundled lfs signals mkdir/rmdir success differently from stock LuaFileSystem, which the directory-creation error checking misread as a failure.",
           "Update and install progress messages no longer read 'Starting nil of ...' for already-installed packages.",
           "Logger: the log window no longer repeats the indentation prefix inside incrementally written output such as the download progress bar (log files were unaffected).",
-          "SemanticVersion: toString no longer errors on nil or SemanticVersion-instance inputs; nil renders as \"0.0.0\"."
+          "SemanticVersion: toString no longer errors on nil or SemanticVersion-instance inputs; nil renders as \"0.0.0\".",
+          "Unit test framework: fixed a cluster of broken assertions — assertItemsEqual/assertItemsAre report a proper failure message and type-check their expected argument, assertContinuous actually checks table keys for continuity (it previously counted integer values), assertNotAlmostEquals reports its own message instead of the assertAlmostEquals text, and assertError no longer over-counts a non-raising function's returned values.",
+          "Unit test framework: ut\\stub now works inside a class's _setup — setup stubs stay in effect for the whole class including its teardown and are restored when the class finishes. Previously, stubbing in a _setup crashed the test run.",
+          "Unit test framework: aborting a run on the first failure now records the suite's end time and result, fixing missing timings in the CTRF report."
         ]
       }
     },
