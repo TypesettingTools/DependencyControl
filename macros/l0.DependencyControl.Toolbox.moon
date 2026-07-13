@@ -89,11 +89,12 @@ buildInstalledDlgList = (scriptType, config, isUninstall) ->
 
     for namespace, script in pairs config.c[scriptType]
         continue if protectedModules[namespace]
-        item = "%s v%s%s"\format script.name, DepCtrl.SemanticVersion\toString(script.version),
+        -- config entries are on-disk data: an orphaned or unmanaged record may lack name/version
+        item = "%s v%s%s"\format script.name or namespace, DepCtrl.SemanticVersion\toString(script.version) or "?",
                                  script.activeChannel and " [#{script.activeChannel}]" or ""
         list[#list+1] = item
-        table.sort list, (a, b) -> a\lower! < b\lower!
         map[item] = script
+    table.sort list, (a, b) -> a\lower! < b\lower!
     return list, map
 
 getConfig = (section) ->
@@ -191,10 +192,10 @@ install = ->
             for channel, rec in pairs channels
                 item = "%s v%s%s"\format rec.name, rec.version, rec.default and "" or " [#{channel}]"
                 list[#list+1] = item
-                table.sort list, (a, b) -> a\lower! < b\lower!
                 map[item] = { :namespace, :channel, feed: rec.feed, name: rec.name, virtual: true,
                               moduleName: rec.moduleName }
 
+        table.sort list, (a, b) -> a\lower! < b\lower!
         return list, map
 
     -- get the highest versions of automation scripts and modules we can install but don't have yet.

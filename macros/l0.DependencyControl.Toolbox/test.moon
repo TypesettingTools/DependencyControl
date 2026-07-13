@@ -154,7 +154,13 @@ UnitTestSuite "l0.DependencyControl.Toolbox", (macros, dependencies, testExports
         list = buildInstalledDlgList "macros", config, false
         ut\assertEquals list[1], "X v2.0.0 [beta]"
 
-      _order: {"uninstall_excludesProtected", "install_includesAll", "sortsByNameCaseInsensitively", "formatsActiveChannel"}
+      -- an entry lacking name/version (e.g. an orphaned unmanaged record) still gets a row
+      toleratesMissingVersionAndName: (ut) ->
+        config = makeConfig "modules", {"a.orphan": {}}
+        list = buildInstalledDlgList "modules", config, false
+        ut\assertEquals list[1], "a.orphan v0.0.0"
+
+      _order: {"uninstall_excludesProtected", "install_includesAll", "sortsByNameCaseInsensitively", "formatsActiveChannel", "toleratesMissingVersionAndName"}
     }
 
     UntrustedPrompt: {

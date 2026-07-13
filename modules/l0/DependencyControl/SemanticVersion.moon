@@ -331,16 +331,15 @@ class SemanticVersion
   __lt: (other) => SemanticVersion\toPacked(@) < SemanticVersion\toPacked other
   __le: (other) => SemanticVersion\toPacked(@) <= SemanticVersion\toPacked other
 
-  --- Converts a version number or string to a semantic version string.
-  ---@param version number|string
+  --- Converts a version number, string, or instance to a semantic version string.
+  ---@param version number|string|SemanticVersion|nil The version as a packed number, a string, an instance, or nil (rendered as "0.0.0").
   ---@param precision? SemverPrecision
   ---@return string|nil versionString
   ---@return string|nil err
   @toString = (version, precision = "patch") =>
-    if type(version) == "string"
-      version, err = @toPacked version
-      return nil, err unless version
-    
+    version, err = @toPacked version
+    return nil, err unless version
+
     parts = {0, 0, 0}
     for i, part in ipairs semParts
       parts[i] = bit.rshift(version, part[2]) % 256

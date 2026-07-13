@@ -58,6 +58,20 @@
       result = SemanticVersion\toString 66051, "major"
       ut\assertEquals result, "1.0.0"
 
+    toString_nilRendersZero: (ut) ->
+      result, err = SemanticVersion\toString nil
+      ut\assertEquals result, "0.0.0"
+      ut\assertNil err
+
+    toString_fromInstance: (ut) ->
+      result = SemanticVersion\toString SemanticVersion "1.2.3"
+      ut\assertEquals result, "1.2.3"
+
+    toString_badString: (ut) ->
+      result, err = SemanticVersion\toString "not-a-version"
+      ut\assertNil result
+      ut\assertString err
+
     -- check
 
     check_equal: (ut) ->
@@ -283,6 +297,7 @@
       "toPacked_string", "toPacked_zero", "toPacked_number", "toPacked_nil",
       "toPacked_badString", "toPacked_overflow", "toPacked_badType",
       "toString_fromNumber", "toString_roundtrip", "toString_majorPrecision",
+      "toString_nilRendersZero", "toString_fromInstance", "toString_badString",
       "check_equal", "check_greater", "check_less", "check_majorPrecision", "check_badArg",
       "check_rangeMode", "check_rangeBadRange",
       "satisfiesRange_tilde", "satisfiesRange_caret", "satisfiesRange_xRangeAndAny",

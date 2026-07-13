@@ -60,12 +60,12 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "A8A91B5B9E56C79B9010F6C51CBC0432E8DDB6E0"
+              "sha1": "1F498A5B79C5121A2007882989F96DD4DC1A83C2"
             },
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "DEC20A482DCF0B65340DE1EED62BE56944CAD153",
+              "sha1": "320613C4EEF8315825AC4146E3CD5A8CFEA0027F",
               "type": "test"
             }
           ],
@@ -97,7 +97,8 @@
           "Added a Manage Feeds macro to review and manage the feeds DependencyControl knows about and their trust status: trust, block (with a reason), unblock, or remove feeds; discover feeds advertised by other feeds; and manage your extra feeds and block list in dedicated panels. It warns before an action would change an installed package's update source, opens feed details in the DepCtrl Browser, and won't let you block DependencyControl's own feed.",
           "Manage Feeds now shows a Fetched column with how long ago each feed was last retrieved into the cache, read straight from the cache so it's visible even before Discover — letting you see at a glance which feeds have recent data.",
           "The Toolbox now ships a DependencyControl unit test suite, adding it to the Run Tests menu.",
-          "The startup update sweep no longer reports expected conditions, such as skipping the update of an unmanaged module, as unexpected scheduling errors."
+          "The startup update sweep no longer reports expected conditions, such as skipping the update of an unmanaged module, as unexpected scheduling errors.",
+          "Fixed the install/uninstall pickers erroring when an installed package's config entry lacks a version or name, as can happen with orphaned or unmanaged records."
         ]
       }
     }
@@ -247,7 +248,7 @@
             {
               "name": "/SemanticVersion.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "70BCED48967F0F1378CCC5A53724D5C18AF4329F"
+              "sha1": "CE31F756EEB6B552B07273D82662BBEE5FE37C0A"
             },
             {
               "name": "/Stub.moon",
@@ -505,7 +506,7 @@
             {
               "name": "/SemanticVersion.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "8E9563EEAA1A91978C2B91B108425FB878B8CADC",
+              "sha1": "5350264412F0E191B830D5B607462D0B1D9A79FB",
               "type": "test"
             },
             {
@@ -713,7 +714,8 @@
           "Uninstalling a package no longer removes files belonging to a sibling package whose name shares a prefix (e.g. uninstalling l0.Functional could delete a module named l0.FunctionalExtras along with all of its files), and namespaces containing hyphens now match only their own files during uninstall.",
           "Fixed installations and updates inside Aegisub failing with 'failed to create temporary download directory ... (unknown error)': Aegisub's bundled lfs signals mkdir/rmdir success differently from stock LuaFileSystem, which the directory-creation error checking misread as a failure.",
           "Update and install progress messages no longer read 'Starting nil of ...' for already-installed packages.",
-          "Logger: the log window no longer repeats the indentation prefix inside incrementally written output such as the download progress bar (log files were unaffected)."
+          "Logger: the log window no longer repeats the indentation prefix inside incrementally written output such as the download progress bar (log files were unaffected).",
+          "SemanticVersion: toString no longer errors on nil or SemanticVersion-instance inputs; nil renders as \"0.0.0\"."
         ]
       }
     },
