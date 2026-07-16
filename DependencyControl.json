@@ -736,7 +736,8 @@
           "Logger: the usePrefix option now applies to both the log file and the log window; the window previously kept its default.",
           "Lock: waiting on a lock logs one trace line per acquisition instead of one per poll, unbounded waits no longer print 'Timeout in -9223372036854775808ms', a stale holder is warned about once instead of every 250ms, and tryLock no longer reports wait time it never spent.",
           "Updater: skipped-optional-dependency log messages no longer swap the dependency's name with the word 'installation'/'update' (previously e.g. 'Skipped Yutils of optional dependency installation').",
-          "Updater: when a module can't be installed because one of its own required modules couldn't be satisfied, the error now names the failing sub-requirement and its reason, instead of ending at 'because its requirements could not be satisfied:' with no further detail."
+          "Updater: when a module can't be installed because one of its own required modules couldn't be satisfied, the error now names the failing sub-requirement and its reason, instead of ending at 'because its requirements could not be satisfied:' with no further detail.",
+          "The settings file now stores only the values you have actually changed: writing one setting no longer copies the rest of its section's defaults into the file, so default changes in DependencyControl updates take effect without manual config cleanup."
         ]
       }
     },

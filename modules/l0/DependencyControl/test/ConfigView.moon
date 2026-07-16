@@ -105,9 +105,32 @@
       ut\assertEquals view.userConfig.nested.a, "userA"   -- the existing user value is preserved
       ut\assertNil rawget view.userConfig.nested, "c"     -- an untouched default is not stored
 
-    -- regression: constructing a view must not overwrite a populated section that holds table-valued keys.
-    -- The default proxies must not be iterated on load, or their __pairs fires the copy-on-write and
-    -- replaces the user's section with defaults (silently wiping trusted/blocked/extra feeds on every load).
+    -- writing into a section absent from the user config stores only the written key; the section's other
+    -- defaults stay in code and keep reading through
+    config_writeIntoAbsentSection: (ut) ->
+      handler = ConfigHandler nil
+      handler.config = {section: {}}
+      view = ConfigView handler, {"section"}, {nested: {a: "defA", b: "defB"}}
+      view.config.nested.b = "newB"
+      ut\assertEquals view.userConfig.nested.b, "newB"    -- the user section was created with the written key
+      ut\assertNil rawget view.userConfig.nested, "a"     -- an untouched default is not materialized
+      ut\assertEquals view.config.nested.a, "defA"        -- and still reads through
+
+    -- a held section view reads and writes the view's live user config, so it stays valid across a
+    -- refresh replacing that table
+    config_heldSectionViewSurvivesRefresh: (ut) ->
+      handler = ConfigHandler nil
+      handler.config = {section: {nested: {a: "one"}}}
+      view = ConfigView handler, {"section"}, {nested: {a: "defA", b: "defB"}}
+      held = view.config.nested
+      handler.config = {section: {nested: {a: "two"}}}
+      view\refresh!
+      ut\assertEquals held.a, "two"                       -- reads the refreshed hive
+      held.b = "newB"
+      ut\assertEquals view.userConfig.nested.b, "newB"    -- writes land in the refreshed hive
+
+    -- regression: constructing a view must not overwrite a populated section that holds table-valued keys
+    -- (a load once silently wiped trusted/blocked/extra feeds this way)
     config_populatedSectionSurvivesConstruction: (ut) ->
       handler = ConfigHandler nil
       handler.config = {root: {sect: {list: {"userA"}, mode: "never"}}}
@@ -218,6 +241,7 @@
       "isOverlappingView_overlap", "isOverlappingView_disjoint",
       "config_readUser", "config_readDefault", "config_write",
       "config_partialSectionFallsThrough", "config_writeIntoPartialSection",
+      "config_writeIntoAbsentSection", "config_heldSectionViewSurvivesRefresh",
       "config_populatedSectionSurvivesConstruction",
       "refresh_success",
       "import_simple", "import_updateOnly", "import_skipPrivate",

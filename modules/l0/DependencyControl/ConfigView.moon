@@ -1,26 +1,38 @@
 Common = require "l0.DependencyControl.Common"
 local ConfigHandler
 
--- A read/write view over a user section that holds only some of its keys, falling through per key to the
--- section default: a user-set value wins, an absent key reads the default. Needed because the top-level
--- default fallback is whole-section, so a partially-populated section (e.g. what the flat->sectioned config
--- migration leaves behind, `updates = {enabled}`) would otherwise read nil for its unset sibling keys.
--- Writes go straight to the user section, so defaults are never materialized into stored config.
-mergeSection = (userSection, defaultSection) ->
+---A read/write view over one section key of a view's user config. A read serves the user-set value,
+---falling through to the section default when unset. A write lands only in the user section (created on
+---first write), so defaults are never materialized into stored config. The view's user config is read
+---live, so a held section view survives a refresh or load replacing that table.
+---@param view ConfigView The view whose user config backs the section.
+---@param sectionKey string The section's top-level key within the view's hive.
+---@param defaultSection table The section's defaults, read for keys the user section doesn't set.
+---@return table sectionView The merged read/write section view; pairs yields the defaults overlaid with the user-set keys.
+mergeSection = (view, sectionKey, defaultSection) ->
     setmetatable {}, {
-        __index: (_, k) -> if userSection[k] != nil then userSection[k] else defaultSection[k]
-        __newindex: (_, k, v) -> userSection[k] = v
+        __index: (_, k) ->
+            userSection = view.userConfig[sectionKey]
+            v = userSection and userSection[k]
+            if v != nil then v else defaultSection[k]
+        __newindex: (_, k, v) ->
+            userSection = view.userConfig[sectionKey]
+            unless userSection
+                userSection = {}
+                view.userConfig[sectionKey] = userSection
+            userSection[k] = v
         __len: -> 0
         __ipairs: -> error "numerically indexed config hive keys are not supported"
         __pairs: ->
             merged = {}
             merged[k] = v for k, v in pairs defaultSection
-            merged[k] = v for k, v in pairs userSection
+            if userSection = view.userConfig[sectionKey]
+                merged[k] = v for k, v in pairs userSection
             return next, merged
     }
 
 ---A view into a hive (nested path) of a ConfigHandler's JSON config file.
----Holds the proxy/defaults machinery and exposes @c / @config / @userConfig.
+---Holds the defaults-fallthrough machinery and exposes @c / @config / @userConfig.
 ---Multiple views on the same file are coordinated through their shared ConfigHandler.
 ---@class ConfigView
 class ConfigView
@@ -75,14 +87,13 @@ class ConfigView
         else
             @userConfig = {}  -- orphan view: no file backing
 
-        setDefaults @, defaults
+        @defaults = defaults and Common.deepCopy(defaults) or {}
         @config = setmetatable {}, {
             __index: (_, k) ->
                 uc = @userConfig[k]
-                return @defaults[k] if uc == nil
                 def = @defaults[k]
-                -- a partially-populated user section still resolves its unset keys from the section default
-                return mergeSection uc, def if type(uc) == "table" and type(def) == "table"
+                return mergeSection @, k, def if type(def) == "table" and (uc == nil or type(uc) == "table")
+                return def if uc == nil
                 return uc
             __newindex: (_, k, v) ->
                 @userConfig[k] = v
@@ -94,32 +105,6 @@ class ConfigView
                 return next, merged
         }
         @c = @config -- shortcut
-
-
-    -- Wraps each top-level default section in a copy-on-write proxy: reads fall through to the section's
-    -- defaults, and the first write into a section not yet present in the user config deep-copies that
-    -- section's defaults into it before applying the write. Only the top level is wrapped -- a section
-    -- already present in the user config is served per-key by mergeSection through @config. The proxy must
-    -- never be iterated here: its __pairs yields the underlying default keys, so descending into it would
-    -- fire the copy-on-write __newindex and materialize every default over the user's config on load.
-    setDefaults = (defaults) =>
-        @defaults = defaults and Common.deepCopy(defaults) or {}
-        for section, contents in pairs @defaults
-            continue if type(contents) != "table" or type(section) == "string" and section\match "^__"
-            @defaults[section] = setmetatable {__targetMethodKey: section, __targetTable: contents}, {
-                __index: contents  -- reads of unset keys fall through to the real defaults
-                __len: (proxy) -> #proxy.__targetTable
-                __newindex: (proxy, key, value) ->
-                    -- first write into an absent section: copy its defaults into the user config, then write
-                    @userConfig[proxy.__targetMethodKey] = Common.deepCopy proxy.__targetTable
-                    @userConfig[proxy.__targetMethodKey][key] = value
-                __pairs: (proxy) -> next, proxy.__targetTable
-                __ipairs: (proxy) ->
-                    i, n, orgTbl = 0, #proxy.__targetTable, proxy.__targetTable
-                    ->
-                        i += 1
-                        return i, orgTbl[i] if i <= n
-            }
 
 
     ---Removes this view's hive from the config file.
