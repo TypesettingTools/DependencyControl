@@ -738,7 +738,8 @@
           "Updater: skipped-optional-dependency log messages no longer swap the dependency's name with the word 'installation'/'update' (previously e.g. 'Skipped Yutils of optional dependency installation').",
           "Updater: when a module can't be installed because one of its own required modules couldn't be satisfied, the error now names the failing sub-requirement and its reason, instead of ending at 'because its requirements could not be satisfied:' with no further detail.",
           "The settings file now stores only the values you have actually changed: writing one setting no longer copies the rest of its section's defaults into the file, so default changes in DependencyControl updates take effect without manual config cleanup.",
-          "UpdateFeed: the feed-loading methods now uniformly return nil plus an error message on failure — fetch previously returned false, and ensureLoaded could return either shape. Code that checks the result for truthiness is unaffected."
+          "UpdateFeed: the feed-loading methods now uniformly return nil plus an error message on failure — fetch previously returned false, and ensureLoaded could return either shape. Code that checks the result for truthiness is unaffected.",
+          "Scripts using DependencyControl no longer pause for half a second while loading: the wait that spread the random seed apart across simultaneously loading scripts is gone, replaced by a monotonic-clock seed that is unique per script environment on its own."
         ]
       }
     },

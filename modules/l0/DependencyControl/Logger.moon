@@ -1,4 +1,5 @@
 Timer = require "l0.DependencyControl.Timer"
+NamedSemaphore = require "l0.DependencyControl.NamedSemaphore"
 lfs = require "lfs"
 
 ---Structured logger that writes to Aegisub's log window and optional log files.
@@ -20,7 +21,7 @@ class Logger
     indentStr: "—"
     maxFiles: 200, maxAge: 604800, maxSize:10*(10^6)
 
-    timer, seeded = Timer!, false
+    seeded = false
 
     -- All logger instances  write to the same live stream (Aegisub's log window or the CLI's stderr), 
     -- so we need to track  the last logger that didn't end its last message with a line feed, 
@@ -33,14 +34,13 @@ class Logger
             if args.usePrefix ~= nil
                 @usePrefixFile, @usePrefixWindow = args.usePrefix, args.usePrefix
 
-        -- scripts are loaded simultaneously, so we need to avoid seeding the rng with the same time
+        -- scripts load simultaneously in separate Lua states, so a whole-second seed would collide;
+        -- the monotonic clock's sub-microsecond reading diverges per state, and the pid separates
+        -- whole processes
         unless seeded
-            timer.sleep 10 for i=1,50
-            math.randomseed(timer\timeElapsed!*1000000)
+            math.randomseed Timer.getTime! * 1000000 + NamedSemaphore.pid
             math.random! for i = 1, 3
             seeded = true
-            -- timer gets freed on garbage collection
-            timer = nil
 
         @lastHadLineFeed = true
         escaped = @fileBaseName\gsub("([%%%(%)%[%]%.%*%-%+%?%$%^])","%%%1")
