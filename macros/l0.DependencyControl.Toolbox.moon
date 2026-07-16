@@ -571,15 +571,6 @@ manageFeeds = ->
             when buttons.help then manageFeedsHelp!
             else applySelections res, rows
 
-depRec\registerMacros {
-    {"Install Script", "Installs an automation script or module on your system.", install},
-    {"Update Script", "Manually check and perform updates to any installed script.", update},
-    {"Uninstall Script", "Removes an automation script or module from your system.", uninstall},
-    {"Manage Feeds", "See and manage the feeds DependencyControl knows about and their trust status.", manageFeeds},
-    {"Macro Configuration", "Lets you change per-automation script settings.", macroConfig},
-}, "DependencyControl", {:shortenUrl, :expandUrl, :formatAge, :buildInstalledDlgList, :promptUntrustedFeed,
-                         :confirmDialog, :manageExtraFeeds, :manageBlockList, :buttons, :feedActionLabels}
-
 -- Force-loads all installed modules, then sweeps the live record registry to schedule
 -- periodic update checks for every record and register unit test menus for modules.
 -- Automation scripts schedule their own update checks on macro invocation and register
@@ -607,6 +598,16 @@ scheduleUpdatesAndRegisterTests = ->
                 logger\trace msgs.scheduleUpdatesAndRegisterTests.registerMacrosError, record.name or record.namespace, errMsg
 
     DepCtrl.updater\releaseLock!
+
+depRec\registerMacros {
+    {"Install Script", "Installs an automation script or module on your system.", install},
+    {"Update Script", "Manually check and perform updates to any installed script.", update},
+    {"Uninstall Script", "Removes an automation script or module from your system.", uninstall},
+    {"Manage Feeds", "See and manage the feeds DependencyControl knows about and their trust status.", manageFeeds},
+    {"Macro Configuration", "Lets you change per-automation script settings.", macroConfig},
+}, "DependencyControl", {:shortenUrl, :expandUrl, :formatAge, :buildInstalledDlgList, :promptUntrustedFeed,
+                         :confirmDialog, :manageExtraFeeds, :manageBlockList, :buttons, :feedActionLabels,
+                         :scheduleUpdatesAndRegisterTests}
 
 -- The startup sweep is an Aegisub-session concern; headless (CLI/test runner) has no session to
 -- schedule for, and running it would trigger live update checks while a test require is in flight.

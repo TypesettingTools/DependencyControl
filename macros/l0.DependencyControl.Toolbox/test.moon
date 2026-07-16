@@ -1,5 +1,6 @@
 UnitTestSuite = require "l0.DependencyControl.UnitTestSuite"
 constants =     require "l0.DependencyControl.Constants"
+Common =        require "l0.DependencyControl.Common"
 DepCtrl =       require "l0.DependencyControl"
 
 -- Suite for the DependencyControl Toolbox macro. The Plumbing class proves the automation-script test
@@ -9,7 +10,13 @@ DepCtrl =       require "l0.DependencyControl"
 -- (the updater, config handler, feed inventory/manager, and the injected feed trust model).
 UnitTestSuite "l0.DependencyControl.Toolbox", (macros, dependencies, testExports, controls) ->
   {:shortenUrl, :expandUrl, :formatAge, :buildInstalledDlgList, :promptUntrustedFeed,
-   :confirmDialog, :manageExtraFeeds, :manageBlockList, :buttons, :feedActionLabels} = testExports
+   :confirmDialog, :manageExtraFeeds, :manageBlockList, :buttons, :feedActionLabels,
+   :scheduleUpdatesAndRegisterTests} = testExports
+
+  -- The UninstallFlow seam: its _setup swaps the DepCtrl class's __call for a constructor returning
+  -- `uninstallSeam.record`, so the flow's `DepCtrl(script)\uninstall!` never builds (and registers) a real
+  -- record. Held at suite scope because tests don't receive their class's setup context.
+  uninstallSeam = {}
 
   -- a fake config the way buildInstalledDlgList reads it: config.c[section] is the installed-package map
   makeConfig = (section, entries) -> {c: {[section]: entries}}
@@ -25,6 +32,21 @@ UnitTestSuite "l0.DependencyControl.Toolbox", (macros, dependencies, testExports
       i += 1
       r = responses[i] or {}
       unpack r, 1, #r
+
+  -- Runs one Uninstall Script pass selecting "X v1.0.0", with the constructed record's uninstall returning
+  -- the given values; returns how often uninstall ran. Requires the UninstallFlow construction seam.
+  runUninstall = (ut, ...) ->
+    results = table.pack ...
+    ran = 0
+    uninstallSeam.record = {
+      uninstall: =>
+        ran += 1
+        unpack results, 1, results.n
+    }
+    ut\stub(DepCtrl.config, "getSectionHandler")\returns {c: {macros: {"a.x": {name: "X", version: "1.0.0"}}, modules: {}}}
+    queueDialog ut, {{"OK", {macro: "X v1.0.0", module: ""}}}
+    macros["Uninstall Script"].process!
+    ran
 
   -- a fake FeedTrust recording the mutations the trust panels delegate to it; getBlockedFeeds hands back a
   -- fresh copy each call so a panel's in-place sort can't corrupt the source list across redisplay cycles
@@ -320,6 +342,35 @@ UnitTestSuite "l0.DependencyControl.Toolbox", (macros, dependencies, testExports
         dlg\assertCalledOnce!
     }
 
+    UninstallFlow: {
+      _description: "Uninstall Script: a picker selection reaches Record uninstall, and every result shape is reported without erroring."
+
+      -- A Stub can't stand in for a metamethod (LuaJIT requires __call to be a plain function), so the
+      -- construction seam is swapped by hand and restored in the teardown, which runs even when a test fails.
+      _setup: (ut) ->
+        meta = getmetatable DepCtrl
+        uninstallSeam.original = meta.__call
+        meta.__call = (cls, script) -> uninstallSeam.record
+
+      _teardown: (ut) ->
+        (getmetatable DepCtrl).__call = uninstallSeam.original
+
+      success_reportsAndRuns: (ut) ->
+        ut\assertEquals runUninstall(ut, true, {}), 1
+
+      errorWithStringDetail_reported: (ut) ->
+        ut\assertEquals runUninstall(ut, nil, "record construction failed"), 1
+
+      errorWithFileTableDetail_formatted: (ut) ->
+        ut\assertEquals runUninstall(ut, nil, {["auto/x.moon"]: {nil, "access denied"}}), 1
+
+      lockedFiles_formatted: (ut) ->
+        ut\assertEquals runUninstall(ut, false, {["auto/x.moon"]: {false, "file in use"}}), 1
+
+      _order: {"success_reportsAndRuns", "errorWithStringDetail_reported",
+               "errorWithFileTableDetail_formatted", "lockedFiles_formatted"}
+    }
+
     Install: {
       _description: "Install Script: crawls feeds for installable packages and runs install tasks for the selection."
 
@@ -377,6 +428,12 @@ UnitTestSuite "l0.DependencyControl.Toolbox", (macros, dependencies, testExports
     ManageFeeds: {
       _description: "Manage Feeds: the redisplay loop dispatches Apply to feed actions and Discover to the crawl."
 
+      -- The offline gather consults the live trust singleton, whose official-set load fetches the DepCtrl
+      -- feed over the network on a cold cache; seed both accessors so no test run leaves the process.
+      _setup: (ut) ->
+        ut\stub(DepCtrl.updater.feedTrust, "getOfficialTrustedFeeds")\returns {}
+        ut\stub(DepCtrl.updater.feedTrust, "getOfficialBlockedFeeds")\returns {}
+
       -- Close on the first render applies no feed action
       close_appliesNothing: (ut) ->
         rows = {{url: "feed://x", provenance: {}, trustStatus: DepCtrl.FeedTrust.TrustStatus.Untrusted, actions: {}, browserUrl: "http://b"}}
@@ -410,6 +467,88 @@ UnitTestSuite "l0.DependencyControl.Toolbox", (macros, dependencies, testExports
         macros["Manage Feeds"].process!
         crawl\assertCalled!
 
-      _order: {"close_appliesNothing", "apply_dispatchesSelectedAction", "discover_usesCrawl"}
+      -- Block asks for a reason before dispatching, and the reason travels in the action options
+      apply_blockPromptsForReason: (ut) ->
+        Block = DepCtrl.FeedManager.FeedAction.Block
+        row = {url: "feed://x", provenance: {}, trustStatus: DepCtrl.FeedTrust.TrustStatus.Untrusted, actions: {Block}, browserUrl: "http://b"}
+        applied = {}
+        ut\stub(DepCtrl.FeedManager, "buildRows")\calls -> {row}
+        ut\stub(DepCtrl.FeedManager.__base, "applyAction")\calls (self, action, entry, opts) ->
+          applied[#applied + 1] = {action, entry, opts}
+          true
+        ut\stub(DepCtrl.FeedInventory.__base, "getPackagesSourcedFrom")\returns {}
+        queueDialog ut, {
+          {buttons.apply, {action1: feedActionLabels[Block]}}
+          {buttons.block, {reason: "compromised"}}
+          {buttons.close}
+        }
+        macros["Manage Feeds"].process!
+        ut\assertEquals #applied, 1
+        ut\assertEquals applied[1][1], Block
+        ut\assertEquals applied[1][3].reason, "compromised"
+
+      -- declining the sourced-packages warning abandons the block before any prompt or dispatch
+      apply_blockDeclinedOnSourcedWarning: (ut) ->
+        Block = DepCtrl.FeedManager.FeedAction.Block
+        row = {url: "feed://x", provenance: {}, trustStatus: DepCtrl.FeedTrust.TrustStatus.Untrusted, actions: {Block}, browserUrl: "http://b"}
+        ut\stub(DepCtrl.FeedManager, "buildRows")\calls -> {row}
+        applyAction = ut\stub DepCtrl.FeedManager.__base, "applyAction"
+        ut\stub(DepCtrl.FeedInventory.__base, "getPackagesSourcedFrom")\returns {"a.pkg"}
+        queueDialog ut, {
+          {buttons.apply, {action1: feedActionLabels[Block]}}
+          {false}                                            -- the sourced warning, declined
+          {buttons.close}
+        }
+        macros["Manage Feeds"].process!
+        applyAction\assertNotCalled!
+
+      _order: {"close_appliesNothing", "apply_dispatchesSelectedAction", "discover_usesCrawl",
+               "apply_blockPromptsForReason", "apply_blockDeclinedOnSourcedWarning"}
+    }
+
+    StartupSweep: {
+      _description: "scheduleUpdatesAndRegisterTests: the startup sweep schedules every record, registers module test menus, and survives per-record failures."
+
+      -- every registered record gets a schedule attempt, module suites get their test menus registered
+      -- (automation scripts register their own), an installed module that fails to load is tolerated,
+      -- and the updater lock is released at the end
+      sweepsRecordsAndRegistersModuleTests: (ut) ->
+        ut\stub(DepCtrl.config, "getSectionHandler")\returns {c: {modules: {"toolbox.test.notARealModule": {}}}}
+        registered = {}
+        records = {
+          {name: "Mod", namespace: "a.mod", scriptType: Common.ScriptType.Module, tests: {registerMacros: => registered.mdl = true}}
+          {name: "Mac", namespace: "a.mac", scriptType: Common.ScriptType.Automation, tests: {registerMacros: => registered.macro = true}}
+        }
+        ut\stub(DepCtrl, "getAllRegisteredRecords")\returns records
+        scheduled = {}
+        ut\stub(DepCtrl.updater, "scheduleUpdate")\calls (self, record) ->
+          scheduled[#scheduled + 1] = record.namespace
+          0
+        released = ut\stub DepCtrl.updater, "releaseLock"
+        scheduleUpdatesAndRegisterTests!
+        ut\assertEquals #scheduled, 2
+        ut\assertTrue registered.mdl         -- module suites are registered by the sweep
+        ut\assertNil registered.macro        -- automation scripts register their own
+        released\assertCalledOnce!
+
+      -- one record's raising scheduleUpdate (or a negative status) doesn't end the sweep for the rest
+      toleratesPerRecordFailures: (ut) ->
+        ut\stub(DepCtrl.config, "getSectionHandler")\returns {c: {modules: {}}}
+        records = {
+          {name: "Boom", namespace: "a.boom", scriptType: Common.ScriptType.Module}
+          {name: "Denied", namespace: "a.denied", scriptType: Common.ScriptType.Module}
+          {name: "Fine", namespace: "a.fine", scriptType: Common.ScriptType.Automation}
+        }
+        ut\stub(DepCtrl, "getAllRegisteredRecords")\returns records
+        calls = 0
+        ut\stub(DepCtrl.updater, "scheduleUpdate")\calls (self, record) ->
+          calls += 1
+          error "scheduler exploded" if record.name == "Boom"
+          record.name == "Denied" and -1 or 0
+        ut\stub DepCtrl.updater, "releaseLock"
+        scheduleUpdatesAndRegisterTests!
+        ut\assertEquals calls, 3
+
+      _order: {"sweepsRecordsAndRegistersModuleTests", "toleratesPerRecordFailures"}
     }
   }
