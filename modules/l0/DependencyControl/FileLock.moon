@@ -1,5 +1,6 @@
 ffi = require "ffi"
 FileOps = require "l0.DependencyControl.FileOps"
+Finalizer = require "l0.DependencyControl.Finalizer"
 
 local openImpl, tryLockImpl, unlockImpl, closeImpl, isAvailable
 
@@ -101,9 +102,7 @@ class FileLock
 
         -- close the handle when this object is garbage collected to release the lock in case it's still being held
         handleRef = handle
-        canary = newproxy true
-        (getmetatable canary).__gc = -> pcall closeImpl, handleRef
-        @_canary = canary
+        Finalizer.guard @, -> closeImpl handleRef
 
     ---Attempts to acquire the lock without blocking.
     ---@return boolean acquired True if acquired.

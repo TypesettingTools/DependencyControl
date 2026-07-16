@@ -1,4 +1,5 @@
 ffi = require "ffi"
+Finalizer = require "l0.DependencyControl.Finalizer"
 
 local formatName, openImpl, isOpenImpl, tryLockImpl, lockImpl, unlockImpl, closeImpl
 local pid, isAvailable, unlinkAtExit
@@ -61,12 +62,11 @@ else
     -- do NOT unlink when an individual instance is collected: unlinking a name another holder still owns
     -- would let a later sem_open create a *separate* semaphore, so two holders could each believe they hold
     -- the lock. Deferring the unlink to teardown keeps the name valid for the whole process while still
-    -- cleaning it up (so a reused pid can't inherit a stale semaphore) on a clean exit. The canary must be
+    -- cleaning it up (so a reused pid can't inherit a stale semaphore) on a clean exit. The finalizer must be
     -- kept alive for the module's lifetime (anchored on the class below) or it would be collected — and fire
     -- the unlink — early.
     namesToUnlink = {}
-    unlinkAtExit = newproxy true
-    (getmetatable unlinkAtExit).__gc = -> pcall(-> ffi.C.sem_unlink name) for name in pairs namesToUnlink
+    unlinkAtExit = Finalizer.create -> pcall(-> ffi.C.sem_unlink name) for name in pairs namesToUnlink
 
     -- POSIX names must start with a single '/' and contain no other slashes.
     formatName  = (token) -> "/#{token}"
@@ -90,8 +90,8 @@ class NamedSemaphore
     -- this process's id, exposed so callers can build process-scoped names and holder records
     @pid = pid
 
-    -- anchor the teardown-unlink canary to the class so it lives as long as the module (nil on Windows)
-    @__unlinkCanary = unlinkAtExit
+    -- anchor the teardown-unlink finalizer to the class so it lives as long as the module (nil on Windows)
+    @__unlinkFinalizer = unlinkAtExit
 
     ---Gets a handle to the named semaphore for the given token, creating it if it doesn't exist.
     ---@param token string A name token restricted to [A-Za-z0-9_].
@@ -110,9 +110,7 @@ class NamedSemaphore
 
         -- close the OS handle when this object is garbage-collected.
         name, handle, unlink = @name, @handle, unlinkOnClose
-        canary = newproxy true
-        (getmetatable canary).__gc = -> pcall closeImpl, name, handle, unlink
-        @_canary = canary
+        Finalizer.guard @, -> closeImpl name, handle, unlink
 
     ---Attempts to acquire without blocking.
     ---@return boolean acquired True if the semaphore was acquired.

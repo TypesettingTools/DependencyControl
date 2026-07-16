@@ -1,6 +1,7 @@
 
 Common = require "l0.DependencyControl.Common"
 Logger = require "l0.DependencyControl.Logger"
+Finalizer = require "l0.DependencyControl.Finalizer"
 
 msgs = {
     notCalled:          "Expected stub to have been called, but it was never called."
@@ -10,7 +11,7 @@ msgs = {
     noNthCall:          "Expected at least %d call(s), but stub was only called %d time(s)."
     wrongCall:          "Call #%d arguments did not match.\n  Expected: %s\n    Actual: %s"
     calledAfterRestore: "Stub for '%s' was called after being restored."
-    canary: {
+    finalizer: {
         notRestored: "Stub for '%s' was not restored before being garbage collected."
     }
 }
@@ -60,18 +61,9 @@ class Stub
 
             -- warn if this stub is garbage-collected without restore() having been called
             keyRef, logger = key, @logger or @@logger
-            canary = newproxy true
-            (getmetatable canary).__gc = ->
+            Finalizer.guard @, ->
                 unless restored[1]
-                    pcall logger.warn, logger, msgs.canary.notRestored, keyRef
-
-            meta = getmetatable @
-            setmetatable @, {
-                __metatable: meta
-                __index:     meta.__index
-                __call:      meta.__call
-                __canary:    canary
-            }
+                    pcall logger.warn, logger, msgs.finalizer.notRestored, keyRef
 
     __call: (...) =>
         @__fail msgs.calledAfterRestore, @_targetMethodKey if @_restored[1]

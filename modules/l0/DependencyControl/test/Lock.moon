@@ -388,9 +388,9 @@
       ut\assertString err
       ut\assertFalse called               -- body never runs when the lock can't be taken
 
-    -- GC canary: unreleased lock is cleaned up and warns on collection
+    -- GC finalizer: unreleased lock is cleaned up and warns on collection
 
-    gc_canary: (ut) ->
+    gc_finalizer: (ut) ->
       sem = makeFakeSemaphore!
       (ut\stub sem, "tryLock")\returns true
       unlockStub = ut\stub sem, "unlock"
@@ -401,7 +401,7 @@
       do
         lock = Lock namespace: "ns", resource: "res", recordHolder: false
         lock\lock!
-      -- run GC until the canary finalizer fires; a backlog of finalizers from earlier
+      -- run GC until the finalizer fires; a backlog of finalizers from earlier
       -- tests means a fixed couple of passes isn't always enough
       for _ = 1, 20
         collectgarbage "collect"
@@ -425,6 +425,6 @@
       "staleHolder_warnsPastLease", "staleHolder_silentWithinLease", "overrideExpiry_usesOwnExpiry",
       "renew_forceRewrites", "renew_notHeld", "renew_skipsWhenFresh", "renew_renewsWhenDue",
       "guard_runsAndReleases", "guard_releasesOnError", "guard_failsToAcquire",
-      "gc_canary"
+      "gc_finalizer"
     }
   }

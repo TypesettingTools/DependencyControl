@@ -8,6 +8,7 @@ Enum   = require "l0.DependencyControl.Enum"
 Crypto = require "l0.DependencyControl.Crypto"
 FileOps = require "l0.DependencyControl.FileOps"
 Accessors = require "l0.DependencyControl.Accessors"
+Finalizer = require "l0.DependencyControl.Finalizer"
 json   = require "json"
 
 DEFAULT_LOCK_WAIT_INTERVAL = 250
@@ -155,28 +156,20 @@ class Lock
         @_holderFilePath = holderFilePath
         @_primitive = @@__createPrimitive @scope, token, lockFilePath
 
-        -- mutable held-state shared with the GC canary (avoids capturing self)
+        -- mutable held-state shared with the GC finalizer (avoids capturing self)
         state = {held: false}
         @_state = state
 
         -- release any still-held lock when this object is garbage collected.
         holderName, instanceId, namespace, resource, logger = @holderName, @instanceId, @namespace, @resource, @logger
         primitive, recordHolder = @_primitive, @recordHolder
-        canary = newproxy true
-        (getmetatable canary).__gc = ->
-            if state.held
-                pcall logger.warn, logger, msgs.new.lockNotReleased, holderName, instanceId, namespace, resource
-                pcall ->
-                    primitive\unlock!
-                    FileOps.remove holderFilePath if recordHolder
-                    state.held = false
-
-        meta = getmetatable @
-        setmetatable @, {
-            __metatable: meta
-            __index: meta.__index
-            __canary: canary
-        }
+        Finalizer.guard @, ->
+            return unless state.held
+            pcall logger.warn, logger, msgs.new.lockNotReleased, holderName, instanceId, namespace, resource
+            pcall ->
+                primitive\unlock!
+                FileOps.remove holderFilePath if recordHolder
+                state.held = false
 
     ---Reads the holder record written by the current lock holder, or nil if none is
     ---present/parseable. Read lock-free, so the record may be stale or briefly absent.

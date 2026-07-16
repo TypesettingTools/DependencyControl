@@ -38,6 +38,7 @@ FeedLoader =     require "l0.DependencyControl.FeedLoader"
 FeedManager =    require "l0.DependencyControl.FeedManager"
 FeedTrust =      require "l0.DependencyControl.FeedTrust"
 FileOps =        require "l0.DependencyControl.FileOps"
+Finalizer =      require "l0.DependencyControl.Finalizer"
 GitRepository =  require "l0.DependencyControl.GitRepository"
 Host =           require "l0.DependencyControl.Host"
 Lock =           require "l0.DependencyControl.Lock"
@@ -76,6 +77,7 @@ class DependencyControl extends Record
     @UpdateFeed = UpdateFeed
     @Updater = Updater
     @UnitTestSuite = UnitTestSuite
+    @Finalizer = Finalizer
     @SemanticVersion = SemanticVersion
 
 -- inherit Record's version accessor before constructing any instance below

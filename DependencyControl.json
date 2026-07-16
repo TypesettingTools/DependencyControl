@@ -118,7 +118,7 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "EE27539D5D5C106943E03CE05310EFBD1C69328F"
+              "sha1": "B96362A625AF83FADA6FB0F452FBB6BDE76B9711"
             },
             {
               "name": "/Common.moon",
@@ -168,7 +168,7 @@
             {
               "name": "/FeedInventory.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "178B4CD02AE69CDA63927F384B28D2A7B36D2B57"
+              "sha1": "76544084EC7F2BC8AD9EF5E184354DB98D7520E0"
             },
             {
               "name": "/FeedManager.moon",
@@ -183,7 +183,7 @@
             {
               "name": "/FileLock.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "F6CB3F535AC17E783687BA629FD6D672555AB41B"
+              "sha1": "957BACB8B05540A11E74A255A13529A20A131D73"
             },
             {
               "name": "/FileOps.moon",
@@ -208,7 +208,7 @@
             {
               "name": "/Lock.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "5455A35681977AF9E5E456012BB21E0F2F349AEB"
+              "sha1": "F4AA4C73B9DED400BF461E55AF9CEAC7BF4FDC16"
             },
             {
               "name": "/Logger.moon",
@@ -228,12 +228,12 @@
             {
               "name": "/NamedSemaphore.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "02A23CCBA75CBB7B8F3052879511566162C804FC"
+              "sha1": "947E15EE629BAF5F0EAA34BC42ED237F62F9D322"
             },
             {
               "name": "/Record.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "B5C2B411129AE53CF750B77FB23D4BDBE4FFC3AC"
+              "sha1": "D0DDF59DFEAE88CD1497A918E9BB01CD62E550C5"
             },
             {
               "name": "/ScriptTargetFilter.moon",
@@ -253,7 +253,7 @@
             {
               "name": "/Stub.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "226ED4CF85A800108A2E2737FDEA2A9FD19142C9"
+              "sha1": "1F448EA7D8AC3C21C6BE0493A08A88E715A30BA0"
             },
             {
               "name": "/BadMutex.moon",
@@ -279,7 +279,7 @@
             {
               "name": "/UpdateTask.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "D3B926807642FCD9B383A5D56ED2353EA1D7341A"
+              "sha1": "D3AD5F032F73B85A02E822E1A6CBEFB32D511819"
             },
             {
               "name": "/Updater.moon",
@@ -342,9 +342,14 @@
               "sha1": "503B592CE2E35ACDCEBC65EE135D6D987C8F7EA6"
             },
             {
+              "name": "/Finalizer.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "3E061756BFF7955E705EBD69E1B46F06E5E5F787"
+            },
+            {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "66C439C44C29099FA1AAF735BEEE26A1905840FD",
+              "sha1": "55F3DE758538D4236DD0E45539DFB71B59BD3B06",
               "type": "test"
             },
             {
@@ -452,7 +457,7 @@
             {
               "name": "/Lock.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "7616E927ED4552DC81E3B629FC3AEB2FE929CB3A",
+              "sha1": "1E9F6E1CCEACB8A8D2698E0766109264E1046A2D",
               "type": "test"
             },
             {
@@ -488,7 +493,7 @@
             {
               "name": "/Record.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "F60CC86DDD58627C5D9E5A5D83F5D7758CE846BC",
+              "sha1": "F5E7206CB1F6DE8CD36F0B65A635EA617925C787",
               "type": "test"
             },
             {
@@ -585,6 +590,12 @@
               "name": "/config-schema.moon",
               "url": "@{fileBaseUrl}",
               "sha1": "9EFA8FCD1386DF9B35FF82A0952870CEA82527F7",
+              "type": "test"
+            },
+            {
+              "name": "/Finalizer.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "10A76A5FC556B3283F1677AD93457C60632A9CD6",
               "type": "test"
             }
           ],
