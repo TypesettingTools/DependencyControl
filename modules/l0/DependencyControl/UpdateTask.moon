@@ -886,8 +886,6 @@ class UpdateTask
                 ModuleLoader.removeDummyRef @record
             return ...
 
-        -- don't perform update of a script when another one is already running for the same script
-        return finish UpdateStatus.TaskAlreadyRunning if @running
         @running = true
 
         -- set a dummy ref (which hasn't yet been set for virtual and unmanaged modules)

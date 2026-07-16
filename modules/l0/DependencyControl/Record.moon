@@ -110,7 +110,7 @@ class Record
 
     init = =>
         FileOps.mkdir @depConf.file, true
-        @loadConfig!
+        @loadGlobalConfig!
         {:logging, :paths} = @config.c
         @logger = Logger { fileBaseName: constants.DEPCTRL_SHORT_NAME, fileSubName: script_namespace, prefix: "[#{constants.DEPCTRL_SHORT_NAME}] ",
                              toFile: logging.toFile, defaultLevel: logging.defaultLevel,
@@ -121,7 +121,7 @@ class Record
         @configDir = paths.config
 
         FileOps.mkdir aegisub.decode_path @configDir
-        logsHaveBeenTrimmed or= @logger\trimFiles!
+        @logger\trimFiles!
         FileOps.runScheduledRemoval @configDir
 
 
@@ -217,7 +217,7 @@ class Record
 
     ---Loads global DependencyControl configuration.
     ---@return ConfigView config
-    @loadConfig = =>
+    @loadGlobalConfig = =>
         if @config
             @config\load!
         else

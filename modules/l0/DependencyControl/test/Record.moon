@@ -406,7 +406,6 @@
 
     -- loadConfig imports recordType from the stored config like any other persisted field
     loadConfig_importsRecordType: (ut) ->
-      -- __base.loadConfig: the instance method (Record.loadConfig is a distinct static for the global config)
       record = setmetatable {
         __class: Record, virtual: false, namespace: "l0.x", scriptType: Common.ScriptType.Module
         config: {load: (=> true), c: {recordType: Common.RecordType.Unmanaged}}
