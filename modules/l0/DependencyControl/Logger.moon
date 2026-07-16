@@ -31,7 +31,7 @@ class Logger
         if args
             @[k] = v for k, v in pairs args
             if args.usePrefix ~= nil
-                @usePrefixFile, @usePrefixWindow = args.usePrefix
+                @usePrefixFile, @usePrefixWindow = args.usePrefix, args.usePrefix
 
         -- scripts are loaded simultaneously, so we need to avoid seeding the rng with the same time
         unless seeded

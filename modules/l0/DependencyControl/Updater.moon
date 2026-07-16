@@ -36,6 +36,7 @@ class Updater
         require: {
             macroPassed: "%s is not a module."
             upToDate: "Tried to require an update for up-to-date module '%s'."
+            notFoundDespiteInstalled: "its files were likely moved or deleted after installation, or installed for a different Aegisub setup — reinstalling the module should restore it"
         }
         scheduleUpdate: {
             updaterDisabled: "Skipping update check for %s (Updater disabled)."
@@ -103,11 +104,11 @@ class Updater
     ---@param optional? boolean Treat this as an optional dependency.
     ---@param channel? string Update channel to use.
     ---@param reason? UpdateReason Defaults to `DependencyResolution` — the reason this method exists; a caller (e.g. an installed provider) may pass another to carry its own reason through.
-    ---@return any ref The loaded module reference, or nil on error.
-    ---@return UpdateStatus? code
-    ---@return string? detail
+    ---@return any ref The loaded module reference, or nil when the module couldn't be provided.
+    ---@return UpdateStatus? code Outcome of the update run; always present when the ref is nil, with `SkippedOptional` marking a skipped optional dependency rather than a failure.
+    ---@return string? detail Error detail for a failing code, or the paradox reason when an up-to-date module then can't be loaded.
     require: (record, targetVersion, addFeeds, optional, channel, reason = UpdateReason.DependencyResolution) =>
-        @logger\assert record.scriptType == Common.ScriptType.Module, msgs.require, record.name or record.namespace
+        @logger\assert record.scriptType == Common.ScriptType.Module, msgs.require.macroPassed, record.name or record.namespace
         @logger\log "%s module '%s'...", record.virtual and "Installing required" or "Updating outdated", record.name
         task, code, res = @addTask record, targetVersion, addFeeds, optional, channel, reason
         code, res = task\run true if task
@@ -116,9 +117,11 @@ class Updater
             -- usually we know in advance if a module is up to date so there's no reason to block other updaters
             -- but we'll make sure to handle this case gracefully, anyway
             @logger\debug msgs.require.upToDate, task.record.name or task.record.namespace
-            return ModuleLoader.loadModule task.record, task.record
+            ref = ModuleLoader.loadModule task.record, task.record
+            return ref if ref
+            return nil, code, task.record._error or msgs.require.notFoundDespiteInstalled
         elseif code >= 0  -- any other non-negative outcome (Installed / AlreadyUpdated / SkippedOptional)
-            return task.ref
+            return task.ref, code, res
         else -- pass on update errors
             return nil, code, res
 

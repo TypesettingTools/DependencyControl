@@ -59,7 +59,7 @@ class Lock
             lockNotReleased: "Lock holder '%s' (%s) did not release its lock on resource '%s.%s' before discarding it, cleaning up..."
         }
         lock: {
-            trying:     "Trying to get a lock on resource '%s.%s' for holder '%s' (%s). Timeout in %ims..."
+            trying:     "Trying to get a lock on resource '%s.%s' for holder '%s' (%s); timeout: %s..."
             failed:     "Could not attain lock on resource '%s.%s' for holder '%s' (%s): %s"
             heldByOther: "Lock on resource '%s.%s' is currently held by %s, retrying in %ims..."
             staleHolder: "Lock on resource '%s.%s' is held by %s whose lease lapsed %ds ago; the holder may have crashed or stalled without releasing it."
@@ -263,11 +263,13 @@ class Lock
                 @__writeHolder!
             return @@LockState.Held, 0
 
-        timePassed = 0
-        while timeout == math.huge or timeout >= timePassed
-            @logger\trace msgs.lock.trying, @namespace, @resource, @holderName, @instanceId,
-                          timeout == math.huge and math.huge or timeout - timePassed
+        -- traced once per acquisition: repeating it on every poll drowns the log during a long wait
+        @logger\trace msgs.lock.trying, @namespace, @resource, @holderName, @instanceId,
+                      timeout == math.huge and "none" or "#{math.floor timeout}ms"
 
+        timePassed = 0
+        staleHolderWarned = nil
+        while timeout == math.huge or timeout >= timePassed
             state = @state
             switch state
                 when @@LockState.Held
@@ -282,17 +284,20 @@ class Lock
                         @logger\trace msgs.lock.attained, @holderName, @instanceId, @namespace, @resource
                         return @@LockState.Held, timePassed
 
-                    -- the lock is held by someone else, so surface who holds it and warn when the
-                    -- holder's lease has lapsed (likely crashed or stalled). Informational only -- a Global
-                    -- file lock self-heals on crash, and a live holder's lock is never force-stolen.
+                    -- the lock is held by someone else, so surface who holds it and warn — once
+                    -- per holder — when the holder's lease has lapsed (likely crashed or stalled).
+                    -- Informational only -- a Global file lock self-heals on crash, and a live
+                    -- holder's lock is never force-stolen.
                     record = @__readHolder!
                     holderDesc = @__describeHolder record
                     deadline = @__holderDeadline record
-                    if deadline and os.time! > deadline
+                    if deadline and os.time! > deadline and holderDesc != staleHolderWarned
                         @logger\warn msgs.lock.staleHolder, @namespace, @resource, holderDesc, os.time! - deadline
+                        staleHolderWarned = holderDesc
 
+                    break if timeout == 0
                     @logger\trace msgs.lock.heldByOther, @namespace, @resource, holderDesc, lockWaitInterval
-                    Timer.sleep lockWaitInterval unless timeout == 0
+                    Timer.sleep lockWaitInterval
                     timePassed += lockWaitInterval
 
         @logger\trace msgs.lock.timeout, @namespace, @resource, @holderName, @instanceId

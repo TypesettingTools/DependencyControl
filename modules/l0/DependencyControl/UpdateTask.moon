@@ -194,31 +194,33 @@ UpdateStatus = Enum "UpdateStatus", {
 
 msgs = {
     updateError: {
-        [UpdateStatus.UpToDate]:             "Couldn't %s %s '%s' because of a paradox: module not found but updater says up-to-date (%s)"
-        [UpdateStatus.UpdaterDisabled]:      "Couldn't %s %s '%s' because the updater is disabled."
+        [UpdateStatus.UpToDate]:             "Couldn't complete the %s of %s '%s' because of a paradox: module not found but updater says up-to-date (%s)"
+        [UpdateStatus.UpdaterDisabled]:      "Couldn't complete the %s of %s '%s' because the updater is disabled."
         [UpdateStatus.InvalidNamespace]:     "Skipping %s of %s '%s': namespace '%s' doesn't conform to rules."
         [UpdateStatus.Unmanaged]:            "Skipping %s of unmanaged %s '%s'."
-        [UpdateStatus.AnotherUpdateRunning]: "Skipped %s of %s '%s': Another update initiated by %s is already running."
+        [UpdateStatus.AnotherUpdateRunning]: "Skipped %s of %s '%s': another update initiated by %s is already running."
         [UpdateStatus.NoSuitablePackage]:    "The %s of %s '%s' failed because no suitable package could be found %s."
-        [UpdateStatus.NoInternet]:           "Skipped %s of %s '%s': An internet connection is currently not available."
-        [UpdateStatus.InvalidVersion]:       "Couldn't %s %s '%s' because the requested version is invalid: %s"
+        [UpdateStatus.NoInternet]:           "Skipped %s of %s '%s': an internet connection is currently not available."
+        [UpdateStatus.InvalidVersion]:       "Couldn't complete the %s of %s '%s' because the requested version is invalid: %s"
         [UpdateStatus.ProtectedInstall]:     "Skipped %s of %s '%s' because its entry point (%s) is in Aegisub's data automation directory. If it's managed by a system package manager, please update it through that instead."
         [UpdateStatus.TaskAlreadyRunning]:   "Skipped %s of %s '%s': the update task is already running."
-        [UpdateStatus.RequirementsUnmet]:    "Couldn't %s %s '%s' because its requirements could not be satisfied:"
-        [UpdateStatus.UntrustedFeed]:        "Couldn't %s %s '%s' because a suitable package was only found in an untrusted feed (%s). Add it to your trusted feeds to proceed."
-        [UpdateStatus.PinnedUnavailable]:    "Couldn't %s %s '%s' because its pinned package source is no longer available. Update or clear the pin to proceed."
-        [UpdateStatus.UserAborted]:          "Aborted %s of %s '%s' at your request."
-        [UpdateStatus.BlockedFeed]:          "Couldn't %s %s '%s' because you blocked the feed (%s) it would be installed from."
-        [UpdateStatus.TempDirFailed]:        "Couldn't %s %s '%s': failed to create temporary download directory %s"
-        [UpdateStatus.PathTraversal]:        "Aborted %s of %s '%s' because it attempted to deploy a file (%s) outside of its namespaced path."
-        [UpdateStatus.BadHash]:              "Aborted %s of %s '%s' because the feed contained a missing or malformed SHA-1 hash for file %s."
-        [UpdateStatus.MoveFailed]:           "Couldn't finish %s of %s '%s' because some files couldn't be moved to their target location:\n"
-        [UpdateStatus.ModuleNotFound]:       "%s of %s '%s' succeeded, couldn't be located by the module loader."
-        [UpdateStatus.ModuleLoadFailed]:     "%s of %s '%s' succeeded, but an error occurred while loading the module:\n%s"
-        [UpdateStatus.MissingVersionRecord]: "%s of %s '%s' succeeded, but it's missing a version record."
-        [UpdateStatus.RecordCreateFailed]:   "%s of unmanaged %s '%s' succeeded, but an error occurred while creating a DependencyControl record: %s"
+        [UpdateStatus.RequirementsUnmet]:    "Couldn't complete the %s of %s '%s' because its requirements could not be satisfied:\n%s"
+        [UpdateStatus.UntrustedFeed]:        "Couldn't complete the %s of %s '%s' because a suitable package was only found in an untrusted feed (%s). Add it to your trusted feeds to proceed."
+        [UpdateStatus.PinnedUnavailable]:    "Couldn't complete the %s of %s '%s' because its pinned package source is no longer available. Update or clear the pin to proceed."
+        [UpdateStatus.UserAborted]:          "Aborted the %s of %s '%s' at your request."
+        [UpdateStatus.BlockedFeed]:          "Couldn't complete the %s of %s '%s' because you blocked the feed (%s) it would be installed from."
+        [UpdateStatus.TempDirFailed]:        "Couldn't complete the %s of %s '%s': failed to create temporary download directory %s"
+        [UpdateStatus.PathTraversal]:        "Aborted the %s of %s '%s' because it attempted to deploy a file (%s) outside of its namespaced path."
+        [UpdateStatus.BadHash]:              "Aborted the %s of %s '%s' because the feed contained a missing or malformed SHA-1 hash for file %s."
+        [UpdateStatus.MoveFailed]:           "Couldn't finish the %s of %s '%s' because some files couldn't be moved to their target location:\n"
+        [UpdateStatus.ModuleNotFound]:       "The %s of %s '%s' succeeded, but the module couldn't be located by the module loader."
+        [UpdateStatus.ModuleLoadFailed]:     "The %s of %s '%s' succeeded, but an error occurred while loading the module:\n%s"
+        [UpdateStatus.MissingVersionRecord]: "The %s of %s '%s' succeeded, but it's missing a version record."
+        [UpdateStatus.RecordCreateFailed]:   "The %s of unmanaged %s '%s' succeeded, but an error occurred while creating a DependencyControl record: %s"
         -- shared template for component-encoded statuses (value <= -100, e.g. DownloadAddFailed/DownloadFailed)
-        component:                           "Error (%d) in component %s during %s of %s '%s':\n— %s"
+        component:                           "Error (%d) in component %s during the %s of %s '%s':\n— %s"
+        -- fallback for a nil or unmapped status code, so error reporting can't itself fail
+        unknown:                             "Couldn't complete the %s of %s '%s' (unrecognized updater status: %s)."
     }
     updaterErrorComponent: {"DownloadManager (adding download)", "DownloadManager"}
     checkFeed: {
@@ -233,7 +235,8 @@ msgs = {
         feedChecking: "Checking feed %s..."
         upToDate: "The %s '%s' is up-to-date (v%s)."
         alreadyUpdated: "%s v%s has already been installed."
-        noFeedAvailExt: "(required: %s; installed: %s; available: %s)"
+        noFeedAvailableExt: "(required: %s; installed: %s; available: %s)"
+        noPlatformAvailable: "for your platform (%s); a build is available only for %s"
         skippedOptional: "Skipped %s of optional dependency '%s': %s"
         optionalNoUpdate: "No suitable download could be found %s."
         optionalUntrusted: "a suitable package was only found in an untrusted feed (%s)."
@@ -308,7 +311,7 @@ class UpdateTask
         ceilingRank != nil and (contextRank[reason] or math.huge) <= ceilingRank
 
     ---Converts updater status/error codes into user-facing error messages.
-    ---@param code number
+    ---@param code? UpdateStatus A nil or unmapped code yields a generic message naming the code.
     ---@param name string
     ---@param scriptType ScriptType A Common.ScriptType value.
     ---@param isInstall boolean
@@ -316,14 +319,18 @@ class UpdateTask
     ---@return string message The user-facing error text for the status code.
     @getUpdaterErrorMsg = (code, name, scriptType, isInstall, detailMsg) ->
         isInstall or= false  -- terms.isInstall is keyed by true/false; tolerate a nil argument
-        if code <= -100
+        detailMsg or= ""     -- a template's trailing %s must never format a nil detail
+        if code and code <= -100
             -- a component-encoded status packs its component id as floor(-code / 100)
             return msgs.updateError.component\format -code, msgs.updaterErrorComponent[math.floor(-code/100)],
                    Common.terms.isInstall[isInstall], Common.terms.scriptType.singular[scriptType], name, detailMsg
-        else
-            return msgs.updateError[code]\format Common.terms.isInstall[isInstall],
-                                                 Common.terms.scriptType.singular[scriptType],
-                                                 name, detailMsg
+        template = msgs.updateError[code]
+        unless template
+            return msgs.updateError.unknown\format Common.terms.isInstall[isInstall],
+                                                   Common.terms.scriptType.singular[scriptType], name, tostring code
+        return template\format Common.terms.isInstall[isInstall],
+                               Common.terms.scriptType.singular[scriptType],
+                               name, detailMsg
 
     ---Creates an update task for one record.
     ---@param record Record
@@ -518,7 +525,7 @@ class UpdateTask
     ---@param provider ScriptUpdateRecord The selected provider's feed record.
     ---@param feedUrl string The feed the provider was found in, used as its primary feed.
     ---@return any ref The loaded provider module reference, or nil on failure.
-    ---@return UpdateStatus? code Updater status code on failure.
+    ---@return UpdateStatus? code Status of the provider's update run. Always present when the ref is nil.
     ---@return string? detail Error detail on failure.
     ---@private
     __installProvider: (provider, feedUrl) =>
@@ -670,17 +677,38 @@ class UpdateTask
             @logger\log UpdateTask.getUpdaterErrorMsg statusCode, @record.name, @record.scriptType, virtual, statusDetailMessage
         return statusCode, statusDetailMessage
 
+    ---The platforms a version-satisfying build is offered for when none covers the current platform, so a
+    ---"no suitable package" failure can be attributed to a platform mismatch.
+    ---@param candidates CandidatePackageSource[] The candidates pooled during resolution.
+    ---@return string[] platforms Offered platforms, sorted and de-duplicated; empty when the shortfall isn't a platform mismatch.
+    ---@private
+    __getOfferedBuildPlatforms: (candidates) =>
+        offered = {}
+        for candidate in *candidates
+            continue unless candidate.isDirect
+            versionNumber = SemanticVersion\toPacked candidate.updateRecord.version
+            continue unless versionNumber and SemanticVersion\check versionNumber, @targetVersion
+            continue if candidate.updateRecord\checkPlatform!
+            offered[platform] = true for platform in *(candidate.updateRecord.platforms or {})
+        platforms = [platform for platform in pairs offered]
+        table.sort platforms
+        return platforms
+
     ---Logs and returns this task's "no suitable package" status — a skip if optional, else a failure.
     ---@param maxVersion number The highest candidate version seen during resolution (0 when none was found).
+    ---@param offeredPlatforms? string[] The platforms a version-satisfying build is offered for; when non-empty, the failure is reported as a platform mismatch rather than a version shortfall.
     ---@return UpdateStatus statusCode A negative failure code for a required dependency, or the skip code (3) for an optional one.
     ---@return string? statusDetailMessage The availability summary for a failure; nil for an optional skip.
     ---@private
-    __reportNoSuitablePackage: (maxVersion) =>
-        detail = msgs.run.noFeedAvailExt\format @targetVersion == 0 and "any" or SemanticVersion\toString(@targetVersion),
-                                                @record.virtual and "no" or SemanticVersion\toString(@record.version),
-                                                maxVersion < 1 and "none" or SemanticVersion\toString maxVersion
+    __reportNoSuitablePackage: (maxVersion, offeredPlatforms) =>
+        detail = if offeredPlatforms and #offeredPlatforms > 0
+            msgs.run.noPlatformAvailable\format Common.platform, table.concat offeredPlatforms, ", "
+        else
+            msgs.run.noFeedAvailableExt\format @targetVersion == 0 and "any" or SemanticVersion\toString(@targetVersion),
+                                               @record.virtual and "no" or SemanticVersion\toString(@record.version),
+                                               maxVersion < 1 and "none" or SemanticVersion\toString maxVersion
         if @optional
-            @logger\log msgs.run.skippedOptional, @record.name, getInstallTerm(@record),
+            @logger\log msgs.run.skippedOptional, getInstallTerm(@record), @record.name,
                                                   msgs.run.optionalNoUpdate\format detail
             return UpdateStatus.SkippedOptional
         return @__logUpdateError UpdateStatus.NoSuitablePackage, detail
@@ -783,7 +811,7 @@ class UpdateTask
 
         abortResolution = ->
             if @optional
-                @logger\log msgs.run.skippedOptional, @record.name, getInstallTerm(@record),
+                @logger\log msgs.run.skippedOptional, getInstallTerm(@record), @record.name,
                                                       msgs.run.optionalAborted
                 return UpdateStatus.SkippedOptional
             return @__logUpdateError UpdateStatus.UserAborted
@@ -791,7 +819,7 @@ class UpdateTask
         -- a hard pin whose remembered source vanished aborts (required) or skips (optional)
         if stickiness == SourceChoiceStickiness.Pinned and not reuse
             if @optional
-                @logger\log msgs.run.skippedOptional, @record.name, getInstallTerm(@record),
+                @logger\log msgs.run.skippedOptional, getInstallTerm(@record), @record.name,
                                                       msgs.run.optionalPinnedUnavailable
                 return withoutInstall UpdateStatus.SkippedOptional
             code, detail = @__logUpdateError UpdateStatus.PinnedUnavailable
@@ -804,7 +832,7 @@ class UpdateTask
                                                @record.name, SemanticVersion\toString @record.version
                 return withoutInstall UpdateStatus.UpToDate
 
-            code, detail = @__reportNoSuitablePackage maxVer
+            code, detail = @__reportNoSuitablePackage maxVer, @__getOfferedBuildPlatforms candidates
             return withoutInstall code, detail
 
         -- consult the remembered source choice to decide whether to let the user pick a package source.
@@ -839,7 +867,7 @@ class UpdateTask
                 userBlockedFeed = trustDecision == FeedTrustDecision.Never
                 if @optional
                     reason = (userBlockedFeed and msgs.run.optionalBlocked or msgs.run.optionalUntrusted)\format selected.feedUrl
-                    @logger\log msgs.run.skippedOptional, @record.name, getInstallTerm(@record), reason
+                    @logger\log msgs.run.skippedOptional, getInstallTerm(@record), @record.name, reason
                     return withoutInstall UpdateStatus.SkippedOptional
                 code, detail = @__logUpdateError (userBlockedFeed and UpdateStatus.BlockedFeed or UpdateStatus.UntrustedFeed), selected.feedUrl
                 return withoutInstall code, detail

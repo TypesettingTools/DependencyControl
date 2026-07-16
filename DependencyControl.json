@@ -208,22 +208,22 @@
             {
               "name": "/Lock.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "F5F3F0D50E126A1180014C40075347A8AA6C66C4"
+              "sha1": "5455A35681977AF9E5E456012BB21E0F2F349AEB"
             },
             {
               "name": "/Logger.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "0EC219D832BC8824AE5AC7C02F29F722B8813B18"
+              "sha1": "F61E71A248ED932D307F0B7DF09724E409CE099D"
             },
             {
               "name": "/ModuleLoader.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "72591835650C501C602F987737CD87AEA2F34B24"
+              "sha1": "A9CBFA84830C06B9E2AC85A0FC7D6851BDA036F1"
             },
             {
               "name": "/ModuleProvider.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "75E838742FB39B702C8C33C9A217883853835CBA"
+              "sha1": "8841E738B26CCC515776A8969254BCE93847CF90"
             },
             {
               "name": "/NamedSemaphore.moon",
@@ -269,7 +269,7 @@
             {
               "name": "/UnitTestSuite.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "DD3D6BFBE78DBA869E8D15A87A26F87AE982CCAD"
+              "sha1": "9C5E48ECFB0BF0C65876FBE5C8DC8AB02BF7FB68"
             },
             {
               "name": "/UpdateFeed.moon",
@@ -279,12 +279,12 @@
             {
               "name": "/UpdateTask.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "E3A71E5630DF006B96D850BBCC66019BEDF4CBFE"
+              "sha1": "D3B926807642FCD9B383A5D56ED2353EA1D7341A"
             },
             {
               "name": "/Updater.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "73ACB2B412416960E9152C8339095D1D59B02A06"
+              "sha1": "FD4E33AE675284CBD30F05776F32C0008CB73C81"
             },
             {
               "name": "/ZipArchiver.moon",
@@ -452,25 +452,25 @@
             {
               "name": "/Lock.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "CB38CB38C0B67A8D6162F4ACC0E5574F41E3C21C",
+              "sha1": "7616E927ED4552DC81E3B629FC3AEB2FE929CB3A",
               "type": "test"
             },
             {
               "name": "/Logger.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "2E8AB839128F6837757C9EB396EFFBA2BCD7863F",
+              "sha1": "1A5D6756191762D312DED41115B4D12658B92F60",
               "type": "test"
             },
             {
               "name": "/ModuleLoader.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "607441134FAB94FFD875F07EDFE4521CC01D1065",
+              "sha1": "3BD90881DB08DACDB2F88304F66DE3C27DD9D742",
               "type": "test"
             },
             {
               "name": "/ModuleProvider.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "8D07B91B13077DBCE86C41DD5ACBDB49BC9DDA87",
+              "sha1": "493E13DF7E008D78DDD93C3E293401034C4652E2",
               "type": "test"
             },
             {
@@ -530,13 +530,13 @@
             {
               "name": "/UpdateTask.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "2F703316FB5787ABEFB8F3A9B31B6E73D2406208",
+              "sha1": "689A849BFE4E3E5AB0E243B9B235C551062CEFAD",
               "type": "test"
             },
             {
               "name": "/Updater.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "B60BFD5FE7F1C079557A4182A7E24E8884EBFF76",
+              "sha1": "93A9B0E85FAD2DAE02870FB3212B020E73446587",
               "type": "test"
             },
             {
@@ -718,7 +718,14 @@
           "SemanticVersion: toString no longer errors on nil or SemanticVersion-instance inputs; nil renders as \"0.0.0\".",
           "Unit test framework: fixed a cluster of broken assertions — assertItemsEqual/assertItemsAre report a proper failure message and type-check their expected argument, assertContinuous actually checks table keys for continuity (it previously counted integer values), assertNotAlmostEquals reports its own message instead of the assertAlmostEquals text, and assertError no longer over-counts a non-raising function's returned values.",
           "Unit test framework: ut\\stub now works inside a class's _setup — setup stubs stay in effect for the whole class including its teardown and are restored when the class finishes. Previously, stubbing in a _setup crashed the test run.",
-          "Unit test framework: aborting a run on the first failure now records the suite's end time and result, fixing missing timings in the CTRF report."
+          "Unit test framework: aborting a run on the first failure now records the suite's end time and result, fixing missing timings in the CTRF report.",
+          "Updater and installer messages read correctly again: 'Couldn't installation module ...' became 'Couldn't complete the installation of module ...', dependency-resolution errors no longer print 'of nil Module', and passing a macro to Updater.require reports its proper error instead of an empty diagnostic.",
+          "A missing optional dependency is reported by checkOptionalModules again — a failed optional install was mislabeled as updated and never surfaced.",
+          "A module whose DependencyControl initializer fails now reports the module's name and the actual error; both were previously dropped from the message.",
+          "Logger: the usePrefix option now applies to both the log file and the log window; the window previously kept its default.",
+          "Lock: waiting on a lock logs one trace line per acquisition instead of one per poll, unbounded waits no longer print 'Timeout in -9223372036854775808ms', a stale holder is warned about once instead of every 250ms, and tryLock no longer reports wait time it never spent.",
+          "Updater: skipped-optional-dependency log messages no longer swap the dependency's name with the word 'installation'/'update' (previously e.g. 'Skipped Yutils of optional dependency installation').",
+          "Updater: when a module can't be installed because one of its own required modules couldn't be satisfied, the error now names the failing sub-requirement and its reason, instead of ending at 'because its requirements could not be satisfied:' with no further detail."
         ]
       }
     },

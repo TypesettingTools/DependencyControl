@@ -21,7 +21,7 @@ unless state
 
 msgs = {
     runInitializer: {
-        initializerError: "Module #{moduleName} initializer error: %s"
+        initializerError: "Module '%s' initializer error: %s"
     }
 }
 
@@ -79,7 +79,7 @@ runInitializer = (ref, DependencyControl) ->
 
     success, errMsg = xpcall initializer, fullTraceback, DependencyControl
     return true if success
-    return nil, msgs.runInitializer.initializerError\format ref.moduleName, errMsg
+    return nil, msgs.runInitializer.initializerError\format ref.moduleName or "?", errMsg
 
 -- Resolves DependencyControl from package.loaded rather than require()ing it, because an alias can be
 -- pulled in during DepCtrl's own bootstrap where a require-back would cycle, and the type check also

@@ -43,11 +43,31 @@
       -- loadModule must receive the record as its module spec, not the namespace string (a string would crash)
       loadStub\assertCalledWith task.record, task.record
 
-    -- a successful (re)install returns the task's freshly-loaded ref
+    -- a successful (re)install returns the task's freshly-loaded ref along with the status code
     require_successReturnsRef: (ut) ->
       task = {updated: true, ref: {the: "ref"}, record: {namespace: "l0.dep", name: "Dep"}, run: ((wait) => UpdateStatus.Installed)}
       record = {scriptType: Common.ScriptType.Module, name: "Dep", namespace: "l0.dep", virtual: false}
-      ut\assertEquals (Updater.require makeRequireUpdater(task), record, 0), task.ref
+      ref, code = Updater.require makeRequireUpdater(task), record, 0
+      ut\assertEquals ref, task.ref
+      ut\assertEquals code, UpdateStatus.Installed
+
+    -- a skipped optional dependency yields no ref but still carries its status code
+    require_skippedOptionalReturnsCode: (ut) ->
+      task = {updated: false, record: {namespace: "l0.dep", name: "Dep"}, run: ((wait) => UpdateStatus.SkippedOptional)}
+      record = {scriptType: Common.ScriptType.Module, name: "Dep", namespace: "l0.dep", virtual: true}
+      ref, code = Updater.require makeRequireUpdater(task), record, 0
+      ut\assertNil ref
+      ut\assertEquals code, UpdateStatus.SkippedOptional
+
+    -- run reports up-to-date but the module then fails to load: the paradox surfaces as a code and detail
+    require_upToDateLoadFailureReturnsCode: (ut) ->
+      ut\stub(ModuleLoader, "loadModule")\calls -> nil
+      task = {updated: false, record: {namespace: "l0.dep", name: "Dep"}, run: ((wait) => UpdateStatus.UpToDate)}
+      record = {scriptType: Common.ScriptType.Module, name: "Dep", namespace: "l0.dep", virtual: false}
+      ref, code, detail = Updater.require makeRequireUpdater(task), record, 0
+      ut\assertNil ref
+      ut\assertEquals code, UpdateStatus.UpToDate
+      ut\assertString detail
 
     -- an update error (negative code) is passed through to the caller
     require_errorPropagates: (ut) ->
@@ -238,6 +258,7 @@
 
     _order: {
       "require_upToDateLoadsModule", "require_successReturnsRef", "require_errorPropagates"
+      "require_skippedOptionalReturnsCode", "require_upToDateLoadFailureReturnsCode"
       "scheduleUpdate_disabledRejected", "scheduleUpdate_belowAutoUpdateModeRejected"
       "scheduleUpdate_virtualRejected"
       "scheduleUpdate_withinIntervalSkips", "scheduleUpdate_protectedInstallRejected"

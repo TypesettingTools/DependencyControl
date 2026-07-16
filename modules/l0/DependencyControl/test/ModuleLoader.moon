@@ -204,6 +204,44 @@
       ut\assertContains err, ns
       ut\assertNil LOADED_MODULES[ns]   -- dummy ref nuked
 
+    -- loadModules: a missing *optional* module the updater skips is left missing without an error
+    -- reason and doesn't fail the overall load; the circular-dependency dummy ref is still cleared.
+    loadModules_missingOptionalSkipped: (ut) ->
+      ns = "test.ModuleLoader.missingOptionalSkip"
+      UpdateTask = require "l0.DependencyControl.UpdateTask"
+      updater = {require: ((...) => return nil, UpdateTask.UpdateStatus.SkippedOptional)}
+      recClass = setmetatable {ScriptType: Common.ScriptType, __name: "DependencyControl", :updater},
+                              {__call: (cls, args) -> {}}
+      rec = {feed: nil, moduleName: "host.Module", name: "host", __class: recClass}
+      mdl = {moduleName: ns, name: ns, version: nil, optional: true}
+      (ut\stub ModuleLoader, "loadModule")\calls (self, m, usePrivate) -> m._missing = true unless usePrivate
+      LOADED_MODULES = LOADED_MODULES or {}
+      LOADED_MODULES[ns] = {dummy: true}
+      success, err = ModuleLoader.loadModules rec, {mdl}
+      ut\assertTrue success
+      ut\assertEquals err, ""
+      ut\assertNil mdl._reason
+      ut\assertNil LOADED_MODULES[ns]   -- dummy ref nuked
+
+    -- loadModules: a required module that fails because one of ITS OWN requirements couldn't be satisfied
+    -- surfaces the nested reason (which sub-requirement failed, and why) in the error — using the real
+    -- getUpdaterErrorMsg so the RequirementsUnmet template's detail isn't dropped on the way to the UI.
+    loadModules_requirementsUnmetSurfacesNestedReason: (ut) ->
+      ns = "l0.ASSFoundation"
+      UpdateTask = require "l0.DependencyControl.UpdateTask"
+      innerReason = "— SubInspector.Inspector (v0.7.2)\n—— Reason: no build for your platform (Linux-x64)"
+      updater = {require: ((...) => return nil, UpdateTask.UpdateStatus.RequirementsUnmet, innerReason), __class: UpdateTask}
+      recClass = setmetatable {ScriptType: Common.ScriptType, __name: "DependencyControl", :updater},
+                              {__call: (cls, args) -> {}}
+      rec = {feed: nil, moduleName: "host.Module", name: "Vector Gradient", __class: recClass}
+      mdl = {moduleName: ns, name: ns, version: "0.5.0", optional: false}
+      (ut\stub ModuleLoader, "loadModule")\calls (self, m, usePrivate) -> m._missing = true unless usePrivate
+      success, err = ModuleLoader.loadModules rec, {mdl}
+      ut\assertFalse success
+      ut\assertContains err, "requirements could not be satisfied"
+      ut\assertContains err, "SubInspector.Inspector"
+      ut\assertContains err, "no build for your platform"
+
     -- loadModules: an outdated installed module is force-updated through the updater; the fresh ref
     -- replaces the loaded one. (isDepCtrlVersionRecord is stubbed so the loaded version record is used
     -- as-is rather than wrapped in an unmanaged record.)
@@ -274,6 +312,7 @@
       "loadModule_cached", "loadModule_success", "loadModule_missing", "loadModule_error",
       "loadModules_skipsModule", "loadModules_allLoaded",
       "loadModules_missingFetchedViaUpdater", "loadModules_missingRequiredFails",
+      "loadModules_missingOptionalSkipped", "loadModules_requirementsUnmetSurfacesNestedReason",
       "loadModules_outdatedForcesUpdate", "loadModules_outdatedRequiredFails",
       "checkOptionalModules_noneOptional", "checkOptionalModules_missingOptional"
     }

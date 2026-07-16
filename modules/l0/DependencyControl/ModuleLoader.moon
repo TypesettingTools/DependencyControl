@@ -6,6 +6,8 @@ constants = require "l0.DependencyControl.Constants"
 SemanticVersion = require "l0.DependencyControl.SemanticVersion"
 ModuleProvider = require "l0.DependencyControl.ModuleProvider"
 Common = require "l0.DependencyControl.Common"
+-- required lazily because a load-time require of UpdateTask would be circular
+local UpdateTask
 
 DEPCTRL_DUMMY_MODULE_MARKER = "#{constants.DEPCTRL_PRIVATE_GLOBAL_VAR_PREFIX}Dummy"
 
@@ -115,10 +117,12 @@ class ModuleLoader
           record = @@{moduleName:.moduleName, name:.name or .moduleName,
                 version:-1, url:.url, feed:.feed, virtual:true}
           ._ref, code, extErr = @@updater\require record, .version, addFeeds, .optional
-          if ._ref or .optional
+          if ._ref
             ._updated, ._missing = true, false
           else
-            ._reason = @@updater.__class.getUpdaterErrorMsg code, .name or .moduleName, true, true, extErr
+            UpdateTask or= require "l0.DependencyControl.UpdateTask"
+            unless code == UpdateTask.UpdateStatus.SkippedOptional
+              ._reason = @@updater.__class.getUpdaterErrorMsg code, .name or .moduleName, Common.ScriptType.Module, true, extErr
             -- nuke dummy reference for circular dependencies
             LOADED_MODULES[.moduleName] = nil
 
@@ -140,13 +144,13 @@ class ModuleLoader
               ._ref = ref
             elseif not .optional
               ._outdated = true
-              ._reason = @@updater.__class.getUpdaterErrorMsg code, .name or .moduleName, true, false, extErr
+              ._reason = @@updater.__class.getUpdaterErrorMsg code, .name or .moduleName, Common.ScriptType.Module, false, extErr
 
     missing, outdated, moduleError = {}, {}, {}
     for mdl in *modules
       with mdl
         name = .name or .moduleName
-        if ._missing
+        if ._missing and not .optional
           missing[#missing+1] = ModuleLoader.formatVersionErrorTemplate @, name, .version, .url, ._reason
         elseif ._outdated
           outdated[#outdated+1] = ModuleLoader.formatVersionErrorTemplate @, name, .version, .url, ._reason, ._ref

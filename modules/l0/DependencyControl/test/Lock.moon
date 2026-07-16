@@ -173,11 +173,13 @@
 
     tryLock_fail: (ut) ->
       _, tryLockStub = installFakeSemaphore ut, false
-      ut\stub TIMER_MODULE_NAME, "sleep"
+      sleepStub = ut\stub TIMER_MODULE_NAME, "sleep"
       ut\stub Lock.logger, "trace"
       lock = Lock namespace: "ns", resource: "res", recordHolder: false
       state, timePassed = lock\tryLock!
       ut\assertEquals state, Lock.LockState.Unavailable
+      ut\assertEquals timePassed, 0    -- no wait happened, so none may be reported
+      sleepStub\assertNotCalled!
       tryLockStub\assertCalledOnce!
 
     -- distinct resources map to distinct semaphores, so they can be held at once;

@@ -93,6 +93,13 @@
       ut\assertTrue ok                     -- no crash
       ut\assertFalse logger.toFile         -- file logging disabled after the failure
 
+    -- the usePrefix shorthand configures both sinks (regression: a multi-assign from the
+    -- single value left the window flag on its default)
+    usePrefix_setsBothSinks: (ut) ->
+      logger = Logger toFile: false, toWindow: false, usePrefix: false
+      ut\assertFalse logger.usePrefixFile
+      ut\assertFalse logger.usePrefixWindow
+
     -- a progress bar's fill chunks continue the logger's own open window line, so they must
     -- not repeat the indent prefix inside the bar
     progress_noIndentInsideBar: (ut) ->
@@ -137,7 +144,7 @@
       "dumpToString_scalar", "dumpToString_flatTable", "dumpToString_ignoreKey",
       "dumpToString_maxDepth", "dumpToString_circular",
       "log_dispatches", "log_emptyMsg", "log_nonNumberLevel", "log_fileOpenFailureDisablesToFile",
-      "progress_noIndentInsideBar",
+      "usePrefix_setsBothSinks", "progress_noIndentInsideBar",
       "assert_truthy", "assert_falsy",
       "assertNotNil_value", "assertNotNil_nil"
     }

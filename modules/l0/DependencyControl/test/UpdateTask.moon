@@ -22,7 +22,7 @@
 
   -- A candidate as pooled in run(): a feed record (with the fields __selectCandidate reads — version
   -- string, namespace, checkPlatform predicate, files) plus its trust band and feed URL.
-  -- opts: namespace, feedUrl, platform (false to fail platform), files (set {} to exclude).
+  -- opts: namespace, feedUrl, platform (false to fail platform), platforms (offered-platform list), files (set {} to exclude).
   makeCandidate = (band, version, opts = {}) ->
     {
       trustBand: band
@@ -34,6 +34,7 @@
         :version
         files: opts.files == nil and {{}} or opts.files
         checkPlatform: -> opts.platform != false
+        platforms: opts.platforms
       }
     }
 
@@ -88,6 +89,7 @@
   directRec = (spec) -> {
     version: spec.version, namespace: spec.namespace or "json", activeChannel: spec.channel or "release"
     files: spec.files == nil and {{}} or spec.files, checkPlatform: -> spec.platform != false
+    platforms: spec.platforms
   }
   providerRec = (spec) -> {
     namespace: spec.namespace, provides: {{name: "json", version: spec.providesVersion}}
@@ -639,6 +641,21 @@
       ut\assertFalse d.installRequired
       ut\assertEquals d.statusCode, UpdateStatus.SkippedOptional
 
+    -- platform shortfall: a candidate matches the required version but offers no build for the current
+    -- platform, so the failure detail names the offered platforms and the current one instead of implying
+    -- the version is installable
+    resolve_noPlatformBuildReportsPlatforms: (ut) ->
+      task = makeResolveTask {
+        declaredFeed: "feed://decl", officialTrusted: {"feed://decl": true}
+        feeds: {"feed://decl": {direct: directRec version: "1.0.0", platform: false, platforms: {"Windows-x64", "OSX-x64"}}}
+      }
+      d = UpdateTask.__resolve task
+      ut\assertFalse d.installRequired
+      ut\assertEquals d.statusCode, UpdateStatus.NoSuitablePackage
+      ut\assertContains d.statusDetailMessage, "Windows-x64"
+      ut\assertContains d.statusDetailMessage, "OSX-x64"
+      ut\assertContains d.statusDetailMessage, Common.platform
+
     -- pinned: the remembered source is reused directly and the pin is preserved, no prompt
     resolve_pinnedReuseProceeds: (ut) ->
       cs = {feedSource: SourceFeedKind.SelfDeclared, channel: "release", stickiness: SourceChoiceStickiness.Pinned}
@@ -967,8 +984,45 @@
       ut\assertNil feed
       ut\assertString err
 
+    -- getUpdaterErrorMsg: the noun install/update terms read grammatically in every template,
+    -- a nil isInstall renders as an update, and a nil or unmapped code falls back to the generic message
+    getUpdaterErrorMsg_grammarAndNilInstall: (ut) ->
+      msg = UpdateTask.getUpdaterErrorMsg UpdateStatus.TempDirFailed, "X", Common.ScriptType.Module, true, "C:/tmp"
+      ut\assertContains msg, "Couldn't complete the installation of module 'X'"
+      msg = UpdateTask.getUpdaterErrorMsg UpdateStatus.Unmanaged, "Y", Common.ScriptType.Module, nil
+      ut\assertContains msg, "Skipping update of unmanaged module 'Y'"
+      msg = UpdateTask.getUpdaterErrorMsg nil, "Z", Common.ScriptType.Module, true
+      ut\assertContains msg, "unrecognized updater status: nil"
+      msg = UpdateTask.getUpdaterErrorMsg UpdateStatus.SkippedOptional, "Z", Common.ScriptType.Module, true
+      ut\assertContains msg, "unrecognized updater status: 3"
+
+    -- getUpdaterErrorMsg: a RequirementsUnmet message carries the nested requirement-failure detail
+    -- (e.g. which required module couldn't be installed), rather than dropping it
+    getUpdaterErrorMsg_requirementsUnmetKeepsDetail: (ut) ->
+      msg = UpdateTask.getUpdaterErrorMsg UpdateStatus.RequirementsUnmet, "l0.ASSFoundation",
+                                          Common.ScriptType.Module, true, "— SubInspector.Inspector: no build for your platform"
+      ut\assertContains msg, "requirements could not be satisfied"
+      ut\assertContains msg, "SubInspector.Inspector: no build for your platform"
+
+    -- __getOfferedBuildPlatforms: collects the platforms a version-satisfying build is offered for when
+    -- none covers the current one (de-duped, sorted), ignoring platform-supporting, too-old, or indirect
+    -- candidates
+    getOfferedBuildPlatforms_collectsVersionMatchingRejects: (ut) ->
+      task = setmetatable {targetVersion: SemanticVersion\toPacked "1.0.0"}, __index: UpdateTask.__base
+      candidates = {
+        makeCandidate 1, "1.2.0", {platform: false, platforms: {"Windows-x64", "OSX-x64"}}   -- version ok, wrong platform → collect
+        makeCandidate 1, "1.5.0", {platform: false, platforms: {"Windows-x64"}}               -- duplicate platform → de-dup
+        makeCandidate 1, "1.0.0", {platform: true, platforms: {"Linux-x64"}}                  -- supports platform → ignore
+        makeCandidate 1, "0.9.0", {platform: false, platforms: {"SomethingElse"}}             -- too old → ignore
+        makeCandidate 1, "1.0.0", {isDirect: false, platform: false, platforms: {"Provider"}} -- indirect → ignore
+      }
+      platforms = UpdateTask.__getOfferedBuildPlatforms task, candidates
+      ut\assertItemsEqual platforms, {"OSX-x64", "Windows-x64"}
+
     _order: {
       "loadFeed_refusesDeniedFeed",
+      "getUpdaterErrorMsg_grammarAndNilInstall", "getUpdaterErrorMsg_requirementsUnmetKeepsDetail",
+      "getOfferedBuildPlatforms_collectsVersionMatchingRejects",
       "selectCandidate_filtersByVersion", "selectCandidate_noneSatisfiesVersion",
       "selectCandidate_skipsUnsupportedPlatform", "selectCandidate_skipsEmptyFiles", "selectCandidate_noneEligible",
       "selectCandidate_lowerBandBeatsHigherVersion", "selectCandidate_highestVersionWithinBand",
@@ -994,6 +1048,7 @@
       "resolve_fallsThroughToTrustedDirect",
       "resolve_untrustedRequiredFailsWithoutPrompt", "resolve_untrustedApprovedProceeds",
       "resolve_untrustedOptionalSkips", "resolve_noCandidateRequiredFails", "resolve_noCandidateOptionalSkips",
+      "resolve_noPlatformBuildReportsPlatforms",
       "resolve_pinnedReuseProceeds", "resolve_pinnedMissingRequiredAborts", "resolve_pinnedMissingOptionalSkips",
       "resolve_retainReuseProceeds", "resolve_retainMissingNonInteractiveDowngrades",
       "resolve_retainMissingInteractivePicks", "resolve_choiceAbortRequiredFails",

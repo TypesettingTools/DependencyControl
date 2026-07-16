@@ -69,10 +69,19 @@
       ModuleProvider.runInitializer ref, makeDepCtrlClassMock!
       initStub\assertNotCalled!
 
+    -- a failing initializer reports the module's name and the real error
+    runInitializer_reportsErrorWithModuleName: (ut) ->
+      ref = {version: "raw", moduleName: "l0.Exploder"}
+      (ut\stub ref, DEPCTRL_MODULE_INIT_HOOK_NAME)\calls -> error "boom"
+      result, err = ModuleProvider.runInitializer ref, makeDepCtrlClassMock!
+      ut\assertNil result
+      ut\assertContains err, "l0.Exploder"
+      ut\assertContains err, "boom"
+
     _order: {
       "register_andGetProvider", "register_firstWins",
       "registerRecord_normalizesAliases", "searcher_resolvesAliasToProvider",
       "runInitializer_noInitHook", "runInitializer_runsWhenUninitialized",
-      "runInitializer_skipsWhenInitialized"
+      "runInitializer_skipsWhenInitialized", "runInitializer_reportsErrorWithModuleName"
     }
   }
