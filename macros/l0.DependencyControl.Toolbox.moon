@@ -81,21 +81,31 @@ feedActionLabels = {
 }
 feedActionByLabel = {label, action for action, label in pairs feedActionLabels}
 
+---Builds a script picker's display list and its item→record map, sorted case-insensitively by display string.
+---@param populate fun(add: fun(item: string, record: any)) Enumerates the rows, calling `add` once per (display string, record) pair.
+---@return string[] list Display strings, sorted case-insensitively.
+---@return table<string, any> map Each display string mapped to its record.
+buildSortedDlgList = (populate) ->
+    list, map = {}, {}
+    populate (item, record) ->
+        list[#list+1] = item
+        map[item] = record
+    table.sort list, (a, b) -> a\lower! < b\lower!
+    return list, map
+
 buildInstalledDlgList = (scriptType, config, isUninstall) ->
-    list, map, protectedModules = {}, {}, {}
+    protectedModules = {}
     if isUninstall
         protectedModules[mdl.moduleName] = true for mdl in *DepCtrl.version.requiredModules
         protectedModules[DepCtrl.version.moduleName] = true
 
-    for namespace, script in pairs config.c[scriptType]
-        continue if protectedModules[namespace]
-        -- config entries are on-disk data: an orphaned or unmanaged record may lack name/version
-        item = "%s v%s%s"\format script.name or namespace, DepCtrl.SemanticVersion\toString(script.version) or "?",
-                                 script.activeChannel and " [#{script.activeChannel}]" or ""
-        list[#list+1] = item
-        map[item] = script
-    table.sort list, (a, b) -> a\lower! < b\lower!
-    return list, map
+    buildSortedDlgList (add) ->
+        for namespace, script in pairs config.c[scriptType]
+            continue if protectedModules[namespace]
+            -- config entries are on-disk data: an orphaned or unmanaged record may lack name/version
+            item = "%s v%s%s"\format script.name or namespace, DepCtrl.SemanticVersion\toString(script.version) or "?",
+                                     script.activeChannel and " [#{script.activeChannel}]" or ""
+            add item, script
 
 getConfig = (section) ->
     config = DepCtrl.config\getSectionHandler section
@@ -187,16 +197,12 @@ install = ->
         return tbl
 
     buildDlgList = (tbl) ->
-        list, map = {}, {}
-        for namespace, channels in pairs tbl
-            for channel, rec in pairs channels
-                item = "%s v%s%s"\format rec.name, rec.version, rec.default and "" or " [#{channel}]"
-                list[#list+1] = item
-                map[item] = { :namespace, :channel, feed: rec.feed, name: rec.name, virtual: true,
-                              moduleName: rec.moduleName }
-
-        table.sort list, (a, b) -> a\lower! < b\lower!
-        return list, map
+        buildSortedDlgList (add) ->
+            for namespace, channels in pairs tbl
+                for channel, rec in pairs channels
+                    item = "%s v%s%s"\format rec.name, rec.version, rec.default and "" or " [#{channel}]"
+                    add item, { :namespace, :channel, feed: rec.feed, name: rec.name, virtual: true,
+                                moduleName: rec.moduleName }
 
     -- get the highest versions of automation scripts and modules we can install but don't have yet.
     -- FeedInventory crawls the known feeds, which are trust-gated and bounded. The shared feed loader then
