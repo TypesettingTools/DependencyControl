@@ -645,7 +645,7 @@
       feed = stubSelf UpdateFeed, {
         _url: url, url: url, __class: UpdateFeed, logger: DepCtrl.logger
         config: {cache: cache}                          -- stale entry ⇒ attempts a fetch first
-        fetch: (...) -> false, "network down"           -- which fails, forcing the offline fallback
+        fetch: (...) -> nil, "network down"             -- which fails, forcing the offline fallback
       }
       data = UpdateFeed.ensureLoaded feed
       ut\assertEquals data.name, "StaleCache"

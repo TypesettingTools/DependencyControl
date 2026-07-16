@@ -260,6 +260,7 @@ class UpdateFeed
     url: Accessors.property get: => @_url or @fileName and "file://#{@fileName}"
 
     ---Creates an update feed wrapper and optionally fetches feed data.
+    ---Raises when neither a URL nor a file name is given.
     ---@param _url? string Feed URL (or nil when loading from a local file via fileName).
     ---@param autoLoad? boolean Fetch/load the feed immediately (default true).
     ---@param fileName? string Local feed file path.
@@ -295,8 +296,8 @@ class UpdateFeed
     ---Downloads feed to a temporary JSON file and sets the .fileName property for subsequent loading.
     ---@param fileName? string Destination path (defaults to a generated temp path).
     ---@param expansionMode? UpdateFeedExpansionMode
-    ---@return table|boolean dataOrSuccess
-    ---@return string? err
+    ---@return table? data The expanded feed data, or nil on failure.
+    ---@return string? err Error message on failure.
     fetch: (fileName, expansionMode) =>
         -- Initialize download infrastructure lazily on first fetch.
         unless @downloader
@@ -310,11 +311,11 @@ class UpdateFeed
 
         dl, err = @downloader\addDownload @url, @fileName
         unless dl
-            return false, msgs.errors.downloadAdd\format @url, @fileName, err
+            return nil, msgs.errors.downloadAdd\format @url, @fileName, err
 
         @downloader\await!
         if dl.error
-            return false, msgs.errors.downloadFailed\format @url, @fileName, dl.error
+            return nil, msgs.errors.downloadFailed\format @url, @fileName, dl.error
 
         @logger\trace msgs.trace.downloaded, @fileName
         result, loadErr = @loadFile @fileName, expansionMode
@@ -334,15 +335,15 @@ class UpdateFeed
     ---@param expansionMode? UpdateFeedExpansionMode Expansion mode. Defaults to remote if the feed
     ---was loaded from a URL; otherwise local, which resolves the rolling localFileBasePath template
     ---variables and exposes the `localFilePath` property on file records for build tooling such as the bundler.
-    ---@return table|boolean dataOrSuccess The expanded feed data, or false on failure.
+    ---@return table? data The expanded feed data, or nil on failure.
     ---@return string? err Error message on failure.
     loadFile: (srcPath = @fileName, expansionMode) =>
         content, err = FileOps.readFile srcPath
-        return false, msgs.errors.cantOpen\format err unless content
+        return nil, msgs.errors.cantOpen\format err unless content
 
         unexpandedData, raw = @@.deserialize content
         -- luajson errors are useless dumps of whatever, no use to pass them on to the user
-        return false, msgs.errors.parse unless unexpandedData
+        return nil, msgs.errors.parse unless unexpandedData
 
         -- keep the pristine null-preserving decode for write-back (see deserialize)
         @rawFeedData = raw
@@ -354,7 +355,7 @@ class UpdateFeed
 
     ---Fetches the feed (or loads it from disk if local) in case it hasn't been loaded yet.
     ---@param expansionMode? UpdateFeedExpansionMode The expansion mode required for the operation.
-    ---@return table|boolean|nil feedData The expanded feed data, false on failure, or nil on a local-path error.
+    ---@return table? feedData The expanded feed data, or nil on failure.
     ---@return string? err An error message in case of failure.
     ensureLoaded: (expansionMode) =>
         if expansionMode == @@ExpansionMode.Local and not @fileName
