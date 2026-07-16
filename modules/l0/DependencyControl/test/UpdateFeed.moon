@@ -6,6 +6,7 @@
   FileOps           = require "l0.DependencyControl.FileOps"
   FileCache         = require "l0.DependencyControl.FileCache"
   UpdateFeed        = require "l0.DependencyControl.UpdateFeed"
+  {:stubSelf}       = require "l0.DependencyControl.test.helpers.stub-helpers"
   FILEOPS_MODULE_NAME = "l0.DependencyControl.FileOps"
 
   -- Builds a stub feed around unexpanded data for driving expand directly.
@@ -13,11 +14,11 @@
     unexpandedData.macros or= {}
     unexpandedData.modules or= {}
     unexpandedData.knownFeeds or= {}
-    setmetatable {
+    stubSelf UpdateFeed, {
       _url: "https://example.com/f.json", :unexpandedData, :feedDir,
       fileName: FileOps.joinPath(feedDir, "feed.json"),
       __class: UpdateFeed, logger: DepCtrl.logger
-    }, __index: UpdateFeed.__base
+    }
 
   normalizePath = (path) -> path\gsub "[/\\]", "/"
 
@@ -206,9 +207,9 @@
     -- expand rebuilds @data from the unexpanded data each call and never mutates that (possibly shared) source
     expand_rebuildsFromUnexpandedDataWithoutMutatingIt: (ut) ->
       unexpandedData = {name: "TestFeed", description: "made for @{feedName}", macros: {}, modules: {}, knownFeeds: {}}
-      feed = setmetatable {
+      feed = stubSelf UpdateFeed, {
         _url: "https://example.com/f.json", :unexpandedData, __class: UpdateFeed, logger: DepCtrl.logger
-      }, __index: UpdateFeed.__base
+      }
 
       data = UpdateFeed.expand feed
       ut\assertEquals data.description, "made for TestFeed"               -- template expanded in the working copy
@@ -626,10 +627,10 @@
       cache = FileCache cacheDir, "test", "feeds", {deserialize: UpdateFeed.deserialize}
       cache\put url, '{"name":"FreshCache"}', "FreshCache"   -- default lifetime → fresh right after writing
 
-      feed = setmetatable {
+      feed = stubSelf UpdateFeed, {
         _url: url, url: url, __class: UpdateFeed, logger: DepCtrl.logger
         config: {cache: cache}
-      }, __index: UpdateFeed.__base
+      }
       data = UpdateFeed.ensureLoaded feed
       ut\assertEquals data.name, "FreshCache"
       ut\assertNil feed.stale
@@ -641,11 +642,11 @@
       cache = FileCache cacheDir, "test", "feeds", {deserialize: UpdateFeed.deserialize}
       cache\put url, '{"name":"StaleCache"}', "StaleCache", 0   -- expiresAfter 0 → immediately stale
 
-      feed = setmetatable {
+      feed = stubSelf UpdateFeed, {
         _url: url, url: url, __class: UpdateFeed, logger: DepCtrl.logger
         config: {cache: cache}                          -- stale entry ⇒ attempts a fetch first
         fetch: (...) -> false, "network down"           -- which fails, forcing the offline fallback
-      }, __index: UpdateFeed.__base
+      }
       data = UpdateFeed.ensureLoaded feed
       ut\assertEquals data.name, "StaleCache"
       ut\assertTrue feed.stale

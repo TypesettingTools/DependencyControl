@@ -10,6 +10,7 @@
   Downloader = require "l0.DependencyControl.Downloader"
   ModuleLoader = require "l0.DependencyControl.ModuleLoader"
   FeedTrust = require "l0.DependencyControl.FeedTrust"
+  {:stubSelf, :makeNullLogger, :makeSeededFeedTrust} = require "l0.DependencyControl.test.helpers.stub-helpers"
 
   UpdateStatus = UpdateTask.UpdateStatus
   ContextCeiling = UpdateTask.ContextCeiling
@@ -42,19 +43,19 @@
   -- declared-feed tie-break) and record.namespace (the ambiguity log). The metatable lets __selectCandidate
   -- resolve its self-call to __getCandidateRankVersion.
   makeSelectTask = (targetVersion, opts = {}) ->
-    setmetatable {
+    stubSelf UpdateTask, {
       :targetVersion
       record: {namespace: "json", feed: opts.declaredFeed}
       logger: {log: (_, ...) -> opts.logged[#opts.logged + 1] = {...} if opts.logged}
       __class: UpdateTask
-    }, __index: UpdateTask.__base
+    }
 
   -- A stub task self for the currentSource helpers (__resolveRememberedFeedUrl, __matchRememberedCandidate,
   -- __feedSourceOf, __persistSource). opts: feed (declared feed URL), userFeed, channel, targetVersion,
   -- currentSource (an existing persisted record), modules (installed-module config for provider feed
   -- lookup), onSave (called by record.config\save!). The metatable resolves the helpers' self-calls.
   makeSourceTask = (opts = {}) ->
-    setmetatable {
+    stubSelf UpdateTask, {
       targetVersion: opts.targetVersion or 0
       channel: opts.channel
       record: {
@@ -66,21 +67,21 @@
       }
       updater: {config: {getSectionHandler: (_, section) -> {c: opts.modules or {}}}}
       __class: UpdateTask
-    }, __index: UpdateTask.__base
+    }
 
   -- A stub task self for __shouldPrompt and the prompt methods. opts: reason (the task's UpdateReason,
   -- for __shouldPrompt), trustedFeeds, blockedFeeds, onSave (called by config\save!). __promptTrustFeed routes
   -- its trust/block through @updater.feedTrust, so the stub carries a real FeedTrust over the same config.
   makeInteractiveTask = (opts = {}) ->
     config = {c: {feeds: {trustedFeeds: opts.trustedFeeds, blockedFeeds: opts.blockedFeeds}, updates: {}}, save: (=> opts.onSave! if opts.onSave)}
-    feedTrust = setmetatable {:config, logger: {log: ->}}, __index: FeedTrust.__base
-    setmetatable {
+    feedTrust = makeSeededFeedTrust {:config}
+    stubSelf UpdateTask, {
       reason: opts.reason
       record: {name: "TestMod", namespace: "l0.testmod", virtual: true, scriptType: Common.ScriptType.Module}
-      logger: {log: ->}
+      logger: makeNullLogger!
       updater: {:config, :feedTrust}
       __class: UpdateTask
-    }, __index: UpdateTask.__base
+    }
 
   -- resolve() drives all feed I/O through @__loadFeed/@checkFeed and all prompting through @__shouldPrompt
   -- /@__promptSelectPackageSource/@__promptTrustFeed; makeResolveTask stubs those so a test can place exactly
@@ -116,12 +117,11 @@
     }
     -- a real FeedTrust seeded with the official sets (so it never loads the live DepCtrl feed) over the
     -- updater config, exactly as Updater wires it
-    feedTrust = setmetatable {
+    feedTrust = makeSeededFeedTrust {
       config: updaterConfig
-      __official: {trusted: opts.officialTrusted or {}, blocked: opts.officialBlocked or {}}
-      logger: {log: ->}
-    }, __index: FeedTrust.__base
-    task = setmetatable {
+      official: {trusted: opts.officialTrusted or {}, blocked: opts.officialBlocked or {}}
+    }
+    task = stubSelf UpdateTask, {
       __class: UpdateTask
       :calls
       targetVersion: opts.targetVersion or 0
@@ -141,7 +141,7 @@
         config: {c: {userFeed: opts.userFeed, currentSource: opts.currentSource}}
       }
       updater: {renewLock: ->, :feedTrust, config: updaterConfig}
-      logger: {log: ->, trace: ->, indent: 0}
+      logger: makeNullLogger!
       __loadFeed: (url) =>
         return nil, "feed not found: #{url}" unless @_feeds[url]
         providers = @_feeds[url].providers or {}
@@ -157,7 +157,7 @@
       __promptTrustFeed: (selected) =>
         calls.trust += 1
         opts.trustReturn
-    }, __index: UpdateTask.__base
+    }
     task
 
   -- A stub task self for run() itself. Its fake __class carries the mockable download engine for
@@ -168,7 +168,7 @@
   -- performUpdateReturn {code, detail}, installProviderReturn {ref, code, detail}.
   makeRunTask = (opts = {}) ->
     calls = {}
-    setmetatable {
+    stubSelf UpdateTask, {
       __class: {__downloader: {isInternetConnected: (=> opts.online != false)}}
       :calls
       running: opts.running
@@ -181,7 +181,7 @@
         checkVersion: (=> opts.installedSatisfies and true or false)
       }
       updater: {acquireLock: (=> opts.lockOk != false, "otherHost")}
-      logger: {log: ->, trace: ->, progress: ->}
+      logger: makeNullLogger!
       __resolve: =>
         calls.resolved = true
         opts.resolution
@@ -192,14 +192,14 @@
       __installProvider: (rec, url) =>
         calls.installProvider = {:rec, :url}
         unpack(opts.installProviderReturn or {})
-    }, __index: UpdateTask.__base
+    }
 
   -- A stub task self for __installProvider: its fake __class carries a mockable DependencyControl
   -- constructor (here one that wraps its ctor args for inspection), and updater.require records its call
   -- in `opts.capture` and returns opts.requireReturn.
   makeProviderTask = (opts = {}) ->
     cap = opts.capture or {}
-    setmetatable {
+    stubSelf UpdateTask, {
       __class: {__DependencyControl: opts.depCtrl}
       addFeeds: opts.addFeeds or {}
       targetVersion: opts.targetVersion or 0
@@ -211,7 +211,7 @@
           cap.targetVersion, cap.optional, cap.reason = targetVersion, optional, reason
           unpack(opts.requireReturn or {})
       }
-    }, __index: UpdateTask.__base
+    }
 
   -- A stub task self for performUpdate: a non-virtual record (so the dummy-ref + requiredModules preamble
   -- is skipped) and a fake __class carrying a stub download engine. FileOps/UpdateFeed statics are
@@ -226,7 +226,7 @@
       self.downloads[#self.downloads + 1] = d
       d
     engine.await = (self, cb) -> cb nil, 1
-    setmetatable {
+    stubSelf UpdateTask, {
       __class: {__downloader: engine, __DependencyControl: {__name: "DependencyControl"}}
       running: false
       updated: false
@@ -236,11 +236,8 @@
         scriptType: Common.ScriptType.Module, virtual: false
       }
       updater: {renewLock: (=>), config: {c: {updates: {}}}}
-      logger: {
-        log: ->, trace: ->, progress: ->, indent: 0
-        format: (arr) => table.concat (arr or {}), "; "
-      }
-    }, __index: UpdateTask.__base
+      logger: makeNullLogger!
+    }
 
   {
     _description: "Tests for UpdateTask: candidate selection/ranking, interactivity gating, the trust/choice prompts, feed-prefix matching, and installed-provider lookup."
@@ -958,7 +955,7 @@
           @virtual = false
           @version = SemanticVersion\toPacked "1.0.0"
       }
-      task = setmetatable {updated: false, logger: {log: ->}, :record}, __index: UpdateTask.__base
+      task = stubSelf UpdateTask, {updated: false, logger: makeNullLogger!, :record}
       UpdateTask.refreshRecord task
       ut\assertTrue task.updated
       ut\assertIs task.ref, loadedRef
@@ -969,17 +966,17 @@
         virtual: false, version: SemanticVersion\toPacked "1.0.0"
         scriptType: Common.ScriptType.Module, name: "Dep", loadConfig: (force) => nil
       }
-      task = setmetatable {updated: false, logger: {log: ->}, :record}, __index: UpdateTask.__base
+      task = stubSelf UpdateTask, {updated: false, logger: makeNullLogger!, :record}
       UpdateTask.refreshRecord task
       ut\assertFalse task.updated
 
     -- __loadFeed refuses a blocked/never feed before any network fetch, surfacing a reason
     loadFeed_refusesDeniedFeed: (ut) ->
       feedTrust = {getFetchDecision: (url) => FeedTrust.FetchDecision.Deny}
-      task = setmetatable {
+      task = stubSelf UpdateTask, {
         updater: {feedTrust: feedTrust}
-        logger: {trace: (->), log: (->)}
-      }, __index: UpdateTask.__base
+        logger: makeNullLogger!
+      }
       feed, err = UpdateTask.__loadFeed task, "feed://untrusted"
       ut\assertNil feed
       ut\assertString err
@@ -1008,7 +1005,7 @@
     -- none covers the current one (de-duped, sorted), ignoring platform-supporting, too-old, or indirect
     -- candidates
     getOfferedBuildPlatforms_collectsVersionMatchingRejects: (ut) ->
-      task = setmetatable {targetVersion: SemanticVersion\toPacked "1.0.0"}, __index: UpdateTask.__base
+      task = stubSelf UpdateTask, {targetVersion: SemanticVersion\toPacked "1.0.0"}
       candidates = {
         makeCandidate 1, "1.2.0", {platform: false, platforms: {"Windows-x64", "OSX-x64"}}   -- version ok, wrong platform → collect
         makeCandidate 1, "1.5.0", {platform: false, platforms: {"Windows-x64"}}               -- duplicate platform → de-dup

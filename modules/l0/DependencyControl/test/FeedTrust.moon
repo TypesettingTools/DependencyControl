@@ -3,18 +3,18 @@
 () ->
   FeedTrust = require "l0.DependencyControl.FeedTrust"
   TrustStatus = FeedTrust.TrustStatus
+  {:makeSeededFeedTrust} = require "l0.DependencyControl.test.helpers.stub-helpers"
 
   -- A FeedTrust seeded with the official sets (so it never loads the live DepCtrl feed) over a stub config.
   -- opts: officialTrusted (set), officialBlocked (list), extraFeeds, trustedFeeds, blockedFeeds, onSave.
   make = (opts = {}) ->
-    setmetatable {
+    makeSeededFeedTrust {
       config: {
         c: {feeds: {extraFeeds: opts.extraFeeds, trustedFeeds: opts.trustedFeeds, blockedFeeds: opts.blockedFeeds, fetchUntrustedFeeds: opts.fetchUntrustedFeeds}}
         save: (=> opts.onSave! if opts.onSave)
       }
-      __official: {trusted: opts.officialTrusted or {}, blocked: opts.officialBlocked or {}}
-      logger: {warn: ->, log: ->}
-    }, __index: FeedTrust.__base
+      official: {trusted: opts.officialTrusted or {}, blocked: opts.officialBlocked or {}}
+    }
 
   {
     _description: "FeedTrust: official/user trust merge, trust queries, and config mutations."
@@ -23,13 +23,13 @@
     -- rebuilding): assertIs proves the same table comes back.
     getOfficialTrustedFeeds_usesCacheWhenPresent: (ut) ->
       cached = {trusted: {"feed://a": true}, blocked: {}}
-      ft = setmetatable {__official: cached}, __index: FeedTrust.__base
+      ft = makeSeededFeedTrust {official: cached}
       ut\assertTrue FeedTrust.getOfficialTrustedFeeds(ft)["feed://a"]
       ut\assertIs ft.__official, cached
 
     getOfficialBlockedFeeds_usesCacheWhenPresent: (ut) ->
       cached = {trusted: {}, blocked: {{url: "https://bad.example/"}}}
-      ft = setmetatable {__official: cached}, __index: FeedTrust.__base
+      ft = makeSeededFeedTrust {official: cached}
       ut\assertEquals FeedTrust.getOfficialBlockedFeeds(ft), {{url: "https://bad.example/"}}
       ut\assertIs ft.__official, cached
 
@@ -43,7 +43,7 @@
         getKnownFeeds: => {"feed://known"}
         data: {blockedFeeds: {}}
       }
-      ft = setmetatable {feedLoader: {load: ((url, opts) => fakeFeed)}}, __index: FeedTrust.__base
+      ft = makeSeededFeedTrust {feedLoader: {load: ((url, opts) => fakeFeed)}}
       first = FeedTrust.getOfficialTrustedFeeds ft
       ut\assertNil ft.__official                   -- failed load -> not cached
       ut\assertNil first["feed://known"]           -- fallback trusts only DepCtrl's own url

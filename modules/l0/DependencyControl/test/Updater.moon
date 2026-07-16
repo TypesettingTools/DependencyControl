@@ -8,6 +8,7 @@
   Lock = require "l0.DependencyControl.Lock"
   UpdateTask = require "l0.DependencyControl.UpdateTask"
   DependencyControl = require "l0.DependencyControl"
+  {:stubSelf, :makeNullLogger} = require "l0.DependencyControl.test.helpers.stub-helpers"
   UpdateStatus = Updater.UpdateStatus
   UpdateReason = UpdateTask.UpdateReason
   ContextCeiling = UpdateTask.ContextCeiling
@@ -15,18 +16,18 @@
   -- A stub updater self for require(): @addTask returns the supplied task (whose run() yields the
   -- scripted code/detail), so require's dispatch is exercised without constructing a real UpdateTask.
   makeRequireUpdater = (task) ->
-    setmetatable {
-      logger: {assert: ((c) => c), log: ->, debug: ->, trace: ->}
+    stubSelf Updater, {
+      logger: makeNullLogger!
       addTask: ((record, tv, af, opt, ch, rsn) => task)
-    }, __index: Updater.__base
+    }
 
   -- A stub updater self for scheduleUpdate(): its config gates the run and @addTask returns opts.task.
   makeScheduleUpdater = (opts = {}) ->
-    setmetatable {
+    stubSelf Updater, {
       config: {c: {updates: {mode: opts.mode, checkInterval: opts.updateInterval or 0}}}
-      logger: {trace: ->, log: ->}
+      logger: makeNullLogger!
       addTask: ((record) => opts.task)
-    }, __index: Updater.__base
+    }
 
   {
     _description: "Tests for Updater: require/scheduleUpdate dispatch, addTask, and lock handling."
@@ -123,51 +124,51 @@
     -- acquireLock / releaseLock / renewLock: the lock state machine.
 
     acquireLock_returnsTrueWhenAlreadyHeld: (ut) ->
-      updater = setmetatable {hasLock: true, config: {c: {updates: {waitTimeout: 5}}}}, __index: Updater.__base
+      updater = stubSelf Updater, {hasLock: true, config: {c: {updates: {waitTimeout: 5}}}}
       ut\assertTrue Updater.acquireLock updater, false
 
     acquireLock_acquiresAndSetsHasLock: (ut) ->
       fakeLock = {lock: ((timeout) => Lock.LockState.Held, 0), getActiveHolder: (=>)}
-      updater = setmetatable {
-        hasLock: false, config: {c: {updates: {waitTimeout: 5}}}, logger: {log: ->}
+      updater = stubSelf Updater, {
+        hasLock: false, config: {c: {updates: {waitTimeout: 5}}}, logger: makeNullLogger!
         tasks: {[Common.ScriptType.Module]: {}}
         feedLoader: {cache: {expireAll: ->}}
         lock: fakeLock   -- pre-set so the lazy `@lock or= Lock{…}` in acquireLock skips construction
-      }, __index: Updater.__base
+      }
       ut\assertTrue Updater.acquireLock updater, false
       ut\assertTrue updater.hasLock
 
     acquireLock_failsWhenHeldByOther: (ut) ->
       fakeLock = {lock: ((timeout) => Lock.LockState.Unavailable, 0), getActiveHolder: (=> {holderName: "OtherScript"})}
-      updater = setmetatable {
-        hasLock: false, config: {c: {updates: {waitTimeout: 5}}}, logger: {log: ->}
+      updater = stubSelf Updater, {
+        hasLock: false, config: {c: {updates: {waitTimeout: 5}}}, logger: makeNullLogger!
         lock: fakeLock
-      }, __index: Updater.__base
+      }
       ok, owner = Updater.acquireLock updater, false
       ut\assertFalse ok
       ut\assertEquals owner, "OtherScript"
 
     releaseLock_releasesWhenHeld: (ut) ->
       released = {}
-      updater = setmetatable {hasLock: true, lock: {release: (=> released.called = true)}}, __index: Updater.__base
+      updater = stubSelf Updater, {hasLock: true, lock: {release: (=> released.called = true)}}
       ut\assertTrue Updater.releaseLock updater
       ut\assertFalse updater.hasLock
       ut\assertTrue released.called
 
     releaseLock_noopWhenNotHeld: (ut) ->
-      updater = setmetatable {hasLock: false}, __index: Updater.__base
+      updater = stubSelf Updater, {hasLock: false}
       ut\assertFalse Updater.releaseLock updater
 
     renewLock_renewsWhenHeld: (ut) ->
       renewed = {}
-      updater = setmetatable {hasLock: true, lock: {renew: (=> renewed.called = true)}}, __index: Updater.__base
+      updater = stubSelf Updater, {hasLock: true, lock: {renew: (=> renewed.called = true)}}
       Updater.renewLock updater
       ut\assertTrue renewed.called
 
     -- addTask: version parsing and task caching.
 
     addTask_versionParseErrorReturns: (ut) ->
-      updater = setmetatable {tasks: {}}, __index: Updater.__base
+      updater = stubSelf Updater, {tasks: {}}
       record = {__class: DependencyControl, scriptType: Common.ScriptType.Module, namespace: "l0.x"}
       task, code, err = Updater.addTask updater, record, "not-a-version"
       ut\assertNil task
@@ -178,9 +179,9 @@
     addTask_updatesExistingTask: (ut) ->
       existing = {targetVersion: 0}
       record = {__class: DependencyControl, scriptType: Common.ScriptType.Module, namespace: "l0.x"}
-      updater = setmetatable {
+      updater = stubSelf Updater, {
         tasks: {[Common.ScriptType.Module]: {[record.namespace]: existing}}
-      }, __index: Updater.__base
+      }
       task = Updater.addTask updater, record, "2.0.0", {"feed://a"}, true
       ut\assertIs task, existing
       ut\assertEquals existing.targetVersion, SemanticVersion\toPacked "2.0.0"
@@ -189,11 +190,11 @@
     -- a record with no queued task gets a fresh UpdateTask, which is cached under its scriptType/namespace
     addTask_createsNewTask: (ut) ->
       record = {__class: DependencyControl, scriptType: Common.ScriptType.Module, namespace: "l0.new", validateNamespace: => true}
-      updater = setmetatable {
+      updater = stubSelf Updater, {
         tasks: {[Common.ScriptType.Module]: {}}
-        logger: {log: ->, trace: ->}
+        logger: makeNullLogger!
         config: {c: {updates: {mode: ContextCeiling.AutoUpdate}, paths: {cache: "?user/cache"}}}
-      }, __index: Updater.__base
+      }
       task = Updater.addTask updater, record, "1.0.0"
       ut\assertNotNil task
       ut\assertIs task.__class, UpdateTask
@@ -203,9 +204,9 @@
     -- discarded, so the guards live in addTask rather than UpdateTask.new
     addTask_disabledUpdaterRejects: (ut) ->
       record = {__class: DependencyControl, scriptType: Common.ScriptType.Module, namespace: "l0.new", validateNamespace: => true}
-      updater = setmetatable {
+      updater = stubSelf Updater, {
         tasks: {[Common.ScriptType.Module]: {}}, config: {c: {updates: {mode: ContextCeiling.Off}}}
-      }, __index: Updater.__base
+      }
       task, code = Updater.addTask updater, record, "1.0.0"
       ut\assertNil task
       ut\assertEquals code, UpdateStatus.UpdaterDisabled
@@ -214,11 +215,11 @@
     -- that blocks background checks
     addTask_modeGatesByReason: (ut) ->
       record = {__class: DependencyControl, scriptType: Common.ScriptType.Module, namespace: "l0.new", validateNamespace: => true}
-      makeUpdater = -> setmetatable {
+      makeUpdater = -> stubSelf Updater, {
         tasks: {[Common.ScriptType.Module]: {}}
-        logger: {log: ->, trace: ->}
+        logger: makeNullLogger!
         config: {c: {updates: {mode: ContextCeiling.UserRequested}, paths: {cache: "?user/cache"}}}
-      }, __index: Updater.__base
+      }
       task, code = Updater.addTask makeUpdater!, record, "1.0.0"   -- default reason: AutoUpdate
       ut\assertNil task
       ut\assertEquals code, UpdateStatus.UpdaterDisabled
@@ -227,9 +228,9 @@
 
     addTask_invalidNamespaceRejects: (ut) ->
       record = {__class: DependencyControl, scriptType: Common.ScriptType.Module, namespace: "bad ns", validateNamespace: => false}
-      updater = setmetatable {
+      updater = stubSelf Updater, {
         tasks: {[Common.ScriptType.Module]: {}}, config: {c: {updates: {mode: ContextCeiling.AutoUpdate}}}
-      }, __index: Updater.__base
+      }
       task, code = Updater.addTask updater, record, "1.0.0"
       ut\assertNil task
       ut\assertEquals code, UpdateStatus.InvalidNamespace
@@ -242,13 +243,13 @@
 
     -- an unset `updates.mode` defaults to auto-update: every context is enabled
     isEnabledFor_defaultsToAllContexts: (ut) ->
-      make = (mode) -> setmetatable {config: {c: {updates: {:mode}}}}, __index: Updater.__base
+      make = (mode) -> stubSelf Updater, {config: {c: {updates: {:mode}}}}
       for reason in *{UpdateReason.UserRequested, UpdateReason.DependencyResolution, UpdateReason.AutoUpdate}
         ut\assertTrue Updater.__isEnabledFor make!, reason
 
     -- each mode enables exactly the contexts at or below its rung; off enables none
     isEnabledFor_modeGatesByContext: (ut) ->
-      make = (mode) -> setmetatable {config: {c: {updates: {:mode}}}}, __index: Updater.__base
+      make = (mode) -> stubSelf Updater, {config: {c: {updates: {:mode}}}}
       ut\assertFalse Updater.__isEnabledFor make(ContextCeiling.Off), UpdateReason.UserRequested
       ut\assertTrue  Updater.__isEnabledFor make(ContextCeiling.UserRequested), UpdateReason.UserRequested
       ut\assertFalse Updater.__isEnabledFor make(ContextCeiling.UserRequested), UpdateReason.DependencyResolution

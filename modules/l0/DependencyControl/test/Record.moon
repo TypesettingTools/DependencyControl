@@ -7,6 +7,7 @@
   FileOps   = require "l0.DependencyControl.FileOps"
   Record    = require "l0.DependencyControl.Record"
   Stub      = require "l0.DependencyControl.Stub"
+  {:stubSelf} = require "l0.DependencyControl.test.helpers.stub-helpers"
 
   DEPCTRL_RECORDS_GLOBAL_KEY = "#{constants.DEPCTRL_PRIVATE_GLOBAL_VAR_PREFIX}Records"
   FILEOPS_MODULE_NAME = "l0.DependencyControl.FileOps"
@@ -399,17 +400,17 @@
     -- defaulting to the record's own version (regression: they'd been class fields, unreachable via rec\method)
     getVersion_compatMethods: (ut) ->
       SemanticVersion = require "l0.DependencyControl.SemanticVersion"
-      fakeSelf = setmetatable {version: SemanticVersion\toPacked "1.2.3"}, __index: Record.__base
+      fakeSelf = stubSelf Record, {version: SemanticVersion\toPacked "1.2.3"}
       ut\assertEquals fakeSelf\getVersionString!, "1.2.3"                                 -- defaults to @version
       ut\assertEquals fakeSelf\getVersionNumber("2.0.0"), SemanticVersion\toPacked "2.0.0"
       ut\assertEquals fakeSelf\getVersionString(SemanticVersion\toPacked "3.1.0"), "3.1.0"
 
     -- loadConfig imports recordType from the stored config like any other persisted field
     loadConfig_importsRecordType: (ut) ->
-      record = setmetatable {
+      record = stubSelf Record, {
         __class: Record, virtual: false, namespace: "l0.x", scriptType: Common.ScriptType.Module
         config: {load: (=> true), c: {recordType: Common.RecordType.Unmanaged}}
-      }, __index: Record.__base
+      }
       Record.__base.loadConfig record, true
       ut\assertEquals record.recordType, Common.RecordType.Unmanaged
 
