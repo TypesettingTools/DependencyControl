@@ -11,6 +11,7 @@ ModuleProvider = require "l0.DependencyControl.ModuleProvider"
 SemanticVersion = require "l0.DependencyControl.SemanticVersion"
 ScriptUpdateRecord = require "l0.DependencyControl.ScriptUpdateRecord"
 ScriptTargetFilter = require "l0.DependencyControl.ScriptTargetFilter"
+Accessors = require "l0.DependencyControl.Accessors"
 JsonSchema = nil
 
 defaultLogger = Logger fileBaseName: "DepCtrl.UpdateFeed"
@@ -83,6 +84,7 @@ stripNulls = (tbl) ->
 
 ---Downloaded and expanded update feed data source.
 ---@class UpdateFeed
+---@field url string This feed's source URL, or a file:// URL over its local file when it has no remote URL (read-only).
 ---@field private __channelTemplateState table<string, table<string, table<string, UpdateFeedChannelTemplateState>>> Captured channel template state, keyed by section, namespace, and channel name.
 class UpdateFeed
     ---Declares one template variable. A regular template captures its value at a fixed tree
@@ -255,6 +257,8 @@ class UpdateFeed
                     j += 1
             table.sort .sourceAt[i], (a,b) -> return .templates[a].order < .templates[b].order
 
+    url: Accessors.property get: => @_url or @fileName and "file://#{@fileName}"
+
     ---Creates an update feed wrapper and optionally fetches feed data.
     ---@param _url? string Feed URL (or nil when loading from a local file via fileName).
     ---@param autoLoad? boolean Fetch/load the feed immediately (default true).
@@ -263,19 +267,7 @@ class UpdateFeed
     ---@param logger? Logger
     new: (@_url, autoLoad = true, @fileName, @config = {}, @logger = defaultLogger) =>
         error msgs.errors.urlOrFilePathRequired if not @_url and not fileName
-    
-        meta = getmetatable @
-        setmetatable @, {
-            __index: (self, key) ->
-                rawValue = meta[key]
-                return rawValue if rawValue != nil
-                if key == 'url'
-                    return self._url if self._url
-                    return "file://#{self.fileName}" if self.fileName
-        }
-
         Common.addDefaults @config, @@defaultConfig
-
         @ensureLoaded! if autoLoad
 
     ---Returns URLs of all feeds referenced in the knownFeeds section of this feed.
@@ -1022,3 +1014,5 @@ class UpdateFeed
                     -- expansion), so they can be yielded directly without a wrapping proxy.
                     for file in *channel.files or {}
                         coroutine.yield file, chanProxy, pkg, section, scriptType
+
+Accessors.install UpdateFeed
