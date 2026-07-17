@@ -28,7 +28,7 @@ msgs = {
 class Accessors
   ---Declares a computed property to place at a key in a class body; wire the class up with install.
   ---Omitting `set` makes the property read-only, so a write raises at runtime.
-  ---@param spec { get?: fun(self: any): any, set?: fun(self: any, value: any) } Getter and/or setter (at least one).
+  ---@param spec { get?: (fun(self: any): any), set?: (fun(self: any, value: any)) } Getter and/or setter (at least one).
   ---@return AccessorSpec spec Assign this to the property's key in the class body.
   @property = (spec) ->
     error msgs.property.badSpec\format type spec unless type(spec) == "table"

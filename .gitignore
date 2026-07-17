@@ -1,3 +1,7 @@
 /ctrf/*.json
 /dist/
 /DependencyControl-*.zip
+/types/
+# generated API reference (the rest of docs/ is committed source); mkdocs build output
+/docs/reference/
+/site/

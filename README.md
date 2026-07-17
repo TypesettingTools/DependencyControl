@@ -26,17 +26,12 @@ modules (_DownloadManager_, _BadMutex_, _PreciseTimer_).
 
 ## Table of Contents
 
-1.  [DependencyControl for Users](#dependency-control-for-users)
-2.  [Usage for Automation Scripts](#usage-for-automation-scripts)
-3.  [Namespaces and Paths](#namespaces-and-paths)
-4.  [The Anatomy of an Updater Feed](#the-anatomy-of-an-updater-feed)
-5.  [Reference](#reference)
-6.  [DependencyControl](#FIXME)
-7.  [Updater](#FIXME)
-8.  [Logger](#FIXME)
-9.  [ConfigHandler](#FIXME)
-10. [FileOps](#FIXME)
-11. [CLI](#cli)
+1. [DependencyControl for Users](#dependency-control-for-users)
+2. [Usage for Automation Scripts](#usage-for-automation-scripts)
+3. [Namespaces and Paths](#namespaces-and-paths)
+4. [The Updater Feed](#the-updater-feed)
+5. [Reference](#reference)
+6. [CLI](#cli)
 
 ---
 
@@ -529,178 +524,11 @@ For an example to serve updates from the HEAD of a GitHub repository main branch
 
 ## Reference
 
-This section is currently both incomplete and outdated. Sorry about that.
+The full API reference — every class, method, parameter, and return, for every module — is published at **[typesettingtools.github.io/DependencyControl](https://typesettingtools.github.io/DependencyControl/)**, showing the latest release (with a version picker for earlier releases and the in-development `master`). To build it from your own checkout, or to get the same annotations as editor IntelliSense, see [MoonCATS](#mooncats) below.
 
-### DependencyControl
+### MoonCATS
 
-**DependencyControl{_tbl_ [requiredModules]={}, _str_ :name=script*name, \_str* :description=script*description, \_str* :author=script*author, \_str* :url, _str_ :version, _str_ :moduleName, _str_ [:configFile], _string_ [:namespace]} --> _obj_ DependencyControlRecord**
-
-The constructor for a DependencyControl record. Uses the table-based signature.
-**Arguments:**
-
-- _requiredModules_: the first and only unnamed argument. Contains all required modules, which may be either a single string for a non-version-controlled requirement or a table with the following fields:
-  - **_str_ [moduleName/[1]]:** the module name
-  - **_str_ [version]:** The minimum required version of the module. Must conform to Semantic Versioning standards. The module in question must contain a DependencyControl version record or otherwise compatible version number.
-  - **_str_ [url]**: The URL of the site where the module can be downloaded from (will be shown to the user in error methods).
-  - **_str_ [feed]**: The update feed used to fetch a copy of the required module when it is missing from the user's system.
-  - **_bool_ [optional=false]**: Marks the module as an optional requirement. If the module is missing on the user's system, no error will be thrown. However, version requirements _will_ be checked if the module was found.
-  - **_str_ [name]**: Friendly module name (used for error messages).
-
-- _name, description, author_: Required for modules, pulled from the \_script\_\_ globals for macros.
-- _version_: Must conform to [Semantic Versioning](http://semver.org/) standards. Labels and build metadata are not supported at this time
-- _moduleName_: module name (as used in require statements). Required for modules, must be nil for macros. Represents the namespace of a module.
-- _url_: The web site/repository URL of your script
-- _feed_: The update feed for your script.
-- _configFile_: Configuration file base name used by the script. Defaults to the namespace. Used for configuration services and script management purposes.
-
-#### Methods
-
-**:checkVersion(_str/num_ version, _str_ [precision = "patch"]) --> _bool_ moduleUpToDate, _str_ error**
-
-Returns true if the version number of the record is greater than or equal to **version**. Reduce the **precision** to `minor` or `major` to also return true for lower patch or minor versions respectively. If the version can't be parsed it returns nil and and error message.
-
-**:checkOptionalModules(_tbl_ modules) --> _bool_ result, _str_ errorMessage**
-
-Returns true if the optional **modules** have been loaded, where **modules** is a list of module names. If one or more of the modules are missing it returns false and an error message.
-
-**:getConfigFileName() --> _str_ fileName**
-
-Returns a full path to the config file proposed for this script by DependencyControl. Uses the configFile argument passed to the constructor which defaults to the script namespace. The path is subject to user configuration and defaults to "?user\config". The file ending is always .json, because why would you use any other format?
-
-The rationale for this function is to keep all macro and module configuration files neatly in one spot and make them discoverable for other scripts (through the DependencyControl config file).
-
-**:getConfigHandler([defaults], [section], [noLoad]) => _obj_ ConfigHandler**
-
-Returns a ConfigHandler (see [ConfigHandler Documentation](#FIXME)) attached to the config file configured for this script.
-
-**:getLogger(_tbl_ args) => _obj_ Logger**
-
-Returns a Logger (see [Logger Documentation](#FIXME)) preconfigured for this script. Trace level and config file preference default to user-configurable values. Log file name and prefix are based on namespace and script name.
-
-**:getVersionNumber(_str/num_ versionString) --> _int/bool_ version, _str_ error**
-
-Takes a SemVer string and converts it into a version number. If parsing the version string fails it returns false and an error message instead.
-
-**:getVersionString(_int_ [version=@version]) --> _str_ versionString**
-
-Returns a version (by default the script version) as a SemVer string.
-
-**:getConfigFileName() --> _str_ configFileName**
-
-Generates and returns a full path to the registered config file name for the module.
-
-**:loadConfig(_bool_ [importRecord], _bool_ [forceReloadGlobal]) --> _bool_ shouldWriteConfig, _bool_ firstInit**
-
-Loads global DependencyControl and per-script configuration from the DependencyControl configuration file. If **importRecord** is true, the version record information of a DependencyControl record will be (temporarily) overwritten by the values contained in the configuration file.
-Global configuration is only loaded on first run or if **forceReloadGlobal** is true.
-
-The first return result indicates there are changes to be written to the config file, the second result returns true if the config file was only just created. _Intended for internal use._
-
-**:loadModule(_tbl_ module, _bool_ [usePrivate]) --> _tbl_ moduleRef**
-
-Loads and returns single module and only errors out in case of module errors. Intended for internal use. If **usePrivate** is true, a private copy of the module is loaded instead.
-
-**:moveFile(_str_ src, _str_ dest) --> _bool_ success, _str_ error**
-
-Moves a file from **source** to **destination** (where both are full file names). Returns true on success or false and error message on failure.
-
-**:register(_tbl_ selfRef, extraUnitTestArgs...) --> _tbl_ selfRef**
-
-Replaces dummy reference written to the global LOADED_MODULES table at DependencyControl object creation time with a reference to this module.
-Also automatically registers unit tests for this module, passing in any **extraUnitTestArgs**
-
-The purpose of this construct is to allow circular references between modules. Limitations apply: the modules in question may not use each other during construction/setup of each module (for obvious reasons).
-
-Call this method as replacement for returning your module.
-
-**:registerMacro(_str_ [name=@name], _str_ [description=@description], _func_ processing*function, \_func* [validation_function], _func_ is*active_function, \_bool|string* [submenu=false])**
-
-Alternative Signature:
-
-**:registerMacro(_func_ processing*function, \_func* [validation_function], _func_ is*active_function, \_bool|string* [submenu=false])**
-
-Registers a single macro using script name and description by default.
-Use **submenu** to specify a submenu name to use for this macro or set it to `true` to use the automation script name.
-
-If the script entry in the DependencyControl configuration file contains a **customMenu** property, the macro will be placed in the specified menu. Do note that that this setting is for _user customization_ and not to be changed without the user's consent.
-
-For the other arguments, please refer to the [aegisub.register_macro](http://docs.aegisub.org/latest/Automation/Lua/Registration/#aegisub.register_macro) API documentation.
-
-**:registerMacros(_tbl_ macros, _bool|string_ [submenuDefault=true], _tbl_ [testExports])**
-
-Registers multiple macros, where **macros** is a list of tables containing the arguments to a **:registerMacro()** call for each automation menu entry.
-Use **submenuDefault** to specify a submenu all macros will be placed in unless overridden on a per-macro basis. Defaults to `true` which causes the automation script name to be used as the submenu name.
-Pass **testExports** to expose the script's internal values (helpers, etc.) to its unit test suite; they are forwarded to the suite's import function so an automation script can be unit-tested (see **:registerTests**).
-
-**:registerTests(unitTestArgs...)**
-
-Loads and registers this script's or module's DependencyControl unit test suite when one is present, forwarding any **unitTestArgs** to the suite's import function. You rarely call it directly: modules register their tests automatically through **:register**, and automation scripts through **:registerMacro**/**:registerMacros** (an automation script passes its internals via the **testExports** argument of **:registerMacros**).
-
-The suite's import function is called with, in order: the subject under test (for a module its own reference; for an automation script a map of its registered macros keyed by name, each carrying the macro's unhooked `process`/`validate`/`isActive`), the script's dependencies, any extra arguments (a module's own table, or an automation script's `testExports`), and a controls object as the final argument.
-
-**:requireModules([modules=@requiredModules], _bool_ [forceUpdate], _bool_ [updateMode], _tbl_ [addFeeds={@feed})] --> ...**
-
-Loads the modules required by this script and returns a reference for every requirement in the order they were supplied by the user. If an optional module is not found, nil is returned.
-
-The updater will try to download copies of modules that are missing or outdated on the user's system. The **addFeeds** parameter can be used to supply additional feeds to search. If missing/outdated requirements can't be fetched, the method will throw an error in normal mode or false and an error message in **update mode**.
-
-Use **forceUpdate** to override update intervals and perform update checks for all required modules, even if requirements are satisfied.
-
-**:writeConfig(_bool_ [writeLocal=true], _bool_ [writeGlobal=true], _bool_ [concert]]**
-
-Writes **global** and per-module **local** configuration. If **concert** is true, concerted writing will be used to update the configuration of all DependencyControl hosted by any given macro/environment at once. See ConfigHandler documentation for more information. _Intended for internal use._
-
-### Updater
-
-#### Methods
-
-**:getUpdaterErrorMsg(_int_ [code], _str_ targetName, ...) --> _str_ errorMsg**
-
-Used to turn an updater return **code** into a human-readable error message. The **name** of the updated component and other format string parameters are passed into the function.
-
-VarArgs:
-
-1.  **_bool_ isModule**: True when component is a module, false when it is an automation script/macro
-2.  **_bool_ isFetch**: True when we are fetching a missing module, false when updating
-3.  **extError**: Extended error information as returned by the _:update()_ method
-
-**:getUpdaterLock(_bool_ [doWait], _int_ [waitTimeout=(user config)]) --> _bool_ result, _str_ runningHost**
-
-Locks the updater to the current macro/environment. Since all automation scripts load in parallel we have to make sure multiple automation scripts don't all update/fetch the same dependencies at once multiple times. The solution is to only let one updater operate at a time. The others will wait their turn and recheck if their required modules were fetched in the meantime.
-
-If **doWait** is true, the function will wait until the updater is unlocked or **waitTimeout** has passed. It will then get the lock and return true. If **doWait** is false, the function will return immediately (true on success, false if another updater has the lock). _Intended for internal use_.
-
-**:releaseUpdaterLock()**
-
-Makes an updater host (macro) release its lock on the Updater if it has one. See _:getUpdaterLock_ for more information
-
-**:update(_bool_ [force], _tbl_ [addFeeds]) --> _int_ resultCode, _str_ extError**
-
-Runs the updater on this automation script or module. This includes recursively updating all required modules. When **force** is true, required modules will skip their update interval check.
-
-The updater consults feeds in trust order (closest and most-trusted first) and stops as soon as a source can satisfy the requirement — see [How DependencyControl Selects Package Sources](#how-dependencycontrol-selects-package-sources). You can supply **additional candidate feeds**.
-
-Returns a result code (0: up-to-date, 1: update performed, <=-1: error) and extended error information which can be fed into _:getUpdaterErrorMsg()_ to get a descriptive error message.
-
-### Logger
-
-tbd
-
-### ConfigHandler
-
-tbd
-
-### FileOps
-
-tbd
-
-### UnitTestSuite
-
-Reference documentation for the UnitTestSuite module is available in the [source code](https://github.com/TypesettingTools/DependencyControl/blob/master/modules/l0/DependencyControl/UnitTestSuite.moon#L760)
-
-### UpdateFeed
-
-tbd
+The `l0.MoonCats` module extracts the [LuaCATS](https://luals.github.io/wiki/annotations/) annotations from MoonScript sources into LuaLS `.d.lua` type definitions and rendered API documentation — see the [`generate-types`](#generate-types--extract-luals-type-definitions) and [`generate-docs`](#generate-docs--render-api-documentation) CLI commands for the packaged workflows. The module itself is a pure text transform available to other tooling: `MoonCats!\extractPackage sources` takes a list of `{requireId, source}` pairs and returns one definition per module plus a diagnostics collection, resolving cross-module references (re-exported classes, package-wide type aliases) across the whole set; `renderDocs sources, opts` runs the same parse and returns documentation pages, an index, and site scaffolding instead; `extractModule` is the single-module convenience. Parsing is AST-assisted via the moonscript rock's own parser, so string literals and comment-lookalike content never confuse the extraction.
 
 ## CLI
 
@@ -822,3 +650,48 @@ With `--add-files`, files found on disk that the targeted channel doesn't list a
 | `--target-macro`  | _(all macros)_                  | Restrict to this macro namespace; repeatable            |
 
 Exit code `0` = success, `1` = one or more packages had errors.
+
+### `generate-types` — Extract LuaLS type definitions
+
+```sh
+luajit depctrl.lua generate-types [--feed <path>] [--out-dir <dir>] [--check] [--target-module <ns>]
+```
+
+Extracts the [LuaCATS](https://luals.github.io/wiki/annotations/) annotations from the feed's module sources into LuaLS `.d.lua` definition files (one per module, mirroring the require path under the output directory), powered by the [MoonCATS](#mooncats) module. Pointing the [Lua language server](https://luals.github.io/)'s `Lua.workspace.library` setting at the definition tree gives any Lua or MoonScript project full IntelliSense — completion, signature help, and type checking — for every DependencyControl-managed module; this repository's own `.vscode/settings.json` wires up `types/` that way. For browsable API documentation rendered from the same annotations, see [`generate-docs`](#generate-docs--render-api-documentation) below.
+
+Beyond copying annotation blocks, the extractor synthesizes what LuaLS can't infer from MoonScript: a constructor call signature (`@overload`) for every class built from its `new` parameters, a typed per-enum class for each exported `Enum` so members complete and type-check, `@field` declarations for data members and instance defaults, and cross-module types for re-exported classes. Macros are skipped — they aren't require-able and have no type definition to generate.
+
+With `--check`, nothing is written; instead the extraction's findings act as an annotation linter: missing annotation blocks on public members, `@param` tags that disagree with the real signature in name or count, and explicit value returns without a `@return` are reported as errors and fail the run. Note that a MoonScript function's implicit final-expression return is deliberately not flagged as missing a `@return`, so a clean check is not proof of complete return documentation.
+
+| Option            | Default                         | Description                                                  |
+| ----------------- | ------------------------------- | ------------------------------------------------------------ |
+| `--feed`          | `DependencyControl.json` in CWD | Path to the feed JSON file                                   |
+| `--out-dir`       | `types` in CWD                  | Root directory for the generated definition tree             |
+| `--check`         | false                           | Lint annotations only; write nothing, exit `1` on errors     |
+| `--target-module` | _(all modules)_                 | Restrict to this module namespace; repeatable                |
+
+Exit code in generate mode: `0` = success, `1` = a module failed to parse, a definition failed to emit, or a file couldn't be written (annotation lint findings are reported but don't fail generation). In `--check` mode: `1` when any error-severity finding exists.
+
+### `generate-docs` — Render API documentation
+
+```sh
+luajit depctrl.lua generate-docs [--feed <path>] [--out-dir <dir>] [--site <flavor>] [--site-name <title>]
+                                 [--include-private] [--target-module <ns>]
+```
+
+Renders browsable API documentation straight from the module sources' LuaCATS annotations — one markdown page per module, plus an index grouped by package. Because it reads the annotations themselves (via [MoonCATS](#mooncats)) rather than the generated type definitions, it documents everything the annotations carry, including details that don't survive into definition files or third-party doc generators: constructor parameter tables with descriptions, deprecation notices with their reasons, per-value enum member descriptions from `@alias` variant lines, and MoonScript's real instance-vs-class member distinction. Every method shows its call signature in both MoonScript and Lua form, parameter and field types cross-link to the page that defines them, and private members are omitted unless `--include-private` renders them with a badge.
+
+For a **standalone API site**, `--site mkdocs` emits a ready-to-serve, self-contained [MkDocs](https://www.mkdocs.org/) project, and `--site mdbook` the [mdBook](https://rust-lang.github.io/mdBook/) equivalent. The **default, `--site none`**, is the advanced path DependencyControl's own site takes: it writes only an **embeddable reference section**, which a committed `mkdocs.yml` folds into a larger, hand-written site through the [`mkdocs-literate-nav`](https://github.com/oprypin/mkdocs-literate-nav) plugin, keeping `docs/` and `mkdocs.yml` as committed source with only the generated `docs/reference/` gitignored.
+
+Published API docs are versioned on GitHub Pages by the `Docs` workflow (`.github/workflows/docs.yml`), which regenerates the docs and deploys them with [mike](https://github.com/jimporter/mike): every merge to master updates `/master/`, every `v*` tag publishes an immutable `/<tag>/` copy and moves the `latest` alias, and a manual workflow dispatch on any branch publishes a `/<branch>/` preview. The site's root URL redirects to `latest` once the first release exists, and to `/master/` before then, so it is never a dead link. The Material theme's version picker lists all published versions; a stale preview can be dropped with `mike delete <branch> --push` from the repository root (where the committed `mkdocs.yml` lives). Serving requires the repository's Pages source to be set to the `gh-pages` branch (root).
+
+| Option              | Default                         | Description                                              |
+| ------------------- | ------------------------------- | -------------------------------------------------------- |
+| `--feed`            | `DependencyControl.json` in CWD | Path to the feed JSON file                               |
+| `--out-dir`         | `docs/reference` in CWD         | Embeddable reference dir, or a standalone site root      |
+| `--site`            | `none`                          | `none` embed section; `mkdocs`/`mdbook` standalone       |
+| `--site-name`       | `DependencyControl API`         | Site title                                               |
+| `--include-private` | false                           | Render private members (badged) instead of omitting them |
+| `--target-module`   | _(all modules)_                 | Restrict to this module namespace; repeatable            |
+
+Exit code `0` = success, `1` = a module failed to parse or a file couldn't be written.

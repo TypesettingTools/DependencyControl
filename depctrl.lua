@@ -76,6 +76,23 @@ updateFeedCmd:flag("-a --add-files",
     "Discover files on disk that the targeted channel doesn't list and add entries for them")
 addTargets(updateFeedCmd)
 
+local typesCmd = parser:command("generate-types",
+    "Extract LuaCATS annotations from module sources into LuaLS .d.lua type-definition files")
+typesCmd:option("-f --feed",    "Feed JSON path"):default("DependencyControl.json")
+typesCmd:option("-o --out-dir", "Root directory for the generated definition tree"):default("types")
+typesCmd:flag("--check",
+    "Lint annotations only: report findings and write nothing; exits nonzero on error findings")
+addTargets(typesCmd)
+
+local docsCmd = parser:command("generate-docs",
+    "Render API documentation from module sources' LuaCATS annotations")
+docsCmd:option("-f --feed",    "Feed JSON path"):default("DependencyControl.json")
+docsCmd:option("-o --out-dir", "Where the docs are written (the embeddable reference dir, or a standalone site's root)"):default("docs/reference")
+docsCmd:option("--site", "'none' = embeddable reference section (flat pages + literate-nav SUMMARY.md); 'mkdocs'/'mdbook' = standalone site"):default("none")
+docsCmd:option("--site-name", "Site title"):default("DependencyControl API")
+docsCmd:flag("--include-private", "Render private members (badged) instead of omitting them")
+addTargets(docsCmd)
+
 local args = parser:parse()
 
 -- ── Resolve the launcher directory ───────────────────────────────────────────
@@ -194,6 +211,41 @@ local function registerFeedSearcher(feed)
     end)
 
     return sourceById
+end
+
+-- Collects the selected module packages' non-test .moon sources from a feed, keyed by require
+-- id, for annotation extraction. Vendored .lua files have no annotations and are skipped; a
+-- warning is printed for any unreadable source.
+local function collectModuleSources(feed, filter)
+    local Common  = require "l0.DependencyControl.Common"
+    local FileOps = require "l0.DependencyControl.FileOps"
+
+    local selected = {}
+    for pkg, scriptType in feed:walkPackages(filter) do
+        if scriptType == Common.ScriptType.Module then selected[pkg.namespace] = true end
+    end
+
+    local function leafSuffix(name)
+        return (name:gsub("%.moon$", ""):gsub("%.lua$", ""):gsub("/", "."))
+    end
+
+    local sources, seen = {}, {}
+    for file, _, pkg in feed:walkFiles() do
+        local src = file.localFilePath
+        if selected[pkg.namespace] and src and file.type ~= "test" and file.name:match("%.moon$") then
+            local requireId = pkg.namespace .. leafSuffix(file.name)
+            if not seen[requireId] then
+                seen[requireId] = true
+                local text, readErr = FileOps.readFile(src)
+                if text then
+                    sources[#sources + 1] = { requireId = requireId, source = text }
+                else
+                    io.stderr:write(("! %s: couldn't read source '%s': %s\n"):format(requireId, src, tostring(readErr)))
+                end
+            end
+        end
+    end
+    return sources, selected
 end
 
 -- ── Command dispatch ──────────────────────────────────────────────────────────
@@ -468,4 +520,158 @@ elseif args.command == "validate-schema" then
             filePath, args.type, version and (" (v" .. version .. ")") or "", tostring(message)))
         os.exit(1)
     end
+
+-- ─── generate-types ───────────────────────────────────────────────────────────
+elseif args.command == "generate-types" then
+    local feedPath = resolveAbsPath(args.feed)
+    local outDir   = resolveAbsPath(args.out_dir)
+
+    setupDepCtrl("generate-types")
+
+    local FileOps = require "l0.DependencyControl.FileOps"
+
+    local feed   = loadFeed(feedPath)
+    local filter = buildFilter(args)
+
+    if #(args.target_macro or {}) > 0 then
+        io.stderr:write("Note: macros are not require-able and have no type definitions; --target-macro selectors are ignored.\n")
+    end
+
+    local sources = collectModuleSources(feed, filter)
+    if #sources == 0 then
+        io.stderr:write("No module sources matched in feed '" .. feedPath .. "'.\n")
+        os.exit(1)
+    end
+
+    local MoonCats = require "l0.MoonCats"
+    local result = MoonCats():extractPackage(sources)
+    local diagnostics = result.diagnostics
+
+    local written, writeErrors = 0, 0
+    if not args.check then
+        for _, def in ipairs(result.definitions) do
+            local outPath = FileOps.getNamespacedPath(outDir, def.requireId, ".d.lua")
+            FileOps.mkdir(outPath, true, true)
+            local ok, writeErr = FileOps.writeFile(outPath, def.text, true)
+            if ok then
+                written = written + 1
+                io.stdout:write(("  %-52s -> %s\n"):format(def.requireId, outPath))
+            else
+                writeErrors = writeErrors + 1
+                io.stderr:write(("! %s: couldn't write '%s': %s\n"):format(def.requireId, outPath, tostring(writeErr)))
+            end
+        end
+    end
+
+    local report = diagnostics:format()
+    if #report > 0 then
+        io.stdout:write("\n" .. report .. "\n")
+    end
+
+    local counts = diagnostics:getCounts()
+    local Severity = MoonCats.Diagnostics.Severity
+    io.stdout:write(("\n%d module(s) processed: %d error(s), %d warning(s), %d note(s)%s\n"):format(
+        #sources, counts[Severity.Error], counts[Severity.Warning], counts[Severity.Info],
+        args.check and " — check mode, nothing written" or (", %d definition(s) written to %s"):format(written, outDir)))
+
+    if args.check then
+        os.exit(diagnostics:hasCheckFailures() and 1 or 0)
+    end
+    -- generation only fails on parse/emit-level breakage or write errors; lint gating is --check's job
+    local hardFailure = writeErrors > 0
+    for _, finding in ipairs(diagnostics.findings) do
+        local FindingCode = MoonCats.Diagnostics.FindingCode
+        if finding.code == FindingCode.ParseFailure or finding.code == FindingCode.EmitFailure then
+            hardFailure = true
+        end
+    end
+    os.exit(hardFailure and 1 or 0)
+
+-- ─── generate-docs ────────────────────────────────────────────────────────────
+elseif args.command == "generate-docs" then
+    local feedPath = resolveAbsPath(args.feed)
+    local outDir   = resolveAbsPath(args.out_dir)
+
+    if args.site ~= "mkdocs" and args.site ~= "mdbook" and args.site ~= "none" then
+        io.stderr:write("--site must be 'mkdocs', 'mdbook', or 'none'.\n"); os.exit(2)
+    end
+
+    setupDepCtrl("generate-docs")
+
+    local Common  = require "l0.DependencyControl.Common"
+    local FileOps = require "l0.DependencyControl.FileOps"
+
+    local feed   = loadFeed(feedPath)
+    local filter = buildFilter(args)
+
+    if #(args.target_macro or {}) > 0 then
+        io.stderr:write("Note: macros are not require-able and have no API docs; --target-macro selectors are ignored.\n")
+    end
+
+    local sources, selected = collectModuleSources(feed, filter)
+    if #sources == 0 then
+        io.stderr:write("No module sources matched in feed '" .. feedPath .. "'.\n")
+        os.exit(1)
+    end
+
+    -- Feed package info groups the index page: name/version/description per namespace,
+    -- plus the require ids of the modules each package owns.
+    local packages = {}
+    for pkg, scriptType in feed:walkPackages(filter) do
+        if scriptType == Common.ScriptType.Module and selected[pkg.namespace] then
+            packages[pkg.namespace] = {
+                name = pkg.name,
+                description = pkg.description,
+                version = feed:getModuleVersion(pkg.namespace),
+                modules = {},
+            }
+        end
+    end
+    for _, source in ipairs(sources) do
+        for namespace, info in pairs(packages) do
+            if source.requireId == namespace or source.requireId:sub(1, #namespace + 1) == namespace .. "." then
+                info.modules[#info.modules + 1] = source.requireId
+            end
+        end
+    end
+
+    local MoonCats = require "l0.MoonCats"
+    local result, diagnostics = MoonCats():renderDocs(sources, {
+        includePrivate = args.include_private,
+        siteName = args.site_name,
+        site = args.site,
+        packages = packages,
+    })
+
+    local written, writeErrors = 0, 0
+    local function writePage(page)
+        local outPath = outDir .. pathSep .. page.path
+        FileOps.mkdir(outPath, true, true)
+        local ok, writeErr = FileOps.writeFile(outPath, page.text, true)
+        if ok then
+            written = written + 1
+        else
+            writeErrors = writeErrors + 1
+            io.stderr:write(("! couldn't write '%s': %s\n"):format(outPath, tostring(writeErr)))
+        end
+    end
+    writePage(result.indexPage)
+    for _, page in ipairs(result.pages) do writePage(page) end
+    for _, file in ipairs(result.scaffold) do writePage(file) end
+
+    local report = diagnostics:format()
+    if #report > 0 then
+        io.stdout:write(report .. "\n")
+    end
+
+    local counts = diagnostics:getCounts()
+    local Severity = MoonCats.Diagnostics.Severity
+    io.stdout:write(("\n%d module(s) documented: %d page(s) written to %s (%d error(s), %d warning(s))\n"):format(
+        #sources, written, outDir, counts[Severity.Error], counts[Severity.Warning]))
+
+    local hardFailure = writeErrors > 0
+    for _, finding in ipairs(diagnostics.findings) do
+        if finding.code == MoonCats.Diagnostics.FindingCode.ParseFailure then hardFailure = true end
+    end
+    os.exit(hardFailure and 1 or 0)
 end

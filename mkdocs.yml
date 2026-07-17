@@ -1,0 +1,23 @@
+site_name: DependencyControl
+site_description: Dependency manager and automatic script updater for Aegisub macros and modules.
+repo_url: https://github.com/TypesettingTools/DependencyControl
+
+theme:
+  name: material
+
+plugins:
+  - search
+  # expands `- API Reference: reference/` from the generated reference/SUMMARY.md
+  - literate-nav:
+      nav_file: SUMMARY.md
+
+extra:
+  # mike maintains versions.json on the published site; Material shows its version picker when present
+  version:
+    provider: mike
+
+nav:
+  - Home: index.md
+  - Design:
+      - Updater Architecture: design/updater-architecture.md
+  - API Reference: reference/

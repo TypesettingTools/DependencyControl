@@ -352,7 +352,7 @@ class FeedTrust
 
     ---Normalizes a raw block table into a `BlockedFeedEntry`, applying defaults as per the schema.
     ---@private
-    ---@param entry { url, matchMode?, reason? } A raw entry from a feed's or the user's `blockedFeeds`.
+    ---@param entry { url: string, matchMode?: string, reason?: string } A raw entry from a feed's or the user's `blockedFeeds`.
     ---@return BlockedFeedEntry? normalized The normalized entry, or nil when it carries no url.
     @__normalizeBlockEntry = (entry) =>
         return nil unless type(entry) == "table" and type(entry.url) == "string"
