@@ -1,0 +1,88 @@
+name: Docs
+
+on:
+  push:
+    branches:
+      - 'master'
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# gh-pages deployments append commits to a shared branch; serialize them
+concurrency:
+  group: docs-deploy
+  cancel-in-progress: false
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # mike commits the built site onto the gh-pages branch
+          fetch-depth: 0
+
+      - uses: leafo/gh-actions-lua@v13
+        with:
+          luaVersion: "luajit-2.1.0-beta3"
+          # DepCtrl relies on Lua 5.2 features (table.unpack, __pairs/__len)
+          luaCompileFlags: "XCFLAGS=-DLUAJIT_ENABLE_LUA52COMPAT"
+
+      - uses: leafo/gh-actions-luarocks@v6
+      # moonscript loader
+      - run: luarocks install moonscript
+      # lfs (Aegisub provides an internal copy)
+      - run: luarocks install luafilesystem
+      # CLI argument parsing
+      - run: luarocks install argparse
+      # json schema validation
+      - run: luarocks install lua-schema
+      - run: luarocks install lpeg
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.x'
+
+      - run: pip install mkdocs-material mike mkdocs-literate-nav
+
+      - name: Generate docs
+        timeout-minutes: 5
+        run: lua depctrl.lua generate-docs
+
+      - name: Determine version slug
+        id: version
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "slug=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          else
+            # branch deploys (master pushes and manual dispatches) use the branch name,
+            # with slashes flattened so the slug stays a single path segment
+            echo "slug=${GITHUB_REF_NAME//\//-}" >> "$GITHUB_OUTPUT"
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Configure committer
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Publish to gh-pages
+        run: |
+          slug='${{ steps.version.outputs.slug }}'
+          if [[ "${{ steps.version.outputs.release }}" == "true" ]]; then
+            # releases also move the 'latest' alias, and the site root redirects to it
+            mike deploy --push --update-aliases "$slug" latest
+            mike set-default --push latest
+          else
+            mike deploy --push "$slug"
+            # Before the first release there is no 'latest' for the root to point at, so a master
+            # deploy claims the root; once a release exists it owns the root and master leaves it be.
+            # Feature-branch previews never touch the root.
+            if [[ "${GITHUB_REF}" == "refs/heads/master" ]] && ! mike list | grep -qw latest; then
+              mike set-default --push "$slug"
+            fi
+          fi

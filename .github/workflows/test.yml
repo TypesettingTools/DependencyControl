@@ -59,3 +59,16 @@ jobs:
           upload-artifact: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Lint the module sources' LuaCATS annotations: missing docs on public members and
+      # @param/@return that disagree with the real signature fail the build. This also emits every
+      # definition and verifies it is loadable Lua, so it doubles as type-generation coverage.
+      - name: Check annotations
+        if: ${{ !cancelled() }}
+        run: lua depctrl.lua generate-types --check
+
+      # Smoke-test that documentation generation runs over the real feed without a parse or emit
+      # failure. --site none skips scaffolding; the output goes to a throwaway directory.
+      - name: Smoke-test doc generation
+        if: ${{ !cancelled() }}
+        run: lua depctrl.lua generate-docs --site none -o "$RUNNER_TEMP/docs"
