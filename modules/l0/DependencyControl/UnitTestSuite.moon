@@ -842,7 +842,8 @@ class UnitTestSuite
 
     ---Loads test classes from a function and adds them to the suite, passing in the specified arguments and a suite controller.
     ---Generally used for dependency injection (e.g. the DepCtrl runners pass in the module under test and its declared dependencies).
-    ---@param ... any Dependencies or other arguments passed to the test suite's import function.
+    ---@param ... any Arguments passed to the import function; a suite controls object is appended after them as its final argument.
+    ---@return false? result `false` when there was no import function to run, so nothing was loaded; nil once the classes have been imported.
     import: (...) =>
         return false unless @importFunc
  

@@ -28,6 +28,8 @@ class Logger
     -- so another logger's next message can be broken onto a fresh line instead of being glued onto it.
     streamAtLineStart, streamOpenedBy = true, nil
 
+    ---Creates a logger, applying the given option overrides to the new instance.
+    ---@param args? table Field overrides copied onto the logger; a `usePrefix` key sets both the file and window prefix flags.
     new: (args) =>
         if args
             @[k] = v for k, v in pairs args
@@ -103,6 +105,11 @@ class Logger
     ---@return boolean
     @isAtLineStart = -> streamAtLineStart
 
+    ---Formats a message for display, substituting printf-style arguments and indenting each line after the first.
+    ---@param msg string|table The message, or a list of lines joined with newlines.
+    ---@param indent number Indentation depth applied to every line after a line break.
+    ---@param ... any Format arguments substituted into the message.
+    ---@return string msg The formatted message.
     format: (msg, indent, ...) =>
         if type(msg) == "table"
             msg = table.concat msg, "\n"
@@ -117,6 +124,11 @@ class Logger
          -- indent after line breaks and connect indentation supplied in the user message
         return msg\gsub("\n", "\n"..indentStr)\gsub "\n#{indentStr}(#{@indentStr})", "\n#{indentRep}%1"
 
+    ---Logs a message at the given severity level.
+    ---@param level? number|string|table Severity level; when not a number, the value is taken as the message and logged at the default level.
+    ---@param msg? string|table Message to log; taken as the first format argument when the level slot already holds the message.
+    ---@param ... any Format arguments substituted into the message.
+    ---@return boolean written False when nothing was passed or the message was empty, otherwise true.
     log: (level, msg, ...) =>
         return false unless level or msg
 
@@ -124,11 +136,29 @@ class Logger
             return @logEx @defaultLevel, level, true, nil, nil, msg, ...
         else return @logEx level, msg, true, nil, nil, ...
 
+    ---Logs the given message at the fatal level (0).
+    ---@param ... any Message and format arguments.
+    ---@return boolean written False when nothing was passed or the message was empty, otherwise true.
     fatal: (...) => @log 0, ...
+    ---Logs the given message at the error level (1).
+    ---@param ... any Message and format arguments.
+    ---@return boolean written False when nothing was passed or the message was empty, otherwise true.
     error: (...) => @log 1, ...
+    ---Logs the given message at the warning level (2).
+    ---@param ... any Message and format arguments.
+    ---@return boolean written False when nothing was passed or the message was empty, otherwise true.
     warn: (...) => @log 2, ...
+    ---Logs the given message at the hint level (3).
+    ---@param ... any Message and format arguments.
+    ---@return boolean written False when nothing was passed or the message was empty, otherwise true.
     hint: (...) => @log 3, ...
+    ---Logs the given message at the debug level (4).
+    ---@param ... any Message and format arguments.
+    ---@return boolean written False when nothing was passed or the message was empty, otherwise true.
     debug: (...) => @log 4, ...
+    ---Logs the given message at the trace level (5).
+    ---@param ... any Message and format arguments.
+    ---@return boolean written False when nothing was passed or the message was empty, otherwise true.
     trace: (...) => @log 5, ...
 
     ---Logs an error message when the given condition is falsy.
@@ -149,6 +179,10 @@ class Logger
             @log 1, ...
         else return cond, ...
 
+    ---Draws an in-place progress bar, filling it toward the given completion percentage.
+    ---@param progress? number|boolean Completion percentage from 0 to 100; a falsy value closes the open bar and is the default.
+    ---@param msg? string Label drawn before the bar when it first opens (default: empty).
+    ---@param ... any Format arguments substituted into the label.
     progress: (progress=false, msg = "", ...) =>
         if @progressStep and not progress
             @logEx nil, "■"\rep(10-@progressStep).."]", true, ""
@@ -221,11 +255,22 @@ class Logger
 
         return table.concat(result, "\n")\gsub "%%", "%%%%"
 
+    ---Displays the given error in a modal dialog with a Close button, then aborts the running script.
+    ---@param errorMessage string Message shown in the dialog.
     windowError: ( errorMessage ) ->
         aegisub.dialog.display { { class: "label", label: errorMessage } }, { "&Close" }, { cancel: "&Close" }
         aegisub.cancel!
 
 
+    ---Deletes log files that exceed the configured age, size, or count limits, keeping the newest.
+    ---@param doWipe boolean When true, delete every matching log file regardless of the limits.
+    ---@param maxAge? number Maximum file age in seconds before deletion (default: the logger's maxAge).
+    ---@param maxSize? number Maximum combined size in bytes before older files are deleted (default: the logger's maxSize).
+    ---@param maxFiles? number Maximum number of files to keep (default: the logger's maxFiles).
+    ---@return integer deleted Number of files removed (0 when the log directory does not exist yet).
+    ---@return integer deletedSize Combined size in bytes of the removed files.
+    ---@return integer total Total number of matching log files found.
+    ---@return integer totalSize Combined size in bytes of all matching files.
     trimFiles: (doWipe, maxAge = @maxAge, maxSize = @maxSize, maxFiles = @maxFiles) =>
         files, totalSize, deletedSize, now, f = {}, 0, 0, os.time!, 0
 
@@ -252,6 +297,9 @@ class Logger
                 kept += 1
         return total-kept, deletedSize, total, totalSize
 
+    ---Returns a human-readable type name for the given value.
+    ---@param val any Value whose type to describe.
+    ---@return string type The Lua type name, or "<ClassName> object" for a DependencyControl class instance.
     @describeType = (val) =>
         _type = type val
         return _type unless _type == "table"

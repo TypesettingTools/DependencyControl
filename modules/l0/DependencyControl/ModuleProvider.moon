@@ -135,6 +135,10 @@ class ModuleProvider
             name = type(alias) == "table" and alias.name or alias
             @register name, record.moduleName if name
 
+    ---Builds a stack traceback string with full, untruncated source paths, rewriting known Aegisub
+    ---directory prefixes back to their `?user`/`?data`/`?temp` aliases. Suitable as an xpcall handler.
+    ---@param msg? string A message, typically the error, prepended to the traceback.
+    ---@return string traceback The formatted traceback, one frame per line.
     @fullTraceback = fullTraceback
 
     ---Gets the provider namespace registered for an alias module name.

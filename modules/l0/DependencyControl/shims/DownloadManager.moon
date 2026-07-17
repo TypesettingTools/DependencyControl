@@ -51,7 +51,9 @@ class DownloadManager
     ---@return number progress Current aggregate progress (0-100).
     progress: => @downloader.progress
 
+    ---Cancels all remaining queued downloads.
     cancel: => @downloader\cancel!
+    ---Removes all queued downloads and resets state; existing `.downloads` references stay valid.
     clear:  => @downloader\clear!
 
     ---@return boolean connected Whether an internet connection appears to be available.

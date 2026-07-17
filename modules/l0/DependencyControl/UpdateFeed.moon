@@ -261,7 +261,7 @@ class UpdateFeed
 
     ---Creates an update feed wrapper and optionally fetches feed data.
     ---Raises when neither a URL nor a file name is given.
-    ---@param _url? string Feed URL (or nil when loading from a local file via fileName).
+    ---@param url? string Feed URL (or nil when loading from a local file via fileName).
     ---@param autoLoad? boolean Fetch/load the feed immediately (default true).
     ---@param fileName? string Local feed file path.
     ---@param config? table Feed-fetch settings, normally supplied by `FeedLoader`: `cache` (the on-disk `FileCache`) and `blockPrivateHosts`.

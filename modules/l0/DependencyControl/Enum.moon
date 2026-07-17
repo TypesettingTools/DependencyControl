@@ -47,7 +47,7 @@ class Enum
   ---Creates an enum from a table of key/value pairs or a list of names.
   ---@param name string
   ---@param values table Key/value pairs, or a list of names whose value defaults to their position.
-  ---@param __logger? Logger
+  ---@param logger? Logger Logger for enum error messages (default: the class logger).
   new: (@name, values, @__logger = @@logger) =>
     @__logger\assert type(@name) == "string", msgs.new.missingOrInvalidName, Logger\describeType @name
     @elements, @__keysByValue, @values, @keys = {}, {}, {}, {}

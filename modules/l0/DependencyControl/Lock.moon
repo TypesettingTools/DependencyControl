@@ -209,6 +209,8 @@ class Lock
     -- Human-readable description of the current foreign holder for log messages, e.g.
     -- "'ConfigHandler' (pid 1234)" or "another instance" when no record is available.
     ---@private
+    ---@param record table? A holder record, or nil when none is available.
+    ---@return string description Human-readable holder description; "another instance" when the record is nil.
     __describeHolder: (record) =>
         return "another instance" unless record
         "'#{record.holderName or DEFAULT_HOLDER_NAME}' (pid #{record.pid or "?"})"
@@ -217,6 +219,8 @@ class Lock
     -- Honors the holder's recorded expiresAt unless overrideExpiry is set, in which case
     -- this instance's expiresAfter is applied to the holder's acquiredAt instead.
     ---@private
+    ---@param record table? A holder record, or nil.
+    ---@return number? deadline Unix timestamp when the holder's lease lapses, or nil when the record is nil or carries no usable timestamp.
     __holderDeadline: (record) =>
         return nil unless record
         if @overrideExpiry and record.acquiredAt

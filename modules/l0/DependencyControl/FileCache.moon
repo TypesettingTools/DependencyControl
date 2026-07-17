@@ -88,6 +88,8 @@ class FileCache
         @__l1 = {}
 
     ---@private
+    ---@param key string The cache key.
+    ---@return string path Filesystem path of the key's cache-index (meta) JSON file.
     __metaPath: (key) => FileOps.joinPath @cacheDir, "#{keySlug key}.meta.json"
 
     ---Reads and decodes a cache index (meta) JSON file.
@@ -207,9 +209,12 @@ class FileCache
 
     ---Writes a snapshot, points the index at it, and trims. Runs under the cache write lock held by put.
     ---@private
+    ---@param key string The cache key.
+    ---@param content string The blob to persist verbatim.
+    ---@param label? string A human-readable name, used to make the snapshot file recognizable.
     ---@param expiresAfter integer Seconds until expiry, from the write time; stamped into the index as an absolute `expiresAt`.
-    ---@return table? meta
-    ---@return string? err
+    ---@return FileCacheMeta? meta The written index entry, or nil on a filesystem error.
+    ---@return string? err Error message when a write failed, nil on success.
     __write: (key, content, label, expiresAfter) =>
         dirRes, dirErr = FileOps.mkdir @cacheDir, false, true
         return nil, dirErr if dirRes == nil

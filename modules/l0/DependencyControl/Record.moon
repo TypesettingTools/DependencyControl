@@ -42,10 +42,22 @@ unregisterRecord = (namespace) -> recordsByNamespace[namespace] = nil
 ---(reserved — not yet consulted during resolution, which uses the provider's own release version).
 ---@alias ModuleAlias { name: string, version?: string }
 
+---A required-module dependency. A bare `require` name is shorthand for a version-agnostic
+---requirement. The table form below adds a version floor and a source to fetch the module from
+---when it is missing.
+---@class RequiredModuleSpec
+---@field [1]? string The module namespace (alternative to `moduleName`).
+---@field moduleName? string The module namespace, as used in `require`.
+---@field version? string|number Minimum version; the module must carry a compatible DependencyControl version record.
+---@field url? string Where the module can be downloaded, shown to the user in error messages.
+---@field feed? string Update feed used to fetch the module when it is missing.
+---@field optional? boolean When true a missing module is not an error, but a module that is found is still version-checked.
+---@field name? string Friendly name used in error messages.
+
 ---Constructor arguments for a [Record](lua://Record). All fields are optional; unset fields are
 ---filled from script_* globals (for automation scripts) or sensible defaults.
 ---@class RecordArgs
----@field [1]? table[] Required module specs, passed positionally.
+---@field [1]? (string|RequiredModuleSpec)[] Required module specs, passed positionally.
 ---@field moduleName? string Module namespace; its presence marks this record as a module rather than an automation script.
 ---@field name? string Display name (defaults to the script/module name).
 ---@field description? string Description (defaults to script_description).
@@ -57,7 +69,7 @@ unregisterRecord = (namespace) -> recordsByNamespace[namespace] = nil
 ---@field configFile? string Config file name (defaults to "<namespace>.json").
 ---@field virtual? boolean Mark as a not-yet-installed placeholder record.
 ---@field recordType? RecordType A Common.RecordType value (default Managed).
----@field requiredModules? table[] Required module specs (alternative to the positional list).
+---@field requiredModules? (string|RequiredModuleSpec)[] Required module specs (alternative to the positional list).
 ---@field provides? (string|ModuleAlias)[] Module aliases this module satisfies for `require` (bare strings are normalized to ModuleAlias tables).
 ---@field readGlobalScriptVars? boolean Read script_* globals for unset fields (default true).
 ---@field saveRecordToConfig? boolean Persist this record to the config file (default true).
@@ -288,7 +300,8 @@ class Record
     getVersionString: (version = @version) => SemanticVersion\toString version
 
 
-    ---Resolves this record's external config file path.
+    ---Resolves this record's external config file path. Config files share one directory so
+    ---they stay discoverable to other scripts through the DependencyControl config file.
     ---@return string path
     getConfigFileName: () =>
         return aegisub.decode_path "#{@@configDir}/#{@configFile}"
@@ -342,9 +355,9 @@ class Record
         return [mdl for mdl, _ in pairs mdlConfig.c when mdl\match pattern], mdlConfig
 
     ---Loads or updates required modules and returns their references.
-    ---@param modules? table[] Module specs to load (default: this record's requiredModules).
+    ---@param modules? (string|RequiredModuleSpec)[] Module specs to load (default: this record's requiredModules).
     ---@param addFeeds? string[] Extra feed URLs to search (default: this record's feed).
-    ---@return any ... The loaded module references, in order.
+    ---@return any ... The loaded module references, in order; an absent optional module comes back as nil.
     requireModules: (modules = @requiredModules, addFeeds = {@feed}) =>
         success, err = ModuleLoader.loadModules @, modules, addFeeds
         @@updater\releaseLock!
@@ -356,7 +369,7 @@ class Record
         return unpack [mdl._ref for mdl in *modules]
     
     ---Registers DepUnit tests for this record if test modules are available.
-    ---@param ... any Forwarded to the test suite's import().
+    ---@param ... any Extra arguments forwarded to the suite's import function (see UnitTestSuite for its full signature).
     registerTests: (...) =>
         return if @haveTestSuite == false or @testSuiteInitialized
 
@@ -392,7 +405,9 @@ class Record
         -- registered centrally by the Toolbox (which loads each module exactly once).
         @tests\registerMacros! if @testSuiteInitialized and @scriptType == Common.ScriptType.Automation
 
-    ---Finalizes module registration and swaps dummy module refs for real refs.
+    ---Finalizes module registration and swaps dummy module refs for real refs. Call it in place of
+    ---returning the module. Modules registered this way may depend on each other circularly, provided
+    ---they don't use each other during construction.
     ---@param selfRef table The module's real exported table.
     ---@param ... any Forwarded to registerTests().
     ---@return table selfRef
@@ -404,7 +419,8 @@ class Record
 
     ---Registers a single Aegisub macro with DependencyControl update hooks.
     ---When the first argument is a function, name and description are taken from the script and the
-    ---remaining arguments shift left.
+    ---remaining arguments shift left. A `customMenu` property in the script's config overrides the
+    ---macro's menu location; it is a user-owned setting, so scripts must not change it without consent.
     ---@param name? string|function Macro name, or the process function in the short signature.
     ---@param description? string|function Macro description, or the validate function in the short signature.
     ---@param process function Macro processing callback.

@@ -111,6 +111,8 @@ class ZipArchiver
     -- on Windows, write a JSON manifest plus the helper script to the temp dir, then run
     -- it via -File (only path arguments to quote, avoiding cmd.exe quoting pitfalls).
     ---@private
+    ---@return boolean|nil success true on success, nil on failure.
+    ---@return string|nil err Error message describing the failure, nil on success.
     __writeWindows: =>
         token        = "%04X"\format math.random 0, 16^4 - 1
         tmpDir       = aegisub.decode_path "?temp"
@@ -139,6 +141,8 @@ class ZipArchiver
     -- on Unix, the `zip` CLI can't rename entries, so stage each file into a temp tree at
     -- its archive name, then archive that tree from the inside.
     ---@private
+    ---@return boolean|nil success true on success, nil on failure.
+    ---@return string|nil err Error message describing the failure, nil on success.
     __writeUnix: =>
         token    = "%04X"\format math.random 0, 16^4 - 1
         stageDir = "#{aegisub.decode_path '?temp'}#{pathSep}depctrl-ziparchiver-#{token}"

@@ -175,7 +175,10 @@ class Crypto
         return nil, msgs.sha1.badPayload\format type(msg) unless type(msg) == "string"
         sha1Impl msg
 
-    -- The pure-Lua reference implementation, exposed for tests / explicit fallback.
+    ---Computes a SHA-1 digest entirely in Lua; the fallback backend when no native SHA-1 is available.
+    ---@private
+    ---@param msg string The input bytes to hash (assumed to be a string; not validated).
+    ---@return string digest A 40-character lowercase hex digest.
     @_sha1Lua = sha1Lua
 
 return Crypto

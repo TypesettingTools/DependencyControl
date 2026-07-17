@@ -92,47 +92,67 @@ class Stub
             @_targetTable[@_targetMethodKey] = @_originalMethod
             @_restored[1] = true
 
+    ---Reports an assertion failure, routing it through the unit test when one is set or throwing otherwise.
     ---@private
+    ---@param msg string A printf-style format string describing the failure.
+    ---@param ... any Values interpolated into the format string.
     __fail: (msg, ...) =>
         if @unitTest
             @unitTest\assert false, msg, ...
         else
             error string.format(msg, ...), 2
 
+    ---Formats a value for inclusion in a failure message.
     ---@private
+    ---@param val any The value to stringify.
+    ---@return string dump The value's string representation.
     __dump: (val) =>
         return @unitTest.logger\dumpToString val if @unitTest
         return tostring val
 
+    ---Asserts the stub was called at least once.
     assertCalled: =>
         @__fail msgs.notCalled unless #@_calls > 0
 
+    ---Asserts the stub was never called.
     assertNotCalled: =>
         @__fail msgs.wasCalled, #@_calls unless #@_calls == 0
 
+    ---Asserts the stub was called exactly the given number of times.
+    ---@param n integer The expected call count.
     assertCalledTimes: (n) =>
         @__fail msgs.wrongCallCount, n, #@_calls unless #@_calls == n
 
+    ---Asserts the stub was called exactly once.
     assertCalledOnce: =>
         @__fail msgs.wrongCallCount, 1, #@_calls unless #@_calls == 1
 
+    ---Asserts the stub was called exactly once and with the given arguments.
+    ---@param ... any The arguments expected on the single call.
     assertCalledOnceWith: (...) =>
         @__fail msgs.wrongCallCount, 1, #@_calls unless #@_calls == 1
         expected = table.pack ...
         @__fail msgs.wrongCall, 1, @__dump(expected), @__dump(@_calls[1]) unless _stubMatch @_calls[1], expected
 
+    ---Asserts at least one recorded call was made with the given arguments.
+    ---@param ... any The arguments expected on some call.
     assertCalledWith: (...) =>
         expected = table.pack ...
         for call in *@_calls
             return if _stubMatch call, expected
         @__fail msgs.notCalledWith, #@_calls, @__dump expected
 
+    ---Asserts the most recent call was made with the given arguments.
+    ---@param ... any The arguments expected on the last call.
     assertLastCalledWith: (...) =>
         expected = table.pack ...
         last = @_calls[#@_calls]
         @__fail msgs.notCalled unless last != nil
         @__fail msgs.wrongCall, #@_calls, @__dump(expected), @__dump last unless _stubMatch last, expected
 
+    ---Asserts the nth recorded call was made with the given arguments.
+    ---@param n integer The 1-based index of the call to check.
+    ---@param ... any The arguments expected on that call.
     assertNthCalledWith: (n, ...) =>
         expected = table.pack ...
         call = @_calls[n]

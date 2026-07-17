@@ -543,8 +543,11 @@ class Download extends EventEmitter
 class Downloader extends EventEmitter
     @Download = Download
     @Event = Enum "DownloaderEvent", { Progress: "progress", Finished: "finished" }
-    -- Exposed so tests (and custom runners) can drive the round-robin scheduler
-    -- with an injected driver.
+    ---Drives every queued download of the given downloader to completion with a round-robin
+    ---scheduler, keeping up to its `maxConnections` transfers active and honoring its cancellation
+    ---and stall-timeout settings. Blocks until all transfers finish or are cancelled.
+    ---@param manager Downloader The downloader whose queued downloads are transferred.
+    ---@param driver table The transfer backend, providing `start(dl)`, `step(dl)`, `finish(dl)`, and an optional `shutdown()`.
     @multiplex = multiplex
 
     -- Maximum simultaneous transfers (also applied as the per-server connection limit on each

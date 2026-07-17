@@ -15,8 +15,17 @@ class GitRepository
         h\close! and out != "" and out or nil
 
     
+    ---Returns the branch name the given ref resolves to.
+    ---@param ref? string Git ref to resolve (defaults to HEAD).
+    ---@return string? branch Short branch name, or nil when the command fails.
     getBranch: (ref = "HEAD") => @run "rev-parse --abbrev-ref #{ref}"
+    ---Returns the abbreviated commit hash of the given ref.
+    ---@param ref? string Git ref to resolve (defaults to HEAD).
+    ---@return string? hash Seven-character commit hash, or nil when the command fails.
     getCommitHash: (ref = "HEAD") => @run "rev-parse --short=7 #{ref}"
+    ---Reports whether the given ref sits exactly on a tag.
+    ---@param ref? string Git ref to test (defaults to HEAD).
+    ---@return boolean atTag True when the ref points exactly at a tag.
     isAtTag: (ref = "HEAD") => not not @run "describe --exact-match --tags #{ref}"
 
     ---Returns a git describe-style version suffix for the current HEAD.

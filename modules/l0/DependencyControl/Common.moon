@@ -247,12 +247,20 @@ class DependencyControlCommon
             return true
         return false, msgs.validateNamespace.badNamespace\format namespace
 
+    ---Returns the Aegisub directory that scripts of the given type are installed to.
+    ---@param scriptType ScriptType Whether to resolve the automation-script or module directory.
+    ---@param rootDir? string Aegisub path token to resolve against (defaults to "?user").
+    ---@return string? dir Absolute directory path, or nil for an unrecognized script type.
     @getAutomationDir: (scriptType, rootDir = "?user") =>
         switch scriptType
             when @ScriptType.Automation then aegisub.decode_path("#{rootDir}/automation/autoload")
             when @ScriptType.Module then aegisub.decode_path("#{rootDir}/automation/include")
             else nil
         
+    ---Returns the DepUnit test directory for scripts of the given type.
+    ---@param scriptType ScriptType Whether to resolve the automation-script or module test directory.
+    ---@param rootDir? string Aegisub path token to resolve against (defaults to "?user").
+    ---@return string? dir Absolute directory path, or nil for an unrecognized script type.
     @getTestDir = (scriptType, rootDir = "?user") =>
         switch scriptType
             when @ScriptType.Automation then aegisub.decode_path("#{rootDir}/automation/tests/DepUnit/macros")

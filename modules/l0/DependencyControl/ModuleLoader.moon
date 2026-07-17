@@ -32,6 +32,13 @@ class ModuleLoader
     }
   }
 
+  ---Formats a single module's version-error line for a load-error summary.
+  ---@param name string The module's display name.
+  ---@param reqVersion? string|integer The required version, shown in the message when present.
+  ---@param url? string The module's feed/download URL, appended when present.
+  ---@param reason? string The failure reason shown for the module.
+  ---@param ref? table The installed module's version record; when given, formats the outdated template instead of the missing one.
+  ---@return string errorLine The formatted one-line error entry.
   @formatVersionErrorTemplate = (name, reqVersion, url, reason, ref) =>
     url = url and ": #{url}" or ""
     if ref
@@ -42,6 +49,9 @@ class ModuleLoader
       reqVersion = reqVersion and " (v#{reqVersion})" or ""
       return msgs.formatVersionErrorTemplate.missing\format name, reqVersion, url, reason
 
+  ---Registers a placeholder entry for this module in the global module registry so a circular
+  ---dependency can resolve this module while it is still loading. No-op for non-module scripts.
+  ---@return boolean|nil registered True if a dummy was registered, false if one already existed, nil if this isn't a module.
   @createDummyRef = =>
     return nil if @scriptType != Common.ScriptType.Module
     -- global module registry allows for circular dependencies:
@@ -54,6 +64,9 @@ class ModuleLoader
       return true
     return false
 
+  ---Removes this module's placeholder registry entry if it is still a dummy (not yet replaced by the
+  ---real module). No-op for non-module scripts.
+  ---@return boolean|nil removed True if a dummy entry was removed, false if none was present, nil if this isn't a module.
   @removeDummyRef = =>
     return nil if @scriptType != Common.ScriptType.Module
     if LOADED_MODULES[@namespace] and LOADED_MODULES[@namespace][DEPCTRL_DUMMY_MODULE_MARKER]
@@ -61,6 +74,13 @@ class ModuleLoader
       return true
     return  false
 
+  ---Loads a single required module, storing the result in `mdl._ref` and running its
+  ---DependencyControl initializer. On failure, sets `mdl._missing` when the module wasn't found or
+  ---`mdl._error` with the load error.
+  ---@param mdl table The module descriptor to load; mutated in place with the result and error flags.
+  ---@param usePrivate? boolean Load this script's private copy (namespaced under its own name) instead of the shared module.
+  ---@param reload? boolean Discard any cached reference and load the module afresh.
+  ---@return table? ref The loaded module reference, or nil on failure.
   @loadModule = (mdl, usePrivate, reload) =>
     with mdl
       ._missing, ._error = nil

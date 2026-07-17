@@ -534,6 +534,11 @@ class FileOps
         return true if actual == hash\lower!
         return false, msgs.verifyHash.mismatch\format actual, hash
 
+    ---Removes a directory, by default together with everything it contains.
+    ---@param path string|string[] Path or path segments to the directory to remove.
+    ---@param recurse? boolean Remove the directory's contents first (default true); when false, only an already-empty directory is removed.
+    ---@return boolean? success True on success, or nil on error.
+    ---@return string? err An error message when the path is empty, doesn't exist, isn't a directory, or something couldn't be removed.
     rmdir: (path, recurse = true) ->
         return nil, msgs.rmdir.emptyPath if path == ""
         mode, path = FileOps.attributes path, "mode"
@@ -643,7 +648,10 @@ class FileOps
                 return false, msgs.exists.wrongType\format fullPathOrErrMsg, expectedMode, mode
             
                 
+    ---Extracts the root anchor of an absolute path.
     ---@private
+    ---@param absolutePath string The absolute path to inspect.
+    ---@return string? root On Windows the drive prefix with its separator (e.g. "C:\"), on POSIX the leading slash plus first segment (e.g. "/usr"), or nil when the path has no such root.
     __getPathRoot: (absolutePath) ->
         return absolutePath\match "^[A-Za-z]:[/\\]" if ffi.os == "Windows"
         return absolutePath\match "^/[^/\\]+"

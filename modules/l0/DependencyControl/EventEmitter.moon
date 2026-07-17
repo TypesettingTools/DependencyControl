@@ -2,6 +2,7 @@
 ---Subclasses provide an `@Event` Enum that defines the valid event values.
 ---@class EventEmitter
 class EventEmitter
+    ---Creates an event emitter with an empty listener registry.
     new: =>
         @_listeners = {}
 
@@ -30,8 +31,10 @@ class EventEmitter
             table.remove listeners, i if listeners[i] == callback
         return @
 
-    -- Invokes all listeners for an event with (self, ...). Iterates a snapshot so
-    -- a listener may safely on/off during dispatch.
+    ---Invokes every listener registered for an event, passing the emitter instance followed by the
+    ---given arguments. A listener may safely register or remove listeners during dispatch.
+    ---@param event any The event value whose listeners to invoke.
+    ---@param ... any Extra arguments forwarded to each listener after the emitter instance.
     _emit: (event, ...) =>
         listeners = @_listeners[event]
         return unless listeners
