@@ -108,6 +108,24 @@
       ut\assertEquals c.modules["l0.mod"].recordType, Common.RecordType.Unmanaged
       ut\assertNil c.modules["l0.mod"].unmanaged
 
+    -- the pre-0.7 alpha pin on DependencyControl's own packages is rewritten to the new release channel;
+    -- a non-alpha pin, and any channel chosen on a third-party feed, are left untouched
+    migratesOwnedAlphaPin: (ut) ->
+      c = {
+        modules: {
+          ["l0.DependencyControl"]: {lastChannel: "alpha", activeChannel: "alpha"}
+          ["l0.Functional"]:        {lastChannel: "alpha"}          -- third-party feed: not ours to move
+        }
+        macros: {
+          ["l0.DependencyControl.Toolbox"]: {lastChannel: "beta"}   -- ours, but not the alpha pin: preserved
+        }
+      }
+      migrate c, nil, schema.CONFIG_SCHEMA_ID_CURRENT
+      ut\assertEquals c.modules["l0.DependencyControl"].lastChannel, "release"
+      ut\assertEquals c.modules["l0.DependencyControl"].activeChannel, "release"
+      ut\assertEquals c.modules["l0.Functional"].lastChannel, "alpha"              -- third-party pin preserved
+      ut\assertEquals c.macros["l0.DependencyControl.Toolbox"].lastChannel, "beta" -- non-alpha pin preserved
+
     -- the migration handles exactly the v0.6.3 keys: each is either lifted or dropped, and nothing else is
     handlesExactlyV063Keys: (ut) ->
       handled = {k, true for k in *droppedKeys}
@@ -119,6 +137,6 @@
     _order: {
       "hasAllSections", "hasPolicyLiterals"
       "migratesFlatKeys", "dropsObsoleteKeys", "dropsObsoleteFormatVersion", "skipsWhenSchemaPresent"
-      "migratesLegacyRecordFields", "preservesUnknownKeys", "handlesExactlyV063Keys"
+      "migratesLegacyRecordFields", "migratesOwnedAlphaPin", "preservesUnknownKeys", "handlesExactlyV063Keys"
     }
   }

@@ -49,6 +49,15 @@ keyMap = {
 -- v0.6.3 keys removed outright on migration: settings dropped in v0.7.0 with no sectioned replacement.
 droppedKeys = {"tryAllFeeds", "dumpFeeds"}
 
+-- pre-0.7 published these packages on an `alpha` channel only, pinning every install to it; v0.7.0 makes
+-- `release` their default. rewrite the pin so those installs track `release`, scoped to DependencyControl's
+-- own packages so a channel deliberately chosen for a third-party feed is left alone.
+channelRename = {
+    packages: Common.makeSet {"l0.DependencyControl", "l0.DependencyControl.Toolbox"}
+    from: "alpha"
+    to:   "release"
+}
+
 ---Migrates a whole config-file table up to the current schema, in place, when its root `$schema` predates it.
 ---For a pre-`$schema` config it lifts flat `config`-hive keys into topic sections and rewrites each record's
 ---pre-0.7 `unmanaged` flag into its recordType and its packed-integer version into a semver string; a config
@@ -80,11 +89,14 @@ migrate = (config, currentSchemaId, targetSchemaId) ->
     for section in *Common.ScriptTypeSection.values
         records = config[section]
         continue unless type(records) == "table"
-        for _, record in pairs records
+        for namespace, record in pairs records
             continue unless type(record) == "table"
             record.recordType = Common.RecordType.Unmanaged if record.unmanaged
             record.unmanaged = nil
             record.version = SemanticVersion\toString record.version if type(record.version) == "number"
+            if channelRename.packages[namespace]
+                record.lastChannel = channelRename.to if record.lastChannel == channelRename.from
+                record.activeChannel = channelRename.to if record.activeChannel == channelRename.from
     return true
 
 {
