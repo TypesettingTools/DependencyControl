@@ -510,12 +510,14 @@ class Record
     getEntryPointPath: =>
         userDir = Common\getAutomationDir @scriptType, "?user"
         for path in *@getPossibleEntryPointPaths userDir
-            return path, true if "file" == FileOps.attributes path, "mode"
+            info = FileOps.getAttributes path, "mode"
+            return path, true if info and info.attr == "file"
 
         dataDir = Common\getAutomationDir @scriptType, "?data"
         if dataDir and dataDir != userDir
             for path in *@getPossibleEntryPointPaths dataDir
-                return path, false if "file" == FileOps.attributes path, "mode"
+                info = FileOps.getAttributes path, "mode"
+                return path, false if info and info.attr == "file"
 
         -- TODO: what if a module is available in another package search path?
         return nil, nil
@@ -547,7 +549,8 @@ class Record
 
         lfs.chdir dir
         for file in lfs.dir dir
-            mode, path = FileOps.attributes file, "mode"
+            info = FileOps.getAttributes file, "mode"
+            mode, path = info and info.attr, info and info.path
             -- a file must be "<stem>.<ext>" and a module directory exactly "<stem>", so a
             -- sibling package sharing the name prefix never falls into the recursive delete
             currPattern = mode == "file" and pattern .. "%." or pattern .. "$"

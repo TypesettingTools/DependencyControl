@@ -140,14 +140,15 @@ Reload your automation scripts to generate a new configuration file.]]
 
 
     readFile = (waitLockTime, useLock = true) =>
-        mode, file = fileOps.attributes @filePath, "mode"
-        if mode == nil
-            return nil, file
+        info, err = fileOps.getAttributes @filePath, "mode"
+        unless info
+            return nil, err
 
-        elseif not mode
+        unless info.attr
             @logger\trace msgs.readFile.fileNotFound, @filePath
             return false, msgs.readFile.fileNotFound\format @filePath
 
+        file = info.path
         if useLock
             lockState, msg = @lock\lock waitLockTime
             if lockState != Lock.LockState.Held

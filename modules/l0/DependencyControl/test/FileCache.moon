@@ -114,8 +114,8 @@
       third = cache\put "u://f", '{"v":3}', "f"
 
       -- the oldest, unprotected snapshot is gone; the newest (the index's target) survives
-      ut\assertFalsy FileOps.attributes FileOps.joinPath(cache.cacheDir, first.latestFile), "mode"
-      ut\assertEquals "file", FileOps.attributes FileOps.joinPath(cache.cacheDir, third.latestFile), "mode"
+      ut\assertFalsy FileOps.getAttributes(FileOps.joinPath(cache.cacheDir, first.latestFile), "mode").attr
+      ut\assertEquals "file", FileOps.getAttributes(FileOps.joinPath(cache.cacheDir, third.latestFile), "mode").attr
       path = cache\getFile "u://f"
       ut\assertEquals readFile(path), '{"v":3}'
 
@@ -175,7 +175,7 @@
       cache\get "u://f"                              -- prime the L1 memo
       cache\expireAll 2000, true                     -- purge everything cached before 2000
       ut\assertNil (cache\get "u://f")               -- memo dropped and L2 gone → full miss
-      ut\assertFalsy FileOps.attributes FileOps.joinPath(cache.cacheDir, meta.latestFile), "mode"
+      ut\assertFalsy FileOps.getAttributes(FileOps.joinPath(cache.cacheDir, meta.latestFile), "mode").attr
 
     _order: {
       "put_roundTrip", "put_worksWithDefaultClock", "getFile_uncached", "isFresh_window", "put_updatesLatest"

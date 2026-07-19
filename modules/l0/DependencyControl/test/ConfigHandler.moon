@@ -139,7 +139,7 @@
       ut\assertNil err
       ut\assertEquals #overlaps, 0
 
-    -- load: stubs fileOps.attributes, lock, io.open, json.decode
+    -- load: stubs fileOps.getAttributes, lock, io.open, json.decode
 
     load_noFilePath: (ut) ->
       handler = ConfigHandler nil
@@ -150,7 +150,7 @@
     load_fileNotFound: (ut) ->
       handler = ConfigHandler nil
       handler.filePath = "/config/test.json"
-      (ut\stub FILEOPS_MODULE_NAME, "attributes")\returns false, "/config/test.json"
+      (ut\stub FILEOPS_MODULE_NAME, "getAttributes")\returns {attr: false, path: "/config/test.json"}
       result = handler\load!
       ut\assertTrue result
       ut\assertEquals handler.config, {}
@@ -161,7 +161,7 @@
       handler.lock = {}
       (ut\stub handler.lock, "lock")\returns Lock.LockState.Held, 0
       ut\stub handler.lock, "release"
-      (ut\stub FILEOPS_MODULE_NAME, "attributes")\returns "file", "/config/test.json"
+      (ut\stub FILEOPS_MODULE_NAME, "getAttributes")\returns {attr: "file", path: "/config/test.json"}
       openStub = (ut\stub io, "open")\calls -> {
         read: (handle, fmt) -> '{"key":"value"}'
         close: (handle) ->
@@ -186,7 +186,7 @@
         return true
       (ut\stub handler.lock, "lock")\returns Lock.LockState.Held, 0
       ut\stub handler.lock, "release"
-      (ut\stub FILEOPS_MODULE_NAME, "attributes")\returns "file", "/config/test.json"
+      (ut\stub FILEOPS_MODULE_NAME, "getAttributes")\returns {attr: "file", path: "/config/test.json"}
       (ut\stub io, "open")\calls -> {read: ((h, f) -> "{}"), close: (->)}
       (ut\stub JSON_MODULE_NAME, "decode")\returns {config: {flatKey: 1}}  -- legacy: no $schema
       saveStub = (ut\stub handler, "save")\returns true
@@ -208,7 +208,7 @@
       handler.__migrate = (config, current, target) -> migrated = true
       (ut\stub handler.lock, "lock")\returns Lock.LockState.Held, 0
       ut\stub handler.lock, "release"
-      (ut\stub FILEOPS_MODULE_NAME, "attributes")\returns "file", "/config/test.json"
+      (ut\stub FILEOPS_MODULE_NAME, "getAttributes")\returns {attr: "file", path: "/config/test.json"}
       (ut\stub io, "open")\calls -> {read: ((h, f) -> "{}"), close: (->)}
       (ut\stub JSON_MODULE_NAME, "decode")\returns {["$schema"]: "schema://v2", config: {}}
       saveStub = (ut\stub handler, "save")\returns true
@@ -217,7 +217,7 @@
       ut\assertEquals handler.schemaId, "schema://v2"
       saveStub\assertNotCalled!
 
-    -- save: stubs fileOps.attributes, lock, io.open, json.encode
+    -- save: stubs fileOps.getAttributes, lock, io.open, json.encode
 
     save_noFilePath: (ut) ->
       handler = ConfigHandler nil
@@ -242,7 +242,7 @@
       (ut\stub handler.lock, "lock")\returns Lock.LockState.Held, 0
       ut\stub handler.lock, "release"
       -- readFile sees no existing file, save writes fresh
-      (ut\stub FILEOPS_MODULE_NAME, "attributes")\returns false, "/config/test.json"
+      (ut\stub FILEOPS_MODULE_NAME, "getAttributes")\returns {attr: false, path: "/config/test.json"}
       writeHandle = {setvbuf: ->, write: ->, flush: ->, close: ->}
       openStub = (ut\stub io, "open")\returns writeHandle
       (ut\stub JSON_MODULE_NAME, "encode")\returns '{"key":"value"}'
@@ -272,7 +272,7 @@
       handlerB.lock = {}
       (ut\stub handlerB.lock, "lock")\returns Lock.LockState.Held, 0
       ut\stub handlerB.lock, "release"
-      (ut\stub FILEOPS_MODULE_NAME, "attributes")\returns false, "/config/test.json"
+      (ut\stub FILEOPS_MODULE_NAME, "getAttributes")\returns {attr: false, path: "/config/test.json"}
       (ut\stub io, "open")\returns {setvbuf: ->, write: ->, flush: ->, close: ->}
       (ut\stub JSON_MODULE_NAME, "encode")\returns '{}'
 
@@ -291,7 +291,7 @@
       handler.lock = {}
       (ut\stub handler.lock, "lock")\returns Lock.LockState.Held, 0
       ut\stub handler.lock, "release"
-      (ut\stub FILEOPS_MODULE_NAME, "attributes")\returns false, "/config/test.json"
+      (ut\stub FILEOPS_MODULE_NAME, "getAttributes")\returns {attr: false, path: "/config/test.json"}
       (ut\stub io, "open")\returns {setvbuf: ->, write: ->, flush: ->, close: ->}
       (ut\stub JSON_MODULE_NAME, "encode")\returns '{}'
       fakeView = {__hivePath: {"section", "key"}, __class: ConfigView}

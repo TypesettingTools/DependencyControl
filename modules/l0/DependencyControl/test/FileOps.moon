@@ -154,23 +154,41 @@
       ut\assertNil path
       ut\assertString err
 
-    -- attributes: stubs lfs.attributes
-    -- lfs.attributes(path, key) returns (value) on success, (nil) when not found,
-    -- or (nil, errmsg) on error. FileOps.attributes maps these to value/false/nil.
+    -- getAttributes: stubs lfs.attributes
+    -- lfs.attributes(path, key) returns (value) on success, (nil) when not found, or
+    -- (nil, errmsg, errCode) on error. getAttributes maps these to an info table whose
+    -- attr is the value or false, or to nil plus an error message on a hard failure.
 
-    attributes_file: (ut) ->
+    getAttributes_file: (ut) ->
       attrStub = (ut\stub lfs, "attributes")\calls (path, key) -> "file"
+      info, err = FileOps.getAttributes {basePath, "file.txt"}, "mode"
+      ut\assertEquals info.attr, "file"
+      ut\assertString info.path
+      ut\assertNil err
+      attrStub\assertCalledOnceWith FileOps.joinPath(basePath, "file.txt"), "mode"
+
+    getAttributes_notFound: (ut) ->
+      attrStub = (ut\stub lfs, "attributes")\calls (path, key) -> nil
+      info, err = FileOps.getAttributes {basePath, "missing.txt"}, "mode"
+      ut\assertFalse info.attr
+      ut\assertString info.path
+      ut\assertNil err
+      attrStub\assertCalledOnceWith FileOps.joinPath(basePath, "missing.txt"), "mode"
+
+    -- a genuine lfs failure (an error code other than not-found) surfaces as nil plus a
+    -- message, keeping the error out of the value channel
+    getAttributes_error: (ut) ->
+      (ut\stub lfs, "attributes")\calls (path, key) -> nil, "permission denied", 13
+      info, err = FileOps.getAttributes {basePath, "denied.txt"}, "mode"
+      ut\assertNil info
+      ut\assertString err
+
+    -- the deprecated attributes() shim still exposes the legacy five-value contract
+    attributes_deprecatedShim: (ut) ->
+      (ut\stub lfs, "attributes")\calls (path, key) -> "file"
       mode, fullPath = FileOps.attributes {basePath, "file.txt"}, "mode"
       ut\assertEquals mode, "file"
       ut\assertString fullPath
-      attrStub\assertCalledOnceWith FileOps.joinPath(basePath, "file.txt"), "mode"
-
-    attributes_notFound: (ut) ->
-      attrStub = (ut\stub lfs, "attributes")\calls (path, key) -> nil
-      mode, fullPath = FileOps.attributes {basePath, "missing.txt"}, "mode"
-      ut\assertFalse mode
-      ut\assertString fullPath
-      attrStub\assertCalledOnceWith FileOps.joinPath(basePath, "missing.txt"), "mode"
 
     -- joinPath: pure computation, no stubs needed
 
@@ -477,7 +495,7 @@
       "validateFullPath_homeDirExpansion", "validateFullPath_reservedNameNonWindows",
       "getNamespacedPath_nested", "getNamespacedPath_flat",
       "getNamespacedPath_badNamespace", "getNamespacedPath_badBasePath",
-      "attributes_file", "attributes_notFound",
+      "getAttributes_file", "getAttributes_notFound", "getAttributes_error", "attributes_deprecatedShim",
       "mkdir_new", "mkdir_exists",
       "mkdir_acceptsSilentLfsSuccess", "mkdir_silentLfsFailure", "rmdir_acceptsSilentLfsSuccess",
       "readFile_success", "readFile_isDirectory",

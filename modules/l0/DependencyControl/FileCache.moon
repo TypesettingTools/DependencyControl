@@ -127,7 +127,8 @@ class FileCache
         meta = @getMeta key
         return nil unless meta and meta.latestFile
         path = FileOps.joinPath @cacheDir, meta.latestFile
-        return nil, meta unless "file" == FileOps.attributes path, "mode"
+        info = FileOps.getAttributes path, "mode"
+        return nil, meta unless info and info.attr == "file"
         return path, meta
 
     ---Returns the deserialized latest snapshot for a key, served from the in-memory L1 memo when it still
@@ -147,7 +148,8 @@ class FileCache
         return nil, meta, fresh unless @__deserialize and meta.latestFile
 
         path = FileOps.joinPath @cacheDir, meta.latestFile
-        content = "file" == FileOps.attributes(path, "mode") and FileOps.readFile path
+        info = FileOps.getAttributes path, "mode"
+        content = info and info.attr == "file" and FileOps.readFile path
         return nil, meta, fresh unless content
 
         value = @.__deserialize content

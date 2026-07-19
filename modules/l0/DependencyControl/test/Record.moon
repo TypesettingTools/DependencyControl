@@ -23,12 +23,12 @@
     (ut\stub aegisub, "decode_path")\calls (path) ->
       ((path\gsub "^%?user", "#{DRIVE}/user")\gsub "^%?data", "#{DRIVE}/data")
 
-  -- fileOps.attributes stub that reports a "file" mode for exactly the given full paths.
+  -- fileOps.getAttributes stub that reports a "file" mode for exactly the given full paths.
   stubFilesPresent = (ut, present) ->
     set = {p, true for p in *present}
-    (ut\stub FILEOPS_MODULE_NAME, "attributes")\calls (path, key) ->
-      return "file", path if set[path]
-      return false, path
+    (ut\stub FILEOPS_MODULE_NAME, "getAttributes")\calls (path, key) ->
+      return {attr: "file", path: path} if set[path]
+      return {attr: false, path: path}
 
   -- Normalize a sub-path under a base dir the same way getPossibleEntryPointPaths does,
   -- so expected paths in tests always match what the production code produces.

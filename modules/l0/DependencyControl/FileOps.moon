@@ -68,6 +68,13 @@ if ffi.os == "Windows"
         ok, res = pcall detectRegistryLongPathsEnabled
         windowsRegistryLongPathsEnabled = ok and res
 
+---@class FileOpsAttributesInfo
+---@field attr table|string|number|false The requested attribute(s), or false when the entry doesn't exist.
+---@field path string The validated full path.
+---@field dev string The device component of the path.
+---@field dir string The directory component of the path.
+---@field file string The file name component of the path.
+
 ---Filesystem utility helpers used by DependencyControl.
 ---@class FileOps
 class FileOps
@@ -233,9 +240,15 @@ class FileOps
         paths = {paths} unless type(paths) == "table"
 
         for path in *paths
-            mode, path = FileOps.attributes path, "mode"
-            if mode
-                rmFunc = mode == "file" and os.remove or FileOps.rmdir
+            info, attrErr = FileOps.getAttributes path, "mode"
+            unless info
+                -- couldn't resolve or stat the path
+                details[path] = {nil, attrErr}
+                continue
+
+            path = info.path
+            if info.attr
+                rmFunc = info.attr == "file" and os.remove or FileOps.rmdir
                 res, err = rmFunc path, recurse
                 unless res
                     firstErr or= err
@@ -295,27 +308,26 @@ class FileOps
     ---@return string? err
     copy: ( source, target, clobber ) ->
         -- source check
-        mode, sourceFullPath, _, _, fileName = FileOps.attributes source, "mode"
+        info, err = FileOps.getAttributes source, "mode"
+        return false, msgs.copy.genericError\format source, target, err unless info
+        {attr: mode, path: sourceFullPath, file: fileName} = info
         switch mode
             when "directory"
                 return false, msgs.copy.dirCopyUnsupported
-            when nil
-                return false, msgs.copy.genericError\format source, target, sourceFullPath
             when false
                 return false, msgs.copy.missingSource\format source
 
         -- target check
         checkTarget = (target) ->
-            mode, targetFullPath = FileOps.attributes target, "mode"
-            switch mode
+            info, err = FileOps.getAttributes target, "mode"
+            return false, msgs.copy.genericError\format source, target, err unless info
+            switch info.attr
                 when "file"
                     return false, msgs.writeFile.targetExists\format target unless clobber
-                when nil
-                    return false, msgs.copy.genericError\format source, target, targetFullPath
                 when "directory"
                     target ..= "/#{fileName}"
                     return checkTarget target
-            return true, targetFullPath
+            return true, info.path
 
         success, targetFullPath = checkTarget target
         return false, targetFullPath unless success
@@ -343,9 +355,10 @@ class FileOps
     ---@return string[]? entries The entry names, or nil when the path isn't a directory.
     ---@return string? err
     listDir: (dirPath) ->
-        mode, fullPath = FileOps.attributes dirPath, "mode"
-        return nil, msgs.listDir.notADirectory\format fullPath, mode if mode != "directory"
-        return [entry for entry in lfs.dir(fullPath) when entry != "." and entry != ".."]
+        info, err = FileOps.getAttributes dirPath, "mode"
+        return nil, err unless info
+        return nil, msgs.listDir.notADirectory\format info.path, info.attr if info.attr != "directory"
+        return [entry for entry in lfs.dir(info.path) when entry != "." and entry != ".."]
 
     ---Recursively collects all files below a directory.
     ---@param dirPath string|string[] Path or path segments of the directory to walk.
@@ -357,7 +370,8 @@ class FileOps
         files = {}
         for entry in *entries
             fullPath = FileOps.joinPath dirPath, entry
-            mode = FileOps.attributes fullPath, "mode"
+            info = FileOps.getAttributes fullPath, "mode"
+            mode = info and info.attr
             if mode == "directory"
                 for file in *(FileOps.listFilesRecursive(fullPath) or {})
                     files[#files + 1] = file
@@ -420,7 +434,9 @@ class FileOps
     ---@return boolean success
     ---@return string? err
     move: (source, target, overwrite) ->
-        mode, err = FileOps.attributes target, "mode"
+        info, err = FileOps.getAttributes target, "mode"
+        return false, msgs.move.genericError\format source, target, err unless info
+        mode = info.attr
         if mode == "file"
             unless overwrite
                 return false, msgs.move.exists\format source, target, mode
@@ -443,8 +459,6 @@ class FileOps
 
         elseif mode -- a directory (or something else) of the same name as the target file is already present
             return false, msgs.move.exists\format source, target, mode
-        elseif mode == nil  -- if retrieving the attributes of a file fails, something is probably wrong
-            return false, msgs.move.genericError\format source, target, err
 
         else -- target file not found, check directory
             res, dirOrErr = FileOps.mkdir target, true, true
@@ -476,11 +490,12 @@ class FileOps
     ---@return string? data The contents of the file, or nil if an error occurred.
     ---@return string? err An error message if an error occurred.
     readFile: (path) ->
-        mode, fullPath = FileOps.attributes path, "mode"
-        return nil, msgs.readFile.cantOpen\format path, fullPath unless mode
-        return nil, msgs.readFile.notAFile\format path, mode if mode != "file"
+        info, err = FileOps.getAttributes path, "mode"
+        return nil, err unless info
+        return nil, msgs.readFile.cantOpen\format path, info.path unless info.attr
+        return nil, msgs.readFile.notAFile\format path, info.attr if info.attr != "file"
 
-        handle, msg = io.open fullPath, "rb"
+        handle, msg = io.open info.path, "rb"
         return nil, msgs.readFile.cantOpen\format fullPath, msg unless handle
 
         data, msg = handle\read "*a"
@@ -497,11 +512,12 @@ class FileOps
     ---@return boolean success True if the file was written successfully.
     ---@return string? err
     writeFile: (path, data, clobber = false) ->
-        mode, fullPath = FileOps.attributes path, "mode"
-        return false, msgs.writeFile.notAFile\format path, mode if mode and mode ~= "file"
-        return false, msgs.writeFile.targetExists\format path if mode == "file" and not clobber
+        info, err = FileOps.getAttributes path, "mode"
+        return false, err unless info
+        return false, msgs.writeFile.notAFile\format path, info.attr if info.attr and info.attr != "file"
+        return false, msgs.writeFile.targetExists\format path if info.attr == "file" and not clobber
 
-        handle, msg = io.open fullPath, "wb"
+        handle, msg = io.open info.path, "wb"
         return false, msgs.writeFile.cantOpen\format fullPath, msg unless handle
 
         success, msg = handle\write data
@@ -541,9 +557,11 @@ class FileOps
     ---@return string? err An error message when the path is empty, doesn't exist, isn't a directory, or something couldn't be removed.
     rmdir: (path, recurse = true) ->
         return nil, msgs.rmdir.emptyPath if path == ""
-        mode, path = FileOps.attributes path, "mode"
-        return nil, msgs.rmdir.doesntExist\format path if mode == false
-        return nil, msgs.rmdir.notDir\format path, mode unless mode == "directory"
+        info, err = FileOps.getAttributes path, "mode"
+        return nil, err unless info
+        path = info.path
+        return nil, msgs.rmdir.doesntExist\format path if info.attr == false
+        return nil, msgs.rmdir.notDir\format path, info.attr unless info.attr == "directory"
 
         if recurse
             -- recursively remove contained files and directories
@@ -589,12 +607,12 @@ class FileOps
     ---@return boolean? created True if created, false if it already existed, nil if an error occurred.
     ---@return string dirPathOrError The existing/created directory path, or an error message.
     mkdir: (path, isFile, recurse) ->
-        mode, fullPath, dev, dir, file = FileOps.attributes path, "mode"
-        dir = isFile and table.concat({dev,dir or file}) or fullPath
+        info, err = FileOps.getAttributes path, "mode"
+        return nil, err unless info
+        {attr: mode, path: fullPath, :dev, :dir, :file} = info
+        dir = isFile and table.concat({dev, dir or file}) or fullPath
 
-        if mode == nil
-            return nil, msgs.attributes.genericError\format fullPath
-        elseif not mode
+        if not mode
             return mkdirRecursive dir if recurse
             res, err = lfs.mkdir dir
             -- lfs implementations disagree on the success value (LuaFileSystem returns true,
@@ -609,7 +627,29 @@ class FileOps
             return nil, msgs.mkdir.otherExists\format mode
         return false, dir
 
+    ---Retrieves file or directory attributes along with the parsed components of its path.
+    ---@param path string|string[] Either a path or an array of path segments.
+    ---@param key? string Attribute name to retrieve (e.g. "mode", "size", "modification"), or nil for the full attribute table.
+    ---@return FileOpsAttributesInfo? info The attributes and path components, or nil on a hard error (an invalid path or an lfs failure). A path that simply doesn't exist is not an error: `info.attr` is then false.
+    ---@return string? err An error message, present only when info is nil.
+    getAttributes: (path, key) ->
+        fullPath, dev, dir, file = FileOps.validateFullPath path, false, lfs.currentdir!
+        unless fullPath
+            return nil, msgs.attributes.badPath\format dev
+
+        attr, err, errCode = lfs.attributes fullPath, key
+        if attr
+            return {:attr, path: fullPath, :dev, :dir, :file}
+        -- Aegisub's lfs implementation signals a non-existent file/dir with a bare nil,
+        -- while the stock library (https://lunarmodules.github.io/luafilesystem/; v1.7.0+)
+        -- returns an error code alongside an error message
+        elseif err == nil or errCode == ENOENT or errCode == ERROR_PATH_NOT_FOUND or errCode == ENOTDIR
+            return {attr: false, path: fullPath, :dev, :dir, :file}
+        else
+            return nil, msgs.attributes.genericError\format err
+
     ---Retrieves file or directory attributes.
+    ---@deprecated Use `getAttributes`, which returns a single info table plus an error message.
     ---@param path string|string[] Either a path or an array of path segments.
     ---@param key? string Attribute name to retrieve (e.g. "mode", "size", "modification"), or nil for the full attribute table.
     ---@return table|string|number|boolean|nil attr The requested attribute(s), false if absent, or nil on error.
@@ -618,20 +658,9 @@ class FileOps
     ---@return string? dir The directory component of the path.
     ---@return string? file The file name component of the path.
     attributes: (path, key) ->
-        fullPath, dev, dir, file = FileOps.validateFullPath path, false, lfs.currentdir!
-        unless fullPath
-            return nil, msgs.attributes.badPath\format dev
-
-        attr, err, errCode = lfs.attributes fullPath, key
-        if attr
-            return attr, fullPath, dev, dir, file
-        -- Aegisub's lfs implementation signals a non-existent file/dir with a bare nil, 
-        -- while the stock library (https://lunarmodules.github.io/luafilesystem/; v1.7.0+)
-        -- returns an error code alongside an error message
-        elseif err == nil or errCode == ENOENT or errCode == ERROR_PATH_NOT_FOUND or errCode == ENOTDIR
-            return false, fullPath, dev, dir, file
-        else
-            return nil, msgs.attributes.genericError\format err
+        info, err = FileOps.getAttributes path, key
+        return nil, err unless info
+        return info.attr, info.path, info.dev, info.dir, info.file
 
     ---Checks whether a file or directory exists and optionally verifies its type.
     ---@param path string|string[] Either a path or an array of path segments.
@@ -639,15 +668,12 @@ class FileOps
     ---@return boolean? exists True if it exists and matches the expected type, false if not, nil on error.
     ---@return string? err An error message if the file doesn't exist or is of the wrong type.
     exists: (path, expectedMode) ->
-        mode, fullPathOrErrMsg = FileOps.attributes path, "mode"
-        switch mode
-            when nil then return nil, fullPathOrErrMsg
-            when false then return false, msgs.exists.doesntExist\format fullPathOrErrMsg
-            else
-                return true if not expectedMode or mode == expectedMode                 
-                return false, msgs.exists.wrongType\format fullPathOrErrMsg, expectedMode, mode
-            
-                
+        info, err = FileOps.getAttributes path, "mode"
+        return nil, err unless info
+        return false, msgs.exists.doesntExist\format info.path unless info.attr
+        return true if not expectedMode or info.attr == expectedMode
+        return false, msgs.exists.wrongType\format info.path, expectedMode, info.attr
+
     ---Extracts the root anchor of an absolute path.
     ---@private
     ---@param absolutePath string The absolute path to inspect.
