@@ -20,7 +20,7 @@
 
     timeElapsed_advancesAfterSleep: (ut) ->
       t = Timer!
-      Timer.sleep 20          -- 20 ms
+      Timer.sleep 20 -- 20 ms
       -- Require at least 10 ms to pass; allows 50% margin for CI jitter.
       ut\assertGreaterThan t\timeElapsed!, 0.010
 

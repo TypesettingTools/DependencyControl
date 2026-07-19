@@ -1,8 +1,8 @@
 -- FileOps tests: path validation and filesystem utilities.
 -- Called from Tests.moon as: (require "...test.FileOps") basePath, isWindows
 (basePath, isWindows) ->
-  ffi     = require "ffi"
-  lfs     = require "lfs"
+  ffi = require "ffi"
+  lfs = require "lfs"
   FileOps = require "l0.DependencyControl.FileOps"
   pathSep = isWindows and "\\" or "/"
 
@@ -34,7 +34,7 @@
     validateFullPath_parentDir: (ut) ->
       -- ".." is resolved rather than rejected
       result = FileOps.validateFullPath {basePath, "..", "escape.txt"}
-      ut\assertString result  -- resolves to parent dir + escape.txt
+      ut\assertString result -- resolves to parent dir + escape.txt
 
     validateFullPath_tooLong: (ut) ->
       -- exceed the full-path limit on every platform/config (well past the ~32k
@@ -261,7 +261,7 @@
 
     readFile_success: (ut) ->
       filePath = FileOps.joinPath basePath, "file.txt"
-      content  = "hello, DependencyControl"
+      content = "hello, DependencyControl"
       mockHandle = {
         read: (handle, fmt) -> content
         close: (handle) ->
@@ -284,12 +284,12 @@
     getHash_sha1: (ut) ->
       (ut\stub FILEOPS_MODULE_NAME, "readFile")\returns "abc"
       ut\assertEquals FileOps.getHash("/path/file", "sha1"),
-                      "a9993e364706816aba3e25717850c26c9cd0d89d"
+        "a9993e364706816aba3e25717850c26c9cd0d89d"
 
     getHash_defaultsToSha1: (ut) ->
       (ut\stub FILEOPS_MODULE_NAME, "readFile")\returns "abc"
       ut\assertEquals FileOps.getHash("/path/file"),
-                      "a9993e364706816aba3e25717850c26c9cd0d89d"
+        "a9993e364706816aba3e25717850c26c9cd0d89d"
 
     getHash_unsupportedType: (ut) ->
       hash, err = FileOps.getHash "/path/file", "md5"
@@ -316,13 +316,13 @@
     copy_success: (ut) ->
       srcPath = FileOps.joinPath basePath, "src.txt"
       dstPath = FileOps.joinPath basePath, "dst.txt"
-      mockIn  = {
-        read:  (handle, fmt)  -> "content"
-        close: (handle)       ->
+      mockIn = {
+        read: (handle, fmt) -> "content"
+        close: (handle) ->
       }
       mockOut = {
         write: (handle, data) -> true
-        close: (handle)       ->
+        close: (handle) ->
       }
       (ut\stub lfs, "attributes")\calls (path, key) ->
         if path == srcPath then "file" else nil

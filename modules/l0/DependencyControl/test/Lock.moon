@@ -1,11 +1,11 @@
 -- Lock tests: extracted from the main test suite.
 -- Called from test.moon as: (controls\requireTest "Lock")!
 () ->
-  Lock   = require "l0.DependencyControl.Lock"
+  Lock = require "l0.DependencyControl.Lock"
   Logger = require "l0.DependencyControl.Logger"
 
   FILEOPS_MODULE_NAME = "l0.DependencyControl.FileOps"
-  TIMER_MODULE_NAME   = "l0.DependencyControl.Timer"
+  TIMER_MODULE_NAME = "l0.DependencyControl.Timer"
 
   -- A controllable stand-in for the OS lock primitive, installed via the
   -- Lock.__createPrimitive seam so Lock tests never open a real OS handle. Spy/stub its
@@ -14,8 +14,8 @@
     {
       isOpen: isOpen
       tryLock: => true
-      lock:    => true
-      unlock:  => true
+      lock: => true
+      unlock: => true
     }
 
   -- Installs a fake lock primitive through the Lock.__createPrimitive seam for the next Lock
@@ -119,10 +119,10 @@
       _, tryLockStub = installFakeSemaphore ut, true
       ut\stub Lock.logger, "trace"
       lock = Lock namespace: "ns", resource: "res", recordHolder: false
-      lock\lock!                          -- acquire
-      state, timePassed = lock\lock!      -- re-enter: already held path
+      lock\lock! -- acquire
+      state, timePassed = lock\lock! -- re-enter: already held path
       ut\assertEquals state, Lock.LockState.Held
-      tryLockStub\assertCalledOnce!       -- semaphore not re-acquired on second call
+      tryLockStub\assertCalledOnce! -- semaphore not re-acquired on second call
       lock\release!
 
     lock_timeout: (ut) ->
@@ -133,32 +133,32 @@
       state, timePassed = lock\lock 0
       ut\assertEquals state, Lock.LockState.Unavailable
       tryLockStub\assertCalledOnce!
-      sleepStub\assertNotCalled!          -- timeout=0 suppresses sleep
+      sleepStub\assertNotCalled! -- timeout=0 suppresses sleep
 
     lock_retry: (ut) ->
       callCount = 0
       _, tryLockStub = installFakeSemaphore ut, ->
         callCount += 1
-        callCount >= 2                    -- fails first, succeeds second
+        callCount >= 2 -- fails first, succeeds second
       sleepStub = ut\stub TIMER_MODULE_NAME, "sleep"
       ut\stub Lock.logger, "trace"
       lock = Lock namespace: "ns", resource: "res", recordHolder: false
       state, timePassed = lock\lock!
       ut\assertEquals state, Lock.LockState.Held
       tryLockStub\assertCalledTimes 2
-      sleepStub\assertCalledOnceWith 250  -- default lockWaitInterval
+      sleepStub\assertCalledOnceWith 250 -- default lockWaitInterval
       lock\release!
 
     -- a missing OS primitive degrades to a process-local grant rather than failing
     lock_primitiveUnavailable: (ut) ->
-      sem = makeFakeSemaphore false       -- isOpen = false
+      sem = makeFakeSemaphore false -- isOpen = false
       (ut\stub Lock, "__createPrimitive")\returns sem
       ut\stub Lock.logger, "warn"
       ut\stub Lock.logger, "trace"
       lock = Lock namespace: "ns", resource: "res", recordHolder: false
       state = lock\lock 0
       ut\assertEquals state, Lock.LockState.Held
-      lock\release!  -- release so the lingering held state can't fire its GC warning in a later test
+      lock\release! -- release so the lingering held state can't fire its GC warning in a later test
 
     -- tryLock
 
@@ -178,7 +178,7 @@
       lock = Lock namespace: "ns", resource: "res", recordHolder: false
       state, timePassed = lock\tryLock!
       ut\assertEquals state, Lock.LockState.Unavailable
-      ut\assertEquals timePassed, 0    -- no wait happened, so none may be reported
+      ut\assertEquals timePassed, 0 -- no wait happened, so none may be reported
       sleepStub\assertNotCalled!
       tryLockStub\assertCalledOnce!
 
@@ -189,7 +189,7 @@
       a = Lock namespace: "ns", resource: "resA", recordHolder: false
       b = Lock namespace: "ns", resource: "resB", recordHolder: false
       ut\assertEquals (a\tryLock!), Lock.LockState.Held
-      ut\assertEquals (b\tryLock!), Lock.LockState.Held   -- different resource doesn't block
+      ut\assertEquals (b\tryLock!), Lock.LockState.Held -- different resource doesn't block
       a\release!
       b\release!
 
@@ -198,9 +198,9 @@
       a = Lock namespace: "ns", resource: "shared", recordHolder: false
       b = Lock namespace: "ns", resource: "shared", recordHolder: false
       ut\assertEquals (a\tryLock!), Lock.LockState.Held
-      ut\assertEquals (b\tryLock!), Lock.LockState.Unavailable  -- held by a
+      ut\assertEquals (b\tryLock!), Lock.LockState.Unavailable -- held by a
       a\release!
-      ut\assertEquals (b\tryLock!), Lock.LockState.Held         -- available after release
+      ut\assertEquals (b\tryLock!), Lock.LockState.Held -- available after release
       b\release!
 
     -- release
@@ -239,7 +239,7 @@
       ut\assertString written.data
       ut\assertContains written.data, "TestHolder"
       lock\release!
-      removeStub\assertCalledOnce!        -- holder file cleared on release
+      removeStub\assertCalledOnce! -- holder file cleared on release
 
     holderRecordsLease: (ut) ->
       written = {}
@@ -251,7 +251,7 @@
       ut\stub Lock.logger, "trace"
       lock = Lock namespace: "ns", resource: "res", expiresAfter: 120
       lock\lock!
-      ut\assertContains written.data, "expiresAt"  -- lease stamped into the record
+      ut\assertContains written.data, "expiresAt" -- lease stamped into the record
       ut\assertContains written.data, "acquiredAt"
       lock\release!
 
@@ -261,9 +261,9 @@
       a = Lock namespace: "ns", resource: "globalShared", scope: Lock.Scope.Global, recordHolder: false
       b = Lock namespace: "ns", resource: "globalShared", scope: Lock.Scope.Global, recordHolder: false
       ut\assertEquals (a\tryLock!), Lock.LockState.Held
-      ut\assertEquals (b\tryLock!), Lock.LockState.Unavailable  -- held by a (same file)
+      ut\assertEquals (b\tryLock!), Lock.LockState.Unavailable -- held by a (same file)
       a\release!
-      ut\assertEquals (b\tryLock!), Lock.LockState.Held         -- available after release
+      ut\assertEquals (b\tryLock!), Lock.LockState.Held -- available after release
       b\release!
 
     -- stale-holder warning: honors the holder's recorded lease
@@ -271,13 +271,13 @@
     staleHolder_warnsPastLease: (ut) ->
       now = os.time!
       (ut\stub FILEOPS_MODULE_NAME, "readFile")\returns craftHolderRecord now - 1000, now - 10
-      installFakeSemaphore ut, false      -- never acquires: takes the heldByOther path
+      installFakeSemaphore ut, false -- never acquires: takes the heldByOther path
       ut\stub TIMER_MODULE_NAME, "sleep"
       warnStub = ut\stub Lock.logger, "warn"
       ut\stub Lock.logger, "trace"
-      lock = Lock namespace: "ns", resource: "res"  -- recordHolder defaults true
+      lock = Lock namespace: "ns", resource: "res" -- recordHolder defaults true
       lock\lock 0
-      warnStub\assertCalled!              -- lease lapsed -> stale warning
+      warnStub\assertCalled! -- lease lapsed -> stale warning
 
     staleHolder_silentWithinLease: (ut) ->
       now = os.time!
@@ -288,7 +288,7 @@
       ut\stub Lock.logger, "trace"
       lock = Lock namespace: "ns", resource: "res"
       lock\lock 0
-      warnStub\assertNotCalled!           -- still within the holder's lease
+      warnStub\assertNotCalled! -- still within the holder's lease
 
     overrideExpiry_usesOwnExpiry: (ut) ->
       now = os.time!
@@ -300,7 +300,7 @@
       ut\stub Lock.logger, "trace"
       lock = Lock namespace: "ns", resource: "res", overrideExpiry: true, expiresAfter: 10
       lock\lock 0
-      warnStub\assertCalled!              -- our (acquiredAt + 10) deadline has passed
+      warnStub\assertCalled! -- our (acquiredAt + 10) deadline has passed
 
     -- renew
 
@@ -313,8 +313,8 @@
       installFakeSemaphore ut, true
       ut\stub Lock.logger, "trace"
       lock = Lock namespace: "ns", resource: "res"
-      lock\lock!                          -- writes holder record (#1)
-      ok = lock\renew -1                  -- -1 forces a rewrite (#2)
+      lock\lock! -- writes holder record (#1)
+      ok = lock\renew -1 -- -1 forces a rewrite (#2)
       ut\assertTrue ok
       ut\assertEquals #writes, 2
       lock\release!
@@ -337,7 +337,7 @@
       ut\stub Lock.logger, "trace"
       lock = Lock namespace: "ns", resource: "res", expiresAfter: 600
       lock\lock!
-      renewed = lock\renew!               -- default threshold: lease barely started
+      renewed = lock\renew! -- default threshold: lease barely started
       ut\assertFalse renewed
       ut\assertEquals #writes, 1
       lock\release!
@@ -352,7 +352,7 @@
       ut\stub Lock.logger, "trace"
       lock = Lock namespace: "ns", resource: "res", expiresAfter: 600
       lock\lock!
-      lock._leaseExpiresMono = 0          -- force remaining time below the threshold
+      lock._leaseExpiresMono = 0 -- force remaining time below the threshold
       renewed = lock\renew!
       ut\assertTrue renewed
       ut\assertEquals #writes, 2
@@ -369,14 +369,14 @@
         "value"
       ut\assertTrue ran
       ut\assertEquals result, "value"
-      unlockStub\assertCalledOnce!        -- released after the body
+      unlockStub\assertCalledOnce! -- released after the body
 
     guard_releasesOnError: (ut) ->
       _, _, unlockStub = installFakeSemaphore ut, true
       ut\stub Lock.logger, "trace"
       ok, err = pcall -> Lock\guard {namespace: "ns", resource: "res", recordHolder: false}, -> error "boom"
-      ut\assertFalse ok                   -- the body's error is re-raised
-      unlockStub\assertCalledOnce!        -- but the lock was still released
+      ut\assertFalse ok -- the body's error is re-raised
+      unlockStub\assertCalledOnce! -- but the lock was still released
 
     guard_failsToAcquire: (ut) ->
       installFakeSemaphore ut, false
@@ -386,7 +386,7 @@
       result, err = Lock\guard {namespace: "ns", resource: "res", recordHolder: false, timeout: 0}, -> called = true
       ut\assertNil result
       ut\assertString err
-      ut\assertFalse called               -- body never runs when the lock can't be taken
+      ut\assertFalse called -- body never runs when the lock can't be taken
 
     -- GC finalizer: unreleased lock is cleaned up and warns on collection
 

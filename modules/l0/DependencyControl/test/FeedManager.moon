@@ -1,12 +1,12 @@
 -- FeedManager tests: the actions the Manage Feeds UI offers per feed, action execution (via a stub FeedTrust),
 -- the DepCtrl Browser deep-link, and row assembly. No network.
 () ->
-  FeedManager =   require "l0.DependencyControl.FeedManager"
+  FeedManager = require "l0.DependencyControl.FeedManager"
   FeedInventory = require "l0.DependencyControl.FeedInventory"
-  FeedTrust =     require "l0.DependencyControl.FeedTrust"
-  constants =     require "l0.DependencyControl.Constants"
+  FeedTrust = require "l0.DependencyControl.FeedTrust"
+  constants = require "l0.DependencyControl.Constants"
 
-  Provenance =  FeedInventory.Provenance
+  Provenance = FeedInventory.Provenance
   TrustStatus = FeedTrust.TrustStatus
   FeedAction = FeedManager.FeedAction
   BlockMatchMode = FeedTrust.BlockMatchMode
@@ -17,11 +17,11 @@
   makeManager = ->
     calls = {}
     feedTrust = {
-      trust:           (url) => calls[#calls + 1] = {"trust", url}
-      untrust:         (url) => calls[#calls + 1] = {"untrust", url}
-      unblock:         (url) => calls[#calls + 1] = {"unblock", url}
+      trust: (url) => calls[#calls + 1] = {"trust", url}
+      untrust: (url) => calls[#calls + 1] = {"untrust", url}
+      unblock: (url) => calls[#calls + 1] = {"unblock", url}
       removeExtraFeed: (url) => calls[#calls + 1] = {"removeExtraFeed", url}
-      block:      (url, opts) => calls[#calls + 1] = {"block", url, opts}
+      block: (url, opts) => calls[#calls + 1] = {"block", url, opts}
     }
     FeedManager(feedTrust), calls
 
@@ -125,16 +125,16 @@
         {url: "feed://a", provenance: {Provenance.UserExtra}, trustStatus: TrustStatus.TrustedUser, inUse: true}
       }
       rows = FeedManager.buildRows entries
-      ut\assertEquals rows[1].url, "feed://a"   -- URL-sorted, independent of input order
+      ut\assertEquals rows[1].url, "feed://a" -- URL-sorted, independent of input order
       ut\assertEquals rows[2].url, "feed://b"
       ut\assertEquals rows[1].actions, {FeedAction.Block, FeedAction.Remove, FeedAction.OpenBrowser}
       ut\assertTrue rows[1].removable
       ut\assertEquals rows[1].browserUrl, FeedManager.getBrowserUrl "feed://a"
-      ut\assertTrue rows[2].reachable           -- surfaced from entry.fetched
+      ut\assertTrue rows[2].reachable -- surfaced from entry.fetched
       ut\assertNil rows[1].reachable
-      ut\assertTrue rows[1].inUse               -- surfaced from entry.inUse
+      ut\assertTrue rows[1].inUse -- surfaced from entry.inUse
       ut\assertNil rows[2].inUse
-      ut\assertEquals rows[2].lastFetchedAt, 1700000000   -- surfaced from entry.lastFetchedAt
+      ut\assertEquals rows[2].lastFetchedAt, 1700000000 -- surfaced from entry.lastFetchedAt
       ut\assertNil rows[1].lastFetchedAt
 
     -- regression: a trust-only feed (no provenance) keeps inTrustedFeeds on its row, so the row round-trips

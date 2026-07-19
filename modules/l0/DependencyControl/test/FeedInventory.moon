@@ -3,13 +3,13 @@
 -- Called from test.moon as: (controls\requireTest "FeedInventory")!
 () ->
   FeedInventory = require "l0.DependencyControl.FeedInventory"
-  FeedTrust =     require "l0.DependencyControl.FeedTrust"
-  constants =     require "l0.DependencyControl.Constants"
-  UpdateTask =    require "l0.DependencyControl.UpdateTask"
+  FeedTrust = require "l0.DependencyControl.FeedTrust"
+  constants = require "l0.DependencyControl.Constants"
+  UpdateTask = require "l0.DependencyControl.UpdateTask"
 
-  Provenance =   FeedInventory.Provenance
-  TrustStatus =  FeedTrust.TrustStatus
-  CrawlLimit =  FeedInventory.CrawlLimit
+  Provenance = FeedInventory.Provenance
+  TrustStatus = FeedTrust.TrustStatus
+  CrawlLimit = FeedInventory.CrawlLimit
   SourceFeedKind = UpdateTask.SourceFeedKind
 
   -- a fake FeedTrust; opts: official (set), trusted (set), blocked (set), status (url -> FeedTrustStatus),
@@ -49,10 +49,10 @@
   -- section a flat test config into the live sectioned layout (feeds/updates/paths + the macros/modules registries)
   makeInventory = (configC = {}, feedTrustOpts, feedLoader) ->
     sectioned = {
-      feeds:   {extraFeeds: configC.extraFeeds, trustedFeeds: configC.trustedFeeds, crawlLimits: configC.feedCrawlLimits}
+      feeds: {extraFeeds: configC.extraFeeds, trustedFeeds: configC.trustedFeeds, crawlLimits: configC.feedCrawlLimits}
       updates: {blockPrivateHosts: configC.updaterBlockPrivateHosts}
-      paths:   {cache: "?user/cache"}
-      macros:  configC.macros
+      paths: {cache: "?user/cache"}
+      macros: configC.macros
       modules: configC.modules
     }
     FeedInventory {c: sectioned}, (makeFeedTrust feedTrustOpts), (feedLoader or makeFeedLoader!)
@@ -140,37 +140,37 @@
     gather_marksInUse: (ut) ->
       m = byUrl gatherFeeds {
         macros: {
-          "a.plain":      {feed: "feed://plain"}
+          "a.plain": {feed: "feed://plain"}
           "a.overridden": {feed: "feed://declared", userFeed: "feed://override"}
         }
       }, {}
-      ut\assertTrue m["feed://plain"].inUse       -- declared with no override -> effective source
-      ut\assertTrue m["feed://override"].inUse    -- the override is the effective source
-      ut\assertNil m["feed://declared"].inUse     -- declared but overridden -> not the effective source
+      ut\assertTrue m["feed://plain"].inUse -- declared with no override -> effective source
+      ut\assertTrue m["feed://override"].inUse -- the override is the effective source
+      ut\assertNil m["feed://declared"].inUse -- declared but overridden -> not the effective source
 
     -- getPackagesSourcedFrom / getEffectiveSource: a package's remembered currentSource (resolved per kind), else its
     -- override, else its declared feed
     getPackagesSourcedFrom_getEffectiveSource: (ut) ->
       inv = makeInventory {
         macros: {
-          "a.self":     {feed: "feed://self", currentSource: {feedSource: SourceFeedKind.SelfDeclared}}
-          "a.user":     {feed: "feed://declared", userFeed: "feed://user", currentSource: {feedSource: SourceFeedKind.UserFeed}}
-          "a.other":    {feed: "feed://x", currentSource: {feedSource: SourceFeedKind.Other, feedUrl: "feed://literal"}}
-          "a.plain":    {feed: "feed://plain"}                              -- no currentSource -> falls back to feed
-          "a.override": {feed: "feed://d2", userFeed: "feed://o2"}          -- no currentSource -> falls back to userFeed
+          "a.self": {feed: "feed://self", currentSource: {feedSource: SourceFeedKind.SelfDeclared}}
+          "a.user": {feed: "feed://declared", userFeed: "feed://user", currentSource: {feedSource: SourceFeedKind.UserFeed}}
+          "a.other": {feed: "feed://x", currentSource: {feedSource: SourceFeedKind.Other, feedUrl: "feed://literal"}}
+          "a.plain": {feed: "feed://plain"} -- no currentSource -> falls back to feed
+          "a.override": {feed: "feed://d2", userFeed: "feed://o2"} -- no currentSource -> falls back to userFeed
         }
         modules: {
-          "m.prov":    {feed: "feed://provider"}
+          "m.prov": {feed: "feed://provider"}
           "m.viaProv": {feed: "feed://y", currentSource: {feedSource: SourceFeedKind.Provider, provider: {namespace: "m.prov"}}}
         }
       }, {}
-      ut\assertEquals inv\getPackagesSourcedFrom("feed://self"),     {"a.self"}      -- self-declared -> own feed
-      ut\assertEquals inv\getPackagesSourcedFrom("feed://user"),     {"a.user"}      -- user-feed kind -> the override
-      ut\assertEquals inv\getPackagesSourcedFrom("feed://declared"), {}             -- declared, but sourced elsewhere
-      ut\assertEquals inv\getPackagesSourcedFrom("feed://literal"),  {"a.other"}     -- other -> literal feedUrl
-      ut\assertEquals inv\getPackagesSourcedFrom("feed://plain"),    {"a.plain"}     -- fallback: no currentSource -> feed
-      ut\assertEquals inv\getPackagesSourcedFrom("feed://o2"),       {"a.override"}  -- fallback: no currentSource -> userFeed
-      ut\assertEquals inv\getPackagesSourcedFrom("feed://d2"),       {}             -- declared but overridden -> not effective
+      ut\assertEquals inv\getPackagesSourcedFrom("feed://self"), {"a.self"} -- self-declared -> own feed
+      ut\assertEquals inv\getPackagesSourcedFrom("feed://user"), {"a.user"} -- user-feed kind -> the override
+      ut\assertEquals inv\getPackagesSourcedFrom("feed://declared"), {} -- declared, but sourced elsewhere
+      ut\assertEquals inv\getPackagesSourcedFrom("feed://literal"), {"a.other"} -- other -> literal feedUrl
+      ut\assertEquals inv\getPackagesSourcedFrom("feed://plain"), {"a.plain"} -- fallback: no currentSource -> feed
+      ut\assertEquals inv\getPackagesSourcedFrom("feed://o2"), {"a.override"} -- fallback: no currentSource -> userFeed
+      ut\assertEquals inv\getPackagesSourcedFrom("feed://d2"), {} -- declared but overridden -> not effective
       -- provider resolves to m.prov's feed; m.prov itself (no currentSource) also falls back to that same feed
       ut\assertEquals inv\getPackagesSourcedFrom("feed://provider"), {"m.prov", "m.viaProv"}
 
@@ -189,15 +189,15 @@
       ut\assertEquals m["deep"].provenance, {Provenance.TransitiveKnown}
       ut\assertEquals m["mid"].advertisedBy, {"root"}
       ut\assertEquals m["deep"].advertisedBy, {"mid"}
-      ut\assertFalse stats.truncated   -- nothing was capped
+      ut\assertFalse stats.truncated -- nothing was capped
 
     -- with fetchUntrustedFeeds="never", an untrusted feed is recorded (advertised) but not fetched/expanded
     crawl_neverDoesNotFetchUntrusted: (ut) ->
       loader = crawlLoader {"root": {"untrusted"}, "untrusted": {"deep"}}
       inv = makeInventory {extraFeeds: {"root"}}, {trusted: {"root": true}, fetchUntrustedFeeds: "never"}, loader
       m = byUrl inv\crawl!
-      ut\assertEquals m["untrusted"].provenance, {Provenance.TransitiveKnown}   -- recorded (advertised)
-      ut\assertNil m["deep"]                                           -- not fetched -> not discovered
+      ut\assertEquals m["untrusted"].provenance, {Provenance.TransitiveKnown} -- recorded (advertised)
+      ut\assertNil m["deep"] -- not fetched -> not discovered
 
     -- a blocked root is gated like any other feed: recorded but never fetched, so what it advertises
     -- isn't discovered (a blocked feed is always denied, even when it's a configured discovery root)
@@ -205,8 +205,8 @@
       loader = crawlLoader {"blockedRoot": {"child"}}
       inv = makeInventory {extraFeeds: {"blockedRoot"}}, {blocked: {"blockedRoot": true}}, loader
       m = byUrl inv\crawl!
-      ut\assertNotNil m["blockedRoot"]   -- still listed (user extra feed)
-      ut\assertNil m["child"]            -- root not fetched -> its advertised feed not discovered
+      ut\assertNotNil m["blockedRoot"] -- still listed (user extra feed)
+      ut\assertNil m["child"] -- root not fetched -> its advertised feed not discovered
 
     -- with fetchUntrustedFeeds="prompt", an untrusted feed is followed only when the prompter confirms it
     crawl_promptFollowsOnlyConfirmedUntrusted: (ut) ->
@@ -221,11 +221,11 @@
       }
       inv = makeInventory {extraFeeds: {"root"}}, {trusted: {"root": true, "deepYes": true}, fetchUntrustedFeeds: "prompt", :prompter}, loader
       m = byUrl inv\crawl!
-      ut\assertNotNil m["yes"]      -- both untrusted feeds are recorded (advertised)
+      ut\assertNotNil m["yes"] -- both untrusted feeds are recorded (advertised)
       ut\assertNotNil m["no"]
-      ut\assertNotNil m["deepYes"]  -- confirmed -> followed -> its child is discovered
-      ut\assertNil m["deepNo"]      -- declined -> not followed
-      ut\assertEquals #asked, 2     -- only the two untrusted feeds were asked, once each
+      ut\assertNotNil m["deepYes"] -- confirmed -> followed -> its child is discovered
+      ut\assertNil m["deepNo"] -- declined -> not followed
+      ut\assertEquals #asked, 2 -- only the two untrusted feeds were asked, once each
 
     -- the per-subtree budget caps how many untrusted feeds are fetched from one root
     crawl_boundsUntrustedPerRoot: (ut) ->
@@ -269,7 +269,7 @@
       inv = makeInventory {extraFeeds: {"root"}, feedCrawlLimits: {[CrawlLimit.Depth]: 1}}, {trusted: {"root": true, "a": true}}, loader
       feeds, stats = inv\crawl!
       m = byUrl feeds
-      ut\assertNil m["b"]   -- "a" sat at the depth cap, so its knownFeeds were never read
+      ut\assertNil m["b"] -- "a" sat at the depth cap, so its knownFeeds were never read
       t = truncationFor stats, "a"
       ut\assertEquals t.limit, CrawlLimit.Depth
       ut\assertEquals t.route, {"root", "a"}
@@ -280,9 +280,9 @@
       loader = crawlLoader {"root": {"mid", "dead"}, "mid": {}}
       inv = makeInventory {extraFeeds: {"root"}}, {trusted: {"root": true, "mid": true}}, loader
       m = byUrl inv\crawl!
-      ut\assertTrue m["root"].fetched   -- config root, loaded
-      ut\assertTrue m["mid"].fetched    -- trusted, loaded (even with empty knownFeeds)
-      ut\assertNil m["dead"].fetched    -- advertised but the loader returns nil -> unreachable
+      ut\assertTrue m["root"].fetched -- config root, loaded
+      ut\assertTrue m["mid"].fetched -- trusted, loaded (even with empty knownFeeds)
+      ut\assertNil m["dead"].fetched -- advertised but the loader returns nil -> unreachable
 
     -- a feed known only through trustedFeeds is trust-only: visible in the inventory but not a crawl root,
     -- so its knownFeeds are never expanded
@@ -291,9 +291,9 @@
       inv = makeInventory {trustedFeeds: {"tf"}}, {trusted: {"tf": true}}, loader
       m = byUrl inv\crawl!
       ut\assertTrue m["tf"].inTrustedFeeds
-      ut\assertEquals m["tf"].provenance, {}   -- not a discovery source
-      ut\assertNil m["tf"].fetched             -- never fetched (not a root)
-      ut\assertNil m["child"]                  -- so its advertised feed isn't discovered
+      ut\assertEquals m["tf"].provenance, {} -- not a discovery source
+      ut\assertNil m["tf"].fetched -- never fetched (not a root)
+      ut\assertNil m["child"] -- so its advertised feed isn't discovered
 
     -- gather stamps each feed with its last-fetch time from the persistent cache; an uncached feed has none
     gather_stampsLastFetchedFromCache: (ut) ->

@@ -1,7 +1,7 @@
-Logger            = require "l0.DependencyControl.Logger"
-Common            = require "l0.DependencyControl.Common"
+Logger = require "l0.DependencyControl.Logger"
+Common = require "l0.DependencyControl.Common"
 SemanticVersion = require "l0.DependencyControl.SemanticVersion"
-ReleaseNotes    = require "l0.DependencyControl.release-notes"
+ReleaseNotes = require "l0.DependencyControl.release-notes"
 
 defaultLogger = Logger fileBaseName: "DepCtrl.ScriptUpdateRecord"
 
@@ -50,106 +50,106 @@ defaultLogger = Logger fileBaseName: "DepCtrl.ScriptUpdateRecord"
 ---@field files FeedFileData[] Platform-filtered file list for the active channel (set by setChannel).
 ---@field platforms? string[] Platforms supported by the active channel (set by setChannel).
 class ScriptUpdateRecord
-    msgs = {
-        errors: {
-            noActiveChannel: "No active channel."
-        }
-        changelog: {
-            header:      "Changelog for %s v%s (released %s):"
-            verTemplate: "v %s:"
-        }
+  msgs = {
+    errors: {
+      noActiveChannel: "No active channel."
     }
+    changelog: {
+      header: "Changelog for %s v%s (released %s):"
+      verTemplate: "v %s:"
+    }
+  }
 
-    -- Shared per-class metatable for the @data __index fallback; initialised lazily on first instantiation.
-    instanceMetaTable = nil
+  -- Shared per-class metatable for the @data __index fallback; initialised lazily on first instantiation.
+  instanceMetaTable = nil
 
-    --- Creates an update record for a single script entry in a feed.
-    ---@param namespace string
-    ---@param data FeedScriptData
-    ---@param config? {c: {activeChannel?: string}}
-    ---@param scriptType ScriptType
-    ---@param autoChannel? boolean Select the default channel on construction (default true).
-    ---@param logger? Logger
-    new: (@namespace, data, @config = {c:{}}, scriptType, autoChannel = true, @logger = defaultLogger) =>
-        @data = {k, v for k, v in pairs data}
-        @moduleName = scriptType == Common.ScriptType.Module and @namespace
+  --- Creates an update record for a single script entry in a feed.
+  ---@param namespace string
+  ---@param data FeedScriptData
+  ---@param config? {c: {activeChannel?: string}}
+  ---@param scriptType ScriptType
+  ---@param autoChannel? boolean Select the default channel on construction (default true).
+  ---@param logger? Logger
+  new: (@namespace, data, @config = {c:{}}, scriptType, autoChannel = true, @logger = defaultLogger) =>
+    @data = {k, v for k, v in pairs data}
+    @moduleName = scriptType == Common.ScriptType.Module and @namespace
 
-        unless instanceMetaTable
-            meta = getmetatable @
-            instanceMetaTable = {__index: (t, k) ->
-                v = meta[k]
-                return v if v != nil
-                d = rawget t, "data"
-                return d and d[k]
-            }
-        setmetatable @, instanceMetaTable
+    unless instanceMetaTable
+      meta = getmetatable @
+      instanceMetaTable = {__index: (t, k) ->
+        v = meta[k]
+        return v if v != nil
+        d = rawget t, "data"
+        return d and d[k]
+      }
+    setmetatable @, instanceMetaTable
 
-        @setChannel! if autoChannel
+    @setChannel! if autoChannel
 
 
-    --- Returns all available channel names for this script and the default channel.
-    ---@return string[] channels
-    ---@return string? defaultChannel
-    getChannels: =>
-        channels, default = {}
-        for name, channel in pairs @data.channels
-            channels[#channels+1] = name
-            if channel.default and not default
-                default = name
+  --- Returns all available channel names for this script and the default channel.
+  ---@return string[] channels
+  ---@return string? defaultChannel
+  getChannels: =>
+    channels, default = {}
+    for name, channel in pairs @data.channels
+      channels[#channels+1] = name
+      if channel.default and not default
+        default = name
 
-        return channels, default
+    return channels, default
 
-    --- Selects the active update channel and exposes its fields on this instance.
-    ---@param channelName? string Channel to activate; defaults to config.c.activeChannel.
-    ---@return boolean success
-    ---@return string activeChannel
-    setChannel: (channelName = @config.c.activeChannel) =>
-        with @config.c
-            .channels, default = @getChannels!
-            .lastChannel or= channelName or default
-            channelData = @data.channels[.lastChannel]
-            @activeChannel = .lastChannel
-            return false, @activeChannel unless channelData
-            @[k] = v for k, v in pairs channelData
+  --- Selects the active update channel and exposes its fields on this instance.
+  ---@param channelName? string Channel to activate; defaults to config.c.activeChannel.
+  ---@return boolean success
+  ---@return string activeChannel
+  setChannel: (channelName = @config.c.activeChannel) =>
+    with @config.c
+      .channels, default = @getChannels!
+      .lastChannel or= channelName or default
+      channelData = @data.channels[.lastChannel]
+      @activeChannel = .lastChannel
+      return false, @activeChannel unless channelData
+      @[k] = v for k, v in pairs channelData
 
-        @files = @files and [file for file in *@files when not file.platform or file.platform == Common.platform] or {}
-        return true, @activeChannel
+    @files = @files and [file for file in *@files when not file.platform or file.platform == Common.platform] or {}
+    return true, @activeChannel
 
-    --- Checks whether this script's active channel supports the current platform.
-    ---@return boolean supported
-    ---@return string platform
-    checkPlatform: =>
-        @logger\assert @activeChannel, msgs.errors.noActiveChannel
-        return not @platforms or (Common.makeSet @platforms)[Common.platform], Common.platform
+  --- Checks whether this script's active channel supports the current platform.
+  ---@return boolean supported
+  ---@return string platform
+  checkPlatform: =>
+    @logger\assert @activeChannel, msgs.errors.noActiveChannel
+    return not @platforms or (Common.makeSet @platforms)[Common.platform], Common.platform
 
-    --- Formats changelog entries from the current version down to a minimum version, grouping each
-    --- version's entries into marker categories (Bug Fixes, New Features, …) with a glyph heading.
-    ---@param versionRecord any Unused; present for API compatibility.
-    ---@param minVer? number|string Oldest version to include (default 0, i.e. all).
-    ---@return string changelog Formatted multi-line string, or "" if nothing to show. A version whose entries carry no markers lists them flat, without category headings.
-    getChangelog: (versionRecord, minVer = 0) =>
-        return "" unless "table" == type @changelog
-        maxVer = SemanticVersion\toPacked @version
-        minVer = SemanticVersion\toPacked minVer
+  --- Formats changelog entries from the current version down to a minimum version, grouping each
+  --- version's entries into marker categories (Bug Fixes, New Features, …) with a glyph heading.
+  ---@param versionRecord any Unused; present for API compatibility.
+  ---@param minVer? number|string Oldest version to include (default 0, i.e. all).
+  ---@return string changelog Formatted multi-line string, or "" if nothing to show. A version whose entries carry no markers lists them flat, without category headings.
+  getChangelog: (versionRecord, minVer = 0) =>
+    return "" unless "table" == type @changelog
+    maxVer = SemanticVersion\toPacked @version
+    minVer = SemanticVersion\toPacked minVer
 
-        changelog = {}
-        for ver, entry in pairs @changelog
-            verNum = SemanticVersion\toPacked ver
-            -- skip a malformed changelog version key. feed changelog keys aren't schema-validated, so toPacked
-            -- returns false for them, and toString(false) or comparing false >= minVer would otherwise raise
-            continue unless verNum
-            if verNum >= minVer and verNum <= maxVer
-                changelog[#changelog+1] = {verNum, SemanticVersion\toString(verNum), entry}
+    changelog = {}
+    for ver, entry in pairs @changelog
+      verNum = SemanticVersion\toPacked ver
+      -- skip a malformed changelog version key. feed changelog keys aren't schema-validated, so toPacked
+      -- returns false for them, and toString(false) or comparing false >= minVer would otherwise raise
+      continue unless verNum
+      if verNum >= minVer and verNum <= maxVer
+        changelog[#changelog+1] = {verNum, SemanticVersion\toString(verNum), entry}
 
-        return "" if #changelog == 0
-        table.sort changelog, (a,b) -> a[1]>b[1]
+    return "" if #changelog == 0
+    table.sort changelog, (a,b) -> a[1]>b[1]
 
-        msg = {msgs.changelog.header\format @name, SemanticVersion\toString(@version), @released or "<no date>"}
-        for chg in *changelog
-            chg[3] = {chg[3]} if type(chg[3]) ~= "table"
-            continue if #chg[3] == 0
-            msg[#msg+1] = @logger\format msgs.changelog.verTemplate, 1, chg[2]
-            block = ReleaseNotes.renderLog chg[3]
-            msg[#msg+1] = block unless block == ""
+    msg = {msgs.changelog.header\format @name, SemanticVersion\toString(@version), @released or "<no date>"}
+    for chg in *changelog
+      chg[3] = {chg[3]} if type(chg[3]) ~= "table"
+      continue if #chg[3] == 0
+      msg[#msg+1] = @logger\format msgs.changelog.verTemplate, 1, chg[2]
+      block = ReleaseNotes.renderLog chg[3]
+      msg[#msg+1] = block unless block == ""
 
-        return table.concat msg, "\n"
+    return table.concat msg, "\n"

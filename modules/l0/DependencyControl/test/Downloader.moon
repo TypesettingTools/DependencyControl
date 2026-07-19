@@ -43,8 +43,8 @@
       dm\await!
       -- 2 downloads × 3 steps; each pass touches both before re-stepping either
       ut\assertEquals #order, 6
-      ut\assertNotEquals order[1], order[2]   -- first pass touched both
-      ut\assertNotEquals order[3], order[4]   -- second pass too
+      ut\assertNotEquals order[1], order[2] -- first pass touched both
+      ut\assertNotEquals order[3], order[4] -- second pass too
       ut\assertEquals dl.status, Status.Finished for dl in *dm.downloads
 
     -- the user-described scenario: start two slow downloads, detect (via the
@@ -52,7 +52,7 @@
 
     roundRobin_detectsConcurrencyThenCancels: (ut) ->
       order = {}
-      dm = fakeManager makeFakeDriver 1000, order   -- "slow": many steps to finish
+      dm = fakeManager makeFakeDriver 1000, order -- "slow": many steps to finish
       dm\addDownload "http://x/1", "#{basePath}_c1"
       dm\addDownload "http://x/2", "#{basePath}_c2"
 
@@ -62,7 +62,7 @@
         for dl in *dm.downloads
           inFlight += 1 if dl.status == Status.Active and (dl.bytesReceived or 0) > 0
         maxConcurrent = math.max maxConcurrent, inFlight
-        dm\cancel! if maxConcurrent >= 2   -- proven concurrent → abort
+        dm\cancel! if maxConcurrent >= 2 -- proven concurrent → abort
       dm\await!
 
       ut\assertGreaterThanOrEquals maxConcurrent, 2
@@ -147,7 +147,7 @@
       dm\addDownload "http://x/1", "#{basePath}_apb1"
       seen = {}
       dm\await (downloader, percent) ->
-        ut\assertEquals downloader, dm   -- the emitter is passed through per the convention
+        ut\assertEquals downloader, dm -- the emitter is passed through per the convention
         seen[#seen + 1] = percent
       ut\assertGreaterThan #seen, 0
       ut\assertEquals type(seen[1]), "number"
@@ -180,7 +180,7 @@
       dm = fakeManager makeFakeDriver 3, order
       dl1 = dm\addDownload "http://x/1", "#{basePath}_ic1"
       dl2 = dm\addDownload "http://x/2", "#{basePath}_ic2"
-      dm\on Downloader.Event.Progress, -> dl1\cancel!   -- cancel dl1 once it's underway
+      dm\on Downloader.Event.Progress, -> dl1\cancel! -- cancel dl1 once it's underway
       dm\await!
       ut\assertEquals dl1.status, Status.Cancelled
       ut\assertEquals dl2.status, Status.Finished
@@ -206,7 +206,7 @@
       dm\addDownload "http://x/1", "#{basePath}_cl"
       dm\clear!
       ut\assertEquals #dm.downloads, 0
-      ut\assertIs dm.downloads, downloadsRef   -- same table, emptied in place
+      ut\assertIs dm.downloads, downloadsRef -- same table, emptied in place
 
     -- the private-host SSRF guard (enabled per-instance) refuses literal private/loopback addresses,
     -- lets public addresses through, and is skippable via the option (all with literal IPs, so offline)
@@ -236,10 +236,10 @@
 
     -- resolveRedirect: a Location header may be absolute, protocol-relative, root-relative, or path-relative
     resolveRedirect_resolvesAllForms: (ut) ->
-      ut\assertEquals resolveRedirect("http://a/b/c", "https://x/y"), "https://x/y"        -- absolute wins
-      ut\assertEquals resolveRedirect("http://a.com/b/c", "/new"), "http://a.com/new"      -- root-relative
-      ut\assertEquals resolveRedirect("https://a.com/b", "//o.com/z"), "https://o.com/z"   -- protocol-relative
-      ut\assertEquals resolveRedirect("https://a.com/d/p.json", "s.json"), "https://a.com/d/s.json"  -- path-relative
+      ut\assertEquals resolveRedirect("http://a/b/c", "https://x/y"), "https://x/y" -- absolute wins
+      ut\assertEquals resolveRedirect("http://a.com/b/c", "/new"), "http://a.com/new" -- root-relative
+      ut\assertEquals resolveRedirect("https://a.com/b", "//o.com/z"), "https://o.com/z" -- protocol-relative
+      ut\assertEquals resolveRedirect("https://a.com/d/p.json", "s.json"), "https://a.com/d/s.json" -- path-relative
 
     _order: {
       "roundRobin_interleaves", "roundRobin_detectsConcurrencyThenCancels",

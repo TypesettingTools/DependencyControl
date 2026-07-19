@@ -5,7 +5,7 @@
 -- Called from Tests.moon as: (require "...test.integration.Downloader") basePath
 (basePath) ->
   Downloader = require "l0.DependencyControl.Downloader"
-  FileOps    = require "l0.DependencyControl.FileOps"
+  FileOps = require "l0.DependencyControl.FileOps"
 
   {
     _description: "Real-HTTP Downloader tests against a local test server (runs when launchable)."

@@ -65,7 +65,7 @@
     -- a leading ---block bound to the first declaration is that declaration's doc, not the module's
     page_boundLeadingDocIsNotModuleDoc: (ut) ->
       text = render ut, "---Makes one.\n---@param x integer\nmake = (x) -> x\nreturn {:make}", "l0.Test.Mod"
-      ut\assertMatches text, "Makes one%."          -- rendered as the function's doc
+      ut\assertMatches text, "Makes one%." -- rendered as the function's doc
       -- and not duplicated as a module description above the Functions heading
       ut\assertMatches text, "```\n\n## Functions"
 
@@ -246,7 +246,7 @@
 
     scaffold_mkdocsDefault: (ut) ->
       _, result = render ut, "class Foo\n  go: => 1\nreturn Foo", "l0.Test.Foo"
-      ut\assertEquals result.pages[1].path, "docs/l0.Test.Foo.md"   -- standalone site nests pages under docs/
+      ut\assertEquals result.pages[1].path, "docs/l0.Test.Foo.md" -- standalone site nests pages under docs/
       ut\assertEquals #result.scaffold, 1
       ut\assertEquals result.scaffold[1].path, "mkdocs.yml"
       ut\assertMatches result.scaffold[1].text, "site_name: API Documentation"
@@ -270,7 +270,7 @@
     -- only scaffold file is a literate-nav SUMMARY.md
     scaffold_noneEmbedsFlatWithLiterateNav: (ut) ->
       _, result = render ut, "class Foo\n  go: => 1\nreturn Foo", "l0.Test.Foo", {site: "none"}
-      ut\assertEquals result.pages[1].path, "l0.Test.Foo.md"       -- flat, no docs/ prefix
+      ut\assertEquals result.pages[1].path, "l0.Test.Foo.md" -- flat, no docs/ prefix
       ut\assertEquals result.indexPage.path, "index.md"
       ut\assertEquals #result.scaffold, 1
       ut\assertEquals result.scaffold[1].path, "SUMMARY.md"

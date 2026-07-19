@@ -15,66 +15,66 @@ table.sort scriptTypeList
 ---    ScriptTargetFilter {[Common.ScriptType.Module]: {include: {"l0.DependencyControl"}}}
 ---@class ScriptTargetFilter
 class ScriptTargetFilter
-    @scriptTypeList = scriptTypeList
+  @scriptTypeList = scriptTypeList
 
-    ---@param spec? table<ScriptType, true | { include?: string[], exclude?: string[] }> Initial rules keyed by script type.
-    new: (spec) =>
-        @rules = {}  -- [scriptType] = {all: bool, include: {ns -> true}, exclude: {ns -> true}}
-        if spec
-            for scriptType, rule in pairs spec
-                if rule == true
-                    @includeAll scriptType
-                else
-                    @include scriptType, ns for ns in *(rule.include or {})
-                    @exclude scriptType, ns for ns in *(rule.exclude or {})
-
-    ---Lazily creates and returns the rule table for a script type.
-    ---@private
-    ---@param scriptType ScriptType
-    ---@return table rule
-    ruleFor: (scriptType) =>
-        @rules[scriptType] or= {include: {}, exclude: {}}
-        @rules[scriptType]
-
-    ---Includes a single namespace of the given script type.
-    ---@param scriptType ScriptType
-    ---@param namespace string
-    ---@return ScriptTargetFilter self
-    include: (scriptType, namespace) =>
-        @ruleFor(scriptType).include[namespace] = true
-        @
-
-    ---Includes every namespace of the given script type, or — when called without an
-    ---argument — every namespace of every script type.
-    ---@param scriptType? ScriptType Script type to include all of; omit to include everything.
-    ---@return ScriptTargetFilter self
-    includeAll: (scriptType) =>
-        if scriptType
-            @ruleFor(scriptType).all = true
+  ---@param spec? table<ScriptType, true | { include?: string[], exclude?: string[] }> Initial rules keyed by script type.
+  new: (spec) =>
+    @rules = {} -- [scriptType] = {all: bool, include: {ns -> true}, exclude: {ns -> true}}
+    if spec
+      for scriptType, rule in pairs spec
+        if rule == true
+          @includeAll scriptType
         else
-            @includeAll t for t in *@@scriptTypeList
-        @
+          @include scriptType, ns for ns in *(rule.include or {})
+          @exclude scriptType, ns for ns in *(rule.exclude or {})
 
-    ---Excludes a single namespace of the given script type (takes precedence over includes).
-    ---@param scriptType ScriptType
-    ---@param namespace string
-    ---@return ScriptTargetFilter self
-    exclude: (scriptType, namespace) =>
-        @ruleFor(scriptType).exclude[namespace] = true
-        @
+  ---Lazily creates and returns the rule table for a script type.
+  ---@private
+  ---@param scriptType ScriptType
+  ---@return table rule
+  ruleFor: (scriptType) =>
+    @rules[scriptType] or= {include: {}, exclude: {}}
+    @rules[scriptType]
 
-    ---Returns the script types this filter would process (those carrying any rule), sorted.
-    ---@return ScriptType[] scriptTypes
-    scriptTypes: =>
-        [t for t in *@@scriptTypeList when @rules[t]]
+  ---Includes a single namespace of the given script type.
+  ---@param scriptType ScriptType
+  ---@param namespace string
+  ---@return ScriptTargetFilter self
+  include: (scriptType, namespace) =>
+    @ruleFor(scriptType).include[namespace] = true
+    @
 
-    ---Tests whether a script of the given type and namespace should be processed.
-    ---@param scriptType ScriptType
-    ---@param namespace string
-    ---@return boolean
-    matches: (scriptType, namespace) =>
-        rule = @rules[scriptType]
-        return false unless rule
-        return false if rule.exclude[namespace]
-        return true if rule.all
-        rule.include[namespace] or false
+  ---Includes every namespace of the given script type, or — when called without an
+  ---argument — every namespace of every script type.
+  ---@param scriptType? ScriptType Script type to include all of; omit to include everything.
+  ---@return ScriptTargetFilter self
+  includeAll: (scriptType) =>
+    if scriptType
+      @ruleFor(scriptType).all = true
+    else
+      @includeAll t for t in *@@scriptTypeList
+    @
+
+  ---Excludes a single namespace of the given script type (takes precedence over includes).
+  ---@param scriptType ScriptType
+  ---@param namespace string
+  ---@return ScriptTargetFilter self
+  exclude: (scriptType, namespace) =>
+    @ruleFor(scriptType).exclude[namespace] = true
+    @
+
+  ---Returns the script types this filter would process (those carrying any rule), sorted.
+  ---@return ScriptType[] scriptTypes
+  scriptTypes: =>
+    [t for t in *@@scriptTypeList when @rules[t]]
+
+  ---Tests whether a script of the given type and namespace should be processed.
+  ---@param scriptType ScriptType
+  ---@param namespace string
+  ---@return boolean
+  matches: (scriptType, namespace) =>
+    rule = @rules[scriptType]
+    return false unless rule
+    return false if rule.exclude[namespace]
+    return true if rule.all
+    rule.include[namespace] or false

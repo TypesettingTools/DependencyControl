@@ -16,7 +16,7 @@ NPM_RANGE_TOKEN_GT = ">"
 NPM_RANGE_TOKEN_GTE = ">="
 NPM_RANGE_TOKEN_EQ = "="
 NPM_RANGE_TOKEN_TILDE = "~"
-NPM_RANGE_TOKEN_RUBY_PESSIMISTIC = NPM_RANGE_TOKEN_TILDE .. NPM_RANGE_TOKEN_GT  -- "~>", an alias for "~" (see parseComparator)
+NPM_RANGE_TOKEN_RUBY_PESSIMISTIC = NPM_RANGE_TOKEN_TILDE .. NPM_RANGE_TOKEN_GT -- "~>", an alias for "~" (see parseComparator)
 NPM_RANGE_TOKEN_CARET = "^"
 NPM_RANGE_TOKEN_WILDCARD_X_UPPER = "X"
 NPM_RANGE_TOKEN_WILDCARD_X_LOWER = "x"
@@ -139,7 +139,7 @@ tildeComparators = (v) ->
   upper = v.minor != nil and encodeVersion(v.major or 0, v.minor + 1, 0) or encodeVersion((v.major or 0) + 1, 0, 0)
   {{op: Op.GTE, num: lower}, {op: Op.LT, num: upper}}
 
----Expands a caret-range version into its equivalent comparator list. Allows changes that do not modify the 
+---Expands a caret-range version into its equivalent comparator list. Allows changes that do not modify the
 ---left-most non-zero digit in the {major, minor, patch} sequence.
 ---@param v PartialVersion The parsed version (possibly partial; wildcard components are nil).
 ---@return SemverComparator[] comparators The expanded comparator list equivalent to the original caret-range version.
@@ -156,7 +156,7 @@ caretComparators = (v) ->
     encodeVersion major + 1, 0, 0
   {{op: Op.GTE, num: lower}, {op: Op.LT, num: upper}}
 
----Expands an explicit-operator comparator over a possibly-partial version into concrete {op, num} comparator(s). 
+---Expands an explicit-operator comparator over a possibly-partial version into concrete {op, num} comparator(s).
 ---A fully-specified version (e.g. ">1.2.3") passes straight through whereas a partial one is normalized the way
 ---the operator dictates (e.g. ">1" => ">=2.0.0","<=1.2" => "<1.3.0").
 ---@param op ComparisonOperator The operator (e.g. ">", "<=", "=").
@@ -172,14 +172,14 @@ operatorComparators = (op, v) ->
   return (op == NPM_RANGE_TOKEN_GT or op == NPM_RANGE_TOKEN_LT) and {{op: Op.LT, num: 0}} or {{op: Op.GTE, num: 0}} if major == nil
   if minor == nil or patch == nil
     switch op
-      when NPM_RANGE_TOKEN_GT  then return {{op: Op.GTE, num: minor == nil and encodeVersion(major + 1, 0, 0) or encodeVersion(major, minor + 1, 0)}}
-      when NPM_RANGE_TOKEN_LTE then return {{op: Op.LT,  num: minor == nil and encodeVersion(major + 1, 0, 0) or encodeVersion(major, minor + 1, 0)}}
-      when NPM_RANGE_TOKEN_LT  then return {{op: Op.LT,  num: encodeVersion major, minor or 0, 0}}
+      when NPM_RANGE_TOKEN_GT then return {{op: Op.GTE, num: minor == nil and encodeVersion(major + 1, 0, 0) or encodeVersion(major, minor + 1, 0)}}
+      when NPM_RANGE_TOKEN_LTE then return {{op: Op.LT, num: minor == nil and encodeVersion(major + 1, 0, 0) or encodeVersion(major, minor + 1, 0)}}
+      when NPM_RANGE_TOKEN_LT then return {{op: Op.LT, num: encodeVersion major, minor or 0, 0}}
       when NPM_RANGE_TOKEN_GTE then return {{op: Op.GTE, num: encodeVersion major, minor or 0, 0}}
   {{op: op, num: encodeVersion major, minor, patch}}
 
 ---Takes two versions `a` and `b` extracted from a hyphen range and returns a pair comparator tables
----representing the equivalent range. 
+---representing the equivalent range.
 ---@param aVersion PartialVersion The left-hand side of the hyphen range.
 ---@param bVersion PartialVersion The right-hand side of the hyphen range.
 ---@return SemverComparator[] comparators The pair of comparators ({lower, upper}) representing the hyphen range.
@@ -234,7 +234,7 @@ parseComparatorSet = (groupStr) ->
     toVer, errTo = parsePartialVersion toStr
     return nil, errTo unless toVer
     return hyphenComparators fromVer, toVer
-  
+
   comparators = {}
   for token in groupStr\gmatch "%S+"
     parts, err = parseComparator token
@@ -250,10 +250,10 @@ reduceToInterval = (comparators) ->
   for comp in *comparators
     switch comp.op
       when Op.GTE then min = math.max min, comp.num
-      when Op.GT  then min = math.max min, comp.num + 1
+      when Op.GT then min = math.max min, comp.num + 1
       when Op.LTE then max = math.min max, comp.num + 1
-      when Op.LT  then max = math.min max, comp.num
-      when Op.EQ  then min, max = math.max(min, comp.num), math.min(max, comp.num + 1)
+      when Op.LT then max = math.min max, comp.num
+      when Op.EQ then min, max = math.max(min, comp.num), math.min(max, comp.num + 1)
   {:min, :max}
 
 
@@ -421,7 +421,7 @@ class SemanticVersion
     b = bit.band b, mask
     return a >= b, b
 
-  ---Parses an npm-style version range into its set of half-open integer intervals `[min,max)` 
+  ---Parses an npm-style version range into its set of half-open integer intervals `[min,max)`
   --- (`min`inclusive, `max` exclusive). Supports the following range syntax:
   --- * comparators: `>=1.2.7`, `<=1.2.7`, `>1.2.7`, `<1.2.7`, `=1.2.7`
   --- * intersection: `>=1.2.7 <1.3.0`
@@ -430,7 +430,7 @@ class SemanticVersion
   --- * X-ranges: `1.x`, `*`
   --- * tilde ranges: `~1.2.3`
   --- * caret ranges: `^1.2.3`
-  ---An unsatisfiable range (e.g. `>2 <1`) yields an empty list. 
+  ---An unsatisfiable range (e.g. `>2 <1`) yields an empty list.
   ---Pre-release/build labels are not supported at this time.
   ---@param range string The version range.
   ---@return SemverInterval[]? intervals The range's intervals, or nil on a malformed range.

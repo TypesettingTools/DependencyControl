@@ -4,8 +4,8 @@
 -- so the default offline run never depends on them.
 -- Called from Tests.moon as: (require "...test.integration.ZipArchiver") basePath
 (basePath) ->
-  ffi         = require "ffi"
-  FileOps     = require "l0.DependencyControl.FileOps"
+  ffi = require "ffi"
+  FileOps = require "l0.DependencyControl.FileOps"
   ZipArchiver = require "l0.DependencyControl.ZipArchiver"
 
   isWindows = ffi.os == "Windows"
@@ -28,13 +28,13 @@
       if isWindows
         return false, "PowerShell unavailable" unless execOk [[powershell -NoProfile -NonInteractive -Command "exit 0"]]
       else
-        return false, "`zip` unavailable"   unless execOk "command -v zip > /dev/null 2>&1"
+        return false, "`zip` unavailable" unless execOk "command -v zip > /dev/null 2>&1"
         return false, "`unzip` unavailable" unless execOk "command -v unzip > /dev/null 2>&1"
       return true
 
     _setup: (ut) ->
-      base       = "#{basePath}_ziparchiver"
-      srcDir     = "#{base}/src"
+      base = "#{basePath}_ziparchiver"
+      srcDir = "#{base}/src"
       extractDir = "#{base}/extracted"
       FileOps.mkdir "#{srcDir}/sub", false, true
       FileOps.mkdir extractDir, false, true
@@ -63,7 +63,7 @@
 
       ut\assertTrue execOk(extractCmd ctx.archivePath, ctx.extractDir), "extraction failed"
       ut\assertTrue FileOps.exists "#{ctx.extractDir}/top.txt"
-      ut\assertTrue FileOps.exists "#{ctx.extractDir}/sub/c.txt"   -- nested path materialized
+      ut\assertTrue FileOps.exists "#{ctx.extractDir}/sub/c.txt" -- nested path materialized
 
       data = FileOps.readFile "#{ctx.extractDir}/sub/c.txt"
       ut\assertEquals data, "nested file contents"

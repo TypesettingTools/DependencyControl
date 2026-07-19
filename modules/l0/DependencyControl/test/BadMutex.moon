@@ -22,18 +22,18 @@
     tryLock_acquires: (ut) ->
       result = BadMutex.tryLock!
       ut\assertTrue result
-      BadMutex.unlock!  -- release so subsequent tests start clean
+      BadMutex.unlock! -- release so subsequent tests start clean
 
     tryLock_failsWhenHeld: (ut) ->
-      ut\assertTrue BadMutex.tryLock!          -- acquire
-      result = BadMutex.tryLock!               -- second attempt must fail
+      ut\assertTrue BadMutex.tryLock! -- acquire
+      result = BadMutex.tryLock! -- second attempt must fail
       BadMutex.unlock!
       ut\assertFalse result
 
     unlock_releasesLock: (ut) ->
       ut\assertTrue BadMutex.tryLock!
       BadMutex.unlock!
-      result = BadMutex.tryLock!               -- must succeed again after release
+      result = BadMutex.tryLock! -- must succeed again after release
       BadMutex.unlock!
       ut\assertTrue result
 

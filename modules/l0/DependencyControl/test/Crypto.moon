@@ -15,7 +15,7 @@
     -- exercises multi-block padding (>55 bytes)
     sha1_quickBrownFox: (ut) ->
       ut\assertEquals Crypto.sha1("The quick brown fox jumps over the lazy dog"),
-                      "2fd4e1c67a2d28fced849ee1bb76e7391b93eb12"
+        "2fd4e1c67a2d28fced849ee1bb76e7391b93eb12"
 
     -- binary payloads (embedded NUL and high bytes) hash without error
     sha1_binaryData: (ut) ->

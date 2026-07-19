@@ -8,21 +8,21 @@ selfPath = debug.getinfo(1, "S").source\gsub "^@", ""
 ---DependencyControl Timer engine.
 ---@class PreciseTimer
 class PreciseTimer
-    -- mirrors the native PT.PreciseTimer version this shim is API-compatible with
-    @version = 0x000106
-    @version_string = "0.1.6"
-    @loadedLibraryPath = selfPath
+  -- mirrors the native PT.PreciseTimer version this shim is API-compatible with
+  @version = 0x000106
+  @version_string = "0.1.6"
+  @loadedLibraryPath = selfPath
 
-    --- Starts a new timer, capturing the current time as its start point.
-    new: =>
-        @timer = Timer!
+  --- Starts a new timer, capturing the current time as its start point.
+  new: =>
+    @timer = Timer!
 
-    --- Returns the seconds elapsed since the timer was created.
-    ---@return number seconds
-    timeElapsed: => @timer\timeElapsed!
+  --- Returns the seconds elapsed since the timer was created.
+  ---@return number seconds
+  timeElapsed: => @timer\timeElapsed!
 
-    --- Sleeps for the given number of milliseconds.
-    ---@param ms? number milliseconds to sleep (defaults to 100)
-    sleep: (ms = 100) -> Timer.sleep ms
+  --- Sleeps for the given number of milliseconds.
+  ---@param ms? number milliseconds to sleep (defaults to 100)
+  sleep: (ms = 100) -> Timer.sleep ms
 
 return PreciseTimer

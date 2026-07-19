@@ -14,25 +14,25 @@ local UpdateTask
 ---| "dependency-advertised" # DependencyAdvertised: a feed advertised in an installed package's requiredModules
 ---| "transitive-known" # TransitiveKnown: a feed advertised in another fetched feed's knownFeeds (crawl only)
 Provenance = Enum "FeedProvenance", {
-    OfficialDepCtrl:      "official-depctrl"
-    OfficialKnown:        "official-known"
-    UserExtra:            "user-extra"
-    PackageDeclared:      "package-declared"
-    PackageOverride:      "package-override"
-    DependencyAdvertised: "dependency-advertised"
-    TransitiveKnown:      "transitive-known"
+  OfficialDepCtrl: "official-depctrl"
+  OfficialKnown: "official-known"
+  UserExtra: "user-extra"
+  PackageDeclared: "package-declared"
+  PackageOverride: "package-override"
+  DependencyAdvertised: "dependency-advertised"
+  TransitiveKnown: "transitive-known"
 }
 
 -- Display order for a feed's provenance, most authoritative origin first. Pinned here because Enum.values
 -- follows hash order, not definition order.
 provenanceOrder = {
-    Provenance.OfficialDepCtrl
-    Provenance.OfficialKnown
-    Provenance.UserExtra
-    Provenance.PackageDeclared
-    Provenance.PackageOverride
-    Provenance.DependencyAdvertised
-    Provenance.TransitiveKnown
+  Provenance.OfficialDepCtrl
+  Provenance.OfficialKnown
+  Provenance.UserExtra
+  Provenance.PackageDeclared
+  Provenance.PackageOverride
+  Provenance.DependencyAdvertised
+  Provenance.TransitiveKnown
 }
 
 ---Which crawl budget a truncation hit.
@@ -41,49 +41,49 @@ provenanceOrder = {
 ---| "per-root" # PerRoot: the per-subtree budget for untrusted expansion
 ---| "depth" # Depth: the crawl-depth limit; a feed at this depth is left unfetched
 CrawlLimit = Enum "FeedCrawlLimit", {
-    PerFeed: "per-feed"
-    PerRoot: "per-root"
-    Depth:   "depth"
+  PerFeed: "per-feed"
+  PerRoot: "per-root"
+  Depth: "depth"
 }
 
 -- Ensures inventoryEntriesByUrl has a (possibly blank) entry for url; returns it, or nil for an invalid url.
 ensureInventoryEntry = (inventoryEntriesByUrl, url) ->
-    return nil unless type(url) == "string" and #url > 0
-    entry = inventoryEntriesByUrl[url]
-    unless entry
-        entry = {:url, provenance: {}, packages: {}, advertisedBy: {}}
-        inventoryEntriesByUrl[url] = entry
-    entry
+  return nil unless type(url) == "string" and #url > 0
+  entry = inventoryEntriesByUrl[url]
+  unless entry
+    entry = {:url, provenance: {}, packages: {}, advertisedBy: {}}
+    inventoryEntriesByUrl[url] = entry
+  entry
 
 -- Ensures inventoryEntriesByUrl has an entry for url and tags it with the given provenance source; returns the entry (nil for
 -- an invalid url). The `packages`/`advertisedBy` sets are filled by the caller.
 addSource = (inventoryEntriesByUrl, url, source) ->
-    entry = ensureInventoryEntry inventoryEntriesByUrl, url
-    entry.provenance[source] = true if entry
-    entry
+  entry = ensureInventoryEntry inventoryEntriesByUrl, url
+  entry.provenance[source] = true if entry
+  entry
 
 -- The sorted keys of a set, as a list.
 getSortedKeys = (set) ->
-    keys = [k for k in pairs set]
-    table.sort keys
-    keys
+  keys = [k for k in pairs set]
+  table.sort keys
+  keys
 
 -- A shallow copy of `list` with `item` appended, leaving the original untouched (for per-node crawl routes).
 appended = (list, item) ->
-    copy = [x for x in *list]
-    copy[#copy + 1] = item
-    copy
+  copy = [x for x in *list]
+  copy[#copy + 1] = item
+  copy
 
 -- Cap on how many dropped feed URLs one truncation event records; its `dropped` count stays exact.
 maxDropSample = 50
 
 -- The feed a package's persisted `currentSource` resolves to (nil when absent), via UpdateTask's shared resolver.
 resolveCurrentSource = (pkg, modulesSection) ->
-    src = pkg.currentSource
-    return nil unless type(src) == "table"
+  src = pkg.currentSource
+  return nil unless type(src) == "table"
 
-    UpdateTask or= require "l0.DependencyControl.UpdateTask"
-    UpdateTask.resolveSourceUrl src, pkg.feed, pkg.userFeed, modulesSection
+  UpdateTask or= require "l0.DependencyControl.UpdateTask"
+  UpdateTask.resolveSourceUrl src, pkg.feed, pkg.userFeed, modulesSection
 
 ---A reachable feed with the sources it was discovered through and its trust status.
 ---@class FeedInventoryEntry
@@ -124,204 +124,204 @@ resolveCurrentSource = (pkg, modulesSection) ->
 ---injected feed loader, bounding untrusted expansion.
 ---@class FeedInventory
 class FeedInventory
-    @Provenance = Provenance
-    @CrawlLimit = CrawlLimit
+  @Provenance = Provenance
+  @CrawlLimit = CrawlLimit
 
-    ---The built-in crawl budgets, used for any budget the config doesn't set (and the config's own default).
-    ---@type FeedCrawlLimits
-    @defaultCrawlLimits = {
-        [CrawlLimit.Depth]:   7
-        [CrawlLimit.PerRoot]: 50
-        [CrawlLimit.PerFeed]: 25
-    }
+  ---The built-in crawl budgets, used for any budget the config doesn't set (and the config's own default).
+  ---@type FeedCrawlLimits
+  @defaultCrawlLimits = {
+    [CrawlLimit.Depth]: 7
+    [CrawlLimit.PerRoot]: 50
+    [CrawlLimit.PerFeed]: 25
+  }
 
-    ---@param config ConfigView The global config view; its `c` holds `extraFeeds`/`trustedFeeds`/`macros`/`modules`, `fetchUntrustedFeeds`, and `feedCrawlLimits`.
-    ---@param feedTrust FeedTrust The trust model, for the official feeds and trust/block queries.
-    ---@param feedLoader FeedLoader Loads feeds during a crawl and holds the feed cache read for last-fetch times.
-    new: (@config, @feedTrust, @feedLoader) =>
+  ---@param config ConfigView The global config view; its `c` holds `extraFeeds`/`trustedFeeds`/`macros`/`modules`, `fetchUntrustedFeeds`, and `feedCrawlLimits`.
+  ---@param feedTrust FeedTrust The trust model, for the official feeds and trust/block queries.
+  ---@param feedLoader FeedLoader Loads feeds during a crawl and holds the feed cache read for last-fetch times.
+  new: (@config, @feedTrust, @feedLoader) =>
 
-    ---The feed a package effectively updates from: its remembered `currentSource` (resolved), falling back to
-    ---its override (`userFeed`) or declared `feed`.
-    ---@param pkg table An installed package's config entry.
-    ---@param modulesSection table The modules config section, for resolving a provider `currentSource`.
-    ---@return string? url The feed the package updates from, or nil when it declares none.
-    @getEffectiveSource = (pkg, modulesSection) ->
-        resolveCurrentSource(pkg, modulesSection) or pkg.userFeed or pkg.feed
+  ---The feed a package effectively updates from: its remembered `currentSource` (resolved), falling back to
+  ---its override (`userFeed`) or declared `feed`.
+  ---@param pkg table An installed package's config entry.
+  ---@param modulesSection table The modules config section, for resolving a provider `currentSource`.
+  ---@return string? url The feed the package updates from, or nil when it declares none.
+  @getEffectiveSource = (pkg, modulesSection) ->
+    resolveCurrentSource(pkg, modulesSection) or pkg.userFeed or pkg.feed
 
-    ---Collects the feeds reachable from config, installed packages, and the official trust lists into a
-    ---`url -> raw entry` map (provenance/packages/advertisedBy still as sets). Network-free.
-    ---@private
-    ---@return table<string, FeedInventoryEntry> inventoryEntriesByUrl
-    __collectConfigFeeds: =>
-        inventoryEntriesByUrl = {}
-        tagPackage = (url, source, namespace) ->
-            entry = addSource inventoryEntriesByUrl, url, source
-            entry.packages[namespace] = true if entry
+  ---Collects the feeds reachable from config, installed packages, and the official trust lists into a
+  ---`url -> raw entry` map (provenance/packages/advertisedBy still as sets). Network-free.
+  ---@private
+  ---@return table<string, FeedInventoryEntry> inventoryEntriesByUrl
+  __collectConfigFeeds: =>
+    inventoryEntriesByUrl = {}
+    tagPackage = (url, source, namespace) ->
+      entry = addSource inventoryEntriesByUrl, url, source
+      entry.packages[namespace] = true if entry
 
-        for url in pairs @feedTrust\getOfficialTrustedFeeds!
-            addSource inventoryEntriesByUrl, url, url == constants.DEPCTRL_FEED_URL and Provenance.OfficialDepCtrl or Provenance.OfficialKnown
+    for url in pairs @feedTrust\getOfficialTrustedFeeds!
+      addSource inventoryEntriesByUrl, url, url == constants.DEPCTRL_FEED_URL and Provenance.OfficialDepCtrl or Provenance.OfficialKnown
 
-        c = @config.c
-        addSource inventoryEntriesByUrl, url, Provenance.UserExtra for url in *(c.feeds.extraFeeds or {})
-        -- trustedFeeds grant trust but aren't a discovery source, so they get no provenance — just the flag
-        for url in *(c.feeds.trustedFeeds or {})
-            entry = ensureInventoryEntry inventoryEntriesByUrl, url
-            entry.inTrustedFeeds = true if entry
+    c = @config.c
+    addSource inventoryEntriesByUrl, url, Provenance.UserExtra for url in *(c.feeds.extraFeeds or {})
+    -- trustedFeeds grant trust but aren't a discovery source, so they get no provenance — just the flag
+    for url in *(c.feeds.trustedFeeds or {})
+      entry = ensureInventoryEntry inventoryEntriesByUrl, url
+      entry.inTrustedFeeds = true if entry
 
-        modulesSection = c[Common.ScriptTypeSection[Common.ScriptType.Module]] or {}
-        for scriptType in *Common.ScriptType.values
-            for namespace, pkg in pairs (c[Common.ScriptTypeSection[scriptType]] or {})
-                continue unless type(pkg) == "table"
-                tagPackage pkg.feed, Provenance.PackageDeclared, namespace
-                tagPackage pkg.userFeed, Provenance.PackageOverride, namespace
-                for dep in *(pkg.requiredModules or {})
-                    tagPackage dep.feed, Provenance.DependencyAdvertised, namespace if type(dep) == "table"
-                effective = FeedInventory.getEffectiveSource pkg, modulesSection
-                inventoryEntriesByUrl[effective].inUse = true if type(effective) == "string" and inventoryEntriesByUrl[effective]
-        
-        return inventoryEntriesByUrl
+    modulesSection = c[Common.ScriptTypeSection[Common.ScriptType.Module]] or {}
+    for scriptType in *Common.ScriptType.values
+      for namespace, pkg in pairs (c[Common.ScriptTypeSection[scriptType]] or {})
+        continue unless type(pkg) == "table"
+        tagPackage pkg.feed, Provenance.PackageDeclared, namespace
+        tagPackage pkg.userFeed, Provenance.PackageOverride, namespace
+        for dep in *(pkg.requiredModules or {})
+          tagPackage dep.feed, Provenance.DependencyAdvertised, namespace if type(dep) == "table"
+        effective = FeedInventory.getEffectiveSource pkg, modulesSection
+        inventoryEntriesByUrl[effective].inUse = true if type(effective) == "string" and inventoryEntriesByUrl[effective]
 
-    ---Collapses each raw entry's provenance/package/advertisedBy sets to stable-ordered lists, attaches the
-    ---trust status (and, for a blocked feed, the block entry that matches it), and stamps the feed's last
-    ---fetch time from the persistent cache.
-    ---@private
-    ---@param inventoryEntriesByUrl table<string, FeedInventoryEntry> The raw entries to finalize.
-    ---@return FeedInventoryEntry[] feeds
-    __finalize: (inventoryEntriesByUrl) =>
-        cache = @feedLoader.cache
-        feeds = {}
-        for url, entry in pairs inventoryEntriesByUrl
-            entry.provenance = [p for p in *provenanceOrder when entry.provenance[p]]
-            entry.packages = getSortedKeys entry.packages
-            entry.advertisedBy = getSortedKeys entry.advertisedBy
-            entry.trustStatus, entry.blockedBy = @feedTrust\getTrustStatus url
-            meta = cache\getMeta url
-            entry.lastFetchedAt = meta.cachedAt if meta and meta.cachedAt
-            feeds[#feeds + 1] = entry
-        feeds
+    return inventoryEntriesByUrl
 
-    ---Gathers the known feeds from config, installed packages, and the official trust lists. Fetches nothing.
-    ---@return FeedInventoryEntry[] feeds
-    gather: => @__finalize @__collectConfigFeeds!
+  ---Collapses each raw entry's provenance/package/advertisedBy sets to stable-ordered lists, attaches the
+  ---trust status (and, for a blocked feed, the block entry that matches it), and stamps the feed's last
+  ---fetch time from the persistent cache.
+  ---@private
+  ---@param inventoryEntriesByUrl table<string, FeedInventoryEntry> The raw entries to finalize.
+  ---@return FeedInventoryEntry[] feeds
+  __finalize: (inventoryEntriesByUrl) =>
+    cache = @feedLoader.cache
+    feeds = {}
+    for url, entry in pairs inventoryEntriesByUrl
+      entry.provenance = [p for p in *provenanceOrder when entry.provenance[p]]
+      entry.packages = getSortedKeys entry.packages
+      entry.advertisedBy = getSortedKeys entry.advertisedBy
+      entry.trustStatus, entry.blockedBy = @feedTrust\getTrustStatus url
+      meta = cache\getMeta url
+      entry.lastFetchedAt = meta.cachedAt if meta and meta.cachedAt
+      feeds[#feeds + 1] = entry
+    feeds
 
-    ---Returns the namespaces of installed packages that effectively update from the given feed URL.
-    ---@param feedUrl string The feed URL to check.
-    ---@return string[] namespaces Sorted namespaces whose effective source is that feed.
-    getPackagesSourcedFrom: (feedUrl) =>
-        c = @config.c
-        modulesSection = c[Common.ScriptTypeSection[Common.ScriptType.Module]] or {}
-        matched = {}
-        for scriptType in *Common.ScriptType.values
-            for namespace, pkg in pairs (c[Common.ScriptTypeSection[scriptType]] or {})
-                continue unless type(pkg) == "table"
-                matched[#matched + 1] = namespace if FeedInventory.getEffectiveSource(pkg, modulesSection) == feedUrl
-        table.sort matched
-        matched
+  ---Gathers the known feeds from config, installed packages, and the official trust lists. Fetches nothing.
+  ---@return FeedInventoryEntry[] feeds
+  gather: => @__finalize @__collectConfigFeeds!
 
-    ---Loads a feed's `knownFeeds` URLs through the shared feed loader, or nil when the feed can't be loaded.
-    ---@private
-    ---@param url string The feed URL to read.
-    ---@return string[]? knownFeeds
-    __loadKnownFeeds: (url) =>
-        ok, feed = pcall @feedLoader.load, @feedLoader, url
-        ok and feed and feed.data and feed\getKnownFeeds! or nil
+  ---Returns the namespaces of installed packages that effectively update from the given feed URL.
+  ---@param feedUrl string The feed URL to check.
+  ---@return string[] namespaces Sorted namespaces whose effective source is that feed.
+  getPackagesSourcedFrom: (feedUrl) =>
+    c = @config.c
+    modulesSection = c[Common.ScriptTypeSection[Common.ScriptType.Module]] or {}
+    matched = {}
+    for scriptType in *Common.ScriptType.values
+      for namespace, pkg in pairs (c[Common.ScriptTypeSection[scriptType]] or {})
+        continue unless type(pkg) == "table"
+        matched[#matched + 1] = namespace if FeedInventory.getEffectiveSource(pkg, modulesSection) == feedUrl
+    table.sort matched
+    matched
 
-    ---Fetches feeds and discovers transitively-advertised ones by crawling the `knownFeeds` graph out from the
-    ---config-derived feeds; untrusted expansion is bounded, so check `stats.truncated` for incomplete results.
-    ---@return FeedInventoryEntry[] feeds The known feeds, enriched with what the crawl discovered.
-    ---@return FeedCrawlStats stats What the crawl explored and where it stopped short.
-    crawl: =>
-        inventoryEntriesByUrl = @__collectConfigFeeds!
-        stats = @__crawlKnownFeeds inventoryEntriesByUrl
-        return @__finalize(inventoryEntriesByUrl), stats
+  ---Loads a feed's `knownFeeds` URLs through the shared feed loader, or nil when the feed can't be loaded.
+  ---@private
+  ---@param url string The feed URL to read.
+  ---@return string[]? knownFeeds
+  __loadKnownFeeds: (url) =>
+    ok, feed = pcall @feedLoader.load, @feedLoader, url
+    ok and feed and feed.data and feed\getKnownFeeds! or nil
 
-    ---Breadth-first crawl of the `knownFeeds` graph, extending inventoryEntriesByUrl in place with the transitively-discovered
-    ---feeds under the untrusted-expansion bounds. Each config-derived feed is its own budget subtree, so a
-    ---malicious subtree can't starve the others.
-    ---@private
-    ---@param inventoryEntriesByUrl table<string, FeedInventoryEntry> The config-derived feeds to start from; extended in place.
-    ---@return FeedCrawlStats stats
-    __crawlKnownFeeds: (inventoryEntriesByUrl) =>
-        c = @config.c
-        limits =     c.feeds.crawlLimits or {}
-        defaults =   @@defaultCrawlLimits
-        maxDepth =   limits[CrawlLimit.Depth]   or defaults[CrawlLimit.Depth]
-        maxPerRoot = limits[CrawlLimit.PerRoot] or defaults[CrawlLimit.PerRoot]
-        maxPerFeed = limits[CrawlLimit.PerFeed] or defaults[CrawlLimit.PerFeed]
-        stats = {fetched: 0, truncated: false, truncations: {}}
+  ---Fetches feeds and discovers transitively-advertised ones by crawling the `knownFeeds` graph out from the
+  ---config-derived feeds; untrusted expansion is bounded, so check `stats.truncated` for incomplete results.
+  ---@return FeedInventoryEntry[] feeds The known feeds, enriched with what the crawl discovered.
+  ---@return FeedCrawlStats stats What the crawl explored and where it stopped short.
+  crawl: =>
+    inventoryEntriesByUrl = @__collectConfigFeeds!
+    stats = @__crawlKnownFeeds inventoryEntriesByUrl
+    return @__finalize(inventoryEntriesByUrl), stats
 
-        record = (limit, feedUrl, root, depth, route, limitValue, drops) ->
-            stats.truncated = true
-            stats.truncations[#stats.truncations + 1] = {
-                :limit, feed: feedUrl, :root, :depth, :route, :limitValue
-                dropped: drops and drops.count or 0
-                droppedUrls: drops and drops.sample or {}
-            }
+  ---Breadth-first crawl of the `knownFeeds` graph, extending inventoryEntriesByUrl in place with the transitively-discovered
+  ---feeds under the untrusted-expansion bounds. Each config-derived feed is its own budget subtree, so a
+  ---malicious subtree can't starve the others.
+  ---@private
+  ---@param inventoryEntriesByUrl table<string, FeedInventoryEntry> The config-derived feeds to start from; extended in place.
+  ---@return FeedCrawlStats stats
+  __crawlKnownFeeds: (inventoryEntriesByUrl) =>
+    c = @config.c
+    limits = c.feeds.crawlLimits or {}
+    defaults = @@defaultCrawlLimits
+    maxDepth = limits[CrawlLimit.Depth] or defaults[CrawlLimit.Depth]
+    maxPerRoot = limits[CrawlLimit.PerRoot] or defaults[CrawlLimit.PerRoot]
+    maxPerFeed = limits[CrawlLimit.PerFeed] or defaults[CrawlLimit.PerFeed]
+    stats = {fetched: 0, truncated: false, truncations: {}}
 
-        -- accumulate dropped feed URLs into a bounded sample while keeping an exact count
-        newDrops = -> {count: 0, sample: {}}
-        drop = (drops, url) ->
-            drops.count += 1
-            drops.sample[#drops.sample + 1] = url if #drops.sample < maxDropSample
+    record = (limit, feedUrl, root, depth, route, limitValue, drops) ->
+      stats.truncated = true
+      stats.truncations[#stats.truncations + 1] = {
+        :limit, feed: feedUrl, :root, :depth, :route, :limitValue
+        dropped: drops and drops.count or 0
+        droppedUrls: drops and drops.sample or {}
+      }
 
-        -- BFS frontier seeded with the config-derived feeds; each is its own subtree root for budgeting
-        queue, visited, untrustedPerRoot = {}, {}, {}
-        for url, entry in pairs inventoryEntriesByUrl
-            -- don't crawl feeds with no discovery provenance (e.g. orphaned `trustedFeeds` entries)
-            continue unless next entry.provenance
-            -- gate the root itself the same way its advertised children are: a blocked root is never
-            -- fetched, and an untrusted root honors the fetch policy (recorded above, just not crawled)
-            continue unless @feedTrust\shouldFetch url
-            queue[#queue + 1] = {:url, root: url, depth: 0, route: {url}}
-            visited[url] = true
+    -- accumulate dropped feed URLs into a bounded sample while keeping an exact count
+    newDrops = -> {count: 0, sample: {}}
+    drop = (drops, url) ->
+      drops.count += 1
+      drops.sample[#drops.sample + 1] = url if #drops.sample < maxDropSample
 
-        head = 1
-        while head <= #queue
-            {url: feedUrl, :root, :depth, :route} = queue[head]
-            head += 1
-            if depth >= maxDepth
-                record CrawlLimit.Depth, feedUrl, root, depth, route, maxDepth
-                continue
-            knownFeeds = @__loadKnownFeeds feedUrl
-            continue unless knownFeeds
-            stats.fetched += 1
-            inventoryEntriesByUrl[feedUrl].fetched = true
+    -- BFS frontier seeded with the config-derived feeds; each is its own subtree root for budgeting
+    queue, visited, untrustedPerRoot = {}, {}, {}
+    for url, entry in pairs inventoryEntriesByUrl
+      -- don't crawl feeds with no discovery provenance (e.g. orphaned `trustedFeeds` entries)
+      continue unless next entry.provenance
+      -- gate the root itself the same way its advertised children are: a blocked root is never
+      -- fetched, and an untrusted root honors the fetch policy (recorded above, just not crawled)
+      continue unless @feedTrust\shouldFetch url
+      queue[#queue + 1] = {:url, root: url, depth: 0, route: {url}}
+      visited[url] = true
 
-            perFeedUntrusted = 0
-            perFeedDrops, perRootDrops = newDrops!, newDrops!
-            for knownUrl in *knownFeeds
-                continue unless type(knownUrl) == "string" and #knownUrl > 0
-                continue if @feedTrust\isBlocked knownUrl
-                trusted = @feedTrust\isTrusted knownUrl
-                unless trusted
-                    -- bound how many untrusted feeds a single feed may contribute
-                    if perFeedUntrusted >= maxPerFeed
-                        drop perFeedDrops, knownUrl
-                        continue
-                    perFeedUntrusted += 1
+    head = 1
+    while head <= #queue
+      {url: feedUrl, :root, :depth, :route} = queue[head]
+      head += 1
+      if depth >= maxDepth
+        record CrawlLimit.Depth, feedUrl, root, depth, route, maxDepth
+        continue
+      knownFeeds = @__loadKnownFeeds feedUrl
+      continue unless knownFeeds
+      stats.fetched += 1
+      inventoryEntriesByUrl[feedUrl].fetched = true
 
-                -- a feed advertised by DepCtrl's own feed is official-known, not merely transitively known
-                prov = feedUrl == constants.DEPCTRL_FEED_URL and Provenance.OfficialKnown or Provenance.TransitiveKnown
-                entry = addSource inventoryEntriesByUrl, knownUrl, prov
-                entry.advertisedBy[feedUrl] = true
-                continue if visited[knownUrl]
+      perFeedUntrusted = 0
+      perFeedDrops, perRootDrops = newDrops!, newDrops!
+      for knownUrl in *knownFeeds
+        continue unless type(knownUrl) == "string" and #knownUrl > 0
+        continue if @feedTrust\isBlocked knownUrl
+        trusted = @feedTrust\isTrusted knownUrl
+        unless trusted
+          -- bound how many untrusted feeds a single feed may contribute
+          if perFeedUntrusted >= maxPerFeed
+            drop perFeedDrops, knownUrl
+            continue
+          perFeedUntrusted += 1
 
-                if trusted
-                    visited[knownUrl] = true
-                    queue[#queue + 1] = {url: knownUrl, :root, depth: depth + 1, route: appended(route, knownUrl)}
-                -- for an untrusted feed, within the per-root budget, ask the fetch policy before crawling in. shouldFetch
-                -- prompts under the `prompt` policy (session-cached), and denies under `never` or with no
-                -- prompter (headless), leaving the feed recorded above but not followed.
-                else
-                    if (untrustedPerRoot[root] or 0) >= maxPerRoot
-                        drop perRootDrops, knownUrl
-                    elseif @feedTrust\shouldFetch knownUrl
-                        untrustedPerRoot[root] = (untrustedPerRoot[root] or 0) + 1
-                        visited[knownUrl] = true
-                        queue[#queue + 1] = {url: knownUrl, :root, depth: depth + 1, route: appended(route, knownUrl)}
+        -- a feed advertised by DepCtrl's own feed is official-known, not merely transitively known
+        prov = feedUrl == constants.DEPCTRL_FEED_URL and Provenance.OfficialKnown or Provenance.TransitiveKnown
+        entry = addSource inventoryEntriesByUrl, knownUrl, prov
+        entry.advertisedBy[feedUrl] = true
+        continue if visited[knownUrl]
 
-            record CrawlLimit.PerFeed, feedUrl, root, depth, route, maxPerFeed, perFeedDrops if perFeedDrops.count > 0
-            record CrawlLimit.PerRoot, feedUrl, root, depth, route, maxPerRoot, perRootDrops if perRootDrops.count > 0
-        stats
+        if trusted
+          visited[knownUrl] = true
+          queue[#queue + 1] = {url: knownUrl, :root, depth: depth + 1, route: appended(route, knownUrl)}
+        -- for an untrusted feed, within the per-root budget, ask the fetch policy before crawling in. shouldFetch
+        -- prompts under the `prompt` policy (session-cached), and denies under `never` or with no
+        -- prompter (headless), leaving the feed recorded above but not followed.
+        else
+          if (untrustedPerRoot[root] or 0) >= maxPerRoot
+            drop perRootDrops, knownUrl
+          elseif @feedTrust\shouldFetch knownUrl
+            untrustedPerRoot[root] = (untrustedPerRoot[root] or 0) + 1
+            visited[knownUrl] = true
+            queue[#queue + 1] = {url: knownUrl, :root, depth: depth + 1, route: appended(route, knownUrl)}
+
+      record CrawlLimit.PerFeed, feedUrl, root, depth, route, maxPerFeed, perFeedDrops if perFeedDrops.count > 0
+      record CrawlLimit.PerRoot, feedUrl, root, depth, route, maxPerRoot, perRootDrops if perRootDrops.count > 0
+    stats
 
 return FeedInventory

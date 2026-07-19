@@ -56,18 +56,18 @@
       ut\assertNotNil c
       ut\assertNotNil o
       ut\assertTrue f < x and x < c and c < o
-      ut\assertFalsy md\find "Breaking Changes", 1, true    -- breaking is not a section of its own
+      ut\assertFalsy md\find "Breaking Changes", 1, true -- breaking is not a section of its own
 
     renderMarkdown_breakingMarkedAtTopOfSection: (ut) ->
       pkgs = {{name: "P", scope: "P", primary: true, entries: {
         "change: regular change", "change(API)!: breaking change"}}}
       md = renderMarkdown pkgs
       ut\assertContains md, "## Changes"
-      ut\assertContains md, "⚠️ **API:** breaking change"    -- breaking tagged, kept in its type section
+      ut\assertContains md, "⚠️ **API:** breaking change" -- breaking tagged, kept in its type section
       mark = md\find "⚠️", 1, true
-      reg  = md\find "regular change", 1, true
+      reg = md\find "regular change", 1, true
       ut\assertNotNil mark
-      ut\assertTrue mark < reg                                -- floated above the non-breaking entry
+      ut\assertTrue mark < reg -- floated above the non-breaking entry
 
     renderMarkdown_barePrimaryBoldOthers: (ut) ->
       pkgs = {
@@ -75,9 +75,9 @@
         {name: "Side", scope: "Side", entries: {"feat: side attributed"}}
       }
       md = renderMarkdown pkgs
-      ut\assertContains md, "- primary bare"             -- primary unscoped entry: no lead-in
-      ut\assertContains md, "**Side:** side attributed"  -- non-primary: package fallback scope
-      ut\assertFalsy md\find "**Main:**", 1, true        -- the primary never gets a package lead-in
+      ut\assertContains md, "- primary bare" -- primary unscoped entry: no lead-in
+      ut\assertContains md, "**Side:** side attributed" -- non-primary: package fallback scope
+      ut\assertFalsy md\find "**Main:**", 1, true -- the primary never gets a package lead-in
 
     renderMarkdown_markerScopeOverridesFallback: (ut) ->
       md = renderMarkdown {{name: "Side", scope: "Side", entries: {"fix(Net): a fix"}}}
@@ -91,13 +91,13 @@
       md = renderMarkdown {{name: "P", scope: "P", primary: true, entries: {"loose one", "loose two"}}}
       ut\assertContains md, "- loose one"
       ut\assertContains md, "- loose two"
-      ut\assertFalsy md\find "#", 1, true                    -- no headings at all when nothing is marked
+      ut\assertFalsy md\find "#", 1, true -- no headings at all when nothing is marked
 
     renderLog_reconstructsAndGroups: (ut) ->
       out = renderLog {"fix(Updater): a bug", "feat: a feature"}
       ut\assertContains out, "New Features"
       ut\assertContains out, "Bug Fixes"
-      ut\assertContains out, "  • Updater: a bug"            -- scope kept, machine type token dropped
+      ut\assertContains out, "  • Updater: a bug" -- scope kept, machine type token dropped
       ut\assertContains out, "  • a feature"
       ut\assertFalsy out\find "fix(Updater):", 1, true
 
@@ -105,7 +105,7 @@
       out = renderLog {"plain one", "plain two"}
       ut\assertContains out, "  • plain one"
       ut\assertContains out, "  • plain two"
-      ut\assertFalsy out\find "Other Changes", 1, true       -- no heading when nothing is marked
+      ut\assertFalsy out\find "Other Changes", 1, true -- no heading when nothing is marked
 
     _order: {
       "parseEntry_marked", "parseEntry_breaking", "parseEntry_breakingWithScope",

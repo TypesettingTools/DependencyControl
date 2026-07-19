@@ -39,16 +39,16 @@
       fakeFeed = {
         ensureLoaded: =>
           calls += 1
-          calls > 1                                -- fails first, succeeds thereafter
+          calls > 1 -- fails first, succeeds thereafter
         getKnownFeeds: => {"feed://known"}
         data: {blockedFeeds: {}}
       }
       ft = makeSeededFeedTrust {feedLoader: {load: ((url, opts) => fakeFeed)}}
       first = FeedTrust.getOfficialTrustedFeeds ft
-      ut\assertNil ft.__official                   -- failed load -> not cached
-      ut\assertNil first["feed://known"]           -- fallback trusts only DepCtrl's own url
+      ut\assertNil ft.__official -- failed load -> not cached
+      ut\assertNil first["feed://known"] -- fallback trusts only DepCtrl's own url
       second = FeedTrust.getOfficialTrustedFeeds ft -- retries -> succeeds this time
-      ut\assertNotNil ft.__official                -- cached now
+      ut\assertNotNil ft.__official -- cached now
       ut\assertTrue second["feed://known"]
 
     -- getTrustedFeeds merges the official trusted set with the user's extraFeeds and trustedFeeds.
@@ -100,7 +100,7 @@
       ft = make officialTrusted: {"feed://o": true}, extraFeeds: {"feed://e"}, trustedFeeds: {"feed://t"}
       ut\assertTrue FeedTrust.isUserTrusted ft, "feed://e"
       ut\assertTrue FeedTrust.isUserTrusted ft, "feed://t"
-      ut\assertFalse FeedTrust.isUserTrusted ft, "feed://o"   -- official, not one of the user's lists
+      ut\assertFalse FeedTrust.isUserTrusted ft, "feed://o" -- official, not one of the user's lists
       ut\assertFalse FeedTrust.isUserTrusted ft, "feed://x"
       ut\assertFalse FeedTrust.isUserTrusted ft, nil
 
@@ -108,17 +108,17 @@
     isOfficiallyTrusted_officialSetOnly: (ut) ->
       ft = make officialTrusted: {"feed://o": true}, extraFeeds: {"feed://e"}, trustedFeeds: {"feed://t"}
       ut\assertTrue FeedTrust.isOfficiallyTrusted ft, "feed://o"
-      ut\assertFalse FeedTrust.isOfficiallyTrusted ft, "feed://e"   -- a user list, not the official set
+      ut\assertFalse FeedTrust.isOfficiallyTrusted ft, "feed://e" -- a user list, not the official set
       ut\assertFalse FeedTrust.isOfficiallyTrusted ft, "feed://t"
       ut\assertFalse FeedTrust.isOfficiallyTrusted ft, nil
 
     -- getTrustStatus classifies official and user trust independently: official-only, user-only, both, or neither.
     getTrustStatus_classifiesTrust: (ut) ->
       ft = make officialTrusted: {"feed://o": true, "feed://both": true}, extraFeeds: {"feed://u"}, trustedFeeds: {"feed://both"}
-      ut\assertEquals FeedTrust.getTrustStatus(ft, "feed://o"),    TrustStatus.TrustedOfficial
-      ut\assertEquals FeedTrust.getTrustStatus(ft, "feed://u"),    TrustStatus.TrustedUser
+      ut\assertEquals FeedTrust.getTrustStatus(ft, "feed://o"), TrustStatus.TrustedOfficial
+      ut\assertEquals FeedTrust.getTrustStatus(ft, "feed://u"), TrustStatus.TrustedUser
       ut\assertEquals FeedTrust.getTrustStatus(ft, "feed://both"), TrustStatus.TrustedBoth
-      ut\assertEquals FeedTrust.getTrustStatus(ft, "feed://x"),    TrustStatus.Untrusted
+      ut\assertEquals FeedTrust.getTrustStatus(ft, "feed://x"), TrustStatus.Untrusted
 
     -- a block overrides any trust, and getTrustStatus returns the matching entry as its second value.
     getTrustStatus_blockOverridesAndReturnsEntry: (ut) ->
@@ -133,7 +133,7 @@
     trust_appendsPersistsAndInvalidates: (ut) ->
       saved = {}
       ft = make trustedFeeds: {}, onSave: -> saved[1] = true
-      FeedTrust.getTrustedFeeds ft   -- prime the cache
+      FeedTrust.getTrustedFeeds ft -- prime the cache
       FeedTrust.trust ft, "feed://new"
       ut\assertEquals ft.config.c.feeds.trustedFeeds[1], "feed://new"
       ut\assertTrue saved[1]
@@ -142,7 +142,7 @@
     block_appendsPersistsAndInvalidates: (ut) ->
       saved = {}
       ft = make blockedFeeds: {}, onSave: -> saved[1] = true
-      FeedTrust.getBlockedFeeds ft   -- prime the cache
+      FeedTrust.getBlockedFeeds ft -- prime the cache
       FeedTrust.block ft, "https://bad/"
       ut\assertEquals ft.config.c.feeds.blockedFeeds[1], {url: "https://bad/", matchMode: "prefix"}
       ut\assertTrue saved[1]
@@ -167,7 +167,7 @@
     untrust_removesPersistsAndInvalidates: (ut) ->
       saved = {}
       ft = make trustedFeeds: {"feed://a", "feed://b"}, onSave: -> saved[1] = true
-      FeedTrust.getTrustedFeeds ft   -- prime the cache
+      FeedTrust.getTrustedFeeds ft -- prime the cache
       ut\assertTrue FeedTrust.untrust ft, "feed://a"
       ut\assertEquals ft.config.c.feeds.trustedFeeds, {"feed://b"}
       ut\assertTrue saved[1]
@@ -189,7 +189,7 @@
     unblock_removesPersistsAndInvalidates: (ut) ->
       saved = {}
       ft = make blockedFeeds: {{url: "https://bad/", matchMode: "prefix"}, {url: "https://evil/", matchMode: "prefix"}}, onSave: -> saved[1] = true
-      FeedTrust.getBlockedFeeds ft   -- prime the cache
+      FeedTrust.getBlockedFeeds ft -- prime the cache
       ut\assertTrue FeedTrust.unblock ft, "https://bad/"
       ut\assertEquals ft.config.c.feeds.blockedFeeds, {{url: "https://evil/", matchMode: "prefix"}}
       ut\assertTrue saved[1]
@@ -204,7 +204,7 @@
     addExtraFeed_addsPersistsAndInvalidates: (ut) ->
       saved = {}
       ft = make extraFeeds: {}, onSave: -> saved[1] = true
-      FeedTrust.getTrustedFeeds ft   -- prime the cache
+      FeedTrust.getTrustedFeeds ft -- prime the cache
       ut\assertTrue FeedTrust.addExtraFeed ft, "feed://extra"
       ut\assertEquals ft.config.c.feeds.extraFeeds, {"feed://extra"}
       ut\assertTrue saved[1]
@@ -212,7 +212,7 @@
 
     removeExtraFeed_removesAndInvalidates: (ut) ->
       ft = make extraFeeds: {"feed://x"}
-      FeedTrust.getTrustedFeeds ft   -- prime the cache
+      FeedTrust.getTrustedFeeds ft -- prime the cache
       ut\assertTrue FeedTrust.removeExtraFeed ft, "feed://x"
       ut\assertEquals ft.config.c.feeds.extraFeeds, {}
       ut\assertFalse FeedTrust.isTrusted ft, "feed://x"
@@ -243,10 +243,10 @@
     -- a url differing only in case is a duplicate (matching is case-insensitive), and a bogus mode defaults to prefix
     block_dedupsCaseInsensitivelyAndValidatesMode: (ut) ->
       ft = make blockedFeeds: {{url: "https://Bad/", matchMode: "prefix"}}
-      ut\assertFalse FeedTrust.block ft, "https://bad/"          -- case-only difference -> duplicate
+      ut\assertFalse FeedTrust.block ft, "https://bad/" -- case-only difference -> duplicate
       ft2 = make blockedFeeds: {}
       FeedTrust.block ft2, "https://x/", {matchMode: "bogus"}
-      ut\assertEquals ft2.config.c.feeds.blockedFeeds[1].matchMode, "prefix"   -- unknown mode -> prefix
+      ut\assertEquals ft2.config.c.feeds.blockedFeeds[1].matchMode, "prefix" -- unknown mode -> prefix
 
     -- getBlockingEntry surfaces the matching entry's reason and marks official blocks.
     getBlockingEntry_surfacesReasonAndOfficial: (ut) ->

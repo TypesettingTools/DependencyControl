@@ -1,7 +1,7 @@
 -- UpdateTask tests: extracted from the main test suite.
 -- Called from test.moon as: (controls\requireTest "UpdateTask")!
 () ->
-  Common  = require "l0.DependencyControl.Common"
+  Common = require "l0.DependencyControl.Common"
   UpdateTask = require "l0.DependencyControl.UpdateTask"
   UnitTestSuite = require "l0.DependencyControl.UnitTestSuite"
   SemanticVersion = require "l0.DependencyControl.SemanticVersion"
@@ -222,7 +222,7 @@
     engine.addDownload = (self, url, outfile, sha1) ->
       return nil, "add failed: #{url}" if opts.addDownloadFails
       d = {:url, :outfile, :sha1, error: "download boom"
-           status: opts.downloadStatus or Downloader.Download.Status.Finished}
+        status: opts.downloadStatus or Downloader.Download.Status.Finished}
       self.downloads[#self.downloads + 1] = d
       d
     engine.await = (self, cb) -> cb nil, 1
@@ -343,7 +343,7 @@
       task = makeSelectTask SemanticVersion\toPacked "1.0.0"
       chosen = UpdateTask.__selectCandidate task,
         {makeCandidate(3, "9.9.9", namespace: "l0.a", isDirect: false, providesVersion: "^1"),
-         makeCandidate(3, "1.0.0", namespace: "l0.b", isDirect: false, providesVersion: "^2")}
+          makeCandidate(3, "1.0.0", namespace: "l0.b", isDirect: false, providesVersion: "^2")}
       ut\assertEquals chosen.updateRecord.namespace, "l0.b"
 
     -- __selectCandidate's 2nd return is the set of candidates tied with the winner (for the chooser)
@@ -351,8 +351,8 @@
       task = makeSelectTask 0
       _, tied = UpdateTask.__selectCandidate task,
         {makeCandidate(3, "1.0.0", namespace: "l0.a"), makeCandidate(3, "1.0.0", namespace: "l0.b"),
-         makeCandidate(3, "1.0.0", namespace: "l0.c", platform: false)}
-      ut\assertEquals #tied, 2   -- the platform-ineligible one is excluded
+          makeCandidate(3, "1.0.0", namespace: "l0.c", platform: false)}
+      ut\assertEquals #tied, 2 -- the platform-ineligible one is excluded
 
     -- UpdateTask.isWithinContextCeiling: the shared context-ladder gate — each ceiling admits exactly the
     -- contexts at or below its rung; off, unset, and unrecognized ceilings admit none
@@ -421,7 +421,7 @@
     promptSelectPackageSource_picksSelection: (ut) ->
       task = makeInteractiveTask!
       winner = {feedUrl: "feed://a", updateRecord: {namespace: "l0.a", name: "A"}}
-      other  = {feedUrl: "feed://b", updateRecord: {namespace: "l0.b", name: "B"}}
+      other = {feedUrl: "feed://b", updateRecord: {namespace: "l0.b", name: "B"}}
       ut\stub(aegisub.dialog, "display")\calls -> msgs.promptSelectSource.retain, {choice: "B (feed://b)"}
       chosen, stickiness = UpdateTask.__promptSelectPackageSource task, {winner, other}, winner
       ut\assertEquals chosen, other
@@ -430,7 +430,7 @@
     promptSelectPackageSource_autoKeepsWinner: (ut) ->
       task = makeInteractiveTask!
       winner = {feedUrl: "feed://a", updateRecord: {namespace: "l0.a", name: "A"}}
-      other  = {feedUrl: "feed://b", updateRecord: {namespace: "l0.b", name: "B"}}
+      other = {feedUrl: "feed://b", updateRecord: {namespace: "l0.b", name: "B"}}
       -- "Let DepCtrl Decide" ignores the dropdown and keeps the algorithm's pick
       ut\stub(aegisub.dialog, "display")\calls -> msgs.promptSelectSource.auto, {choice: "B (feed://b)"}
       chosen, stickiness = UpdateTask.__promptSelectPackageSource task, {winner, other}, winner
@@ -440,7 +440,7 @@
     promptSelectPackageSource_abortReturnsNil: (ut) ->
       task = makeInteractiveTask!
       winner = {feedUrl: "feed://a", updateRecord: {namespace: "l0.a", name: "A"}}
-      other  = {feedUrl: "feed://b", updateRecord: {namespace: "l0.b", name: "B"}}
+      other = {feedUrl: "feed://b", updateRecord: {namespace: "l0.b", name: "B"}}
       ut\stub(aegisub.dialog, "display")\calls -> msgs.promptSelectSource.abort, {}
       ut\assertNil UpdateTask.__promptSelectPackageSource task, {winner, other}, winner
 
@@ -567,7 +567,7 @@
       d = UpdateTask.__resolve task
       ut\assertTrue d.installRequired
       ut\assertEquals d.selectedSource.feedUrl, "feed://decl"
-      ut\assertNil task.triedFeeds["feed://extra"]   -- tier 2 was never reached
+      ut\assertNil task.triedFeeds["feed://extra"] -- tier 2 was never reached
 
     -- cascade: an empty declared feed falls through to a user extra feed (trusted discovery, tier 2).
     -- Guards that extraFeeds is read from the `feeds` config section, not `updates`.
@@ -771,7 +771,7 @@
       d = UpdateTask.__resolve task
       ut\assertFalse d.installRequired
       ut\assertEquals d.statusCode, UpdateStatus.NoSuitablePackage
-      ut\assertNil task.triedFeeds["feed://blocked"]   -- skipped before being fetched
+      ut\assertNil task.triedFeeds["feed://blocked"] -- skipped before being fetched
 
     -- userFeed: an exclusive override feed is consulted in place of the declared-feed cascade
     resolve_userFeedUsedExclusively: (ut) ->
@@ -782,12 +782,12 @@
       d = UpdateTask.__resolve task
       ut\assertTrue d.installRequired
       ut\assertEquals d.selectedSource.feedUrl, "feed://user"
-      ut\assertNil task.triedFeeds["feed://decl"]   -- the declared feed is never consulted
+      ut\assertNil task.triedFeeds["feed://decl"] -- the declared feed is never consulted
 
     -- run(): a direct-install resolution is persisted, then dispatched to performUpdate
     run_dispatchesDirectInstall: (ut) ->
       task = makeRunTask {
-        virtual: false   -- so the post-resolve up-to-date check runs
+        virtual: false -- so the post-resolve up-to-date check runs
         resolution: {
           installRequired: true, stickiness: SourceChoiceStickiness.Once, maxVersion: 0
           selectedSource: {isDirect: true, updateRecord: {version: "1.0.0"}}
@@ -829,8 +829,8 @@
       }
       code = UpdateTask.run task
       ut\assertEquals code, UpdateStatus.UpToDate
-      ut\assertNil task.calls.performUpdate   -- no install performed
-      ut\assertNotNil task.calls.persisted    -- but the source choice is still recorded
+      ut\assertNil task.calls.performUpdate -- no install performed
+      ut\assertNotNil task.calls.persisted -- but the source choice is still recorded
 
     -- run(): a terminal resolution (no install required) returns its status without dispatching
     run_terminalResolutionReturnsStatus: (ut) ->
@@ -848,7 +848,7 @@
       task = makeRunTask {online: false, resolution: {installRequired: false, statusCode: UpdateStatus.UpToDate}}
       code = UpdateTask.run task
       ut\assertEquals code, UpdateStatus.NoInternet
-      ut\assertNil task.calls.resolved   -- the guard returns before resolve()
+      ut\assertNil task.calls.resolved -- the guard returns before resolve()
 
     -- __installProvider: builds a virtual provider record from the feed entry, appends the provider's
     -- feed to addFeeds, and installs it through the updater (forwarding targetVersion/optional/reason)
@@ -870,7 +870,7 @@
       ut\assertEquals ctor.feed, "feed://prov"
       ut\assertEquals ctor.url, "http://prov/x.zip"
       ut\assertEquals cap.addFeeds[1], "feed://a"
-      ut\assertEquals cap.addFeeds[2], "feed://prov"   -- the provider's feed is appended
+      ut\assertEquals cap.addFeeds[2], "feed://prov" -- the provider's feed is appended
       ut\assertEquals cap.targetVersion, 0x10000
       ut\assertTrue cap.optional
       ut\assertEquals cap.reason, UpdateReason.UserRequested
@@ -896,7 +896,7 @@
       ut\stub(FileOps, "getTempDir")\returns "tmp"
       ut\stub(FileOps, "mkdir")\returns true, "tmp"
       ut\stub(UpdateFeed, "getFileDeployPath")\returns "deploy/x.moon"
-      update = {version: 0x10000, files: {{name: "x.moon", type: "script", sha1: "abc"}}}   -- not 40 hex chars
+      update = {version: 0x10000, files: {{name: "x.moon", type: "script", sha1: "abc"}}} -- not 40 hex chars
       code = UpdateTask.performUpdate makePerformTask!, update
       ut\assertEquals code, UpdateStatus.BadHash
 
@@ -905,7 +905,7 @@
       ut\stub(FileOps, "getTempDir")\returns "tmp"
       ut\stub(FileOps, "mkdir")\returns true, "tmp"
       ut\stub(UpdateFeed, "getFileDeployPath")\returns "deploy/x.moon"
-      ut\stub(FileOps, "verifyHash")\returns false   -- not already on disk → it gets downloaded
+      ut\stub(FileOps, "verifyHash")\returns false -- not already on disk → it gets downloaded
       task = makePerformTask {downloadStatus: Downloader.Download.Status.Failed}
       update = {version: 0x10000, files: {{name: "x.moon", type: "script", url: "http://x", sha1: string.rep "a", 40}}}
       code = UpdateTask.performUpdate task, update
@@ -943,7 +943,7 @@
       ut\assertEquals code, UpdateStatus.Installed
       ut\assertEquals detail, "1.0.0"
       ut\assertTrue task.updated
-      ut\assertIs task.record, newRecord   -- record swapped to the freshly-loaded version record
+      ut\assertIs task.record, newRecord -- record swapped to the freshly-loaded version record
 
     -- refreshRecord: another updater installed the module while we waited for the lock → adopt the result
     refreshRecord_detectsExternalInstall: (ut) ->
@@ -997,7 +997,7 @@
     -- (e.g. which required module couldn't be installed), rather than dropping it
     getUpdaterErrorMsg_requirementsUnmetKeepsDetail: (ut) ->
       msg = UpdateTask.getUpdaterErrorMsg UpdateStatus.RequirementsUnmet, "l0.ASSFoundation",
-                                          Common.ScriptType.Module, true, "— SubInspector.Inspector: no build for your platform"
+        Common.ScriptType.Module, true, "— SubInspector.Inspector: no build for your platform"
       ut\assertContains msg, "requirements could not be satisfied"
       ut\assertContains msg, "SubInspector.Inspector: no build for your platform"
 
@@ -1007,10 +1007,10 @@
     getOfferedBuildPlatforms_collectsVersionMatchingRejects: (ut) ->
       task = stubSelf UpdateTask, {targetVersion: SemanticVersion\toPacked "1.0.0"}
       candidates = {
-        makeCandidate 1, "1.2.0", {platform: false, platforms: {"Windows-x64", "OSX-x64"}}   -- version ok, wrong platform → collect
-        makeCandidate 1, "1.5.0", {platform: false, platforms: {"Windows-x64"}}               -- duplicate platform → de-dup
-        makeCandidate 1, "1.0.0", {platform: true, platforms: {"Linux-x64"}}                  -- supports platform → ignore
-        makeCandidate 1, "0.9.0", {platform: false, platforms: {"SomethingElse"}}             -- too old → ignore
+        makeCandidate 1, "1.2.0", {platform: false, platforms: {"Windows-x64", "OSX-x64"}} -- version ok, wrong platform → collect
+        makeCandidate 1, "1.5.0", {platform: false, platforms: {"Windows-x64"}} -- duplicate platform → de-dup
+        makeCandidate 1, "1.0.0", {platform: true, platforms: {"Linux-x64"}} -- supports platform → ignore
+        makeCandidate 1, "0.9.0", {platform: false, platforms: {"SomethingElse"}} -- too old → ignore
         makeCandidate 1, "1.0.0", {isDirect: false, platform: false, platforms: {"Provider"}} -- indirect → ignore
       }
       platforms = UpdateTask.__getOfferedBuildPlatforms task, candidates

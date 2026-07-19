@@ -2,12 +2,12 @@
 -- and feed refresh.
 -- Called from Tests.moon as: (require "...test.UpdateFeed") basePath, DepCtrl
 (basePath, DepCtrl) ->
-  Common            = require "l0.DependencyControl.Common"
-  FileOps           = require "l0.DependencyControl.FileOps"
-  FileCache         = require "l0.DependencyControl.FileCache"
-  UpdateFeed        = require "l0.DependencyControl.UpdateFeed"
-  dkjson            = require "l0.dkjson"
-  {:stubSelf}       = require "l0.DependencyControl.test.helpers.stub-helpers"
+  Common = require "l0.DependencyControl.Common"
+  FileOps = require "l0.DependencyControl.FileOps"
+  FileCache = require "l0.DependencyControl.FileCache"
+  UpdateFeed = require "l0.DependencyControl.UpdateFeed"
+  dkjson = require "l0.dkjson"
+  {:stubSelf} = require "l0.DependencyControl.test.helpers.stub-helpers"
   FILEOPS_MODULE_NAME = "l0.DependencyControl.FileOps"
 
   -- Builds a stub feed around unexpanded data for driving expand directly.
@@ -77,7 +77,7 @@
       }
       sur = UpdateFeed.getMacro feed, "test.NS"
       ut\assertTable sur
-      ut\assertFalse sur.moduleName  -- false for Automation (not a module)
+      ut\assertFalse sur.moduleName -- false for Automation (not a module)
 
     getModule_usesModuleType: (ut) ->
       feed = {
@@ -90,7 +90,7 @@
       }
       sur = UpdateFeed.getModule feed, "test.NS"
       ut\assertTable sur
-      ut\assertEquals sur.moduleName, "test.NS"  -- set for Module type
+      ut\assertEquals sur.moduleName, "test.NS" -- set for Module type
 
     -- getModuleVersion
 
@@ -121,7 +121,7 @@
       feed = {
         data: {modules: {
           "l0.dkjson": {name: "dkjson", channels: {release: {default: true, version: "2.10.0", files: {}, provides: {"json", "dkjson"}}}}
-          "l0.Other":  {name: "Other",  channels: {release: {default: true, version: "1.0.0", files: {}}}}
+          "l0.Other": {name: "Other", channels: {release: {default: true, version: "1.0.0", files: {}}}}
         }, macros: {}},
         logger: DepCtrl.logger, __class: UpdateFeed
       }
@@ -177,7 +177,7 @@
       ut\assertEquals result[1].name, "json"
       ut\assertEquals result[1].version, "1.2.0"
       sameRef = result[1] == input[1]
-      ut\assertFalse sameRef   -- copied, not the caller's table
+      ut\assertFalse sameRef -- copied, not the caller's table
 
     normalizeModuleAliases_dropsNonSchemaFields: (ut) ->
       result = UpdateFeed\__normalizeModuleAliases {{name: "json", version: "1.0.0", optional: true, bogus: "x"}}
@@ -213,13 +213,13 @@
       }
 
       data = UpdateFeed.expand feed
-      ut\assertEquals data.description, "made for TestFeed"               -- template expanded in the working copy
-      ut\assertEquals unexpandedData.description, "made for @{feedName}"   -- pristine source left untouched
-      ut\assertFalse data == unexpandedData                               -- @data is a fresh copy, not the source
+      ut\assertEquals data.description, "made for TestFeed" -- template expanded in the working copy
+      ut\assertEquals unexpandedData.description, "made for @{feedName}" -- pristine source left untouched
+      ut\assertFalse data == unexpandedData -- @data is a fresh copy, not the source
 
-      again = UpdateFeed.expand feed                                      -- a second expand rebuilds from the source
-      ut\assertFalse again == data                                        -- a new working copy each call
-      ut\assertEquals unexpandedData.description, "made for @{feedName}"   -- source still pristine
+      again = UpdateFeed.expand feed -- a second expand rebuilds from the source
+      ut\assertFalse again == data -- a new working copy each call
+      ut\assertEquals unexpandedData.description, "made for @{feedName}" -- source still pristine
 
     -- a fileBaseUrls map collapses to the entry matching each file's type, with @{fileName} baked in
     expand_fileBaseUrlsCollapsePerType: (ut) ->
@@ -392,12 +392,12 @@
       ut\assertEquals #result, 2
       ut\assertEquals result[1].name, "/New.moon"
       ut\assertNil result[1].type
-      ut\assertEquals result[1].url, "@{fileBaseUrl}"                -- script type has a fileBaseUrls entry
+      ut\assertEquals result[1].url, "@{fileBaseUrl}" -- script type has a fileBaseUrls entry
       ut\assertEquals result[1].channel, "release"
       ut\assertContains result[1].localFilePath, "New.moon"
       ut\assertEquals result[2].name, "/New.moon"
       ut\assertEquals result[2].type, "test"
-      ut\assertEquals result[2].url, "@{fileBaseUrl}@{fileName}"     -- no fileBaseUrls entry for tests
+      ut\assertEquals result[2].url, "@{fileBaseUrl}@{fileName}" -- no fileBaseUrls entry for tests
 
     -- a local path template with an unexpanded variable besides @{fileName} can't be inverted
     findUnlistedFiles_skipsUninvertibleTemplates: (ut) ->
@@ -471,8 +471,8 @@
       (ut\stub feed, "__refreshVersionRecord")\returns false
       (ut\stub feed, "__refreshFiles")\returns false, {}
       feed\updateFeed {markReleased: "2099-12-31", outPath: false}
-      ut\assertEquals feed.rawFeedData.modules["l0.Fresh"].channels.release.released, "2099-12-31"  -- stamped
-      ut\assertEquals feed.rawFeedData.modules["l0.Old"].channels.release.released, "2020-01-01"     -- kept
+      ut\assertEquals feed.rawFeedData.modules["l0.Fresh"].channels.release.released, "2099-12-31" -- stamped
+      ut\assertEquals feed.rawFeedData.modules["l0.Old"].channels.release.released, "2020-01-01" -- kept
 
     -- mergeChannels copies the source channel into the destination channel(s), preserves channels not
     -- named, stamps the release date, sets the default flag, tracks top-level metadata, and adds packages
@@ -504,14 +504,14 @@
       ut\assertNil err
       ut\assertEquals #merged, 2
       chA = dest.rawFeedData.modules["l0.A"].channels
-      ut\assertEquals chA.release.version, "0.7.0"        -- release taken from the source's main channel
-      ut\assertEquals chA.release.released, "2026-07-19"  -- release date stamped
-      ut\assertTrue chA.release.default                   -- default flag set
-      ut\assertEquals chA.alpha.version, "0.6.0"          -- alpha channel preserved
+      ut\assertEquals chA.release.version, "0.7.0" -- release taken from the source's main channel
+      ut\assertEquals chA.release.released, "2026-07-19" -- release date stamped
+      ut\assertTrue chA.release.default -- default flag set
+      ut\assertEquals chA.alpha.version, "0.6.0" -- alpha channel preserved
       ut\assertEquals chA.alpha.released, "2024-01-01"
-      ut\assertEquals dest.rawFeedData.name, "NewName"    -- top-level metadata tracks the source
+      ut\assertEquals dest.rawFeedData.name, "NewName" -- top-level metadata tracks the source
       newCh = dest.rawFeedData.modules["l0.New"].channels
-      ut\assertNotNil newCh.release                       -- new package added, carrying only the to-channel
+      ut\assertNotNil newCh.release -- new package added, carrying only the to-channel
       ut\assertNil newCh.alpha
 
     -- bumpVersions off a released version starts a new cycle: it rewrites the marked source literal,
@@ -537,9 +537,9 @@
       ut\assertEquals stats.target, "0.8.0"
       ut\assertEquals #stats.bumped, 1
       main = feed.rawFeedData.modules["l0.Pkg"].channels.main
-      ut\assertEquals main.version, "0.8.0"               -- feed version bumped
-      ut\assertEquals main.released, dkjson.null           -- release date cleared (new build pending)
-      ut\assertNotNil (FileOps.readFile srcFile)\match '"0%.8%.0"'  -- marked source literal rewritten
+      ut\assertEquals main.version, "0.8.0" -- feed version bumped
+      ut\assertEquals main.released, dkjson.null -- release date cleared (new build pending)
+      ut\assertNotNil (FileOps.readFile srcFile)\match '"0%.8%.0"' -- marked source literal rewritten
 
     -- walkFiles
 
@@ -599,7 +599,7 @@
         elseif k == "type" then "script"
       }
       fakeChan = setmetatable {}, {__index: (_, k) -> k == "name" and "release" or nil}
-      fakePkg  = setmetatable {}, {__index: (_, k) -> k == "namespace" and "test.NS" or nil}
+      fakePkg = setmetatable {}, {__index: (_, k) -> k == "namespace" and "test.NS" or nil}
       (ut\stub feed, "walkFiles")\calls (self, scriptTypes) ->
         coroutine.wrap ->
           coroutine.yield fakeFile, fakeChan, fakePkg, "modules", Common.ScriptType.Module
@@ -625,7 +625,7 @@
         elseif k == "type" then "script"
       }
       fakeChan = setmetatable {}, {__index: (_, k) -> k == "name" and "release" or nil}
-      fakePkg  = setmetatable {}, {__index: (_, k) -> k == "namespace" and "test.NS" or nil}
+      fakePkg = setmetatable {}, {__index: (_, k) -> k == "namespace" and "test.NS" or nil}
       (ut\stub feed, "walkFiles")\calls (self, scriptTypes) ->
         coroutine.wrap ->
           coroutine.yield fakeFile, fakeChan, fakePkg, "modules", Common.ScriptType.Module
@@ -647,7 +647,7 @@
         elseif k == "name" then "NS.moon"
       }
       fakeChan = setmetatable {}, {__index: (_, k) -> k == "name" and "release" or nil}
-      fakePkg  = setmetatable {}, {__index: (_, k) -> k == "namespace" and "test.NS" or nil}
+      fakePkg = setmetatable {}, {__index: (_, k) -> k == "namespace" and "test.NS" or nil}
       (ut\stub feed, "walkFiles")\calls (self, scriptTypes) ->
         coroutine.wrap ->
           coroutine.yield fakeFile, fakeChan, fakePkg, "modules", Common.ScriptType.Module
@@ -667,14 +667,14 @@
         elseif k == "name" then "Old.moon"
       }
       fakeChan = setmetatable {}, {__index: (_, k) -> k == "name" and "release" or nil}
-      fakePkg  = setmetatable {}, {__index: (_, k) -> k == "namespace" and "test.NS" or nil}
+      fakePkg = setmetatable {}, {__index: (_, k) -> k == "namespace" and "test.NS" or nil}
       (ut\stub feed, "walkFiles")\calls (self, scriptTypes) ->
         coroutine.wrap ->
           coroutine.yield fakeFile, fakeChan, fakePkg, "modules", Common.ScriptType.Module
       (ut\stub UpdateFeed, "getFileDeployPath")\returns dstPath
       (ut\stub FILEOPS_MODULE_NAME, "exists")\returns true
       removeStub = (ut\stub FILEOPS_MODULE_NAME, "remove")\returns true
-      copyStub   = (ut\stub FILEOPS_MODULE_NAME, "copy")\returns true
+      copyStub = (ut\stub FILEOPS_MODULE_NAME, "copy")\returns true
       fileCount, errCount = UpdateFeed.deployFiles feed, basePath
       ut\assertEquals fileCount, 0
       ut\assertEquals errCount, 0
@@ -692,7 +692,7 @@
         elseif k == "name" then "Old.moon"
       }
       fakeChan = setmetatable {}, {__index: (_, k) -> k == "name" and "release" or nil}
-      fakePkg  = setmetatable {}, {__index: (_, k) -> k == "namespace" and "test.NS" or nil}
+      fakePkg = setmetatable {}, {__index: (_, k) -> k == "namespace" and "test.NS" or nil}
       (ut\stub feed, "walkFiles")\calls (self, scriptTypes) ->
         coroutine.wrap ->
           coroutine.yield fakeFile, fakeChan, fakePkg, "modules", Common.ScriptType.Module
@@ -721,7 +721,7 @@
       cacheDir = FileOps.joinPath basePath, "uf-cache-fresh"
       url = "https://example.com/fresh.json"
       cache = FileCache cacheDir, "test", "feeds", {deserialize: UpdateFeed.deserialize}
-      cache\put url, '{"name":"FreshCache"}', "FreshCache"   -- default lifetime → fresh right after writing
+      cache\put url, '{"name":"FreshCache"}', "FreshCache" -- default lifetime → fresh right after writing
 
       feed = stubSelf UpdateFeed, {
         _url: url, url: url, __class: UpdateFeed, logger: DepCtrl.logger
@@ -736,12 +736,12 @@
       cacheDir = FileOps.joinPath basePath, "uf-cache-stale"
       url = "https://example.com/stale.json"
       cache = FileCache cacheDir, "test", "feeds", {deserialize: UpdateFeed.deserialize}
-      cache\put url, '{"name":"StaleCache"}', "StaleCache", 0   -- expiresAfter 0 → immediately stale
+      cache\put url, '{"name":"StaleCache"}', "StaleCache", 0 -- expiresAfter 0 → immediately stale
 
       feed = stubSelf UpdateFeed, {
         _url: url, url: url, __class: UpdateFeed, logger: DepCtrl.logger
-        config: {cache: cache}                          -- stale entry ⇒ attempts a fetch first
-        fetch: (...) -> nil, "network down"             -- which fails, forcing the offline fallback
+        config: {cache: cache} -- stale entry ⇒ attempts a fetch first
+        fetch: (...) -> nil, "network down" -- which fails, forcing the offline fallback
       }
       data = UpdateFeed.ensureLoaded feed
       ut\assertEquals data.name, "StaleCache"
@@ -769,7 +769,7 @@
       ut\assertEquals #errors, 0
 
     refreshFiles_missingFileFlagsDelete: (ut) ->
-      (ut\stub FILEOPS_MODULE_NAME, "exists")\returns false   -- vanished from disk
+      (ut\stub FILEOPS_MODULE_NAME, "exists")\returns false -- vanished from disk
       rawChannel = {files: {{name: "gone.moon", sha1: "X"}}}
       changed, errors = UpdateFeed.__refreshFiles {__class: UpdateFeed}, rawChannel, {files: {{localFilePath: "/x/gone.moon"}}}
       ut\assertTrue changed
@@ -807,14 +807,14 @@
         data: {modules: {[ns]: {channels: {release: {files: {}}}}}},
         __class: UpdateFeed
       }
-      (ut\stub feed, "__refreshVersionRecord")\returns true       -- version/deps changed
+      (ut\stub feed, "__refreshVersionRecord")\returns true -- version/deps changed
       (ut\stub feed, "__refreshFiles")\returns false, {}
       result = UpdateFeed.__updatePackage feed, Common.ScriptType.Module, ns, nil
       ut\assertEquals result.namespace, ns
       ut\assertEquals result.channel, "release"
       ut\assertTrue result.changed
       ut\assertEquals #result.errors, 0
-      ut\assertNotNil feed.rawFeedData.modules[ns].channels.release.released   -- reset to null sentinel
+      ut\assertNotNil feed.rawFeedData.modules[ns].channels.release.released -- reset to null sentinel
 
     updatePackage_collectsRefreshError: (ut) ->
       ns = "test.NS"

@@ -101,7 +101,7 @@ class Enum
   ---@return string|string[] result A single string when joining, or a list of the formatted keys when join is false.
   describe: (values = @values, pattern = ((key, value) -> "#{value} (#{key})"), join = true) =>
     values = {values} if "table" != type values
-  
+
     keys = for v in *values
       key = @__keysByValue[v]
       @__logger\assert key != nil, msgs.describe.valueNotDefined, v, @name

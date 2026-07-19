@@ -57,7 +57,7 @@
     -- (a false from the exact declared version is instead returned verbatim — that's a definitive no)
     validateAny_aggregatesAllFailures: (ut) ->
       schemas = {"0.3.0": mockSchema(false, "err A"), "0.2.0": mockSchema(false, "err B")}
-      isValid, _, err = JsonSchema\validateAny {}, schemas, "0.4.0"   -- 0.4.0 absent -> falls through
+      isValid, _, err = JsonSchema\validateAny {}, schemas, "0.4.0" -- 0.4.0 absent -> falls through
       ut\assertNil isValid
       ut\assertContains err, "err A"
       ut\assertContains err, "err B"
@@ -75,7 +75,7 @@
       data = {["$schema"]: "https://host/v0.7.0.json"}
       isValid, version = JsonSchema\validateAny data, {"0.7.0": mockSchema(false, "bad"), "0.6.3": mockSchema true}, nil
       ut\assertFalse isValid
-      ut\assertEquals version, "0.7.0"   -- did not fall through to the lenient 0.6.3
+      ut\assertEquals version, "0.7.0" -- did not fall through to the lenient 0.6.3
 
     -- for data without a `$schema`, the hint may be a function that derives the version from the data itself
     -- (e.g. a feed reading its legacy `dependencyControlFeedFormatVersion` field)

@@ -1,8 +1,8 @@
 -- ModuleLoader tests: internal module loading helpers.
 -- Called from Tests.moon as: (require "...test.ModuleLoader")!
 ->
-  constants    = require "l0.DependencyControl.Constants"
-  Common       = require "l0.DependencyControl.Common"
+  constants = require "l0.DependencyControl.Constants"
+  Common = require "l0.DependencyControl.Common"
   ModuleLoader = require "l0.DependencyControl.ModuleLoader"
   ModuleProvider = require "l0.DependencyControl.ModuleProvider"
   SemanticVersion = require "l0.DependencyControl.SemanticVersion"
@@ -29,14 +29,14 @@
       ut\assertContains result, ": http://example.com"
 
     formatVersionErrorTemplate_outdated_scalarRef: (ut) ->
-      ref = {version: 65793}  -- 1*65536 + 1*256 + 1 = "1.1.1" in base-256 encoding
+      ref = {version: 65793} -- 1*65536 + 1*256 + 1 = "1.1.1" in base-256 encoding
       result = ModuleLoader.formatVersionErrorTemplate nil, "MyModule", "2.0.0", nil, "too old", ref
       ut\assertContains result, "Installed:"
       ut\assertContains result, "Required: v2.0.0"
       ut\assertContains result, "1.1.1"
 
     formatVersionErrorTemplate_outdated_tableRef: (ut) ->
-      ref = {version: {version: 65793}}  -- 1*65536 + 1*256 + 1 = "1.1.1" in base-256 encoding
+      ref = {version: {version: 65793}} -- 1*65536 + 1*256 + 1 = "1.1.1" in base-256 encoding
       result = ModuleLoader.formatVersionErrorTemplate nil, "MyModule", "2.0.0", nil, "too old", ref
       ut\assertContains result, "Installed:"
       ut\assertContains result, "1.1.1"
@@ -150,7 +150,7 @@
       mdl = {moduleName: ns}
       loadModuleStub = ut\stub ModuleLoader, "loadModule"
       rec = {moduleName: "host.Module", feed: nil, name: "host",
-             __class: {ScriptType: Common.ScriptType, __name: "DependencyControl", updater: nil}}
+        __class: {ScriptType: Common.ScriptType, __name: "DependencyControl", updater: nil}}
       success, err = ModuleLoader.loadModules rec, {mdl}, nil, {[ns]: true}
       ut\assertTrue success
       ut\assertEquals err, ""
@@ -161,7 +161,7 @@
       mockRef = {loaded: true}
       mdl = {moduleName: ns, version: nil, name: ns}
       rec = {namespace: "host.Module", moduleName: "host.Module", feed: nil, name: "host",
-             __class: {ScriptType: Common.ScriptType, __name: "DependencyControl", updater: nil}}
+        __class: {ScriptType: Common.ScriptType, __name: "DependencyControl", updater: nil}}
       (ut\stub ModuleLoader, "loadModule")\calls (self, m, usePrivate) ->
         m._ref = mockRef unless usePrivate
       success, err = ModuleLoader.loadModules rec, {mdl}
@@ -176,7 +176,7 @@
       mockRef = {fetched: true}
       updater = {require: ((...) => mockRef)}
       recClass = setmetatable {ScriptType: Common.ScriptType, __name: "DependencyControl", :updater},
-                              {__call: (cls, args) -> {}}
+        {__call: (cls, args) -> {}}
       rec = {feed: nil, moduleName: "host.Module", name: "host", __class: recClass}
       mdl = {moduleName: ns, name: ns, version: nil}
       (ut\stub ModuleLoader, "loadModule")\calls (self, m, usePrivate) -> m._missing = true unless usePrivate
@@ -193,7 +193,7 @@
       updaterClass = {getUpdaterErrorMsg: (code, name) -> "fetch failed: #{name}"}
       updater = {require: ((...) => return nil, -6, "no feed"), __class: updaterClass}
       recClass = setmetatable {ScriptType: Common.ScriptType, __name: "DependencyControl", :updater},
-                              {__call: (cls, args) -> {}}
+        {__call: (cls, args) -> {}}
       rec = {feed: nil, moduleName: "host.Module", name: "host", __class: recClass}
       mdl = {moduleName: ns, name: ns, version: nil, optional: false}
       (ut\stub ModuleLoader, "loadModule")\calls (self, m, usePrivate) -> m._missing = true unless usePrivate
@@ -202,7 +202,7 @@
       success, err = ModuleLoader.loadModules rec, {mdl}
       ut\assertFalse success
       ut\assertContains err, ns
-      ut\assertNil LOADED_MODULES[ns]   -- dummy ref nuked
+      ut\assertNil LOADED_MODULES[ns] -- dummy ref nuked
 
     -- loadModules: a missing *optional* module the updater skips is left missing without an error
     -- reason and doesn't fail the overall load; the circular-dependency dummy ref is still cleared.
@@ -211,7 +211,7 @@
       UpdateTask = require "l0.DependencyControl.UpdateTask"
       updater = {require: ((...) => return nil, UpdateTask.UpdateStatus.SkippedOptional)}
       recClass = setmetatable {ScriptType: Common.ScriptType, __name: "DependencyControl", :updater},
-                              {__call: (cls, args) -> {}}
+        {__call: (cls, args) -> {}}
       rec = {feed: nil, moduleName: "host.Module", name: "host", __class: recClass}
       mdl = {moduleName: ns, name: ns, version: nil, optional: true}
       (ut\stub ModuleLoader, "loadModule")\calls (self, m, usePrivate) -> m._missing = true unless usePrivate
@@ -221,7 +221,7 @@
       ut\assertTrue success
       ut\assertEquals err, ""
       ut\assertNil mdl._reason
-      ut\assertNil LOADED_MODULES[ns]   -- dummy ref nuked
+      ut\assertNil LOADED_MODULES[ns] -- dummy ref nuked
 
     -- loadModules: a required module that fails because one of ITS OWN requirements couldn't be satisfied
     -- surfaces the nested reason (which sub-requirement failed, and why) in the error — using the real
@@ -232,7 +232,7 @@
       innerReason = "— SubInspector.Inspector (v0.7.2)\n—— Reason: no build for your platform (Linux-x64)"
       updater = {require: ((...) => return nil, UpdateTask.UpdateStatus.RequirementsUnmet, innerReason), __class: UpdateTask}
       recClass = setmetatable {ScriptType: Common.ScriptType, __name: "DependencyControl", :updater},
-                              {__call: (cls, args) -> {}}
+        {__call: (cls, args) -> {}}
       rec = {feed: nil, moduleName: "host.Module", name: "Vector Gradient", __class: recClass}
       mdl = {moduleName: ns, name: ns, version: "0.5.0", optional: false}
       (ut\stub ModuleLoader, "loadModule")\calls (self, m, usePrivate) -> m._missing = true unless usePrivate
@@ -248,10 +248,10 @@
     loadModules_outdatedForcesUpdate: (ut) ->
       ns = "test.ModuleLoader.outdated"
       newRef = {updated: true}
-      loadedRef = {version: {version: 65793, checkVersion: ((target) => false)}}  -- installed but too old
+      loadedRef = {version: {version: 65793, checkVersion: ((target) => false)}} -- installed but too old
       updater = {require: ((...) => newRef)}
       recClass = setmetatable {ScriptType: Common.ScriptType, __name: "DependencyControl", :updater},
-                              {__call: (cls, args) -> {}}
+        {__call: (cls, args) -> {}}
       rec = {feed: nil, moduleName: "host.Module", name: "host", __class: recClass}
       mdl = {moduleName: ns, name: ns, version: SemanticVersion\toPacked "2.0.0"}
       (ut\stub ModuleLoader, "loadModule")\calls (self, m, usePrivate) -> m._ref = loadedRef unless usePrivate
@@ -268,7 +268,7 @@
       updaterClass = {getUpdaterErrorMsg: (code, name) -> "too old: #{name}"}
       updater = {require: ((...) => return nil, -6, "no newer version"), __class: updaterClass}
       recClass = setmetatable {ScriptType: Common.ScriptType, __name: "DependencyControl", :updater},
-                              {__call: (cls, args) -> {}}
+        {__call: (cls, args) -> {}}
       rec = {feed: nil, moduleName: "host.Module", name: "host", __class: recClass}
       mdl = {moduleName: ns, name: ns, version: SemanticVersion\toPacked "2.0.0", optional: false}
       (ut\stub ModuleLoader, "loadModule")\calls (self, m, usePrivate) -> m._ref = loadedRef unless usePrivate
@@ -294,7 +294,7 @@
         name: "test"
         requiredModules: {
           {moduleName: "MissingMod", name: "MissingMod", optional: true, _missing: true,
-           _reason: "not found", version: nil, url: nil}
+            _reason: "not found", version: nil, url: nil}
         }
         __class: {ScriptType: Common.ScriptType, automationDir: {modules: "include"}}
       }

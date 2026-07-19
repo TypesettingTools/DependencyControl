@@ -24,7 +24,7 @@
         logEx: (level, msg, _insertLineFeed, _prefix, _indent, ...) =>
           cap.msg, cap.args = msg, table.pack ...
           error "PROBE_ASSERT_FAILED"
-        dumpToString: (value) => tostring value   -- assert methods dump their values eagerly
+        dumpToString: (value) => tostring value -- assert methods dump their values eagerly
       }
     }, __index: UnitTest.__base
 
@@ -36,8 +36,8 @@
     -- its test (see Logger.logEx). dumpToString is needed even by passing asserts, which
     -- format their failure arguments eagerly.
     noop = {indent: 0, log: (->), warn: (->), trace: (->), assert: ((cond) => cond),
-            logEx: ((level) => error "SILENCED_ASSERT_FAILED" if level == 1),
-            dumpToString: ((value) => tostring value)}
+      logEx: ((level) => error "SILENCED_ASSERT_FAILED" if level == 1),
+      dumpToString: ((value) => tostring value)}
     suite.logger = noop
     for cls in *suite.classes
       cls.logger, cls.setup.logger, cls.teardown.logger = noop, noop, noop
@@ -57,7 +57,7 @@
 
     assertContains_caseSensitiveRejectsWrongCase: (ut) ->
       probe = makeProbe!
-      ok = pcall UnitTest.assertContains, probe, "Hello World", "world"   -- default: case-sensitive
+      ok = pcall UnitTest.assertContains, probe, "Hello World", "world" -- default: case-sensitive
       ut\assertFalse ok
       ut\assertTrue probe.assertFailed
 
@@ -71,9 +71,9 @@
 
     assertNegative_failureMessage: (ut) ->
       probe = makeProbe!
-      pcall UnitTest.assertNegative, probe, 5   -- 5 isn't negative → the assertion fails
+      pcall UnitTest.assertNegative, probe, 5 -- 5 isn't negative → the assertion fails
       ut\assertEquals probe.captured.args[1], "negative"
-      ut\assertEquals probe.captured.args[3], 5   -- the value, now passed for the template's %d
+      ut\assertEquals probe.captured.args[3], 5 -- the value, now passed for the template's %d
 
     -- run(): regression for the crash when a test class's setup fails (the -1 sentinel was iterated).
 
@@ -86,8 +86,8 @@
       }
       silence suite
       ok, success = pcall -> suite\run!
-      ut\assertTrue ok        -- previously raised on `for … in *(-1)`
-      ut\assertFalse success  -- the failed setup is reported as a suite failure
+      ut\assertTrue ok -- previously raised on `for … in *(-1)`
+      ut\assertFalse success -- the failed setup is reported as a suite failure
 
     -- ut\skip: a test that skips itself is marked skipped (not failed), aborts the rest of its body,
     -- and is reported as skipped with its reason; the suite run still succeeds.
@@ -96,14 +96,14 @@
         Skipping: {
           skips: (t) ->
             t\skip "unmet precondition"
-            t\assertTrue false   -- unreachable: skip aborts the body before this would fail
+            t\assertTrue false -- unreachable: skip aborts the body before this would fail
           passes: (t) -> t\assertTrue true
         }
       }
       silence suite
       ok, success = pcall -> suite\run!
       ut\assertTrue ok
-      ut\assertTrue success   -- a skip is not a failure
+      ut\assertTrue success -- a skip is not a failure
 
       byName = {t.name, t for t in *suite.classes[1].tests}
       ut\assertTrue byName.skips.skipped
@@ -121,7 +121,7 @@
       ran = {}
       suite = UnitTestSuite "test.regression.orderMembership", {
         Partial: {
-          _order: {"bbb", "aaa"}   -- non-alphabetical, and deliberately omits "ccc"
+          _order: {"bbb", "aaa"} -- non-alphabetical, and deliberately omits "ccc"
           aaa: (t) -> ran[#ran+1] = "aaa"
           bbb: (t) -> ran[#ran+1] = "bbb"
           ccc: (t) -> ran[#ran+1] = "ccc"
@@ -129,7 +129,7 @@
       }
       silence suite
       suite\run!
-      ut\assertEquals ran, {"bbb", "aaa", "ccc"}   -- listed order first, then the unlisted test appended
+      ut\assertEquals ran, {"bbb", "aaa", "ccc"} -- listed order first, then the unlisted test appended
 
     -- assertItemsEqual/assertItemsAre: regressions for the failure message passing the keys
     -- sub-phrase as the whole template, and the expected arg being type-checked against `actual`
@@ -157,7 +157,7 @@
       ok = pcall UnitTest.assertItemsAre, probe, {shared}, {shared}
       ut\assertTrue ok
       probe = makeProbe!
-      ok = pcall UnitTest.assertItemsAre, probe, {{}}, {{}}   -- equal items, but not identical
+      ok = pcall UnitTest.assertItemsAre, probe, {{}}, {{}} -- equal items, but not identical
       ut\assertFalse ok
       ut\assertEquals probe.captured.args[1], "identical"
 
@@ -165,7 +165,7 @@
 
     assertContinuous_checksKeysNotValues: (ut) ->
       probe = makeProbe!
-      ok = pcall UnitTest.assertContinuous, probe, {"a", "b", "c"}   -- continuous keys, no numeric values
+      ok = pcall UnitTest.assertContinuous, probe, {"a", "b", "c"} -- continuous keys, no numeric values
       ut\assertTrue ok
       sparse = {"a", "b"}
       sparse[4] = "d"
@@ -212,8 +212,8 @@
       ok, success = pcall -> suite\run!
       ut\assertTrue ok
       ut\assertTrue success
-      ut\assertTrue sawStubInTeardown             -- still stubbed while the teardown ran
-      ut\assertEquals target.value!, "real"       -- restored once the class finished
+      ut\assertTrue sawStubInTeardown -- still stubbed while the teardown ran
+      ut\assertEquals target.value!, "real" -- restored once the class finished
 
     -- suite run(true): regression for the abort path leaving endTime/success unset (breaking the
     -- CTRF summary) and referencing a nonexistent message key

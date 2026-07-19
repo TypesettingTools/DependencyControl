@@ -17,8 +17,8 @@
       ut\assertTrue Host.isPrivateAddress {192, 168, 1, 1}
       ut\assertTrue Host.isPrivateAddress {172, 16, 0, 1}
       ut\assertTrue Host.isPrivateAddress {172, 31, 255, 255}
-      ut\assertTrue Host.isPrivateAddress {169, 254, 169, 254}    -- cloud metadata
-      ut\assertTrue Host.isPrivateAddress {100, 64, 0, 1}          -- CGNAT
+      ut\assertTrue Host.isPrivateAddress {169, 254, 169, 254} -- cloud metadata
+      ut\assertTrue Host.isPrivateAddress {100, 64, 0, 1} -- CGNAT
       ut\assertTrue Host.isPrivateAddress {0, 0, 0, 0}
       ut\assertTrue Host.isPrivateAddress {255, 255, 255, 255}
 
@@ -26,9 +26,9 @@
     isPrivateAddress_ipv4Public: (ut) ->
       ut\assertFalse Host.isPrivateAddress {8, 8, 8, 8}
       ut\assertFalse Host.isPrivateAddress {1, 1, 1, 1}
-      ut\assertFalse Host.isPrivateAddress {172, 15, 0, 1}         -- just below 172.16/12
-      ut\assertFalse Host.isPrivateAddress {172, 32, 0, 1}         -- just above 172.16/12
-      ut\assertFalse Host.isPrivateAddress {100, 128, 0, 1}        -- just above 100.64/10
+      ut\assertFalse Host.isPrivateAddress {172, 15, 0, 1} -- just below 172.16/12
+      ut\assertFalse Host.isPrivateAddress {172, 32, 0, 1} -- just above 172.16/12
+      ut\assertFalse Host.isPrivateAddress {100, 128, 0, 1} -- just above 100.64/10
       ut\assertFalse Host.isPrivateAddress {192, 167, 1, 1}
 
     -- isPrivateAddress: IPv6 ranges, including IPv4-mapped
@@ -65,34 +65,34 @@
     -- parseIPv4Literal: the inet_aton encodings that would otherwise bypass a naive host check
     parseIPv4Literal_encodings: (ut) ->
       ut\assertEquals Host.parseIPv4Literal("127.0.0.1"), {127, 0, 0, 1}
-      ut\assertEquals Host.parseIPv4Literal("2130706433"), {127, 0, 0, 1}     -- decimal
-      ut\assertEquals Host.parseIPv4Literal("0x7f000001"), {127, 0, 0, 1}     -- hex
-      ut\assertEquals Host.parseIPv4Literal("0177.0.0.1"), {127, 0, 0, 1}     -- octal first octet
-      ut\assertEquals Host.parseIPv4Literal("127.1"), {127, 0, 0, 1}          -- 2-part fill
-      ut\assertEquals Host.parseIPv4Literal("192.168.1"), {192, 168, 0, 1}    -- 3-part fill
+      ut\assertEquals Host.parseIPv4Literal("2130706433"), {127, 0, 0, 1} -- decimal
+      ut\assertEquals Host.parseIPv4Literal("0x7f000001"), {127, 0, 0, 1} -- hex
+      ut\assertEquals Host.parseIPv4Literal("0177.0.0.1"), {127, 0, 0, 1} -- octal first octet
+      ut\assertEquals Host.parseIPv4Literal("127.1"), {127, 0, 0, 1} -- 2-part fill
+      ut\assertEquals Host.parseIPv4Literal("192.168.1"), {192, 168, 0, 1} -- 3-part fill
 
     parseIPv4Literal_notLiterals: (ut) ->
       ut\assertNil Host.parseIPv4Literal "example.com"
-      ut\assertNil Host.parseIPv4Literal "256.1.1.1"     -- octet out of range
-      ut\assertNil Host.parseIPv4Literal "1.2.3.4.5"     -- too many parts
-      ut\assertNil Host.parseIPv4Literal ".1.2.3"        -- leading dot
-      ut\assertNil Host.parseIPv4Literal "1.2..3"        -- empty component
-      ut\assertNil Host.parseIPv4Literal "::1"           -- not IPv4
+      ut\assertNil Host.parseIPv4Literal "256.1.1.1" -- octet out of range
+      ut\assertNil Host.parseIPv4Literal "1.2.3.4.5" -- too many parts
+      ut\assertNil Host.parseIPv4Literal ".1.2.3" -- leading dot
+      ut\assertNil Host.parseIPv4Literal "1.2..3" -- empty component
+      ut\assertNil Host.parseIPv4Literal "::1" -- not IPv4
 
     -- isPrivate: literal hosts classified without the resolver
     isPrivate_literalHost: (ut) ->
       neverResolve = (host) -> error "resolver must not be called for a literal host"
       ut\assertTrue (Host "127.0.0.1", neverResolve).isPrivate
-      ut\assertTrue (Host "2130706433", neverResolve).isPrivate   -- decimal-encoded loopback
+      ut\assertTrue (Host "2130706433", neverResolve).isPrivate -- decimal-encoded loopback
       ut\assertFalse (Host "93.184.216.34", neverResolve).isPrivate
 
     -- isPrivate: named hosts resolved through the injected resolver; any private address counts
     isPrivate_resolvedHost: (ut) ->
       resolve = resolverOver {
         "internal.example": {{10, 0, 0, 5}}
-        "evil.example":     {{93, 184, 216, 34}}
-        "rebind.example":   {{93, 184, 216, 34}, {127, 0, 0, 1}}   -- one public, one loopback
-        "::1":              {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}}
+        "evil.example": {{93, 184, 216, 34}}
+        "rebind.example": {{93, 184, 216, 34}, {127, 0, 0, 1}} -- one public, one loopback
+        "::1": {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}}
       }
       ut\assertTrue (Host "internal.example", resolve).isPrivate
       ut\assertFalse (Host "evil.example", resolve).isPrivate

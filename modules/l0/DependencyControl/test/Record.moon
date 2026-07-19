@@ -1,12 +1,12 @@
 -- Record tests: extracted from the main test suite.
 -- Called from test.moon as: (controls\requireTest "Record") basePath
 (basePath) ->
-  ffi       = require "ffi"
+  ffi = require "ffi"
   constants = require "l0.DependencyControl.Constants"
-  Common    = require "l0.DependencyControl.Common"
-  FileOps   = require "l0.DependencyControl.FileOps"
-  Record    = require "l0.DependencyControl.Record"
-  Stub      = require "l0.DependencyControl.Stub"
+  Common = require "l0.DependencyControl.Common"
+  FileOps = require "l0.DependencyControl.FileOps"
+  Record = require "l0.DependencyControl.Record"
+  Stub = require "l0.DependencyControl.Stub"
   {:stubSelf} = require "l0.DependencyControl.test.helpers.stub-helpers"
 
   DEPCTRL_RECORDS_GLOBAL_KEY = "#{constants.DEPCTRL_PRIVATE_GLOBAL_VAR_PREFIX}Records"
@@ -159,7 +159,7 @@
       rec = {}
       result = Record.setVersion rec, "2.3.4"
       ut\assertEquals result, 131844
-      ut\assertEquals rec.semanticVersion\toPacked!, 131844   -- stored on the canonical instance
+      ut\assertEquals rec.semanticVersion\toPacked!, 131844 -- stored on the canonical instance
 
     setVersion_validNumber: (ut) ->
       rec = {}
@@ -177,9 +177,9 @@
       SemanticVersion = require "l0.DependencyControl.SemanticVersion"
       -- a real Record-metatabled instance so `version` dispatches through the installed accessor
       rec = setmetatable {semanticVersion: SemanticVersion "1.2.3"}, Record.__base
-      ut\assertEquals rec.version, SemanticVersion\toPacked "1.2.3"   -- getter yields the packed int
-      rec.version = "2.0.0"                                            -- setter accepts a string
-      ut\assertEquals tostring(rec.semanticVersion), "2.0.0"          -- rebuilt the canonical instance
+      ut\assertEquals rec.version, SemanticVersion\toPacked "1.2.3" -- getter yields the packed int
+      rec.version = "2.0.0" -- setter accepts a string
+      ut\assertEquals tostring(rec.semanticVersion), "2.0.0" -- rebuilt the canonical instance
       ut\assertEquals rec.version, SemanticVersion\toPacked "2.0.0"
 
     validateNamespace_valid: (ut) ->
@@ -380,12 +380,12 @@
       ModuleProvider = require "l0.DependencyControl.ModuleProvider"
       ns, alias = uniqueName("prov.mod"), uniqueName "alias"
       rec = Record {moduleName: ns, version: "1.0.0", feed: "https://example.com/feed.json",
-                    provides: {{name: alias, version: "^1"}, "bare.#{ns}"}}
+        provides: {{name: alias, version: "^1"}, "bare.#{ns}"}}
       ut\assertNotNil rec.provides
       ut\assertEquals #rec.provides, 2
       ut\assertEquals rec.provides[1].name, alias
       ut\assertEquals rec.provides[1].version, "^1"
-      ut\assertEquals rec.provides[2].name, "bare.#{ns}"   -- bare string normalized to a table
+      ut\assertEquals rec.provides[2].name, "bare.#{ns}" -- bare string normalized to a table
       ut\assertEquals ModuleProvider\getProvider(alias), ns
       ut\assertEquals ModuleProvider\getProvider("bare.#{ns}"), ns
 
@@ -401,7 +401,7 @@
     getVersion_compatMethods: (ut) ->
       SemanticVersion = require "l0.DependencyControl.SemanticVersion"
       fakeSelf = stubSelf Record, {version: SemanticVersion\toPacked "1.2.3"}
-      ut\assertEquals fakeSelf\getVersionString!, "1.2.3"                                 -- defaults to @version
+      ut\assertEquals fakeSelf\getVersionString!, "1.2.3" -- defaults to @version
       ut\assertEquals fakeSelf\getVersionNumber("2.0.0"), SemanticVersion\toPacked "2.0.0"
       ut\assertEquals fakeSelf\getVersionString(SemanticVersion\toPacked "3.1.0"), "3.1.0"
 

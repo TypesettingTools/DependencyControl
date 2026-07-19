@@ -72,7 +72,7 @@ class ModuleLoader
     if LOADED_MODULES[@namespace] and LOADED_MODULES[@namespace][DEPCTRL_DUMMY_MODULE_MARKER]
       LOADED_MODULES[@namespace] = nil
       return true
-    return  false
+    return false
 
   ---Loads a single required module, storing the result in `mdl._ref` and running its
   ---DependencyControl initializer. On failure, sets `mdl._missing` when the module wasn't found or
@@ -114,7 +114,7 @@ class ModuleLoader
       -- run DepCtrl initializer if one was specified
       ModuleProvider.runInitializer res, @@
 
-    return mdl._ref  -- having this in the with block breaks moonscript
+    return mdl._ref -- having this in the with block breaks moonscript
 
   ---Loads required modules, updates missing/outdated ones, and validates version constraints.
   ---@param modules table[]
@@ -135,7 +135,7 @@ class ModuleLoader
         -- try to fetch and load a missing module from the web
         if ._missing
           record = @@{moduleName:.moduleName, name:.name or .moduleName,
-                version:-1, url:.url, feed:.feed, virtual:true}
+            version:-1, url:.url, feed:.feed, virtual:true}
           ._ref, code, extErr = @@updater\require record, .version, addFeeds, .optional
           if ._ref
             ._updated, ._missing = true, false
@@ -195,7 +195,7 @@ class ModuleLoader
   @checkOptionalModules = (modules) =>
     modules = type(modules)=="string" and {[modules]:true} or Common.makeSet modules
     missing = [ModuleLoader.formatVersionErrorTemplate @, mdl.moduleName, mdl.version, mdl.url,
-              mdl._reason for mdl in *@requiredModules when mdl.optional and mdl._missing and modules[mdl.name]]
+      mdl._reason for mdl in *@requiredModules when mdl.optional and mdl._missing and modules[mdl.name]]
 
     if #missing>0
       downloadHint = msgs.checkOptionalModules.downloadHint\format Common\getAutomationDir Common.ScriptType.Module

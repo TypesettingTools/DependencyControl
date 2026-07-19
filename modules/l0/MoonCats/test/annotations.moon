@@ -1,7 +1,7 @@
 -- annotations tests: LuaCATS tag-line parsing shared by the definition and doc emitters.
 () ->
   {:extractTypeText, :parseParamTag, :parseReturnTag, :parseFieldTag, :parseAliasVariants,
-   :collectBlockTags, :proseLines, :blockTagText, :guardFunType} = require "l0.MoonCats.annotations"
+    :collectBlockTags, :proseLines, :blockTagText, :guardFunType} = require "l0.MoonCats.annotations"
 
   {
     _description: "annotations: LuaCATS tag-line parsing helpers."

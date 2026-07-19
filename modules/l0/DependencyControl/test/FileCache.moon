@@ -4,7 +4,7 @@
 -- Called from test.moon as: (require "…test.FileCache") basePath
 (basePath) ->
   FileCache = require "l0.DependencyControl.FileCache"
-  FileOps =   require "l0.DependencyControl.FileOps"
+  FileOps = require "l0.DependencyControl.FileOps"
 
   -- a fresh cache in its own base subdir with a controllable clock; returns (cache, clock)
   makeCache = (name, opts = {}) ->
@@ -83,26 +83,26 @@
       base = FileOps.joinPath basePath, "filecache", "shared"
       a1 = FileCache.get base, "ns", "one"
       a2 = FileCache.get base, "ns", "one"
-      b  = FileCache.get base, "ns", "two"
-      ut\assertTrue a1 == a2      -- same base/namespace/name → shared instance
-      ut\assertFalse a1 == b      -- different name → distinct instance
+      b = FileCache.get base, "ns", "two"
+      ut\assertTrue a1 == a2 -- same base/namespace/name → shared instance
+      ut\assertFalse a1 == b -- different name → distinct instance
 
     -- expiry is fixed at write time, so bumping the instance's maxAge afterwards can't retroactively prolong it
     put_expiryFixedAtWriteTime: (ut) ->
       cache, clock = makeCache "fixed-expiry", {maxAge: 100, t: 1000}
-      meta = cache\put "u://f", "{}", "f"          -- expiresAt fixed at 1000 + 100 = 1100
-      cache.maxAge = 100000                          -- a later, longer default lifetime
+      meta = cache\put "u://f", "{}", "f" -- expiresAt fixed at 1000 + 100 = 1100
+      cache.maxAge = 100000 -- a later, longer default lifetime
       clock.t = 1200
-      ut\assertFalse cache\isFresh meta              -- still stale: honors the baked 1100, not the new maxAge
+      ut\assertFalse cache\isFresh meta -- still stale: honors the baked 1100, not the new maxAge
 
     -- a per-resource expiresAfter on put overrides the cache's default lifetime for that one entry
     put_perResourceExpiry: (ut) ->
       cache, clock = makeCache "per-resource", {maxAge: 100, t: 1000}
-      short = cache\put "u://short", "{}", "s", 10     -- expiresAt 1010
-      long  = cache\put "u://long",  "{}", "l", 5000   -- expiresAt 6000
+      short = cache\put "u://short", "{}", "s", 10 -- expiresAt 1010
+      long = cache\put "u://long", "{}", "l", 5000 -- expiresAt 6000
       clock.t = 1050
-      ut\assertFalse cache\isFresh short             -- 1050 >= 1010
-      ut\assertTrue cache\isFresh long               -- 1050 < 6000
+      ut\assertFalse cache\isFresh short -- 1050 >= 1010
+      ut\assertTrue cache\isFresh long -- 1050 < 6000
 
     -- trimming caps retained snapshots but never deletes an entry's current one
     trim_keepsLatestOverCap: (ut) ->
@@ -127,7 +127,7 @@
       ut\assertEquals v1.content, '{"v":1}'
       ut\assertTrue fresh
       v2 = cache\get "u://f"
-      ut\assertIs v1, v2               -- same object → served from L1, not re-deserialized
+      ut\assertIs v1, v2 -- same object → served from L1, not re-deserialized
 
     -- a memo is keyed to its snapshot's cache time, so another writer's newer put supersedes it: get re-reads L2
     get_memoSupersededByNewerSnapshot: (ut) ->
@@ -135,10 +135,10 @@
       codec = (content) -> {:content}
       a = FileCache dir, "ns", "s", {deserialize: codec, now: -> 1000}
       a\put "u://f", '{"v":1}', "f"
-      a\get "u://f"                     -- a's L1 memoizes v1 @ cachedAt 1000
+      a\get "u://f" -- a's L1 memoizes v1 @ cachedAt 1000
       b = FileCache dir, "ns", "s", {deserialize: codec, now: -> 1002}
-      b\put "u://f", '{"v":2}', "f"     -- L2 snapshot is now v2 @ cachedAt 1002
-      value = a\get "u://f"             -- a's memo no longer matches the on-disk cachedAt → re-reads L2
+      b\put "u://f", '{"v":2}', "f" -- L2 snapshot is now v2 @ cachedAt 1002
+      value = a\get "u://f" -- a's memo no longer matches the on-disk cachedAt → re-reads L2
       ut\assertEquals value.content, '{"v":2}'
 
     -- get reports staleness without withholding the value, so callers can use it as an offline fallback
@@ -160,21 +160,21 @@
     expireAll_marksOlderStaleKeepingSnapshot: (ut) ->
       cache, clock = makeCache "expire-soft", {maxAge: 100000, t: 1000}
       meta = cache\put "u://f", '{"v":1}', "f"
-      ut\assertTrue cache\isFresh meta              -- within the (large) window
-      cache\expireAll 1500                           -- everything cached before 1500 is now stale
+      ut\assertTrue cache\isFresh meta -- within the (large) window
+      cache\expireAll 1500 -- everything cached before 1500 is now stale
       ut\assertFalse cache\isFresh meta
-      ut\assertNotNil (cache\getFile "u://f")        -- snapshot retained as an offline fallback
+      ut\assertNotNil (cache\getFile "u://f") -- snapshot retained as an offline fallback
       clock.t = 1600
-      refreshed = cache\put "u://f", '{"v":2}', "f"   -- re-put after the cut-off
-      ut\assertTrue cache\isFresh refreshed          -- fresh again
+      refreshed = cache\put "u://f", '{"v":2}', "f" -- re-put after the cut-off
+      ut\assertTrue cache\isFresh refreshed -- fresh again
 
     -- purging expireAll deletes the affected entries' L1 memo, snapshot, and index, so the key becomes a miss
     expireAll_purgeDeletesEntries: (ut) ->
       cache = makeCache "expire-purge", {t: 1000, deserialize: (content) -> {:content}}
       meta = cache\put "u://f", '{"v":1}', "f"
-      cache\get "u://f"                              -- prime the L1 memo
-      cache\expireAll 2000, true                     -- purge everything cached before 2000
-      ut\assertNil (cache\get "u://f")               -- memo dropped and L2 gone → full miss
+      cache\get "u://f" -- prime the L1 memo
+      cache\expireAll 2000, true -- purge everything cached before 2000
+      ut\assertNil (cache\get "u://f") -- memo dropped and L2 gone → full miss
       ut\assertFalsy FileOps.getAttributes(FileOps.joinPath(cache.cacheDir, meta.latestFile), "mode").attr
 
     _order: {

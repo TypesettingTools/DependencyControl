@@ -1,9 +1,9 @@
 -- ScriptTargetFilter tests: include/exclude rules, matching, and fluent construction.
 -- Called from test.moon as: (controls\requireTest "ScriptTargetFilter")!
 () ->
-  Common             = require "l0.DependencyControl.Common"
+  Common = require "l0.DependencyControl.Common"
   ScriptTargetFilter = require "l0.DependencyControl.ScriptTargetFilter"
-  Module     = Common.ScriptType.Module
+  Module = Common.ScriptType.Module
   Automation = Common.ScriptType.Automation
 
   {
@@ -11,13 +11,13 @@
 
     include_singleNamespace: (ut) ->
       f = ScriptTargetFilter!\include Module, "l0.DependencyControl"
-      ut\assertTrue  f\matches Module, "l0.DependencyControl"
+      ut\assertTrue f\matches Module, "l0.DependencyControl"
       ut\assertFalse f\matches Module, "l0.Other"
       ut\assertFalse f\matches Automation, "l0.DependencyControl"
 
     includeAll_singleType: (ut) ->
       f = ScriptTargetFilter!\includeAll Module
-      ut\assertTrue  f\matches Module, "anything"
+      ut\assertTrue f\matches Module, "anything"
       ut\assertFalse f\matches Automation, "anything"
 
     includeAll_everything: (ut) ->
@@ -30,7 +30,7 @@
 
     exclude_takesPrecedenceOverAll: (ut) ->
       f = ScriptTargetFilter!\includeAll(Module)\exclude Module, "l0.Skip"
-      ut\assertTrue  f\matches Module, "l0.Keep"
+      ut\assertTrue f\matches Module, "l0.Keep"
       ut\assertFalse f\matches Module, "l0.Skip"
 
     exclude_overridesInclude: (ut) ->
@@ -53,12 +53,12 @@
 
     new_fromSpecBooleanAll: (ut) ->
       f = ScriptTargetFilter {[Module]: true}
-      ut\assertTrue  f\matches Module, "x"
+      ut\assertTrue f\matches Module, "x"
       ut\assertFalse f\matches Automation, "x"
 
     new_fromSpecIncludeExclude: (ut) ->
       f = ScriptTargetFilter {[Module]: {include: {"l0.A", "l0.B"}, exclude: {"l0.B"}}}
-      ut\assertTrue  f\matches Module, "l0.A"
+      ut\assertTrue f\matches Module, "l0.A"
       ut\assertFalse f\matches Module, "l0.B"
       ut\assertFalse f\matches Module, "l0.C"
 

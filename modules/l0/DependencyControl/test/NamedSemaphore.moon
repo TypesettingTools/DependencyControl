@@ -47,14 +47,14 @@
     collectingOneHandleKeepsExclusion: (ut) ->
       name = token!
       a = NamedSemaphore name, true
-      ut\assertTrue a\tryLock!                 -- a holds it (value 0)
-      b = NamedSemaphore name, true            -- a second handle to the same name...
+      ut\assertTrue a\tryLock! -- a holds it (value 0)
+      b = NamedSemaphore name, true -- a second handle to the same name...
       b = nil
-      collectgarbage "collect" for _ = 1, 3    -- ...is collected (loop forces the finalizer to run); the name must survive
-      c = NamedSemaphore name, true            -- a fresh open must see the same, still-held semaphore
-      ut\assertFalse c\tryLock!                -- so it cannot acquire while a holds it
+      collectgarbage "collect" for _ = 1, 3 -- ...is collected (loop forces the finalizer to run); the name must survive
+      c = NamedSemaphore name, true -- a fresh open must see the same, still-held semaphore
+      ut\assertFalse c\tryLock! -- so it cannot acquire while a holds it
       a\unlock!
 
     _order: {"pidIsExposed", "acquiresExclusivelyAndReleases", "blockingLockAcquires", "sameNameContends"
-             "collectingOneHandleKeepsExclusion"}
+      "collectingOneHandleKeepsExclusion"}
   }

@@ -5,7 +5,7 @@
   constants = require "l0.DependencyControl.Constants"
   ModuleProvider = require "l0.DependencyControl.ModuleProvider"
   SemanticVersion = require "l0.DependencyControl.SemanticVersion"
-  
+
   DEPCTRL_MODULE_INIT_HOOK_NAME = "#{constants.DEPCTRL_PRIVATE_GLOBAL_VAR_PREFIX}Init"
   uniqueName = (prefix) -> "#{prefix}_#{'%08X'\format math.random 0, 16^8-1}"
 
@@ -28,7 +28,7 @@
     register_firstWins: (ut) ->
       name = uniqueName "alias"
       ut\assertTrue ModuleProvider\register name, "first.provider"
-      ut\assertFalse ModuleProvider\register name, "second.provider"   -- already registered
+      ut\assertFalse ModuleProvider\register name, "second.provider" -- already registered
       ut\assertEquals ModuleProvider\getProvider(name), "first.provider"
 
     registerRecord_normalizesAliases: (ut) ->
@@ -40,11 +40,11 @@
 
     -- end to end: a require of a registered alias resolves to the provider module
     searcher_resolvesAliasToProvider: (ut) ->
-      ModuleProvider\install!   -- idempotent; already installed during load
+      ModuleProvider\install! -- idempotent; already installed during load
       name = uniqueName "aliasToSemver"
       ModuleProvider\register name, "l0.DependencyControl.SemanticVersion"
       resolved = require name
-      package.loaded[name] = nil   -- don't leak the alias into the module cache
+      package.loaded[name] = nil -- don't leak the alias into the module cache
       ut\assertIs resolved, SemanticVersion
 
     -- runInitializer: shared __depCtrlInit guard + call (also used by ModuleLoader & UpdateFeed)

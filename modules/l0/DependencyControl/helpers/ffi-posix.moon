@@ -10,41 +10,41 @@ isOSX = ffi.os == "OSX"
 filePermissionBits = {r: 4, w: 2, x: 1}
 
 {
-    -- low two bits of the open(2) flags: the access mode (same on Linux and macOS)
-    FileAccessMode: {
-        Read:      0  -- O_RDONLY (read-only)
-        Write:     1  -- O_WRONLY (write-only)
-        ReadWrite: 2  -- O_RDWR   (read-write)
-    }
+  -- low two bits of the open(2) flags: the access mode (same on Linux and macOS)
+  FileAccessMode: {
+    Read: 0 -- O_RDONLY (read-only)
+    Write: 1 -- O_WRONLY (write-only)
+    ReadWrite: 2 -- O_RDWR   (read-write)
+  }
 
-    FileCreationFlags: {
-        Create:    isOSX and 0x200    or 0x40     -- O_CREAT: create the file if it doesn't exist
-        Exclusive: isOSX and 0x800    or 0x80     -- O_EXCL: with Create, fail if the file already exists
-        Truncate:  isOSX and 0x400    or 0x200    -- O_TRUNC: truncate the file to zero length
-        -- O_NOCTTY: don't let an opened terminal become the process's controlling terminal
-        NoControllingTerminal: isOSX and 0x20000 or 0x100
-        Directory: isOSX and 0x100000 or 0x10000  -- O_DIRECTORY: fail if the path isn't a directory
-        NoFollow:  isOSX and 0x100    or 0x20000  -- O_NOFOLLOW: fail if the final component is a symlink
-        -- O_CLOEXEC: set the close-on-exec flag so child processes don't inherit the fd
-        CloseOnExec: isOSX and 0x1000000 or 0x80000
-        -- O_TMPFILE: create an unnamed temporary file (the Linux value already includes
-        -- O_DIRECTORY, as the kernel requires). Not available on macOS, where it is 0 (a
-        -- no-op) -- callers needing a temp file there must fall back to another mechanism.
-        TmpFile:   isOSX and 0 or 0x410000
-    }
+  FileCreationFlags: {
+    Create: isOSX and 0x200 or 0x40 -- O_CREAT: create the file if it doesn't exist
+    Exclusive: isOSX and 0x800 or 0x80 -- O_EXCL: with Create, fail if the file already exists
+    Truncate: isOSX and 0x400 or 0x200 -- O_TRUNC: truncate the file to zero length
+    -- O_NOCTTY: don't let an opened terminal become the process's controlling terminal
+    NoControllingTerminal: isOSX and 0x20000 or 0x100
+    Directory: isOSX and 0x100000 or 0x10000 -- O_DIRECTORY: fail if the path isn't a directory
+    NoFollow: isOSX and 0x100 or 0x20000 -- O_NOFOLLOW: fail if the final component is a symlink
+    -- O_CLOEXEC: set the close-on-exec flag so child processes don't inherit the fd
+    CloseOnExec: isOSX and 0x1000000 or 0x80000
+    -- O_TMPFILE: create an unnamed temporary file (the Linux value already includes
+    -- O_DIRECTORY, as the kernel requires). Not available on macOS, where it is 0 (a
+    -- no-op) -- callers needing a temp file there must fall back to another mechanism.
+    TmpFile: isOSX and 0 or 0x410000
+  }
 
-    ---Builds the numeric file mode for the given symbolic permissions.
-    ---@param user? string Any combination of "r", "w" and "x" for the owner, or "" for none.
-    ---@param group? string Same, for the owner's group.
-    ---@param other? string Same, for all other users.
-    ---@return number mode The file mode, e.g. getFileMode("rwx", "r", "r") -> 0o744 (484).
-    getFileMode: (user = "", group = "", other = "") ->
-        mode = 0
-        for perm in user\gmatch "."
-            mode += (filePermissionBits[perm] or 0) * 64
-        for perm in group\gmatch "."
-            mode += (filePermissionBits[perm] or 0) * 8
-        for perm in other\gmatch "."
-            mode += filePermissionBits[perm] or 0
-        return mode
+  ---Builds the numeric file mode for the given symbolic permissions.
+  ---@param user? string Any combination of "r", "w" and "x" for the owner, or "" for none.
+  ---@param group? string Same, for the owner's group.
+  ---@param other? string Same, for all other users.
+  ---@return number mode The file mode, e.g. getFileMode("rwx", "r", "r") -> 0o744 (484).
+  getFileMode: (user = "", group = "", other = "") ->
+    mode = 0
+    for perm in user\gmatch "."
+      mode += (filePermissionBits[perm] or 0) * 64
+    for perm in group\gmatch "."
+      mode += (filePermissionBits[perm] or 0) * 8
+    for perm in other\gmatch "."
+      mode += filePermissionBits[perm] or 0
+    return mode
 }

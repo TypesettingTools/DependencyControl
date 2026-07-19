@@ -5,7 +5,7 @@
   Diagnostics = require "l0.MoonCats.Diagnostics"
   UnitTestSuite = require "l0.DependencyControl.UnitTestSuite"
   {:splitLines, :computeStringMask, :scanCommentBlocks, :segmentBlock,
-   :paramsFromFndef, :literalTokenFromNode, :fndefHasValueReturn} = UnitTestSuite\getTestExports Parser
+    :paramsFromFndef, :literalTokenFromNode, :fndefHasValueReturn} = UnitTestSuite\getTestExports Parser
   {:MemberKind, :ExportKind, :SegmentKind, :ValueKind, :SymbolKind} = Parser
 
   parse = (source, requireId = "test.mod") ->

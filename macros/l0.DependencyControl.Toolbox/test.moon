@@ -1,7 +1,7 @@
 UnitTestSuite = require "l0.DependencyControl.UnitTestSuite"
-constants =     require "l0.DependencyControl.Constants"
-Common =        require "l0.DependencyControl.Common"
-DepCtrl =       require "l0.DependencyControl"
+constants = require "l0.DependencyControl.Constants"
+Common = require "l0.DependencyControl.Common"
+DepCtrl = require "l0.DependencyControl"
 
 -- Suite for the DependencyControl Toolbox macro. The Plumbing class proves the automation-script test
 -- wiring (DependencyControl discovers the suite and hands it the script's registered macros + testExports);
@@ -10,8 +10,8 @@ DepCtrl =       require "l0.DependencyControl"
 -- (the updater, config handler, feed inventory/manager, and the injected feed trust model).
 UnitTestSuite "l0.DependencyControl.Toolbox", (macros, dependencies, testExports, controls) ->
   {:shortenUrl, :expandUrl, :formatAge, :buildInstalledDlgList, :promptUntrustedFeed,
-   :confirmDialog, :manageExtraFeeds, :manageBlockList, :buttons, :feedActionLabels,
-   :scheduleUpdatesAndRegisterTests} = testExports
+    :confirmDialog, :manageExtraFeeds, :manageBlockList, :buttons, :feedActionLabels,
+    :scheduleUpdatesAndRegisterTests} = testExports
 
   -- The UninstallFlow seam: its _setup swaps the DepCtrl class's __call for a constructor returning
   -- `uninstallSeam.record`, so the flow's `DepCtrl(script)\uninstall!` never builds (and registers) a real
@@ -54,12 +54,12 @@ UnitTestSuite "l0.DependencyControl.Toolbox", (macros, dependencies, testExports
     calls = {block: {}, unblock: {}, trust: {}, addExtraFeed: {}, removeExtraFeed: {}}
     {
       :calls
-      getBlockedFeeds: =>            [b for b in *(blocked or {})]
-      block:           (url, opts) => calls.block[#calls.block + 1] = {url, opts}
-      unblock:         (url) =>       calls.unblock[#calls.unblock + 1] = url
-      trust:           (url) =>       calls.trust[#calls.trust + 1] = url
-      addExtraFeed:    (url) =>       calls.addExtraFeed[#calls.addExtraFeed + 1] = url
-      removeExtraFeed: (url) =>       calls.removeExtraFeed[#calls.removeExtraFeed + 1] = url
+      getBlockedFeeds: => [b for b in *(blocked or {})]
+      block: (url, opts) => calls.block[#calls.block + 1] = {url, opts}
+      unblock: (url) => calls.unblock[#calls.unblock + 1] = url
+      trust: (url) => calls.trust[#calls.trust + 1] = url
+      addExtraFeed: (url) => calls.addExtraFeed[#calls.addExtraFeed + 1] = url
+      removeExtraFeed: (url) => calls.removeExtraFeed[#calls.removeExtraFeed + 1] = url
     }
 
   -- a minimal fake UpdateFeed exposing one installable automation script, enough for install discovery
@@ -140,11 +140,11 @@ UnitTestSuite "l0.DependencyControl.Toolbox", (macros, dependencies, testExports
       uninstall_excludesProtected: (ut) ->
         config = makeConfig "modules", {
           [constants.DEPCTRL_NAMESPACE]: {name: "DepCtrl", version: "0.7.0"}
-          "l0.Other":                   {name: "Other",  version: "1.2.3"}
+          "l0.Other": {name: "Other", version: "1.2.3"}
         }
         list, map = buildInstalledDlgList "modules", config, true
         names = namesIn map
-        ut\assertNil names["DepCtrl"]      -- protected on uninstall
+        ut\assertNil names["DepCtrl"] -- protected on uninstall
         ut\assertTrue names["Other"]
         ut\assertEquals #list, 1
 
@@ -152,7 +152,7 @@ UnitTestSuite "l0.DependencyControl.Toolbox", (macros, dependencies, testExports
       install_includesAll: (ut) ->
         config = makeConfig "modules", {
           [constants.DEPCTRL_NAMESPACE]: {name: "DepCtrl", version: "0.7.0"}
-          "l0.Other":                   {name: "Other",  version: "1.2.3"}
+          "l0.Other": {name: "Other", version: "1.2.3"}
         }
         list, map = buildInstalledDlgList "modules", config, false
         names = namesIn map
@@ -251,8 +251,8 @@ UnitTestSuite "l0.DependencyControl.Toolbox", (macros, dependencies, testExports
       -- a checked user block is unblocked; a checked official block is left alone (it has no remove control)
       removesUserBlockNotOfficial: (ut) ->
         ft = makeFeedTrust {
-          {url: "feed://official", isOfficial: true,  matchMode: DepCtrl.FeedTrust.BlockMatchMode.Prefix}
-          {url: "feed://user",     isOfficial: false, matchMode: DepCtrl.FeedTrust.BlockMatchMode.Prefix}
+          {url: "feed://official", isOfficial: true, matchMode: DepCtrl.FeedTrust.BlockMatchMode.Prefix}
+          {url: "feed://user", isOfficial: false, matchMode: DepCtrl.FeedTrust.BlockMatchMode.Prefix}
         }
         -- sorted by URL: [feed://official, feed://user] -> remove1 targets the official (ignored), remove2 the user
         queueDialog ut, {{buttons.apply, {remove1: true, remove2: true}}, {buttons.close}}
@@ -368,7 +368,7 @@ UnitTestSuite "l0.DependencyControl.Toolbox", (macros, dependencies, testExports
         ut\assertEquals runUninstall(ut, false, {["auto/x.moon"]: {false, "file in use"}}), 1
 
       _order: {"success_reportsAndRuns", "errorWithStringDetail_reported",
-               "errorWithFileTableDetail_formatted", "lockedFiles_formatted"}
+        "errorWithFileTableDetail_formatted", "lockedFiles_formatted"}
     }
 
     Install: {
@@ -416,8 +416,8 @@ UnitTestSuite "l0.DependencyControl.Toolbox", (macros, dependencies, testExports
         ut\stub(DepCtrl.config, "getSectionHandler")\returns cfg
         dlg = queueDialog ut, {{"OK", {"a.x.customMenu": "Tools/Mine", "a.x.userFeed": ""}}}
         macros["Macro Configuration"].process!
-        ut\assertEquals cfg.c["a.x"].customMenu, "Tools/Mine"   -- non-empty edit written
-        ut\assertNil cfg.c["a.x"].userFeed                      -- empty edit left unset
+        ut\assertEquals cfg.c["a.x"].customMenu, "Tools/Mine" -- non-empty edit written
+        ut\assertNil cfg.c["a.x"].userFeed -- empty edit left unset
         ut\assertTrue saved.yes
         -- the built dialog is a gap-free array whose first row sits at y=0 (no wasted leading row)
         built = dlg._calls[1][1]
@@ -496,14 +496,14 @@ UnitTestSuite "l0.DependencyControl.Toolbox", (macros, dependencies, testExports
         ut\stub(DepCtrl.FeedInventory.__base, "getPackagesSourcedFrom")\returns {"a.pkg"}
         queueDialog ut, {
           {buttons.apply, {action1: feedActionLabels[Block]}}
-          {false}                                            -- the sourced warning, declined
+          {false} -- the sourced warning, declined
           {buttons.close}
         }
         macros["Manage Feeds"].process!
         applyAction\assertNotCalled!
 
       _order: {"close_appliesNothing", "apply_dispatchesSelectedAction", "discover_usesCrawl",
-               "apply_blockPromptsForReason", "apply_blockDeclinedOnSourcedWarning"}
+        "apply_blockPromptsForReason", "apply_blockDeclinedOnSourcedWarning"}
     }
 
     StartupSweep: {
@@ -527,8 +527,8 @@ UnitTestSuite "l0.DependencyControl.Toolbox", (macros, dependencies, testExports
         released = ut\stub DepCtrl.updater, "releaseLock"
         scheduleUpdatesAndRegisterTests!
         ut\assertEquals #scheduled, 2
-        ut\assertTrue registered.mdl         -- module suites are registered by the sweep
-        ut\assertNil registered.macro        -- automation scripts register their own
+        ut\assertTrue registered.mdl -- module suites are registered by the sweep
+        ut\assertNil registered.macro -- automation scripts register their own
         released\assertCalledOnce!
 
       -- one record's raising scheduleUpdate (or a negative status) doesn't end the sweep for the rest

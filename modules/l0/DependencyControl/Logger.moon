@@ -5,305 +5,305 @@ lfs = require "lfs"
 ---Structured logger that writes to Aegisub's log window and optional log files.
 ---@class Logger
 class Logger
-    levels = {"fatal", "error", "warning", "hint", "debug", "trace"}
-    defaultLevel: 2
-    maxToFileLevel: 5
-    fileBaseName: script_namespace or "UNKNOWN"
-    fileSubName: ""
-    logDir: "?user/log"
-    fileTemplate: "%s/%s-%04x_%s_%s.log"
-    fileMatchTemplate: "%d%d%d%d%-%d%d%-%d%d%-%d%d%-%d%d%-%d%d%-%x%x%x%x_@{fileBaseName}_?.*%.log$"
-    prefix: ""
-    toFile: false, toWindow: true
-    indent: 0
-    usePrefixFile: true
-    usePrefixWindow: true
-    indentStr: "—"
-    maxFiles: 200, maxAge: 604800, maxSize:10*(10^6)
+  levels = {"fatal", "error", "warning", "hint", "debug", "trace"}
+  defaultLevel: 2
+  maxToFileLevel: 5
+  fileBaseName: script_namespace or "UNKNOWN"
+  fileSubName: ""
+  logDir: "?user/log"
+  fileTemplate: "%s/%s-%04x_%s_%s.log"
+  fileMatchTemplate: "%d%d%d%d%-%d%d%-%d%d%-%d%d%-%d%d%-%d%d%-%x%x%x%x_@{fileBaseName}_?.*%.log$"
+  prefix: ""
+  toFile: false, toWindow: true
+  indent: 0
+  usePrefixFile: true
+  usePrefixWindow: true
+  indentStr: "—"
+  maxFiles: 200, maxAge: 604800, maxSize:10*(10^6)
 
-    seeded = false
+  seeded = false
 
-    -- All logger instances  write to the same live stream (Aegisub's log window or the CLI's stderr), 
-    -- so we need to track  the last logger that didn't end its last message with a line feed, 
-    -- so another logger's next message can be broken onto a fresh line instead of being glued onto it.
-    streamAtLineStart, streamOpenedBy = true, nil
+  -- All logger instances  write to the same live stream (Aegisub's log window or the CLI's stderr),
+  -- so we need to track  the last logger that didn't end its last message with a line feed,
+  -- so another logger's next message can be broken onto a fresh line instead of being glued onto it.
+  streamAtLineStart, streamOpenedBy = true, nil
 
-    ---Creates a logger, applying the given option overrides to the new instance.
-    ---@param args? table Field overrides copied onto the logger; a `usePrefix` key sets both the file and window prefix flags.
-    new: (args) =>
-        if args
-            @[k] = v for k, v in pairs args
-            if args.usePrefix ~= nil
-                @usePrefixFile, @usePrefixWindow = args.usePrefix, args.usePrefix
+  ---Creates a logger, applying the given option overrides to the new instance.
+  ---@param args? table Field overrides copied onto the logger; a `usePrefix` key sets both the file and window prefix flags.
+  new: (args) =>
+    if args
+      @[k] = v for k, v in pairs args
+      if args.usePrefix ~= nil
+        @usePrefixFile, @usePrefixWindow = args.usePrefix, args.usePrefix
 
-        -- scripts load simultaneously in separate Lua states, so a whole-second seed would collide;
-        -- the monotonic clock's sub-microsecond reading diverges per state, and the pid separates
-        -- whole processes
-        unless seeded
-            math.randomseed Timer.getTime! * 1000000 + NamedSemaphore.pid
-            math.random! for i = 1, 3
-            seeded = true
+    -- scripts load simultaneously in separate Lua states, so a whole-second seed would collide;
+    -- the monotonic clock's sub-microsecond reading diverges per state, and the pid separates
+    -- whole processes
+    unless seeded
+      math.randomseed Timer.getTime! * 1000000 + NamedSemaphore.pid
+      math.random! for i = 1, 3
+      seeded = true
 
-        @lastHadLineFeed = true
-        escaped = @fileBaseName\gsub("([%%%(%)%[%]%.%*%-%+%?%$%^])","%%%1")
-        @fileMatch = @fileMatchTemplate\gsub "@{fileBaseName}", escaped
-        @fileName = @fileTemplate\format aegisub.decode_path(@logDir), os.date("%Y-%m-%d-%H-%M-%S"),
-                                          math.random(0, 16^4-1), @fileBaseName, @fileSubName
+    @lastHadLineFeed = true
+    escaped = @fileBaseName\gsub("([%%%(%)%[%]%.%*%-%+%?%$%^])","%%%1")
+    @fileMatch = @fileMatchTemplate\gsub "@{fileBaseName}", escaped
+    @fileName = @fileTemplate\format aegisub.decode_path(@logDir), os.date("%Y-%m-%d-%H-%M-%S"),
+      math.random(0, 16^4-1), @fileBaseName, @fileSubName
 
-    ---Writes a log message with explicit rendering options.
-    ---@param level? number Severity level (default: the logger's defaultLevel).
-    ---@param msg? string|table Message, or a list of lines joined with newlines.
-    ---@param insertLineFeed? boolean Append a trailing newline (default true).
-    ---@param prefix? string Line prefix (default: the logger's prefix).
-    ---@param indent? number Indentation depth (default: the logger's indent).
-    ---@param ... any Format arguments substituted into msg.
-    ---@return boolean written False if msg was empty, otherwise true.
-    logEx: (level = @defaultLevel, msg = "", insertLineFeed = true, prefix = @prefix, indent = @indent, ...) =>
-        return false if msg == ""
+  ---Writes a log message with explicit rendering options.
+  ---@param level? number Severity level (default: the logger's defaultLevel).
+  ---@param msg? string|table Message, or a list of lines joined with newlines.
+  ---@param insertLineFeed? boolean Append a trailing newline (default true).
+  ---@param prefix? string Line prefix (default: the logger's prefix).
+  ---@param indent? number Indentation depth (default: the logger's indent).
+  ---@param ... any Format arguments substituted into msg.
+  ---@return boolean written False if msg was empty, otherwise true.
+  logEx: (level = @defaultLevel, msg = "", insertLineFeed = true, prefix = @prefix, indent = @indent, ...) =>
+    return false if msg == ""
 
-        prefixWin = @usePrefixWindow and prefix or ""
-        lineFeed = insertLineFeed and "\n" or ""
-        indentStr = indent==0 and "" or @indentStr\rep(indent) .. " "
-        
-        msg = if @lastHadLineFeed
-            @format msg, indent, ...
-        elseif 0 < select "#", ...
-            (tostring msg)\format ...
+    prefixWin = @usePrefixWindow and prefix or ""
+    lineFeed = insertLineFeed and "\n" or ""
+    indentStr = indent==0 and "" or @indentStr\rep(indent) .. " "
 
-        show = aegisub.log and @toWindow
-        if @toFile and level <= @maxToFileLevel
-            unless @handle
-                lfs.mkdir aegisub.decode_path @logDir   -- best-effort: create the log dir (parent ?user exists)
-                @handle = io.open @fileName, "a"
-                unless @handle
-                    -- missing dir / permissions / disk full: disable file logging rather than crash on every
-                    -- subsequent call, and note it once in the window (this message still reaches the window below)
-                    @toFile = false
-                    aegisub.log 2, "[#{@fileBaseName}] Couldn't open log file '#{@fileName}'; file logging disabled.\n" if aegisub.log
-            if @handle
-                linePre = @lastHadLineFeed and "#{indentStr}[#{levels[level+1]\upper!}] #{os.date '%H:%M:%S'} #{show and '+' or '•'} " or ""
-                line = table.concat({linePre, @usePrefixFile and prefix or "", msg, lineFeed})
-                @handle\write(line)\flush!
+    msg = if @lastHadLineFeed
+      @format msg, indent, ...
+    elseif 0 < select "#", ...
+      (tostring msg)\format ...
 
-        -- for some reason the stack trace gets swallowed when not doing the replace
-        assert level > 1,"#{indentStr}Error: #{prefixWin}#{msg\gsub ':', ': '}"
-        if show
-            -- ensure this message starts clean instead of being glued onto unrelated output
-            lineBreak = (not streamAtLineStart and streamOpenedBy != @) and "\n" or ""
-            -- a chunk continuing this logger's own open line (e.g. a progress bar fill) must
-            -- not repeat the indent
-            winIndent = (not streamAtLineStart and streamOpenedBy == @) and "" or indentStr
-            aegisub.log level, table.concat({lineBreak, winIndent, prefixWin, msg, lineFeed})
-            streamAtLineStart = insertLineFeed
-            streamOpenedBy = if insertLineFeed then nil else @
+    show = aegisub.log and @toWindow
+    if @toFile and level <= @maxToFileLevel
+      unless @handle
+        lfs.mkdir aegisub.decode_path @logDir -- best-effort: create the log dir (parent ?user exists)
+        @handle = io.open @fileName, "a"
+        unless @handle
+          -- missing dir / permissions / disk full: disable file logging rather than crash on every
+          -- subsequent call, and note it once in the window (this message still reaches the window below)
+          @toFile = false
+          aegisub.log 2, "[#{@fileBaseName}] Couldn't open log file '#{@fileName}'; file logging disabled.\n" if aegisub.log
+      if @handle
+        linePre = @lastHadLineFeed and "#{indentStr}[#{levels[level+1]\upper!}] #{os.date '%H:%M:%S'} #{show and '+' or '•'} " or ""
+        line = table.concat({linePre, @usePrefixFile and prefix or "", msg, lineFeed})
+        @handle\write(line)\flush!
 
-        @lastHadLineFeed = insertLineFeed
-        return true
+    -- for some reason the stack trace gets swallowed when not doing the replace
+    assert level > 1,"#{indentStr}Error: #{prefixWin}#{msg\gsub ':', ': '}"
+    if show
+      -- ensure this message starts clean instead of being glued onto unrelated output
+      lineBreak = (not streamAtLineStart and streamOpenedBy != @) and "\n" or ""
+      -- a chunk continuing this logger's own open line (e.g. a progress bar fill) must
+      -- not repeat the indent
+      winIndent = (not streamAtLineStart and streamOpenedBy == @) and "" or indentStr
+      aegisub.log level, table.concat({lineBreak, winIndent, prefixWin, msg, lineFeed})
+      streamAtLineStart = insertLineFeed
+      streamOpenedBy = if insertLineFeed then nil else @
 
-    ---Whether the last message to the  log stream ended with a line feed, or left the stream mid-line.
-    ---Lets a caller decide whether its next output continues that open line or starts fresh.
-    ---@return boolean
-    @isAtLineStart = -> streamAtLineStart
+    @lastHadLineFeed = insertLineFeed
+    return true
 
-    ---Formats a message for display, substituting printf-style arguments and indenting each line after the first.
-    ---@param msg string|table The message, or a list of lines joined with newlines.
-    ---@param indent number Indentation depth applied to every line after a line break.
-    ---@param ... any Format arguments substituted into the message.
-    ---@return string msg The formatted message.
-    format: (msg, indent, ...) =>
-        if type(msg) == "table"
-            msg = table.concat msg, "\n"
-        
-        if 0 < select "#", ...
-            msg = (tostring msg)\format ...
+  ---Whether the last message to the  log stream ended with a line feed, or left the stream mid-line.
+  ---Lets a caller decide whether its next output continues that open line or starts fresh.
+  ---@return boolean
+  @isAtLineStart = -> streamAtLineStart
 
-        return msg unless indent>0
+  ---Formats a message for display, substituting printf-style arguments and indenting each line after the first.
+  ---@param msg string|table The message, or a list of lines joined with newlines.
+  ---@param indent number Indentation depth applied to every line after a line break.
+  ---@param ... any Format arguments substituted into the message.
+  ---@return string msg The formatted message.
+  format: (msg, indent, ...) =>
+    if type(msg) == "table"
+      msg = table.concat msg, "\n"
 
-        indentRep = @indentStr\rep(indent)
-        indentStr = indentRep .. " "
-         -- indent after line breaks and connect indentation supplied in the user message
-        return msg\gsub("\n", "\n"..indentStr)\gsub "\n#{indentStr}(#{@indentStr})", "\n#{indentRep}%1"
+    if 0 < select "#", ...
+      msg = (tostring msg)\format ...
 
-    ---Logs a message at the given severity level.
-    ---@param level? number|string|table Severity level; when not a number, the value is taken as the message and logged at the default level.
-    ---@param msg? string|table Message to log; taken as the first format argument when the level slot already holds the message.
-    ---@param ... any Format arguments substituted into the message.
-    ---@return boolean written False when nothing was passed or the message was empty, otherwise true.
-    log: (level, msg, ...) =>
-        return false unless level or msg
+    return msg unless indent>0
 
-        if "number" != type level
-            return @logEx @defaultLevel, level, true, nil, nil, msg, ...
-        else return @logEx level, msg, true, nil, nil, ...
+    indentRep = @indentStr\rep(indent)
+    indentStr = indentRep .. " "
+      -- indent after line breaks and connect indentation supplied in the user message
+    return msg\gsub("\n", "\n"..indentStr)\gsub "\n#{indentStr}(#{@indentStr})", "\n#{indentRep}%1"
 
-    ---Logs the given message at the fatal level (0).
-    ---@param ... any Message and format arguments.
-    ---@return boolean written False when nothing was passed or the message was empty, otherwise true.
-    fatal: (...) => @log 0, ...
-    ---Logs the given message at the error level (1).
-    ---@param ... any Message and format arguments.
-    ---@return boolean written False when nothing was passed or the message was empty, otherwise true.
-    error: (...) => @log 1, ...
-    ---Logs the given message at the warning level (2).
-    ---@param ... any Message and format arguments.
-    ---@return boolean written False when nothing was passed or the message was empty, otherwise true.
-    warn: (...) => @log 2, ...
-    ---Logs the given message at the hint level (3).
-    ---@param ... any Message and format arguments.
-    ---@return boolean written False when nothing was passed or the message was empty, otherwise true.
-    hint: (...) => @log 3, ...
-    ---Logs the given message at the debug level (4).
-    ---@param ... any Message and format arguments.
-    ---@return boolean written False when nothing was passed or the message was empty, otherwise true.
-    debug: (...) => @log 4, ...
-    ---Logs the given message at the trace level (5).
-    ---@param ... any Message and format arguments.
-    ---@return boolean written False when nothing was passed or the message was empty, otherwise true.
-    trace: (...) => @log 5, ...
+  ---Logs a message at the given severity level.
+  ---@param level? number|string|table Severity level; when not a number, the value is taken as the message and logged at the default level.
+  ---@param msg? string|table Message to log; taken as the first format argument when the level slot already holds the message.
+  ---@param ... any Format arguments substituted into the message.
+  ---@return boolean written False when nothing was passed or the message was empty, otherwise true.
+  log: (level, msg, ...) =>
+    return false unless level or msg
 
-    ---Logs an error message when the given condition is falsy.
-    ---@param cond any Value to test for truthiness.
-    ---@param ... any Error message and format arguments logged when cond is falsy.
-    ---@return any cond The condition and any trailing arguments, returned unchanged when truthy.
-    assert: (cond, ...) =>
-        if not cond
-            @log 1, ...
-        else return cond, ...
+    if "number" != type level
+      return @logEx @defaultLevel, level, true, nil, nil, msg, ...
+    else return @logEx level, msg, true, nil, nil, ...
 
-    ---Logs an error message when the given condition is nil.
-    ---@param cond any Value to test for nil.
-    ---@param ... any Error message and format arguments logged when cond is nil.
-    ---@return any cond The condition and any trailing arguments, returned unchanged when not nil.
-    assertNotNil: (cond, ...) =>
-        if cond == nil
-            @log 1, ...
-        else return cond, ...
+  ---Logs the given message at the fatal level (0).
+  ---@param ... any Message and format arguments.
+  ---@return boolean written False when nothing was passed or the message was empty, otherwise true.
+  fatal: (...) => @log 0, ...
+  ---Logs the given message at the error level (1).
+  ---@param ... any Message and format arguments.
+  ---@return boolean written False when nothing was passed or the message was empty, otherwise true.
+  error: (...) => @log 1, ...
+  ---Logs the given message at the warning level (2).
+  ---@param ... any Message and format arguments.
+  ---@return boolean written False when nothing was passed or the message was empty, otherwise true.
+  warn: (...) => @log 2, ...
+  ---Logs the given message at the hint level (3).
+  ---@param ... any Message and format arguments.
+  ---@return boolean written False when nothing was passed or the message was empty, otherwise true.
+  hint: (...) => @log 3, ...
+  ---Logs the given message at the debug level (4).
+  ---@param ... any Message and format arguments.
+  ---@return boolean written False when nothing was passed or the message was empty, otherwise true.
+  debug: (...) => @log 4, ...
+  ---Logs the given message at the trace level (5).
+  ---@param ... any Message and format arguments.
+  ---@return boolean written False when nothing was passed or the message was empty, otherwise true.
+  trace: (...) => @log 5, ...
 
-    ---Draws an in-place progress bar, filling it toward the given completion percentage.
-    ---@param progress? number|boolean Completion percentage from 0 to 100; a falsy value closes the open bar and is the default.
-    ---@param msg? string Label drawn before the bar when it first opens (default: empty).
-    ---@param ... any Format arguments substituted into the label.
-    progress: (progress=false, msg = "", ...) =>
-        if @progressStep and not progress
-            @logEx nil, "■"\rep(10-@progressStep).."]", true, ""
-            @progressStep = nil
-        elseif progress
-            unless @progressStep
-                @progressStep = 0
-                msg ..= " " if #msg>0
-                @logEx nil, "#{msg}[", false, nil, nil, ...
-            step = math.floor(progress * 0.1 + 0.5)
-            @logEx nil, "■"\rep(step-@progressStep), false, ""
-            @progressStep = step
+  ---Logs an error message when the given condition is falsy.
+  ---@param cond any Value to test for truthiness.
+  ---@param ... any Error message and format arguments logged when cond is falsy.
+  ---@return any cond The condition and any trailing arguments, returned unchanged when truthy.
+  assert: (cond, ...) =>
+    if not cond
+      @log 1, ...
+    else return cond, ...
 
-    -- taken from https://github.com/TypesettingCartel/Aegisub-Motion/blob/master/src/Log.moon
-    ---Logs a table dump (or scalar value) at the specified level.
-    ---@param item any Value to dump; tables are rendered recursively.
-    ---@param ignore? any Table key to omit from the dump.
-    ---@param level? number Log level (default: the logger's defaultLevel).
-    ---@param maxDepth? number Maximum table depth to recurse into.
-    dump: ( item, ignore, level = @defaultLevel, maxDepth ) =>
-        @log level, @dumpToString item, ignore, maxDepth
+  ---Logs an error message when the given condition is nil.
+  ---@param cond any Value to test for nil.
+  ---@param ... any Error message and format arguments logged when cond is nil.
+  ---@return any cond The condition and any trailing arguments, returned unchanged when not nil.
+  assertNotNil: (cond, ...) =>
+    if cond == nil
+      @log 1, ...
+    else return cond, ...
 
-    ---Converts a table dump (or scalar value) to a readable string.
-    ---@param item any Value to render; tables are rendered recursively.
-    ---@param ignore? any Table key to omit from the dump.
-    ---@param maxDepth? number Maximum table depth to recurse into.
-    ---@return string
-    dumpToString: ( item, ignore, maxDepth ) =>
-        if "table" != type item
-            return tostring item
+  ---Draws an in-place progress bar, filling it toward the given completion percentage.
+  ---@param progress? number|boolean Completion percentage from 0 to 100; a falsy value closes the open bar and is the default.
+  ---@param msg? string Label drawn before the bar when it first opens (default: empty).
+  ---@param ... any Format arguments substituted into the label.
+  progress: (progress=false, msg = "", ...) =>
+    if @progressStep and not progress
+      @logEx nil, "■"\rep(10-@progressStep).."]", true, ""
+      @progressStep = nil
+    elseif progress
+      unless @progressStep
+        @progressStep = 0
+        msg ..= " " if #msg>0
+        @logEx nil, "#{msg}[", false, nil, nil, ...
+      step = math.floor(progress * 0.1 + 0.5)
+      @logEx nil, "■"\rep(step-@progressStep), false, ""
+      @progressStep = step
 
-        count, tablecount = 1, 1
+  -- taken from https://github.com/TypesettingCartel/Aegisub-Motion/blob/master/src/Log.moon
+  ---Logs a table dump (or scalar value) at the specified level.
+  ---@param item any Value to dump; tables are rendered recursively.
+  ---@param ignore? any Table key to omit from the dump.
+  ---@param level? number Log level (default: the logger's defaultLevel).
+  ---@param maxDepth? number Maximum table depth to recurse into.
+  dump: ( item, ignore, level = @defaultLevel, maxDepth ) =>
+    @log level, @dumpToString item, ignore, maxDepth
 
-        result = { "{ @#{tablecount}" }
-        seen   = { [item]: tablecount }
-        recurse = ( item, space, depth = 0 ) ->
-            if maxDepth and depth > maxDepth
-                count += 1
-                result[count] = space .. "<...>"
-                return
+  ---Converts a table dump (or scalar value) to a readable string.
+  ---@param item any Value to render; tables are rendered recursively.
+  ---@param ignore? any Table key to omit from the dump.
+  ---@param maxDepth? number Maximum table depth to recurse into.
+  ---@return string
+  dumpToString: ( item, ignore, maxDepth ) =>
+    if "table" != type item
+      return tostring item
 
-            depth += 1
+    count, tablecount = 1, 1
 
-            for key, value in pairs item
-                unless key == ignore
-                    if "number" == type key
-                        key = "##{key}"
-                    if "table" == type value
-                        unless seen[value]
-                            tablecount += 1
-                            seen[value] = tablecount
-                            count += 1
-                            result[count] = space .. "#{key}: { @#{tablecount}"
-                            recurse value, space .. "    ", depth
-                            count += 1
-                            result[count] = space .. "}"
-                        else
-                            count += 1
-                            result[count] = space .. "#{key}: @#{seen[value]}"
+    result = { "{ @#{tablecount}" }
+    seen = { [item]: tablecount }
+    recurse = ( item, space, depth = 0 ) ->
+      if maxDepth and depth > maxDepth
+        count += 1
+        result[count] = space .. "<...>"
+        return
 
-                    else
-                        if "string" == type value
-                            value = ("%q")\format value
+      depth += 1
 
-                        count += 1
-                        result[count] = space .. "#{key}: #{value}"
-
-        recurse item, "    "
-        result[count+1] = "}"
-
-        return table.concat(result, "\n")\gsub "%%", "%%%%"
-
-    ---Displays the given error in a modal dialog with a Close button, then aborts the running script.
-    ---@param errorMessage string Message shown in the dialog.
-    windowError: ( errorMessage ) ->
-        aegisub.dialog.display { { class: "label", label: errorMessage } }, { "&Close" }, { cancel: "&Close" }
-        aegisub.cancel!
-
-
-    ---Deletes log files that exceed the configured age, size, or count limits, keeping the newest.
-    ---@param doWipe boolean When true, delete every matching log file regardless of the limits.
-    ---@param maxAge? number Maximum file age in seconds before deletion (default: the logger's maxAge).
-    ---@param maxSize? number Maximum combined size in bytes before older files are deleted (default: the logger's maxSize).
-    ---@param maxFiles? number Maximum number of files to keep (default: the logger's maxFiles).
-    ---@return integer deleted Number of files removed (0 when the log directory does not exist yet).
-    ---@return integer deletedSize Combined size in bytes of the removed files.
-    ---@return integer total Total number of matching log files found.
-    ---@return integer totalSize Combined size in bytes of all matching files.
-    trimFiles: (doWipe, maxAge = @maxAge, maxSize = @maxSize, maxFiles = @maxFiles) =>
-        files, totalSize, deletedSize, now, f = {}, 0, 0, os.time!, 0
-
-        dir = aegisub.decode_path @logDir
-        -- nothing to trim if the log directory hasn't been created yet
-        return 0, 0, 0, 0 unless lfs.attributes dir, "mode"
-        
-        for file in lfs.dir dir
-            fullPath = "#{dir}/#{file}"
-            attr = lfs.attributes fullPath
-            if type(attr) == "table" and attr.mode == "file" and file\find @fileMatch
-                f += 1
-                files[f] = {name: file, path: fullPath, modified: attr.modification, size: attr.size}
-
-        table.sort files, (a,b) -> a.modified > b.modified
-        total, kept = #files, 0
-
-        for i, file in ipairs files
-            totalSize += file.size
-            if doWipe or kept > maxFiles or totalSize > maxSize or file.modified+maxAge < now
-                deletedSize += file.size
-                os.remove file.path
+      for key, value in pairs item
+        unless key == ignore
+          if "number" == type key
+            key = "##{key}"
+          if "table" == type value
+            unless seen[value]
+              tablecount += 1
+              seen[value] = tablecount
+              count += 1
+              result[count] = space .. "#{key}: { @#{tablecount}"
+              recurse value, space .. "    ", depth
+              count += 1
+              result[count] = space .. "}"
             else
-                kept += 1
-        return total-kept, deletedSize, total, totalSize
+              count += 1
+              result[count] = space .. "#{key}: @#{seen[value]}"
 
-    ---Returns a human-readable type name for the given value.
-    ---@param val any Value whose type to describe.
-    ---@return string type The Lua type name, or "<ClassName> object" for a DependencyControl class instance.
-    @describeType = (val) =>
-        _type = type val
-        return _type unless _type == "table"
+          else
+            if "string" == type value
+              value = ("%q")\format value
 
-        return if val.__class
-            "#{val.__class.__name} object"
-        else _type
+            count += 1
+            result[count] = space .. "#{key}: #{value}"
+
+    recurse item, "    "
+    result[count+1] = "}"
+
+    return table.concat(result, "\n")\gsub "%%", "%%%%"
+
+  ---Displays the given error in a modal dialog with a Close button, then aborts the running script.
+  ---@param errorMessage string Message shown in the dialog.
+  windowError: ( errorMessage ) ->
+    aegisub.dialog.display { { class: "label", label: errorMessage } }, { "&Close" }, { cancel: "&Close" }
+    aegisub.cancel!
+
+
+  ---Deletes log files that exceed the configured age, size, or count limits, keeping the newest.
+  ---@param doWipe boolean When true, delete every matching log file regardless of the limits.
+  ---@param maxAge? number Maximum file age in seconds before deletion (default: the logger's maxAge).
+  ---@param maxSize? number Maximum combined size in bytes before older files are deleted (default: the logger's maxSize).
+  ---@param maxFiles? number Maximum number of files to keep (default: the logger's maxFiles).
+  ---@return integer deleted Number of files removed (0 when the log directory does not exist yet).
+  ---@return integer deletedSize Combined size in bytes of the removed files.
+  ---@return integer total Total number of matching log files found.
+  ---@return integer totalSize Combined size in bytes of all matching files.
+  trimFiles: (doWipe, maxAge = @maxAge, maxSize = @maxSize, maxFiles = @maxFiles) =>
+    files, totalSize, deletedSize, now, f = {}, 0, 0, os.time!, 0
+
+    dir = aegisub.decode_path @logDir
+    -- nothing to trim if the log directory hasn't been created yet
+    return 0, 0, 0, 0 unless lfs.attributes dir, "mode"
+
+    for file in lfs.dir dir
+      fullPath = "#{dir}/#{file}"
+      attr = lfs.attributes fullPath
+      if type(attr) == "table" and attr.mode == "file" and file\find @fileMatch
+        f += 1
+        files[f] = {name: file, path: fullPath, modified: attr.modification, size: attr.size}
+
+    table.sort files, (a,b) -> a.modified > b.modified
+    total, kept = #files, 0
+
+    for i, file in ipairs files
+      totalSize += file.size
+      if doWipe or kept > maxFiles or totalSize > maxSize or file.modified+maxAge < now
+        deletedSize += file.size
+        os.remove file.path
+      else
+        kept += 1
+    return total-kept, deletedSize, total, totalSize
+
+  ---Returns a human-readable type name for the given value.
+  ---@param val any Value whose type to describe.
+  ---@return string type The Lua type name, or "<ClassName> object" for a DependencyControl class instance.
+  @describeType = (val) =>
+    _type = type val
+    return _type unless _type == "table"
+
+    return if val.__class
+      "#{val.__class.__name} object"
+    else _type

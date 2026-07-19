@@ -1,7 +1,7 @@
 -- ScriptUpdateRecord tests: channel management and update record accessors.
 -- Called from Tests.moon as: (require "...test.ScriptUpdateRecord")!
 ->
-  Common             = require "l0.DependencyControl.Common"
+  Common = require "l0.DependencyControl.Common"
   ScriptUpdateRecord = require "l0.DependencyControl.ScriptUpdateRecord"
 
   {
@@ -85,8 +85,8 @@
       }
       sur = ScriptUpdateRecord "test.NS", data, {c:{}}, Common.ScriptType.Module
       result = sur\getChangelog nil
-      ut\assertContains result, "Initial release"   -- valid entry still rendered
-      ut\assertString result                         -- and no crash on the malformed key
+      ut\assertContains result, "Initial release" -- valid entry still rendered
+      ut\assertString result -- and no crash on the malformed key
 
     -- marked entries are grouped under category headings; the machine type token is dropped and the
     -- scope kept, so the raw marker never shows in-app
@@ -101,10 +101,10 @@
       ut\assertContains result, "New Features"
       ut\assertContains result, "Bug Fixes"
       ut\assertContains result, "Changes"
-      ut\assertContains result, "Updater: fixed a thing"          -- scope kept, type token dropped
-      ut\assertContains result, "⚠️ broke a thing"                -- breaking tagged within its section
-      ut\assertFalsy result\find "fix(Updater):", 1, true         -- raw marker never leaks
-      ut\assertFalsy result\find "Breaking Changes", 1, true      -- breaking is not its own section
+      ut\assertContains result, "Updater: fixed a thing" -- scope kept, type token dropped
+      ut\assertContains result, "⚠️ broke a thing" -- breaking tagged within its section
+      ut\assertFalsy result\find "fix(Updater):", 1, true -- raw marker never leaks
+      ut\assertFalsy result\find "Breaking Changes", 1, true -- breaking is not its own section
 
     _order: {
       "getChannels_basic", "getChannels_noDefault",

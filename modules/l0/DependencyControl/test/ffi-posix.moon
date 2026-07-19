@@ -3,9 +3,9 @@
 -- the values are never used. Run it via the WSL test runner.
 -- Called from test.moon as: (controls\requireTest "FfiPosix")!
 () ->
-  ffi      = require "ffi"
+  ffi = require "ffi"
   ffiPosix = require "l0.DependencyControl.helpers.ffi-posix"
-  lfs      = require "lfs"
+  lfs = require "lfs"
 
   pcall ffi.cdef, [[
     int open(const char *path, int flags, int mode);
@@ -39,7 +39,7 @@
       fd1 = ffi.C.open path, bit.bor(Access.Write, Create), ffiPosix.getFileMode "rw"
       ffi.C.close fd1 if fd1 >= 0
       fd2 = ffi.C.open path, bit.bor(Access.Write, Create, Exclusive), ffiPosix.getFileMode "rw"
-      ut\assertTrue fd2 < 0          -- EEXIST
+      ut\assertTrue fd2 < 0 -- EEXIST
       ffi.C.close fd2 if fd2 >= 0
       os.remove path
 
@@ -52,5 +52,5 @@
       ffi.C.umask oldMask
       perms = lfs.attributes path, "permissions"
       os.remove path
-      ut\assertEquals perms, "rw-r--r--"   -- 0o644
+      ut\assertEquals perms, "rw-r--r--" -- 0o644
   }

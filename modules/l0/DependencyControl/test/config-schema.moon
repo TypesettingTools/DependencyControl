@@ -37,7 +37,7 @@
       }}
       ut\assertTrue migrate c, nil, schema.CONFIG_SCHEMA_ID_CURRENT
       cfg = c.config
-      ut\assertEquals cfg.updates.mode, "off"   -- updaterEnabled: false maps onto the mode domain
+      ut\assertEquals cfg.updates.mode, "off" -- updaterEnabled: false maps onto the mode domain
       ut\assertEquals cfg.updates.checkInterval, 999
       ut\assertEquals cfg.updates.waitTimeout, 45
       ut\assertEquals cfg.updates.orphanTimeout, 30
@@ -66,14 +66,14 @@
       c = {config: {formatVersion: 1, updaterEnabled: true}}
       migrate c, nil, schema.CONFIG_SCHEMA_ID_CURRENT
       ut\assertNil c.config.formatVersion
-      ut\assertEquals c.config.updates.mode, "auto-update"   -- updaterEnabled: true maps onto the mode domain
+      ut\assertEquals c.config.updates.mode, "auto-update" -- updaterEnabled: true maps onto the mode domain
 
     -- a config that already carries a $schema is sectioned; migrate leaves it untouched
     skipsWhenSchemaPresent: (ut) ->
       c = {["$schema"]: schema.CONFIG_SCHEMA_ID_CURRENT, config: {updates: {mode: "off"}}}
       ut\assertFalse migrate c, schema.CONFIG_SCHEMA_ID_CURRENT, schema.CONFIG_SCHEMA_ID_CURRENT
-      ut\assertEquals c.config.updates.mode, "off"   -- unchanged
-      ut\assertNil c.config.updates.checkInterval     -- not re-populated with defaults
+      ut\assertEquals c.config.updates.mode, "off" -- unchanged
+      ut\assertNil c.config.updates.checkInterval -- not re-populated with defaults
 
     -- keys the migration doesn't know about — arbitrary user keys and unreleased post-v0.6.3 keys alike —
     -- are left in place (only dev configs have the latter, and they need no migration)
@@ -82,7 +82,7 @@
       migrate c, nil, schema.CONFIG_SCHEMA_ID_CURRENT
       cfg = c.config
       ut\assertEquals cfg.someUserKey, 42
-      ut\assertEquals cfg.trustedFeeds, {"t"}   -- a v0.7.0-dev key: not lifted into a section
+      ut\assertEquals cfg.trustedFeeds, {"t"} -- a v0.7.0-dev key: not lifted into a section
       ut\assertNil cfg.feeds
       ut\assertEquals cfg.updates.mode, "auto-update"
 
@@ -91,8 +91,8 @@
     migratesLegacyRecordFields: (ut) ->
       c = {
         macros: {
-          ["l0.old"]: {unmanaged: true, version: 66051, author: "x"}   -- 66051 == 1.2.3
-          ["l0.managed"]: {version: 2}                                 -- 2 == 0.0.2
+          ["l0.old"]: {unmanaged: true, version: 66051, author: "x"} -- 66051 == 1.2.3
+          ["l0.managed"]: {version: 2} -- 2 == 0.0.2
         }
         modules: {
           ["l0.mod"]: {unmanaged: true}
@@ -100,11 +100,11 @@
       }
       migrate c, nil, schema.CONFIG_SCHEMA_ID_CURRENT
       ut\assertEquals c.macros["l0.old"].recordType, Common.RecordType.Unmanaged
-      ut\assertNil c.macros["l0.old"].unmanaged            -- flag dropped
-      ut\assertEquals c.macros["l0.old"].version, "1.2.3"  -- packed int -> semver string
-      ut\assertEquals c.macros["l0.old"].author, "x"       -- unrelated fields untouched
+      ut\assertNil c.macros["l0.old"].unmanaged -- flag dropped
+      ut\assertEquals c.macros["l0.old"].version, "1.2.3" -- packed int -> semver string
+      ut\assertEquals c.macros["l0.old"].author, "x" -- unrelated fields untouched
       ut\assertEquals c.macros["l0.managed"].version, "0.0.2"
-      ut\assertNil c.macros["l0.managed"].recordType       -- no flag -> stays managed
+      ut\assertNil c.macros["l0.managed"].recordType -- no flag -> stays managed
       ut\assertEquals c.modules["l0.mod"].recordType, Common.RecordType.Unmanaged
       ut\assertNil c.modules["l0.mod"].unmanaged
 
@@ -114,16 +114,16 @@
       c = {
         modules: {
           ["l0.DependencyControl"]: {lastChannel: "alpha", activeChannel: "alpha"}
-          ["l0.Functional"]:        {lastChannel: "alpha"}          -- third-party feed: not ours to move
+          ["l0.Functional"]: {lastChannel: "alpha"} -- third-party feed: not ours to move
         }
         macros: {
-          ["l0.DependencyControl.Toolbox"]: {lastChannel: "beta"}   -- ours, but not the alpha pin: preserved
+          ["l0.DependencyControl.Toolbox"]: {lastChannel: "beta"} -- ours, but not the alpha pin: preserved
         }
       }
       migrate c, nil, schema.CONFIG_SCHEMA_ID_CURRENT
       ut\assertEquals c.modules["l0.DependencyControl"].lastChannel, "stable"
       ut\assertEquals c.modules["l0.DependencyControl"].activeChannel, "stable"
-      ut\assertEquals c.modules["l0.Functional"].lastChannel, "alpha"              -- third-party pin preserved
+      ut\assertEquals c.modules["l0.Functional"].lastChannel, "alpha" -- third-party pin preserved
       ut\assertEquals c.macros["l0.DependencyControl.Toolbox"].lastChannel, "beta" -- non-alpha pin preserved
 
     -- the migration handles exactly the v0.6.3 keys: each is either lifted or dropped, and nothing else is

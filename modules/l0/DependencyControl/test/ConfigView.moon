@@ -2,7 +2,7 @@
 -- Called from Tests.moon as: (require "...test.ConfigView")!
 ->
   ConfigHandler = require "l0.DependencyControl.ConfigHandler"
-  ConfigView    = require "l0.DependencyControl.ConfigView"
+  ConfigView = require "l0.DependencyControl.ConfigView"
 
   {
     _description: "Tests for the ConfigView hive accessor and defaults proxy."
@@ -49,14 +49,14 @@
 
     isOverlappingView_root: (ut) ->
       handler = ConfigHandler nil
-      root  = ConfigView handler, {}
+      root = ConfigView handler, {}
       child = ConfigView handler, {"section"}
       ut\assertTrue root\isOverlappingView child
 
     isOverlappingView_overlap: (ut) ->
       handler = ConfigHandler nil
       parent = ConfigView handler, {"a", "b"}
-      child  = ConfigView handler, {"a", "b", "c"}
+      child = ConfigView handler, {"a", "b", "c"}
       ut\assertTrue parent\isOverlappingView child
 
     isOverlappingView_disjoint: (ut) ->
@@ -90,10 +90,10 @@
     -- flat->sectioned config migration leaves partial sections behind, so this guards against nil reads)
     config_partialSectionFallsThrough: (ut) ->
       handler = ConfigHandler nil
-      handler.config = {section: {nested: {a: "userA"}}}   -- only 'a' is set within 'nested'
+      handler.config = {section: {nested: {a: "userA"}}} -- only 'a' is set within 'nested'
       view = ConfigView handler, {"section"}, {nested: {a: "defA", b: "defB"}}
-      ut\assertEquals view.config.nested.a, "userA"   -- a user-set key wins
-      ut\assertEquals view.config.nested.b, "defB"    -- an unset sibling falls through to the default
+      ut\assertEquals view.config.nested.a, "userA" -- a user-set key wins
+      ut\assertEquals view.config.nested.b, "defB" -- an unset sibling falls through to the default
 
     -- writing into a partial section targets the user section only, never materializing the other defaults
     config_writeIntoPartialSection: (ut) ->
@@ -101,9 +101,9 @@
       handler.config = {section: {nested: {a: "userA"}}}
       view = ConfigView handler, {"section"}, {nested: {a: "defA", b: "defB"}}
       view.config.nested.b = "newB"
-      ut\assertEquals view.userConfig.nested.b, "newB"    -- written to the user section
-      ut\assertEquals view.userConfig.nested.a, "userA"   -- the existing user value is preserved
-      ut\assertNil rawget view.userConfig.nested, "c"     -- an untouched default is not stored
+      ut\assertEquals view.userConfig.nested.b, "newB" -- written to the user section
+      ut\assertEquals view.userConfig.nested.a, "userA" -- the existing user value is preserved
+      ut\assertNil rawget view.userConfig.nested, "c" -- an untouched default is not stored
 
     -- writing into a section absent from the user config stores only the written key; the section's other
     -- defaults stay in code and keep reading through
@@ -112,9 +112,9 @@
       handler.config = {section: {}}
       view = ConfigView handler, {"section"}, {nested: {a: "defA", b: "defB"}}
       view.config.nested.b = "newB"
-      ut\assertEquals view.userConfig.nested.b, "newB"    -- the user section was created with the written key
-      ut\assertNil rawget view.userConfig.nested, "a"     -- an untouched default is not materialized
-      ut\assertEquals view.config.nested.a, "defA"        -- and still reads through
+      ut\assertEquals view.userConfig.nested.b, "newB" -- the user section was created with the written key
+      ut\assertNil rawget view.userConfig.nested, "a" -- an untouched default is not materialized
+      ut\assertEquals view.config.nested.a, "defA" -- and still reads through
 
     -- a held section view reads and writes the view's live user config, so it stays valid across a
     -- refresh replacing that table
@@ -125,9 +125,9 @@
       held = view.config.nested
       handler.config = {section: {nested: {a: "two"}}}
       view\refresh!
-      ut\assertEquals held.a, "two"                       -- reads the refreshed hive
+      ut\assertEquals held.a, "two" -- reads the refreshed hive
       held.b = "newB"
-      ut\assertEquals view.userConfig.nested.b, "newB"    -- writes land in the refreshed hive
+      ut\assertEquals view.userConfig.nested.b, "newB" -- writes land in the refreshed hive
 
     -- regression: constructing a view must not overwrite a populated section that holds table-valued keys
     -- (a load once silently wiped trusted/blocked/extra feeds this way)
@@ -135,8 +135,8 @@
       handler = ConfigHandler nil
       handler.config = {root: {sect: {list: {"userA"}, mode: "never"}}}
       view = ConfigView handler, {"root"}, {sect: {list: {}, mode: "always"}}
-      ut\assertEquals view.userConfig.sect.list, {"userA"}   -- user list intact, not replaced by default {}
-      ut\assertEquals view.userConfig.sect.mode, "never"     -- user scalar intact, not reset to "always"
+      ut\assertEquals view.userConfig.sect.list, {"userA"} -- user list intact, not replaced by default {}
+      ut\assertEquals view.userConfig.sect.mode, "never" -- user scalar intact, not reset to "always"
 
     -- refresh: re-links userConfig to handler's current hive table
 
@@ -145,7 +145,7 @@
       handler.config = {section: {key: "initial"}}
       view = ConfigView handler, {"section"}
       ut\assertEquals view.userConfig.key, "initial"
-      handler.config.section = {key: "updated"}  -- replace table, not just value
+      handler.config.section = {key: "updated"} -- replace table, not just value
       view\refresh!
       ut\assertEquals view.userConfig.key, "updated"
 
@@ -216,7 +216,7 @@
       handler.config = {section: {key: "value"}}
       newHive = {}
       purgeStub = (ut\stub handler, "purgeHive")\returns newHive
-      saveStub  = (ut\stub handler, "save")\returns true
+      saveStub = (ut\stub handler, "save")\returns true
       view = ConfigView handler, {"section"}
       result = view\delete!
       ut\assertTrue result
@@ -229,11 +229,11 @@
     setFile_registersWithNewHandler: (ut) ->
       old = ConfigHandler nil
       view = ConfigView old, {"config"}
-      old.views[view] = true   -- as getView would register it
+      old.views[view] = true -- as getView would register it
       target = "#{aegisub.decode_path '?temp'}/dc_m12b_setfile.json"
       ut\assertTrue view\setFile target
-      ut\assertTrue view.__configHandler.views[view]   -- registered with the new handler
-      ut\assertNil old.views[view]                      -- and detached from the old one
+      ut\assertTrue view.__configHandler.views[view] -- registered with the new handler
+      ut\assertNil old.views[view] -- and detached from the old one
 
     _order: {
       "new_orphan", "new_withHandler", "new_stringHivePath", "new_tableHivePath",

@@ -2,11 +2,11 @@
 -- Called from Tests.moon as: (require "...test.ConfigHandler")!
 ->
   ConfigHandler = require "l0.DependencyControl.ConfigHandler"
-  ConfigView    = require "l0.DependencyControl.ConfigView"
-  Lock          = require "l0.DependencyControl.Lock"
+  ConfigView = require "l0.DependencyControl.ConfigView"
+  Lock = require "l0.DependencyControl.Lock"
 
   FILEOPS_MODULE_NAME = "l0.DependencyControl.FileOps"
-  JSON_MODULE_NAME    = "json"
+  JSON_MODULE_NAME = "json"
 
   {
     _description: "Tests for the ConfigHandler JSON-backed config manager."
@@ -34,7 +34,7 @@
       result = ConfigHandler\getSerializableCopy t
       ut\assertEquals result.a, 1
       ut\assertEquals type(result.self), "table"
-      ut\assertNil result.self.a  -- circular ref becomes empty table
+      ut\assertNil result.self.a -- circular ref becomes empty table
 
     -- new
 
@@ -62,9 +62,9 @@
       canon = "#{aegisub.decode_path '?temp'}/dc_m12a_get_cache.json"
       (ut\stub FILEOPS_MODULE_NAME, "validateFullPath")\calls (p) -> canon, nil
       h1 = ConfigHandler\get "raw-spelling-one", nil, true
-      h2 = ConfigHandler\get "raw-spelling-two", nil, true   -- validates to the same canonical path
+      h2 = ConfigHandler\get "raw-spelling-two", nil, true -- validates to the same canonical path
       ut\assertNotNil h1
-      ut\assertEquals h1, h2   -- same handler, not a duplicate
+      ut\assertEquals h1, h2 -- same handler, not a duplicate
 
     -- getHive: exercises traverseHive + mergeHive internally
 
@@ -80,7 +80,7 @@
       hive, err = handler\getHive {"section"}
       ut\assertNil err
       ut\assertEquals type(hive), "table"
-      ut\assertEquals type(handler.config.section), "table"  -- path created in config
+      ut\assertEquals type(handler.config.section), "table" -- path created in config
 
     getHive_badParent: (ut) ->
       handler = ConfigHandler nil
@@ -188,15 +188,15 @@
       ut\stub handler.lock, "release"
       (ut\stub FILEOPS_MODULE_NAME, "getAttributes")\returns {attr: "file", path: "/config/test.json"}
       (ut\stub io, "open")\calls -> {read: ((h, f) -> "{}"), close: (->)}
-      (ut\stub JSON_MODULE_NAME, "decode")\returns {config: {flatKey: 1}}  -- legacy: no $schema
+      (ut\stub JSON_MODULE_NAME, "decode")\returns {config: {flatKey: 1}} -- legacy: no $schema
       saveStub = (ut\stub handler, "save")\returns true
       ut\assertTrue handler\load!
-      ut\assertNil captured.current                     -- the legacy file carried no $schema
+      ut\assertNil captured.current -- the legacy file carried no $schema
       ut\assertEquals captured.target, "schema://v2"
-      ut\assertEquals handler.schemaId, "schema://v2"   -- exposed on the handler
-      ut\assertEquals handler.config["$schema"], "schema://v2"  -- stamped into the config
+      ut\assertEquals handler.schemaId, "schema://v2" -- exposed on the handler
+      ut\assertEquals handler.config["$schema"], "schema://v2" -- stamped into the config
       ut\assertTrue handler.config.config.migrated
-      saveStub\assertCalledOnce!                          -- migration persisted
+      saveStub\assertCalledOnce! -- migration persisted
 
     -- load skips migration (and the persist) when the file already carries the target $schema
     load_skipsMigrationWhenSchemaMatches: (ut) ->
@@ -213,7 +213,7 @@
       (ut\stub JSON_MODULE_NAME, "decode")\returns {["$schema"]: "schema://v2", config: {}}
       saveStub = (ut\stub handler, "save")\returns true
       ut\assertTrue handler\load!
-      ut\assertFalse migrated                    -- current == target: callback never invoked
+      ut\assertFalse migrated -- current == target: callback never invoked
       ut\assertEquals handler.schemaId, "schema://v2"
       saveStub\assertNotCalled!
 
@@ -306,8 +306,8 @@
       view = ConfigView handler, {"section"}
       newHive = handler\purgeHive view
       ut\assertEquals type(newHive), "table"
-      ut\assertNil newHive.key            -- original content cleared
-      ut\assertEquals handler.config.other.x, 1  -- sibling section untouched
+      ut\assertNil newHive.key -- original content cleared
+      ut\assertEquals handler.config.other.x, 1 -- sibling section untouched
 
     _order: {
       "getSerializableCopy_simple", "getSerializableCopy_privateKeys",

@@ -2,7 +2,7 @@
 -- (getAutomationDir, getTestDir, flatten, getObjectHash).
 -- Called from Tests.moon as: (require "...test.Common") basePath
 (basePath) ->
-  ffi    = require "ffi"
+  ffi = require "ffi"
   Common = require "l0.DependencyControl.Common"
 
   {
@@ -170,7 +170,7 @@
         t = {:x}
         t.self = t
         t
-      ut\assertFalse Common.equals cyc(1), cyc(2)   -- a differing sibling key still makes them unequal
+      ut\assertFalse Common.equals cyc(1), cyc(2) -- a differing sibling key still makes them unequal
       ut\assertTrue Common.equals cyc(1), cyc(1)
 
     -- itemsEqual counts occurrences, so duplicate scalar items match by multiplicity
@@ -184,7 +184,7 @@
       s = "a-mo.Line[1] (v2)+?*^$%"
       escaped = Common.escapePattern s
       ut\assertEquals (s\find escaped), 1
-      ut\assertNil ("amo.Line[1] (v2)+?*^$%")\find "^" .. escaped   -- hyphen no longer quantifies
+      ut\assertNil ("amo.Line[1] (v2)+?*^$%")\find "^" .. escaped -- hyphen no longer quantifies
 
     escapePattern_plainStringUnchanged: (ut) ->
       ut\assertEquals Common.escapePattern("l0_Functional"), "l0_Functional"

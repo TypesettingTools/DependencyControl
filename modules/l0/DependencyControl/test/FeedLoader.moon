@@ -3,16 +3,16 @@
 -- Called from test.moon as: (require "…test.FeedLoader") basePath, DepCtrl
 (basePath, DepCtrl) ->
   FeedLoader = require "l0.DependencyControl.FeedLoader"
-  FileOps =    require "l0.DependencyControl.FileOps"
-  constants =  require "l0.DependencyControl.Constants"
+  FileOps = require "l0.DependencyControl.FileOps"
+  constants = require "l0.DependencyControl.Constants"
 
   url = "https://example.com/feed.json"
 
   -- a FeedLoader over a temp cache base; opts override the config's feed settings
   make = (opts = {}) ->
     config = {c: {
-      paths:   {cache: FileOps.joinPath basePath, "feedloader"}
-      feeds:   {cacheMaxAge: opts.cacheMaxAge or 4242}
+      paths: {cache: FileOps.joinPath basePath, "feedloader"}
+      feeds: {cacheMaxAge: opts.cacheMaxAge or 4242}
       updates: {blockPrivateHosts: opts.blockPrivateHosts}
     }}
     FeedLoader config, DepCtrl.logger
@@ -33,7 +33,7 @@
       feed = loader\load url, {autoLoad: false}
       ut\assertIs feed.config.cache, loader.cache
       ut\assertTrue feed.config.blockPrivateHosts
-      ut\assertNil feed.data   -- autoLoad off: constructed but not fetched
+      ut\assertNil feed.data -- autoLoad off: constructed but not fetched
 
     _order: {
       "new_opensFeedCacheUnderNamespace", "load_wiresSharedCacheAndPolicy"

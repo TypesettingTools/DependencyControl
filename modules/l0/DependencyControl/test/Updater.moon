@@ -133,7 +133,7 @@
         hasLock: false, config: {c: {updates: {waitTimeout: 5}}}, logger: makeNullLogger!
         tasks: {[Common.ScriptType.Module]: {}}
         feedLoader: {cache: {expireAll: ->}}
-        lock: fakeLock   -- pre-set so the lazy `@lock or= Lock{…}` in acquireLock skips construction
+        lock: fakeLock -- pre-set so the lazy `@lock or= Lock{…}` in acquireLock skips construction
       }
       ut\assertTrue Updater.acquireLock updater, false
       ut\assertTrue updater.hasLock
@@ -220,7 +220,7 @@
         logger: makeNullLogger!
         config: {c: {updates: {mode: ContextCeiling.UserRequested}, paths: {cache: "?user/cache"}}}
       }
-      task, code = Updater.addTask makeUpdater!, record, "1.0.0"   -- default reason: AutoUpdate
+      task, code = Updater.addTask makeUpdater!, record, "1.0.0" -- default reason: AutoUpdate
       ut\assertNil task
       ut\assertEquals code, UpdateStatus.UpdaterDisabled
       task = Updater.addTask makeUpdater!, record, "1.0.0", nil, nil, nil, UpdateReason.UserRequested
@@ -251,11 +251,11 @@
     isEnabledFor_modeGatesByContext: (ut) ->
       make = (mode) -> stubSelf Updater, {config: {c: {updates: {:mode}}}}
       ut\assertFalse Updater.__isEnabledFor make(ContextCeiling.Off), UpdateReason.UserRequested
-      ut\assertTrue  Updater.__isEnabledFor make(ContextCeiling.UserRequested), UpdateReason.UserRequested
+      ut\assertTrue Updater.__isEnabledFor make(ContextCeiling.UserRequested), UpdateReason.UserRequested
       ut\assertFalse Updater.__isEnabledFor make(ContextCeiling.UserRequested), UpdateReason.DependencyResolution
-      ut\assertTrue  Updater.__isEnabledFor make(ContextCeiling.DependencyResolution), UpdateReason.DependencyResolution
+      ut\assertTrue Updater.__isEnabledFor make(ContextCeiling.DependencyResolution), UpdateReason.DependencyResolution
       ut\assertFalse Updater.__isEnabledFor make(ContextCeiling.DependencyResolution), UpdateReason.AutoUpdate
-      ut\assertTrue  Updater.__isEnabledFor make(ContextCeiling.AutoUpdate), UpdateReason.AutoUpdate
+      ut\assertTrue Updater.__isEnabledFor make(ContextCeiling.AutoUpdate), UpdateReason.AutoUpdate
 
     _order: {
       "require_upToDateLoadsModule", "require_successReturnsRef", "require_errorPropagates"

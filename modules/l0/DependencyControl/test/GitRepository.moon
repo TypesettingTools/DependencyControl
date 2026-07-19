@@ -11,8 +11,8 @@
     run_returnsOutput: (ut) ->
       git = GitRepository "/some/dir"
       mockHandle = {
-        read:  (h, f) -> "main\n"
-        close: (h)    -> true
+        read: (h, f) -> "main\n"
+        close: (h) -> true
       }
       (ut\stub io, "popen")\returns mockHandle
       ut\assertEquals git\run("rev-parse --abbrev-ref HEAD"), "main"
@@ -20,8 +20,8 @@
     run_nilOnEmptyOutput: (ut) ->
       git = GitRepository "/some/dir"
       mockHandle = {
-        read:  (h, f) -> "   \n"
-        close: (h)    -> true
+        read: (h, f) -> "   \n"
+        close: (h) -> true
       }
       (ut\stub io, "popen")\returns mockHandle
       ut\assertNil git\run "status"

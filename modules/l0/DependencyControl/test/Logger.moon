@@ -87,11 +87,11 @@
     -- a log file that can't be opened disables file logging instead of crashing on every subsequent call
     log_fileOpenFailureDisablesToFile: (ut) ->
       logger = Logger toFile: true, toWindow: false, logDir: "?temp"
-      (ut\stub io, "open")\calls -> nil    -- simulate the log file failing to open
-      ut\stub aegisub, "log"               -- swallow the one-time warning
+      (ut\stub io, "open")\calls -> nil -- simulate the log file failing to open
+      ut\stub aegisub, "log" -- swallow the one-time warning
       ok = pcall -> logger\log 4, "hello"
-      ut\assertTrue ok                     -- no crash
-      ut\assertFalse logger.toFile         -- file logging disabled after the failure
+      ut\assertTrue ok -- no crash
+      ut\assertFalse logger.toFile -- file logging disabled after the failure
 
     -- the usePrefix shorthand configures both sinks (regression: a multi-assign from the
     -- single value left the window flag on its default)
@@ -110,7 +110,7 @@
       logger\progress 50
       logger\progress!
       out = table.concat captured
-      ut\assertContains out, "—— Downloading"     -- the opening chunk keeps its indent
+      ut\assertContains out, "—— Downloading" -- the opening chunk keeps its indent
       bar = out\match "%[(.-)%]"
       ut\assertEquals bar, "■"\rep 10
 
