@@ -89,6 +89,16 @@ Delete on sight any comment built on these tells (they signal you're narrating a
 
 Name a `.moon` file that defines and returns a single class after that class, in PascalCase (`FeedTrust.moon`, `Host.moon`). Name any other file — helpers that return a function or table, FFI shims, and the like — in kebab-case (`resolve-host.moon`, `ffi-posix.moon`). Test files mirror the name of what they test.
 
+## Class or plain table
+
+Reach for a MoonScript `class` only when its instances will carry state or behavior — when the type is genuinely meant to be constructed, now or in the foreseeable future. A module that is only a namespace of stateless functions (optionally alongside `Enum`s or constants) should be a plain table the file returns, not a class. A `class` advertises instantiability to every caller: it makes `Name(...)` a valid constructor and presents the type as constructable to tooling and readers, so using one for a never-constructed namespace hands library users the wrong mental model.
+
+Default to a table, because the upgrade is one-directional. A table of functions upgrades to a class without breaking *callers*: a function invoked as `Mod.fn(args)` becomes a static method `@fn = (args) ->` with the same signature, and gaining a class merely *adds* a constructor. The reverse — retiring a class that callers already construct — breaks them. The upgrade is not entirely free, though. Turning a table into a class renames its file (`hash.moon` → `Hash.moon`) and its require path. But those are internal: a find-replace across our own requirers, not a published surface. So when instances are only a maybe-someday, ship the table now and upgrade if the need actually arrives.
+
+Still give the table a type name with a plain `---@class Name` annotation on the value it returns; that is only a LuaCATS declaration, and with no constructor behind it nothing suggests the type is constructable. File naming follows from the decision (see [File naming](#file-naming)): PascalCase for a class file, kebab-case for a table module — so a stateless utility like `Hash` lives in `hash.moon`, even though that reads oddly next to a class file such as `FileOps.moon`. Some existing all-static classes predate this guidance; treat them as legacy to migrate, not precedent to copy.
+
+A module's **public re-export** is the exception: it is a published surface, unlike its file and require path. Pin it to the name the module would carry as a class — PascalCase — even while the module is a table. Exporting `DependencyControl.Hash` rather than `.hash` costs nothing now and means a later table→class upgrade never renames the accessor. A lowercase export would force a breaking rename (or a permanent deprecated alias) exactly when you upgrade.
+
 ## MoonScript gotchas
 
 **`or=` is a statement, not an expression.** A method whose entire body is `@field or= value` returns `nil`, not the assigned value. Always add an explicit `return @field` after a lazy-init `or=` when the caller expects a return value.

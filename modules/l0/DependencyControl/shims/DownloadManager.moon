@@ -1,6 +1,6 @@
 Downloader = require "l0.DependencyControl.Downloader"
 FileOps = require "l0.DependencyControl.FileOps"
-Crypto = require "l0.DependencyControl.Crypto"
+Hash = require "l0.DependencyControl.hash"
 
 msgs = {
   checkMissingArgs: "Required arguments had the wrong type. Expected string, got '%s' and '%s'."
@@ -79,7 +79,7 @@ class DownloadManager
   ---@return string? err
   checkStringSHA1: (str, expected) =>
     return nil, msgs.checkMissingArgs\format type(str), type(expected) unless type(expected) == "string"
-    actual, err = Crypto.sha1 str -- Crypto validates the payload type
+    actual, err = Hash.getDigest Hash.HashType.Sha1, str -- Hash.getDigest validates the payload type
     return actual, err unless actual
     return true if actual == expected\lower!
     false, msgs.hashMismatch\format actual, expected

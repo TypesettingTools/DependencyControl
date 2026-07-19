@@ -1,6 +1,6 @@
 constants = require "l0.DependencyControl.Constants"
 Common = require "l0.DependencyControl.Common"
-Crypto = require "l0.DependencyControl.Crypto"
+Hash = require "l0.DependencyControl.hash"
 Enum = require "l0.DependencyControl.Enum"
 FeedInventory = require "l0.DependencyControl.FeedInventory"
 FeedTrust = require "l0.DependencyControl.FeedTrust"
@@ -54,7 +54,7 @@ class FeedManager
   ---@param feedUrl string The exact feed URL, as stored (the hash is sensitive to casing and trailing slash).
   ---@return string url The Browser page URL.
   @getBrowserUrl = (feedUrl) ->
-    "#{browserFeedBase}#{Crypto.sha1(feedUrl)\sub 1, 7}/"
+    "#{browserFeedBase}#{Hash.getDigest(Hash.HashType.Sha1, feedUrl)\sub 1, 7}/"
 
   ---The actions the Manage Feeds UI offers for a feed, from its trust state and provenance.
   ---@param entry FeedInventoryEntry The feed to compute the offered actions for.

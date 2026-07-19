@@ -29,7 +29,7 @@ provideBundled "l0.DependencyControl.shims.PreciseTimer", {"PT.PreciseTimer"}, "
 Common = require "l0.DependencyControl.Common"
 ConfigHandler = require "l0.DependencyControl.ConfigHandler"
 ConfigView = require "l0.DependencyControl.ConfigView"
-Crypto = require "l0.DependencyControl.Crypto"
+Hash = require "l0.DependencyControl.hash"
 Downloader = require "l0.DependencyControl.Downloader"
 Enum = require "l0.DependencyControl.Enum"
 EventEmitter = require "l0.DependencyControl.EventEmitter"
@@ -58,7 +58,7 @@ class DependencyControl extends PackageRecord
   @Common = Common
   @ConfigHandler = ConfigHandler
   @ConfigView = ConfigView
-  @Crypto = Crypto
+  @Hash = Hash
   @Downloader = Downloader
   @Enum = Enum
   @EventEmitter = EventEmitter

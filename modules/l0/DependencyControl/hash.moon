@@ -1,17 +1,18 @@
--- Cryptographic / hashing utilities.
--- Uses a fast native SHA-1 when one is available (CommonCrypto on macOS, libcrypto
--- on Linux, the Windows CryptoAPI), and falls back to a pure-Lua implementation
--- otherwise — so it always works, even headless / on platforms without the libs.
+-- Hashing utilities: content digests used for integrity and identity (currently SHA-1).
+-- Uses a fast native SHA-1 when one is available (CommonCrypto on macOS, libcrypto on
+-- Linux, the Windows CryptoAPI), and falls back to a pure-Lua implementation otherwise —
+-- so it always works, even headless / on platforms without the libs.
 
 ffi = require "ffi"
 bit = require "bit"
+Enum = require "l0.DependencyControl.Enum"
 band, bor, bxor, bnot = bit.band, bit.bor, bit.bxor, bit.bnot
 lshift, rol, tobit, tohex = bit.lshift, bit.rol, bit.tobit, bit.tohex
 
 msgs = {
-  sha1: {
-    badPayload: "Expected a string payload to hash, got a '%s'."
-  }
+  badData: "Expected a string payload to hash, got a '%s'."
+  badExpected: "Expected a string hash to compare against, got a '%s'."
+  mismatch: "Hash mismatch. Got %s, expected %s."
 }
 
 -- Formats a 20-byte digest buffer as a 40-character lowercase hex string.
@@ -157,28 +158,57 @@ if ok and native
   if verified and digest == sha1Lua "abc"
     sha1Impl, sha1Backend = native, backendName
 
----Cryptographic / hashing utilities backed by a native SHA-1 where available.
----@class Crypto
-class Crypto
-  -- Name of the active SHA-1 backend ("CommonCrypto"/"OpenSSL"/"CryptoAPI"/"lua").
-  @sha1Backend = sha1Backend
+---@alias HashType
+---| "sha1" # Sha1: SHA-1, a 40-character lowercase hex digest
+HashType = Enum "HashType", { Sha1: "sha1" }
 
-  ---Computes the SHA-1 digest of a string.
-  ---Accepts arbitrary binary data: Lua strings are byte-safe, so any byte sequence
-  ---(e.g. a file read in binary mode) hashes correctly. A raw FFI buffer must be
-  ---converted with ffi.string(buf, len) first.
+-- each supported algorithm's string hasher, keyed by HashType value
+algorithms = { [HashType.Sha1]: sha1Impl }
+
+-- Computes the digest without input validation; shared by getDigest and verify.
+getDigest = (hashType, data) ->
+  valid, err = HashType\validate hashType, "hashType"
+  return nil, err unless valid
+  return nil, msgs.badData\format type(data) unless type(data) == "string"
+  algorithms[hashType] data
+
+---@class Hash
+---@field HashType Enum The hash algorithms `getDigest`/`verify` accept (currently `Sha1`).
+---@field sha1Backend string Name of the active SHA-1 backend: "CommonCrypto", "OpenSSL (EVP)", "OpenSSL (SHA1)", "CryptoAPI", or "lua".
+Hash = {
+  :HashType
+  sha1Backend: sha1Backend
+
+  ---Computes the digest of a string under the given algorithm.
+  ---Accepts arbitrary binary data: Lua strings are byte-safe, so any byte sequence (e.g. a file read
+  ---in binary mode) hashes correctly. A raw FFI buffer must be converted with ffi.string(buf, len) first.
   ---Suitable for file integrity verification; not for security-sensitive use.
-  ---@param msg string The input bytes (may be binary).
-  ---@return string? digest A 40-character lowercase hex digest, or nil on invalid input.
+  ---@param hashType HashType The hash algorithm to use.
+  ---@param data string The input bytes (may be binary).
+  ---@return string? digest A lowercase hex digest, or nil on invalid input.
   ---@return string? err
-  @sha1 = (msg) ->
-    return nil, msgs.sha1.badPayload\format type(msg) unless type(msg) == "string"
-    sha1Impl msg
+  getDigest: getDigest
 
-  ---Computes a SHA-1 digest entirely in Lua; the fallback backend when no native SHA-1 is available.
+  ---Checks whether a string hashes to an expected digest under the given algorithm.
+  ---@param hashType HashType The hash algorithm to use.
+  ---@param data string The input bytes to hash.
+  ---@param expected string The expected hex digest (compared case-insensitively).
+  ---@return boolean? match True on match, false on mismatch, or nil on error.
+  ---@return string? err The mismatch detail or error message.
+  verify: (hashType, data, expected) ->
+    return nil, msgs.badExpected\format type(expected) unless type(expected) == "string"
+    actual, err = getDigest hashType, data
+    return actual, err unless actual
+    return true if actual == expected\lower!
+    false, msgs.mismatch\format actual, expected
+
+  ---Computes a SHA-1 digest entirely in Lua; the fallback backend used when no native SHA-1 is
+  ---available, and the reference the active backend is checked against. Tests read it directly;
+  ---callers should use `get`/`verify`.
   ---@private
   ---@param msg string The input bytes to hash (assumed to be a string; not validated).
   ---@return string digest A 40-character lowercase hex digest.
-  @_sha1Lua = sha1Lua
+  _sha1Lua: sha1Lua
+}
 
-return Crypto
+return Hash

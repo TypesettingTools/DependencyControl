@@ -40,7 +40,7 @@
         f = assert io.open path, "wb"
         f\write makeBytes size
         f\close!
-        sha1 = assert FileOps.getHash path, FileOps.HashType.SHA1
+        sha1 = assert FileOps.getHash path
         fixtures[#fixtures + 1] = {:name, :sha1}
 
       server = MockServerController :serveDir

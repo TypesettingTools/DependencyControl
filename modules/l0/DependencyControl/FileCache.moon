@@ -1,4 +1,4 @@
-Crypto = require "l0.DependencyControl.Crypto"
+Hash = require "l0.DependencyControl.hash"
 FileOps = require "l0.DependencyControl.FileOps"
 Logger = require "l0.DependencyControl.Logger"
 Lock = require "l0.DependencyControl.Lock"
@@ -17,7 +17,7 @@ sanitizeLabel = (label) ->
 
 -- The 7-hex-char SHA-1 slug of a cache key. Deterministic per key (sensitive to its exact bytes), matching
 -- the DepCtrl Browser's feed-URL slug convention.
-keySlug = (key) -> Crypto.sha1(key)\sub 1, 7
+keySlug = (key) -> Hash.getDigest(Hash.HashType.Sha1, key)\sub 1, 7
 
 -- The embedded UTC timestamp of a snapshot file name, for chronological ordering ("" when absent).
 snapshotStamp = (fileName) -> fileName\match "(%d+T%d+Z)" or ""

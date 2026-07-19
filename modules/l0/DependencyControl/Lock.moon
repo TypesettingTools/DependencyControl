@@ -5,7 +5,7 @@ Timer = require "l0.DependencyControl.Timer"
 Logger = require "l0.DependencyControl.Logger"
 Common = require "l0.DependencyControl.Common"
 Enum = require "l0.DependencyControl.Enum"
-Crypto = require "l0.DependencyControl.Crypto"
+Hash = require "l0.DependencyControl.hash"
 FileOps = require "l0.DependencyControl.FileOps"
 Accessors = require "l0.DependencyControl.Accessors"
 Finalizer = require "l0.DependencyControl.Finalizer"
@@ -128,7 +128,7 @@ class Lock
   -- Derives the OS-safe semaphore name token, holder-file path and Global lock-file path
   -- for a tuple.
   deriveNames = (scope, namespace, resource) ->
-    hash = Crypto.sha1 "#{namespace}#{NAMESPACE_RESOURCE_SEPARATOR}#{resource}"
+    hash = Hash.getDigest Hash.HashType.Sha1, "#{namespace}#{NAMESPACE_RESOURCE_SEPARATOR}#{resource}"
     token = scope == Scope.Global and "#{constants.DEPCTRL_SHORT_NAME}_global_#{hash}" or "#{constants.DEPCTRL_SHORT_NAME}_p#{NamedSemaphore.pid}_#{hash}"
     holderFilePath = aegisub.decode_path "?temp/depctrl_lock_#{token}.json"
     lockFilePath = aegisub.decode_path "?temp/depctrl_lock_#{token}.lock"

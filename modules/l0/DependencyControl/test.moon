@@ -18,7 +18,7 @@ UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
   {
     Timer: (controls\requireTest "Timer")!
     BadMutex: (controls\requireTest "BadMutex")!
-    Crypto: (controls\requireTest "Crypto")!
+    Hash: (controls\requireTest "hash")!
     ModuleProvider: (controls\requireTest "ModuleProvider") basePath, DepCtrl
     Downloader: (controls\requireTest "Downloader") basePath
     Common: (controls\requireTest "Common") basePath

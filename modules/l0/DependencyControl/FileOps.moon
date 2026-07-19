@@ -3,8 +3,7 @@ lfs = require "lfs"
 constants = require "l0.DependencyControl.Constants"
 Logger = require "l0.DependencyControl.Logger"
 Common = require "l0.DependencyControl.Common"
-Crypto = require "l0.DependencyControl.Crypto"
-Enum = require "l0.DependencyControl.Enum"
+Hash = require "l0.DependencyControl.hash"
 
 ENOENT = 2 -- POSIX error code for "No such file or directory"
 ENOTDIR = 20 -- POSIX error code for "Not a directory"
@@ -138,10 +137,6 @@ class FileOps
       notAFile: "Can only write to files but supplied path '%s' points to a %s.",
       targetExists: "Target file '%s' already exists."
     }
-    verifyHash: {
-      badHash: "Argument #2 (hash) must be a string, got '%s'."
-      mismatch: "Hash mismatch. Got %s, expected %s."
-    }
     remove: {
       noConfigReschedule: "Couldn't load the FileOps config file (%s) - deletions of %s cannot be rescheduled!"
     }
@@ -184,12 +179,6 @@ class FileOps
     sepAll: ffi.os == "Windows" and "[\\/]" or "/"
     invalidChars: '[<>:"|%?%*%z%c;]'
   }
-  ---@alias FileOpsHashType "sha1"
-
-  -- supported file hash algorithms, keyed by HashType value
-  HashType = Enum "FileOpsHashType", { SHA1: "sha1" }
-  @HashType = HashType
-  hashAlgorithms = { [HashType.SHA1]: Crypto.sha1 }
   @logger = Logger!
 
   -- effective full-path limit; on Windows this depends on whether *this process*
@@ -525,30 +514,26 @@ class FileOps
     return true if success
     return false, msgs.writeFile.failedWrite\format fullPath, msg
 
-  ---Computes the hash of a file's contents.
+  ---Reads a file and computes the hash of its contents.
   ---@param fileName string|string[] Path or path segments to the file to hash.
-  ---@param hashType? FileOpsHashType The hash algorithm to use (default SHA1).
+  ---@param hashType? HashType The hash algorithm to use (default Sha1).
   ---@return string? hexDigest The lowercase hex digest, or nil if an error occurred.
   ---@return string? err An error message if an error occurred.
-  getHash: (fileName, hashType = HashType.SHA1) ->
-    valid, err = HashType\validate hashType, "hashType"
-    return nil, err unless valid
+  getHash: (fileName, hashType = Hash.HashType.Sha1) ->
     data, readErr = FileOps.readFile fileName
     return nil, readErr unless data
-    return hashAlgorithms[hashType] data
+    Hash.getDigest hashType, data
 
-  ---Verifies that a file's contents match an expected hash.
+  ---Reads a file and verifies its contents match an expected hash.
   ---@param fileName string|string[] Path or path segments to the file to verify.
-  ---@param hash string The expected hex digest (case-insensitive).
-  ---@param hashType? FileOpsHashType The hash algorithm to use (default SHA1).
+  ---@param hash string The expected hex digest (compared case-insensitively).
+  ---@param hashType? HashType The hash algorithm to use (default Sha1).
   ---@return boolean? match True on match, false on mismatch, or nil on error.
   ---@return string? err The mismatch detail or error message.
-  verifyHash: (fileName, hash, hashType = HashType.SHA1) ->
-    return nil, msgs.verifyHash.badHash\format type hash unless type(hash) == "string"
-    actual, err = FileOps.getHash fileName, hashType
-    return actual, err unless actual
-    return true if actual == hash\lower!
-    return false, msgs.verifyHash.mismatch\format actual, hash
+  verifyHash: (fileName, hash, hashType = Hash.HashType.Sha1) ->
+    data, readErr = FileOps.readFile fileName
+    return nil, readErr unless data
+    Hash.verify hashType, data, hash
 
   ---Removes a directory, by default together with everything it contains.
   ---@param path string|string[] Path or path segments to the directory to remove.

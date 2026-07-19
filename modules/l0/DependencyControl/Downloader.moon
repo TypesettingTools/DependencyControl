@@ -596,11 +596,11 @@ class Downloader extends EventEmitter
     download = Download url, outfile, @_lastId
 
     if type(sha1) == "string"
-      expected = sha1\lower!
-      -- piggyback on the finish event to verify the downloaded file's hash
+      expected = sha1
+      -- piggyback on the finish event to verify the downloaded file's hash (case-insensitive)
       download\on Download.Event.Finish, (dl) ->
         return unless dl.status == Download.Status.Finished -- only verify successful transfers
-        ok, msg = FileOps.verifyHash dl.outfile, expected, FileOps.HashType.SHA1
+        ok, msg = FileOps.verifyHash dl.outfile, expected
         dl\markFailed msg unless ok
 
     @downloads[#@downloads + 1] = download

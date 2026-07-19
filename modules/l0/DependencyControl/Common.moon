@@ -1,5 +1,5 @@
 ffi = require "ffi"
-Crypto = require "l0.DependencyControl.Crypto"
+Hash = require "l0.DependencyControl.hash"
 Enum = require "l0.DependencyControl.Enum"
 constants = require "l0.DependencyControl.Constants"
 
@@ -361,7 +361,7 @@ class DependencyControlCommon
   ---ignores irrelevant differences. Useful for cheaply detecting whether semantic content changed.
   ---@param value any The value to hash.
   ---@return string hash A 40-character lowercase SHA-1 hex digest.
-  @getObjectHash = (value) -> Crypto.sha1 canonicalize value
+  @getObjectHash = (value) -> Hash.getDigest Hash.HashType.Sha1, canonicalize value
 
   ---Generates a random RFC-4122 version-4 UUID string.
   ---@return string uuid
