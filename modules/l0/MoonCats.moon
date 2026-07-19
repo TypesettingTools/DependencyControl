@@ -9,7 +9,7 @@ FindingCode = Diagnostics.FindingCode
 
 version = DependencyControl {
     name: "MoonCATS"
-    version: "0.1.0"
+    version: "0.7.0"  -- @{l0.MoonCats:version}
     description: "Extracts LuaCATS annotations from MoonScript sources into LuaLS type definitions."
     author: "line0"
     moduleName: "l0.MoonCats"

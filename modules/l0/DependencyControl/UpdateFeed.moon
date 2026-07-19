@@ -12,6 +12,7 @@ SemanticVersion = require "l0.DependencyControl.SemanticVersion"
 ScriptUpdateRecord = require "l0.DependencyControl.ScriptUpdateRecord"
 ScriptTargetFilter = require "l0.DependencyControl.ScriptTargetFilter"
 Accessors = require "l0.DependencyControl.Accessors"
+ReleaseNotes = require "l0.DependencyControl.release-notes"
 JsonSchema = nil
 
 defaultLogger = Logger fileBaseName: "DepCtrl.UpdateFeed"
@@ -166,6 +167,10 @@ class UpdateFeed
         ensureLoaded: {
             noLocalPath: "Local expansion mode require a local feed file path to resolve local path templates against."
         }
+        formatReleaseNotes: {
+            noChannel:    "No version or channel given, and no channel is marked default: true."
+            channelEmpty: "No package advertises a version on channel '%s'."
+        }
         __refreshFiles: {
             noLocalPath: "Feed has no local path required to check file '%s' for changes."
             sha1Failed: "Couldn't compute SHA-1 for file '%s' to check for changes: %s"
@@ -192,6 +197,19 @@ class UpdateFeed
             schemaInvalid: "Feed fails schema validation (format v%s) — continuing anyway."
             wrote:         "Wrote %d updated package(s) to %s."
             noRawData:     "No raw feed data loaded — call loadFile or updateFeed first."
+        }
+        mergeChannels: {
+            noFrom: "No source channel (`from`) given."
+            noTo:   "No destination channel(s) (`to`) given."
+        }
+        bumpVersions: {
+            badLevel:       "Version level must be 'major', 'minor' or 'patch'."
+            noChannel:      "No channel marked default: true; specify a channel."
+            outOfSync:      "Feed is out of sync with the sources; run update-feed first. Stale: %s."
+            unknownPackage: "Unknown package: %s."
+        }
+        __bumpVersionInSource: {
+            markerCount: "Expected exactly one @{%s:version} marker in the package source, found %d."
         }
     }
 
@@ -788,7 +806,7 @@ class UpdateFeed
     ---Loads the feed (unless already loaded), optionally validates it, refreshes the targeted
     ---packages in place and writes the result back to disk. The feed path is the one supplied to
     ---the constructor; pre-load with loadFile() if you need to act on the feed before refresh.
-    ---@param opts? { channel?: string, filter?: ScriptTargetFilter, schemaDir?: string|string[], outPath?: string|boolean, addFiles?: boolean } Options. `outPath` false performs a dry run; nil/true defaults to the loaded feed's source path. `addFiles` appends entries (with computed SHA-1s) for on-disk files missing from the targeted channel; the added names are reported per package in `addedFiles`.
+    ---@param opts? { channel?: string, filter?: ScriptTargetFilter, schemaDir?: string|string[], outPath?: string|boolean, addFiles?: boolean, markReleased?: boolean|string } Options. `outPath` false performs a dry run; nil/true defaults to the loaded feed's source path. `addFiles` appends entries (with computed SHA-1s) for on-disk files missing from the targeted channel; the added names are reported per package in `addedFiles`. `markReleased` stamps a release date on each targeted channel still marked unreleased — a date string sets that date, `true` uses today (UTC).
     ---@return { changed: integer, errored: integer, packages: table[] }|nil stats Per-run statistics, or nil on a fatal load/write error.
     ---@return string? err
     updateFeed: (opts = {}) =>
@@ -839,6 +857,24 @@ class UpdateFeed
                 result.addedFiles or= {}
                 result.addedFiles[#result.addedFiles + 1] = {name: entry.name, type: entry.type}
 
+        -- Stamp the release date on each targeted package's resolved channel when it is still
+        -- unreleased (released is null — cleared on its last content change). A channel that already
+        -- carries a date keeps it, so `released` records when each build actually shipped.
+        if opts.markReleased
+            releaseDate = type(opts.markReleased) == "string" and opts.markReleased or os.date "!%Y-%m-%d"
+            resultsByPackage = {result.scriptType .. "\0" .. result.namespace, result for result in *stats.packages}
+            for pkg, scriptType in @walkPackages filter
+                rawPkg = @rawFeedData[Common.ScriptTypeSection[scriptType]]
+                rawPkg = rawPkg and rawPkg[pkg.namespace]
+                continue unless rawPkg and rawPkg.channels
+                channelName = @@__resolveChannel rawPkg.channels, opts.channel
+                rawChannel = channelName and rawPkg.channels[channelName]
+                continue unless rawChannel
+                continue unless rawChannel.released == nil or rawChannel.released == dkjson.null
+                rawChannel.released = releaseDate
+                result = resultsByPackage[scriptType .. "\0" .. pkg.namespace]
+                result.changed = true if result
+
         for result in *stats.packages
             stats.changed += 1 if result.changed
             stats.errored += 1 if #result.errors > 0
@@ -849,6 +885,255 @@ class UpdateFeed
             @logger\hint msgs.update.wrote, stats.changed, outPath
 
         return stats
+
+    ---Copies channel data from another feed into this one, in place, and writes the result. For each
+    ---package in the source, its `from` channel's raw data is copied into every `to` channel here,
+    ---with each `to` channel's `default` flag set (true only for the given default channel) and its
+    ---release date set when one is supplied. Channels not among `to` are left as they are, so they
+    ---keep their previously published versions; a package missing here is added carrying only the
+    ---`to` channels. Top-level feed metadata and each package's shared (non-channel) fields track the
+    ---source. File hashes are copied verbatim — the `from` channel is assumed already in sync with
+    ---its own source — so no files are read.
+    ---@param source UpdateFeed The loaded feed to copy channel data from.
+    ---@param opts { from: string, to: string[], defaultChannel?: string, released?: string, outPath?: string|boolean } `outPath` false does a dry run; nil/true writes to this feed's own path.
+    ---@return string[]? merged The namespaces whose channels were written, or nil on error.
+    ---@return string? err
+    mergeChannels: (source, opts = {}) =>
+        loaded, err = @ensureLoaded @@ExpansionMode.Local
+        return nil, err unless loaded
+        srcLoaded, srcErr = source\ensureLoaded @@ExpansionMode.Local
+        return nil, srcErr unless srcLoaded
+        return nil, msgs.mergeChannels.noFrom unless opts.from
+        toChannels = opts.to or {}
+        return nil, msgs.mergeChannels.noTo unless #toChannels > 0
+
+        -- Common.deepCopy only accepts a table; feed values are a mix of tables and scalars
+        copyValue = (v) -> type(v) == "table" and Common.deepCopy(v) or v
+
+        merged = {}
+        for section in *Common.ScriptTypeSection.values
+            srcSection = source.rawFeedData[section]
+            continue unless type(srcSection) == "table"
+            @rawFeedData[section] or= {}
+            dstSection = @rawFeedData[section]
+            for ns, srcPkg in pairs srcSection
+                continue unless type(srcPkg) == "table" and srcPkg.channels
+                fromChannel = srcPkg.channels[opts.from]
+                continue unless fromChannel
+                dstPkg = dstSection[ns]
+                unless type(dstPkg) == "table" and dstPkg.channels
+                    dstPkg = {k, copyValue v for k, v in pairs srcPkg when k != "channels"}
+                    dstPkg.channels = {}
+                    dstSection[ns] = dstPkg
+                else
+                    dstPkg[k] = copyValue v for k, v in pairs srcPkg when k != "channels"
+                for toName in *toChannels
+                    entry = Common.deepCopy fromChannel
+                    entry.default = toName == opts.defaultChannel
+                    entry.released = opts.released if opts.released
+                    dstPkg.channels[toName] = entry
+                merged[#merged + 1] = ns
+
+        -- top-level feed metadata (name, baseUrl, templates, vars, knownFeeds, …) tracks the source
+        @rawFeedData[k] = copyValue v for k, v in pairs source.rawFeedData when k != "macros" and k != "modules"
+
+        return merged if opts.outPath == false
+        wrote, writeErr = @__writeRawFeed (opts.outPath == true or opts.outPath == nil) and @feedPath or opts.outPath
+        return nil, writeErr unless wrote
+        return merged
+
+    ---Rewrites the marked version literal (`… "<ver>"  -- @{<namespace>:version}`) in the one source
+    ---file of the given package that carries it. The source files are taken from the loaded (expanded)
+    ---feed, so the feed must have been loaded in Local mode.
+    ---@private
+    ---@param namespace string The package whose marker to rewrite.
+    ---@param newVersion string The version to write into the marked literal.
+    ---@return boolean ok
+    ---@return string? err
+    __bumpVersionInSource: (namespace, newVersion) =>
+        marker = Common.escapePattern "@{#{namespace}:version}"
+        pattern = '"[^"]*"([^"\n]*' .. marker .. ')'
+        sources = {}
+        for section in *Common.ScriptTypeSection.values
+            pkg = @data[section] and @data[section][namespace]
+            continue unless pkg and pkg.channels
+            for _, ch in pairs pkg.channels
+                for file in *ch.files or {}
+                    src = file.localFilePath
+                    sources[src] = true if src and not file.delete and file.type != "test" and src\match "%.moon$"
+        hits = {}
+        for src in pairs sources
+            text, readErr = FileOps.readFile src
+            return false, readErr unless text
+            newText, count = text\gsub pattern, '"' .. newVersion .. '"%1', 1
+            hits[#hits + 1] = {:src, text: newText} if count == 1
+        return false, msgs.__bumpVersionInSource.markerCount\format namespace, #hits unless #hits == 1
+        FileOps.writeFile hits[1].src, hits[1].text, true
+
+    ---Bumps package versions on a channel to the repo's lockstep version: rewrites the marked version
+    ---literal in each affected package's source, sets the channel's version, clears its release date,
+    ---and refreshes its file hashes in place, then writes the feed. The target version is derived from
+    ---the channel's release dates: a released highest version starts a new cycle (bumped by `level`); an
+    ---unreleased one is joined, unless a bigger `level` reaches past it, carrying every package already
+    ---bumped into that cycle up with it so a release never spans two versions. Bailing early if the
+    ---feed's file hashes don't already match the sources keeps the version bump its only feed change.
+    ---@param opts { channel?: string, level: SemverPrecision, namespaces?: string[], allChanged?: boolean, outPath?: string|boolean } `namespaces` or `allChanged` selects what to bump; `outPath` false does a dry run.
+    ---@return { channel: string, target: string, bumped: { namespace: string, from: string, to: string }[] }|nil stats
+    ---@return string? err
+    bumpVersions: (opts = {}) =>
+        loaded, err = @ensureLoaded @@ExpansionMode.Local
+        return nil, err unless loaded
+        return nil, msgs.bumpVersions.badLevel unless opts.level
+
+        channel = opts.channel
+        unless channel
+            for section in *Common.ScriptTypeSection.values
+                for _, pkg in pairs @rawFeedData[section] or {}
+                    continue unless type(pkg) == "table" and pkg.channels
+                    for name, ch in pairs pkg.channels
+                        channel = name if ch.default and not channel
+        return nil, msgs.bumpVersions.noChannel unless channel
+
+        stale = {}
+        for file, _, pkg in @walkFiles!
+            src = file.localFilePath
+            continue unless src and file.sha1 and not file.delete
+            hash = FileOps.getHash src
+            stale[#stale + 1] = "#{pkg.namespace}#{file.name}" unless hash and hash\upper! == file.sha1\upper!
+        if #stale > 0
+            return nil, msgs.bumpVersions.outOfSync\format table.concat(stale, ", ")
+
+        isReleased = (v) -> v != nil and v != dkjson.null
+        packed = (v) -> SemanticVersion(v)\toPacked!
+
+        packages = {}
+        for scriptType in *Common.ScriptType.values
+            section = Common.ScriptTypeSection[scriptType]
+            for ns, pkg in pairs @rawFeedData[section] or {}
+                continue unless type(pkg) == "table" and pkg.channels and pkg.channels[channel]
+                ch = pkg.channels[channel]
+                packages[ns] = {:scriptType, version: ch.version, released: isReleased ch.released}
+
+        inProgress, inPacked, lastReleased, lastPacked = nil, -1, nil, -1
+        for _, p in pairs packages
+            pk = packed p.version
+            inProgress, inPacked = p.version, pk if pk > inPacked
+            lastReleased, lastPacked = p.version, pk if p.released and pk > lastPacked
+        inProgressReleased = false
+        for _, p in pairs packages
+            if p.version == inProgress and p.released
+                inProgressReleased = true
+                break
+
+        bump = (v) ->
+            sv = SemanticVersion v
+            tostring(opts.level == "major" and sv\bumpMajor! or opts.level == "minor" and sv\bumpMinor! or sv\bumpPatch!)
+
+        target = nil
+        if inProgressReleased
+            target = bump inProgress
+        elseif lastReleased
+            candidate = bump lastReleased
+            target = packed(candidate) > inPacked and candidate or inProgress
+        else
+            target = inProgress
+        targetPacked = packed target
+
+        toBump = {}
+        if opts.allChanged
+            for ns, p in pairs packages
+                toBump[ns] = true unless p.released
+        else
+            for ns in *(opts.namespaces or {})
+                return nil, msgs.bumpVersions.unknownPackage\format ns unless packages[ns]
+                toBump[ns] = true
+        if not inProgressReleased and lastReleased and inPacked > lastPacked and targetPacked > inPacked
+            for ns, p in pairs packages
+                toBump[ns] = true if p.version == inProgress and not p.released
+
+        names = [ns for ns in pairs toBump]
+        table.sort names
+
+        bumped = {}
+        for ns in *names
+            p = packages[ns]
+            continue if p.version == target
+            ok, editErr = @__bumpVersionInSource ns, target
+            return nil, editErr unless ok
+            section = Common.ScriptTypeSection[p.scriptType]
+            rawChannel = @rawFeedData[section][ns].channels[channel]
+            rawChannel.version = target
+            rawChannel.released = dkjson.null
+            expanded = @data[section] and @data[section][ns] and @data[section][ns].channels[channel]
+            @__refreshFiles rawChannel, expanded
+            bumped[#bumped + 1] = {namespace: ns, from: p.version, to: target}
+
+        if #bumped > 0 and opts.outPath != false
+            wrote, writeErr = @__writeRawFeed (opts.outPath == true or opts.outPath == nil) and @feedPath or opts.outPath
+            return nil, writeErr unless wrote
+        return {:channel, :target, :bumped}
+
+    ---Renders a GitHub-flavored markdown release body from one version's changelog across every package
+    ---that has entries for it. Marker scopes become bold lead-ins; the package whose name matches the
+    ---feed name is treated as primary, so its unscoped entries render with no lead-in, while other
+    ---packages fall back to their namespace's last segment.
+    ---@param opts? {version?: string, channel?: string, title?: string} Give `version` directly, or a `channel` whose highest advertised version is used; with neither, the channel marked default: true. `title` adds a top-level heading.
+    ---@return string? notes The markdown body (empty string when no package has entries for the version), or nil on error.
+    ---@return string? error
+    formatReleaseNotes: (opts = {}) =>
+        loaded, err = @ensureLoaded!
+        return nil, err unless loaded
+
+        version = opts.version
+        unless version
+            channel = opts.channel or @__defaultChannelName!
+            return nil, msgs.formatReleaseNotes.noChannel unless channel
+            version = @__versionOnChannel channel
+            return nil, msgs.formatReleaseNotes.channelEmpty\format channel unless version
+
+        feedName = @rawFeedData.name
+        packages = {}
+        for section in *{"macros", "modules"}
+            for namespace, pkg in pairs @rawFeedData[section] or {}
+                continue unless type(pkg) == "table" and pkg.channels
+                entries = type(pkg.changelog) == "table" and pkg.changelog[version]
+                entries = {entries} if type(entries) == "string"
+                continue unless type(entries) == "table" and #entries > 0
+                packages[#packages + 1] = {
+                    name: pkg.name
+                    scope: namespace\match "[^.]+$"
+                    primary: pkg.name == feedName
+                    :entries
+                }
+        table.sort packages, (a, b) ->
+            return a.primary if a.primary != b.primary   -- primary package first
+            a.name < b.name
+        ReleaseNotes.renderMarkdown packages, {title: opts.title}
+
+    ---Highest version any package advertises on the given channel.
+    ---@param channel string Channel name to inspect.
+    ---@return string? version The version string, or nil when no package uses the channel.
+    ---@private
+    __versionOnChannel: (channel) =>
+        best = nil
+        for section in *{"macros", "modules"}
+            for _, pkg in pairs @rawFeedData[section] or {}
+                continue unless type(pkg) == "table" and pkg.channels
+                ch = pkg.channels[channel]
+                continue unless ch and ch.version
+                best = ch.version if not best or SemanticVersion\toPacked(ch.version) > SemanticVersion\toPacked(best)
+        best
+
+    ---Name of the channel marked default: true, taken from the first package that declares one.
+    ---@return string? channel The default channel name, or nil when no package marks a default.
+    ---@private
+    __defaultChannelName: =>
+        for section in *{"macros", "modules"}
+            for _, pkg in pairs @rawFeedData[section] or {}
+                continue unless type(pkg) == "table" and pkg.channels
+                name = @@__resolveChannel pkg.channels
+                return name if name
+        nil
 
     ---Copies every file listed in the feed to distDir using the Updater's install layout. A file the feed marks
     ---for deletion (`delete: true`) is removed from distDir if present, rather than deployed.

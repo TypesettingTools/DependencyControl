@@ -1,0 +1,103 @@
+# Reusable workflow to keep the DependencyControl feed of a specified branch in sync with its sources. 
+# It refreshes the feed's file hashes, versions, and provided aliases from the sources and commits the
+# result back, so pull requests only have to author metadata. Uses the depctrl CLI, which is fetched 
+# from the DependencyControl repo.
+#
+# Callers usually trigger it on pushes/PR merges to the default branch. If that branch is protected,
+# pass a GitHub App on its bypass list via the app-client-id input and app-private-key secret. See the
+# README's "Release Automation" section for the one-time App setup.
+#
+# Note: update-feed loads each package's module to read its version, so this suits packages whose
+# sources load in bare CI.
+
+name: Reusable — Update Feed Hashes
+
+on:
+  workflow_call:
+    inputs:
+      branch:
+        description: "Branch to sync and commit back to"
+        type: string
+        default: main
+      depctrl-ref:
+        description: "DependencyControl ref providing the depctrl CLI; 'latest' resolves to its newest release"
+        type: string
+        default: latest
+      app-client-id:
+        description: "Client ID of a GitHub App on the dev branch's bypass list (optional)"
+        type: string
+        default: ""
+    secrets:
+      app-private-key:
+        description: "Private key for app-client-id (optional)"
+        required: false
+
+concurrency:
+  group: update-feed-${{ github.repository }}
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Generate a token from the release App
+        id: app-token
+        if: ${{ inputs.app-client-id != '' }}
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ inputs.app-client-id }}
+          private-key: ${{ secrets.app-private-key }}
+
+      - name: Check out the package repo
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.branch }}
+          token: ${{ steps.app-token.outputs.token || github.token }}
+
+      - name: Resolve the DependencyControl CLI ref
+        id: cli-ref
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          ref="${{ inputs.depctrl-ref }}"
+          if [ "$ref" = "latest" ]; then
+            ref="$(gh api repos/TypesettingTools/DependencyControl/releases/latest --jq .tag_name 2>/dev/null || true)"
+            [ -n "$ref" ] || { echo "::error::Could not resolve the latest DependencyControl release; pin 'depctrl-ref' to a tag or branch."; exit 1; }
+            echo "Using latest DependencyControl release: $ref"
+          fi
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+
+      - name: Check out the DependencyControl CLI
+        uses: actions/checkout@v6
+        with:
+          repository: TypesettingTools/DependencyControl
+          ref: ${{ steps.cli-ref.outputs.ref }}
+          path: _depctrl
+
+      - uses: leafo/gh-actions-lua@v13
+        with:
+          luaVersion: "luajit-2.1.0-beta3"
+          luaCompileFlags: "XCFLAGS=-DLUAJIT_ENABLE_LUA52COMPAT"
+      - uses: leafo/gh-actions-luarocks@v6
+      - run: luarocks install moonscript
+      - run: luarocks install luafilesystem
+      - run: luarocks install argparse
+      - run: luarocks install lua-schema
+      - run: luarocks install lpeg
+
+      - name: Refresh the dev feed and commit any drift
+        run: |
+          set -euo pipefail
+          lua _depctrl/depctrl.lua update-feed
+          if git diff --quiet -- DependencyControl.json; then
+            echo "Feed already in sync with source."
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add DependencyControl.json
+          git commit -m "ci(feed): refresh file hashes and versions [skip ci]"
+          git push origin "HEAD:${{ inputs.branch }}"

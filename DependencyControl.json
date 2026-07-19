@@ -16,7 +16,7 @@
   "vars": {
     "tagSuffix": {
       "alpha": "-alpha",
-      "release": ""
+      "stable": ""
     }
   },
   "maintainer": "line0",
@@ -52,39 +52,15 @@
       "author": "line0",
       "url": "@{baseUrl}#@{namespace}",
       "channels": {
-        "release": {
-          "version": "0.3.0",
+        "main": {
+          "version": "0.7.0",
           "released": null,
           "default": true,
           "files": [
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "F2E05217B8C34B2FFAB02BC458C3F8E20055CAD9"
-            },
-            {
-              "name": ".moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "3865388F0EF9E368187D5E6F6C3CC8400499F885",
-              "type": "test"
-            }
-          ],
-          "requiredModules": [
-            {
-              "moduleName": "l0.DependencyControl",
-              "version": "0.7.0"
-            }
-          ]
-        },
-        "alpha": {
-          "version": "0.3.0",
-          "released": null,
-          "default": false,
-          "files": [
-            {
-              "name": ".moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "F2E05217B8C34B2FFAB02BC458C3F8E20055CAD9"
+              "sha1": "ED79B545D895B0F5509AE7AB6B06AB22CE7E3390"
             },
             {
               "name": ".moon",
@@ -122,8 +98,10 @@
           "Manage Feeds now shows a Fetched column with how long ago each feed was last retrieved into the cache, read straight from the cache so it's visible even before Discover — letting you see at a glance which feeds have recent data.",
           "The Toolbox now ships a DependencyControl unit test suite, adding it to the Run Tests menu.",
           "The startup update sweep no longer reports expected conditions, such as skipping the update of an unmanaged module, as unexpected scheduling errors.",
-          "Fixed the install/uninstall pickers erroring when an installed package's config entry lacks a version or name, as can happen with orphaned or unmanaged records.",
-          "The Toolbox now updates from a `release` channel by default; installations on the previous `alpha` channel are migrated automatically."
+          "Fixed the install/uninstall pickers erroring when an installed package's config entry lacks a version or name, as can happen with orphaned or unmanaged records."
+        ],
+        "0.7.0": [
+          "change: The Toolbox now updates from a `stable` channel by default; installations on the previous `alpha` channel are migrated automatically."
         ]
       }
     }
@@ -135,7 +113,7 @@
       "author": "line0",
       "url": "@{baseUrl}#@{namespace}",
       "channels": {
-        "release": {
+        "main": {
           "version": "0.7.0",
           "released": null,
           "default": true,
@@ -143,7 +121,7 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "B96362A625AF83FADA6FB0F452FBB6BDE76B9711"
+              "sha1": "874F2A0C4E159136F8A1B29703E7897DE9B902A8"
             },
             {
               "name": "/Common.moon",
@@ -258,7 +236,7 @@
             {
               "name": "/Record.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "D0DDF59DFEAE88CD1497A918E9BB01CD62E550C5"
+              "sha1": "F51F6BB24351C3FCC590DB648ECEA19DFB562645"
             },
             {
               "name": "/ScriptTargetFilter.moon",
@@ -268,7 +246,7 @@
             {
               "name": "/ScriptUpdateRecord.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "010977C8F8D5A6C4CB725AADC1DC27DFB08A2022"
+              "sha1": "D02091577898A4C26AA5897768FBD648501AC099"
             },
             {
               "name": "/SemanticVersion.moon",
@@ -294,12 +272,12 @@
             {
               "name": "/UnitTestSuite.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "E6F37750CCCEAF6290DA09C55CEE219D6599F953"
+              "sha1": "4E6316B84D3561B849B5832AF72D522BAAEC93EC"
             },
             {
               "name": "/UpdateFeed.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "CED1C3429CC75FBBBDFB9A6251A03B8AE8503234"
+              "sha1": "ABCF996B3495F792149005535AF79451299E9C28"
             },
             {
               "name": "/UpdateTask.moon",
@@ -364,7 +342,7 @@
             {
               "name": "/config-schema.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "503B592CE2E35ACDCEBC65EE135D6D987C8F7EA6"
+              "sha1": "7462907BFA5ACB1AA910F91B0338A761970B7989"
             },
             {
               "name": "/Finalizer.moon",
@@ -372,9 +350,14 @@
               "sha1": "3E061756BFF7955E705EBD69E1B46F06E5E5F787"
             },
             {
+              "name": "/release-notes.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "96ACBC6E83391D2C11DD0B74D98DF7F9459C5569"
+            },
+            {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "2DFD8FDF75573B8C7A91691D5F942B9FF975CA90",
+              "sha1": "B9F987FB75A51D32EA1CF12B6CE9F89418A6A610",
               "type": "test"
             },
             {
@@ -530,7 +513,7 @@
             {
               "name": "/ScriptUpdateRecord.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "2126448AD1EC7E47736AAE52BB974242C4A84991",
+              "sha1": "14225B3ACF99EF5F0D08D2B1D9A5CB55A8994D7C",
               "type": "test"
             },
             {
@@ -554,7 +537,7 @@
             {
               "name": "/UpdateFeed.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "87D26EAD7E574E90C48CA751A6E32D113C2EC8D0",
+              "sha1": "EEBC21A4C8FAD4E4FB1D06390606D97EC8DBD468",
               "type": "test"
             },
             {
@@ -614,7 +597,7 @@
             {
               "name": "/config-schema.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "9EFA8FCD1386DF9B35FF82A0952870CEA82527F7",
+              "sha1": "4959E3E61477B63DF8E207EC248979B22511345C",
               "type": "test"
             },
             {
@@ -634,521 +617,11 @@
               "url": "@{fileBaseUrl}",
               "sha1": "DCA83BB0D8D0E1EB0A08AF3CD670737B341938EB",
               "type": "test"
-            }
-          ],
-          "provides": [
-            {
-              "name": "BM.BadMutex",
-              "version": "^0.1.3"
-            },
-            {
-              "name": "DM.DownloadManager",
-              "version": "^0.3.1"
-            },
-            {
-              "name": "PT.PreciseTimer",
-              "version": "^0.1.6"
-            }
-          ]
-        },
-        "alpha": {
-          "version": "0.7.0",
-          "released": null,
-          "default": false,
-          "files": [
-            {
-              "name": ".moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "B96362A625AF83FADA6FB0F452FBB6BDE76B9711"
-            },
-            {
-              "name": "/Common.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "551B80B4A1A47119F89AABFC8ECC4E52DDF3F37F"
-            },
-            {
-              "name": "/Constants.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "68762FCCFB4866C951F9506F1BBF2BBA37506FA0"
-            },
-            {
-              "name": "/ConfigHandler.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "844FE28DB95A3FC0C47EBDCE49804FFCD01D6D7A"
-            },
-            {
-              "name": "/ConfigView.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "A520D21D5A6ACFFC21006536070EAD7A64061778"
-            },
-            {
-              "name": "/Crypto.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "6FF844EE6191D2ED86683981F9234B21F196DA3F"
-            },
-            {
-              "name": "/Downloader.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "E0809BA16F1948B6C55A3976630562E91318D7FA"
-            },
-            {
-              "name": "/Enum.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "5BFB3A3B14733BFE17FFF30F3F9D692520A606BF"
-            },
-            {
-              "name": "/EventEmitter.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "033A72C3AD897FBABAB96F198B45BF06C708A01F"
-            },
-            {
-              "name": "/FileCache.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "00559D640E7B9423CB573B263E8F70F511ABA32D"
-            },
-            {
-              "name": "/FeedInventory.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "76544084EC7F2BC8AD9EF5E184354DB98D7520E0"
-            },
-            {
-              "name": "/FeedManager.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "2ED36C4231B3A309819646E266F67FC87A6E2AEB"
-            },
-            {
-              "name": "/FeedTrust.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "97E31E2295DBEDC430B6952C410509C5EFF1B118"
-            },
-            {
-              "name": "/FileLock.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "957BACB8B05540A11E74A255A13529A20A131D73"
-            },
-            {
-              "name": "/FileOps.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "12EAA710F8688A45E35998C524A30C9AEC1CAF9D"
-            },
-            {
-              "name": "/GitRepository.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "133A26FEA5539C40F1E32CD93DA11837BE5A0001"
-            },
-            {
-              "name": "/Host.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "2F94704962A6959C6F853B3D29FEDC490555E375"
-            },
-            {
-              "name": "/JsonSchema.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "63DAA517D0D4A6622CF995DC5B72FFD2656BEB1E"
-            },
-            {
-              "name": "/Lock.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "5DF9CED0D2928DF0B8D6AD5A5CBB006FE5516C0E"
-            },
-            {
-              "name": "/Logger.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "E3497AC7BEA973FD1E88E50B0B2BEBB491392AB2"
-            },
-            {
-              "name": "/ModuleLoader.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "EA1A11F160D1F4F5964BC71E9F2764C3B5091FBE"
-            },
-            {
-              "name": "/ModuleProvider.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "07DC7C3364B68B78D0F9709A2639469AA05BF902"
-            },
-            {
-              "name": "/NamedSemaphore.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "947E15EE629BAF5F0EAA34BC42ED237F62F9D322"
-            },
-            {
-              "name": "/Record.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "D0DDF59DFEAE88CD1497A918E9BB01CD62E550C5"
-            },
-            {
-              "name": "/ScriptTargetFilter.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "4D7EF7B000B49C72A90A442EFF8BC0A40A83CA64"
-            },
-            {
-              "name": "/ScriptUpdateRecord.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "010977C8F8D5A6C4CB725AADC1DC27DFB08A2022"
-            },
-            {
-              "name": "/SemanticVersion.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "CE31F756EEB6B552B07273D82662BBEE5FE37C0A"
-            },
-            {
-              "name": "/Stub.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "AD4653665E0806AE1C3E207A80997DE9BED5B421"
-            },
-            {
-              "name": "/BadMutex.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "6B1C4E43BB588DDD2DE0FF730F3F288C641C535E",
-              "delete": true
-            },
-            {
-              "name": "/Timer.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "73D7D5C0B9D6CDC5623C47C4DA18B45ED823CB8F"
-            },
-            {
-              "name": "/UnitTestSuite.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "E6F37750CCCEAF6290DA09C55CEE219D6599F953"
-            },
-            {
-              "name": "/UpdateFeed.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "CED1C3429CC75FBBBDFB9A6251A03B8AE8503234"
-            },
-            {
-              "name": "/UpdateTask.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "D3AD5F032F73B85A02E822E1A6CBEFB32D511819"
-            },
-            {
-              "name": "/Updater.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "FD4E33AE675284CBD30F05776F32C0008CB73C81"
-            },
-            {
-              "name": "/ZipArchiver.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "70D9E8C5B72FA218D11935009788186A5CB73937"
-            },
-            {
-              "name": "/helpers/ffi-posix.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "972CE60ABA29D4BE64031C8E0FD087CA8EC59966"
-            },
-            {
-              "name": "/helpers/ffi-windows.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "BF0B05684EF8B96B6657C60C4AE6B057A8CBDC55"
-            },
-            {
-              "name": "/helpers/open-url.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "7F8313A28BF027859DA51871CADB384261D63F03"
-            },
-            {
-              "name": "/helpers/resolve-host.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "7A76C6D24EE45467FD16206DE2880AED4C64231B"
-            },
-            {
-              "name": "/shims/BadMutex.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "E492F2D2BFBBDDB66498C6ED8988573279886014"
-            },
-            {
-              "name": "/shims/DownloadManager.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "D34BD0B96AEDCC7462C594C193655545A1B62E90"
-            },
-            {
-              "name": "/shims/PreciseTimer.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "F976BF883F90623D4D71191F1A5E72703A8551BE"
-            },
-            {
-              "name": "/Accessors.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "9C6D9B9C7E6F246D853B7D9EA1E7B108AF419DE5"
-            },
-            {
-              "name": "/FeedLoader.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "AA53AF139648ADDB4767207098B92877DD61119C"
-            },
-            {
-              "name": "/config-schema.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "503B592CE2E35ACDCEBC65EE135D6D987C8F7EA6"
-            },
-            {
-              "name": "/Finalizer.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "3E061756BFF7955E705EBD69E1B46F06E5E5F787"
-            },
-            {
-              "name": ".moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "2DFD8FDF75573B8C7A91691D5F942B9FF975CA90",
-              "type": "test"
-            },
-            {
-              "name": "/BadMutex.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "BDEA61A6DD65512495FD919754E8E14D351A48EE",
-              "type": "test"
-            },
-            {
-              "name": "/Common.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "13A19DB1AA485B34FEFD692C58CEC6F2705012C0",
-              "type": "test"
-            },
-            {
-              "name": "/ConfigHandler.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "D8B410FA8234F1F2281669FF5DA76AEFAA5FDB35",
-              "type": "test"
-            },
-            {
-              "name": "/ConfigView.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "87483D512F2232D69A9BF82AD57D2DBACFA1450E",
-              "type": "test"
-            },
-            {
-              "name": "/Crypto.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "6E17511ED227B9423E331E7121A037828EB9EF18",
-              "type": "test"
-            },
-            {
-              "name": "/Downloader.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "1FDFF6E1AF4D723744C5B2CF1F8DC33BEA6A6990",
-              "type": "test"
-            },
-            {
-              "name": "/Enum.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "1BF9FF97C5668EB5046EE80B24F52F9C53F54A02",
-              "type": "test"
-            },
-            {
-              "name": "/FileCache.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "908F7ED9C709531CE26DD4B54E97ACCAE441C798",
-              "type": "test"
-            },
-            {
-              "name": "/FeedInventory.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "5CC534E23995ABEAE40D72864685DF7B0703DCD5",
-              "type": "test"
-            },
-            {
-              "name": "/FeedManager.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "3CB2C7274069AD3B43BF4710B4F9793A1B569E8F",
-              "type": "test"
-            },
-            {
-              "name": "/FeedTrust.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "57A6E31DC46854193252067E8A0C3249A8B1F32F",
-              "type": "test"
-            },
-            {
-              "name": "/ffi-posix.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "8EFC18D174558ED7AC6F95DA97602D840F963542",
-              "type": "test"
-            },
-            {
-              "name": "/FileLock.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "FDC65E7FD7EB3190C2F7B888A6D48DD6CE3C1407",
-              "type": "test"
-            },
-            {
-              "name": "/FileOps.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "883E8AC0C67E1335584AFA63D0C899EAB7DF0398",
-              "type": "test"
-            },
-            {
-              "name": "/GitRepository.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "F7E43D74EF6574408DFD1B851EF40F18BDB64FFA",
-              "type": "test"
-            },
-            {
-              "name": "/Host.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "9CFC925DBFE62A67B8F884AD82F89E16AB7C14D7",
-              "type": "test"
-            },
-            {
-              "name": "/JsonSchema.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "FF601104CC6FE6F79EBCD396E7A7161C04978C02",
-              "type": "test"
-            },
-            {
-              "name": "/Lock.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "1E9F6E1CCEACB8A8D2698E0766109264E1046A2D",
-              "type": "test"
-            },
-            {
-              "name": "/Logger.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "1A5D6756191762D312DED41115B4D12658B92F60",
-              "type": "test"
-            },
-            {
-              "name": "/ModuleLoader.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "3BD90881DB08DACDB2F88304F66DE3C27DD9D742",
-              "type": "test"
-            },
-            {
-              "name": "/ModuleProvider.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "493E13DF7E008D78DDD93C3E293401034C4652E2",
-              "type": "test"
-            },
-            {
-              "name": "/NamedSemaphore.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "2D773892B9DDB3B58B0EA4A2E0BED2FED8CA5330",
-              "type": "test"
-            },
-            {
-              "name": "/open-url.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "A6ADC29FF30AB670AB2D0D8ED2A18740B591CD66",
-              "type": "test"
-            },
-            {
-              "name": "/Record.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "1DEB899489F22DE7E5309D7EB23E1F17BEA1EBB5",
-              "type": "test"
-            },
-            {
-              "name": "/ScriptTargetFilter.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "278632008FE11ADB967B4761A2BFD1AB344C12B8",
-              "type": "test"
-            },
-            {
-              "name": "/ScriptUpdateRecord.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "2126448AD1EC7E47736AAE52BB974242C4A84991",
-              "type": "test"
-            },
-            {
-              "name": "/SemanticVersion.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "5350264412F0E191B830D5B607462D0B1D9A79FB",
-              "type": "test"
-            },
-            {
-              "name": "/Timer.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "9666CC4536FE09F6382EEDC5C2580280F7912111",
-              "type": "test"
-            },
-            {
-              "name": "/UnitTestSuite.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "637B340273487957B5EF1ECEA69087F0BD1FF1F2",
-              "type": "test"
-            },
-            {
-              "name": "/UpdateFeed.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "87D26EAD7E574E90C48CA751A6E32D113C2EC8D0",
-              "type": "test"
-            },
-            {
-              "name": "/UpdateTask.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "A0B2306AAC5D244CAD7F9FE32A61ECC0B12B16BE",
-              "type": "test"
-            },
-            {
-              "name": "/Updater.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "4032CDE0DD251DAA247A2E84E922D857966D13B5",
-              "type": "test"
-            },
-            {
-              "name": "/ZipArchiver.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "02A5F4F29EBE807A2F1FCB7BF8264CCB44F70FE5",
-              "type": "test"
-            },
-            {
-              "name": "/integration/Downloader.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "7090AF0D0F2DF5A33392AD7C83E0E596EC37C0D7",
-              "type": "test"
-            },
-            {
-              "name": "/integration/ZipArchiver.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "5E6F0364B0DC35F3A6AAC79C23F35F20AD3EF2AC",
-              "type": "test"
-            },
-            {
-              "name": "/helpers/mock-http-server.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "B95A67E6B631826C1018765E5E925C1144341BC3",
-              "type": "test"
-            },
-            {
-              "name": "/helpers/MockHttpServerController.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "C699B32FF02A9600C0C42DE90402EAB99A8A474A",
-              "type": "test"
-            },
-            {
-              "name": "/Accessors.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "A0ADEAF64D6E7485B605D33B8C787D3ECB0541E9",
-              "type": "test"
-            },
-            {
-              "name": "/FeedLoader.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "C8FB1137C1F75D28F219F4BE13000D36E1A08F82",
-              "type": "test"
-            },
-            {
-              "name": "/config-schema.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "9EFA8FCD1386DF9B35FF82A0952870CEA82527F7",
-              "type": "test"
-            },
-            {
-              "name": "/Finalizer.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "10A76A5FC556B3283F1677AD93457C60632A9CD6",
-              "type": "test"
-            },
-            {
-              "name": "/helpers/stub-helpers.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "531AF23A17A2D6B9D73CA462CF4EDDECE5F4EFE0",
-              "type": "test"
             },
             {
-              "name": "/integration/Logger.moon",
+              "name": "/release-notes.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "DCA83BB0D8D0E1EB0A08AF3CD670737B341938EB",
+              "sha1": "0233AE3641CC736EB50AB70322FFBB479CB003A8",
               "type": "test"
             }
           ],
@@ -1228,74 +701,76 @@
           "Logger/UpdateFeed: Fixed chained method calls on file handles (`handle:write():flush()` and `handle:write():close()`) that could silently swallow errors"
         ],
         "0.7.0": [
-          "The previously monolithic `DependencyControl.moon` has been broken up into focused sub-modules as groundwork for a future SQLite-based script registry backend: `Record` (version record management), `ModuleLoader` (module loading and dependency resolution), `SemanticVersion` (version number handling), and `Common` (shared enums and utilities).",
-          "Script types (automation macros vs. modules) and record types are now represented by proper enums (`ScriptType`, `RecordType`) instead of bare booleans, making the API more explicit and extensible.",
-          "UpdateFeed: Fixed two regressions caused by the refactoring, both of which caused the update process to fail.",
-          "Global initialization has been moved into a dedicated setup method, reducing implicit global state for loggers and configuration.",
-          "DepCtrl now refuses to load if the installed Moonscript is below the minimum required version with a helpful error message directing users to update their Aegisub build.",
-          "ModuleLoader: Fixed a regression where DepCtrl init hooks were called again on already-initialized modules, causing errors in modules that mutate their exported state on first call (e.g. BadMutex).",
-          "Common: Fixed a long-standing bug that guaranteed the `capitalize()` function to fail, that  was never caught because it was unused until the refactoring.",
-          "Common: Added the `makeSet()`, `addDefaults()`, `trim()`, and `escapePattern()` utility helpers (building a set from a list, filling in missing table defaults, stripping surrounding whitespace from a string, and escaping Lua pattern magic characters), shared with the Functional module.",
-          "Updater: Fixed a potential issue where a multi-assignment statement could corrupt record fields after an unsuccessful update.",
-          "Automatic update scheduling is now centralized in the DependencyControl Toolbox and runs in a single Aegisub environment at startup, covering all installed scripts including modules not loaded by any automation script. Previously, each automation script's environment scheduled redundant checks for every module it loaded.",
-          "Record: Added `getAllRegisteredRecords()` to expose the full live record registry to tooling.",
-          "Modules with a DependencyControl unit test suite now have their test menus registered automatically by the Toolbox. Automation scripts register their own test menus when they call `registerMacros` through DependencyControl.",
-          "Automation scripts can now ship a DependencyControl unit test suite, just like modules. `registerMacros` accepts an optional table of test exports (the script's internal values to test), which — together with the script's registered macros, now exposed to the suite by name — is passed to the suite's import function.",
-          "Lock: Locks are now per-resource — distinct namespace/resource pairs can be held at the same time instead of contending over a single global mutex — and accept an optional `Global` scope that enforces mutual exclusion across separate Aegisub instances (now used when reading and writing shared config files). A Global lock is backed by an OS advisory file lock that the system releases automatically if the holder crashes, so a crashed process can never leave a config file permanently locked.",
-          "Lock: While a lock is held it records its holder (name, process id, and lease expiry) in a side file for troubleshooting, and logs a warning when it is waiting on a holder whose lease has lapsed (a likely crash or stall). The recorded lease is honored by waiters; an `overrideExpiry` option lets a waiter apply its own expiry instead.",
-          "Lock: Added `renew(threshold)` to extend a held lock's lease during long operations (refreshing only when the remaining lease drops below the threshold, so it is cheap to call from a busy loop), and a `Lock.guard` helper that acquires a lock, runs a function, and always releases it (even if the function errors).",
-          "Updater: The in-progress-update flag is no longer stored in the config file; concurrent updates are now coordinated by a dedicated cross-process lock that the system releases automatically if an updater crashes. The lease is renewed throughout long downloads, and a new `Updater.isRunning()` reports whether (and which script) an update is currently running.",
-          "Timer: Exposed a shared monotonic `Timer.getTime()` clock, added stopwatch-style `start()`, `stop()`, and `reset()` methods, and PT.PreciseTimer is now provided through the same bundled-provider mechanism as BM.BadMutex and DM.DownloadManager (set DEPCTRL_FORCE_BUILTIN_TIMER=1 to force DepCtrl's implementation).",
-          "Updater: Scripts and modules installed in Aegisub's data automation directory (e.g. native modules installed by a system package manager) are no longer updated by DependencyControl — scheduled checks skip them with a debug log, while manual installs/updates and dependency resolution report a descriptive error. Portable / \"Local Config\" setups, where the user and data directories are the same, are unaffected.",
-          "Updater: A required module that no feed offers directly can now be satisfied by installing a module that declares it in `provides`  — for example, a script requiring `json` is satisfied by installing `dkjson`. Providers are only used when no feed offers the module by name; a candidate must be installable on your platform and meet the required version, and a directly-named module is always preferred over a provider. Once a provider is installed for a requirement, it keeps being used and updated instead of switching to a different provider (as long as it can still satisfy the requirement). Feeds can now advertise `provides` per release, and `update-feed` mirrors a module's declared aliases into the feed automatically. A provider can pin a provided alias to an npm-style version range (e.g. `~1.2`), so it keeps satisfying requirements within that range without having to be re-published for every patch release of the provided module.",
-          "Updater: Package sources are now selected by trust to harden against supply-chain attacks. Feeds are consulted closest-first (the feed a script declares for a dependency, then feeds DependencyControl trusts — those in its own feed plus your `extraFeeds` — then any others), and the install is refused if a requirement can only be met from an untrusted feed. Your `extraFeeds` are discovery roots that are also searched for updates, while your `trustedFeeds` only grant trust to feeds reached another way and are never themselves searched. A new `blockedFeeds` config (and an official block list in DependencyControl's own feed) lets a compromised feed be rejected outright. The obsolete `tryAllFeeds` setting and its exhaustive update mode have been removed.",
-          "Updater: When an install would otherwise be refused because it can only be satisfied from an untrusted feed, DependencyControl can now ask you to confirm and either use it just this once, add it to your trusted feeds, or block it outright; and when several equally-ranked packages can satisfy a requirement it can ask you to pick one. How freely it may prompt is controlled by two new settings: `feedTrustPromptThreshold` for trusting an untrusted feed (defaults to prompting in all situations, since it decides whether an update succeeds) and `packageChoicePromptThreshold` for picking between equally-ranked packages (defaults to only actions you start yourself).",
-          "Updater: The package picker now also lets you decide how long your choice should stick — use the source only this once, remember it while it stays available, pin it so DependencyControl never switches silently, or hand the decision back to DependencyControl for good. The remembered choice is stored per package and follows the source across feed-URL changes; a pinned source that becomes unavailable fails a required dependency (so you can fix the pin) and skips an optional one. A new global `offerAllSources` setting offers every eligible source (including lower-ranked and untrusted ones) whenever there's more than one, so you can override the ranking.",
-          "Unit test framework: `assertContains` now honors its case-insensitive option (it previously always compared case-sensitively) and reports a proper message when the assertion fails.",
-          "Unit test framework: a failing test-class setup is now reported as a failure instead of aborting the entire test run with an internal error.",
-          "Unit test framework: a failing `assertNegative` now says \"negative\" rather than \"positive\" in its message.",
-          "Updater: the temporary download directory is now removed after a successful install instead of being left behind.",
-          "FileOps: `mkdir` no longer reports success when the directory could not actually be created.",
-          "Logger: the download progress bar now fills incrementally instead of jumping from empty to full at the halfway point.",
-          "Unit test framework: a failing `assertPositive`/`assertNegative` no longer errors while formatting its failure message.",
-          "Disabling updates is now fully honored: it also prevents installing or updating modules on demand, not just scheduled background update checks.",
-          "Updater: Feed and package downloads now refuse hosts that resolve to a private, loopback, or link-local address (an SSRF safeguard), controlled by the new `blockPrivateHosts` setting (on by default; turn it off to use feeds on your local network).",
-          "Added `FeedInventory` and `FeedManager` — building blocks that list the feeds DependencyControl knows about, each with its provenance and trust status, and apply feed-trust actions. They back the Toolbox's new Manage Feeds macro and are available to other tooling.",
-          "Feed discovery can now follow feeds' advertised `knownFeeds` transitively to surface feeds beyond the ones you've configured, with untrusted expansion bounded so a hostile feed can't drive unbounded fetches (new `fetchUntrustedFeeds` and `crawlLimits` settings).",
-          "Fetched feeds are now cached to disk as timestamped snapshots (under `?user/cache/l0.DependencyControl/feeds`), so a recently-fetched feed is served from the cache instead of being re-downloaded, and a failed fetch falls back to the last cached copy for offline resilience. The freshness window is configurable via the new `cacheMaxAge` setting and the location via the shared `cache` path, replacing the former `dumpFeeds` debug dump.",
-          "DependencyControl's settings file is now organized into topic sections (`updates`, `feeds`, `logging`, `paths`), and an existing config is migrated into the new layout automatically on first load, so no manual edits are needed. Several settings were renamed for consistency in the process (e.g. `updaterEnabled` became `updates.mode`, `updaterBlockPrivateHosts` became `updates.blockPrivateHosts`, and `feedCacheMaxAge` became `feeds.cacheMaxAge`), and the separate feed-cache directory gave way to a single `paths.cache` location that DependencyControl organizes by namespace internally.",
-          "UpdateFeed: a file marked for deletion in a feed is no longer reported as a missing-source error when deploying, and is now removed from the output directory when present.",
-          "Updater: The on/off switch grew into an update mode: `updates.mode` takes 'off', 'user-requested', 'dependency-resolution', or 'auto-update' to control which contexts may install and update — for example, disable background update checks while still allowing manual installs and dependency resolution. An existing `updaterEnabled` setting migrates automatically ('auto-update' when true, 'off' when false). The two prompt-threshold settings now take the same context values in place of their former numeric levels, plus 'off' to disable a prompt kind entirely.",
-          "Unit test framework: Added `ut\\skip(reason)` to skip a single test from within its body — it aborts the test and is reported as skipped (with the reason) instead of passed or failed.",
-          "Unit test framework: A test class's `_order` now sets only the run and report order; a test omitted from it still runs (appended after the listed ones) instead of being silently skipped. Use `ut\\skip` to skip a test.",
-          "SemanticVersion can now be used as a version value object: construct it from a version string or from major/minor/patch components, compare instances with the standard operators, read its major/minor/patch, produce bumped copies, and test it against a version range. The static helpers additionally accept an instance anywhere they take a version.",
-          "Added the Accessors module: a class can declare metatable-backed get/set computed properties through one standardized transform (instead of hand-rolling metatable code), and each property is recorded on the class for inspection tooling. Available to other tooling built on DependencyControl.",
-          "Record: a record's version is now backed by a SemanticVersion value object, exposed as `record.semanticVersion` for the richer version API; `record.version` continues to return the packed integer as before.",
-          "The config file now stores each installed script's version as a semantic version string (e.g. \"1.2.3\") instead of a packed integer, so it is readable at a glance; existing configs are migrated automatically on first load.",
-          "Update feed format v0.4.0: per-file-type URL and local path templates (fileBaseUrls/localFileBasePaths) can be set once at the feed root or on a macros/modules section container and roll down to every package, so file locations no longer need to be repeated per package. The single-string fileBaseUrl/localFileBasePath properties keep working unchanged and act as the fallback for file types without a map entry.",
-          "Update feed format v0.4.0: feeds can define their own template variables in a root-level vars object, including lookup tables indexed by a computed key (e.g. @{tagSuffix:@{channel}} to derive per-channel release-tag names), and the new @{scriptType}/@{scriptTypeSection} variables expose each package's script type and feed section to templates.",
-          "The update-feed CLI task can now discover files present on disk but missing from the feed and add complete entries for them (--add-files), by inverting the feed's per-file-type local path templates. A new UpdateFeed.findUnlistedFiles() exposes the discovery to other tooling.",
-          "The CLI gained a generate-types task that extracts the LuaCATS annotations from a feed's module sources into LuaLS .d.lua type-definition files (for IntelliSense and API-doc generation), powered by the new l0.MoonCats module; its --check flag turns it into an annotation linter that reports missing or mismatched annotations without writing anything.",
-          "The CLI gained a generate-docs task that renders browsable API documentation from a feed's module sources: one markdown page per module with MoonScript and Lua call forms, typed parameter tables, cross-linked types, and enum documentation, plus ready-to-serve mkdocs or mdBook site scaffolding (--site) and an --include-private switch for contributor-facing builds.",
-          "Uninstalling a package no longer removes files belonging to a sibling package whose name shares a prefix (e.g. uninstalling l0.Functional could delete a module named l0.FunctionalExtras along with all of its files), and namespaces containing hyphens now match only their own files during uninstall.",
-          "Fixed installations and updates inside Aegisub failing with 'failed to create temporary download directory ... (unknown error)': Aegisub's bundled lfs signals mkdir/rmdir success differently from stock LuaFileSystem, which the directory-creation error checking misread as a failure.",
-          "Update and install progress messages no longer read 'Starting nil of ...' for already-installed packages.",
-          "Logger: the log window no longer repeats the indentation prefix inside incrementally written output such as the download progress bar (log files were unaffected).",
-          "SemanticVersion: toString no longer errors on nil or SemanticVersion-instance inputs; nil renders as \"0.0.0\".",
-          "Unit test framework: fixed a cluster of broken assertions — assertItemsEqual/assertItemsAre report a proper failure message and type-check their expected argument, assertContinuous actually checks table keys for continuity (it previously counted integer values), assertNotAlmostEquals reports its own message instead of the assertAlmostEquals text, and assertError no longer over-counts a non-raising function's returned values.",
-          "Unit test framework: ut\\stub now works inside a class's _setup — setup stubs stay in effect for the whole class including its teardown and are restored when the class finishes. Previously, stubbing in a _setup crashed the test run.",
-          "Unit test framework: aborting a run on the first failure now records the suite's end time and result, fixing missing timings in the CTRF report.",
-          "Updater and installer messages read correctly again: 'Couldn't installation module ...' became 'Couldn't complete the installation of module ...', dependency-resolution errors no longer print 'of nil Module', and passing a macro to Updater.require reports its proper error instead of an empty diagnostic.",
-          "A missing optional dependency is reported by checkOptionalModules again — a failed optional install was mislabeled as updated and never surfaced.",
-          "A module whose DependencyControl initializer fails now reports the module's name and the actual error; both were previously dropped from the message.",
-          "Logger: the usePrefix option now applies to both the log file and the log window; the window previously kept its default.",
-          "Lock: waiting on a lock logs one trace line per acquisition instead of one per poll, unbounded waits no longer print 'Timeout in -9223372036854775808ms', a stale holder is warned about once instead of every 250ms, and tryLock no longer reports wait time it never spent.",
-          "Updater: skipped-optional-dependency log messages no longer swap the dependency's name with the word 'installation'/'update' (previously e.g. 'Skipped Yutils of optional dependency installation').",
-          "Updater: when a module can't be installed because one of its own required modules couldn't be satisfied, the error now names the failing sub-requirement and its reason, instead of ending at 'because its requirements could not be satisfied:' with no further detail.",
-          "The settings file now stores only the values you have actually changed: writing one setting no longer copies the rest of its section's defaults into the file, so default changes in DependencyControl updates take effect without manual config cleanup.",
-          "UpdateFeed: the feed-loading methods now uniformly return nil plus an error message on failure — fetch previously returned false, and ensureLoaded could return either shape. Code that checks the result for truthiness is unaffected.",
-          "Scripts using DependencyControl no longer pause for half a second while loading: the wait that spread the random seed apart across simultaneously loading scripts is gone, replaced by a monotonic-clock seed that is unique per script environment on its own.",
-          "DependencyControl and its Toolbox now update from a `release` channel by default, with the previous `alpha` channel kept for pre-release builds. Existing installations pinned to `alpha` are moved to `release` automatically the first time v0.7.0 loads."
+          "change: The previously monolithic `DependencyControl.moon` has been broken up into focused sub-modules as groundwork for a future SQLite-based script registry backend: `Record` (version record management), `ModuleLoader` (module loading and dependency resolution), `SemanticVersion` (version number handling), and `Common` (shared enums and utilities).",
+          "change: Script types (automation macros vs. modules) and record types are now represented by proper enums (`ScriptType`, `RecordType`) instead of bare booleans, making the API more explicit and extensible.",
+          "fix(UpdateFeed): Fixed two regressions caused by the refactoring, both of which caused the update process to fail.",
+          "change: Global initialization has been moved into a dedicated setup method, reducing implicit global state for loggers and configuration.",
+          "change!: DepCtrl now refuses to load if the installed Moonscript is below the minimum required version with a helpful error message directing users to update their Aegisub build.",
+          "fix(ModuleLoader): Fixed a regression where DepCtrl init hooks were called again on already-initialized modules, causing errors in modules that mutate their exported state on first call (e.g. BadMutex).",
+          "fix(Common): Fixed a long-standing bug that guaranteed the `capitalize()` function to fail, that  was never caught because it was unused until the refactoring.",
+          "feat(Common): Added the `makeSet()`, `addDefaults()`, `trim()`, and `escapePattern()` utility helpers (building a set from a list, filling in missing table defaults, stripping surrounding whitespace from a string, and escaping Lua pattern magic characters), shared with the Functional module.",
+          "fix(Updater): Fixed a potential issue where a multi-assignment statement could corrupt record fields after an unsuccessful update.",
+          "change: Automatic update scheduling is now centralized in the DependencyControl Toolbox and runs in a single Aegisub environment at startup, covering all installed scripts including modules not loaded by any automation script. Previously, each automation script's environment scheduled redundant checks for every module it loaded.",
+          "feat(Record): Added `getAllRegisteredRecords()` to expose the full live record registry to tooling.",
+          "feat: Modules with a DependencyControl unit test suite now have their test menus registered automatically by the Toolbox. Automation scripts register their own test menus when they call `registerMacros` through DependencyControl.",
+          "feat: Automation scripts can now ship a DependencyControl unit test suite, just like modules. `registerMacros` accepts an optional table of test exports (the script's internal values to test), which — together with the script's registered macros, now exposed to the suite by name — is passed to the suite's import function.",
+          "change(Lock): Locks are now per-resource — distinct namespace/resource pairs can be held at the same time instead of contending over a single global mutex — and accept an optional `Global` scope that enforces mutual exclusion across separate Aegisub instances (now used when reading and writing shared config files). A Global lock is backed by an OS advisory file lock that the system releases automatically if the holder crashes, so a crashed process can never leave a config file permanently locked.",
+          "feat(Lock): While a lock is held it records its holder (name, process id, and lease expiry) in a side file for troubleshooting, and logs a warning when it is waiting on a holder whose lease has lapsed (a likely crash or stall). The recorded lease is honored by waiters; an `overrideExpiry` option lets a waiter apply its own expiry instead.",
+          "feat(Lock): Added `renew(threshold)` to extend a held lock's lease during long operations (refreshing only when the remaining lease drops below the threshold, so it is cheap to call from a busy loop), and a `Lock.guard` helper that acquires a lock, runs a function, and always releases it (even if the function errors).",
+          "change(Updater): The in-progress-update flag is no longer stored in the config file; concurrent updates are now coordinated by a dedicated cross-process lock that the system releases automatically if an updater crashes. The lease is renewed throughout long downloads, and a new `Updater.isRunning()` reports whether (and which script) an update is currently running.",
+          "feat(Timer): Exposed a shared monotonic `Timer.getTime()` clock, added stopwatch-style `start()`, `stop()`, and `reset()` methods, and PT.PreciseTimer is now provided through the same bundled-provider mechanism as BM.BadMutex and DM.DownloadManager (set DEPCTRL_FORCE_BUILTIN_TIMER=1 to force DepCtrl's implementation).",
+          "change(Updater): Scripts and modules installed in Aegisub's data automation directory (e.g. native modules installed by a system package manager) are no longer updated by DependencyControl — scheduled checks skip them with a debug log, while manual installs/updates and dependency resolution report a descriptive error. Portable / \"Local Config\" setups, where the user and data directories are the same, are unaffected.",
+          "feat(Updater): A required module that no feed offers directly can now be satisfied by installing a module that declares it in `provides`  — for example, a script requiring `json` is satisfied by installing `dkjson`. Providers are only used when no feed offers the module by name; a candidate must be installable on your platform and meet the required version, and a directly-named module is always preferred over a provider. Once a provider is installed for a requirement, it keeps being used and updated instead of switching to a different provider (as long as it can still satisfy the requirement). Feeds can now advertise `provides` per release, and `update-feed` mirrors a module's declared aliases into the feed automatically. A provider can pin a provided alias to an npm-style version range (e.g. `~1.2`), so it keeps satisfying requirements within that range without having to be re-published for every patch release of the provided module.",
+          "change(Updater)!: Package sources are now selected by trust to harden against supply-chain attacks. Feeds are consulted closest-first (the feed a script declares for a dependency, then feeds DependencyControl trusts — those in its own feed plus your `extraFeeds` — then any others), and the install is refused if a requirement can only be met from an untrusted feed. Your `extraFeeds` are discovery roots that are also searched for updates, while your `trustedFeeds` only grant trust to feeds reached another way and are never themselves searched. A new `blockedFeeds` config (and an official block list in DependencyControl's own feed) lets a compromised feed be rejected outright. The obsolete `tryAllFeeds` setting and its exhaustive update mode have been removed.",
+          "feat(Updater): When an install would otherwise be refused because it can only be satisfied from an untrusted feed, DependencyControl can now ask you to confirm and either use it just this once, add it to your trusted feeds, or block it outright; and when several equally-ranked packages can satisfy a requirement it can ask you to pick one. How freely it may prompt is controlled by two new settings: `feedTrustPromptThreshold` for trusting an untrusted feed (defaults to prompting in all situations, since it decides whether an update succeeds) and `packageChoicePromptThreshold` for picking between equally-ranked packages (defaults to only actions you start yourself).",
+          "feat(Updater): The package picker now also lets you decide how long your choice should stick — use the source only this once, remember it while it stays available, pin it so DependencyControl never switches silently, or hand the decision back to DependencyControl for good. The remembered choice is stored per package and follows the source across feed-URL changes; a pinned source that becomes unavailable fails a required dependency (so you can fix the pin) and skips an optional one. A new global `offerAllSources` setting offers every eligible source (including lower-ranked and untrusted ones) whenever there's more than one, so you can override the ranking.",
+          "fix(Tests): `assertContains` now honors its case-insensitive option (it previously always compared case-sensitively) and reports a proper message when the assertion fails.",
+          "fix(Tests): a failing test-class setup is now reported as a failure instead of aborting the entire test run with an internal error.",
+          "fix(Tests): a failing `assertNegative` now says \"negative\" rather than \"positive\" in its message.",
+          "fix(Updater): the temporary download directory is now removed after a successful install instead of being left behind.",
+          "fix(FileOps): `mkdir` no longer reports success when the directory could not actually be created.",
+          "fix(Logger): the download progress bar now fills incrementally instead of jumping from empty to full at the halfway point.",
+          "fix(Tests): a failing `assertPositive`/`assertNegative` no longer errors while formatting its failure message.",
+          "fix: Disabling updates is now fully honored: it also prevents installing or updating modules on demand, not just scheduled background update checks.",
+          "feat(Updater): Feed and package downloads now refuse hosts that resolve to a private, loopback, or link-local address (an SSRF safeguard), controlled by the new `blockPrivateHosts` setting (on by default; turn it off to use feeds on your local network).",
+          "feat: Added `FeedInventory` and `FeedManager` — building blocks that list the feeds DependencyControl knows about, each with its provenance and trust status, and apply feed-trust actions. They back the Toolbox's new Manage Feeds macro and are available to other tooling.",
+          "feat: Feed discovery can now follow feeds' advertised `knownFeeds` transitively to surface feeds beyond the ones you've configured, with untrusted expansion bounded so a hostile feed can't drive unbounded fetches (new `fetchUntrustedFeeds` and `crawlLimits` settings).",
+          "feat: Fetched feeds are now cached to disk as timestamped snapshots (under `?user/cache/l0.DependencyControl/feeds`), so a recently-fetched feed is served from the cache instead of being re-downloaded, and a failed fetch falls back to the last cached copy for offline resilience. The freshness window is configurable via the new `cacheMaxAge` setting and the location via the shared `cache` path, replacing the former `dumpFeeds` debug dump.",
+          "change: DependencyControl's settings file is now organized into topic sections (`updates`, `feeds`, `logging`, `paths`), and an existing config is migrated into the new layout automatically on first load, so no manual edits are needed. Several settings were renamed for consistency in the process (e.g. `updaterEnabled` became `updates.mode`, `updaterBlockPrivateHosts` became `updates.blockPrivateHosts`, and `feedCacheMaxAge` became `feeds.cacheMaxAge`), and the separate feed-cache directory gave way to a single `paths.cache` location that DependencyControl organizes by namespace internally.",
+          "fix(UpdateFeed): a file marked for deletion in a feed is no longer reported as a missing-source error when deploying, and is now removed from the output directory when present.",
+          "change(Updater): The on/off switch grew into an update mode: `updates.mode` takes 'off', 'user-requested', 'dependency-resolution', or 'auto-update' to control which contexts may install and update — for example, disable background update checks while still allowing manual installs and dependency resolution. An existing `updaterEnabled` setting migrates automatically ('auto-update' when true, 'off' when false). The two prompt-threshold settings now take the same context values in place of their former numeric levels, plus 'off' to disable a prompt kind entirely.",
+          "feat(Tests): Added `ut\\skip(reason)` to skip a single test from within its body — it aborts the test and is reported as skipped (with the reason) instead of passed or failed.",
+          "change(Tests): A test class's `_order` now sets only the run and report order; a test omitted from it still runs (appended after the listed ones) instead of being silently skipped. Use `ut\\skip` to skip a test.",
+          "feat(SemanticVersion): SemanticVersion can now be used as a version value object: construct it from a version string or from major/minor/patch components, compare instances with the standard operators, read its major/minor/patch, produce bumped copies, and test it against a version range. The static helpers additionally accept an instance anywhere they take a version.",
+          "feat: Added the Accessors module: a class can declare metatable-backed get/set computed properties through one standardized transform (instead of hand-rolling metatable code), and each property is recorded on the class for inspection tooling. Available to other tooling built on DependencyControl.",
+          "feat(Record): a record's version is now backed by a SemanticVersion value object, exposed as `record.semanticVersion` for the richer version API; `record.version` continues to return the packed integer as before.",
+          "change: The config file now stores each installed script's version as a semantic version string (e.g. \"1.2.3\") instead of a packed integer, so it is readable at a glance; existing configs are migrated automatically on first load.",
+          "feat: Update feed format v0.4.0: per-file-type URL and local path templates (fileBaseUrls/localFileBasePaths) can be set once at the feed root or on a macros/modules section container and roll down to every package, so file locations no longer need to be repeated per package. The single-string fileBaseUrl/localFileBasePath properties keep working unchanged and act as the fallback for file types without a map entry.",
+          "feat: Update feed format v0.4.0: feeds can define their own template variables in a root-level vars object, including lookup tables indexed by a computed key (e.g. @{tagSuffix:@{channel}} to derive per-channel release-tag names), and the new @{scriptType}/@{scriptTypeSection} variables expose each package's script type and feed section to templates.",
+          "feat: The update-feed CLI task can now discover files present on disk but missing from the feed and add complete entries for them (--add-files), by inverting the feed's per-file-type local path templates. A new UpdateFeed.findUnlistedFiles() exposes the discovery to other tooling.",
+          "feat: The CLI gained a generate-types task that extracts the LuaCATS annotations from a feed's module sources into LuaLS .d.lua type-definition files (for IntelliSense and API-doc generation), powered by the new l0.MoonCats module; its --check flag turns it into an annotation linter that reports missing or mismatched annotations without writing anything.",
+          "feat: The CLI gained a generate-docs task that renders browsable API documentation from a feed's module sources: one markdown page per module with MoonScript and Lua call forms, typed parameter tables, cross-linked types, and enum documentation, plus ready-to-serve mkdocs or mdBook site scaffolding (--site) and an --include-private switch for contributor-facing builds.",
+          "fix: Uninstalling a package no longer removes files belonging to a sibling package whose name shares a prefix (e.g. uninstalling l0.Functional could delete a module named l0.FunctionalExtras along with all of its files), and namespaces containing hyphens now match only their own files during uninstall.",
+          "fix: Fixed installations and updates inside Aegisub failing with 'failed to create temporary download directory ... (unknown error)': Aegisub's bundled lfs signals mkdir/rmdir success differently from stock LuaFileSystem, which the directory-creation error checking misread as a failure.",
+          "fix: Update and install progress messages no longer read 'Starting nil of ...' for already-installed packages.",
+          "fix(Logger): the log window no longer repeats the indentation prefix inside incrementally written output such as the download progress bar (log files were unaffected).",
+          "fix(SemanticVersion): toString no longer errors on nil or SemanticVersion-instance inputs; nil renders as \"0.0.0\".",
+          "fix(Tests): fixed a cluster of broken assertions — assertItemsEqual/assertItemsAre report a proper failure message and type-check their expected argument, assertContinuous actually checks table keys for continuity (it previously counted integer values), assertNotAlmostEquals reports its own message instead of the assertAlmostEquals text, and assertError no longer over-counts a non-raising function's returned values.",
+          "fix(Tests): ut\\stub now works inside a class's _setup — setup stubs stay in effect for the whole class including its teardown and are restored when the class finishes. Previously, stubbing in a _setup crashed the test run.",
+          "fix(Tests): aborting a run on the first failure now records the suite's end time and result, fixing missing timings in the CTRF report.",
+          "fix: Updater and installer messages read correctly again: 'Couldn't installation module ...' became 'Couldn't complete the installation of module ...', dependency-resolution errors no longer print 'of nil Module', and passing a macro to Updater.require reports its proper error instead of an empty diagnostic.",
+          "fix: A missing optional dependency is reported by checkOptionalModules again — a failed optional install was mislabeled as updated and never surfaced.",
+          "fix: A module whose DependencyControl initializer fails now reports the module's name and the actual error; both were previously dropped from the message.",
+          "fix(Logger): the usePrefix option now applies to both the log file and the log window; the window previously kept its default.",
+          "fix(Lock): waiting on a lock logs one trace line per acquisition instead of one per poll, unbounded waits no longer print 'Timeout in -9223372036854775808ms', a stale holder is warned about once instead of every 250ms, and tryLock no longer reports wait time it never spent.",
+          "fix(Updater): skipped-optional-dependency log messages no longer swap the dependency's name with the word 'installation'/'update' (previously e.g. 'Skipped Yutils of optional dependency installation').",
+          "fix(Updater): when a module can't be installed because one of its own required modules couldn't be satisfied, the error now names the failing sub-requirement and its reason, instead of ending at 'because its requirements could not be satisfied:' with no further detail.",
+          "change: The settings file now stores only the values you have actually changed: writing one setting no longer copies the rest of its section's defaults into the file, so default changes in DependencyControl updates take effect without manual config cleanup.",
+          "change(UpdateFeed): the feed-loading methods now uniformly return nil plus an error message on failure — fetch previously returned false, and ensureLoaded could return either shape. Code that checks the result for truthiness is unaffected.",
+          "change: Scripts using DependencyControl no longer pause for half a second while loading: the wait that spread the random seed apart across simultaneously loading scripts is gone, replaced by a monotonic-clock seed that is unique per script environment on its own.",
+          "change: DependencyControl and its Toolbox now update from a `stable` channel by default, with the previous `alpha` channel kept for pre-release builds. Existing installations pinned to `alpha` are moved to `stable` automatically the first time v0.7.0 loads.",
+          "feat: Feed packages are now versioned in lockstep: a release advances only the packages that changed to a single shared repo-level version. The CLI gained a `bump-version` task that picks that version from the feed's release dates and applies it, and an `update-feed --mark-released` option that records which builds have shipped.",
+          "feat: Changelog entries may now carry conventional-commit markers (`feat`/`fix`/`change`, an optional scope, `!` for breaking); the update changelog and generated release notes group them by category and flag breaking changes. The CLI gained `merge-feed` and `release-notes` tasks used by the release workflow."
         ]
       }
     },
@@ -1305,15 +780,15 @@
       "author": "David Kolf",
       "url": "http://dkolf.de/dkjson-lua/",
       "channels": {
-        "release": {
-          "version": "2.10.0",
+        "main": {
+          "version": "0.7.0",
           "released": null,
           "default": true,
           "files": [
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "73EDA9FC07D0F6B4B3713F08262C337B520B69B9"
+              "sha1": "61B9A456F051A2863530433FA401FA551D1FF5DF"
             },
             {
               "name": "/vendor/dkjson.lua",
@@ -1332,8 +807,8 @@
         }
       },
       "changelog": {
-        "2.10.0": [
-          "Vendored dkjson v2.10 with a DependencyControl version record and json/dkjson self-registration."
+        "0.7.0": [
+          "feat: Vendored dkjson v2.10 with a DependencyControl version record and json/dkjson self-registration."
         ]
       }
     },
@@ -1343,20 +818,20 @@
       "author": "line0",
       "url": "@{baseUrl}#@{namespace}",
       "channels": {
-        "release": {
-          "version": "0.1.0",
+        "main": {
+          "version": "0.7.0",
           "released": null,
           "default": true,
           "files": [
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "04D24C3341EE9FCD71652F0F936BE830E1768C1C"
+              "sha1": "8AE3F6F7D23476533F821D2F1E6F1DB73A7CD9FD"
             },
             {
               "name": "/Parser.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "5EE21217ED0BDFBBD1A18EA46AAA11709428A5F1"
+              "sha1": "1686F376FE487BB07A4D68419242134B7E665BE4"
             },
             {
               "name": "/Emitter.moon",
@@ -1376,7 +851,7 @@
             {
               "name": "/DocRenderer.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "E6E72F7ECDD4B8982B041C1CD23B43E7625EB478"
+              "sha1": "C220322634ABE9BFCC475F63499EC011D35F7032"
             },
             {
               "name": ".moon",
@@ -1393,7 +868,7 @@
             {
               "name": "/DocRenderer.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "BED8FE294D2D79B3B31A327CF011EB4EBB06E309",
+              "sha1": "344D061B46992560EB701404B5A38A1F85B314E4",
               "type": "test"
             },
             {
@@ -1418,10 +893,10 @@
         }
       },
       "changelog": {
-        "0.1.0": [
-          "Initial release: extracts LuaCATS annotations from MoonScript sources into LuaLS .d.lua type-definition files, with enum-class synthesis, constructor overloads, cross-module type resolution, and an annotation lint mode.",
-          "Renders API documentation straight from the parsed annotations: one markdown page per module with MoonScript and Lua call forms for every method, constructor parameter tables, cross-linked types, enum member tables with per-value descriptions, deprecation notices, and private members omitted (or badged on request). Emits ready-to-serve mkdocs or mdBook site scaffolding.",
-          "Class fields, enum exports, and instance defaults are declared as typed @field annotations on the class, and re-exported local functions resolve to their full signature and documentation, so both IntelliSense and generated docs show real types instead of placeholders."
+        "0.7.0": [
+          "feat: Initial release: extracts LuaCATS annotations from MoonScript sources into LuaLS .d.lua type-definition files, with enum-class synthesis, constructor overloads, cross-module type resolution, and an annotation lint mode.",
+          "feat: Renders API documentation straight from the parsed annotations: one markdown page per module with MoonScript and Lua call forms for every method, constructor parameter tables, cross-linked types, enum member tables with per-value descriptions, deprecation notices, and private members omitted (or badged on request). Emits ready-to-serve mkdocs or mdBook site scaffolding.",
+          "feat: Class fields, enum exports, and instance defaults are declared as typed @field annotations on the class, and re-exported local functions resolve to their full signature and documentation, so both IntelliSense and generated docs show real types instead of placeholders."
         ]
       }
     }

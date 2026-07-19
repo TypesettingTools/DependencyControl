@@ -46,6 +46,7 @@ UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
     FeedManager:        (controls\requireTest "FeedManager")!
     FileCache:          (controls\requireTest "FileCache") basePath
     ScriptUpdateRecord: (controls\requireTest "ScriptUpdateRecord")!
+    ReleaseNotes:       (controls\requireTest "release-notes")!
     UpdateFeed:         (controls\requireTest "UpdateFeed") basePath, DepCtrl
     GitRepository:      (controls\requireTest "GitRepository")!
     ScriptTargetFilter: (controls\requireTest "ScriptTargetFilter")!

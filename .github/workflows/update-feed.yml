@@ -1,0 +1,26 @@
+name: Update feed hashes
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'modules/**'
+      - 'macros/**'
+      - 'DependencyControl.json'
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    # prevent looping caused by the workflow committing back to main
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+    permissions:
+      contents: write
+    uses: ./.github/workflows/reusable-update-feed.yml
+    with:
+      branch: main
+      depctrl-ref: main   # this repo IS DependencyControl; use its own CLI at main
+      app-client-id: ${{ vars.DEPCTRL_CI_APP_CLIENT_ID }}
+    secrets:
+      app-private-key: ${{ secrets.DEPCTRL_CI_APP_PRIVATE_KEY }}

@@ -108,7 +108,7 @@
       ut\assertEquals c.modules["l0.mod"].recordType, Common.RecordType.Unmanaged
       ut\assertNil c.modules["l0.mod"].unmanaged
 
-    -- the pre-0.7 alpha pin on DependencyControl's own packages is rewritten to the new release channel;
+    -- the pre-0.7 alpha pin on DependencyControl's own packages is rewritten to the new stable channel;
     -- a non-alpha pin, and any channel chosen on a third-party feed, are left untouched
     migratesOwnedAlphaPin: (ut) ->
       c = {
@@ -121,8 +121,8 @@
         }
       }
       migrate c, nil, schema.CONFIG_SCHEMA_ID_CURRENT
-      ut\assertEquals c.modules["l0.DependencyControl"].lastChannel, "release"
-      ut\assertEquals c.modules["l0.DependencyControl"].activeChannel, "release"
+      ut\assertEquals c.modules["l0.DependencyControl"].lastChannel, "stable"
+      ut\assertEquals c.modules["l0.DependencyControl"].activeChannel, "stable"
       ut\assertEquals c.modules["l0.Functional"].lastChannel, "alpha"              -- third-party pin preserved
       ut\assertEquals c.macros["l0.DependencyControl.Toolbox"].lastChannel, "beta" -- non-alpha pin preserved
 

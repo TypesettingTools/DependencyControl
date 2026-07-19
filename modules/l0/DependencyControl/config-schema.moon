@@ -50,12 +50,12 @@ keyMap = {
 droppedKeys = {"tryAllFeeds", "dumpFeeds"}
 
 -- pre-0.7 published these packages on an `alpha` channel only, pinning every install to it; v0.7.0 makes
--- `release` their default. rewrite the pin so those installs track `release`, scoped to DependencyControl's
+-- `stable` their default. rewrite the pin so those installs track `stable`, scoped to DependencyControl's
 -- own packages so a channel deliberately chosen for a third-party feed is left alone.
 channelRename = {
     packages: Common.makeSet {"l0.DependencyControl", "l0.DependencyControl.Toolbox"}
     from: "alpha"
-    to:   "release"
+    to:   "stable"
 }
 
 ---Migrates a whole config-file table up to the current schema, in place, when its root `$schema` predates it.

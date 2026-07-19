@@ -1,0 +1,51 @@
+# Release DependencyControl itself: a thin caller over the reusable publish-release workflow (the same
+# building block third-party package repos use), mapping this repo's channel layout onto its inputs.
+# `main` is the dev/default branch; `master` is the protected publish branch that serves the feed URL
+# (…/DependencyControl/master/DependencyControl.json) and the schema $id URLs.
+#
+# Pushing to protected `master`/`main` and their tags uses a GitHub App on their bypass lists, wired
+# through the DEPCTRL_CI_APP_CLIENT_ID variable and DEPCTRL_CI_APP_PRIVATE_KEY secret. With those unset
+# the run falls back to GITHUB_TOKEN, usable only while the branches are unprotected (e.g. a dry-run
+# before locking them down). See the README's "Release Automation → Branch protection" for App setup.
+
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch or commit to release'
+        required: true
+        default: 'main'
+      channel:
+        description: 'Channel(s) to publish'
+        type: choice
+        required: true
+        default: 'stable'
+        options:
+          - stable
+          - alpha
+          - both
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    permissions:
+      contents: write
+    uses: ./.github/workflows/reusable-publish-release.yml
+    with:
+      ref: ${{ github.event.inputs.ref }}
+      # "both" → the two published channels; otherwise the single chosen channel
+      channels: ${{ github.event.inputs.channel == 'both' && 'stable alpha' || github.event.inputs.channel }}
+      default-channel: stable
+      source-channel: main
+      stable-channel: stable
+      release-channels: stable   # cut a GitHub Release for stable versions only (not alpha)
+      dev-branch: main
+      publish-branch: master # historical: our feed URL is on master
+      depctrl-ref: ${{ github.event.inputs.ref }}   # release DepCtrl with its own CLI at that ref
+      app-client-id: ${{ vars.DEPCTRL_CI_APP_CLIENT_ID }}
+    secrets:
+      app-private-key: ${{ secrets.DEPCTRL_CI_APP_PRIVATE_KEY }}

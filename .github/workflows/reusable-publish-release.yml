@@ -1,0 +1,240 @@
+# Reusable workflow: publish a release. Any DependencyControl package repo can call this. It copies
+# the dev feed's channel onto the chosen published channel(s) of the publish branch (preserving the
+# channels it isn't releasing), tags the versions those channels reference, records the release date
+# back on the dev branch when a stable channel ships (so `bump-version` can see what has shipped), and
+# optionally cuts a GitHub Release per channel. The depctrl CLI is fetched from the DependencyControl
+# repo, so callers don't vendor it.
+#
+# Third-party caller:
+#   jobs:
+#     publish:
+#       permissions: { contents: write }
+#       uses: TypesettingTools/DependencyControl/.github/workflows/reusable-publish-release.yml@v1
+#       with: { ref: main, channels: stable, default-channel: stable, release-channels: stable }
+#       secrets: { app-private-key: ${{ secrets.DEPCTRL_CI_APP_PRIVATE_KEY }} }
+# See this repo's release.yml for a working caller.
+#
+# If the publish branch is protected, GITHUB_TOKEN can't push to it — pass a GitHub App on its bypass
+# list via the app-client-id input and app-private-key secret. See the README's "Release Automation"
+# section for the one-time App setup.
+
+name: Reusable — publish a release
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: "Commit or branch to release (its source is tagged; its feed is published)"
+        type: string
+        required: true
+      channels:
+        description: "Space-separated channels to publish, e.g. 'stable' or 'stable alpha'"
+        type: string
+        required: true
+      default-channel:
+        description: "Which published channel is marked default: true"
+        type: string
+        required: true
+      source-channel:
+        description: "The dev feed's channel to copy from"
+        type: string
+        default: main
+      dev-branch:
+        description: "Development/default branch; the release date is recorded here"
+        type: string
+        default: main
+      publish-branch:
+        description: "Branch that serves the feed URL"
+        type: string
+        default: publish
+      stable-channel:
+        description: "Publishing this channel also records the release date on the dev branch"
+        type: string
+        default: stable
+      release-channels:
+        description: "Space-separated published channels to also cut a GitHub Release for (empty: none)"
+        type: string
+        default: ""
+      depctrl-ref:
+        description: "DependencyControl ref providing the depctrl CLI; 'latest' resolves to its newest release"
+        type: string
+        default: latest
+      app-client-id:
+        description: "Client ID of a GitHub App on the publish branch's bypass list (optional)"
+        type: string
+        default: ""
+    secrets:
+      app-private-key:
+        description: "Private key for app-client-id (optional)"
+        required: false
+
+concurrency:
+  group: publish-release-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Generate a token from the release App
+        id: app-token
+        if: ${{ inputs.app-client-id != '' }}
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ inputs.app-client-id }}
+          private-key: ${{ secrets.app-private-key }}
+
+      - name: Check out the package repo
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0   # full history + all tags: needed to create/verify version tags
+          token: ${{ steps.app-token.outputs.token || github.token }}
+
+      - name: Resolve the DependencyControl CLI ref
+        id: cli-ref
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          ref="${{ inputs.depctrl-ref }}"
+          if [ "$ref" = "latest" ]; then
+            ref="$(gh api repos/TypesettingTools/DependencyControl/releases/latest --jq .tag_name 2>/dev/null || true)"
+            [ -n "$ref" ] || { echo "::error::Could not resolve the latest DependencyControl release; pin 'depctrl-ref' to a tag or branch."; exit 1; }
+            echo "Using latest DependencyControl release: $ref"
+          fi
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+
+      - name: Check out the DependencyControl CLI
+        uses: actions/checkout@v6
+        with:
+          repository: TypesettingTools/DependencyControl
+          ref: ${{ steps.cli-ref.outputs.ref }}
+          path: _depctrl
+
+      - uses: leafo/gh-actions-lua@v13
+        with:
+          luaVersion: "luajit-2.1.0-beta3"
+          luaCompileFlags: "XCFLAGS=-DLUAJIT_ENABLE_LUA52COMPAT"
+      - uses: leafo/gh-actions-luarocks@v6
+      - run: luarocks install moonscript
+      - run: luarocks install luafilesystem
+      - run: luarocks install argparse
+      - run: luarocks install lua-schema
+      - run: luarocks install lpeg
+
+      - name: Pin one release date for the whole run
+        run: echo "RELEASE_DATE=$(date -u +%Y-%m-%d)" >> "$GITHUB_ENV"
+
+      # Sync the dev feed to its source and — only when a stable channel is shipping — stamp the
+      # release date on the dev branch, so version tooling sees the dev state as released.
+      - name: Record the release on the dev branch
+        run: |
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          lua _depctrl/depctrl.lua update-feed
+          case " ${{ inputs.channels }} " in
+            *" ${{ inputs.stable-channel }} "*)
+              lua _depctrl/depctrl.lua update-feed --mark-released --release-date "$RELEASE_DATE" ;;
+          esac
+          if ! git diff --quiet -- DependencyControl.json; then
+            git add DependencyControl.json
+            git commit -m "release: record ${{ inputs.channels }} for ${{ inputs.ref }} [skip ci]"
+            git push origin "HEAD:${{ inputs.dev-branch }}"
+          fi
+
+      # Each published channel resolves files from a tag v<version><tagSuffix[channel]>. Derive them
+      # from the source channel's versions and create the missing ones at the released commit.
+      - name: Create the version tags
+        run: |
+          set -euo pipefail
+          jq -r --arg channels "${{ inputs.channels }}" --arg src "${{ inputs.source-channel }}" '
+            ($channels | split(" ")) as $to
+            | (.vars.tagSuffix // {}) as $suf
+            | [ (.macros // {}), (.modules // {})
+                | to_entries[]
+                | (.value.channels[$src].version // empty) as $v
+                | $to[] | "v" + ($v | tostring) + ($suf[.] // "") ]
+            | unique[]' DependencyControl.json > "$RUNNER_TEMP/tags.txt"
+          echo "Tags:"; sed 's/^/  /' "$RUNNER_TEMP/tags.txt"
+          released_sha=$(git rev-parse HEAD)
+          while IFS= read -r tag; do
+            [ -n "$tag" ] || continue
+            if git rev-parse -q --verify "refs/tags/$tag^{commit}" >/dev/null; then
+              echo "· $tag exists — leaving it"
+            else
+              git tag "$tag" "$released_sha"
+              git push origin "refs/tags/$tag"
+            fi
+          done < "$RUNNER_TEMP/tags.txt"
+
+      # Copy the source channel onto the published channel(s), preserving the others, then guard that
+      # every tag the published feed references exists before pushing.
+      - name: Publish to the publish branch
+        run: |
+          set -euo pipefail
+          git fetch origin "${{ inputs.publish-branch }}:refs/remotes/origin/${{ inputs.publish-branch }}"
+          git worktree add --detach _publish "origin/${{ inputs.publish-branch }}"
+          rsync -a --delete \
+            --exclude '.git' --exclude '_publish' --exclude '_depctrl' \
+            --exclude 'ctrf' --exclude 'types' --exclude 'build' \
+            --exclude 'DependencyControl.json' \
+            ./ _publish/
+          lua _depctrl/depctrl.lua merge-feed -f DependencyControl.json --into _publish/DependencyControl.json \
+            --from "${{ inputs.source-channel }}" --to "${{ inputs.channels }}" \
+            --default-channel "${{ inputs.default-channel }}" --released "$RELEASE_DATE"
+
+          git fetch --tags --force --quiet
+          jq -r '
+            (.vars.tagSuffix // {}) as $suf
+            | [ (.macros // {}), (.modules // {})
+                | to_entries[] | (.value.channels // {}) | to_entries[]
+                | "v" + (.value.version | tostring) + ($suf[.key] // "") ]
+            | unique[]' _publish/DependencyControl.json > "$RUNNER_TEMP/publish-tags.txt"
+          while IFS= read -r tag; do
+            [ -n "$tag" ] || continue
+            git rev-parse -q --verify "refs/tags/$tag^{commit}" >/dev/null \
+              || { echo "Refusing to publish: referenced tag $tag doesn't exist."; exit 1; }
+          done < "$RUNNER_TEMP/publish-tags.txt"
+
+          cd _publish
+          git add -A
+          if git diff --cached --quiet; then
+            echo "publish branch already matches this release; nothing to publish."
+          else
+            git commit -m "release: publish ${{ inputs.channels }} for ${{ inputs.ref }} [skip ci]"
+            git push origin "HEAD:${{ inputs.publish-branch }}"
+          fi
+
+      # Optionally cut a GitHub Release for each requested channel that shipped this run. Notes are
+      # rendered from the feed's changelog for the released version; a channel other than the stable
+      # one is marked prerelease. An existing release for a tag is left untouched.
+      - name: Create GitHub release(s)
+        if: ${{ inputs.release-channels != '' }}
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token || github.token }}
+        run: |
+          set -euo pipefail
+          notes="$RUNNER_TEMP/release-notes.md"
+          lua _depctrl/depctrl.lua release-notes --channel "${{ inputs.source-channel }}" --output "$notes" \
+            || echo "(no changelog entries for this release)" > "$notes"
+          [ -s "$notes" ] || echo "(no changelog entries for this release)" > "$notes"
+          for chan in ${{ inputs.channels }}; do
+            case " ${{ inputs.release-channels }} " in *" $chan "*) ;; *) continue ;; esac
+            ver=$(jq -r --arg c "$chan" \
+              '[ (.macros // {}), (.modules // {}) | to_entries[] | .value.channels[$c].version // empty ] | unique | .[0] // empty' \
+              _publish/DependencyControl.json)
+            [ -n "$ver" ] || { echo "· no version on channel '$chan'; skipping its release"; continue; }
+            suffix=$(jq -r --arg c "$chan" '(.vars.tagSuffix // {})[$c] // ""' _publish/DependencyControl.json)
+            tag="v${ver}${suffix}"
+            prerelease=""; [ "$chan" = "${{ inputs.stable-channel }}" ] || prerelease="--prerelease"
+            if gh release view "$tag" >/dev/null 2>&1; then
+              echo "· release $tag already exists — leaving it"
+            else
+              gh release create "$tag" --title "$tag" --notes-file "$notes" $prerelease
+              echo "· created release $tag $prerelease"
+            fi
+          done

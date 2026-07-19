@@ -6,6 +6,7 @@
   FileOps           = require "l0.DependencyControl.FileOps"
   FileCache         = require "l0.DependencyControl.FileCache"
   UpdateFeed        = require "l0.DependencyControl.UpdateFeed"
+  dkjson            = require "l0.dkjson"
   {:stubSelf}       = require "l0.DependencyControl.test.helpers.stub-helpers"
   FILEOPS_MODULE_NAME = "l0.DependencyControl.FileOps"
 
@@ -445,6 +446,101 @@
       ut\assertEquals result.addedFiles[1].name, "/New.moon"
       ut\assertEquals stats.changed, 1
 
+    -- updateFeed markReleased stamps the release date on channels still unreleased and keeps existing dates
+    updateFeed_markReleasedStampsUnreleased: (ut) ->
+      root = FileOps.joinPath basePath, "markrel"
+      FileOps.mkdir FileOps.joinPath(root, "modules", "l0"), false, true
+      FileOps.writeFile FileOps.joinPath(root, "modules", "l0", "Fresh.moon"), "-- fresh", true
+      FileOps.writeFile FileOps.joinPath(root, "modules", "l0", "Old.moon"), "-- old", true
+      feedPath = FileOps.joinPath root, "feed.json"
+      FileOps.writeFile feedPath, [[{
+        "dependencyControlFeedFormatVersion": "0.4.0",
+        "name": "T",
+        "fileBaseUrl": "https://x.test/",
+        "fileBaseUrls": {"script": "@{fileBaseUrl}@{namespacePath}@{fileName}"},
+        "localFileBasePaths": {"script": "@{localFileBasePath}modules/@{namespacePath}@{fileName}"},
+        "modules": {
+          "l0.Fresh": {"name": "Fresh", "author": "a", "channels": {"release": {"version": "1.0.0", "default": true, "released": null,
+            "files": [{"name": ".moon", "url": "@{fileBaseUrl}", "sha1": "0000000000000000000000000000000000000000"}]}}},
+          "l0.Old": {"name": "Old", "author": "a", "channels": {"release": {"version": "1.0.0", "default": true, "released": "2020-01-01",
+            "files": [{"name": ".moon", "url": "@{fileBaseUrl}", "sha1": "0000000000000000000000000000000000000000"}]}}}
+        }
+      }]], true
+      feed = UpdateFeed nil, false, feedPath
+      -- stub both refreshers so no content change resets `released`, isolating the markReleased stamping
+      (ut\stub feed, "__refreshVersionRecord")\returns false
+      (ut\stub feed, "__refreshFiles")\returns false, {}
+      feed\updateFeed {markReleased: "2099-12-31", outPath: false}
+      ut\assertEquals feed.rawFeedData.modules["l0.Fresh"].channels.release.released, "2099-12-31"  -- stamped
+      ut\assertEquals feed.rawFeedData.modules["l0.Old"].channels.release.released, "2020-01-01"     -- kept
+
+    -- mergeChannels copies the source channel into the destination channel(s), preserves channels not
+    -- named, stamps the release date, sets the default flag, tracks top-level metadata, and adds packages
+    mergeChannels_copiesPreservingOthers: (ut) ->
+      root = FileOps.joinPath basePath, "merge1"
+      FileOps.mkdir root, false, true
+      srcPath = FileOps.joinPath root, "src.json"
+      dstPath = FileOps.joinPath root, "dst.json"
+      FileOps.writeFile srcPath, [[{
+        "dependencyControlFeedFormatVersion": "0.4.0", "name": "NewName", "baseUrl": "b",
+        "modules": {
+          "l0.A":   {"name": "A", "author": "x", "channels": {"main": {"version": "0.7.0", "released": null, "default": true, "files": [{"name": ".moon", "url": "u", "sha1": "AAA"}]}}},
+          "l0.New": {"name": "N", "author": "x", "channels": {"main": {"version": "0.7.0", "released": null, "default": true, "files": [{"name": ".moon", "url": "u", "sha1": "CCC"}]}}}
+        }
+      }]], true
+      FileOps.writeFile dstPath, [[{
+        "dependencyControlFeedFormatVersion": "0.4.0", "name": "OldName", "baseUrl": "old",
+        "modules": {
+          "l0.A": {"name": "A", "author": "x", "channels": {
+            "release": {"version": "0.6.0", "released": "2024-01-01", "default": true,  "files": [{"name": ".moon", "url": "u", "sha1": "OLD"}]},
+            "alpha":   {"version": "0.6.0", "released": "2024-01-01", "default": false, "files": [{"name": ".moon", "url": "u", "sha1": "OLD"}]}}}
+        }
+      }]], true
+      source = UpdateFeed nil, false, srcPath
+      source\loadFile srcPath, UpdateFeed.ExpansionMode.Local
+      dest = UpdateFeed nil, false, dstPath
+      dest\loadFile dstPath, UpdateFeed.ExpansionMode.Local
+      merged, err = dest\mergeChannels source, {from: "main", to: {"release"}, defaultChannel: "release", released: "2026-07-19", outPath: false}
+      ut\assertNil err
+      ut\assertEquals #merged, 2
+      chA = dest.rawFeedData.modules["l0.A"].channels
+      ut\assertEquals chA.release.version, "0.7.0"        -- release taken from the source's main channel
+      ut\assertEquals chA.release.released, "2026-07-19"  -- release date stamped
+      ut\assertTrue chA.release.default                   -- default flag set
+      ut\assertEquals chA.alpha.version, "0.6.0"          -- alpha channel preserved
+      ut\assertEquals chA.alpha.released, "2024-01-01"
+      ut\assertEquals dest.rawFeedData.name, "NewName"    -- top-level metadata tracks the source
+      newCh = dest.rawFeedData.modules["l0.New"].channels
+      ut\assertNotNil newCh.release                       -- new package added, carrying only the to-channel
+      ut\assertNil newCh.alpha
+
+    -- bumpVersions off a released version starts a new cycle: it rewrites the marked source literal,
+    -- bumps the channel version, clears the release date, and refreshes the file hash
+    bumpVersions_startsCycleFromReleased: (ut) ->
+      root = FileOps.joinPath basePath, "bump1"
+      FileOps.mkdir FileOps.joinPath(root, "modules", "l0"), false, true
+      srcFile = FileOps.joinPath root, "modules", "l0", "Pkg.moon"
+      FileOps.writeFile srcFile, [[version = "0.7.0"  -- @{l0.Pkg:version}]], true
+      hash = FileOps.getHash srcFile
+      feedJson = [[{
+        "dependencyControlFeedFormatVersion": "0.4.0", "name": "F", "fileBaseUrl": "u/",
+        "fileBaseUrls": {"script": "@{fileBaseUrl}@{fileName}"},
+        "localFileBasePaths": {"script": "@{localFileBasePath}modules/@{namespacePath}@{fileName}"},
+        "modules": {"l0.Pkg": {"name": "Pkg", "author": "x", "channels": {"main": {"version": "0.7.0", "released": "2024-01-01", "default": true, "files": [{"name": ".moon", "url": "@{fileBaseUrl}", "sha1": "HASH"}]}}}}
+      }]]
+      feedPath = FileOps.joinPath root, "feed.json"
+      FileOps.writeFile feedPath, (feedJson\gsub "HASH", hash\upper!), true
+      feed = UpdateFeed nil, false, feedPath
+      feed\loadFile feedPath, UpdateFeed.ExpansionMode.Local
+      stats, err = feed\bumpVersions {level: "minor", namespaces: {"l0.Pkg"}, outPath: false}
+      ut\assertNil err
+      ut\assertEquals stats.target, "0.8.0"
+      ut\assertEquals #stats.bumped, 1
+      main = feed.rawFeedData.modules["l0.Pkg"].channels.main
+      ut\assertEquals main.version, "0.8.0"               -- feed version bumped
+      ut\assertEquals main.released, dkjson.null           -- release date cleared (new build pending)
+      ut\assertNotNil (FileOps.readFile srcFile)\match '"0%.8%.0"'  -- marked source literal rewritten
+
     -- walkFiles
 
     walkFiles_yieldsProxies: (ut) ->
@@ -749,7 +845,8 @@
       "expand_authorVarsAndComputedKeys", "expand_localFileBasePathsResolveFullPaths",
       "expand_legacyScalarBases",
       "findUnlistedFiles_discoversUnlistedFiles", "findUnlistedFiles_skipsUninvertibleTemplates",
-      "updateFeed_addFilesAppendsEntries",
+      "updateFeed_addFilesAppendsEntries", "updateFeed_markReleasedStampsUnreleased",
+      "mergeChannels_copiesPreservingOthers", "bumpVersions_startsCycleFromReleased",
       "walkFiles_yieldsProxies", "walkFiles_passesThroughLocalFilePath",
       "deployFiles_copiesToDist", "deployFiles_skipExistingNoClobber",
       "deployFiles_countsMissingSource", "deployFiles_removesDeleted", "deployFiles_deleteMissingIsNoOp",

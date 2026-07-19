@@ -32,6 +32,7 @@ modules (_DownloadManager_, _BadMutex_, _PreciseTimer_).
 4. [The Updater Feed](#the-updater-feed)
 5. [Reference](#reference)
 6. [CLI](#cli)
+7. [Release Automation](#release-automation)
 
 ---
 
@@ -516,7 +517,7 @@ _Depth 7:_ File Information
 **Author-defined variables** _(v0.4.0)_: a root-level `vars` object defines your own template variables. A string value is substituted as `@{name}`; an object value is a lookup table indexed as `@{name:key}`, where the key part may itself be a variable. DependencyControl's own feed uses this to derive release-tag names per channel:
 
 ```json
-"vars": { "tagSuffix": { "alpha": "-alpha", "release": "" } },
+"vars": { "tagSuffix": { "alpha": "-alpha", "stable": "" } },
 "fileBaseUrls": { "script": "@{fileBaseUrl}v@{version}@{tagSuffix:@{channel}}/@{scriptTypeSection}/@{namespacePath}@{fileName}" }
 ```
 
@@ -633,6 +634,7 @@ Exit code `0` = success, `1` = one or more errors.
 
 ```sh
 luajit depctrl.lua update-feed [--feed <path>] [--channel <name>] [--dry-run] [--add-files]
+                               [--mark-released] [--release-date <date>]
                                [--target-module <ns>] [--target-macro <ns>]
 ```
 
@@ -640,16 +642,91 @@ Refreshes each targeted package's channel in place: recomputes SHA-1 hashes from
 
 With `--add-files`, files found on disk that the targeted channel doesn't list are added to it, complete with computed SHA-1 hashes. Discovery works by inverting the effective per-file-type `localFileBasePaths` templates — every template whose only unexpanded variable is `@{fileName}` is matched against the files below it — so it requires the feed to declare `localFileBasePaths` (at any level; see the template section above). New _packages_ are not discovered; add those to the feed by hand.
 
-| Option            | Default                         | Description                                             |
-| ----------------- | ------------------------------- | ------------------------------------------------------- |
-| `--feed`          | `DependencyControl.json` in CWD | Path to the feed JSON file                              |
-| `--channel`       | _(each package's default)_      | Channel to update                                       |
-| `--dry-run`       | false                           | Print what would change without writing back            |
-| `--add-files`     | false                           | Add entries for on-disk files missing from the channel  |
-| `--target-module` | _(all modules)_                 | Restrict to this module namespace; repeatable           |
-| `--target-macro`  | _(all macros)_                  | Restrict to this macro namespace; repeatable            |
+With `--mark-released`, each targeted channel still marked unreleased (`released` is `null`) is stamped with the release date — today (UTC) by default, or the date passed to `--release-date` (giving a date implies `--mark-released`). A channel that already carries a date keeps it. This is the last step of a release, recording which builds have shipped — the release workflow runs it so version tooling can later tell a released version from a pending one, passing one date so every stamp in a run agrees.
+
+| Option            | Default                         | Description                                              |
+| ----------------- | ------------------------------- | -------------------------------------------------------- |
+| `--feed`          | `DependencyControl.json` in CWD | Path to the feed JSON file                               |
+| `--channel`       | _(each package's default)_      | Channel to update                                        |
+| `--dry-run`       | false                           | Print what would change without writing back             |
+| `--add-files`     | false                           | Add entries for on-disk files missing from the channel   |
+| `--mark-released` | false                           | Stamp the release date on channels still unreleased      |
+| `--release-date`  | today (UTC)                     | Date to stamp with `--mark-released`                     |
+| `--target-module` | _(all modules)_                 | Restrict to this module namespace; repeatable            |
+| `--target-macro`  | _(all macros)_                  | Restrict to this macro namespace; repeatable             |
 
 Exit code `0` = success, `1` = one or more packages had errors.
+
+### `bump-version` — Bump package versions (lockstep)
+
+```sh
+luajit depctrl.lua bump-version [--feed <path>] [--channel <name>] (--major | --minor | --patch)
+                                (<namespace>… | --all-changed)
+```
+
+Bumps the given packages — or, with `--all-changed`, every package changed since its last release — to the repository's lockstep version, then refreshes the feed. Versions are managed in lockstep: a release only advances the packages that actually changed, and they all move to the same repo-level version. The versions and release state are read from the working channel (`--channel`, or the channel marked `default: true`). The target version is derived from that channel's release dates: if the highest version present has already been released, a new cycle starts and the version is bumped by the chosen component; otherwise the packages join the release already in progress. If a later bump reaches past the in-progress version, every package already bumped into that cycle is carried up with it, so a release never spans two versions.
+
+Each version lives in its package's source, on the line marked `-- @{<namespace>:version}` (e.g. `-- @{l0.MoonCats:version}`) — the feed template variable the literal feeds, keyed by the package's own namespace just like everything else DependencyControl tracks. The command rewrites the literal there and updates the channel's version and file hash in the feed to match. `version` is the only property synced this way — every other record field flows source → feed through `update-feed`, never the reverse — so it is the only recognized marker. Before touching anything the command verifies the feed's hashes already match the sources and bails if not, so its only feed change is the version bump — run `update-feed` and commit first if it reports the feed out of sync.
+
+| Option          | Default                         | Description                                       |
+| --------------- | ------------------------------- | ------------------------------------------------- |
+| `--feed`        | `DependencyControl.json` in CWD | Path to the feed JSON file                        |
+| `--channel`     | _(the default channel)_         | Channel whose versions and release state drive it |
+| `--major`       | —                               | Start a new cycle by bumping the major component  |
+| `--minor`       | —                               | Start a new cycle by bumping the minor component  |
+| `--patch`       | —                               | Start a new cycle by bumping the patch component  |
+| `--all-changed` | false                           | Bump every package changed since its last release |
+
+Exit code `0` = success (including nothing to bump), `1` = the feed was out of sync or a package/marker couldn't be resolved.
+
+### `merge-feed` — Publish channel(s) from one feed into another
+
+```sh
+luajit depctrl.lua merge-feed [--feed <src>] --into <dst> --from <channel> --to "<channels>"
+                              --default-channel <name> [--released <date>] [--dry-run]
+```
+
+Copies the `--from` channel of every package in the source feed into each `--to` channel of the destination feed (updated in place), then writes the destination through the feed's canonical formatter. Each destination channel's `default` flag is set (true only for `--default-channel`) and its release date stamped when `--released` is given; file hashes are copied as-is, so no sources are read. Channels not named in `--to` are left untouched — they keep their previously published versions — and a package missing from the destination is added carrying only the `--to` channels. Top-level feed metadata and shared package fields track the source. This is how the release workflow promotes the dev feed's channel onto the published `stable`/`alpha` channels while leaving the channel it isn't releasing in place.
+
+| Option              | Default                         | Description                                          |
+| ------------------- | ------------------------------- | ---------------------------------------------------- |
+| `--feed`            | `DependencyControl.json` in CWD | Source feed to copy from                             |
+| `--into`            | _(required)_                    | Destination feed, updated in place                   |
+| `--from`            | _(required)_                    | Source channel to copy                               |
+| `--to`              | _(required)_                    | Destination channel(s), space-separated              |
+| `--default-channel` | _(required)_                    | Which destination channel becomes default: true      |
+| `--released`        | _(unset)_                       | Release date to stamp on the destination channel(s)  |
+| `--dry-run`         | false                           | Compute the merge without writing the destination    |
+
+Exit code `0` = success, `1` = a feed couldn't be loaded or a required option was missing.
+
+### `release-notes` — Render grouped release notes from the changelog
+
+```sh
+luajit depctrl.lua release-notes [--feed <path>] [--channel <name> | --version <ver>] [--title <text>] [--output <path>]
+```
+
+Renders a GitHub-flavored markdown release body from one version's changelog across every package that has entries for it, grouping them into sections — New Features, Bug Fixes, Changes, Other Changes — by a conventional-commit-style marker at the start of each changelog entry:
+
+```text
+<type>[(<scope>)][!]: <message>
+```
+
+`type` is `feat`, `fix`, or `change` (case-insensitive); an unrecognized leading token leaves the entry uncategorized under Other Changes. `(scope)` is an optional area tag such as `(Updater)` that becomes the entry's bold lead-in. A trailing `!` flags a breaking change: the entry stays in its type's section but is tagged ⚠️ and floated above that section's non-breaking entries. The package whose name matches the feed's `name` is treated as primary — its unscoped entries render with no lead-in, while other packages fall back to their namespace's last segment, so every line stays attributed in the aggregated notes.
+
+The same markers drive the changelog the Toolbox prints to Aegisub's log on update: there the machine `type` token is dropped and each entry is rendered under a glyph-headed category (✨ Features, 🐛 Fixes, 🔧 Changes), breaking entries tagged ⚠️ and floated to the top of their section, so the convention never leaks into what users read. Feeds need no markers to work — a version with nothing marked renders as a flat list, no headings, in both the release body and the log.
+
+Pass `--version` for an exact version, or `--channel` (the default channel if omitted) to use the highest version that channel advertises. Notes go to stdout unless `--output` writes them to a file, which receives only the notes and none of the setup logging — so the release workflow uses `--output` to fill the body of the GitHub Release it cuts.
+
+| Option      | Default                         | Description                                     |
+| ----------- | ------------------------------- | ----------------------------------------------- |
+| `--feed`    | `DependencyControl.json` in CWD | Path to the feed JSON file                      |
+| `--channel` | _(the channel marked default)_  | Channel whose version's changelog to render     |
+| `--version` | _(derived from `--channel`)_    | Exact version to render (overrides `--channel`) |
+| `--title`   | _(none)_                        | Optional top-level `#` heading to prepend       |
+| `--output`  | _(stdout)_                      | Write the notes to this file instead of stdout  |
+
+Exit code `0` = success (including an empty result), `1` = the feed couldn't be loaded or no version could be resolved.
 
 ### `generate-types` — Extract LuaLS type definitions
 
@@ -695,3 +772,103 @@ Published API docs are versioned on GitHub Pages by the `Docs` workflow (`.githu
 | `--target-module`   | _(all modules)_                 | Restrict to this module namespace; repeatable            |
 
 Exit code `0` = success, `1` = a module failed to parse or a file couldn't be written.
+
+## Release Automation
+
+DependencyControl ships two **reusable GitHub Actions workflows** for a publish-branch release model — used both by this repo and by any package repo that wants the same setup:
+
+- [`reusable-publish-release.yml`](.github/workflows/reusable-publish-release.yml) — run on demand; copies your dev feed's channel onto the published channel(s) of a separate publish branch, tags the versions they reference, records the release date back on the dev branch (for a stable release) so `bump-version` can tell what has shipped, and can cut a GitHub Release per channel with notes rendered from the changelog.
+- [`reusable-update-feed.yml`](.github/workflows/reusable-update-feed.yml) — on every push to the dev branch, refreshes the feed's file hashes and versions from the sources and commits the result back, so pull requests only have to author metadata.
+
+### The branch model
+
+The feed URL baked into installed configs points at one branch, so that branch must only ever advertise released, downloadable versions. The workflows keep the dev and published states on separate branches:
+
+- a **dev branch** (`main`) whose `DependencyControl.json` carries a single dev channel — the working state, edited freely in pull requests;
+- a **publish branch** (`publish`) whose `DependencyControl.json` carries the user-facing channels (e.g. `stable` and `alpha`) — written only by the release workflow, and the branch the feed URL serves.
+
+A release _copies_ the dev channel onto a chosen published channel and leaves the channels it isn't releasing untouched, so the published channels can sit at different versions. Each channel's files resolve from a `v<version>` tag (with the channel's tag suffix) that the release workflow creates.
+
+DependencyControl's own repository keeps this branch as `master` for historical reasons — its published feed URL predates this layout and can't move — so its `release.yml` overrides `publish-branch: master`. New packages need no such override: the workflow defaults to `publish`, and any name works as long as it's the branch your feed URL points at.
+
+### Using the workflows in your own package
+
+1. **Set up the branches.** Make your dev branch the default and create a publish branch. In your feed, give each package a single dev channel (its name is the `source-channel` input, default `main`); the release workflow creates the published channels.
+2. **Add two thin caller workflows** that pin a DependencyControl version and pass your layout. A publish caller (`.github/workflows/release.yml`):
+
+   ```yaml
+   name: Release
+   on:
+     workflow_dispatch:
+       inputs:
+         ref:
+           description: Ref to release
+           default: main
+         channels:
+           description: Channel(s) to publish (space-separated)
+           default: stable
+   permissions:
+     contents: write
+   jobs:
+     publish:
+       permissions:
+         contents: write
+       uses: TypesettingTools/DependencyControl/.github/workflows/reusable-publish-release.yml@v1
+       with:
+         ref: ${{ github.event.inputs.ref }}
+         channels: ${{ github.event.inputs.channels }}
+         default-channel: stable
+         release-channels: stable
+       secrets:
+         app-private-key: ${{ secrets.CI_APP_PRIVATE_KEY }}   # only if the publish branch is protected
+   ```
+
+   An update-feed caller (`.github/workflows/update-feed.yml`):
+
+   ```yaml
+   name: Update feed
+   on:
+     push:
+       branches: [main]
+       paths: ['**/*.moon', 'DependencyControl.json']
+   permissions:
+     contents: write
+   jobs:
+     sync:
+       if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+       permissions:
+         contents: write
+       uses: TypesettingTools/DependencyControl/.github/workflows/reusable-update-feed.yml@v1
+   ```
+
+3. **Version with `bump-version`.** Bump the changed packages (lockstep) before releasing; the update-feed workflow propagates the new versions into your dev feed, and the release workflow tags and publishes them.
+
+### Branch protection
+
+Each workflow pushes to the branch it maintains — the publish workflow to the publish branch and its version tags, the update-feed workflow to the dev branch. With no protection they push using the built-in `GITHUB_TOKEN` and need no credential setup. To protect those branches, note that `GITHUB_TOKEN` _cannot_ be granted bypass: a ruleset's bypass list accepts roles, teams, GitHub Apps, and deploy keys — but not the `github-actions[bot]` identity the token runs as. Give the workflows a **GitHub App** on the bypass list instead:
+
+1. **Create a GitHub App** with repository permission _Contents: read & write_ and no webhook, then generate a private key and note the App's Client ID.
+2. **Install the App** on the package repository.
+3. **Add the App to the bypass list** of each protected branch's ruleset — the publish branch, the dev branch, or both — plus any tag protection that the publish workflow's version tags would trip.
+4. **Store the credentials** as repository Actions entries: the Client ID as a **variable** (it isn't sensitive) such as `DEPCTRL_CI_APP_CLIENT_ID`, and the private key as a **secret** such as `DEPCTRL_CI_APP_PRIVATE_KEY`.
+5. **Pass them to whichever caller pushes a protected branch** — the publish and update-feed callers both accept `app-client-id: ${{ vars.DEPCTRL_CI_APP_CLIENT_ID }}` and the `app-private-key: ${{ secrets.DEPCTRL_CI_APP_PRIVATE_KEY }}` secret.
+
+Each workflow mints a short-lived token from the App for its pushes and falls back to `GITHUB_TOKEN` when these inputs are absent, so you can develop against unprotected branches and add the App only when you lock them down.
+
+### Key inputs
+
+Both workflows fetch the depctrl CLI from this repo (`depctrl-ref`, default `latest` — the newest DependencyControl release), so you never vendor it. The publish workflow's inputs:
+
+| Input                           | Default            | Description                                                        |
+| ------------------------------- | ------------------ | ------------------------------------------------------------------ |
+| `ref`                           | _(required)_       | Commit or branch to release (its source is tagged)                 |
+| `channels`                      | _(required)_       | Space-separated channels to publish (e.g. `stable alpha`)          |
+| `default-channel`               | _(required)_       | Which published channel is marked `default: true`                  |
+| `source-channel`                | `main`             | The dev feed channel to copy from                                  |
+| `dev-branch` / `publish-branch` | `main` / `publish` | Branch names                                                       |
+| `stable-channel`                | `stable`           | Publishing this channel records the release date on the dev branch |
+| `release-channels`              | _(none)_           | Published channels to also cut a GitHub Release for                |
+| `depctrl-ref`                   | `latest`           | DependencyControl ref for the CLI (`latest`, a tag, or a branch)   |
+| `app-client-id`                 | _(none)_           | GitHub App Client ID for branch-protection bypass                  |
+
+`reusable-update-feed.yml` takes the matching `dev-branch`, `depctrl-ref`, and `app-client-id` inputs plus the `app-private-key` secret. See each workflow file's header for the full contract.

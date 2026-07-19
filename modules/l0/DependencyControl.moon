@@ -85,7 +85,7 @@ Accessors.install DependencyControl
 
 rec = DependencyControl{
     name: "DependencyControl",
-    version: "0.7.0",
+    version: "0.7.0",  -- @{l0.DependencyControl:version}
     description: "Provides script management and auto-updating for Aegisub macros and modules.",
     author: "line0",
     url: "http://github.com/TypesettingTools/DependencyControl",

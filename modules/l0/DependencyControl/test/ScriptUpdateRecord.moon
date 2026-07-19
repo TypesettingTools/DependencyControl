@@ -88,11 +88,29 @@
       ut\assertContains result, "Initial release"   -- valid entry still rendered
       ut\assertString result                         -- and no crash on the malformed key
 
+    -- marked entries are grouped under category headings; the machine type token is dropped and the
+    -- scope kept, so the raw marker never shows in-app
+    getChangelog_groupsMarkedEntries: (ut) ->
+      data = {
+        channels: {release: {default: true, version: "1.0.0", files: {}}},
+        name: "TestScript",
+        changelog: {["1.0.0"]: {"fix(Updater): fixed a thing", "feat: added a thing", "change!: broke a thing"}}
+      }
+      sur = ScriptUpdateRecord "test.NS", data, {c:{}}, Common.ScriptType.Module
+      result = sur\getChangelog nil
+      ut\assertContains result, "New Features"
+      ut\assertContains result, "Bug Fixes"
+      ut\assertContains result, "Changes"
+      ut\assertContains result, "Updater: fixed a thing"          -- scope kept, type token dropped
+      ut\assertContains result, "⚠️ broke a thing"                -- breaking tagged within its section
+      ut\assertFalsy result\find "fix(Updater):", 1, true         -- raw marker never leaks
+      ut\assertFalsy result\find "Breaking Changes", 1, true      -- breaking is not its own section
+
     _order: {
       "getChannels_basic", "getChannels_noDefault",
       "setChannel_valid", "setChannel_invalid",
       "checkPlatform_noConstraint", "checkPlatform_currentPlatform", "checkPlatform_notMatching",
       "getChangelog_noTable", "getChangelog_inRange", "getChangelog_allOutOfRange",
-      "getChangelog_skipsMalformedKey"
+      "getChangelog_skipsMalformedKey", "getChangelog_groupsMarkedEntries"
     }
   }

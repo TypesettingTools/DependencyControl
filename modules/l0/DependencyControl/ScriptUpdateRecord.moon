@@ -1,6 +1,7 @@
 Logger            = require "l0.DependencyControl.Logger"
 Common            = require "l0.DependencyControl.Common"
 SemanticVersion = require "l0.DependencyControl.SemanticVersion"
+ReleaseNotes    = require "l0.DependencyControl.release-notes"
 
 defaultLogger = Logger fileBaseName: "DepCtrl.ScriptUpdateRecord"
 
@@ -56,7 +57,6 @@ class ScriptUpdateRecord
         changelog: {
             header:      "Changelog for %s v%s (released %s):"
             verTemplate: "v %s:"
-            msgTemplate: "  • %s"
         }
     }
 
@@ -122,10 +122,11 @@ class ScriptUpdateRecord
         @logger\assert @activeChannel, msgs.errors.noActiveChannel
         return not @platforms or (Common.makeSet @platforms)[Common.platform], Common.platform
 
-    --- Formats changelog entries between the current version and a minimum version.
+    --- Formats changelog entries from the current version down to a minimum version, grouping each
+    --- version's entries into marker categories (Bug Fixes, New Features, …) with a glyph heading.
     ---@param versionRecord any Unused; present for API compatibility.
     ---@param minVer? number|string Oldest version to include (default 0, i.e. all).
-    ---@return string changelog Formatted multi-line string, or "" if nothing to show.
+    ---@return string changelog Formatted multi-line string, or "" if nothing to show. A version whose entries carry no markers lists them flat, without category headings.
     getChangelog: (versionRecord, minVer = 0) =>
         return "" unless "table" == type @changelog
         maxVer = SemanticVersion\toPacked @version
@@ -146,8 +147,9 @@ class ScriptUpdateRecord
         msg = {msgs.changelog.header\format @name, SemanticVersion\toString(@version), @released or "<no date>"}
         for chg in *changelog
             chg[3] = {chg[3]} if type(chg[3]) ~= "table"
-            if #chg[3] > 0
-                msg[#msg+1] = @logger\format msgs.changelog.verTemplate, 1, chg[2]
-                msg[#msg+1] = @logger\format(msgs.changelog.msgTemplate, 1, entry) for entry in *chg[3]
+            continue if #chg[3] == 0
+            msg[#msg+1] = @logger\format msgs.changelog.verTemplate, 1, chg[2]
+            block = ReleaseNotes.renderLog chg[3]
+            msg[#msg+1] = block unless block == ""
 
         return table.concat msg, "\n"

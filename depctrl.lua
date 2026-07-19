@@ -74,7 +74,42 @@ updateFeedCmd:option("-c --channel", "Channel to update (default: the channel ma
 updateFeedCmd:flag("-n --dry-run", "Print what would change without writing back")
 updateFeedCmd:flag("-a --add-files",
     "Discover files on disk that the targeted channel doesn't list and add entries for them")
+updateFeedCmd:flag("--mark-released",
+    "Stamp the release date on targeted channels still marked unreleased")
+updateFeedCmd:option("--release-date",
+    "Date to stamp with --mark-released (default: today, UTC)"):argname("<date>")
 addTargets(updateFeedCmd)
+
+local bumpCmd = parser:command("bump-version",
+    "Bump package version(s) to the feed's lockstep version, then refresh the feed")
+bumpCmd:option("-f --feed", "Feed JSON path"):default("DependencyControl.json")
+bumpCmd:option("-c --channel",
+    "Channel whose versions and release state drive the bump (default: the channel marked default: true)")
+    :argname("<name>")
+bumpCmd:argument("namespace", "Package namespace(s) to bump; omit when using --all-changed"):args("*")
+bumpCmd:flag("--all-changed", "Bump every package changed since its last release (release date cleared)")
+bumpCmd:flag("--major", "Start a new release cycle by bumping the major component")
+bumpCmd:flag("--minor", "Start a new release cycle by bumping the minor component")
+bumpCmd:flag("--patch", "Start a new release cycle by bumping the patch component")
+
+local mergeCmd = parser:command("merge-feed",
+    "Copy channel(s) from one feed into another (e.g. publishing a dev channel to release/alpha)")
+mergeCmd:option("-f --feed",         "Source feed JSON path"):default("DependencyControl.json")
+mergeCmd:option("--into",            "Destination feed JSON path (updated in place)"):argname("<path>")
+mergeCmd:option("--from",            "Source channel to copy from"):argname("<name>")
+mergeCmd:option("--to",              "Destination channel(s), space-separated"):argname("<names>")
+mergeCmd:option("--default-channel", "Which destination channel becomes default: true"):argname("<name>")
+mergeCmd:option("--released",        "Release date to stamp on the destination channel(s)"):argname("<date>")
+mergeCmd:flag("-n --dry-run",        "Print what would change without writing")
+
+local notesCmd = parser:command("release-notes",
+    "Render grouped markdown release notes from a feed's changelog for one version")
+notesCmd:option("-f --feed",    "Feed JSON path"):default("DependencyControl.json")
+notesCmd:option("-c --channel", "Channel whose version's changelog to render (default: the channel marked default: true)")
+    :argname("<name>")
+notesCmd:option("--version", "Version whose changelog to render (overrides --channel)"):argname("<ver>")
+notesCmd:option("--title",   "Optional top-level heading to prepend"):argname("<text>")
+notesCmd:option("-o --output", "Write the notes to this file instead of stdout"):argname("<path>")
 
 local typesCmd = parser:command("generate-types",
     "Extract LuaCATS annotations from module sources into LuaLS .d.lua type-definition files")
@@ -418,6 +453,8 @@ elseif args.command == "update-feed" then
         schemaDir = table.concat({ launcherDir, "schemas", "feed" }, pathSep),
         outPath   = not args.dry_run,  -- false = dry run; true = write back to the feed's own path
         addFiles  = args.add_files,
+        -- a date implies stamping; --mark-released alone stamps today (handled inside updateFeed)
+        markReleased = args.release_date or (args.mark_released and true) or nil,
     })
 
     if not stats then
@@ -458,6 +495,96 @@ elseif args.command == "update-feed" then
         io.stdout:write(("%d package(s) had errors (see above).\n"):format(stats.errored))
     end
     os.exit(stats.errored > 0 and 1 or 0)
+
+-- ─── bump-version ─────────────────────────────────────────────────────────────
+elseif args.command == "bump-version" then
+    local levels = {}
+    for _, l in ipairs({ "major", "minor", "patch" }) do if args[l] then levels[#levels + 1] = l end end
+    if #levels ~= 1 then
+        io.stderr:write("Specify exactly one of --major, --minor, --patch.\n"); os.exit(2)
+    end
+    local haveNamespaces = #(args.namespace or {}) > 0
+    if haveNamespaces == args.all_changed then   -- both given, or neither
+        io.stderr:write("Pass package namespace(s), or --all-changed, but not both.\n"); os.exit(2)
+    end
+
+    setupDepCtrl("bump-version")
+    local feed = loadFeed(resolveAbsPath(args.feed))
+
+    local stats, err = feed:bumpVersions({
+        channel    = args.channel,
+        level      = levels[1],
+        namespaces = haveNamespaces and args.namespace or nil,
+        allChanged = args.all_changed,
+    })
+    if not stats then
+        io.stderr:write("bump-version: " .. tostring(err) .. "\n"); os.exit(1)
+    end
+    if #stats.bumped == 0 then
+        io.stdout:write("Nothing to bump.\n"); os.exit(0)
+    end
+    for _, b in ipairs(stats.bumped) do
+        io.stdout:write(("  %-40s %s -> %s\n"):format(b.namespace, b.from, b.to))
+    end
+    io.stdout:write(("\nBumped %d package(s) to %s on channel '%s'.\n"):format(
+        #stats.bumped, stats.target, stats.channel))
+    os.exit(0)
+
+-- ─── merge-feed ───────────────────────────────────────────────────────────────
+elseif args.command == "merge-feed" then
+    if not (args.into and args.from and args.to and args.default_channel) then
+        io.stderr:write("merge-feed requires --into, --from, --to and --default-channel.\n"); os.exit(2)
+    end
+    local intoPath = resolveAbsPath(args.into)
+
+    setupDepCtrl("merge-feed")
+
+    local source = loadFeed(resolveAbsPath(args.feed))
+    local dest   = loadFeed(intoPath)
+
+    local to = {}
+    for word in args.to:gmatch("%S+") do to[#to + 1] = word end
+
+    local merged, err = dest:mergeChannels(source, {
+        from           = args.from,
+        to             = to,
+        defaultChannel = args.default_channel,
+        released       = args.released,
+        outPath        = not args.dry_run,
+    })
+    if not merged then
+        io.stderr:write("merge-feed: " .. tostring(err) .. "\n"); os.exit(1)
+    end
+    io.stdout:write(("Merged '%s' -> [%s] for %d package(s)%s\n"):format(
+        args.from, args.to, #merged, args.dry_run and " — dry run, nothing written" or (" into " .. intoPath)))
+    os.exit(0)
+
+-- ─── release-notes ──────────────────────────────────────────────────────────────
+elseif args.command == "release-notes" then
+    setupDepCtrl("release-notes")
+    local feed = loadFeed(resolveAbsPath(args.feed))
+
+    local notes, err = feed:formatReleaseNotes({
+        version = args.version,
+        channel = args.channel,
+        title   = args.title,
+    })
+    if not notes then
+        io.stderr:write("release-notes: " .. tostring(err) .. "\n"); os.exit(1)
+    end
+    local body = #notes > 0 and (notes .. "\n") or notes
+    if args.output then
+        local path = resolveAbsPath(args.output)
+        local fh, ferr = io.open(path, "w")
+        if not fh then
+            io.stderr:write("release-notes: can't write " .. path .. ": " .. tostring(ferr) .. "\n"); os.exit(1)
+        end
+        fh:write(body); fh:close()
+        io.stdout:write("Wrote release notes to " .. path .. "\n")
+    else
+        io.stdout:write(body)
+    end
+    os.exit(0)
 
 elseif args.command == "validate-schema" then
     if args.type ~= "config" and args.type ~= "feed" then
