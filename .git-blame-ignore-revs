@@ -1,0 +1,5 @@
+# GitHub honors this file automatically; enable it locally with:
+# `git config blame.ignoreRevsFile .git-blame-ignore-revs`
+
+# style: re-indent all sources to two spaces per level
+49718912b23cc19d5f0060b8641b925a37b5ac74
