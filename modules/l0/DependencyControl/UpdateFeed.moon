@@ -31,7 +31,7 @@ sectionKeys = {section, true for section in pairs scriptTypeBySection}
 -- fileBaseUrls/localFileBasePaths) are skipped: real packages are tables carrying `channels`.
 walkPackages = (feed, filter) ->
   coroutine.wrap ->
-    for scriptType in *filter\scriptTypes!
+    for scriptType in *filter.scriptTypes
       section = Common.ScriptTypeSection[scriptType]
       packages = feed.data[section]
       continue unless packages

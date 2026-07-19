@@ -975,7 +975,7 @@ class UnitTestSuite
         entry = {
           name: c.name
           suite: c.classname
-          duration: math.floor c.duration * 1000 + 0.5 -- seconds -> ms
+          duration: math.floor c.duration + 0.5
         }
         if c.skipped
           skipped += 1

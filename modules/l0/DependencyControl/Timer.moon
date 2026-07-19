@@ -1,4 +1,5 @@
 ffi = require "ffi"
+Accessors = require "l0.DependencyControl.Accessors"
 
 local getTime, sleep
 
@@ -15,7 +16,7 @@ if ffi.os == "Windows"
   counter = ffi.new "long long[1]"
   getTime = ->
     ffi.C.QueryPerformanceCounter counter
-    tonumber(counter[0]) / freq
+    tonumber(counter[0]) / freq * 1000
 
   sleep = (ms) -> ffi.C.Sleep ms
 
@@ -31,23 +32,22 @@ else
   ts = ffi.new "struct timespec"
   getTime = ->
     ffi.C.clock_gettime CLOCK_MONOTONIC, ts
-    tonumber(ts.tv_sec) + tonumber(ts.tv_nsec) * 1e-9
+    tonumber(ts.tv_sec) * 1000 + tonumber(ts.tv_nsec) * 1e-6
 
   sleep = (ms) -> ffi.C.poll nil, 0, ms
 
 ---Timer with monotonic clock readings and millisecond sleep.
 ---Not affected by system clock changes.
 ---@class Timer
+---@field elapsed number Milliseconds measured so far, excluding any intervals during which the timer was stopped. Read-only.
 class Timer
   ---Creates a new timer, running from the current time.
   new: =>
     @accumulated = 0
     @start!
 
-  ---Returns the seconds measured so far, excluding any intervals during which the
-  ---timer was stopped.
-  ---@return number seconds
-  timeElapsed: => @accumulated + (@running and getTime! - @startTime or 0)
+  elapsed: Accessors.property
+    get: => @accumulated + (@running and getTime! - @startTime or 0)
 
   ---Resumes measurement from the current time. No-op if already running, so a prior
   ---stop/start round trip never discards accumulated time.
@@ -81,9 +81,11 @@ class Timer
 
   @sleep = sleep
 
-  ---Returns the current value of the process's monotonic clock, in seconds, at
-  ---sub-second resolution. Only differences between readings are meaningful.
-  ---@return number seconds
+  ---Returns the current value of the process's monotonic clock, in milliseconds, at
+  ---sub-millisecond resolution. Only differences between readings are meaningful.
+  ---@return number milliseconds
   @getTime = getTime
+
+Accessors.install Timer
 
 return Timer

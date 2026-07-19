@@ -192,7 +192,7 @@ class Lock
   __writeHolder: =>
     return unless @recordHolder
     @expiresAt = os.time! + @expiresAfter
-    @_leaseExpiresMono = Timer.getTime! + @expiresAfter
+    @_leaseExpiresMono = Timer.getTime! + @expiresAfter * 1000
     record = {
       holderName: @holderName, instanceId: @instanceId, pid: NamedSemaphore.pid
       scope: @scope, namespace: @namespace, resource: @resource
@@ -334,7 +334,7 @@ class Lock
     validForMs = @expiresAfter * 1000
     threshold = expiryThreshold or math.min math.max(validForMs / 2, RENEW_SAFETY_MARGIN_MS), validForMs
     unless threshold < 0 -- negative forces a refresh
-      remainingMs = (@_leaseExpiresMono - Timer.getTime!) * 1000
+      remainingMs = @_leaseExpiresMono - Timer.getTime!
       return false if remainingMs > threshold
     @__writeHolder!
     return true

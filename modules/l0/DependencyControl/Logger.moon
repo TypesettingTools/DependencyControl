@@ -40,7 +40,7 @@ class Logger
     -- the monotonic clock's sub-microsecond reading diverges per state, and the pid separates
     -- whole processes
     unless seeded
-      math.randomseed Timer.getTime! * 1000000 + NamedSemaphore.pid
+      math.randomseed Timer.getTime! * 1000 + NamedSemaphore.pid
       math.random! for i = 1, 3
       seeded = true
 

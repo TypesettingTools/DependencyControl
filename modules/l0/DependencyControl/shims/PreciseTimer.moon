@@ -19,7 +19,7 @@ class PreciseTimer
 
   --- Returns the seconds elapsed since the timer was created.
   ---@return number seconds
-  timeElapsed: => @timer\timeElapsed!
+  timeElapsed: => @timer.elapsed / 1000
 
   --- Sleeps for the given number of milliseconds.
   ---@param ms? number milliseconds to sleep (defaults to 100)

@@ -1,4 +1,5 @@
 Common = require "l0.DependencyControl.Common"
+Accessors = require "l0.DependencyControl.Accessors"
 
 -- fresh copy of all script-type values, so the in-place sort below can't mutate the Enum's own list
 scriptTypeList = [v for v in *Common.ScriptType.values]
@@ -14,6 +15,7 @@ table.sort scriptTypeList
 ---    ScriptTargetFilter!\includeAll!                            -- everything
 ---    ScriptTargetFilter {[Common.ScriptType.Module]: {include: {"l0.DependencyControl"}}}
 ---@class ScriptTargetFilter
+---@field scriptTypes ScriptType[] The script types this filter would process (those carrying any rule), sorted. Read-only.
 class ScriptTargetFilter
   @scriptTypeList = scriptTypeList
 
@@ -63,10 +65,8 @@ class ScriptTargetFilter
     @ruleFor(scriptType).exclude[namespace] = true
     @
 
-  ---Returns the script types this filter would process (those carrying any rule), sorted.
-  ---@return ScriptType[] scriptTypes
-  scriptTypes: =>
-    [t for t in *@@scriptTypeList when @rules[t]]
+  scriptTypes: Accessors.property
+    get: => [t for t in *@@scriptTypeList when @rules[t]]
 
   ---Tests whether a script of the given type and namespace should be processed.
   ---@param scriptType ScriptType
@@ -78,3 +78,7 @@ class ScriptTargetFilter
     return false if rule.exclude[namespace]
     return true if rule.all
     rule.include[namespace] or false
+
+Accessors.install ScriptTargetFilter
+
+return ScriptTargetFilter

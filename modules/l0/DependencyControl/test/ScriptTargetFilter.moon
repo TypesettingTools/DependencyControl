@@ -44,12 +44,18 @@
       ut\assertEquals f\exclude(Module, "b"), f
 
     scriptTypes_listsTypesWithRules: (ut) ->
-      types = ScriptTargetFilter!\includeAll(Module)\scriptTypes!
-      ut\assertEquals #types, 1
-      ut\assertEquals types[1], Module
+      f = ScriptTargetFilter!\includeAll Module
+      ut\assertEquals #f.scriptTypes, 1
+      ut\assertEquals f.scriptTypes[1], Module
 
     scriptTypes_empty: (ut) ->
-      ut\assertEquals #(ScriptTargetFilter!\scriptTypes!), 0
+      f = ScriptTargetFilter!
+      ut\assertEquals #f.scriptTypes, 0
+
+    scriptTypes_isReadOnly: (ut) ->
+      f = ScriptTargetFilter!
+      ok = pcall -> f.scriptTypes = {}
+      ut\assertEquals ok, false
 
     new_fromSpecBooleanAll: (ut) ->
       f = ScriptTargetFilter {[Module]: true}
@@ -66,6 +72,7 @@
       "include_singleNamespace", "includeAll_singleType", "includeAll_everything",
       "matches_noRuleIsFalse", "exclude_takesPrecedenceOverAll", "exclude_overridesInclude",
       "chaining_returnsSelf", "scriptTypes_listsTypesWithRules", "scriptTypes_empty",
+      "scriptTypes_isReadOnly",
       "new_fromSpecBooleanAll", "new_fromSpecIncludeExclude"
     }
   }

@@ -4,25 +4,30 @@
   Timer = require "l0.DependencyControl.Timer"
 
   {
-    _description: "Tests for the FFI-based Timer: monotonic timing and millisecond sleep."
+    _description: "Tests for the FFI-based Timer: monotonic millisecond timing and sleep."
 
-    -- timeElapsed
+    -- elapsed
 
-    timeElapsed_nonNegative: (ut) ->
+    elapsed_nonNegative: (ut) ->
       t = Timer!
-      ut\assertGreaterThanOrEquals t\timeElapsed!, 0
+      ut\assertGreaterThanOrEquals t.elapsed, 0
 
-    timeElapsed_monotonic: (ut) ->
+    elapsed_monotonic: (ut) ->
       t = Timer!
-      a = t\timeElapsed!
-      b = t\timeElapsed!
+      a = t.elapsed
+      b = t.elapsed
       ut\assertGreaterThanOrEquals b, a
 
-    timeElapsed_advancesAfterSleep: (ut) ->
+    elapsed_advancesAfterSleep: (ut) ->
       t = Timer!
       Timer.sleep 20 -- 20 ms
       -- Require at least 10 ms to pass; allows 50% margin for CI jitter.
-      ut\assertGreaterThan t\timeElapsed!, 0.010
+      ut\assertGreaterThan t.elapsed, 10
+
+    elapsed_isReadOnly: (ut) ->
+      t = Timer!
+      ok = pcall -> t.elapsed = 5
+      ut\assertEquals ok, false
 
     -- stopwatch: start / stop / reset
 
@@ -30,27 +35,28 @@
       t = Timer!
       Timer.sleep 20
       t\stop!
-      a = t\timeElapsed!
+      a = t.elapsed
       Timer.sleep 20
       -- while stopped, the elapsed total must not advance
-      ut\assertEquals t\timeElapsed!, a
+      ut\assertEquals t.elapsed, a
 
     start_resumesAfterStop: (ut) ->
       t = Timer!
       Timer.sleep 20
-      frozen = t\stop!\timeElapsed!
+      t\stop!
+      frozen = t.elapsed
       t\start!
       Timer.sleep 20
       -- resuming measurement adds to the time accumulated before the stop
-      ut\assertGreaterThan t\timeElapsed!, frozen
+      ut\assertGreaterThan t.elapsed, frozen
 
     reset_clearsAccumulated: (ut) ->
       t = Timer!
       Timer.sleep 20
-      before = t\timeElapsed!
+      before = t.elapsed
       t\reset!
       -- reset drops back to (near) zero, below the pre-reset total
-      ut\assertLessThan t\timeElapsed!, before
+      ut\assertLessThan t.elapsed, before
 
     -- getTime: shared monotonic clock
 
@@ -62,6 +68,12 @@
       Timer.sleep 5
       b = Timer.getTime!
       ut\assertGreaterThanOrEquals b, a
+
+    -- readings are milliseconds, so a 20 ms sleep must advance the clock by ~20, not ~0.02
+    getTime_readsMilliseconds: (ut) ->
+      a = Timer.getTime!
+      Timer.sleep 20
+      ut\assertGreaterThan Timer.getTime! - a, 10
 
     -- sleep
 
@@ -80,10 +92,10 @@
       ut\assertFunction t.sleep
 
     _order: {
-      "timeElapsed_nonNegative", "timeElapsed_monotonic",
-      "timeElapsed_advancesAfterSleep",
+      "elapsed_nonNegative", "elapsed_monotonic",
+      "elapsed_advancesAfterSleep", "elapsed_isReadOnly",
       "stop_freezesElapsed", "start_resumesAfterStop", "reset_clearsAccumulated",
-      "getTime_isCallable", "getTime_monotonic",
+      "getTime_isCallable", "getTime_monotonic", "getTime_readsMilliseconds",
       "sleep_isCallable", "sleep_onClass", "sleep_onInstance"
     }
   }
