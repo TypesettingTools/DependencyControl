@@ -43,7 +43,7 @@ GitRepository = require "l0.DependencyControl.GitRepository"
 Host = require "l0.DependencyControl.Host"
 Lock = require "l0.DependencyControl.Lock"
 Logger = require "l0.DependencyControl.Logger"
-Record = require "l0.DependencyControl.Record"
+PackageRecord = require "l0.DependencyControl.PackageRecord"
 Accessors = require "l0.DependencyControl.Accessors"
 Stub = require "l0.DependencyControl.Stub"
 Timer = require "l0.DependencyControl.Timer"
@@ -53,8 +53,8 @@ Updater = require "l0.DependencyControl.Updater"
 
 ---Main DependencyControl entry point.
 ---Provides package management and access to all sub-modules.
----@class DependencyControl: Record
-class DependencyControl extends Record
+---@class DependencyControl: PackageRecord
+class DependencyControl extends PackageRecord
   @Common = Common
   @ConfigHandler = ConfigHandler
   @ConfigView = ConfigView
@@ -71,7 +71,7 @@ class DependencyControl extends Record
   @Host = Host
   @Lock = Lock
   @Logger = Logger
-  @Record = Record
+  @PackageRecord = PackageRecord
   @Stub = Stub
   @Timer = Timer
   @UpdateFeed = UpdateFeed
@@ -80,7 +80,7 @@ class DependencyControl extends Record
   @Finalizer = Finalizer
   @SemanticVersion = SemanticVersion
 
--- inherit Record's version accessor before constructing any instance below
+-- inherit PackageRecord's version accessor before constructing any instance below
 Accessors.install DependencyControl
 
 rec = DependencyControl{

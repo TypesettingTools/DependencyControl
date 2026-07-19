@@ -65,7 +65,7 @@ class Updater
     UpdateTask.isWithinContextCeiling reason, @config.c.updates.mode or @@defaultMode
 
   ---Creates or updates a queued update task for a record.
-  ---@param record Record|table A record, or a plain table to construct one from.
+  ---@param record PackageRecord|table A record, or a plain table to construct one from.
   ---@param targetVersion? number|string Minimum version to install.
   ---@param addFeeds? string[]
   ---@param optional? boolean Treat this as an optional dependency.
@@ -98,7 +98,7 @@ class Updater
     return task
 
   ---Ensures a module dependency is installed/updated and loadable.
-  ---@param record Record
+  ---@param record PackageRecord
   ---@param targetVersion? number|string Minimum version to install.
   ---@param addFeeds? string[]
   ---@param optional? boolean Treat this as an optional dependency.
@@ -126,7 +126,7 @@ class Updater
       return nil, code, res
 
   ---Performs a periodic non-blocking update check for a managed record.
-  ---@param record Record
+  ---@param record PackageRecord
   ---@return UpdateStatus status The status code (the task's run result when an update actually runs).
   ---@return string? entryPath The resolved entry-point path, returned only with a ProtectedInstall status.
   scheduleUpdate: (record) =>

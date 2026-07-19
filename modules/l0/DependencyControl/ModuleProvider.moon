@@ -60,7 +60,7 @@ fullTraceback = (msg) ->
     i += 1
   table.concat parts, "\n"
 
--- Returns true when value is a live DependencyControl Record instance. Uses class name and the
+-- Returns true when value is a live DependencyControl PackageRecord instance. Uses class name and the
 -- presence of checkVersion rather than class identity so the test passes across self-update
 -- reloads and other classes accidentally named "DependencyControl".
 isDepCtrlVersionRecord = (value) ->
@@ -103,7 +103,7 @@ search = (name) ->
 ---Resolves provided module aliases to their provider module through a custom package searcher.
 ---@class ModuleProvider
 class ModuleProvider
-  ---Returns true when value is a live DependencyControl Record instance, regardless of which class object created it.
+  ---Returns true when value is a live DependencyControl PackageRecord instance, regardless of which class object created it.
   ---@param value any
   ---@return boolean isRecord
   @isDepCtrlVersionRecord = isDepCtrlVersionRecord

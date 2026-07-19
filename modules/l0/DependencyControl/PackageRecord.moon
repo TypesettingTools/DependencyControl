@@ -25,8 +25,8 @@ unless recordsByNamespace
   _G[DEPCTRL_RECORDS_GLOBAL_KEY] = recordsByNamespace
 
 ---Registers a record in the global registry under its namespace. Latest call wins.
----@param record Record
----@return Record record The record passed in.
+---@param record PackageRecord
+---@return PackageRecord record The record passed in.
 registerRecord = (record) ->
   recordsByNamespace[record.namespace] = record if record.namespace
   return record
@@ -54,9 +54,9 @@ unregisterRecord = (namespace) -> recordsByNamespace[namespace] = nil
 ---@field optional? boolean When true a missing module is not an error, but a module that is found is still version-checked.
 ---@field name? string Friendly name used in error messages.
 
----Constructor arguments for a [Record](lua://Record). All fields are optional; unset fields are
+---Constructor arguments for a [PackageRecord](lua://PackageRecord). All fields are optional; unset fields are
 ---filled from script_* globals (for automation scripts) or sensible defaults.
----@class RecordArgs
+---@class PackageRecordArgs
 ---@field [1]? (string|RequiredModuleSpec)[] Required module specs, passed positionally.
 ---@field moduleName? string Module namespace; its presence marks this record as a module rather than an automation script.
 ---@field name? string Display name (defaults to the script/module name).
@@ -75,10 +75,10 @@ unregisterRecord = (namespace) -> recordsByNamespace[namespace] = nil
 ---@field saveRecordToConfig? boolean Persist this record to the config file (default true).
 
 ---DependencyControl record representing one managed or unmanaged script/module.
----@class Record
+---@class PackageRecord
 ---@field semanticVersion SemanticVersion This record's version as a value object (the canonical store).
 ---@field version integer This record's version as a packed integer; assignable from a string, packed integer, or SemanticVersion.
-class Record
+class PackageRecord
   msgs = {
     new: {
       badRecordError: "Error: Bad #{constants.DEPCTRL_NAME} record (%s)."
@@ -110,14 +110,14 @@ class Record
   ---Returns the live, installed record registered for a namespace, or nil if none is registered
   ---or the registered one is still a virtual (not-yet-installed) placeholder.
   ---@param namespace string
-  ---@return Record? record
+  ---@return PackageRecord? record
   @getRegisteredRecord = (namespace) =>
     record = recordsByNamespace[namespace]
     record unless record and record.virtual
 
   ---Returns all currently registered live records keyed by namespace.
   ---Includes virtual (not-yet-installed) placeholders.
-  ---@return table<string, Record> records
+  ---@return table<string, PackageRecord> records
   @getAllRegisteredRecords = => {ns, record for ns, record in pairs recordsByNamespace}
 
   init = =>
@@ -138,9 +138,9 @@ class Record
 
 
   ---Creates a DependencyControl record from explicit arguments and/or script globals.
-  ---@param args RecordArgs
+  ---@param args PackageRecordArgs
   new: (args) =>
-    init Record unless @@logger
+    init PackageRecord unless @@logger
 
     -- createDummyRef below can expose this record before its real version is parsed, so set a valid one now
     @semanticVersion = SemanticVersion.fromPacked 0
@@ -335,7 +335,7 @@ class Record
     FileCache.get @@config.c.paths.cache, @namespace, name, opts
 
   ---Checks whether this record's version satisfies a minimum version.
-  ---@param value number|string|Record Version, or record, to compare against.
+  ---@param value number|string|PackageRecord Version, or record, to compare against.
   ---@param precision? SemverPrecision Precision to compare at (default "patch").
   ---@return boolean? satisfied
   ---@return number|string|nil maskedOrError Masked comparison value on success, or an error message.
@@ -562,5 +562,5 @@ class Record
     unregisterRecord @namespace
     return FileOps.remove toRemove, true, true
 
--- wire the computed `version` accessor (returns Record, so the module still yields the class)
-Accessors.install Record
+-- wire the computed `version` accessor (returns PackageRecord, so the module still yields the class)
+Accessors.install PackageRecord

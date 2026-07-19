@@ -1,11 +1,11 @@
--- Record tests: extracted from the main test suite.
--- Called from test.moon as: (controls\requireTest "Record") basePath
+-- PackageRecord tests: extracted from the main test suite.
+-- Called from test.moon as: (controls\requireTest "PackageRecord") basePath
 (basePath) ->
   ffi = require "ffi"
   constants = require "l0.DependencyControl.Constants"
   Common = require "l0.DependencyControl.Common"
   FileOps = require "l0.DependencyControl.FileOps"
-  Record = require "l0.DependencyControl.Record"
+  PackageRecord = require "l0.DependencyControl.PackageRecord"
   Stub = require "l0.DependencyControl.Stub"
   {:stubSelf} = require "l0.DependencyControl.test.helpers.stub-helpers"
 
@@ -36,17 +36,17 @@
 
   moduleRecord = {
     scriptType: Common.ScriptType.Module, namespace: "l0.Foo",
-    getPossibleEntryPointPaths: Record.getPossibleEntryPointPaths,
-    getEntryPointPath: Record.getEntryPointPath
+    getPossibleEntryPointPaths: PackageRecord.getPossibleEntryPointPaths,
+    getEntryPointPath: PackageRecord.getEntryPointPath
   }
   macroRecord = {
     scriptType: Common.ScriptType.Automation, namespace: "l0.Foo.Bar",
-    getPossibleEntryPointPaths: Record.getPossibleEntryPointPaths,
-    getEntryPointPath: Record.getEntryPointPath
+    getPossibleEntryPointPaths: PackageRecord.getPossibleEntryPointPaths,
+    getEntryPointPath: PackageRecord.getEntryPointPath
   }
 
   {
-    _description: "Tests for Record, the core DependencyControl record class."
+    _description: "Tests for PackageRecord, the core DependencyControl record class."
 
     ---@param ut UnitTest
     _setup: (ut) ->
@@ -139,64 +139,64 @@
       ut\assertFalse isUserPath
 
     checkVersion_equal: (ut) ->
-      rec = {version: 65793, __class: Record}
-      ut\assertTruthy Record.checkVersion rec, 65793
+      rec = {version: 65793, __class: PackageRecord}
+      ut\assertTruthy PackageRecord.checkVersion rec, 65793
 
     checkVersion_greater: (ut) ->
-      rec = {version: 65793, __class: Record}
-      ut\assertTruthy Record.checkVersion rec, "1.0.0"
+      rec = {version: 65793, __class: PackageRecord}
+      ut\assertTruthy PackageRecord.checkVersion rec, "1.0.0"
 
     checkVersion_older: (ut) ->
-      rec = {version: 65793, __class: Record}
-      ut\assertFalsy Record.checkVersion rec, "2.0.0"
+      rec = {version: 65793, __class: PackageRecord}
+      ut\assertFalsy PackageRecord.checkVersion rec, "2.0.0"
 
     checkVersion_recordArg: (ut) ->
-      rec = {version: 65793, __class: Record}
-      otherRec = {version: 65536, __class: Record}
-      ut\assertTruthy Record.checkVersion rec, otherRec
+      rec = {version: 65793, __class: PackageRecord}
+      otherRec = {version: 65536, __class: PackageRecord}
+      ut\assertTruthy PackageRecord.checkVersion rec, otherRec
 
     setVersion_validString: (ut) ->
       rec = {}
-      result = Record.setVersion rec, "2.3.4"
+      result = PackageRecord.setVersion rec, "2.3.4"
       ut\assertEquals result, 131844
       ut\assertEquals rec.semanticVersion\toPacked!, 131844 -- stored on the canonical instance
 
     setVersion_validNumber: (ut) ->
       rec = {}
-      result = Record.setVersion rec, 65793
+      result = PackageRecord.setVersion rec, 65793
       ut\assertEquals result, 65793
 
     setVersion_invalid: (ut) ->
       rec = {}
-      result, err = Record.setVersion rec, "x.y.z"
+      result, err = PackageRecord.setVersion rec, "x.y.z"
       ut\assertNil result
       ut\assertString err
 
     -- the `version` accessor: a packed-int view over the canonical @semanticVersion instance
     version_accessorGetsAndSets: (ut) ->
       SemanticVersion = require "l0.DependencyControl.SemanticVersion"
-      -- a real Record-metatabled instance so `version` dispatches through the installed accessor
-      rec = setmetatable {semanticVersion: SemanticVersion "1.2.3"}, Record.__base
+      -- a real PackageRecord-metatabled instance so `version` dispatches through the installed accessor
+      rec = setmetatable {semanticVersion: SemanticVersion "1.2.3"}, PackageRecord.__base
       ut\assertEquals rec.version, SemanticVersion\toPacked "1.2.3" -- getter yields the packed int
       rec.version = "2.0.0" -- setter accepts a string
       ut\assertEquals tostring(rec.semanticVersion), "2.0.0" -- rebuilt the canonical instance
       ut\assertEquals rec.version, SemanticVersion\toPacked "2.0.0"
 
     validateNamespace_valid: (ut) ->
-      rec = {namespace: "l0.DependencyControl", virtual: false, __class: Record}
-      ut\assertTrue Record.validateNamespace rec
+      rec = {namespace: "l0.DependencyControl", virtual: false, __class: PackageRecord}
+      ut\assertTrue PackageRecord.validateNamespace rec
 
     validateNamespace_invalid_noDot: (ut) ->
-      rec = {namespace: "no-dots", virtual: false, __class: Record}
-      ut\assertFalse Record.validateNamespace rec
+      rec = {namespace: "no-dots", virtual: false, __class: PackageRecord}
+      ut\assertFalse PackageRecord.validateNamespace rec
 
     validateNamespace_invalid_trailingDot: (ut) ->
-      rec = {namespace: "l0.", virtual: false, __class: Record}
-      ut\assertFalse Record.validateNamespace rec
+      rec = {namespace: "l0.", virtual: false, __class: PackageRecord}
+      ut\assertFalse PackageRecord.validateNamespace rec
 
     validateNamespace_virtual: (ut) ->
-      rec = {namespace: "bad", virtual: true, __class: Record}
-      ut\assertTrue Record.validateNamespace rec
+      rec = {namespace: "bad", virtual: true, __class: PackageRecord}
+      ut\assertTrue PackageRecord.validateNamespace rec
 
     uninstall_virtual: (ut) ->
       rec = {
@@ -205,7 +205,7 @@
         name: "TestScript",
         __class: {RecordType: Common.RecordType, terms: Common.terms}
       }
-      result, err = Record.uninstall rec
+      result, err = PackageRecord.uninstall rec
       ut\assertNil result
       ut\assertString err
       ut\assertContains err, "virtual"
@@ -218,7 +218,7 @@
         name: "TestMod",
         __class: {RecordType: Common.RecordType, terms: Common.terms}
       }
-      result, err = Record.uninstall rec
+      result, err = PackageRecord.uninstall rec
       ut\assertNil result
       ut\assertString err
       ut\assertContains err, "unmanaged"
@@ -243,7 +243,7 @@
         config: {delete: ->}, getSubmodules: -> nil,
         __class: {RecordType: Common.RecordType, terms: Common.terms}
       }
-      success, results = Record.uninstall rec
+      success, results = PackageRecord.uninstall rec
       ut\assertTrue success
       ut\assertTable results
       ut\assertFalse FileOps.exists FileOps.joinPath(root, "l0", "Functional.moon"), "file"
@@ -268,7 +268,7 @@
         config: {delete: ->}, getSubmodules: -> nil,
         __class: {RecordType: Common.RecordType, terms: Common.terms}
       }
-      success, results = Record.uninstall rec
+      success, results = PackageRecord.uninstall rec
       ut\assertTrue success
       ut\assertTable results
       ut\assertFalse FileOps.exists FileOps.joinPath(root, "a-mo.Script.moon"), "file"
@@ -282,7 +282,7 @@
         scriptType: Common.ScriptType.Module,
         __class: {RecordType: Common.RecordType, ScriptType: Common.ScriptType}
       }
-      ut\assertNil Record.getSubmodules rec
+      ut\assertNil PackageRecord.getSubmodules rec
 
     getSubmodules_unmanaged: (ut) ->
       rec = {
@@ -291,7 +291,7 @@
         scriptType: Common.ScriptType.Module,
         __class: {RecordType: Common.RecordType, ScriptType: Common.ScriptType}
       }
-      ut\assertNil Record.getSubmodules rec
+      ut\assertNil PackageRecord.getSubmodules rec
 
     getSubmodules_nonModule: (ut) ->
       rec = {
@@ -300,12 +300,12 @@
         scriptType: Common.ScriptType.Automation,
         __class: {RecordType: Common.RecordType, ScriptType: Common.ScriptType}
       }
-      ut\assertNil Record.getSubmodules rec
+      ut\assertNil PackageRecord.getSubmodules rec
 
     getConfigFileName_basic: (ut) ->
       ut\stub(aegisub, "decode_path")\calls (path) -> path
       rec = {configFile: "test.json", __class: {configDir: "?user/config"}}
-      result = Record.getConfigFileName rec
+      result = PackageRecord.getConfigFileName rec
       ut\assertString result
       ut\assertContains result, "test.json"
       ut\assertContains result, "?user/config"
@@ -324,7 +324,7 @@
         __class: {updater: updaterMock}
       }
       process = (->)
-      Record.registerMacro rec, "MyMacro", "My macro", process
+      PackageRecord.registerMacro rec, "MyMacro", "My macro", process
       ut\assertEquals #registered, 1
       ut\assertContains registered[1][1], "MyMacro"
       registerTestsStub\assertCalledOnceWith rec
@@ -339,29 +339,29 @@
       ns = uniqueName "regns"
       rec = {namespace: ns}
       _G[DEPCTRL_RECORDS_GLOBAL_KEY][ns] = rec
-      ut\assertIs Record\getRegisteredRecord(ns), rec
+      ut\assertIs PackageRecord\getRegisteredRecord(ns), rec
 
     registry_getMissing: (ut) ->
-      ut\assertNil Record\getRegisteredRecord uniqueName "absent"
+      ut\assertNil PackageRecord\getRegisteredRecord uniqueName "absent"
 
     registry_getSkipsVirtual: (ut) ->
       ns = uniqueName "virtns"
       _G[DEPCTRL_RECORDS_GLOBAL_KEY][ns] = {namespace: ns, virtual: true}
-      ut\assertNil Record\getRegisteredRecord ns
+      ut\assertNil PackageRecord\getRegisteredRecord ns
 
     registry_returnsAfterUnvirtualized: (ut) ->
       ns = uniqueName "virtns"
       rec = {namespace: ns, virtual: true}
       _G[DEPCTRL_RECORDS_GLOBAL_KEY][ns] = rec
-      ut\assertNil Record\getRegisteredRecord ns
+      ut\assertNil PackageRecord\getRegisteredRecord ns
       rec.virtual = false
-      ut\assertIs Record\getRegisteredRecord(ns), rec
+      ut\assertIs PackageRecord\getRegisteredRecord(ns), rec
 
     registry_getRegisteredReturnsCopy: (ut) ->
       ns = uniqueName "allns"
       rec = {namespace: ns}
       _G[DEPCTRL_RECORDS_GLOBAL_KEY][ns] = rec
-      records = Record\getAllRegisteredRecords!
+      records = PackageRecord\getAllRegisteredRecords!
       ut\assertIs records[ns], rec
       -- a shallow copy: mutating the returned table must not affect the live registry
       records[ns] = nil
@@ -371,7 +371,7 @@
       ns = uniqueName "allvirtns"
       rec = {namespace: ns, virtual: true}
       _G[DEPCTRL_RECORDS_GLOBAL_KEY][ns] = rec
-      ut\assertIs Record\getAllRegisteredRecords![ns], rec
+      ut\assertIs PackageRecord\getAllRegisteredRecords![ns], rec
 
     -- Regression: the constructor must populate @provides (normalizing bare strings to ModuleAlias
     -- tables) and register every alias with the module-provides searcher. A field/local mix-up that
@@ -379,7 +379,7 @@
     construct_populatesAndRegistersProvides: (ut) ->
       ModuleProvider = require "l0.DependencyControl.ModuleProvider"
       ns, alias = uniqueName("prov.mod"), uniqueName "alias"
-      rec = Record {moduleName: ns, version: "1.0.0", feed: "https://example.com/feed.json",
+      rec = PackageRecord {moduleName: ns, version: "1.0.0", feed: "https://example.com/feed.json",
         provides: {{name: alias, version: "^1"}, "bare.#{ns}"}}
       ut\assertNotNil rec.provides
       ut\assertEquals #rec.provides, 2
@@ -392,7 +392,7 @@
     -- getFileCache: a shared cache under the configured cache base, this script's namespace, and the given name
     getFileCache_namespacedUnderConfigBase: (ut) ->
       fakeSelf = {namespace: "l0.test.script", __class: {config: {c: {paths: {cache: "?user/cache"}}}}}
-      cache = Record.getFileCache fakeSelf, "thumbnails"
+      cache = PackageRecord.getFileCache fakeSelf, "thumbnails"
       ut\assertNotNil cache
       ut\assertMatches cache.cacheDir, "l0%.test%.script/thumbnails$"
 
@@ -400,18 +400,18 @@
     -- defaulting to the record's own version (regression: they'd been class fields, unreachable via rec\method)
     getVersion_compatMethods: (ut) ->
       SemanticVersion = require "l0.DependencyControl.SemanticVersion"
-      fakeSelf = stubSelf Record, {version: SemanticVersion\toPacked "1.2.3"}
+      fakeSelf = stubSelf PackageRecord, {version: SemanticVersion\toPacked "1.2.3"}
       ut\assertEquals fakeSelf\getVersionString!, "1.2.3" -- defaults to @version
       ut\assertEquals fakeSelf\getVersionNumber("2.0.0"), SemanticVersion\toPacked "2.0.0"
       ut\assertEquals fakeSelf\getVersionString(SemanticVersion\toPacked "3.1.0"), "3.1.0"
 
     -- loadConfig imports recordType from the stored config like any other persisted field
     loadConfig_importsRecordType: (ut) ->
-      record = stubSelf Record, {
-        __class: Record, virtual: false, namespace: "l0.x", scriptType: Common.ScriptType.Module
+      record = stubSelf PackageRecord, {
+        __class: PackageRecord, virtual: false, namespace: "l0.x", scriptType: Common.ScriptType.Module
         config: {load: (=> true), c: {recordType: Common.RecordType.Unmanaged}}
       }
-      Record.__base.loadConfig record, true
+      PackageRecord.__base.loadConfig record, true
       ut\assertEquals record.recordType, Common.RecordType.Unmanaged
 
     _order: {

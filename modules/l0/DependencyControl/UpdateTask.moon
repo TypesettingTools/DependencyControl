@@ -11,7 +11,7 @@ UnitTestSuite = require "l0.DependencyControl.UnitTestSuite"
 
 ---The "installation"/"update" term for a record's task. Common.terms.isInstall is keyed by
 ---true/false, while an installed record leaves `virtual` nil.
----@param record Record
+---@param record PackageRecord
 ---@return string term
 getInstallTerm = (record) -> Common.terms.isInstall[record.virtual or false]
 
@@ -333,7 +333,7 @@ class UpdateTask
       name, detailMsg
 
   ---Creates an update task for one record.
-  ---@param record Record
+  ---@param record PackageRecord
   ---@param targetVersionNumber? number Minimum version to install (default 0, i.e. any).
   ---@param addFeeds? string[]
   ---@param optional? boolean Treat this as an optional dependency.
@@ -605,7 +605,7 @@ class UpdateTask
     return nil, nil
 
   ---Runs the full update/install flow for this task.
-  ---Acquires the global updater lock but does not release it — the caller (a Record.requireModules /
+  ---Acquires the global updater lock but does not release it — the caller (a PackageRecord.requireModules /
   ---macro-hook / Toolbox entry point) must call `updater\releaseLock` once its whole operation is done,
   ---or the lock is held until its lease lapses (orphanTimeout), blocking other scripts' updates.
   ---@param waitLock? boolean Wait for a concurrent update to finish instead of bailing.

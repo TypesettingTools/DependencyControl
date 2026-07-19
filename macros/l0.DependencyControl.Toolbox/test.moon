@@ -343,7 +343,7 @@ UnitTestSuite "l0.DependencyControl.Toolbox", (macros, dependencies, testExports
     }
 
     UninstallFlow: {
-      _description: "Uninstall Script: a picker selection reaches Record uninstall, and every result shape is reported without erroring."
+      _description: "Uninstall Script: a picker selection reaches PackageRecord uninstall, and every result shape is reported without erroring."
 
       -- A Stub can't stand in for a metamethod (LuaJIT requires __call to be a plain function), so the
       -- construction seam is swapped by hand and restored in the teardown, which runs even when a test fails.
