@@ -82,7 +82,7 @@ class Lock
     }
   }
 
-  @logger = Logger fileBaseName: "DependencyControl.Lock"
+  @logger = Logger fileBaseName: "#{constants.DEPCTRL_SHORT_NAME}.Lock"
 
   ---@alias LockState
   ---| -1 # Unknown: the state can't be determined without trying to acquire (e.g. a foreign holder)

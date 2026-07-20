@@ -1,6 +1,7 @@
 
 Common = require "l0.DependencyControl.Common"
 Logger = require "l0.DependencyControl.Logger"
+constants = require "l0.DependencyControl.Constants"
 Finalizer = require "l0.DependencyControl.Finalizer"
 
 msgs = {
@@ -25,7 +26,7 @@ _stubMatch = (call, expected) ->
 ---Can be used standalone or via UnitTest:stub for automatic lifecycle management.
 ---@class Stub
 class Stub
-  @logger = Logger fileBaseName: "DependencyControl.Stub"
+  @logger = Logger fileBaseName: "#{constants.DEPCTRL_SHORT_NAME}.Stub"
 
   ---Creates a spy on a method, recording calls while still invoking the original method.
   ---@param table table|string The table to spy into, or a module name (looked up in the module cache).

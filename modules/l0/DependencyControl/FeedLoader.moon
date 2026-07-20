@@ -3,7 +3,7 @@ constants = require "l0.DependencyControl.Constants"
 Logger = require "l0.DependencyControl.Logger"
 UpdateFeed = require "l0.DependencyControl.UpdateFeed"
 
-defaultLogger = Logger fileBaseName: "DepCtrl.FeedLoader"
+defaultLogger = Logger fileBaseName: "#{constants.DEPCTRL_SHORT_NAME}.FeedLoader"
 
 ---Owns DependencyControl's single on-disk feed cache and hands out `UpdateFeed` instances wired to it,
 ---so no consumer assembles feed-fetch settings or names the cache. One instance is built per config (the

@@ -1,10 +1,11 @@
 Hash = require "l0.DependencyControl.hash"
 FileOps = require "l0.DependencyControl.FileOps"
 Logger = require "l0.DependencyControl.Logger"
+constants = require "l0.DependencyControl.Constants"
 Lock = require "l0.DependencyControl.Lock"
 dkjson = require "l0.dkjson"
 
-defaultLogger = Logger fileBaseName: "DepCtrl.FileCache"
+defaultLogger = Logger fileBaseName: "#{constants.DEPCTRL_SHORT_NAME}.FileCache"
 
 LOCK_NAMESPACE = "l0.DependencyControl.FileCache" -- Global-lock namespace for serializing cache writes
 LOCK_TIMEOUT = 5000 -- ms to wait for the write lock before skipping the write

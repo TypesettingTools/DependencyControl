@@ -15,7 +15,7 @@ Accessors = require "l0.DependencyControl.Accessors"
 ReleaseNotes = require "l0.DependencyControl.release-notes"
 JsonSchema = nil
 
-defaultLogger = Logger fileBaseName: "DepCtrl.UpdateFeed"
+defaultLogger = Logger fileBaseName: "#{constants.DEPCTRL_SHORT_NAME}.UpdateFeed"
 
 ScriptType = Common.ScriptType
 

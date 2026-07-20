@@ -1,9 +1,10 @@
 Logger = require "l0.DependencyControl.Logger"
+constants = require "l0.DependencyControl.Constants"
 Common = require "l0.DependencyControl.Common"
 SemanticVersion = require "l0.DependencyControl.SemanticVersion"
 ReleaseNotes = require "l0.DependencyControl.release-notes"
 
-defaultLogger = Logger fileBaseName: "DepCtrl.ScriptUpdateRecord"
+defaultLogger = Logger fileBaseName: "#{constants.DEPCTRL_SHORT_NAME}.ScriptUpdateRecord"
 
 ---@class FeedFileData
 ---@field name string Filename relative to the base URL.

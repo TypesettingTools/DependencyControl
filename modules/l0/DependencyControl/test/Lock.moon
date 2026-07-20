@@ -57,7 +57,7 @@
     -- class-level Logger: verifies Logger was constructed with the correct fileBaseName
 
     classLogger_fileBaseName: (ut) ->
-      ut\assertEquals Lock.logger.fileBaseName, "DependencyControl.Lock"
+      ut\assertEquals Lock.logger.fileBaseName, "DepCtrl.Lock"
 
     -- constructor
 

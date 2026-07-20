@@ -20,7 +20,7 @@ UpdateStatus = UpdateTask.UpdateStatus
 ---@field feedTrust FeedTrust The feed-trust model (official + user trust merge, trust queries, mutations).
 ---@field feedLoader FeedLoader The shared feed loader (owns the feed cache; builds every `UpdateFeed`).
 class Updater
-  @logger = Logger fileBaseName: "DependencyControl.Updater"
+  @logger = Logger fileBaseName: "#{constants.DEPCTRL_SHORT_NAME}.Updater"
 
   -- Defaults for the config's `updates` section settings this class owns, applied when the key is unset.
   ---@type UpdateContextCeiling

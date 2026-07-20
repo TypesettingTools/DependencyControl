@@ -1,10 +1,11 @@
 json = require "json"
 Logger = require "l0.DependencyControl.Logger"
+constants = require "l0.DependencyControl.Constants"
 FileOps = require "l0.DependencyControl.FileOps"
 SemanticVersion = require "l0.DependencyControl.SemanticVersion"
 
 JSON_SCHEMA_ID_KEYWORD = "$schema"
-defaultLogger = Logger fileBaseName: "DepCtrl.JsonSchema"
+defaultLogger = Logger fileBaseName: "#{constants.DEPCTRL_SHORT_NAME}.JsonSchema"
 
 -- Lazily resolve lua-schema because it's only available on luarocks, not DepCtrl
 luaSchema = nil

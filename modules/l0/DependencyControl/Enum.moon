@@ -1,4 +1,5 @@
 Logger = require "l0.DependencyControl.Logger"
+constants = require "l0.DependencyControl.Constants"
 
 reservedKeys = {
   "describe",
@@ -36,7 +37,7 @@ msgs = {
 ---An immutable enumeration type with value/key reverse lookup.
 ---@class Enum
 class Enum
-  @logger = Logger fileBaseName: "DependencyControl.Enum"
+  @logger = Logger fileBaseName: "#{constants.DEPCTRL_SHORT_NAME}.Enum"
   ---Reports whether `k` is reserved as an enum key — a built-in member name or `__`-prefixed.
   ---@param k string
   ---@return boolean reserved

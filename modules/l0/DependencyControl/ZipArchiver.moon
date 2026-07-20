@@ -1,10 +1,11 @@
 lfs = require "lfs"
 ffi = require "ffi"
 Logger = require "l0.DependencyControl.Logger"
+constants = require "l0.DependencyControl.Constants"
 FileOps = require "l0.DependencyControl.FileOps"
 json = require "l0.dkjson"
 
-defaultLogger = Logger fileBaseName: "DepCtrl.ZipArchiver"
+defaultLogger = Logger fileBaseName: "#{constants.DEPCTRL_SHORT_NAME}.ZipArchiver"
 
 -- Drives .NET's System.IO.Compression ZipArchive directly on Windows, reading
 -- the (source → entry name) mapping from a JSON manifest. Entry names are taken

@@ -120,7 +120,7 @@ Reload your automation scripts to generate a new configuration file.]]
   ---@param filePath? string
   ---@param logger? Logger
   ---@param schemaOpts? { schemaId: string, migrate: fun(config: table, current?: string, target: string): boolean } The `$schema` this handler targets and the migration callback invoked on load when a file's `$schema` differs.
-  new: (filePath, @logger = Logger(fileBaseName: @@__name), schemaOpts = {}) =>
+  new: (filePath, @logger = Logger(fileBaseName: "#{constants.DEPCTRL_SHORT_NAME}.#{@@__name}"), schemaOpts = {}) =>
     @views = setmetatable {}, {__mode: 'k'}
     @config = {}
     -- the loaded file's `$schema`, exposed so views can see which schema their values conform to
