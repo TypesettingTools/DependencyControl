@@ -31,6 +31,13 @@ npmRangeWildcardTokens = {
 
 semverFields = {"major", "minor", "patch"}
 
+---A version comparison operator (the value of a ComparisonOperator enum member).
+---@alias ComparisonOperator
+---| ">" # GT: greater than
+---| ">=" # GTE: greater than or equal
+---| "<" # LT: less than
+---| "<=" # LTE: less than or equal
+---| "=" # EQ: equal
 ComparisonOperator = Enum "ComparisonOperator", {
   GT: ">"
   GTE: ">="
@@ -39,14 +46,6 @@ ComparisonOperator = Enum "ComparisonOperator", {
   EQ: "="
 }
 Op = ComparisonOperator
-
----A version comparison operator (the value of a ComparisonOperator enum member).
----@alias ComparisonOperator
----| ">"  # greater than
----| ">=" # greater than or equal
----| "<"  # less than
----| "<=" # less than or equal
----| "="  # equal
 
 ---A semantic version parsed into its specified components; an absent or wildcard (`x`/`*`) component is nil.
 ---@class PartialVersion

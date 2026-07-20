@@ -40,13 +40,19 @@ resolveRedirect = (base, location) ->
   dir = path\match("^(.*/)") or "/"
   "#{proto}://#{authority}#{dir}#{location}"
 
--- Lifecycle state of a single download.
+---Lifecycle state of a single download.
+---@alias DownloadStatus
+---| "queued" # Queued: created, not yet started
+---| "active" # Active: transfer in progress
+---| "finished" # Finished: completed successfully
+---| "failed" # Failed: completed with an error
+---| "cancelled" # Cancelled: cancelled before completion
 DownloadStatus = Enum "DownloadStatus", {
-  Queued: "queued" -- created, not yet started
-  Active: "active" -- transfer in progress
-  Finished: "finished" -- completed successfully
-  Failed: "failed" -- completed with an error
-  Cancelled: "cancelled" -- cancelled before completion
+  Queued: "queued"
+  Active: "active"
+  Finished: "finished"
+  Failed: "failed"
+  Cancelled: "cancelled"
 }
 
 -- statuses representing a download that is no longer in flight
@@ -476,8 +482,14 @@ else
 ---status). A Finish listener may downgrade the status via markFailed (e.g. for a
 ---failed hash verification). The current state is exposed via @status (Download.Status).
 ---@class Download: EventEmitter
+---@field status DownloadStatus Current lifecycle state of this download.
 class Download extends EventEmitter
   @Status = DownloadStatus
+
+  ---Events emitted by a Download.
+  ---@alias DownloadEvent
+  ---| "progress" # Progress: transfer data arrived
+  ---| "finish" # Finish: the download reached a terminal status
   @Event = Enum "DownloadEvent", { Progress: "progress", Finish: "finish" }
 
   ---Creates a single download in the Queued state.
@@ -542,6 +554,11 @@ class Download extends EventEmitter
 ---@field progress number Current aggregate download progress across all queued transfers, 0-100 (read-only).
 class Downloader extends EventEmitter
   @Download = Download
+
+  ---Events emitted by a Downloader.
+  ---@alias DownloaderEvent
+  ---| "progress" # Progress: aggregate progress across queued transfers changed
+  ---| "finished" # Finished: await completed
   @Event = Enum "DownloaderEvent", { Progress: "progress", Finished: "finished" }
   ---Drives every queued download of the given downloader to completion with a round-robin
   ---scheduler, keeping up to its `maxConnections` transfers active and honoring its cancellation
