@@ -3,6 +3,11 @@
 --
 --   macOS/Linux: libcurl multi interface — parallel, scheduled by libcurl
 --   Windows:     WinINet driver multiplexed by our round-robin scheduler (parallel)
+--
+-- Single-underscore members form the internal contract between a download and its transfer runner and driver.
+-- They are not part of the public API, but runner and driver implementations call and maintain them (a
+-- Download's _complete/_notifyProgress/_cancel and its transfer scratch, the Downloader's _reportProgress).
+-- Double-underscore members are class-private.
 
 ffi = require "ffi"
 lfs = require "lfs"
@@ -523,8 +528,8 @@ class Download extends EventEmitter
   ---the status via `markFailed`). Idempotent — only the first call takes effect.
   ---@param transportError? string A transport-level error, if any.
   _complete: (transportError) =>
-    return if @_finalized
-    @_finalized = true
+    return if @__finalized
+    @__finalized = true
     if transportError
       @error = transportError
       @status = @@Status.Failed
@@ -535,8 +540,8 @@ class Download extends EventEmitter
   ---Part of the download-runner callback contract: a runner calls this to finalize the download as
   ---cancelled and fire Finish listeners. Idempotent.
   _cancel: =>
-    return if @_finalized
-    @_finalized = true
+    return if @__finalized
+    @__finalized = true
     @status = @@Status.Cancelled
     @_emit @@Event.Finish
 
@@ -587,7 +592,7 @@ class Downloader extends EventEmitter
 
     @downloads = {}
     @cancelled = false
-    @_runner = runner or defaultRunner
+    @__runner = runner or defaultRunner
 
   ---Queues a download. Transfers happen later, in await.
   ---Register progress/finish listeners on the returned Download as needed.
@@ -630,7 +635,7 @@ class Downloader extends EventEmitter
   ---@return Downloader self for chaining
   await: (onProgress) =>
     @on @@Event.Progress, onProgress if onProgress
-    @_runner @
+    @__runner @
     @off @@Event.Progress, onProgress if onProgress
     @_emit @@Event.Finished
     return @
