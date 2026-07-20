@@ -330,7 +330,7 @@ class SemanticVersion
   __lt: (other) => SemanticVersion\toPacked(@) < SemanticVersion\toPacked other
   __le: (other) => SemanticVersion\toPacked(@) <= SemanticVersion\toPacked other
 
-  --- Converts a version number, string, or instance to a semantic version string.
+  ---Converts a version number, string, or instance to a semantic version string.
   ---@param version number|string|SemanticVersion|nil The version as a packed number, a string, an instance, or nil (rendered as "0.0.0").
   ---@param precision? SemverPrecision
   ---@return string|nil versionString
@@ -421,7 +421,7 @@ class SemanticVersion
     return a >= b, b
 
   ---Parses an npm-style version range into its set of half-open integer intervals `[min,max)`
-  --- (`min`inclusive, `max` exclusive). Supports the following range syntax:
+  ---(`min`inclusive, `max` exclusive). Supports the following range syntax:
   --- * comparators: `>=1.2.7`, `<=1.2.7`, `>1.2.7`, `<1.2.7`, `=1.2.7`
   --- * intersection: `>=1.2.7 <1.3.0`
   --- * union: `>=1.2.7 <1.3.0 || >=1.4.0 <2.0.0`

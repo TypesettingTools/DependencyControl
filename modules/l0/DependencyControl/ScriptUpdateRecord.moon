@@ -63,7 +63,7 @@ class ScriptUpdateRecord
   -- Shared per-class metatable for the @data __index fallback; initialised lazily on first instantiation.
   instanceMetaTable = nil
 
-  --- Creates an update record for a single script entry in a feed.
+  ---Creates an update record for a single script entry in a feed.
   ---@param namespace string
   ---@param data FeedScriptData
   ---@param config? {c: {activeChannel?: string}}
@@ -87,7 +87,7 @@ class ScriptUpdateRecord
     @setChannel! if autoChannel
 
 
-  --- Returns all available channel names for this script and the default channel.
+  ---Returns all available channel names for this script and the default channel.
   ---@return string[] channels
   ---@return string? defaultChannel
   getChannels: =>
@@ -99,7 +99,7 @@ class ScriptUpdateRecord
 
     return channels, default
 
-  --- Selects the active update channel and exposes its fields on this instance.
+  ---Selects the active update channel and exposes its fields on this instance.
   ---@param channelName? string Channel to activate; defaults to config.c.activeChannel.
   ---@return boolean success
   ---@return string activeChannel
@@ -115,15 +115,15 @@ class ScriptUpdateRecord
     @files = @files and [file for file in *@files when not file.platform or file.platform == Common.platform] or {}
     return true, @activeChannel
 
-  --- Checks whether this script's active channel supports the current platform.
+  ---Checks whether this script's active channel supports the current platform.
   ---@return boolean supported
   ---@return string platform
   checkPlatform: =>
     @logger\assert @activeChannel, msgs.errors.noActiveChannel
     return not @platforms or (Common.makeSet @platforms)[Common.platform], Common.platform
 
-  --- Formats changelog entries from the current version down to a minimum version, grouping each
-  --- version's entries into marker categories (Bug Fixes, New Features, …) with a glyph heading.
+  ---Formats changelog entries from the current version down to a minimum version, grouping each
+  ---version's entries into marker categories (Bug Fixes, New Features, …) with a glyph heading.
   ---@param versionRecord any Unused; present for API compatibility.
   ---@param minVer? number|string Oldest version to include (default 0, i.e. all).
   ---@return string changelog Formatted multi-line string, or "" if nothing to show. A version whose entries carry no markers lists them flat, without category headings.

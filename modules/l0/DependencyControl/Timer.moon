@@ -75,7 +75,7 @@ class Timer
     @startTime = getTime!
     return @
 
-  --- Sleeps for the given number of milliseconds.
+  ---Sleeps for the given number of milliseconds.
   ---@param ms number
   sleep: sleep
 

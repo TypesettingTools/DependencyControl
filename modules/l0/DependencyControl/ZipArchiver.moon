@@ -62,13 +62,13 @@ class ZipArchiver
     }
   }
 
-  --- Creates an archiver that will write a zip to `outputPath`.
+  ---Creates an archiver that will write a zip to `outputPath`.
   ---@param outputPath string Absolute path of the archive to create.
   ---@param logger? Logger
   new: (@outputPath, @logger = defaultLogger) =>
     @entries = {}
 
-  --- Adds a single file under `archiveName` (a forward-slash path within the archive).
+  ---Adds a single file under `archiveName` (a forward-slash path within the archive).
   ---@param sourcePath string Absolute path of the file to add.
   ---@param archiveName string Name/path the file should have inside the archive.
   ---@return ZipArchiver self for chaining.

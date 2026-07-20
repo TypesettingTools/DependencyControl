@@ -13,15 +13,15 @@ class PreciseTimer
   @version_string = "0.1.6"
   @loadedLibraryPath = selfPath
 
-  --- Starts a new timer, capturing the current time as its start point.
+  ---Starts a new timer, capturing the current time as its start point.
   new: =>
     @timer = Timer!
 
-  --- Returns the seconds elapsed since the timer was created.
+  ---Returns the seconds elapsed since the timer was created.
   ---@return number seconds
   timeElapsed: => @timer.elapsed / 1000
 
-  --- Sleeps for the given number of milliseconds.
+  ---Sleeps for the given number of milliseconds.
   ---@param ms? number milliseconds to sleep (defaults to 100)
   sleep: (ms = 100) -> Timer.sleep ms
 
