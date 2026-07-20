@@ -86,7 +86,6 @@ class PackageRecord
         noUnmanagedMacros: "Creating unmanaged version records for macros is not allowed"
         missingNamespace: "No namespace defined"
         badVersion: "Couldn't parse version number: %s"
-        badNamespace: "Namespace '%s' failed validation. Namespace rules: must contain 1+ single dots, but not start or end with a dot; all other characters must be in [A-Za-z0-9-_]."
         badModuleTable: "Invalid required module table #%d (%s)."
       }
     }
@@ -188,9 +187,11 @@ class PackageRecord
     unless script_namespace
       export script_namespace = @namespace
 
-    -- non-depctrl record don't need to conform to namespace rules
-    assert @virtual or @recordType == Common.RecordType.Unmanaged or @validateNamespace!,
-      msgs.new.badRecord.badNamespace\format @namespace
+    -- non-depctrl records don't need to conform to namespace rules; managed ones defer to
+    -- Common.validateNamespace (and its message) rather than restating the rules here
+    unless @virtual or @recordType == Common.RecordType.Unmanaged
+      valid, nsErr = @validateNamespace!
+      assert valid, nsErr
 
     @configFile = configFile or "#{@namespace}.json"
     @automationDir = Common\getAutomationDir @scriptType
