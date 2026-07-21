@@ -64,7 +64,7 @@
     makeFeedLoader {
       load: (url) ->
         known = map[url]
-        {data: known, getKnownFeeds: => known or {}}
+        {data: known, knownFeeds: known or {}}
     }
 
   -- index a gathered feed list by url for assertions

@@ -100,6 +100,7 @@ Scope: this file is about the code. Contributor and agent *workflow* (verifying 
 
 - **CP2.** Omit `set` for a read-only property (a write then raises). A readable property appears in `pairs(instance)` and runs its getter, so you **MUST** initialize the backing field before the property can be read, and **MUST NOT** `pairs` a class's `__base` (its getters have no instance).
 - **CP3.** Annotate a property's type with a `---@field` on the `---@class`, not through the `property{…}` call — the accessor is invisible plumbing. LuaCATS has no read-only marker, so note read-only in the `@field` description and let `install` enforce it.
+- **CP4.** Not every derived read is a property: a property's getter **MUST NOT** reach off the machine or sample changing state. It may read in-memory values, the local filesystem, or a bounded read-only local subprocess (a `git` query), and **SHOULD** memoize a lazy result into a backing field. A read that resolves a hostname, fetches over the network, or returns a value that differs between calls stays a `get*` method instead — the `!` at that call site deliberately signals work that can hang, fail, or change, and hiding it behind a field access is what to avoid. Local, so properties: `timer.elapsed`, `record.version`. Off-machine or sampling, so methods: `host\resolvesToPrivate!` (DNS), `feedTrust\getTrustedFeeds!` (loads a feed), `lock\getActiveHolder!` (samples the holder).
 
   ```moon
   ---@class PackageRecord

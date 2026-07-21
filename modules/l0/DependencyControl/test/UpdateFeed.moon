@@ -26,19 +26,14 @@
   {
     _description: "Tests for UpdateFeed feed data access, script record retrieval, and file deployment."
 
-    getKnownFeeds_noData: (ut) ->
-      feed = {data: nil, __class: UpdateFeed}
-      result = UpdateFeed.getKnownFeeds feed
-      ut\assertTable result
-      ut\assertEquals #result, 0
+    knownFeeds_noData: (ut) ->
+      feed = stubSelf UpdateFeed, {data: nil}
+      ut\assertTable feed.knownFeeds
+      ut\assertEquals #feed.knownFeeds, 0
 
-    getKnownFeeds_withData: (ut) ->
-      feed = {
-        data: {knownFeeds: {a: "https://example.com/a.json", b: "https://example.com/b.json"}},
-        __class: UpdateFeed
-      }
-      result = UpdateFeed.getKnownFeeds feed
-      ut\assertEquals #result, 2
+    knownFeeds_withData: (ut) ->
+      feed = stubSelf UpdateFeed, {data: {knownFeeds: {a: "https://example.com/a.json", b: "https://example.com/b.json"}}}
+      ut\assertEquals #feed.knownFeeds, 2
 
     getScript_invalidType: (ut) ->
       feed = {data: {macros: {}, modules: {}, knownFeeds: {}}, logger: DepCtrl.logger, __class: UpdateFeed}
@@ -830,7 +825,7 @@
       ut\assertContains result.errors[1], "no record"
 
     _order: {
-      "getKnownFeeds_noData", "getKnownFeeds_withData",
+      "knownFeeds_noData", "knownFeeds_withData",
       "getScript_invalidType", "getScript_missing", "getScript_found",
       "getMacro_usesAutomationType", "getModule_usesModuleType",
       "getModuleVersion_defaultChannel", "getModuleVersion_fallback", "getModuleVersion_missing",

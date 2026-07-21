@@ -28,11 +28,12 @@ class GitRepository
   ---@return boolean atTag True when the ref points exactly at a tag.
   isAtTag: (ref = "HEAD") => not not @run "describe --exact-match --tags #{ref}"
 
-  ---Returns a git describe-style version suffix for the current HEAD.
-  ---Returns "" when HEAD is exactly on a tag, "-<branch>-g<hash>" otherwise.
+  ---Returns a git describe-style version suffix for the given ref.
+  ---Returns "" when the ref is exactly on a tag, "-<branch>-g<hash>" otherwise.
+  ---@param ref? string Git ref to describe (defaults to HEAD).
   ---@return string suffix
-  getVersionSuffix: =>
-    return "" if @isAtTag!
-    branch = @getBranch! or "unknown"
-    hash = @getCommitHash! or "0000000"
+  getVersionSuffix: (ref = "HEAD") =>
+    return "" if @isAtTag ref
+    branch = @getBranch(ref) or "unknown"
+    hash = @getCommitHash(ref) or "0000000"
     "-#{branch}-g#{hash}"

@@ -82,9 +82,9 @@
     -- isPrivate: literal hosts classified without the resolver
     isPrivate_literalHost: (ut) ->
       neverResolve = (host) -> error "resolver must not be called for a literal host"
-      ut\assertTrue (Host "127.0.0.1", neverResolve).isPrivate
-      ut\assertTrue (Host "2130706433", neverResolve).isPrivate -- decimal-encoded loopback
-      ut\assertFalse (Host "93.184.216.34", neverResolve).isPrivate
+      ut\assertTrue (Host "127.0.0.1", neverResolve)\resolvesToPrivate!
+      ut\assertTrue (Host "2130706433", neverResolve)\resolvesToPrivate! -- decimal-encoded loopback
+      ut\assertFalse (Host "93.184.216.34", neverResolve)\resolvesToPrivate!
 
     -- isPrivate: named hosts resolved through the injected resolver; any private address counts
     isPrivate_resolvedHost: (ut) ->
@@ -94,15 +94,15 @@
         "rebind.example": {{93, 184, 216, 34}, {127, 0, 0, 1}} -- one public, one loopback
         "::1": {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}}
       }
-      ut\assertTrue (Host "internal.example", resolve).isPrivate
-      ut\assertFalse (Host "evil.example", resolve).isPrivate
-      ut\assertTrue (Host "rebind.example", resolve).isPrivate
-      ut\assertTrue (Host "::1", resolve).isPrivate
+      ut\assertTrue (Host "internal.example", resolve)\resolvesToPrivate!
+      ut\assertFalse (Host "evil.example", resolve)\resolvesToPrivate!
+      ut\assertTrue (Host "rebind.example", resolve)\resolvesToPrivate!
+      ut\assertTrue (Host "::1", resolve)\resolvesToPrivate!
 
     -- a failed lookup (resolver returns nil) leaves a non-literal host not-private
     isPrivate_unresolved: (ut) ->
-      ut\assertFalse (Host "unknown.example", resolverOver {}).isPrivate
-      ut\assertFalse (Host "unknown.example", (-> nil)).isPrivate
+      ut\assertFalse (Host "unknown.example", resolverOver {})\resolvesToPrivate!
+      ut\assertFalse (Host "unknown.example", (-> nil))\resolvesToPrivate!
 
     -- resolution is cached: the resolver runs once across repeated queries
     addresses_cachesResolution: (ut) ->
@@ -111,15 +111,15 @@
         calls += 1
         {{10, 0, 0, 1}}
       host = Host "internal.example", resolve
-      host.isPrivate
-      host.isPrivate
+      host\resolvesToPrivate!
+      host\resolvesToPrivate!
       ut\assertEquals calls, 1
 
     -- fromUrl builds a Host from a URL's host, or nil when there is none
     fromUrl_extractsHost: (ut) ->
       resolve = resolverOver {"internal.example": {{10, 0, 0, 5}}}
-      ut\assertTrue (Host.fromUrl "https://internal.example/feed", resolve).isPrivate
-      ut\assertTrue (Host.fromUrl "http://127.0.0.1/x").isPrivate
+      ut\assertTrue (Host.fromUrl "https://internal.example/feed", resolve)\resolvesToPrivate!
+      ut\assertTrue (Host.fromUrl "http://127.0.0.1/x")\resolvesToPrivate!
       ut\assertNil Host.fromUrl "file:///etc/passwd"
 
     _order: {

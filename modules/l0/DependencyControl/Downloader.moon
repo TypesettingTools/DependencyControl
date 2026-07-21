@@ -244,7 +244,7 @@ if ffi.os != "Windows"
     -- host is refused even though libcurl follows redirects itself. Requires curl >= 7.80, otherwise ignored.
     pcall ffi.cdef, "typedef int (*dc_curl_prereq_cb)(void* clientp, char* conn_primary_ip, char* conn_local_ip, int conn_primary_port, int conn_local_port);"
     prereqBlockPrivate = ffi.cast "dc_curl_prereq_cb", (_, primaryIp) ->
-      ok, private = pcall -> Host(ffi.string primaryIp).isPrivate
+      ok, private = pcall -> Host(ffi.string primaryIp)\resolvesToPrivate!
       ok and private and CURL_PREREQFUNC_ABORT or CURL_PREREQFUNC_OK
 
     getDouble = (h, info) ->
@@ -429,7 +429,7 @@ else
             if manager.blockPrivateHosts
               return fail msgs.nonHttpScheme\format url unless url\match "^https?://"
               host = Host.fromUrl url
-              return fail msgs.privateHostBlocked\format url if host and host.isPrivate
+              return fail msgs.privateHostBlocked\format url if host and host\resolvesToPrivate!
 
             request = winInet.InternetOpenUrlW session, toWide(url), nil, 0,
               bit.bor(INTERNET_FLAG_RELOAD, INTERNET_FLAG_NO_CACHE_WRITE, INTERNET_FLAG_NO_AUTO_REDIRECT), 0
@@ -610,7 +610,7 @@ class Downloader extends EventEmitter
     if @blockPrivateHosts
       return nil, msgs.nonHttpScheme\format url unless url\match "^https?://"
       host = Host.fromUrl url
-      return nil, msgs.privateHostBlocked\format url if host and host.isPrivate
+      return nil, msgs.privateHostBlocked\format url if host and host\resolvesToPrivate!
 
     fileOps.mkdir outfile, true, true
 

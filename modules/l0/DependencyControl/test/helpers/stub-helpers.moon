@@ -6,7 +6,7 @@ FeedTrust = require "l0.DependencyControl.FeedTrust"
 ---@param cls table The class whose method table (`__base`) the stub inherits.
 ---@param fields? table The stub's own fields (default empty).
 ---@return table stub The `fields` table with `cls.__base` installed as its metatable index.
-stubSelf = (cls, fields = {}) -> setmetatable fields, __index: cls.__base
+stubSelf = (cls, fields = {}) -> setmetatable fields, cls.__base
 
 ---Builds a logger stub whose every method is a no-op, with a live `indent` field the code under test can
 ---adjust. Its `assert` returns the condition and never raises, so assert-guarded code under test proceeds.

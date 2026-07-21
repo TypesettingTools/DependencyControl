@@ -40,7 +40,7 @@
         ensureLoaded: =>
           calls += 1
           calls > 1 -- fails first, succeeds thereafter
-        getKnownFeeds: => {"feed://known"}
+        knownFeeds: {"feed://known"}
         data: {blockedFeeds: {}}
       }
       ft = makeSeededFeedTrust {feedLoader: {load: ((url, opts) => fakeFeed)}}

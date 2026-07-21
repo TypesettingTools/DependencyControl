@@ -224,7 +224,7 @@ class FeedInventory
   ---@return string[]? knownFeeds
   __loadKnownFeeds: (url) =>
     ok, feed = pcall @feedLoader.load, @feedLoader, url
-    ok and feed and feed.data and feed\getKnownFeeds! or nil
+    ok and feed and feed.data and feed.knownFeeds or nil
 
   ---Fetches feeds and discovers transitively-advertised ones by crawling the `knownFeeds` graph out from the
   ---config-derived feeds; untrusted expansion is bounded, so check `stats.truncated` for incomplete results.

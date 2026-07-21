@@ -88,6 +88,7 @@ stripNulls = (tbl) ->
 ---Downloaded and expanded update feed data source.
 ---@class UpdateFeed
 ---@field url string This feed's source URL, or a file:// URL over its local file when it has no remote URL (read-only).
+---@field knownFeeds string[] URLs referenced in this feed's `knownFeeds` section; empty when the feed isn't loaded. Read-only.
 ---@field private __channelTemplateState table<string, table<string, table<string, UpdateFeedChannelTemplateState>>> Captured channel template state, keyed by section, namespace, and channel name.
 class UpdateFeed
   ---Declares one template variable. A regular template captures its value at a fixed tree
@@ -291,12 +292,15 @@ class UpdateFeed
     utils.addDefaults @config, @@defaultConfig
     @ensureLoaded! if autoLoad
 
-  ---Returns URLs of all feeds referenced in the knownFeeds section of this feed.
+  -- URLs of all feeds referenced in this feed's knownFeeds section; empty when the feed isn't loaded.
+  knownFeeds: Accessors.property
+    get: =>
+      return {} unless @data
+      [url for _, url in pairs @data.knownFeeds]
+
+  ---@deprecated Use the `knownFeeds` property. Retained for callers written against DepCtrl < 0.7.
   ---@return string[] urls
-  getKnownFeeds: =>
-    return {} unless @data
-    return [url for _, url in pairs @data.knownFeeds]
-    -- TODO: maybe also search all requirements for feed URLs
+  getKnownFeeds: => @knownFeeds
 
   ---Decodes a feed's JSON into its unexpanded working data — null sentinels stripped and the macros/modules/
   ---knownFeeds sections ensured present — alongside the raw null-preserving decode kept for write-back. Shared

@@ -1,5 +1,4 @@
 resolveHost = require "l0.DependencyControl.helpers.resolve-host"
-Accessors = require "l0.DependencyControl.Accessors"
 
 -- Parses one inet_aton numeric component: 0x-prefixed hex, 0-prefixed octal, or decimal. nil if invalid.
 parseAtonPart = (s) ->
@@ -51,7 +50,6 @@ isPrivateIPv6 = (b) ->
 
 ---A host — a hostname or IP literal — that reports whether it targets a non-public IP address.
 ---@class Host
----@field isPrivate boolean Whether this host targets a non-public address — private, loopback, link-local, or reserved. An unresolvable host reads as false, since its fetch fails on its own. Read-only, memoized on first read.
 class Host
   -- Default resolver for non-literal hosts, mapping a hostname to a list of address byte arrays. Each
   -- instance copies it at construction, and tests override it via the constructor.
@@ -73,19 +71,21 @@ class Host
       @__resolved = resolve and resolve(@host) or false
     @__resolved or nil
 
-  isPrivate: Accessors.property
-    get: =>
-      if @__private == nil
-        if @__literal
-          @__private = Host.isPrivateAddress @__literal
-        else
-          @__private = false
-          if addresses = @addresses!
-            for address in *addresses
-              if Host.isPrivateAddress address
-                @__private = true
-                break
-      @__private
+  ---Reports whether this host targets a non-public IP address — private, loopback, link-local, or
+  ---reserved. Resolves a non-literal host on first call; an unresolvable host reads as false.
+  ---@return boolean private True when the host targets a non-public address.
+  resolvesToPrivate: =>
+    if @__private == nil
+      if @__literal
+        @__private = Host.isPrivateAddress @__literal
+      else
+        @__private = false
+        if addresses = @addresses!
+          for address in *addresses
+            if Host.isPrivateAddress address
+              @__private = true
+              break
+    @__private
 
   ---Builds a Host from a URL's host component, or nil when the URL carries no host.
   ---@param url string The URL to extract the host from.
@@ -155,5 +155,4 @@ class Host
           return nil if v > 0xFF
         return values
 
-Accessors.install Host
 return Host

@@ -1,3 +1,4 @@
+Accessors = require "l0.DependencyControl.Accessors"
 constants = require "l0.DependencyControl.Constants"
 domain = require "l0.DependencyControl.domain"
 utils = require "l0.DependencyControl.utils"
@@ -38,6 +39,7 @@ msgs = {
 ---the merged trusted/blocked sets (official plus the user's config), the trust queries the resolver asks
 ---per candidate, and the user-config mutations. Built and exposed by `Updater` as `updater.feedTrust`.
 ---@class FeedTrust
+---@field userTrustedFeeds table<string,boolean> The user's own trusted feeds — the union of `extraFeeds` and `trustedFeeds`. Cached, invalidated on mutation. Read-only.
 class FeedTrust
   ---@alias BlockedFeedMatchMode
   ---| "prefix" # Prefix: matches any feed URL starting with this value (case-insensitive)
@@ -92,7 +94,7 @@ class FeedTrust
       -- when the load fails (e.g. offline), return the best-effort fallback without caching, so a
       -- later call retries once the feed becomes reachable (e.g. after the updater fetches it into the cache)
       return {:trusted, :blocked}
-    utils.makeSet feed\getKnownFeeds!, trusted
+    utils.makeSet feed.knownFeeds, trusted
     blocked = feed.data.blockedFeeds or {}
     @__official = {:trusted, :blocked}
     return @__official
@@ -106,17 +108,16 @@ class FeedTrust
   ---@return BlockedFeedEntry[] blockedFeeds
   getOfficialBlockedFeeds: => @__loadOfficial!.blocked
 
-  ---Returns the user's own trusted feeds: the union of `extraFeeds` (discovery roots) and `trustedFeeds`
-  ---(trust-only). Cached; invalidated when the user's lists change.
-  ---@return table<string,boolean> userTrustedFeeds
-  getUserTrustedFeeds: =>
-    unless @__userTrusted
-      c = @config.c.feeds
-      set = {}
-      utils.makeSet c.extraFeeds or {}, set
-      utils.makeSet c.trustedFeeds or {}, set
-      @__userTrusted = set
-    return @__userTrusted
+  -- The user's own trusted feeds (extraFeeds ∪ trustedFeeds, trust-only); cached, invalidated on mutation.
+  userTrustedFeeds: Accessors.property
+    get: =>
+      unless @__userTrusted
+        c = @config.c.feeds
+        set = {}
+        utils.makeSet c.extraFeeds or {}, set
+        utils.makeSet c.trustedFeeds or {}, set
+        @__userTrusted = set
+      @__userTrusted
 
   ---Returns the merged trusted feed-URL set: the official feeds plus the user's own trusted feeds
   ---(`extraFeeds` and `trustedFeeds`). Cached; invalidated when the user's lists change.
@@ -124,7 +125,7 @@ class FeedTrust
   getTrustedFeeds: =>
     unless @__trusted
       merged = {url, true for url in pairs @getOfficialTrustedFeeds!}
-      merged[url] = true for url in pairs @getUserTrustedFeeds!
+      merged[url] = true for url in pairs @userTrustedFeeds
       @__trusted = merged
     return @__trusted
 
@@ -156,7 +157,7 @@ class FeedTrust
   ---as opposed to DependencyControl's official set. A block does not factor into this.
   ---@param url? string The feed URL to check.
   ---@return boolean userTrusted True when the feed URL is in one of the user's trust lists.
-  isUserTrusted: (url) => url and @getUserTrustedFeeds![url] and true or false
+  isUserTrusted: (url) => url and @userTrustedFeeds[url] and true or false
 
   ---Reports whether a feed URL is in DependencyControl's official trusted set (its own feed plus the feeds it
   ---advertises), as opposed to the user's own lists. A block does not factor into this.
@@ -370,4 +371,5 @@ class FeedTrust
     return url\lower! == entry.url\lower! if entry.matchMode == @BlockMatchMode.Exact
     return @urlMatchesPrefix url, {entry.url}
 
+Accessors.install FeedTrust
 return FeedTrust
