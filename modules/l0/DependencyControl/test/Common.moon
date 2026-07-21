@@ -62,9 +62,9 @@
 
     getAutomationDir_customRoot: (ut) ->
       (ut\stub aegisub, "decode_path")\calls (path) -> path
-      result = Common\getAutomationDir Common.ScriptType.Automation, "myroot"
+      result = Common\getAutomationDir Common.ScriptType.Automation, "myRoot"
       ut\assertString result
-      ut\assertContains result, "myroot"
+      ut\assertContains result, "myRoot"
       ut\assertContains result, "autoload"
 
     getAutomationDir_unknown: (ut) ->
@@ -85,9 +85,9 @@
 
     getTestDir_customRoot: (ut) ->
       (ut\stub aegisub, "decode_path")\calls (path) -> path
-      result = Common\getTestDir Common.ScriptType.Module, "myroot"
+      result = Common\getTestDir Common.ScriptType.Module, "myRoot"
       ut\assertString result
-      ut\assertContains result, "myroot"
+      ut\assertContains result, "myRoot"
       ut\assertContains result, "DepUnit"
 
     -- flatten

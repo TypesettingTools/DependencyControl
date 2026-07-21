@@ -96,14 +96,14 @@ setupNativeSha1 = ->
       return if 0 == advapi.CryptAcquireContextW prov, nil, nil, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT
       hProv = prov[0]
       digest = ffi.new "unsigned char[20]"
-      dlen = ffi.new "unsigned long[1]"
+      digestLen = ffi.new "unsigned long[1]"
       impl = (msg) ->
         hashPtr = ffi.new "uintptr_t[1]"
         return sha1Lua msg if 0 == advapi.CryptCreateHash hProv, CALG_SHA1, 0, 0, hashPtr
         hHash = hashPtr[0]
         advapi.CryptHashData hHash, msg, #msg, 0
-        dlen[0] = 20
-        advapi.CryptGetHashParam hHash, HP_HASHVAL, digest, dlen, 0
+        digestLen[0] = 20
+        advapi.CryptGetHashParam hHash, HP_HASHVAL, digest, digestLen, 0
         advapi.CryptDestroyHash hHash
         digestToHex digest
       return impl, "CryptoAPI"

@@ -227,7 +227,7 @@
     -- namespace part exactly, so a sibling package sharing the name prefix survives the
     -- recursive delete
     uninstall_moduleSparesPrefixSiblings: (ut) ->
-      root = FileOps.joinPath basePath, "uninst-mod"
+      root = FileOps.joinPath basePath, "uninstall-mod"
       ut\assertString root
       FileOps.mkdir FileOps.joinPath(root, "l0", "Functional"), false, true
       FileOps.mkdir FileOps.joinPath(root, "l0", "FunctionalExtras"), false, true
@@ -254,7 +254,7 @@
     -- automation file matching anchors the namespace on both sides and escapes pattern magic
     -- (a hyphen would otherwise act as a lazy quantifier)
     uninstall_automationEscapesAndTerminates: (ut) ->
-      root = FileOps.joinPath basePath, "uninst-auto"
+      root = FileOps.joinPath basePath, "uninstall-auto"
       ut\assertString root
       FileOps.mkdir root, false, true
       FileOps.writeFile FileOps.joinPath(root, "a-mo.Script.moon"), "-- macro", true
@@ -336,7 +336,7 @@
     -- with unique namespaces. Teardown removes every key not present at setup time.
 
     registry_getReturnsRegistered: (ut) ->
-      ns = uniqueName "regns"
+      ns = uniqueName "registered"
       rec = {namespace: ns}
       _G[DEPCTRL_RECORDS_GLOBAL_KEY][ns] = rec
       ut\assertIs PackageRecord\getRegisteredRecord(ns), rec
@@ -345,12 +345,12 @@
       ut\assertNil PackageRecord\getRegisteredRecord uniqueName "absent"
 
     registry_getSkipsVirtual: (ut) ->
-      ns = uniqueName "virtns"
+      ns = uniqueName "virtual"
       _G[DEPCTRL_RECORDS_GLOBAL_KEY][ns] = {namespace: ns, virtual: true}
       ut\assertNil PackageRecord\getRegisteredRecord ns
 
     registry_returnsAfterUnvirtualized: (ut) ->
-      ns = uniqueName "virtns"
+      ns = uniqueName "virtual"
       rec = {namespace: ns, virtual: true}
       _G[DEPCTRL_RECORDS_GLOBAL_KEY][ns] = rec
       ut\assertNil PackageRecord\getRegisteredRecord ns
@@ -358,7 +358,7 @@
       ut\assertIs PackageRecord\getRegisteredRecord(ns), rec
 
     registry_getRegisteredReturnsCopy: (ut) ->
-      ns = uniqueName "allns"
+      ns = uniqueName "allRegistered"
       rec = {namespace: ns}
       _G[DEPCTRL_RECORDS_GLOBAL_KEY][ns] = rec
       records = PackageRecord\getAllRegisteredRecords!
@@ -368,7 +368,7 @@
       ut\assertIs _G[DEPCTRL_RECORDS_GLOBAL_KEY][ns], rec
 
     registry_getRegisteredIncludesVirtual: (ut) ->
-      ns = uniqueName "allvirtns"
+      ns = uniqueName "allVirtual"
       rec = {namespace: ns, virtual: true}
       _G[DEPCTRL_RECORDS_GLOBAL_KEY][ns] = rec
       ut\assertIs PackageRecord\getAllRegisteredRecords![ns], rec

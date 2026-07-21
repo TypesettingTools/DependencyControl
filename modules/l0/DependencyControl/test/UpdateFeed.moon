@@ -753,7 +753,7 @@
     refreshFiles_updatesChangedSha: (ut) ->
       (ut\stub FILEOPS_MODULE_NAME, "exists")\returns true
       (ut\stub FILEOPS_MODULE_NAME, "getHash")\returns "deadbeef"
-      rawChannel = {files: {{name: "a.moon", sha1: "OLDHASH"}}}
+      rawChannel = {files: {{name: "a.moon", sha1: "a1b2c3d4"}}}
       expandedChannel = {files: {{localFilePath: "/x/a.moon"}}}
       changed, errors = UpdateFeed.__refreshFiles {__class: UpdateFeed}, rawChannel, expandedChannel
       ut\assertTrue changed

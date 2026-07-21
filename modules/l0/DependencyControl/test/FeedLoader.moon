@@ -11,7 +11,7 @@
   -- a FeedLoader over a temp cache base; opts override the config's feed settings
   make = (opts = {}) ->
     config = {c: {
-      paths: {cache: FileOps.joinPath basePath, "feedloader"}
+      paths: {cache: FileOps.joinPath basePath, "feedLoader"}
       feeds: {cacheMaxAge: opts.cacheMaxAge or 4242}
       updates: {blockPrivateHosts: opts.blockPrivateHosts}
     }}

@@ -367,6 +367,7 @@ class DependencyControlCommon
   ---@return string uuid
   @uuid = ->
     -- https://gist.github.com/jrus/3197011
+    -- cspell:ignore yxxx
     "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx"\gsub "[xy]", (c) ->
       v = c == "x" and math.random(0, 0xf) or math.random 8, 0xb
       return "%x"\format v

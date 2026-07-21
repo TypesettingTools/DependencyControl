@@ -651,7 +651,7 @@
           "ConfigHandler: writes to the configuration table are no longer accidentally routed to the defaults table when a value is updated that only exists in the Defaults.",
           "ConfigHandler: Looping over the configuration table is now completely transparent wrt which fields are user configuration or defaults.",
           "ConfigHandler: fixed a bug that prevented a global lock on the config file from being released on certain error conditions.",
-          "The update feed format has been updated to v0.2.0 and introduces a new template variable to reference knownFeeds specifed at the top level."
+          "The update feed format has been updated to v0.2.0 and introduces a new template variable to reference knownFeeds specified at the top level."
         ],
         "0.5.1": [
           "Macros registered using DependencyControl now get passed the previously missing 'active_line' parameter.",
@@ -684,7 +684,7 @@
         "0.6.1": [
           "The Updater component now supports the DownloadManager v0.4.0 API changes.",
           "Updater: A regression introduced in v0.6.0 was fixed that caused update or installation processes to fail when the feed contained deletion records.",
-          "FileOps.mkdir() no longer falsely retuns an error state when a path to an existing file is passed with the `isFile` flag set."
+          "FileOps.mkdir() no longer falsely returns an error state when a path to an existing file is passed with the `isFile` flag set."
         ],
         "0.6.2": [
           "An issue was fixed that would cause DepCtrl initializer code in modules previously loaded with regular Lua loading mechanisms to be skipped when requested in a _DependencyControl_- context. This kept the [requireffi](https://github.com/torque/ffi-experiments/tree/master/requireffi) _DependencyControl_ record from being established, preventing any updates from taking place.",

@@ -33,7 +33,7 @@
       return true
 
     _setup: (ut) ->
-      base = "#{basePath}_ziparchiver"
+      base = "#{basePath}_zipArchiver"
       srcDir = "#{base}/src"
       extractDir = "#{base}/extracted"
       FileOps.mkdir "#{srcDir}/sub", false, true

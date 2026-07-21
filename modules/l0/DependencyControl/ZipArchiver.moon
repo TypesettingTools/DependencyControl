@@ -117,8 +117,8 @@ class ZipArchiver
   __writeWindows: =>
     token = "%04X"\format math.random 0, 16^4 - 1
     tmpDir = aegisub.decode_path "?temp"
-    manifestPath = "#{tmpDir}#{pathSep}depctrl-ziparchiver-#{token}.json"
-    scriptPath = "#{tmpDir}#{pathSep}depctrl-ziparchiver-#{token}.ps1"
+    manifestPath = "#{tmpDir}#{pathSep}#{constants.DEPCTRL_SHORT_NAME}-#{@@__name}-#{token}.json"
+    scriptPath = "#{tmpDir}#{pathSep}#{constants.DEPCTRL_SHORT_NAME}-#{@@__name}-#{token}.ps1"
 
     cleanup = ->
       os.remove manifestPath
@@ -146,7 +146,7 @@ class ZipArchiver
   ---@return string|nil err Error message describing the failure, nil on success.
   __writeUnix: =>
     token = "%04X"\format math.random 0, 16^4 - 1
-    stageDir = "#{aegisub.decode_path '?temp'}#{pathSep}depctrl-ziparchiver-#{token}"
+    stageDir = "#{aegisub.decode_path '?temp'}#{pathSep}#{constants.DEPCTRL_SHORT_NAME}-#{@@__name}-#{token}"
     FileOps.mkdir stageDir, false, true
 
     for entry in *@entries

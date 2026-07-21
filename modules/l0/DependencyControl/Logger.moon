@@ -214,10 +214,10 @@ class Logger
     if "table" != type item
       return tostring item
 
-    count, tablecount = 1, 1
+    count, tableCount = 1, 1
 
-    result = { "{ @#{tablecount}" }
-    seen = { [item]: tablecount }
+    result = { "{ @#{tableCount}" }
+    seen = { [item]: tableCount }
     recurse = ( item, space, depth = 0 ) ->
       if maxDepth and depth > maxDepth
         count += 1
@@ -232,10 +232,10 @@ class Logger
             key = "##{key}"
           if "table" == type value
             unless seen[value]
-              tablecount += 1
-              seen[value] = tablecount
+              tableCount += 1
+              seen[value] = tableCount
               count += 1
-              result[count] = space .. "#{key}: { @#{tablecount}"
+              result[count] = space .. "#{key}: { @#{tableCount}"
               recurse value, space .. "    ", depth
               count += 1
               result[count] = space .. "}"

@@ -3,9 +3,10 @@
 -- Called from test.moon as: (controls\requireTest "FileLock")!
 () ->
   FileLock = require "l0.DependencyControl.FileLock"
+  constants = require "l0.DependencyControl.Constants"
 
   -- a fresh lock-file path per call (?temp is created by the test runner)
-  tmpPath = -> aegisub.decode_path "?temp/depctrl_filelock_#{'%08X'\format math.random 0, 16^8-1}.lock"
+  tmpPath = -> aegisub.decode_path "?temp/#{constants.DEPCTRL_SHORT_NAME}_#{FileLock.__name}_#{'%08X'\format math.random 0, 16^8-1}.lock"
 
   {
     _description: "FileLock: the cross-process advisory file lock, against real OS lock files."

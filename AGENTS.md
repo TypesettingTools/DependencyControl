@@ -35,6 +35,27 @@ Rules are numbered and use the RFC 2119 keywords (**MUST**, **SHOULD**, **MAY**)
   luarocks --lua-version=5.1 install <rock>
   ```
 
+## SP — Spell-checking & dictionaries
+
+The repo is spell-checked with cspell (`cspell.json` plus the word lists in `.cspell/`). The dictionaries are curated and reusable, not a silence-the-warning dumping ground.
+
+<!-- feedloader below is a deliberate counter-example -->
+<!-- cspell:ignore feedloader -->
+
+- **SP1.** When cspell flags a word, resolve it in this order; you **MUST NOT** skip ahead to silence it:
+  1. A typo — fix it.
+  2. A non-conforming identifier or fixture (a lowercase run-on, a cryptic abbreviation, an invented token) — rename it to conform ([STYLE NM1/NM4](STYLE.md#nm--naming)), in test code as much as production.
+  3. Genuine terminology — add it to the one right dictionary (SP2).
+  4. A genuine format artifact (a UUID template, a git-describe hash, a `%s`-composed message template) — add an inline `-- cspell:ignore <token>` with a one-line reason.
+
+  Silencing a typo, a local name, or a fixture string by adding it to a dictionary is prohibited: it buries the defect and pollutes a shared list. A lowercase run-on is doubly wrong here — cspell splits identifiers on case boundaries, so `feedloader` reads as one unknown word where `feedLoader` splits into two known ones.
+
+- **SP2.** Terminology goes in exactly one list, chosen by the word's nature. `luajit-moonscript.txt` holds Lua/MoonScript language and stdlib terms the bundled `lua` dictionary lacks. `ffi.txt` holds C API symbols bound through the FFI. `project.txt` holds everything for this repo and the DepCtrl ecosystem: own identifiers, rock/tool proper nouns, contributor handles, and prose jargon missing from cspell's base dictionary. Only `project` takes editor "add to dictionary" quick-fixes, and each list's boundary is stated in its `description` in `cspell.json`.
+
+- **SP3.** An external name you cannot rename is terminology even when it looks like an abbreviation: a C symbol (`CURLOPT_PREREQFUNCTION`), a node-type string from a grammar you consume (`"fndef"`). The test is ownership: a contract with code you don't control belongs in a dictionary, while your own identifier or string gets renamed (SP1).
+
+- **SP4.** Vendored third-party code (`**/vendor/**`) is excluded from spell-checking; you **MUST NOT** add its internal identifiers to any list.
+
 ## WR — Writing pitfalls (agents especially)
 
 These are prose habits common in AI output but rare in human contributors', so they live here rather than in STYLE.md. They apply to every comment, doc comment, and Markdown file you write.

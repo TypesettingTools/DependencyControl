@@ -575,9 +575,9 @@ elseif args.command == "release-notes" then
   local body = #notes > 0 and (notes .. "\n") or notes
   if args.output then
     local path = resolveAbsPath(args.output)
-    local fh, ferr = io.open(path, "w")
+    local fh, fileErr = io.open(path, "w")
     if not fh then
-      io.stderr:write("release-notes: can't write " .. path .. ": " .. tostring(ferr) .. "\n"); os.exit(1)
+      io.stderr:write("release-notes: can't write " .. path .. ": " .. tostring(fileErr) .. "\n"); os.exit(1)
     end
     fh:write(body); fh:close()
     io.stdout:write("Wrote release notes to " .. path .. "\n")

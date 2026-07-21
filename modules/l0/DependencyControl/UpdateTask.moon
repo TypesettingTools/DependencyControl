@@ -231,6 +231,8 @@ msgs = {
   }
   run: {
     starting: "Starting %s of %s '%s'... "
+    -- %s fills to "" or "re", composing "fetch"/"refetch"
+    -- cspell:ignore sfetch
     fetching: "Trying to %sfetch missing %s '%s'..."
     feedChecking: "Checking feed %s..."
     upToDate: "The %s '%s' is up-to-date (v%s)."

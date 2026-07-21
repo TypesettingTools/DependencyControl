@@ -209,8 +209,8 @@ Feeds are fetched lazily, closest-first, and `selectCandidate` is re-run after e
 ```mermaid
 flowchart TD
     C(["Cascade"]) --> UF{userFeed set?}
-    UF -- yes --> UFonly["gather {userFeed} (exclusive, trusted unless blocked)"]
-    UFonly --> Sel0["selectCandidate"]
+    UF -- yes --> UFOnly["gather {userFeed} (exclusive, trusted unless blocked)"]
+    UFOnly --> Sel0["selectCandidate"]
     Sel0 --> CEnd(["candidate or nil"])
 
     UF -- no --> T1["tier 1: declared feed"]

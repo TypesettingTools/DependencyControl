@@ -100,7 +100,7 @@
       ut\assertNil result
 
     validateFullPath_trailingDotSegment: (ut) ->
-      result = FileOps.validateFullPath {basePath, "trailingdot.", "file.txt"}
+      result = FileOps.validateFullPath {basePath, "trailingDot.", "file.txt"}
       ut\assertNil result
 
     validateFullPath_valid: (ut) ->
@@ -156,7 +156,7 @@
 
     -- getAttributes: stubs lfs.attributes
     -- lfs.attributes(path, key) returns (value) on success, (nil) when not found, or
-    -- (nil, errmsg, errCode) on error. getAttributes maps these to an info table whose
+    -- (nil, errMsg, errCode) on error. getAttributes maps these to an info table whose
     -- attr is the value or false, or to nil plus an error message on a hard failure.
 
     getAttributes_file: (ut) ->
@@ -465,10 +465,10 @@
 
     listFilesRecursive_collectsNestedFiles: (ut) ->
       root = FileOps.joinPath basePath, "walk"
-      FileOps.mkdir FileOps.joinPath(root, "sub", "subsub"), false, true
+      FileOps.mkdir FileOps.joinPath(root, "sub", "subSub"), false, true
       FileOps.writeFile FileOps.joinPath(root, "a.txt"), "a", true
       FileOps.writeFile FileOps.joinPath(root, "sub", "b.txt"), "b", true
-      FileOps.writeFile FileOps.joinPath(root, "sub", "subsub", "c.txt"), "c", true
+      FileOps.writeFile FileOps.joinPath(root, "sub", "subSub", "c.txt"), "c", true
       files = FileOps.listFilesRecursive root
       ut\assertTable files
       ut\assertEquals #files, 3

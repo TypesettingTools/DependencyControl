@@ -494,8 +494,8 @@ fndefHasValueReturn = (fndefNode) ->
     return if found or "table" != type node
     return if node[1] == "fndef"
     if node[1] == "return"
-      explist = node[2]
-      found = true if "table" == type(explist) and explist[2] != nil
+      expList = node[2]
+      found = true if "table" == type(expList) and expList[2] != nil
       return
     for _, child in pairs node
       search child if "table" == type child
@@ -863,9 +863,9 @@ resolveModuleExport = (tree, ctx) ->
   return {kind: ExportKind.Unknown} unless "table" == type last
   switch nodeType last
     when "return"
-      explist = last[2]
-      if "table" == type(explist) and explist[2] != nil
-        resolveExportTarget explist[2], ctx
+      expList = last[2]
+      if "table" == type(expList) and expList[2] != nil
+        resolveExportTarget expList[2], ctx
       else
         {kind: ExportKind.Unknown}
     when "class"

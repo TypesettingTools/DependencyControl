@@ -1,35 +1,33 @@
 {
   "dictionaryDefinitions": [
     {
-      "name": "lua",
-      "path": "./.cspell/lua.txt",
+      "name": "luajit-moonscript",
+      "description": "The LuaJIT + MoonScript + Lua 5.1 delta that @cspell/dict-lua omits: bit ops, removed 5.1 builtins, MoonScript, and Lua concept/prose terms. Reusable across LuaJIT/MoonScript projects.",
+      "path": "./.cspell/luajit-moonscript.txt",
       "scope": "workspace",
-      "addWords": true
+      "addWords": false
     },
     {
       "name": "ffi",
+      "description": "C API symbols bound via LuaJIT FFI: POSIX, Windows, and libcurl. Reusable across FFI-using projects.",
       "path": "./.cspell/ffi.txt",
       "scope": "workspace",
-      "addWords": true
+      "addWords": false
     },
     {
-      "name": "domain-specific",
-      "path": "./.cspell/domain-specific.txt",
+      "name": "project",
+      "description": "Everything specific to this repo and the DepCtrl ecosystem: own identifiers, rock/tool proper nouns, and prose jargon. Quick-added words land here.",
+      "path": "./.cspell/project.txt",
       "scope": "workspace",
       "addWords": true
     }
   ],
-  "dictionaries": ["domain-specific"],
-  "languageSettings": [
+  "dictionaries": ["lua", "luajit-moonscript", "ffi", "project"],
+  "ignorePaths": [".cspell/**", "**/vendor/**"],
+  "overrides": [
     {
-      "languageId": "lua",
-      "dictionaries": ["lua", "ffi"]
-    },
-    {
-      "languageId": "moonscript",
-      "dictionaries": ["lua", "ffi"]
+      "filename": "**/.github/workflows/*.{yml,yaml}",
+      "dictionaries": ["bash"]
     }
-  ],
-  "words": ["moonscript"],
-  "ignorePaths": [".cspell/**"]
+  ]
 }

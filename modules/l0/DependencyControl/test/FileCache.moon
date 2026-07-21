@@ -10,7 +10,7 @@
   makeCache = (name, opts = {}) ->
     clock = {t: opts.t or 1000}
     opts.now = -> clock.t
-    FileCache(FileOps.joinPath(basePath, "filecache", name), "testns", "test", opts), clock
+    FileCache(FileOps.joinPath(basePath, "filecache", name), "testNamespace", "test", opts), clock
 
   readFile = FileOps.readFile
 
@@ -32,7 +32,7 @@
 
     -- the default (real) clock path works end to end — put/get use os.time/os.date, not an injected stub
     put_worksWithDefaultClock: (ut) ->
-      cache = FileCache FileOps.joinPath(basePath, "filecache", "defaultclock"), "testns", "test"
+      cache = FileCache FileOps.joinPath(basePath, "filecache", "defaultClock"), "testNamespace", "test"
       meta = cache\put "u://real", '{"name":"Real"}', "Real"
       ut\assertNotNil meta
       ut\assertEquals readFile(cache\getFile "u://real"), '{"name":"Real"}'

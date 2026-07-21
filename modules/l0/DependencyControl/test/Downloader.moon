@@ -224,7 +224,7 @@
 
     blockPrivateHosts_optOutAllowsPrivate: (ut) ->
       dm = Downloader nil, {blockPrivateHosts: false}
-      dl = dm\addDownload "http://127.0.0.1/x", "#{basePath}_optout"
+      dl = dm\addDownload "http://127.0.0.1/x", "#{basePath}_optOut"
       ut\assertNotNil dl
 
     -- with the guard on, a non-http(s) URL is refused even though it has no host for the private-IP check

@@ -6,6 +6,7 @@
   ffi = require "ffi"
   ffiPosix = require "l0.DependencyControl.helpers.ffi-posix"
   lfs = require "lfs"
+  constants = require "l0.DependencyControl.Constants"
 
   pcall ffi.cdef, [[
     int open(const char *path, int flags, int mode);
@@ -17,7 +18,7 @@
   Create = ffiPosix.FileCreationFlags.Create
   Exclusive = ffiPosix.FileCreationFlags.Exclusive
 
-  tmpPath = -> aegisub.decode_path "?temp/depctrl_ffiposix_#{'%08X'\format math.random 0, 16^8-1}"
+  tmpPath = -> aegisub.decode_path "?temp/#{constants.DEPCTRL_SHORT_NAME}_ffiPosix_#{'%08X'\format math.random 0, 16^8-1}"
 
   {
     _description: "POSIX open(2) flag/mode values (helpers/ffi-posix), validated against the real kernel."

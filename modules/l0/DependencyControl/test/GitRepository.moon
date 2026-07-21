@@ -65,6 +65,8 @@
       (ut\stub git, "isAtTag")\returns false
       (ut\stub git, "getBranch")\returns "main"
       (ut\stub git, "getCommitHash")\returns "abc1234"
+      -- getVersionSuffix prefixes the short hash with git's "g"
+      -- cspell:ignore gabc
       ut\assertEquals git\getVersionSuffix!, "-main-gabc1234"
 
     getVersionSuffix_unknownFallbacks: (ut) ->

@@ -1,4 +1,4 @@
--- Note: this is a private API intended to be exclusively for internal DependenyControl use
+-- Note: this is a private API intended to be exclusively for internal DependencyControl use
 -- Everything in this class can and will change without any prior notice
 -- and calling any method is guaranteed to interfere with DependencyControl operation
 

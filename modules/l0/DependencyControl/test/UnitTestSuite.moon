@@ -19,7 +19,7 @@
         assert: (cond, msg, ...) =>
           unless cond
             cap.msg, cap.args = msg, table.pack ...
-            error "PROBE_ARGCHECK_FAILED"
+            error "PROBE_ARG_CHECK_FAILED"
           cond
         logEx: (level, msg, _insertLineFeed, _prefix, _indent, ...) =>
           cap.msg, cap.args = msg, table.pack ...

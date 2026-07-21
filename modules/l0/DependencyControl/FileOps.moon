@@ -104,7 +104,7 @@ class FileOps
       openError: "Couldn't open %s file '%s' for reading: \n%s"
     },
     exists: {
-      doesntExist: "No such file or directory: '%s'."
+      notFound: "No such file or directory: '%s'."
       wrongType: "Expected %s to be a %s but found a %s."
     }
     listDir: {
@@ -123,7 +123,7 @@ class FileOps
       createDirError: "Could not create target directory for '%s': %s"
       cantRemove: "Couldn't overwrite file '%s': %s. Attempts at renaming the existing target file failed."
       cantRenameTryingCopy: "Move operation failed to rename '%s' to '%s' (%s), trying copy+remove instead..."
-      couldntRemoveFiles: "Move operation succeeded to copied the file(s) to the target location, but some of the source files couldn't be removed:\n%s\n%s"
+      removeFilesFailed: "Move operation succeeded in copying the file(s) to the target location, but some of the source files couldn't be removed:\n%s\n%s"
       cantCopy: "Move operation failed to copy '%s' to '%s' (%s) after a failed rename attempt (%s)."
     }
     readFile: {
@@ -142,9 +142,9 @@ class FileOps
     }
     rmdir: {
       emptyPath: "Argument #1 (path) must not be an empty string."
-      couldntRemoveFiles: "Some of the files and folders in the specified directory couldn't be removed:\n%s"
-      couldntRemoveDir: "Error removing empty directory: %s.",
-      doesntExist: "No such file or directory: '%s'."
+      removeFilesFailed: "Some of the files and folders in the specified directory couldn't be removed:\n%s"
+      removeDirFailed: "Error removing empty directory: %s.",
+      notFound: "No such file or directory: '%s'."
       notDir: "Expected '%s' to be a directory but found a %s."
     }
     runScheduledRemoval: {
@@ -470,7 +470,7 @@ class FileOps
 
       unless res
         fileList = table.concat ["#{path}: #{res[2]}" for path, res in pairs details when not res[1]], "\n"
-        FileOps.logger\debug msgs.move.couldntRemoveFiles, fileList, msgs.generic.deletionRescheduled
+        FileOps.logger\debug msgs.move.removeFilesFailed, fileList, msgs.generic.deletionRescheduled
 
     return true
 
@@ -545,7 +545,7 @@ class FileOps
     info, err = FileOps.getAttributes path, "mode"
     return nil, err unless info
     path = info.path
-    return nil, msgs.rmdir.doesntExist\format path if info.attr == false
+    return nil, msgs.rmdir.notFound\format path if info.attr == false
     return nil, msgs.rmdir.notDir\format path, info.attr unless info.attr == "directory"
 
     if recurse
@@ -554,7 +554,7 @@ class FileOps
       res, details = FileOps.remove toRemove, true
       unless res
         fileList = table.concat ["#{path}: #{res[2]}" for path, res in pairs details when not res[1]], "\n"
-        return nil, msgs.rmdir.couldntRemoveFiles\format fileList
+        return nil, msgs.rmdir.removeFilesFailed\format fileList
 
     -- remove empty directory
     success, err = lfs.rmdir path
@@ -562,7 +562,7 @@ class FileOps
     -- Aegisub's lfs returns nothing), so only an explicit error or a directory that
     -- still exists counts as failure
     unless not err and (success or not lfs.attributes(path, "mode"))
-      return nil, msgs.rmdir.couldntRemoveDir\format(err or "unknown error")
+      return nil, msgs.rmdir.removeDirFailed\format(err or "unknown error")
 
     return true
 
@@ -573,15 +573,15 @@ class FileOps
   ---@return string dirPathOrError The directory path on success, or an error message.
   mkdirRecursive = (dir) ->
     -- preserve a leading separator so POSIX absolute paths keep their root
-    accum, first = dir\match("^[/\\]") and FileOps.pathSep or "", true
+    accumulator, first = dir\match("^[/\\]") and FileOps.pathSep or "", true
     for segment in FileOps.pathSegments dir
-      accum = first and accum .. segment or "#{accum}#{FileOps.pathSep}#{segment}"
+      accumulator = first and accumulator .. segment or "#{accumulator}#{FileOps.pathSep}#{segment}"
       first = false
-      continue if accum\match "^%a:$" -- skip bare drive letters like "C:"
-      unless lfs.attributes accum, "mode"
-        _, err = lfs.mkdir accum
+      continue if accumulator\match "^%a:$" -- skip bare drive letters like "C:"
+      unless lfs.attributes accumulator, "mode"
+        _, err = lfs.mkdir accumulator
         -- tolerate races and pre-existing levels; only fail if it's still absent
-        if err and not lfs.attributes accum, "mode"
+        if err and not lfs.attributes accumulator, "mode"
           return nil, msgs.mkdir.createError\format err
     return true, dir
 
@@ -655,7 +655,7 @@ class FileOps
   exists: (path, expectedMode) ->
     info, err = FileOps.getAttributes path, "mode"
     return nil, err unless info
-    return false, msgs.exists.doesntExist\format info.path unless info.attr
+    return false, msgs.exists.notFound\format info.path unless info.attr
     return true if not expectedMode or info.attr == expectedMode
     return false, msgs.exists.wrongType\format info.path, expectedMode, info.attr
 

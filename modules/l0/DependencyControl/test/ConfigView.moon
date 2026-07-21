@@ -230,7 +230,7 @@
       old = ConfigHandler nil
       view = ConfigView old, {"config"}
       old.views[view] = true -- as getView would register it
-      target = "#{aegisub.decode_path '?temp'}/dc_m12b_setfile.json"
+      target = "#{aegisub.decode_path '?temp'}/dc_m12b_setFile.json"
       ut\assertTrue view\setFile target
       ut\assertTrue view.__configHandler.views[view] -- registered with the new handler
       ut\assertNil old.views[view] -- and detached from the old one

@@ -31,7 +31,7 @@
       isDirect: opts.isDirect != false
       providesVersion: opts.providesVersion
       updateRecord: {
-        namespace: opts.namespace or "l0.cand"
+        namespace: opts.namespace or "l0.candidate"
         :version
         files: opts.files == nil and {{}} or opts.files
         checkPlatform: -> opts.platform != false
@@ -77,7 +77,7 @@
     feedTrust = makeSeededFeedTrust {:config}
     stubSelf UpdateTask, {
       reason: opts.reason
-      record: {name: "TestMod", namespace: "l0.testmod", virtual: true, scriptType: Common.ScriptType.Module}
+      record: {name: "TestMod", namespace: "l0.testMod", virtual: true, scriptType: Common.ScriptType.Module}
       logger: makeNullLogger!
       updater: {:config, :feedTrust}
       __class: UpdateTask
@@ -267,7 +267,7 @@
     selectCandidate_skipsEmptyFiles: (ut) ->
       task = makeSelectTask 0
       chosen = UpdateTask.__selectCandidate task,
-        {makeCandidate(2, "2.0.0", namespace: "l0.nofiles", files: {}), makeCandidate(2, "1.0.0", namespace: "l0.ok")}
+        {makeCandidate(2, "2.0.0", namespace: "l0.noFiles", files: {}), makeCandidate(2, "1.0.0", namespace: "l0.ok")}
       ut\assertEquals chosen.updateRecord.namespace, "l0.ok"
 
     selectCandidate_noneEligible: (ut) ->

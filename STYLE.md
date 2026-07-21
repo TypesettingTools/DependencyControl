@@ -40,9 +40,13 @@ Scope: this file is about the code. Contributor and agent *workflow* (verifying 
 
 ## NM — Naming
 
-- **NM1.** Casing **MUST** be: `camelCase` for methods, fields, and locals; `PascalCase` for classes and `Enum` members; `UPPER_SNAKE` for module-level constants. `snake_case` appears only at the Aegisub API and C FFI boundaries, never in project-native code.
+<!-- the run-on spellings below are deliberate counter-examples in the NM and ID rules -->
+<!-- cspell:ignore feedloader dlen nofiles ziparchiver -->
+
+- **NM1.** Casing **MUST** be: `camelCase` for methods, fields, and locals; `PascalCase` for classes and `Enum` members; `UPPER_SNAKE` for module-level constants. `snake_case` appears only at the Aegisub API and C FFI boundaries, never in project-native code. A compound camelCase name **MUST** show its word boundaries rather than run the words together — `feedLoader`, not `feedloader`. Each segment **SHOULD** be a whole word, not a truncation (`digestLen` over `dlen`), though short conventional abbreviations like `id`, `ns`, `len`, and `msg` are fine. A name that mirrors an external source — a C symbol, a grammar node type — keeps that source's spelling.
 - **NM2.** Name a member by its role, not a part-of-speech rule. Commands (do work, have effects) take a verb (`getEffectiveSource`, `persistSource`); predicates use `is`/`has`/`should` (`isBlocked`, `hasTeardown`); value producers may lead with a preposition or copula (`toString`, `fromJSON`, `withoutInstall`).
 - **NM3.** A member that acts **MUST NOT** have a bare-noun name (`failures`, `scriptTypes` read as fields). Litmus: read the name as a field access; if it does work but looks like stored data, it's wrong. Two fixes, and the choice matters: a *command* takes a verb (`getFailures`); a derived *value* with no side effects **SHOULD** instead become an actual read-only [computed property](#cp--computed-properties) so the noun becomes honest (`filter.scriptTypes`, `timer.elapsed`). A sampling or effectful call stays a verb-named method.
+- **NM4.** These naming rules apply to test code and to identifier-like string literals — fixture names, temp-path segments, stand-in namespaces (`"l0.noFiles"`, not `"l0.nofiles"`) — not only to production identifiers. A throwaway test string is still read by people and tools; being a placeholder is not license to skip the conventions.
 
 ## DOC — Types & annotations
 
@@ -144,6 +148,10 @@ Scope: this file is about the code. Contributor and agent *workflow* (verifying 
 - **LOG2.** `logger\error` throws by design (log-and-abort); `logger\assert cond, msg, …` is the standard guard.
 - **LOG3.** A logger **SHOULD** be injected with a default: a module-local `defaultLogger` plus a constructor parameter (`@logger = defaultLogger`), so tests can pass their own.
 - **LOG4.** A subsystem logger's `fileBaseName` **MUST** be `"#{Constants.DEPCTRL_SHORT_NAME}.<Class>"` — the short `DepCtrl.` prefix, single-sourced. It's a display label that sits beside the hosting script's namespace in filenames and line prefixes, where the short form reads best.
+
+## ID — Derived identity strings
+
+- **ID1.** Compose a string that encodes the module's own identity from the owning constant or class, never from a hardcoded literal that restates it. A temp-file name, working-path segment, logger label, or namespaced marker **SHOULD** derive its identifying prefix — `"#{constants.DEPCTRL_SHORT_NAME}-#{@@__name}-#{token}.json"`, not `"depctrl-ziparchiver-#{token}.json"`. The literal drifts when the class is renamed; the derived form cannot. ([LOG4](#log--logging) applies this to `fileBaseName`.)
 
 ## CFG — Config access
 

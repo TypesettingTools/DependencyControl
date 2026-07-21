@@ -61,7 +61,7 @@ class ScriptUpdateRecord
     }
   }
 
-  -- Shared per-class metatable for the @data __index fallback; initialised lazily on first instantiation.
+  -- Shared per-class metatable for the @data __index fallback; initialized lazily on first instantiation.
   instanceMetaTable = nil
 
   ---Creates an update record for a single script entry in a feed.
