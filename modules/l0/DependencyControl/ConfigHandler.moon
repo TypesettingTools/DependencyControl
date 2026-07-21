@@ -141,7 +141,13 @@ class ConfigHandler
       }
 
 
-  readFile = (waitLockTime, useLock = true) =>
+  ---Reads and JSON-decodes the config file, acquiring the file lock unless told not to.
+  ---@private
+  ---@param waitLockTime? number Milliseconds to wait for the file lock.
+  ---@param useLock? boolean Acquire and release the file lock around the read (default true).
+  ---@return table|false|nil config The decoded config, false when the file is absent or corrupted, nil on a hard error.
+  ---@return string? err
+  __readFile: (waitLockTime, useLock = true) =>
     info, err = fileOps.getAttributes @filePath, "mode"
     unless info
       return nil, err
@@ -185,7 +191,14 @@ class ConfigHandler
     return res
 
 
-  writeFile = (config, waitLockTime, haveLock = false) =>
+  ---Serializes and writes the config to disk, acquiring the file lock unless the caller holds it.
+  ---@private
+  ---@param config table The config table to write.
+  ---@param waitLockTime? number Milliseconds to wait for the file lock.
+  ---@param haveLock? boolean The caller already holds the lock; don't acquire or release it (default false).
+  ---@return boolean? success True on success, nil on failure.
+  ---@return string? err
+  __writeFile: (config, waitLockTime, haveLock = false) =>
     success, res = pcall json.encode, ConfigHandler\getSerializableCopy config
     unless success
       return nil, msgs.writeFile.failedSerialize\format res
@@ -364,7 +377,7 @@ class ConfigHandler
     if type(views) == "table" and views.__class == ConfigView
       views = {views}
 
-    config, msg = readFile @, waitLockTime
+    config, msg = @__readFile waitLockTime
     return nil, msg if config == nil
 
     @logger\debug msgs.load.noFile, @filePath, msg unless config
@@ -423,7 +436,7 @@ class ConfigHandler
       return nil, msgs.save.failedLock\format msg
 
     -- read the config file under the lock we already hold (useLock false, or readFile would release it)
-    config, err = readFile @, waitLockTime, false
+    config, err = @__readFile waitLockTime, false
     if config == nil
       @lock\release!
       return nil, msgs.save.failedRead\format @filePath, err
@@ -433,7 +446,7 @@ class ConfigHandler
 
     -- save the whole config file if desired
     if views == nil
-      success, msg = writeFile @, @config, nil, true
+      success, msg = @__writeFile @config, nil, true
       @lock\release!
       return if success
         true
@@ -451,7 +464,7 @@ class ConfigHandler
         @lock\release!
         return nil, msgs.save.failedClean\format view.__hivePath, @filePath, msg
 
-    success, msg = writeFile @, config, nil, true
+    success, msg = @__writeFile config, nil, true
     @lock\release!
     return if success
       true
