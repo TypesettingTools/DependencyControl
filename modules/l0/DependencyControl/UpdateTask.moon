@@ -194,6 +194,10 @@ UpdateStatus = Enum "UpdateStatus", {
 }
 
 msgs = {
+  new: {
+    badRecord: "First parameter must be a %s object."
+    badTargetVersion: "Second parameter must be a semantic version number in integer format."
+  }
   updateError: {
     [UpdateStatus.UpToDate]: "Couldn't complete the %s of %s '%s' because of a paradox: module not found but updater says up-to-date (%s)"
     [UpdateStatus.UpdaterDisabled]: "Couldn't complete the %s of %s '%s' because the updater is disabled."
@@ -345,8 +349,8 @@ class UpdateTask
   ---@param updater Updater
   new: (@record, targetVersionNumber = 0, @addFeeds, @optional, @channel, @reason, @updater) =>
     @@__DependencyControl or= require "l0.DependencyControl"
-    assert @record.__class == @@__DependencyControl, "First parameter must be a #{@@__DependencyControl.__name} object."
-    assert type(targetVersionNumber) == "number", "Second parameter must be a semantic version number in integer format."
+    assert @record.__class == @@__DependencyControl, msgs.new.badRecord\format @@__DependencyControl.__name
+    assert type(targetVersionNumber) == "number", msgs.new.badTargetVersion
 
     @logger = @updater.logger
     @triedFeeds = {}

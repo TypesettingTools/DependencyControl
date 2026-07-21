@@ -183,8 +183,8 @@ class PackageRecord
         version or= script_version
 
       @namespace = namespace or script_namespace
-      assert @recordType == domain.RecordType.Managed, msgs.new.badRecordError\format msgs.new.badRecord.noUnmanagedMacros
-      assert @namespace, msgs.new.badRecordError\format msgs.new.badRecord.missingNamespace
+      @@logger\assert @recordType == domain.RecordType.Managed, msgs.new.badRecordError, msgs.new.badRecord.noUnmanagedMacros
+      @@logger\assert @namespace, msgs.new.badRecordError, msgs.new.badRecord.missingNamespace
       @scriptType = domain.ScriptType.Automation
 
     -- if the hosting macro doesn't have a namespace defined, define it for
@@ -196,13 +196,13 @@ class PackageRecord
     -- domain.validateNamespace (and its message) rather than restating the rules here
     unless @virtual or @recordType == domain.RecordType.Unmanaged
       valid, nsErr = @validateNamespace!
-      assert valid, nsErr
+      @@logger\assert valid, msgs.new.badRecordError, nsErr
 
     @configFile = configFile or "#{@namespace}.json"
     @automationDir = domain.getAutomationDir @scriptType
     @testDir = domain.getTestDir @scriptType
     packed, err = SemanticVersion\toPacked version
-    assert packed, msgs.new.badRecordError\format msgs.new.badRecord.badVersion\format err
+    @@logger\assert packed, msgs.new.badRecordError, msgs.new.badRecord.badVersion\format err
     @semanticVersion = SemanticVersion.fromPacked packed
 
     @requiredModules or= {}

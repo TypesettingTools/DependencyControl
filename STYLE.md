@@ -151,6 +151,7 @@ Scope: this file is about the code. Contributor and agent *workflow* (verifying 
 - **LOG2.** `logger\error` throws by design (log-and-abort); `logger\assert cond, msg, …` is the standard guard.
 - **LOG3.** A logger **SHOULD** be injected with a default: a module-local `defaultLogger` plus a constructor parameter (`@logger = defaultLogger`), so tests can pass their own.
 - **LOG4.** A subsystem logger's `fileBaseName` **MUST** be `"#{Constants.DEPCTRL_SHORT_NAME}.<Class>"` — the short `DepCtrl.` prefix, single-sourced. It's a display label that sits beside the hosting script's namespace in filenames and line prefixes, where the short form reads best.
+- **LOG5.** A programmer-error contract check uses `@logger\assert cond, template, …args` where a logger is in scope, or bare `assert cond, msg` where none is yet (e.g. before a constructor assigns it). The message is a `msgs` entry, never an inline literal (ER3). Dynamic values pass as trailing args, never baked into the template, which `@logger\assert` re-formats. A failure a caller can hit at runtime is validated before construction and returned as `nil, err` instead (MS4).
 
 ## ID — Derived identity strings
 
