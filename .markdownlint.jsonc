@@ -1,0 +1,9 @@
+{
+  // STYLE.md FMT5: each paragraph and list item is a single unwrapped line, so a
+  // fixed line-length cap does not apply.
+  "MD013": false,
+
+  // MD060 - Table column style: disabled — Prettier does not align wide tables,
+  // so enforcing 'aligned' produces false positives on wide tables.
+  "MD060": false
+}

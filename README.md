@@ -16,11 +16,7 @@ DependencyControl provides versioning, automatic script update, dependency manag
 
 - Aegisub [v3.4.0+](https://github.com/TypesettingTools/Aegisub/releases) or releases of [arch1t3cht's Aegisub fork](https://github.com/arch1t3cht/Aegisub/releases) based on v3.4.0+. Older versions of Aegisub may work, but you're on your own if you run into any issues.
 
-DependencyControl is self-contained: it bundles a JSON library ([dkjson](https://dkolf.de/dkjson-lua/)), though if you have another `json` module installed, it is used instead.
-It also now ships with pure-FFI
-implementations of functionality previously provided by
-[ffi-experiments](https://github.com/torque/ffi-experiments)
-modules (_DownloadManager_, _BadMutex_, _PreciseTimer_).
+DependencyControl is self-contained: it bundles a JSON library ([dkjson](https://dkolf.de/dkjson-lua/)), though if you have another `json` module installed, it is used instead. It also now ships with pure-FFI implementations of functionality previously provided by [ffi-experiments](https://github.com/torque/ffi-experiments) modules (_DownloadManager_, _BadMutex_, _PreciseTimer_).
 
 ---
 
@@ -42,14 +38,14 @@ As an end-user you don't get to decide whether your scripts use DependencyContro
 
 ### Installation
 
-1.  Download the latest DependencyControl release unpack its contents to your Aegisub **user** automation directory:
-    - On Windows: `%AppData%\Aegisub\automation`
-    - On Linux: `~/.aegisub/automation`
-    - On OSX: `~/Library/Application Support/Aegisub/automation`
+1. Download the latest DependencyControl release and unpack its contents into your Aegisub **user** automation directory:
+   - On Windows: `%AppData%\Aegisub\automation`
+   - On Linux: `~/.aegisub/automation`
+   - On OSX: `~/Library/Application Support/Aegisub/automation`
 
-Do **NOT** unpack the file into the automation directory within the Aegisub installation folder, as this will break the updater.
+   Do **NOT** unpack the file into the automation directory within the Aegisub installation folder, as this will break the updater.
 
-2. Restart Aegisub or re-scan your autoload directory from within the Aegisub _Automation Manger_.
+2. Restart Aegisub or re-scan your autoload directory from within the Aegisub _Automation Manager_.
 
 ### Configuration
 
@@ -67,29 +63,47 @@ There are 2 kinds of configuration:
 
 #### 1. Global Configuration
 
-Changes made in the `config` section of the configuration file will affect all scripts and general DependencyControl behavior.
+Settings in the top-level `config` object affect all scripts and DependencyControl's own behavior. As of v0.7.0 they're grouped into four sections — `updates`, `feeds`, `logging`, and `paths`. A flat config from an earlier version is migrated into this layout automatically the first time v0.7.0 loads it, so there's nothing to convert by hand. DependencyControl stamps the file with a `$schema` link to the [config schema](schemas/config/v0.7.0.json), which a JSON-aware editor uses to validate and autocomplete your edits.
 
-**Available Fields**:
+**`updates` — the update engine**
 
-- _str_ **updates.mode ["auto-update"]:** Which update contexts may install and update at all. Each value includes the ones before it:
+- _str_ **mode ["auto-update"]:** Which update contexts may install and update at all. Each value includes the ones before it:
   - `"off"` — no installs or updates at all
   - `"user-requested"` — only actions you start yourself (e.g. via the Toolbox)
   - `"dependency-resolution"` — also installing/updating modules a script depends on
   - `"auto-update"` (default) — also background scheduled update checks
-- _int_ **updateInterval [3 Days]:** The time in seconds between two update checks of a script
-- _int_ **traceLevel [3]:** Sets the Trace level of DependencyControl update messages. Setting this higher than your _Trace level_ setting in Aegisub will prevent any of the messages from littering your log window.
-- _bool_ **dumpFeeds [true]:** Debug option that will make DependencyControl dump updater feeds (original and expanded) to your Aegisub folder.
-- _arr_ **extraFeeds:** lets you provide additional update feeds that will be used when checking any script for updates. Feeds you list here are treated as trusted.
-- _arr_ **trustedFeeds:** additional feed URLs you trust as package sources, on top of the feeds DependencyControl trusts by default (those advertised in its own feed). Unlike `extraFeeds`, these aren't crawled for updates on their own — they only mark a feed as trusted so packages can be installed from it without a warning.
-- _arr_ **blockedFeeds:** feed URLs that must never be used as a package source. A blocked feed is rejected regardless of any other setting (including `userFeed`). Applied on top of DependencyControl's own block list. Each entry is matched case-insensitively as a URL prefix, so a host root like `https://example.com/` blocks every feed under it.
-- _str_ **feedTrustPromptThreshold ["auto-update"]:** When DependencyControl may ask you to approve installing from a feed not (yet) on the trusted list. Takes the same context values as `updates.mode` (`"off"` never asks; defaults to `"auto-update"`, i.e. asking is allowed in every context). When a situation isn't allowed to prompt, the install fails or is skipped rather than using the untrusted feed.
-- _str_ **packageChoicePromptThreshold ["user-requested"]:** When DependencyControl may ask you to pick between equally-ranked packages that can satisfy a requirement. Same context values as above (default `"user-requested"`: only for actions you start yourself). When a situation isn't allowed to prompt, a stable but arbitrary tie-breaker is used.
-- _bool_ **packageChoiceOfferAllSources [false]:** By default the package picker only appears when two or more sources are genuinely tied (same trust band and version). Set this to `true` to be offered _every_ eligible source whenever there's more than one (including lower-ranked and untrusted ones).
-- _str_ **configDir ["?user/config"]:** Sets the configuration directory that will be "offered" to automation scripts (they may or may not actually use it)
-- _str_ **writeLogs [true]:** When enabled, DependencyControl log messages will be written to a file in the Aegisub log folder. This is a valuable resource for debugging, especially since the Aegisub log window is not available during script initialization.
-- _int_ **logMaxFiles [200]:** DependencyControl will purge old updater log files when any of the limits for log file count, log age and cumulative file size is exceeded.
-- _int_ **logMaxAge [1 Week]:** Logs with a last modified date that exceeds this limit will be deleted. Takes a duration in seconds.
-- _int_ **logMaxSize [10 MB]:** Cumulative file size limit for all log files in bytes.
+- _int_ **checkInterval [302400 (3.5 days)]:** Minimum seconds between two automatic update checks of a given script.
+- _int_ **waitTimeout [60]:** Seconds to wait for another process's in-progress update to finish before giving up.
+- _int_ **orphanTimeout [50]:** Seconds after which an updater lock whose owner has vanished (e.g. a crashed Aegisub) is treated as stale and may be taken over.
+- _str_ **feedTrustPromptThreshold ["auto-update"]:** How freely DependencyControl may ask you to trust an as-yet-untrusted feed before installing from it. Takes the same context values as `mode` (`"off"` never asks; the default allows asking in every context). When a context isn't allowed to prompt, the install fails or is skipped rather than silently using the untrusted feed.
+- _str_ **packageChoicePromptThreshold ["user-requested"]:** How freely DependencyControl may ask you to choose among equally-ranked sources for a requirement. Same context values (the default asks only for actions you start yourself). When a context can't prompt, a stable but arbitrary tie-breaker decides instead.
+- _bool_ **offerAllSources [false]:** By default the package picker only appears when two or more sources are genuinely tied (same trust band and version). Set this to `true` to be offered _every_ eligible source whenever there's more than one, including lower-ranked and untrusted ones.
+- _bool_ **blockPrivateHosts [true]:** Refuse feed and package downloads from hosts that resolve to a private, loopback, or link-local address (an SSRF safeguard). Turn off to use feeds on your local network.
+
+**`feeds` — feed trust, discovery, and caching**
+
+- _arr_ **extraFeeds []:** Your own additional feeds. They're trusted _and_ used as discovery roots: checked for updates to any script, and their advertised `knownFeeds` are crawled to surface further feeds.
+- _arr_ **trustedFeeds []:** Feeds you trust as package sources but that are not discovery roots. They let a package install from them without a warning, but aren't themselves crawled for updates.
+- _arr_ **blockedFeeds []:** Feeds that must never be used as a package source, overriding all trust and merged with DependencyControl's own block list. Each entry is an object: `url` (required); `matchMode` (`"prefix"`, the default, matches every feed URL starting with `url` case-insensitively, while `"exact"` matches only that one URL); and an optional `reason`.
+- _str_ **fetchUntrustedFeeds ["always"]:** What to do when discovery reaches an untrusted feed: `"always"` fetches it, `"never"` skips it, and `"prompt"` asks first (falling back to `"never"` where nothing can prompt, e.g. a headless run).
+- _obj_ **crawlLimits:** Bounds on how far untrusted feed discovery expands. Keys: `per-feed` [25] (untrusted feeds a single feed may contribute), `per-root` [50] (budget per configured discovery root), and `depth` [7]. Any unset budget uses its default.
+- _int_ **cacheMaxAge [3600]:** Seconds a cached feed snapshot stays fresh before it's re-fetched.
+- _int_ **maxFeedSize [5000000]:** Largest single feed response, in bytes, before the fetch is aborted — a guard against a hostile or runaway feed. Set `0` to remove the limit.
+- _int_ **feedFetchTimeout [15]:** Longest time, in seconds, to spend fetching a single feed before the transfer is aborted. Set `0` to remove the timeout.
+
+**`logging` — verbosity and retention**
+
+- _int_ **defaultLevel [3]:** Default trace level of DependencyControl's messages; higher levels log more. Setting it above your Aegisub _Trace level_ keeps these messages out of the log window.
+- _bool_ **toFile [true]:** Write log messages to a file in the log directory. This is valuable for debugging, especially during script initialization when the Aegisub log window isn't available.
+- _int_ **maxFiles [200]:** Old log files are purged once the limit on file count, age, or cumulative size is exceeded.
+- _int_ **maxAge [604800 (1 week)]:** Delete log files whose last-modified date is older than this many seconds.
+- _int_ **maxSize [10000000 (10 MB)]:** Cumulative byte-size limit across all log files.
+
+**`paths` — base directories** (each accepts Aegisub path tokens such as `?user` and `?data`)
+
+- _str_ **config ["?user/config"]:** Directory for DependencyControl's config files; also the directory offered to automation scripts for their own config (they may or may not use it).
+- _str_ **log ["?user/log"]:** Directory for DependencyControl's log files.
+- _str_ **cache ["?user/cache"]:** Base directory for on-disk caches. Each cache lives under a `<namespace>/<name>` subdirectory (e.g. the feed cache at `<cache>/l0.DependencyControl/feeds`).
 
 #### 2. Per-script Configuration
 
@@ -125,7 +139,7 @@ The feeds DependencyControl advertises in its own feed are trusted out of the bo
 - **`blockedFeeds`**: feeds that must never be used, overriding everything else (applied in addition to DependencyControl's own block list). Entries match case-insensitively by URL prefix, so a host root blocks every feed under it.
 - **`userFeed`** (per script): pin a single feed to be used exclusively for that script.
 
-(A future DependencyControl Toolbox UI will let you confirm and trust feeds interactively instead of editing the config by hand.)
+The **DependencyControl Toolbox**'s _Manage Feeds_ macro lets you review, trust, block, and discover feeds interactively, so most of this can be done without editing the config by hand.
 
 #### Remembering your source choice
 
@@ -172,8 +186,7 @@ local version = DependencyControl{
 local util, LineCollection, Line, Log, ASS, Common, YUtils = version:requireModules()
 ```
 
-Specifying a feed in your own version record provides DependencyControl with a source to download updates to your script from.
-Specifying feeds for required modules managed by DependencyControl allows the Updater to discover those modules and fetch them when they're missing from the user's computer. However, you can omit the feed URLs for required modules when your own feed already has references to them.
+Specifying a feed in your own version record provides DependencyControl with a source to download updates to your script from. Specifying feeds for required modules managed by DependencyControl allows the Updater to discover those modules and fetch them when they're missing from the user's computer. However, you can omit the feed URLs for required modules when your own feed already has references to them.
 
 To **register your macros** use the following code snippets instead of the usual _aegisub.register_macro()_ calls:
 
@@ -223,8 +236,7 @@ local version = DependencyControl{
 local createASSClass, re, util, unicode, Common, LineCollection, Line, Log, ASSInspector, YUtils = version:requireModules()
 ```
 
-A reference to the version record must be added as the _.version_ field of your returned module for version control to work.
-A module should also register itself to enable circular dependency support. The _:register()_ method returns your module, so the last lines of your module should look like this:
+A reference to the version record must be added as the _.version_ field of your returned module for version control to work. A module should also register itself to enable circular dependency support. The _:register()_ method returns your module, so the last lines of your module should look like this:
 
 ```lua
 MyModule.version = version
@@ -248,14 +260,12 @@ local version = DependencyControl{
 Notes:
 
 - Each entry is a name string (or a table `{name = "json"}`, which may offer further customization options in the future).
-- Provided names may be bare/non-namespaced even though your own `moduleName` must be a valid
-  (dotted) namespace.
-- Resolution only applies after DependencyControl itself has been loaded, and always defers to a
-  genuinely installed module of that name — so users can still bring their own.
+- Provided names may be bare/non-namespaced even though your own `moduleName` must be a valid (dotted) namespace.
+- Resolution only applies after DependencyControl itself has been loaded, and always defers to a genuinely installed module of that name — so users can still bring their own.
 
 ##### Satisfying a dependency with a provider
 
-`provides` also works across the dependency graph at install time. When a script's `requiredModules` names a module that no feed offers directly, DependencyControl can install a module  that lists that name in its `provides` instead — much like Debian's `Provides:` or Arch's `provides`. For example, a script that requires `json` can be satisfied by installing `l0.dkjson`, which provides it. A candidate must actually be installable (its `platforms` must include yours and its version must meet the requirement), a directly-named module is always preferred over a provider, and the usual [package-source precedence](#how-dependencycontrol-selects-package-sources) decides which feed it comes from. Once a provider is installed for a requirement, DependencyControl keeps using and updating that same module rather than switching to a different provider, as long as it can still satisfy the requirement.
+`provides` also works across the dependency graph at install time. When a script's `requiredModules` names a module that no feed offers directly, DependencyControl can install a module that lists that name in its `provides` instead — much like Debian's `Provides:` or Arch's `provides`. For example, a script that requires `json` can be satisfied by installing `l0.dkjson`, which provides it. A candidate must actually be installable (its `platforms` must include yours and its version must meet the requirement), a directly-named module is always preferred over a provider, and the usual [package-source precedence](#how-dependencycontrol-selects-package-sources) decides which feed it comes from. Once a provider is installed for a requirement, DependencyControl keeps using and updating that same module rather than switching to a different provider, as long as it can still satisfy the requirement.
 
 A provider can pin _which_ versions of an aliased module it stands in for by giving the table entry an npm-style version range via `provides = {{name = "json", version = "~1.2"}}`. This lets one provider cover a span of releases without being re-published for every patch bump of the aliased module. If not specified, the provider is assumed to satisfy any version requirement for that name.
 
@@ -263,8 +273,7 @@ For module authors: the `provides` you declare in your version record is mirrore
 
 #### Advanced: moving a package to a new feed URL
 
-A package can change the feed it updates from by shipping a release whose record points `feed` at the new URL; DependencyControl picks that up the next time it updates the package. Because source selection is trust-aware (see [How DependencyControl Selects Package Sources](#how-dependencycontrol-selects-package-sources)),
-plan migrations with that in mind:
+A package can change the feed it updates from by shipping a release whose record points `feed` at the new URL; DependencyControl picks that up the next time it updates the package. Because source selection is trust-aware (see [How DependencyControl Selects Package Sources](#how-dependencycontrol-selects-package-sources)), plan migrations with that in mind:
 
 - If the new URL is **already trusted** (listed in DependencyControl's feed, or added by users), the move is seamless.
 - If the new URL is **not yet trusted**, automatic updates to it are held back. To avoid breaking them, keep serving from your **old, already-trusted feed in parallel** during the transition and/or get the new URL added to DependencyControl's trusted list. Individual users can also add it to their own `trustedFeeds`.
@@ -279,11 +288,11 @@ Automation scripts must define their namespace in the version record whereas for
 
 Rules for a valid namespace:
 
-1.  contains _at least_ one dot
-2.  must **not** start or end with a dot
-3.  must **not** contain series of two or more dots
-4.  the character set is restricted to: `A-Z`, `a-z`, `0-9`, `.`, `_`, `-`
-5.  _should_ be descriptive (this is more of a guideline)
+1. contains _at least_ one dot
+2. must **not** start or end with a dot
+3. must **not** contain series of two or more dots
+4. the character set is restricted to: `A-Z`, `a-z`, `0-9`, `.`, `_`, `-`
+5. _should_ be descriptive (this is more of a guideline)
 
 **Examples**:
 
@@ -482,35 +491,35 @@ Variables extracted at the **same depth** are expanded in a specific order. As a
 
 _Depth 1:_ Feed Information
 
-1.  `@{feedName}`: The name of the feed
-2.  `@{baseUrl}`: The baseUrl field
-3.  `@{feed:<feedName>}`: A reference to a feed URL in the knownFeeds table
+1. `@{feedName}`: The name of the feed
+2. `@{baseUrl}`: The baseUrl field
+3. `@{feed:<feedName>}`: A reference to a feed URL in the knownFeeds table
 
 _Depth 2:_ Section Information _(v0.4.0)_
 
-1.  `@{scriptTypeSection}`: the name of the feed section the package lives in (`macros` or `modules`)
-2.  `@{scriptType}`: the matching script type identifier (`automation` or `module`)
+1. `@{scriptTypeSection}`: the name of the feed section the package lives in (`macros` or `modules`)
+2. `@{scriptType}`: the matching script type identifier (`automation` or `module`)
 
 _Depth 3:_ Script Information
 
-1.  `@{namespace}`: the script namespace
-2.  `@{namespacePath}`: the script namespace with all `.` replaced by `/`
-3.  `@{scriptName}`: the script name
+1. `@{namespace}`: the script namespace
+2. `@{namespacePath}`: the script namespace with all `.` replaced by `/`
+3. `@{scriptName}`: the script name
 
 _Depth 5:_ Version Information
 
-1.  `@{channel}`: the channel name of this version record
-2.  `@{version}`: the version number as a SemVer string
+1. `@{channel}`: the channel name of this version record
+2. `@{version}`: the version number as a SemVer string
 
 _Depth 7:_ File Information
 
-1.  `@{platform}`: the platform defined for this file, otherwise an empty string
-2.  `@{fileName}`: the file name
+1. `@{platform}`: the platform defined for this file, otherwise an empty string
+2. `@{fileName}`: the file name
 
 **"Rolling" Variables**: These variables can be defined at any depth in the JSON tree — the feed root, a `macros`/`modules` section container _(v0.4.0)_, a package, or a channel — and are continuously expanded using the variables available. You can reference a rolling variable in itself, which will substitute the template for the contents the variable had at the parent-level.
 
-1.  `@{fileBaseUrl}`: the base URL to construct file download URLs from
-2.  `@{localFileBasePath}` _(v0.4.0)_: the on-disk counterpart of `@{fileBaseUrl}`, resolved relative to the feed file when a feed is expanded in local mode; it lets CI/CLI tooling (such as the [DepCtrl CLI](#cli)) locate every packaged file's source in your repository
+1. `@{fileBaseUrl}`: the base URL to construct file download URLs from
+2. `@{localFileBasePath}` _(v0.4.0)_: the on-disk counterpart of `@{fileBaseUrl}`, resolved relative to the feed file when a feed is expanded in local mode; it lets CI/CLI tooling (such as the [DepCtrl CLI](#cli)) locate every packaged file's source in your repository
 
 **Per-file-type template maps** _(v0.4.0)_: the `fileBaseUrls` and `localFileBasePaths` properties hold one full URL/path template per file type (`script`, `test`), usually ending in `@{fileName}`. At each file record, the entry matching the file's `type` becomes the effective `@{fileBaseUrl}`/`@{localFileBasePath}` value, so file entries can simply declare `"url": "@{fileBaseUrl}"`. A file type without a map entry falls back to the scalar `fileBaseUrl`/`localFileBasePath`. The maps roll like the scalar variables, so defining them once at the feed root (or on a section container, when your macros and modules trees follow different layouts) describes every package's file locations in one place.
 
@@ -521,7 +530,7 @@ _Depth 7:_ File Information
 "fileBaseUrls": { "script": "@{fileBaseUrl}v@{version}@{tagSuffix:@{channel}}/@{scriptTypeSection}/@{namespacePath}@{fileName}" }
 ```
 
-For an example to serve updates from the HEAD of a GitHub repository main branch, see [here](https://github.com/TypesettingTools/line0-Aegisub-Scripts/blob/master/DependencyControl.json). An example that shows a feed making use of tagged releases is [also available](https://github.com/TypesettingTools/ASSFoundation/blob/master/DependencyControl.json). DependencyControl's [own feed](./DependencyControl.json) exercises the full v0.4.0 feature set: root-level template maps, a section-scoped override for the differently-structured macros tree, and channel-keyed release-tag suffixes.
+For an example that serves updates from the HEAD of a GitHub repository's main branch, see [line0's script feed](https://github.com/TypesettingTools/line0-Aegisub-Scripts/blob/master/DependencyControl.json). An example that shows a feed making use of tagged releases is [also available](https://github.com/TypesettingTools/ASSFoundation/blob/master/DependencyControl.json). DependencyControl's [own feed](./DependencyControl.json) exercises the full v0.4.0 feature set: root-level template maps, a section-scoped override for the differently-structured macros tree, and channel-keyed release-tag suffixes.
 
 ## Reference
 
@@ -533,10 +542,7 @@ The `l0.MoonCats` module extracts the [LuaCATS](https://luals.github.io/wiki/ann
 
 ## CLI
 
-DependencyControl ships a CLI launcher (`depctrl.lua`) for running tests, building release
-bundles, and deploying to a local Aegisub installation — all **without** a running Aegisub
-process. All commands read their package list from a feed JSON file and can operate on any
-DepCtrl-managed package, not only DependencyControl itself.
+DependencyControl ships a CLI launcher (`depctrl.lua`) for running tests, building release bundles, and deploying to a local Aegisub installation — all **without** a running Aegisub process. All commands read their package list from a feed JSON file and can operate on any DepCtrl-managed package, not only DependencyControl itself.
 
 ### Prerequisites
 
@@ -558,9 +564,7 @@ General form:
 luajit depctrl.lua <command> [options]
 ```
 
-The feed is resolved in this order: `--feed` flag → `DependencyControl.json` in the current
-working directory. All commands accept `--target-module` and `--target-macro` to restrict
-processing to specific packages; without them the command operates on every package in the feed.
+The feed is resolved in this order: `--feed` flag → `DependencyControl.json` in the current working directory. All commands accept `--target-module` and `--target-macro` to restrict processing to specific packages; without them the command operates on every package in the feed.
 
 ### `test` — Run unit test suites
 
@@ -569,22 +573,18 @@ luajit depctrl.lua test [--feed <path>] [--report-dir <dir>]
                         [--target-module <ns>] [--target-macro <ns>]
 ```
 
-Loads every matching package from the feed, runs its DepUnit test suite (if one is registered),
-and writes a per-package [CTRF](https://ctrf.io) JSON report. Exit code `0` = all tested
-packages passed, `1` = one or more failures or load errors.
+Loads every matching package from the feed, runs its DepUnit test suite (if one is registered), and writes a per-package [CTRF](https://ctrf.io) JSON report. Exit code `0` = all tested packages passed, `1` = one or more failures or load errors.
 
-Packages without a test suite are skipped with a notice; packages that fail to load are counted
-as failures. Log files and config/feed caches are written to a per-run throwaway workspace under
-the system temp directory rather than touching your real Aegisub configuration.
+Packages without a test suite are skipped with a notice; packages that fail to load are counted as failures. Log files and config/feed caches are written to a per-run throwaway workspace under the system temp directory rather than touching your real Aegisub configuration.
 
 The feed must have correct `localFileBasePaths` (or `localFileBasePath`) entries so the CLI can resolve source files on disk.
 
-| Option            | Default                         | Description                                              |
-| ----------------- | ------------------------------- | -------------------------------------------------------- |
-| `--feed`          | `DependencyControl.json` in CWD | Path to the feed JSON file                               |
-| `--report-dir`    | `ctrf/`                         | Directory for per-package CTRF JSON reports              |
-| `--target-module` | _(all modules)_                 | Module namespace to test; repeatable                     |
-| `--target-macro`  | _(all macros)_                  | Macro namespace to test; repeatable                      |
+| Option            | Default                         | Description                                 |
+| ----------------- | ------------------------------- | ------------------------------------------- |
+| `--feed`          | `DependencyControl.json` in CWD | Path to the feed JSON file                  |
+| `--report-dir`    | `ctrf/`                         | Directory for per-package CTRF JSON reports |
+| `--target-module` | _(all modules)_                 | Module namespace to test; repeatable        |
+| `--target-macro`  | _(all macros)_                  | Macro namespace to test; repeatable         |
 
 ### `bundle` — Build a release archive
 
@@ -593,15 +593,12 @@ luajit depctrl.lua bundle [--feed <path>] [--out-dir <dir>]
                           [--target-module <ns>] [--target-macro <ns>]
 ```
 
-Copies every file listed in the feed into a `dist/` subfolder of `<dir>`, then packages
-`dist/` into a zip archive named `<feedName>-v<version>[-<branch>-g<hash>].zip` in `<dir>`.
-`dist/` is wiped and recreated on each run. The git branch and hash suffix is omitted when
-HEAD is exactly on a tag.
+Copies every file listed in the feed into a `dist/` subfolder of `<dir>`, then packages `dist/` into a zip archive named `<feedName>-v<version>[-<branch>-g<hash>].zip` in `<dir>`. `dist/` is wiped and recreated on each run. The git branch and hash suffix is omitted when HEAD is exactly on a tag.
 
-| Option            | Default                         | Description                                  |
-| ----------------- | ------------------------------- | -------------------------------------------- |
-| `--feed`          | `DependencyControl.json` in CWD | Path to the feed JSON file                   |
-| `--out-dir`       | CWD                             | Root for the `dist/` folder and the zip file |
+| Option            | Default                         | Description                                   |
+| ----------------- | ------------------------------- | --------------------------------------------- |
+| `--feed`          | `DependencyControl.json` in CWD | Path to the feed JSON file                    |
+| `--out-dir`       | CWD                             | Root for the `dist/` folder and the zip file  |
 | `--target-module` | _(all modules)_                 | Restrict to this module namespace; repeatable |
 | `--target-macro`  | _(all macros)_                  | Restrict to this macro namespace; repeatable  |
 
@@ -614,10 +611,7 @@ luajit depctrl.lua deploy [--feed <path>] [--out-dir <dir>] [--clobber | --no-cl
                           [--target-module <namespace>] [--target-macro <namespace>]
 ```
 
-Copies every file listed in the feed directly into `<dir>` using the Aegisub install layout —
-macros into `<dir>/automation/autoload/`, modules into `<dir>/automation/modules/`, test files
-into `<dir>/automation/tests/DepUnit/…`. Useful for testing against a locally installed Aegisub
-without going through a full release build.
+Copies every file listed in the feed directly into `<dir>` using the Aegisub install layout — macros into `<dir>/automation/autoload/`, modules into `<dir>/automation/modules/`, test files into `<dir>/automation/tests/DepUnit/…`. Useful for testing against a locally installed Aegisub without going through a full release build.
 
 | Option            | Default                         | Description                                            |
 | ----------------- | ------------------------------- | ------------------------------------------------------ |
@@ -644,16 +638,16 @@ With `--add-files`, files found on disk that the targeted channel doesn't list a
 
 With `--mark-released`, each targeted channel still marked unreleased (`released` is `null`) is stamped with the release date — today (UTC) by default, or the date passed to `--release-date` (giving a date implies `--mark-released`). A channel that already carries a date keeps it. This is the last step of a release, recording which builds have shipped — the release workflow runs it so version tooling can later tell a released version from a pending one, passing one date so every stamp in a run agrees.
 
-| Option            | Default                         | Description                                              |
-| ----------------- | ------------------------------- | -------------------------------------------------------- |
-| `--feed`          | `DependencyControl.json` in CWD | Path to the feed JSON file                               |
-| `--channel`       | _(each package's default)_      | Channel to update                                        |
-| `--dry-run`       | false                           | Print what would change without writing back             |
-| `--add-files`     | false                           | Add entries for on-disk files missing from the channel   |
-| `--mark-released` | false                           | Stamp the release date on channels still unreleased      |
-| `--release-date`  | today (UTC)                     | Date to stamp with `--mark-released`                     |
-| `--target-module` | _(all modules)_                 | Restrict to this module namespace; repeatable            |
-| `--target-macro`  | _(all macros)_                  | Restrict to this macro namespace; repeatable             |
+| Option            | Default                         | Description                                            |
+| ----------------- | ------------------------------- | ------------------------------------------------------ |
+| `--feed`          | `DependencyControl.json` in CWD | Path to the feed JSON file                             |
+| `--channel`       | _(each package's default)_      | Channel to update                                      |
+| `--dry-run`       | false                           | Print what would change without writing back           |
+| `--add-files`     | false                           | Add entries for on-disk files missing from the channel |
+| `--mark-released` | false                           | Stamp the release date on channels still unreleased    |
+| `--release-date`  | today (UTC)                     | Date to stamp with `--mark-released`                   |
+| `--target-module` | _(all modules)_                 | Restrict to this module namespace; repeatable          |
+| `--target-macro`  | _(all macros)_                  | Restrict to this macro namespace; repeatable           |
 
 Exit code `0` = success, `1` = one or more packages had errors.
 
@@ -688,15 +682,15 @@ luajit depctrl.lua merge-feed [--feed <src>] --into <dst> --from <channel> --to 
 
 Copies the `--from` channel of every package in the source feed into each `--to` channel of the destination feed (updated in place), then writes the destination through the feed's canonical formatter. Each destination channel's `default` flag is set (true only for `--default-channel`) and its release date stamped when `--released` is given; file hashes are copied as-is, so no sources are read. Channels not named in `--to` are left untouched — they keep their previously published versions — and a package missing from the destination is added carrying only the `--to` channels. Top-level feed metadata and shared package fields track the source. This is how the release workflow promotes the dev feed's channel onto the published `stable`/`alpha` channels while leaving the channel it isn't releasing in place.
 
-| Option              | Default                         | Description                                          |
-| ------------------- | ------------------------------- | ---------------------------------------------------- |
-| `--feed`            | `DependencyControl.json` in CWD | Source feed to copy from                             |
-| `--into`            | _(required)_                    | Destination feed, updated in place                   |
-| `--from`            | _(required)_                    | Source channel to copy                               |
-| `--to`              | _(required)_                    | Destination channel(s), space-separated              |
-| `--default-channel` | _(required)_                    | Which destination channel becomes default: true      |
-| `--released`        | _(unset)_                       | Release date to stamp on the destination channel(s)  |
-| `--dry-run`         | false                           | Compute the merge without writing the destination    |
+| Option              | Default                         | Description                                         |
+| ------------------- | ------------------------------- | --------------------------------------------------- |
+| `--feed`            | `DependencyControl.json` in CWD | Source feed to copy from                            |
+| `--into`            | _(required)_                    | Destination feed, updated in place                  |
+| `--from`            | _(required)_                    | Source channel to copy                              |
+| `--to`              | _(required)_                    | Destination channel(s), space-separated             |
+| `--default-channel` | _(required)_                    | Which destination channel becomes default: true     |
+| `--released`        | _(unset)_                       | Release date to stamp on the destination channel(s) |
+| `--dry-run`         | false                           | Compute the merge without writing the destination   |
 
 Exit code `0` = success, `1` = a feed couldn't be loaded or a required option was missing.
 
@@ -740,12 +734,12 @@ Beyond copying annotation blocks, the extractor synthesizes what LuaLS can't inf
 
 With `--check`, nothing is written; instead the extraction's findings act as an annotation linter: missing annotation blocks on public members, `@param` tags that disagree with the real signature in name or count, and explicit value returns without a `@return` are reported as errors and fail the run. Note that a MoonScript function's implicit final-expression return is deliberately not flagged as missing a `@return`, so a clean check is not proof of complete return documentation.
 
-| Option            | Default                         | Description                                                  |
-| ----------------- | ------------------------------- | ------------------------------------------------------------ |
-| `--feed`          | `DependencyControl.json` in CWD | Path to the feed JSON file                                   |
-| `--out-dir`       | `types` in CWD                  | Root directory for the generated definition tree             |
-| `--check`         | false                           | Lint annotations only; write nothing, exit `1` on errors     |
-| `--target-module` | _(all modules)_                 | Restrict to this module namespace; repeatable                |
+| Option            | Default                         | Description                                              |
+| ----------------- | ------------------------------- | -------------------------------------------------------- |
+| `--feed`          | `DependencyControl.json` in CWD | Path to the feed JSON file                               |
+| `--out-dir`       | `types` in CWD                  | Root directory for the generated definition tree         |
+| `--check`         | false                           | Lint annotations only; write nothing, exit `1` on errors |
+| `--target-module` | _(all modules)_                 | Restrict to this module namespace; repeatable            |
 
 Exit code in generate mode: `0` = success, `1` = a module failed to parse, a definition failed to emit, or a file couldn't be written (annotation lint findings are reported but don't fail generation). In `--check` mode: `1` when any error-severity finding exists.
 
@@ -820,7 +814,7 @@ DependencyControl's own repository keeps this branch as `master` for historical 
          default-channel: stable
          release-channels: stable
        secrets:
-         app-private-key: ${{ secrets.CI_APP_PRIVATE_KEY }}   # only if the publish branch is protected
+         app-private-key: ${{ secrets.CI_APP_PRIVATE_KEY }} # only if the publish branch is protected
    ```
 
    An update-feed caller (`.github/workflows/update-feed.yml`):
@@ -830,7 +824,7 @@ DependencyControl's own repository keeps this branch as `master` for historical 
    on:
      push:
        branches: [main]
-       paths: ['**/*.moon', 'DependencyControl.json']
+       paths: ["**/*.moon", "DependencyControl.json"]
    permissions:
      contents: write
    jobs:
@@ -859,16 +853,16 @@ Each workflow mints a short-lived token from the App for its pushes and falls ba
 
 Both workflows fetch the depctrl CLI from this repo (`depctrl-ref`, default `latest` — the newest DependencyControl release), so you never vendor it. The publish workflow's inputs:
 
-| Input                           | Default            | Description                                                        |
-| ------------------------------- | ------------------ | ------------------------------------------------------------------ |
-| `ref`                           | _(required)_       | Commit or branch to release (its source is tagged)                 |
-| `channels`                      | _(required)_       | Space-separated channels to publish (e.g. `stable alpha`)          |
-| `default-channel`               | _(required)_       | Which published channel is marked `default: true`                  |
-| `source-channel`                | `main`             | The dev feed channel to copy from                                  |
-| `dev-branch` / `publish-branch` | `main` / `publish` | Branch names                                                       |
-| `stable-channel`                | `stable`           | Publishing this channel records the release date on the dev branch |
-| `release-channels`              | _(none)_           | Published channels to also cut a GitHub Release for                |
-| `depctrl-ref`                   | `latest`           | DependencyControl ref for the CLI (`latest`, a tag, or a branch)   |
-| `app-client-id`                 | _(none)_           | GitHub App Client ID for branch-protection bypass                  |
+| Input | Default | Description |
+| --- | --- | --- |
+| `ref` | _(required)_ | Commit or branch to release (its source is tagged) |
+| `channels` | _(required)_ | Space-separated channels to publish (e.g. `stable alpha`) |
+| `default-channel` | _(required)_ | Which published channel is marked `default: true` |
+| `source-channel` | `main` | The dev feed channel to copy from |
+| `dev-branch` / `publish-branch` | `main` / `publish` | Branch names |
+| `stable-channel` | `stable` | Publishing this channel records the release date on the dev branch |
+| `release-channels` | _(none)_ | Published channels to also cut a GitHub Release for |
+| `depctrl-ref` | `latest` | DependencyControl ref for the CLI (`latest`, a tag, or a branch) |
+| `app-client-id` | _(none)_ | GitHub App Client ID for branch-protection bypass |
 
 `reusable-update-feed.yml` takes the matching `dev-branch`, `depctrl-ref`, and `app-client-id` inputs plus the `app-private-key` secret. See each workflow file's header for the full contract.
