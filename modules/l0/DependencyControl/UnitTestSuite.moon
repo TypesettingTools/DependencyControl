@@ -1,6 +1,8 @@
 
 Logger = require "l0.DependencyControl.Logger"
-Common = require "l0.DependencyControl.Common"
+domain = require "l0.DependencyControl.domain"
+environment = require "l0.DependencyControl.environment"
+utils = require "l0.DependencyControl.utils"
 Stub = require "l0.DependencyControl.Stub"
 constants = require "l0.DependencyControl.Constants"
 Timer = require "l0.DependencyControl.Timer"
@@ -175,7 +177,7 @@ class UnitTest
   ---@param aType? string If already known, the type of the first value (small performance benefit).
   ---@param bType? string The type of the second value.
   ---@return boolean equal True if a and b are equal, otherwise false.
-  equals: Common.equals
+  equals: utils.equals
 
   ---Compares equality of two specified tables, ignoring table keys.
   ---Works much like UnitTest:equals, but doesn't require table keys to be equal between a and b:
@@ -188,7 +190,7 @@ class UnitTest
   ---@param ignoreExtraAItems? boolean Make the comparison one-sided, ignoring items present in a but not in b (default false).
   ---@param requireIdenticalItems? boolean Require table items to be identical (compared by reference) rather than equal (default false).
   ---@return boolean equal
-  itemsEqual: Common.itemsEqual
+  itemsEqual: utils.itemsEqual
 
   ---Replaces tbl[key] with a Stub and registers it for automatic cleanup after the test.
   ---If tbl is a string, looks up the module in package.loaded.
@@ -761,16 +763,16 @@ class UnitTestSuite
 
   ---Returns the require specifier used to load DepCtrl test suites in Aegisub environments.
   ---In an Aegisub environment, test suites reside in '?user/automation/tests/DepUnit/(modules|macros)/<namespace>.(moon|lua)'.
-  ---@param scriptType ScriptType A Common.ScriptType value (module or automation script).
+  ---@param scriptType ScriptType A domain.ScriptType value (module or automation script).
   ---@param namespace string The namespaced identifier of the package under test (e.g. 'l0.Functional').
   ---@return string identifier The require specifier used to load the test suite.
   @getDefaultTestSuiteRequireIdentifier = (scriptType, namespace) =>
-    "DepUnit.#{Common.ScriptTypeSection[scriptType]}.#{namespace}"
+    "DepUnit.#{domain.ScriptTypeSection[scriptType]}.#{namespace}"
 
   ---Returns the require specifier used to load DepCtrl test suites in the current environment.
   ---Accepts a hook via the global variable DEPCTRL_UNIT_TEST_SUITE_REQUIRE_IDENTIFIER to be used
   ---by CLI/CI test runners loading the test suites from the source repo or other locations.
-  ---@param scriptType ScriptType A Common.ScriptType value (module or automation script).
+  ---@param scriptType ScriptType A domain.ScriptType value (module or automation script).
   ---@param namespace string The namespaced identifier of the package under test (e.g. 'l0.Functional').
   ---@return string identifier
   @getTestSuiteRequireIdentifier = (scriptType, namespace) =>

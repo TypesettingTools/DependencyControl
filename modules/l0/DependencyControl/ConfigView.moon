@@ -1,4 +1,4 @@
-Common = require "l0.DependencyControl.Common"
+utils = require "l0.DependencyControl.utils"
 local ConfigHandler
 
 ---A read/write view over one section key of a view's user config. A read serves the user-set value,
@@ -87,7 +87,7 @@ class ConfigView
     else
       @userConfig = {} -- orphan view: no file backing
 
-    @defaults = defaults and Common.deepCopy(defaults) or {}
+    @defaults = defaults and utils.deepCopy(defaults) or {}
     @config = setmetatable {}, {
       __index: (_, k) ->
         uc = @userConfig[k]
@@ -100,7 +100,7 @@ class ConfigView
       __len: (tbl) -> return 0
       __ipairs: (tbl) -> error "numerically indexed config hive keys are not supported"
       __pairs: (tbl) ->
-        merged = Common.copy @defaults
+        merged = utils.copy @defaults
         merged[k] = v for k, v in pairs @userConfig
         return next, merged
     }
@@ -126,7 +126,7 @@ class ConfigView
   import: (tbl, keys, updateOnly, skipSameLengthTables) =>
     tbl = tbl.userConfig if tbl.__class == @@
     changesMade = false
-    keySet = Common.makeSet keys if keys
+    keySet = utils.makeSet keys if keys
 
     for k, v in pairs tbl
       continue if keys and not keySet[k] or @userConfig[k] == v

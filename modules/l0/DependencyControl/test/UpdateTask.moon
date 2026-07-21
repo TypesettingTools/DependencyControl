@@ -1,7 +1,8 @@
 -- UpdateTask tests: extracted from the main test suite.
 -- Called from test.moon as: (controls\requireTest "UpdateTask")!
 () ->
-  Common = require "l0.DependencyControl.Common"
+  domain = require "l0.DependencyControl.domain"
+  environment = require "l0.DependencyControl.environment"
   UpdateTask = require "l0.DependencyControl.UpdateTask"
   UnitTestSuite = require "l0.DependencyControl.UnitTestSuite"
   SemanticVersion = require "l0.DependencyControl.SemanticVersion"
@@ -77,7 +78,7 @@
     feedTrust = makeSeededFeedTrust {:config}
     stubSelf UpdateTask, {
       reason: opts.reason
-      record: {name: "TestMod", namespace: "l0.testMod", virtual: true, scriptType: Common.ScriptType.Module}
+      record: {name: "TestMod", namespace: "l0.testMod", virtual: true, scriptType: domain.ScriptType.Module}
       logger: makeNullLogger!
       updater: {:config, :feedTrust}
       __class: UpdateTask
@@ -137,7 +138,7 @@
         name: "json"
         version: opts.version or 0
         virtual: opts.virtual != false
-        scriptType: Common.ScriptType.Module
+        scriptType: domain.ScriptType.Module
         config: {c: {userFeed: opts.userFeed, currentSource: opts.currentSource}}
       }
       updater: {renewLock: ->, :feedTrust, config: updaterConfig}
@@ -175,7 +176,7 @@
       updated: opts.updated
       targetVersion: opts.targetVersion or 0
       record: {
-        name: "TestMod", namespace: "l0.TestMod", scriptType: Common.ScriptType.Module, version: 0
+        name: "TestMod", namespace: "l0.TestMod", scriptType: domain.ScriptType.Module, version: 0
         virtual: opts.virtual != false
         getEntryPointPath: (=> "entry/path", opts.isUserPath)
         checkVersion: (=> opts.installedSatisfies and true or false)
@@ -233,7 +234,7 @@
       targetVersion: 0
       record: {
         name: "TestMod", namespace: "l0.test", automationDir: "auto", version: 0
-        scriptType: Common.ScriptType.Module, virtual: false
+        scriptType: domain.ScriptType.Module, virtual: false
       }
       updater: {renewLock: (=>), config: {c: {updates: {}}}}
       logger: makeNullLogger!
@@ -651,7 +652,7 @@
       ut\assertEquals d.statusCode, UpdateStatus.NoSuitablePackage
       ut\assertContains d.statusDetailMessage, "Windows-x64"
       ut\assertContains d.statusDetailMessage, "OSX-x64"
-      ut\assertContains d.statusDetailMessage, Common.platform
+      ut\assertContains d.statusDetailMessage, environment.platform
 
     -- pinned: the remembered source is reused directly and the pin is preserved, no prompt
     resolve_pinnedReuseProceeds: (ut) ->
@@ -950,7 +951,7 @@
       loadedRef = {fresh: true}
       ut\stub(ModuleLoader, "loadModule")\returns loadedRef
       record = {
-        virtual: true, version: 0, scriptType: Common.ScriptType.Module, name: "Dep"
+        virtual: true, version: 0, scriptType: domain.ScriptType.Module, name: "Dep"
         loadConfig: (force) =>
           @virtual = false
           @version = SemanticVersion\toPacked "1.0.0"
@@ -964,7 +965,7 @@
     refreshRecord_noChangeStaysUntouched: (ut) ->
       record = {
         virtual: false, version: SemanticVersion\toPacked "1.0.0"
-        scriptType: Common.ScriptType.Module, name: "Dep", loadConfig: (force) => nil
+        scriptType: domain.ScriptType.Module, name: "Dep", loadConfig: (force) => nil
       }
       task = stubSelf UpdateTask, {updated: false, logger: makeNullLogger!, :record}
       UpdateTask.refreshRecord task
@@ -984,20 +985,20 @@
     -- getUpdaterErrorMsg: the noun install/update terms read grammatically in every template,
     -- a nil isInstall renders as an update, and a nil or unmapped code falls back to the generic message
     getUpdaterErrorMsg_grammarAndNilInstall: (ut) ->
-      msg = UpdateTask.getUpdaterErrorMsg UpdateStatus.TempDirFailed, "X", Common.ScriptType.Module, true, "C:/tmp"
+      msg = UpdateTask.getUpdaterErrorMsg UpdateStatus.TempDirFailed, "X", domain.ScriptType.Module, true, "C:/tmp"
       ut\assertContains msg, "Couldn't complete the installation of module 'X'"
-      msg = UpdateTask.getUpdaterErrorMsg UpdateStatus.Unmanaged, "Y", Common.ScriptType.Module, nil
+      msg = UpdateTask.getUpdaterErrorMsg UpdateStatus.Unmanaged, "Y", domain.ScriptType.Module, nil
       ut\assertContains msg, "Skipping update of unmanaged module 'Y'"
-      msg = UpdateTask.getUpdaterErrorMsg nil, "Z", Common.ScriptType.Module, true
+      msg = UpdateTask.getUpdaterErrorMsg nil, "Z", domain.ScriptType.Module, true
       ut\assertContains msg, "unrecognized updater status: nil"
-      msg = UpdateTask.getUpdaterErrorMsg UpdateStatus.SkippedOptional, "Z", Common.ScriptType.Module, true
+      msg = UpdateTask.getUpdaterErrorMsg UpdateStatus.SkippedOptional, "Z", domain.ScriptType.Module, true
       ut\assertContains msg, "unrecognized updater status: 3"
 
     -- getUpdaterErrorMsg: a RequirementsUnmet message carries the nested requirement-failure detail
     -- (e.g. which required module couldn't be installed), rather than dropping it
     getUpdaterErrorMsg_requirementsUnmetKeepsDetail: (ut) ->
       msg = UpdateTask.getUpdaterErrorMsg UpdateStatus.RequirementsUnmet, "l0.ASSFoundation",
-        Common.ScriptType.Module, true, "— SubInspector.Inspector: no build for your platform"
+        domain.ScriptType.Module, true, "— SubInspector.Inspector: no build for your platform"
       ut\assertContains msg, "requirements could not be satisfied"
       ut\assertContains msg, "SubInspector.Inspector: no build for your platform"
 

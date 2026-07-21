@@ -2,7 +2,7 @@
 -- and feed refresh.
 -- Called from Tests.moon as: (require "...test.UpdateFeed") basePath, DepCtrl
 (basePath, DepCtrl) ->
-  Common = require "l0.DependencyControl.Common"
+  domain = require "l0.DependencyControl.domain"
   fileOps = require "l0.DependencyControl.file-ops"
   FileCache = require "l0.DependencyControl.FileCache"
   UpdateFeed = require "l0.DependencyControl.UpdateFeed"
@@ -48,7 +48,7 @@
 
     getScript_missing: (ut) ->
       feed = {data: {macros: {}, modules: {}, knownFeeds: {}}, logger: DepCtrl.logger, __class: UpdateFeed}
-      result = UpdateFeed.getScript feed, "test.NS", Common.ScriptType.Module
+      result = UpdateFeed.getScript feed, "test.NS", domain.ScriptType.Module
       ut\assertFalse result
 
     getScript_found: (ut) ->
@@ -59,7 +59,7 @@
         }}, macros: {}, knownFeeds: {}},
         logger: DepCtrl.logger, __class: UpdateFeed
       }
-      sur = UpdateFeed.getScript feed, "test.NS", Common.ScriptType.Module
+      sur = UpdateFeed.getScript feed, "test.NS", domain.ScriptType.Module
       ut\assertTable sur
       ut\assertEquals sur.namespace, "test.NS"
       ut\assertEquals sur.activeChannel, "release"
@@ -194,14 +194,14 @@
 
     getFileDeployPath_module: (ut) ->
       (ut\stub aegisub, "decode_path")\calls (path) -> path\gsub("^%?user", basePath)
-      result = UpdateFeed.getFileDeployPath UpdateFeed, "l0.NS", Common.ScriptType.Module, "/NS.moon", "script", "?user"
+      result = UpdateFeed.getFileDeployPath UpdateFeed, "l0.NS", domain.ScriptType.Module, "/NS.moon", "script", "?user"
       ut\assertString result
       ut\assertContains result, "NS.moon"
       ut\assertContains result, "l0"
 
     getFileDeployPath_test: (ut) ->
       (ut\stub aegisub, "decode_path")\calls (path) -> path\gsub("^%?user", basePath)
-      result = UpdateFeed.getFileDeployPath UpdateFeed, "l0.NS", Common.ScriptType.Module, "/NS.moon", "test", "?user"
+      result = UpdateFeed.getFileDeployPath UpdateFeed, "l0.NS", domain.ScriptType.Module, "/NS.moon", "test", "?user"
       ut\assertString result
       ut\assertContains result, "DepUnit"
 
@@ -299,8 +299,8 @@
         }
       }
       data = UpdateFeed.expand feed
-      ut\assertEquals data.macros["l0.Macro.NS"].url, "https://x.test/#{Common.ScriptType.Automation}/macros"
-      ut\assertEquals data.modules["l0.NS"].url, "https://x.test/#{Common.ScriptType.Module}/modules"
+      ut\assertEquals data.macros["l0.Macro.NS"].url, "https://x.test/#{domain.ScriptType.Automation}/macros"
+      ut\assertEquals data.modules["l0.NS"].url, "https://x.test/#{domain.ScriptType.Module}/modules"
 
     -- vars entries become variables; a table-valued one serves @{name:key} lookups whose key
     -- part may itself be a variable that only comes into scope at channel depth
@@ -563,7 +563,7 @@
       ut\assertEquals results[1].channel.name, "release"
       ut\assertEquals results[1].file.name, "NS.moon"
       ut\assertEquals results[1].section, "modules"
-      ut\assertEquals results[1].scriptType, Common.ScriptType.Module
+      ut\assertEquals results[1].scriptType, domain.ScriptType.Module
       ensureLoadedStub\assertCalledOnce!
 
     -- walkFiles yields files untouched; the localFilePath accessor is attached by `expand` in local mode,
@@ -602,7 +602,7 @@
       fakePkg = setmetatable {}, {__index: (_, k) -> k == "namespace" and "test.NS" or nil}
       (ut\stub feed, "walkFiles")\calls (self, scriptTypes) ->
         coroutine.wrap ->
-          coroutine.yield fakeFile, fakeChan, fakePkg, "modules", Common.ScriptType.Module
+          coroutine.yield fakeFile, fakeChan, fakePkg, "modules", domain.ScriptType.Module
       (ut\stub FILEOPS_MODULE_NAME, "exists")\returns true
       (ut\stub UpdateFeed, "getFileDeployPath")\returns dstPath
       (ut\stub FILEOPS_MODULE_NAME, "mkdir")\returns true
@@ -628,7 +628,7 @@
       fakePkg = setmetatable {}, {__index: (_, k) -> k == "namespace" and "test.NS" or nil}
       (ut\stub feed, "walkFiles")\calls (self, scriptTypes) ->
         coroutine.wrap ->
-          coroutine.yield fakeFile, fakeChan, fakePkg, "modules", Common.ScriptType.Module
+          coroutine.yield fakeFile, fakeChan, fakePkg, "modules", domain.ScriptType.Module
       (ut\stub FILEOPS_MODULE_NAME, "exists")\returns true
       (ut\stub UpdateFeed, "getFileDeployPath")\returns dstPath
       copyStub = (ut\stub FILEOPS_MODULE_NAME, "copy")\returns true
@@ -650,7 +650,7 @@
       fakePkg = setmetatable {}, {__index: (_, k) -> k == "namespace" and "test.NS" or nil}
       (ut\stub feed, "walkFiles")\calls (self, scriptTypes) ->
         coroutine.wrap ->
-          coroutine.yield fakeFile, fakeChan, fakePkg, "modules", Common.ScriptType.Module
+          coroutine.yield fakeFile, fakeChan, fakePkg, "modules", domain.ScriptType.Module
       fileCount, errCount = UpdateFeed.deployFiles feed, basePath
       ut\assertEquals fileCount, 0
       ut\assertEquals errCount, 1
@@ -670,7 +670,7 @@
       fakePkg = setmetatable {}, {__index: (_, k) -> k == "namespace" and "test.NS" or nil}
       (ut\stub feed, "walkFiles")\calls (self, scriptTypes) ->
         coroutine.wrap ->
-          coroutine.yield fakeFile, fakeChan, fakePkg, "modules", Common.ScriptType.Module
+          coroutine.yield fakeFile, fakeChan, fakePkg, "modules", domain.ScriptType.Module
       (ut\stub UpdateFeed, "getFileDeployPath")\returns dstPath
       (ut\stub FILEOPS_MODULE_NAME, "exists")\returns true
       removeStub = (ut\stub FILEOPS_MODULE_NAME, "remove")\returns true
@@ -695,7 +695,7 @@
       fakePkg = setmetatable {}, {__index: (_, k) -> k == "namespace" and "test.NS" or nil}
       (ut\stub feed, "walkFiles")\calls (self, scriptTypes) ->
         coroutine.wrap ->
-          coroutine.yield fakeFile, fakeChan, fakePkg, "modules", Common.ScriptType.Module
+          coroutine.yield fakeFile, fakeChan, fakePkg, "modules", domain.ScriptType.Module
       (ut\stub UpdateFeed, "getFileDeployPath")\returns "#{basePath}/dst/Old.moon"
       (ut\stub FILEOPS_MODULE_NAME, "exists")\returns false
       removeStub = (ut\stub FILEOPS_MODULE_NAME, "remove")\returns true
@@ -795,7 +795,7 @@
 
     updatePackage_notInRaw: (ut) ->
       feed = {rawFeedData: {modules: {}}, data: {modules: {}}, __class: UpdateFeed}
-      result = UpdateFeed.__updatePackage feed, Common.ScriptType.Module, "no.Such", nil
+      result = UpdateFeed.__updatePackage feed, domain.ScriptType.Module, "no.Such", nil
       ut\assertFalse result.changed
       ut\assertEquals #result.errors, 1
       ut\assertContains result.errors[1], "no.Such"
@@ -809,7 +809,7 @@
       }
       (ut\stub feed, "__refreshVersionRecord")\returns true -- version/deps changed
       (ut\stub feed, "__refreshFiles")\returns false, {}
-      result = UpdateFeed.__updatePackage feed, Common.ScriptType.Module, ns, nil
+      result = UpdateFeed.__updatePackage feed, domain.ScriptType.Module, ns, nil
       ut\assertEquals result.namespace, ns
       ut\assertEquals result.channel, "release"
       ut\assertTrue result.changed
@@ -825,7 +825,7 @@
       }
       (ut\stub feed, "__refreshVersionRecord")\returns nil, "no record"
       (ut\stub feed, "__refreshFiles")\returns false, {}
-      result = UpdateFeed.__updatePackage feed, Common.ScriptType.Module, ns, nil
+      result = UpdateFeed.__updatePackage feed, domain.ScriptType.Module, ns, nil
       ut\assertEquals #result.errors, 1
       ut\assertContains result.errors[1], "no record"
 

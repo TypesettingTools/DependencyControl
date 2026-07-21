@@ -1,6 +1,8 @@
 Logger = require "l0.DependencyControl.Logger"
 constants = require "l0.DependencyControl.Constants"
-Common = require "l0.DependencyControl.Common"
+domain = require "l0.DependencyControl.domain"
+environment = require "l0.DependencyControl.environment"
+utils = require "l0.DependencyControl.utils"
 SemanticVersion = require "l0.DependencyControl.SemanticVersion"
 ReleaseNotes = require "l0.DependencyControl.release-notes"
 
@@ -73,7 +75,7 @@ class ScriptUpdateRecord
   ---@param logger? Logger
   new: (@namespace, data, @config = {c:{}}, scriptType, autoChannel = true, @logger = defaultLogger) =>
     @data = {k, v for k, v in pairs data}
-    @moduleName = scriptType == Common.ScriptType.Module and @namespace
+    @moduleName = scriptType == domain.ScriptType.Module and @namespace
 
     unless instanceMetaTable
       meta = getmetatable @
@@ -113,7 +115,7 @@ class ScriptUpdateRecord
       return false, @activeChannel unless channelData
       @[k] = v for k, v in pairs channelData
 
-    @files = @files and [file for file in *@files when not file.platform or file.platform == Common.platform] or {}
+    @files = @files and [file for file in *@files when not file.platform or file.platform == environment.platform] or {}
     return true, @activeChannel
 
   ---Checks whether this script's active channel supports the current platform.
@@ -121,7 +123,7 @@ class ScriptUpdateRecord
   ---@return string platform
   checkPlatform: =>
     @logger\assert @activeChannel, msgs.errors.noActiveChannel
-    return not @platforms or (Common.makeSet @platforms)[Common.platform], Common.platform
+    return not @platforms or (utils.makeSet @platforms)[environment.platform], environment.platform
 
   ---Formats changelog entries from the current version down to a minimum version, grouping each
   ---version's entries into marker categories (Bug Fixes, New Features, …) with a glyph heading.

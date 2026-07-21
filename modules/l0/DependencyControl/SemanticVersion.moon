@@ -1,5 +1,5 @@
 Enum = require "l0.DependencyControl.Enum"
-Common = require "l0.DependencyControl.Common"
+utils = require "l0.DependencyControl.utils"
 
 SemanticVersion = nil
 
@@ -102,7 +102,7 @@ SEMVER_RANGE_MAX_EXCLUSIVE = encodeVersion 256, 0, 0
 ---@return PartialVersion? parsed The parsed version, or nil on error.
 ---@return string? err Error message if parsing failed.
 parsePartialVersion = (str) ->
-  str = (Common.trim str)\gsub "^[vV]", ""
+  str = (utils.trim str)\gsub "^[vV]", ""
   return {} if str == "" or npmRangeWildcardTokens[str]
   components = [c for c in str\gmatch "[^%.]+"]
   return nil, msgs.range.invalidVersion\format str if #components == 0 or #components > 3
@@ -223,7 +223,7 @@ parseComparator = (token) ->
 ---@return SemverComparator[]? comparators The parsed comparators, or nil on error.
 ---@return string? err Error message if parsing failed.
 parseComparatorSet = (groupStr) ->
-  groupStr = Common.trim groupStr
+  groupStr = utils.trim groupStr
   return {{op: Op.GTE, num: 0}} if groupStr == ""
 
   fromStr, toStr = groupStr\match "^(.-)%s+%-%s+(.+)$"
@@ -262,7 +262,7 @@ reduceToInterval = (comparators) ->
 ---@return SemverInterval[]? intervals The range's non-empty intervals, or nil on a malformed range.
 ---@return string? err Error message on failure.
 parseRangeToIntervals = (range) ->
-  range = Common.trim range
+  range = utils.trim range
   groups, start = {}, 1
   while true
     s, e = range\find NPM_RANGE_TOKEN_OR, start, true

@@ -2,7 +2,8 @@ json = require "json"
 lfs = require "lfs"
 
 constants = require "l0.DependencyControl.Constants"
-Common = require "l0.DependencyControl.Common"
+domain = require "l0.DependencyControl.domain"
+utils = require "l0.DependencyControl.utils"
 Logger = require "l0.DependencyControl.Logger"
 ConfigView = require "l0.DependencyControl.ConfigView"
 fileOps = require "l0.DependencyControl.file-ops"
@@ -68,7 +69,7 @@ unregisterRecord = (namespace) -> recordsByNamespace[namespace] = nil
 ---@field feed? string Update feed URL.
 ---@field configFile? string Config file name (defaults to "<namespace>.json").
 ---@field virtual? boolean Mark as a not-yet-installed placeholder record.
----@field recordType? RecordType A Common.RecordType value (default Managed).
+---@field recordType? RecordType A domain.RecordType value (default Managed).
 ---@field requiredModules? (string|RequiredModuleSpec)[] Required module specs (alternative to the positional list).
 ---@field provides? (string|ModuleAlias)[] Module aliases this module satisfies for `require` (bare strings are normalized to ModuleAlias tables).
 ---@field readGlobalScriptVars? boolean Read script_* globals for unset fields (default true).
@@ -144,7 +145,7 @@ class PackageRecord
     -- createDummyRef below can expose this record before its real version is parsed, so set a valid one now
     @semanticVersion = SemanticVersion.fromPacked 0
 
-    Common.addDefaults args, {
+    utils.addDefaults args, {
       readGlobalScriptVars: true
       saveRecordToConfig: true
     }
@@ -154,7 +155,7 @@ class PackageRecord
       author:@author, :version, configFile:@configFile, :provides,
       :readGlobalScriptVars, :saveRecordToConfig} = args
 
-    @recordType or= Common.RecordType.Managed
+    @recordType or= domain.RecordType.Managed
     -- {name, description, process, validate, isActive} of each registered macro, keyed by name
     @registeredMacros = {}
     -- also support name key (as used in configuration) for required modules
@@ -163,8 +164,8 @@ class PackageRecord
     if @moduleName
       @namespace = @moduleName
       @name = name or @moduleName
-      @scriptType = Common.ScriptType.Module
-      ModuleLoader.createDummyRef @ unless @virtual or @recordType == Common.RecordType.Unmanaged
+      @scriptType = domain.ScriptType.Module
+      ModuleLoader.createDummyRef @ unless @virtual or @recordType == domain.RecordType.Unmanaged
 
     else
       if @virtual or not readGlobalScriptVars
@@ -178,9 +179,9 @@ class PackageRecord
         version or= script_version
 
       @namespace = namespace or script_namespace
-      assert @recordType == Common.RecordType.Managed, msgs.new.badRecordError\format msgs.new.badRecord.noUnmanagedMacros
+      assert @recordType == domain.RecordType.Managed, msgs.new.badRecordError\format msgs.new.badRecord.noUnmanagedMacros
       assert @namespace, msgs.new.badRecordError\format msgs.new.badRecord.missingNamespace
-      @scriptType = Common.ScriptType.Automation
+      @scriptType = domain.ScriptType.Automation
 
     -- if the hosting macro doesn't have a namespace defined, define it for
     -- the first DepCtrled module loaded by the macro or its required modules
@@ -188,14 +189,14 @@ class PackageRecord
       export script_namespace = @namespace
 
     -- non-depctrl records don't need to conform to namespace rules; managed ones defer to
-    -- Common.validateNamespace (and its message) rather than restating the rules here
-    unless @virtual or @recordType == Common.RecordType.Unmanaged
+    -- domain.validateNamespace (and its message) rather than restating the rules here
+    unless @virtual or @recordType == domain.RecordType.Unmanaged
       valid, nsErr = @validateNamespace!
       assert valid, nsErr
 
     @configFile = configFile or "#{@namespace}.json"
-    @automationDir = Common\getAutomationDir @scriptType
-    @testDir = Common\getTestDir @scriptType
+    @automationDir = domain.getAutomationDir @scriptType
+    @testDir = domain.getTestDir @scriptType
     packed, err = SemanticVersion\toPacked version
     assert packed, msgs.new.badRecordError\format msgs.new.badRecord.badVersion\format err
     @semanticVersion = SemanticVersion.fromPacked packed
@@ -243,7 +244,7 @@ class PackageRecord
   loadConfig: (importRecord = false) =>
     -- virtual modules are not yet present on the user's system and have no persistent configuration
     @config or= ConfigView\get not @virtual and @@depConf.file,
-      { Common.ScriptTypeSection[@scriptType], @namespace }, {}, @@logger, true
+      { domain.ScriptTypeSection[@scriptType], @namespace }, {}, @@logger, true
 
     -- import and overwrites version record from the configuration
     if importRecord
@@ -277,7 +278,7 @@ class PackageRecord
     unless @virtual or @config.file
       @config\setFile @@depConf.file
 
-    @@logger\trace msgs.writeConfig.writing, Common.terms.scriptType.singular[@scriptType]
+    @@logger\trace msgs.writeConfig.writing, domain.terms.scriptType.singular[@scriptType]
     @config\import @, @@depConf.scriptFields, false, true
     -- version isn't a scriptField, so store it as a semver string
     @config.c.version = tostring @semanticVersion
@@ -350,9 +351,9 @@ class PackageRecord
   ---@return string[]? submodules Submodule namespaces, or nil for non-module records.
   ---@return ConfigView? config The module config section handler.
   getSubmodules: =>
-    return nil if @virtual or @recordType == Common.RecordType.Unmanaged or @scriptType != Common.ScriptType.Module
-    mdlConfig = @@config\getSectionHandler Common.ScriptTypeSection[Common.ScriptType.Module]
-    pattern = "^#{Common.escapePattern @namespace}%."
+    return nil if @virtual or @recordType == domain.RecordType.Unmanaged or @scriptType != domain.ScriptType.Module
+    mdlConfig = @@config\getSectionHandler domain.ScriptTypeSection[domain.ScriptType.Module]
+    pattern = "^#{utils.escapePattern @namespace}%."
     return [mdl for mdl, _ in pairs mdlConfig.c when mdl\match pattern], mdlConfig
 
   ---Loads or updates required modules and returns their references.
@@ -398,13 +399,13 @@ class PackageRecord
       @testSuiteInitialized = true
     else
       @testSuiteInitializeError = errMsg
-      @@logger\warn "Error initializing test suite for #{Common.terms.scriptType.singular[@scriptType]} '#{@name}': #{errMsg}"
+      @@logger\warn "Error initializing test suite for #{domain.terms.scriptType.singular[@scriptType]} '#{@name}': #{errMsg}"
 
     -- Automation scripts run in their own isolated environment exactly once, so they register
     -- their own test menu right here. Modules, by contrast, load in every script's environment;
     -- registering from here would create duplicate menu entries, so their test menus are
     -- registered centrally by the Toolbox (which loads each module exactly once).
-    @tests\registerMacros! if @testSuiteInitialized and @scriptType == Common.ScriptType.Automation
+    @tests\registerMacros! if @testSuiteInitialized and @scriptType == domain.ScriptType.Automation
 
   ---Finalizes module registration and swaps dummy module refs for real refs. Call it in place of
   ---returning the module. Modules registered this way may depend on each other circularly, provided
@@ -487,14 +488,14 @@ class PackageRecord
   ---@return string? err
   validateNamespace: =>
     return true if @virtual
-    return Common.validateNamespace @namespace
+    return domain.validateNamespace @namespace
 
   ---Returns all candidate entry point paths for this record under a given base directory,
   ---covering .moon and .lua extensions and init.* variants for modules.
   ---@param baseDir string Absolute automation base directory.
   ---@return string[] paths
   getPossibleEntryPointPaths: (baseDir) =>
-    isModule = @scriptType == Common.ScriptType.Module
+    isModule = @scriptType == domain.ScriptType.Module
     subPath = isModule and @namespace\gsub("%.", "/") or @namespace
     paths = {}
     for ext in *{".moon", ".lua"}
@@ -509,12 +510,12 @@ class PackageRecord
   ---@return string? path
   ---@return boolean? isUserPath True when found under ?user, false when found under ?data, nil when not found.
   getEntryPointPath: =>
-    userDir = Common\getAutomationDir @scriptType, "?user"
+    userDir = domain.getAutomationDir @scriptType, "?user"
     for path in *@getPossibleEntryPointPaths userDir
       info = fileOps.getAttributes path, "mode"
       return path, true if info and info.attr == "file"
 
-    dataDir = Common\getAutomationDir @scriptType, "?data"
+    dataDir = domain.getAutomationDir @scriptType, "?data"
     if dataDir and dataDir != userDir
       for path in *@getPossibleEntryPointPaths dataDir
         info = fileOps.getAttributes path, "mode"
@@ -528,9 +529,9 @@ class PackageRecord
   ---@return boolean? success nil when the record can't be uninstalled (virtual/unmanaged).
   ---@return table|string|nil result Per-file removal results, or an error message.
   uninstall: (removeConfig = true) =>
-    if @virtual or @recordType == Common.RecordType.Unmanaged
+    if @virtual or @recordType == domain.RecordType.Unmanaged
       return nil, msgs.uninstall.noVirtualOrUnmanaged\format @virtual and "virtual" or "unmanaged",
-        Common.terms.scriptType.singular[@scriptType],
+        domain.terms.scriptType.singular[@scriptType],
         @name
     @config\delete!
     subModules, mdlConfig = @getSubmodules!
@@ -542,10 +543,10 @@ class PackageRecord
     toRemove, pattern, dir = {}
     if @moduleName
       nsp, name = @namespace\match "(.+)%.(.+)"
-      pattern = "^#{Common.escapePattern name}"
+      pattern = "^#{utils.escapePattern name}"
       dir = "#{@automationDir}/#{nsp\gsub '%.', '/'}"
     else
-      pattern = "^#{Common.escapePattern @namespace}"
+      pattern = "^#{utils.escapePattern @namespace}"
       dir = @automationDir
 
     lfs.chdir dir

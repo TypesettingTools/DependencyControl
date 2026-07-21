@@ -5,7 +5,7 @@ export script_author = "line0"
 export script_namespace = "l0.DependencyControl.Toolbox"
 
 DepCtrl = require "l0.DependencyControl"
-Common = DepCtrl.Common
+{:ScriptType, :ScriptTypeSection, terms} = DepCtrl.Domain
 constants = require "l0.DependencyControl.Constants"
 depRec = DepCtrl {
   feed: "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/master/DependencyControl.json",
@@ -116,8 +116,8 @@ getConfig = (section) ->
 -- own handlers, while the feed lists and fetch policy are read from the live global config. Shared by the
 -- install browser's feed discovery and the Manage Feeds macro.
 buildFeedInventory = ->
-  macrosKey = Common.ScriptTypeSection[Common.ScriptType.Automation]
-  modulesKey = Common.ScriptTypeSection[Common.ScriptType.Module]
+  macrosKey = ScriptTypeSection[ScriptType.Automation]
+  modulesKey = ScriptTypeSection[ScriptType.Module]
   getSectionData = (key) ->
     view = DepCtrl.config\getSectionHandler key
     view and view.c or {}
@@ -141,7 +141,7 @@ runUpdaterTask = (scriptData, isInstall) ->
   return task\run! if task
   with scriptData
     logger\log DepCtrl.Updater.getUpdaterErrorMsg code, .moduleName or .name,
-      .moduleName and Common.ScriptType.Module or Common.ScriptType.Automation, isInstall, extErr
+      .moduleName and ScriptType.Module or ScriptType.Automation, isInstall, extErr
 
 -- our feeds all live under raw.githubusercontent.com; abbreviate that host in the UI and expand it back on input
 shortenUrl = (url) -> (url\gsub "^https://raw%.githubusercontent%.com/", "ghuc://")
@@ -178,12 +178,12 @@ install = ->
   config = getConfig!
 
   addAvailableToInstall = (tbl, feed, scriptType) ->
-    scriptTypeConfigAndFeedKeyName = Common.ScriptTypeSection[scriptType]
+    scriptTypeConfigAndFeedKeyName = ScriptTypeSection[scriptType]
 
     for namespace, data in pairs feed.data[scriptTypeConfigAndFeedKeyName]
       scriptData, err = feed\getScript namespace, scriptType, nil, false
       if err
-        logger\warn msgs.install.createScriptUpdateRecordFailed\format Common.terms.scriptType.singular[scriptType], namespace, feed.url, err
+        logger\warn msgs.install.createScriptUpdateRecordFailed\format terms.scriptType.singular[scriptType], namespace, feed.url, err
         continue
 
       channels, defaultChannel = scriptData\getChannels!
@@ -193,7 +193,7 @@ install = ->
         verNum = DepCtrl.SemanticVersion\toPacked record.version
         unless config.c[scriptTypeConfigAndFeedKeyName][namespace] or (tbl[namespace][channel] and verNum < tbl[namespace][channel].verNum)
           tbl[namespace][channel] = { name: scriptData.name, version: record.version, verNum: verNum, feed: feed.url,
-            default: defaultChannel == channel, moduleName: scriptType == Common.ScriptType.Module and namespace }
+            default: defaultChannel == channel, moduleName: scriptType == ScriptType.Module and namespace }
     return tbl
 
   buildDlgList = (tbl) ->
@@ -215,8 +215,8 @@ install = ->
     continue unless entry.fetched
     feed = DepCtrl.updater.feedLoader\load entry.url
     continue unless feed.data
-    macros = addAvailableToInstall macros, feed, Common.ScriptType.Automation
-    modules = addAvailableToInstall modules, feed, Common.ScriptType.Module
+    macros = addAvailableToInstall macros, feed, ScriptType.Automation
+    modules = addAvailableToInstall modules, feed, ScriptType.Module
 
   moduleList, moduleMap = buildDlgList modules
   macroList, macroMap = buildDlgList macros
@@ -592,7 +592,7 @@ scheduleUpdatesAndRegisterTests = ->
       -- and its message stands on its own
       logger\trace DepCtrl.Updater.getUpdaterErrorMsg errMsgOrErrCode, record.name or record.namespace, record.scriptType, false, errDetail
 
-    if record.tests and record.scriptType == Common.ScriptType.Module
+    if record.tests and record.scriptType == ScriptType.Module
       success, errMsg = pcall record.tests\registerMacros
       unless success
         logger\trace msgs.scheduleUpdatesAndRegisterTests.registerMacrosError, record.name or record.namespace, errMsg
@@ -611,4 +611,4 @@ depRec\registerMacros {
 
 -- The startup sweep is an Aegisub-session concern; headless (CLI/test runner) has no session to
 -- schedule for, and running it would trigger live update checks while a test require is in flight.
-scheduleUpdatesAndRegisterTests! unless Common.isHeadless!
+scheduleUpdatesAndRegisterTests! unless DepCtrl.Environment.isHeadless!

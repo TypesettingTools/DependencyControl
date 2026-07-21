@@ -5,7 +5,8 @@
 constants = require "l0.DependencyControl.Constants"
 SemanticVersion = require "l0.DependencyControl.SemanticVersion"
 ModuleProvider = require "l0.DependencyControl.ModuleProvider"
-Common = require "l0.DependencyControl.Common"
+domain = require "l0.DependencyControl.domain"
+utils = require "l0.DependencyControl.utils"
 -- required lazily because a load-time require of UpdateTask would be circular
 local UpdateTask
 
@@ -53,7 +54,7 @@ class ModuleLoader
   ---dependency can resolve this module while it is still loading. No-op for non-module scripts.
   ---@return boolean|nil registered True if a dummy was registered, false if one already existed, nil if this isn't a module.
   @createDummyRef = =>
-    return nil if @scriptType != Common.ScriptType.Module
+    return nil if @scriptType != domain.ScriptType.Module
     -- global module registry allows for circular dependencies:
     -- set a dummy reference to this module since this module is not ready
     -- when the other one tries to load it (and vice versa)
@@ -68,7 +69,7 @@ class ModuleLoader
   ---real module). No-op for non-module scripts.
   ---@return boolean|nil removed True if a dummy entry was removed, false if none was present, nil if this isn't a module.
   @removeDummyRef = =>
-    return nil if @scriptType != Common.ScriptType.Module
+    return nil if @scriptType != domain.ScriptType.Module
     if LOADED_MODULES[@namespace] and LOADED_MODULES[@namespace][DEPCTRL_DUMMY_MODULE_MARKER]
       LOADED_MODULES[@namespace] = nil
       return true
@@ -142,7 +143,7 @@ class ModuleLoader
           else
             UpdateTask or= require "l0.DependencyControl.UpdateTask"
             unless code == UpdateTask.UpdateStatus.SkippedOptional
-              ._reason = @@updater.__class.getUpdaterErrorMsg code, .name or .moduleName, Common.ScriptType.Module, true, extErr
+              ._reason = @@updater.__class.getUpdaterErrorMsg code, .name or .moduleName, domain.ScriptType.Module, true, extErr
             -- nuke dummy reference for circular dependencies
             LOADED_MODULES[.moduleName] = nil
 
@@ -155,7 +156,7 @@ class ModuleLoader
             continue
 
           if not ModuleProvider.isDepCtrlVersionRecord record
-            record = @@ moduleName: .moduleName, version: record, recordType: Common.RecordType.Unmanaged
+            record = @@ moduleName: .moduleName, version: record, recordType: domain.RecordType.Unmanaged
 
           -- force an update for outdated modules
           if not record\checkVersion .version
@@ -164,7 +165,7 @@ class ModuleLoader
               ._ref = ref
             elseif not .optional
               ._outdated = true
-              ._reason = @@updater.__class.getUpdaterErrorMsg code, .name or .moduleName, Common.ScriptType.Module, false, extErr
+              ._reason = @@updater.__class.getUpdaterErrorMsg code, .name or .moduleName, domain.ScriptType.Module, false, extErr
 
     missing, outdated, moduleError = {}, {}, {}
     for mdl in *modules
@@ -183,7 +184,7 @@ class ModuleLoader
     if #outdated > 0
       errorMsg[#errorMsg+1] = msgs.loadModules.outdated\format @name, table.concat outdated, "\n"
     if #missing > 0
-      downloadHint = msgs.checkOptionalModules.downloadHint\format Common\getAutomationDir Common.ScriptType.Module
+      downloadHint = msgs.checkOptionalModules.downloadHint\format domain.getAutomationDir domain.ScriptType.Module
       errorMsg[#errorMsg+1] = msgs.loadModules.missing\format @name, table.concat(missing, "\n"), downloadHint
 
     return #errorMsg == 0, table.concat(errorMsg, "\n\n")
@@ -193,12 +194,12 @@ class ModuleLoader
   ---@return boolean available
   ---@return string? err Error message listing missing modules.
   @checkOptionalModules = (modules) =>
-    modules = type(modules)=="string" and {[modules]:true} or Common.makeSet modules
+    modules = type(modules)=="string" and {[modules]:true} or utils.makeSet modules
     missing = [ModuleLoader.formatVersionErrorTemplate @, mdl.moduleName, mdl.version, mdl.url,
       mdl._reason for mdl in *@requiredModules when mdl.optional and mdl._missing and modules[mdl.name]]
 
     if #missing>0
-      downloadHint = msgs.checkOptionalModules.downloadHint\format Common\getAutomationDir Common.ScriptType.Module
+      downloadHint = msgs.checkOptionalModules.downloadHint\format domain.getAutomationDir domain.ScriptType.Module
       errorMsg = msgs.checkOptionalModules.missing\format @name, table.concat(missing, "\n"), downloadHint
       return false, errorMsg
     return true

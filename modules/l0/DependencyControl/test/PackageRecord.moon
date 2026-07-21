@@ -3,7 +3,7 @@
 (basePath) ->
   ffi = require "ffi"
   constants = require "l0.DependencyControl.Constants"
-  Common = require "l0.DependencyControl.Common"
+  domain = require "l0.DependencyControl.domain"
   fileOps = require "l0.DependencyControl.file-ops"
   PackageRecord = require "l0.DependencyControl.PackageRecord"
   Stub = require "l0.DependencyControl.Stub"
@@ -35,12 +35,12 @@
   entryPath = (baseDir, subPath) -> fileOps.validateFullPath subPath, false, baseDir
 
   moduleRecord = {
-    scriptType: Common.ScriptType.Module, namespace: "l0.Foo",
+    scriptType: domain.ScriptType.Module, namespace: "l0.Foo",
     getPossibleEntryPointPaths: PackageRecord.getPossibleEntryPointPaths,
     getEntryPointPath: PackageRecord.getEntryPointPath
   }
   macroRecord = {
-    scriptType: Common.ScriptType.Automation, namespace: "l0.Foo.Bar",
+    scriptType: domain.ScriptType.Automation, namespace: "l0.Foo.Bar",
     getPossibleEntryPointPaths: PackageRecord.getPossibleEntryPointPaths,
     getEntryPointPath: PackageRecord.getEntryPointPath
   }
@@ -201,9 +201,9 @@
     uninstall_virtual: (ut) ->
       rec = {
         virtual: true,
-        scriptType: Common.ScriptType.Automation,
+        scriptType: domain.ScriptType.Automation,
         name: "TestScript",
-        __class: {RecordType: Common.RecordType, terms: Common.terms}
+        __class: {RecordType: domain.RecordType, terms: domain.terms}
       }
       result, err = PackageRecord.uninstall rec
       ut\assertNil result
@@ -213,10 +213,10 @@
     uninstall_unmanaged: (ut) ->
       rec = {
         virtual: false,
-        recordType: Common.RecordType.Unmanaged,
-        scriptType: Common.ScriptType.Module,
+        recordType: domain.RecordType.Unmanaged,
+        scriptType: domain.ScriptType.Module,
         name: "TestMod",
-        __class: {RecordType: Common.RecordType, terms: Common.terms}
+        __class: {RecordType: domain.RecordType, terms: domain.terms}
       }
       result, err = PackageRecord.uninstall rec
       ut\assertNil result
@@ -236,12 +236,12 @@
       fileOps.writeFile fileOps.joinPath(root, "l0", "FunctionalExtras.moon"), "-- sibling", true
       fileOps.writeFile fileOps.joinPath(root, "l0", "FunctionalExtras", "sub.moon"), "-- sibling sub", true
       rec = {
-        virtual: false, recordType: Common.RecordType.Managed,
-        scriptType: Common.ScriptType.Module,
+        virtual: false, recordType: domain.RecordType.Managed,
+        scriptType: domain.ScriptType.Module,
         namespace: "l0.Functional", moduleName: "l0.Functional",
         automationDir: root,
         config: {delete: ->}, getSubmodules: -> nil,
-        __class: {RecordType: Common.RecordType, terms: Common.terms}
+        __class: {RecordType: domain.RecordType, terms: domain.terms}
       }
       success, results = PackageRecord.uninstall rec
       ut\assertTrue success
@@ -261,12 +261,12 @@
       fileOps.writeFile fileOps.joinPath(root, "a-mo.ScriptExtra.moon"), "-- other macro", true
       fileOps.writeFile fileOps.joinPath(root, "amo.Script.moon"), "-- hyphen bait", true
       rec = {
-        virtual: false, recordType: Common.RecordType.Managed,
-        scriptType: Common.ScriptType.Automation,
+        virtual: false, recordType: domain.RecordType.Managed,
+        scriptType: domain.ScriptType.Automation,
         namespace: "a-mo.Script",
         automationDir: root,
         config: {delete: ->}, getSubmodules: -> nil,
-        __class: {RecordType: Common.RecordType, terms: Common.terms}
+        __class: {RecordType: domain.RecordType, terms: domain.terms}
       }
       success, results = PackageRecord.uninstall rec
       ut\assertTrue success
@@ -278,27 +278,27 @@
     getSubmodules_virtual: (ut) ->
       rec = {
         virtual: true,
-        recordType: Common.RecordType.Managed,
-        scriptType: Common.ScriptType.Module,
-        __class: {RecordType: Common.RecordType, ScriptType: Common.ScriptType}
+        recordType: domain.RecordType.Managed,
+        scriptType: domain.ScriptType.Module,
+        __class: {RecordType: domain.RecordType, ScriptType: domain.ScriptType}
       }
       ut\assertNil PackageRecord.getSubmodules rec
 
     getSubmodules_unmanaged: (ut) ->
       rec = {
         virtual: false,
-        recordType: Common.RecordType.Unmanaged,
-        scriptType: Common.ScriptType.Module,
-        __class: {RecordType: Common.RecordType, ScriptType: Common.ScriptType}
+        recordType: domain.RecordType.Unmanaged,
+        scriptType: domain.ScriptType.Module,
+        __class: {RecordType: domain.RecordType, ScriptType: domain.ScriptType}
       }
       ut\assertNil PackageRecord.getSubmodules rec
 
     getSubmodules_nonModule: (ut) ->
       rec = {
         virtual: false,
-        recordType: Common.RecordType.Managed,
-        scriptType: Common.ScriptType.Automation,
-        __class: {RecordType: Common.RecordType, ScriptType: Common.ScriptType}
+        recordType: domain.RecordType.Managed,
+        scriptType: domain.ScriptType.Automation,
+        __class: {RecordType: domain.RecordType, ScriptType: domain.ScriptType}
       }
       ut\assertNil PackageRecord.getSubmodules rec
 
@@ -408,11 +408,11 @@
     -- loadConfig imports recordType from the stored config like any other persisted field
     loadConfig_importsRecordType: (ut) ->
       record = stubSelf PackageRecord, {
-        __class: PackageRecord, virtual: false, namespace: "l0.x", scriptType: Common.ScriptType.Module
-        config: {load: (=> true), c: {recordType: Common.RecordType.Unmanaged}}
+        __class: PackageRecord, virtual: false, namespace: "l0.x", scriptType: domain.ScriptType.Module
+        config: {load: (=> true), c: {recordType: domain.RecordType.Unmanaged}}
       }
       PackageRecord.__base.loadConfig record, true
-      ut\assertEquals record.recordType, Common.RecordType.Unmanaged
+      ut\assertEquals record.recordType, domain.RecordType.Unmanaged
 
     _order: {
       "getFileCache_namespacedUnderConfigBase", "getVersion_compatMethods",

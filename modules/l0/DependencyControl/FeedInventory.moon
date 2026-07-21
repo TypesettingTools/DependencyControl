@@ -1,5 +1,5 @@
 constants = require "l0.DependencyControl.Constants"
-Common = require "l0.DependencyControl.Common"
+domain = require "l0.DependencyControl.domain"
 Enum = require "l0.DependencyControl.Enum"
 
 local UpdateTask
@@ -168,9 +168,9 @@ class FeedInventory
       entry = ensureInventoryEntry inventoryEntriesByUrl, url
       entry.inTrustedFeeds = true if entry
 
-    modulesSection = c[Common.ScriptTypeSection[Common.ScriptType.Module]] or {}
-    for scriptType in *Common.ScriptType.values
-      for namespace, pkg in pairs (c[Common.ScriptTypeSection[scriptType]] or {})
+    modulesSection = c[domain.ScriptTypeSection[domain.ScriptType.Module]] or {}
+    for scriptType in *domain.ScriptType.values
+      for namespace, pkg in pairs (c[domain.ScriptTypeSection[scriptType]] or {})
         continue unless type(pkg) == "table"
         tagPackage pkg.feed, Provenance.PackageDeclared, namespace
         tagPackage pkg.userFeed, Provenance.PackageOverride, namespace
@@ -209,10 +209,10 @@ class FeedInventory
   ---@return string[] namespaces Sorted namespaces whose effective source is that feed.
   getPackagesSourcedFrom: (feedUrl) =>
     c = @config.c
-    modulesSection = c[Common.ScriptTypeSection[Common.ScriptType.Module]] or {}
+    modulesSection = c[domain.ScriptTypeSection[domain.ScriptType.Module]] or {}
     matched = {}
-    for scriptType in *Common.ScriptType.values
-      for namespace, pkg in pairs (c[Common.ScriptTypeSection[scriptType]] or {})
+    for scriptType in *domain.ScriptType.values
+      for namespace, pkg in pairs (c[domain.ScriptTypeSection[scriptType]] or {})
         continue unless type(pkg) == "table"
         matched[#matched + 1] = namespace if FeedInventory.getEffectiveSource(pkg, modulesSection) == feedUrl
     table.sort matched

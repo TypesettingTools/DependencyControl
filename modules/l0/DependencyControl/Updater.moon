@@ -2,7 +2,7 @@ constants = require "l0.DependencyControl.Constants"
 FeedLoader = require "l0.DependencyControl.FeedLoader"
 FeedTrust = require "l0.DependencyControl.FeedTrust"
 Logger = require "l0.DependencyControl.Logger"
-Common = require "l0.DependencyControl.Common"
+domain = require "l0.DependencyControl.domain"
 Lock = require "l0.DependencyControl.Lock"
 ModuleLoader = require "l0.DependencyControl.ModuleLoader"
 SemanticVersion = require "l0.DependencyControl.SemanticVersion"
@@ -50,7 +50,7 @@ class Updater
   ---@param config ConfigView The global DependencyControl config view.
   ---@param logger? Logger
   new: (@host = script_namespace, @config, @logger = defaultLogger) =>
-    @tasks = {scriptType, {} for scriptType in *Common.ScriptType.values}
+    @tasks = {scriptType, {} for scriptType in *domain.ScriptType.values}
     -- one shared feed loader owns the on-disk feed cache and every UpdateFeed construction; feed trust
     -- is likewise a singleton so its cache and trust/block invalidations are visible across all consumers.
     -- both take the logger of the first Updater to build them, so feed activity logs through the
@@ -110,7 +110,7 @@ class Updater
   ---@return UpdateStatus? code Outcome of the update run; always present when the ref is nil, with `SkippedOptional` marking a skipped optional dependency rather than a failure.
   ---@return string? detail Error detail for a failing code, or the paradox reason when an up-to-date module then can't be loaded.
   require: (record, targetVersion, addFeeds, optional, channel, reason = UpdateReason.DependencyResolution) =>
-    @logger\assert record.scriptType == Common.ScriptType.Module, msgs.require.macroPassed, record.name or record.namespace
+    @logger\assert record.scriptType == domain.ScriptType.Module, msgs.require.macroPassed, record.name or record.namespace
     @logger\log "%s module '%s'...", record.virtual and "Installing required" or "Updating outdated", record.name
     task, code, res = @addTask record, targetVersion, addFeeds, optional, channel, reason
     code, res = task\run true if task
@@ -137,7 +137,7 @@ class Updater
       return UpdateStatus.UpdaterDisabled
 
     -- no regular updates for non-existing or unmanaged modules
-    if record.virtual or record.recordType == Common.RecordType.Unmanaged
+    if record.virtual or record.recordType == domain.RecordType.Unmanaged
       return UpdateStatus.Unmanaged
 
     -- the update interval has not yet been passed since the last update check
@@ -150,12 +150,12 @@ class Updater
     -- don't shadow scripts installed to the ?data automation dir with a ?user copy
     entryPath, isUserPath = record\getEntryPointPath!
     if isUserPath == false
-      @logger\trace msgs.scheduleUpdate.protectedInstall, Common.terms.scriptType.singular[record.scriptType],
+      @logger\trace msgs.scheduleUpdate.protectedInstall, domain.terms.scriptType.singular[record.scriptType],
         record.name or record.namespace, entryPath
       return UpdateStatus.ProtectedInstall, entryPath
 
     task = @addTask record -- no need to check for errors, because we've already accounted for those case
-    @logger\trace msgs.scheduleUpdate.runningUpdate, Common.terms.scriptType.singular[record.scriptType], record.name
+    @logger\trace msgs.scheduleUpdate.runningUpdate, domain.terms.scriptType.singular[record.scriptType], record.name
     return task\run!
 
 
@@ -189,7 +189,7 @@ class Updater
     @feedLoader.cache\expireAll!
     -- if we actually had to wait, another updater may have updated modules in the meantime
     if timePassed > 0
-      task\refreshRecord! for _,task in pairs @tasks[Common.ScriptType.Module]
+      task\refreshRecord! for _,task in pairs @tasks[domain.ScriptType.Module]
 
     return true
 

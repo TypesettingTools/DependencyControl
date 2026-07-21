@@ -49,9 +49,36 @@
       ut\assertNil result
       ut\assertString err
 
+    -- getObjectHash: deterministic, order-independent SHA-1 of a (nested) value
+
+    getObjectHash_isHexString: (ut) ->
+      hash = Hash.getObjectHash {a: 1, b: "two"}
+      ut\assertString hash
+      ut\assertMatches hash, "^%x+$"
+
+    getObjectHash_deterministic: (ut) ->
+      ut\assertEquals Hash.getObjectHash({a: 1, b: 2}), Hash.getObjectHash {a: 1, b: 2}
+
+    getObjectHash_ignoresKeyOrder: (ut) ->
+      ut\assertEquals Hash.getObjectHash({a: 1, b: 2, c: 3}), Hash.getObjectHash {c: 3, a: 1, b: 2}
+
+    getObjectHash_nestedOrderIndependent: (ut) ->
+      a = {x: {p: 1, q: 2}, y: 3}
+      b = {y: 3, x: {q: 2, p: 1}}
+      ut\assertEquals Hash.getObjectHash(a), Hash.getObjectHash b
+
+    getObjectHash_distinguishesContent: (ut) ->
+      ut\assertNotEquals Hash.getObjectHash({v: "1"}), Hash.getObjectHash {v: "2"}
+
+    -- type tagging keeps the number 1 and the string "1" from colliding
+    getObjectHash_typeTagged: (ut) ->
+      ut\assertNotEquals Hash.getObjectHash({v: 1}), Hash.getObjectHash {v: "1"}
+
     _order: {
       "sha1_abc", "sha1_empty", "sha1_quickBrownFox",
       "sha1_binaryData", "sha1_rejectsNonString", "sha1_backendMatchesReference",
-      "verify_matchIsCaseInsensitive", "verify_mismatchReturnsFalseAndErr", "verify_rejectsNonStringExpected"
+      "verify_matchIsCaseInsensitive", "verify_mismatchReturnsFalseAndErr", "verify_rejectsNonStringExpected",
+      "getObjectHash_isHexString", "getObjectHash_deterministic", "getObjectHash_ignoresKeyOrder",
+      "getObjectHash_nestedOrderIndependent", "getObjectHash_distinguishesContent", "getObjectHash_typeTagged"
     }
   }

@@ -3,7 +3,7 @@
 -- keys, is idempotent, and preserves unknown keys.
 () ->
   schema = require "l0.DependencyControl.config-schema"
-  Common = require "l0.DependencyControl.Common"
+  domain = require "l0.DependencyControl.domain"
 
   {:migrate, :keyMap, :droppedKeys} = schema.migration
 
@@ -99,13 +99,13 @@
         }
       }
       migrate c, nil, schema.CONFIG_SCHEMA_ID_CURRENT
-      ut\assertEquals c.macros["l0.old"].recordType, Common.RecordType.Unmanaged
+      ut\assertEquals c.macros["l0.old"].recordType, domain.RecordType.Unmanaged
       ut\assertNil c.macros["l0.old"].unmanaged -- flag dropped
       ut\assertEquals c.macros["l0.old"].version, "1.2.3" -- packed int -> semver string
       ut\assertEquals c.macros["l0.old"].author, "x" -- unrelated fields untouched
       ut\assertEquals c.macros["l0.managed"].version, "0.0.2"
       ut\assertNil c.macros["l0.managed"].recordType -- no flag -> stays managed
-      ut\assertEquals c.modules["l0.mod"].recordType, Common.RecordType.Unmanaged
+      ut\assertEquals c.modules["l0.mod"].recordType, domain.RecordType.Unmanaged
       ut\assertNil c.modules["l0.mod"].unmanaged
 
     -- the pre-0.7 alpha pin on DependencyControl's own packages is rewritten to the new stable channel;

@@ -1,6 +1,6 @@
 UnitTestSuite = require "l0.DependencyControl.UnitTestSuite"
 constants = require "l0.DependencyControl.Constants"
-Common = require "l0.DependencyControl.Common"
+domain = require "l0.DependencyControl.domain"
 DepCtrl = require "l0.DependencyControl"
 
 -- Suite for the DependencyControl Toolbox macro. The Plumbing class proves the automation-script test
@@ -516,8 +516,8 @@ UnitTestSuite "l0.DependencyControl.Toolbox", (macros, dependencies, testExports
         ut\stub(DepCtrl.config, "getSectionHandler")\returns {c: {modules: {"toolbox.test.notARealModule": {}}}}
         registered = {}
         records = {
-          {name: "Mod", namespace: "a.mod", scriptType: Common.ScriptType.Module, tests: {registerMacros: => registered.mdl = true}}
-          {name: "Mac", namespace: "a.mac", scriptType: Common.ScriptType.Automation, tests: {registerMacros: => registered.macro = true}}
+          {name: "Mod", namespace: "a.mod", scriptType: domain.ScriptType.Module, tests: {registerMacros: => registered.mdl = true}}
+          {name: "Mac", namespace: "a.mac", scriptType: domain.ScriptType.Automation, tests: {registerMacros: => registered.macro = true}}
         }
         ut\stub(DepCtrl, "getAllRegisteredRecords")\returns records
         scheduled = {}
@@ -535,9 +535,9 @@ UnitTestSuite "l0.DependencyControl.Toolbox", (macros, dependencies, testExports
       toleratesPerRecordFailures: (ut) ->
         ut\stub(DepCtrl.config, "getSectionHandler")\returns {c: {modules: {}}}
         records = {
-          {name: "Boom", namespace: "a.boom", scriptType: Common.ScriptType.Module}
-          {name: "Denied", namespace: "a.denied", scriptType: Common.ScriptType.Module}
-          {name: "Fine", namespace: "a.fine", scriptType: Common.ScriptType.Automation}
+          {name: "Boom", namespace: "a.boom", scriptType: domain.ScriptType.Module}
+          {name: "Denied", namespace: "a.denied", scriptType: domain.ScriptType.Module}
+          {name: "Fine", namespace: "a.fine", scriptType: domain.ScriptType.Automation}
         }
         ut\stub(DepCtrl, "getAllRegisteredRecords")\returns records
         calls = 0

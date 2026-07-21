@@ -1,4 +1,4 @@
-Common = require "l0.DependencyControl.Common"
+utils = require "l0.DependencyControl.utils"
 Enum = require "l0.DependencyControl.Enum"
 Diagnostics = require "l0.MoonCats.Diagnostics"
 moonParse = require "moonscript.parse"
@@ -90,7 +90,7 @@ ValueKind = Enum "MoonCatsValueKind", {
   Other: "other"
 }
 
-metamethodNames = Common.makeSet {
+metamethodNames = utils.makeSet {
   "__tostring", "__eq", "__lt", "__le", "__call", "__index", "__newindex",
   "__pairs", "__ipairs", "__gc", "__len", "__concat", "__add", "__sub",
   "__mul", "__div", "__mod", "__pow", "__unm", "__metatable", "__mode", "__close"

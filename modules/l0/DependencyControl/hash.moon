@@ -172,6 +172,24 @@ getDigest = (hashType, data) ->
   return nil, msgs.badData\format type(data) unless type(data) == "string"
   algorithms[hashType] data
 
+---Serializes a value into a canonical string for hashing: table keys are emitted in sorted
+---order so field ordering never affects the result, and every value is tagged with its type
+---so distinct types can't collide (e.g. the number 1 vs. the string "1").
+---@param value any The value to canonicalize.
+---@return string canonical The canonicalized string.
+canonicalize = (value) ->
+  switch type value
+    when "table"
+      entries = {}
+      entries[#entries + 1] = "#{canonicalize k}=#{canonicalize v}" for k, v in pairs value
+      table.sort entries
+      "{#{table.concat entries, ","}}"
+    when "string" then "s:#{value}"
+    when "number" then "n:#{string.format "%.17g", value}"
+    when "boolean" then "b:#{value and 1 or 0}"
+    when "nil" then "nil"
+    else "#{type value}:#{tostring value}"
+
 ---@class Hash
 ---@field HashType Enum The hash algorithms `getDigest`/`verify` accept (currently `Sha1`).
 ---@field sha1Backend string Name of the active SHA-1 backend: "CommonCrypto", "OpenSSL (EVP)", "OpenSSL (SHA1)", "CryptoAPI", or "lua".
@@ -201,6 +219,14 @@ Hash = {
     return actual, err unless actual
     return true if actual == expected\lower!
     false, msgs.mismatch\format actual, expected
+
+  ---Produces a deterministic SHA-1 hash of a (possibly nested) Lua value.
+  ---Table keys are sorted before hashing, so field ordering never affects the result; pass an
+  ---object pruned to just the fields you care about to obtain a stable content signature that
+  ---ignores irrelevant differences. Useful for cheaply detecting whether semantic content changed.
+  ---@param value any The value to hash.
+  ---@return string hash A 40-character lowercase SHA-1 hex digest.
+  getObjectHash: (value) -> getDigest HashType.Sha1, canonicalize value
 
   ---Computes a SHA-1 digest entirely in Lua; the fallback backend used when no native SHA-1 is
   ---available, and the reference the active backend is checked against. Tests read it directly;

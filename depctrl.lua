@@ -203,12 +203,12 @@ end
 -- Builds a ScriptTargetFilter from the --target-module/--target-macro selectors. With no
 -- selectors it includes everything; otherwise just the named packages, by type.
 local function buildFilter(cliArgs)
-  local Common = require "l0.DependencyControl.Common"
+  local domain = require "l0.DependencyControl.domain"
   local filter = require("l0.DependencyControl.ScriptTargetFilter")()
   local mods, macros = cliArgs.target_module or {}, cliArgs.target_macro or {}
   if #mods == 0 and #macros == 0 then return filter:includeAll() end
-  for _, ns in ipairs(mods) do filter:include(Common.ScriptType.Module, ns) end
-  for _, ns in ipairs(macros) do filter:include(Common.ScriptType.Automation, ns) end
+  for _, ns in ipairs(mods) do filter:include(domain.ScriptType.Module, ns) end
+  for _, ns in ipairs(macros) do filter:include(domain.ScriptType.Automation, ns) end
   return filter
 end
 
@@ -252,12 +252,12 @@ end
 -- id, for annotation extraction. Vendored .lua files have no annotations and are skipped; a
 -- warning is printed for any unreadable source.
 local function collectModuleSources(feed, filter)
-  local Common = require "l0.DependencyControl.Common"
+  local domain = require "l0.DependencyControl.domain"
   local FileOps = require "l0.DependencyControl.file-ops"
 
   local selected = {}
   for pkg, scriptType in feed:walkPackages(filter) do
-    if scriptType == Common.ScriptType.Module then selected[pkg.namespace] = true end
+    if scriptType == domain.ScriptType.Module then selected[pkg.namespace] = true end
   end
 
   local function leafSuffix(name)
@@ -725,7 +725,7 @@ elseif args.command == "generate-docs" then
 
   setupDepCtrl("generate-docs")
 
-  local Common = require "l0.DependencyControl.Common"
+  local domain = require "l0.DependencyControl.domain"
   local FileOps = require "l0.DependencyControl.file-ops"
 
   local feed = loadFeed(feedPath)
@@ -745,7 +745,7 @@ elseif args.command == "generate-docs" then
   -- plus the require ids of the modules each package owns.
   local packages = {}
   for pkg, scriptType in feed:walkPackages(filter) do
-    if scriptType == Common.ScriptType.Module and selected[pkg.namespace] then
+    if scriptType == domain.ScriptType.Module and selected[pkg.namespace] then
       packages[pkg.namespace] = {
         name = pkg.name,
         description = pkg.description,

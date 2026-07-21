@@ -1,0 +1,231 @@
+-- General-purpose Lua helpers with no DependencyControl dependencies: deep equality, table
+-- copying, set and list operations, string trimming and pattern escaping, array flattening,
+-- and UUID generation. Sits at the bottom of the dependency graph.
+
+-- Compares two values for deep equality. Tables are compared recursively;
+-- other types use == except that two identical values always compare equal.
+-- Circular references are handled.
+_equals = (a, b, aType, bType) ->
+  treeA, treeB, depth = {}, {}, 0
+
+  recurse = (a, b, aType = type a, bType) ->
+    return true if a == b
+    bType or= type b
+    return false if aType != bType or aType != "table"
+
+    return false if #a != #b
+
+    aFieldCnt, bFieldCnt = 0, 0
+    local tablesSeenAtKeys
+
+    depth += 1
+    treeA[depth], treeB[depth] = a, b
+
+    for k, v in pairs a
+      vType = type v
+      if vType == "table"
+        tablesSeenAtKeys or= {}
+        tablesSeenAtKeys[k] = true
+
+      -- this key's value cycles back to a table already being compared up the stack; treat the key
+      -- as matched and move on to the remaining keys (returning true here would wrongly declare the
+      -- whole tables equal and would also skip the depth decrement)
+      cyclic = false
+      for i = 1, depth
+        if v == treeA[i] and b[k] == treeB[i]
+          cyclic = true
+          break
+
+      unless cyclic or recurse v, b[k], vType
+        depth -= 1
+        return false
+
+      aFieldCnt += 1
+
+    for k, v in pairs b
+      continue if tablesSeenAtKeys and tablesSeenAtKeys[k]
+      if bFieldCnt == aFieldCnt or not recurse v, a[k]
+        depth -= 1
+        return false
+      bFieldCnt += 1
+
+    res = recurse getmetatable(a), getmetatable b
+    depth -= 1
+    return res
+
+  return recurse a, b, aType, bType
+
+-- Compares table items for equality ignoring keys.
+-- Delegates table-vs-table comparisons to _equals.
+_itemsEqual = (a, b, onlyNumKeys = true, ignoreExtraAItems, requireIdenticalItems) ->
+  seen, aTbls = {}, {}
+  aCnt, aTblCnt, bCnt = 0, 0, 0
+
+  findEqualTable = (bTbl) ->
+    for i, aTbl in ipairs aTbls
+      if _equals aTbl, bTbl
+        table.remove aTbls, i
+        seen[aTbl] -= 1
+        return true
+    return false
+
+  if onlyNumKeys
+    aCnt, bCnt = #a, #b
+    return false if not ignoreExtraAItems and aCnt != bCnt
+
+    for v in *a
+      seen[v] = (seen[v] or 0) + 1 -- multiset: track occurrences so duplicate items match by count
+      if "table" == type v
+        aTblCnt += 1
+        aTbls[aTblCnt] = v
+
+    for v in *b
+      if (seen[v] or 0) > 0
+        seen[v] -= 1
+        continue
+
+      if type(v) != "table" or requireIdenticalItems or not findEqualTable v
+        return false
+
+  else
+    for _, v in pairs a
+      aCnt += 1
+      seen[v] = (seen[v] or 0) + 1 -- multiset: track occurrences so duplicate items match by count
+      if "table" == type v
+        aTblCnt += 1
+        aTbls[aTblCnt] = v
+
+    for _, v in pairs b
+      bCnt += 1
+      if (seen[v] or 0) > 0
+        seen[v] -= 1
+        continue
+
+      if type(v) != "table" or requireIdenticalItems or not findEqualTable v
+        return false
+
+    return false if not ignoreExtraAItems and aCnt != bCnt
+
+  return true
+
+
+getTableLength = (tbl) ->
+  n = 0
+  n += 1 for _, _ in pairs tbl
+  return n
+
+isPureArrayTable = (tbl) ->
+  typ = type tbl
+  return false, nil, typ if typ != "table"
+  len = getTableLength tbl
+  return #tbl == len, len, typ
+
+flatten = (value, depth = 1, toArrayTable) ->
+  flattened, f = {}, 0
+
+  recurse = (v, d) ->
+    isArray, _, typ = isPureArrayTable v
+    if toArrayTable and not isArray
+      v, isArray = toArrayTable v, typ
+      isArray = isPureArrayTable(v) if isArray == nil
+    if isArray and d > 0
+      recurse nestedVal, d - 1 for nestedVal in *v
+    else
+      f += 1
+      flattened[f] = v
+
+  recurse value, depth
+  return flattened, f
+
+deepCopy = (tbl) -> {k, (type(v) == "table" and deepCopy(v) or v) for k, v in pairs tbl}
+
+---@class Utils
+Utils = {
+  ---Deep equality comparison. Tables compared recursively; other types use ==.
+  ---Circular references are handled. Metatables are included in the comparison.
+  ---@param a any
+  ---@param b any
+  ---@return boolean equal
+  equals: _equals
+
+  ---Compares table items for equality, ignoring keys.
+  ---By default only numerical indexes are compared.
+  ---@param a table
+  ---@param b table
+  ---@param onlyNumKeys? boolean Compare only sequential numeric indices (default true).
+  ---@param ignoreExtraAItems? boolean Allow `a` to contain items absent from `b` (default false).
+  ---@param requireIdenticalItems? boolean Require identical (not merely equal) table items (default false).
+  ---@return boolean equal
+  itemsEqual: _itemsEqual
+
+  ---Shallow-copies a table (no metatable).
+  ---@param tbl table The table to copy.
+  ---@return table copy The copied table.
+  copy: (tbl) -> {k, v for k, v in pairs tbl}
+
+  ---Deep-copies a table recursively (no metatables).
+  ---@param tbl table The table to deep-copy.
+  ---@return table copy The deep-copied table.
+  deepCopy: deepCopy
+
+  ---Builds (or extends) a set from an array's values: each value becomes a key mapped to `value`.
+  ---@param source any[] Array whose values become the set's keys.
+  ---@param target? table Table to populate (default a new table).
+  ---@param overwrite? boolean Overwrite keys already present in `target` (default true).
+  ---@param value? any Value to map each key to (default true).
+  ---@return table set The populated `target`.
+  makeSet: (source, target = {}, overwrite = true, value = true) ->
+    target[v] = value for v in *source when overwrite or not target[v]
+    return target
+
+  ---Reports whether an array contains a value (compared with `==`).
+  ---@param list any[] The array to search.
+  ---@param value any The value to look for.
+  ---@return boolean included Whether `value` is an element of `list`.
+  listIncludes: (list, value) ->
+    for entry in *list
+      return true if entry == value
+    return false
+
+  ---Fills in missing entries of `tbl` from `defaults`, mutating `tbl` in place.
+  ---@param tbl table The table to fill in.
+  ---@param defaults table Default key/value pairs.
+  ---@param predicate? fun(value: any, key: any, tbl: table): boolean Per-key test for whether to apply the default; when omitted, defaults apply wherever `tbl[key]` is nil.
+  ---@return number addedCount The number of defaults applied.
+  addDefaults: (tbl, defaults, predicate) ->
+    addedCnt = 0
+    for k, v in pairs defaults
+      if not predicate and tbl[k] == nil or predicate and predicate tbl[k], k, tbl
+        addedCnt += 1
+        tbl[k] = v
+    return addedCnt
+
+  ---Strips leading and trailing whitespace from a string.
+  ---@param str string The string to trim.
+  ---@return string trimmed The trimmed string.
+  trim: (str) -> (str\gsub "^%s*(.-)%s*$", "%1")
+
+  ---Escapes all Lua pattern magic characters in a string so it matches literally.
+  ---@param str string The string to escape.
+  ---@return string escaped The escaped string.
+  escapePattern: (str) -> (str\gsub "[%^%$%(%)%%%.%[%]%*%+%-%?]", "%%%1")
+
+  ---Flattens nested array tables into a single array up to the specified depth. Values that are not (or not converted to) pure array tables are included as-is.
+  ---@param value any The value to flatten.
+  ---@param depth? number Maximum depth to flatten (default 1).
+  ---@param toArrayTable? fun(value: any, valueType: string): table?, boolean? Converts a non-array value to an array table.
+  ---@return table flattened A flattened array table containing the flattened values.
+  ---@return number flattenedCount The number of elements in the flattened array.
+  flatten: flatten
+
+  ---Generates a random RFC-4122 version-4 UUID string.
+  ---@return string uuid
+  uuid: ->
+    -- https://gist.github.com/jrus/3197011
+    -- cspell:ignore yxxx
+    "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx"\gsub "[xy]", (c) ->
+      v = c == "x" and math.random(0, 0xf) or math.random 8, 0xb
+      return "%x"\format v
+}
+
+return Utils

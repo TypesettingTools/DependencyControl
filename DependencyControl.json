@@ -60,12 +60,12 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "6C15DC59016ADE3520FA548E9875A6B1E046F4E5"
+              "sha1": "3BD7BDA1A114693CC34457D36EACA3E84AD5CC24"
             },
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "556FC7B292EDF1A7571F6EAD4C7243342CE98381",
+              "sha1": "D9AD1325DD19A317CFB6D5745AE65338411896B7",
               "type": "test"
             }
           ],
@@ -121,12 +121,7 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "8C3B510D71768A0E26B3E8FD4A2DC510B01B36B7"
-            },
-            {
-              "name": "/Common.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "E638DFB4218F95024FB262E0C540CE90AF23A1BF"
+              "sha1": "F6F5430E03D9AE33D7F0DF75896D9FF66FFE955C"
             },
             {
               "name": "/Constants.moon",
@@ -136,17 +131,17 @@
             {
               "name": "/ConfigHandler.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "03AA674F0EA63E133C623F1981F98A20244B06B7"
+              "sha1": "277138390E27D4B73E7034CB549603F90DA963B2"
             },
             {
               "name": "/ConfigView.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "36E6BADD74CED0799DC97B6D213E50EF4172BF61"
+              "sha1": "FF5F7B24528593348D632080551116F26A84D53C"
             },
             {
               "name": "/hash.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "FCFD96B28DF46F54FFB23CB216D027D0BCF74C58"
+              "sha1": "5EF0E977CFA14E9DDBCD9A71016A269FD789FFF2"
             },
             {
               "name": "/Downloader.moon",
@@ -171,17 +166,17 @@
             {
               "name": "/FeedInventory.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "61AA7C165DDA4157C4848CBA3FA129171B1314E3"
+              "sha1": "2238F4DDBB64545EF7DCFF890A5C038624D4DAEF"
             },
             {
               "name": "/FeedManager.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "1C8C71A438927066B832477527FBE3073CCB5F83"
+              "sha1": "9058C2FB8F273E6F0D72876BDADA029BAA8327D6"
             },
             {
               "name": "/FeedTrust.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "823553A082771920EF1F0815C8CA916FF34EC6D5"
+              "sha1": "56FE5CA178E47E65E8AD7EED9385AC35090FEC93"
             },
             {
               "name": "/FileLock.moon",
@@ -191,7 +186,7 @@
             {
               "name": "/file-ops.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "CFAE575739F752B5DCE9BC255131294E2FEDE188"
+              "sha1": "7B6256216560723E10502787004D74C327CB5FD3"
             },
             {
               "name": "/GitRepository.moon",
@@ -211,7 +206,7 @@
             {
               "name": "/Lock.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "45F464DB29ECA6CDE9940ABB77661AB19AD963D5"
+              "sha1": "5A1A699B9CB5F30A673BE1B2A48F2310DC478F6C"
             },
             {
               "name": "/Logger.moon",
@@ -221,7 +216,7 @@
             {
               "name": "/ModuleLoader.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "C44751C8B39FB273A1886793B5A7AE42271FAA40"
+              "sha1": "AAAC383B88E56E94395E62319DC54A9426F88CF0"
             },
             {
               "name": "/ModuleProvider.moon",
@@ -236,27 +231,27 @@
             {
               "name": "/PackageRecord.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "48EB1F673BE6FF08AA001724EEE93BB1B29D3C00"
+              "sha1": "8ED1558AFE4F25DBBDCEB14357413CF027FAFECF"
             },
             {
               "name": "/ScriptTargetFilter.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "A5253C9459DD571CF43F161CDC23776843F3B30E"
+              "sha1": "E6E4988292DF9A8F5CA37A2E03027340A40FCDB1"
             },
             {
               "name": "/ScriptUpdateRecord.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "9206F607BC9DC310A694E17C378A5E2B59EB855F"
+              "sha1": "52A0925BB1EC28E5D894CA3D8327251E21C52E88"
             },
             {
               "name": "/SemanticVersion.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "312E62DAAC4EF6A1770E1F9FB3AC8A1DB109315C"
+              "sha1": "FE7146185B0EFD4533196C498AA6462102C4EEF4"
             },
             {
               "name": "/Stub.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "B41D3BD440C7EE5C392E0163B95AE6BC99B23299"
+              "sha1": "BF1DE93F8AA1E53B0E4C309DCC656AC1A5C74228"
             },
             {
               "name": "/BadMutex.moon",
@@ -272,22 +267,22 @@
             {
               "name": "/UnitTestSuite.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "9EECF4DCDAF3A6951384D66EFE9907BF687C6262"
+              "sha1": "0F52DBF69EB46E4CAB866FF3A83EA0C2A2DAC2F3"
             },
             {
               "name": "/UpdateFeed.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "0CB7E0C173F92628A1033D8A7B2678076039B8EC"
+              "sha1": "475BE8CE1186060D7545CF3E45199B4BAF19B896"
             },
             {
               "name": "/UpdateTask.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "5FA984514A8720ACFD0B0AA74BFB8E5AF783F96B"
+              "sha1": "F2723D96BB282B3EE6566193605F6E337142DA43"
             },
             {
               "name": "/Updater.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "FDFE395DE34F3FAC7656D4899889AE43BFD025DE"
+              "sha1": "C08FED71390004D69149A2276771BA4074DC4392"
             },
             {
               "name": "/ZipArchiver.moon",
@@ -342,7 +337,7 @@
             {
               "name": "/config-schema.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "C5E49D928DA906E58BF52C44B15704DC5A710A12"
+              "sha1": "9C1605C2019F2C0A7F4B02C821CCCDB1AE6821C2"
             },
             {
               "name": "/Finalizer.moon",
@@ -355,21 +350,30 @@
               "sha1": "59DBF1610331C09E353679D40809810C74FE7152"
             },
             {
+              "name": "/domain.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "A3A82DEB64487204E4771EC9222029FC55B446B3"
+            },
+            {
+              "name": "/environment.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "5D383C75F2E97A53B2343D554E9E2FC26C613FFF"
+            },
+            {
+              "name": "/utils.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "063074381094F2F26408CA9DCA90D7270ACC02B7"
+            },
+            {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "8D87B67766B05429CC70CEACF51DAE6AF84F2E65",
+              "sha1": "8DEEC64398F1C5A19914DE59D1F9F48853C03D6D",
               "type": "test"
             },
             {
               "name": "/BadMutex.moon",
               "url": "@{fileBaseUrl}",
               "sha1": "36D24DA8FEB591C18C0A8020A8062D5B19A72C24",
-              "type": "test"
-            },
-            {
-              "name": "/Common.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "35800E58A367C9DC95C7F1952434974291A07A20",
               "type": "test"
             },
             {
@@ -387,7 +391,7 @@
             {
               "name": "/hash.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "A295A30E0A167D677F1E0F561A83740D3F07084A",
+              "sha1": "EAB8280045E3CC4EA8D3D58B30922D74FCF953D4",
               "type": "test"
             },
             {
@@ -477,7 +481,7 @@
             {
               "name": "/ModuleLoader.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "94124DA4C212E7217B58F22FF08E979FC62921FA",
+              "sha1": "C83F6D1317CE6E952E67C064D65A564DA91358DA",
               "type": "test"
             },
             {
@@ -501,19 +505,19 @@
             {
               "name": "/PackageRecord.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "C5844DE0999A6E27C96A1E313D523B74DE25AFA6",
+              "sha1": "52A7A60235FDBE5EAF6D3F05AD00F58CAA0BEAFE",
               "type": "test"
             },
             {
               "name": "/ScriptTargetFilter.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "40C9370EFB194A76E2D0AF79833F3F43C5B68C84",
+              "sha1": "C731DA153C97FD92AF4F8465CC2B3865C086691E",
               "type": "test"
             },
             {
               "name": "/ScriptUpdateRecord.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "97D1E57A3CAC8E26D22B9060C9C9745489D56889",
+              "sha1": "0B66CB43DC28194E93D5CC25426698010FCC436D",
               "type": "test"
             },
             {
@@ -537,19 +541,19 @@
             {
               "name": "/UpdateFeed.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "597A1010EBB667F6CD6FF9C9FB9040506F784815",
+              "sha1": "BC3B4A04669C491CBE0DB3F177AA532CC9EAD249",
               "type": "test"
             },
             {
               "name": "/UpdateTask.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "D6B3D5362124CB847FAA2E104B92B55761F2D0DD",
+              "sha1": "70E15CF66D045D60298B3D9C328DD41DF27F2DE4",
               "type": "test"
             },
             {
               "name": "/Updater.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "EF6D3D98D648802F300F733F157B71E53AE16ABE",
+              "sha1": "195C4E1CFA2D360B418E5EA4D6D869F552A49D93",
               "type": "test"
             },
             {
@@ -597,7 +601,7 @@
             {
               "name": "/config-schema.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "8D2C564CF313BE368C9DB77819576808E1AB6E44",
+              "sha1": "C65BC75E4ACF11F2CA174255CB6792C3C4FAD7A7",
               "type": "test"
             },
             {
@@ -622,6 +626,24 @@
               "name": "/release-notes.moon",
               "url": "@{fileBaseUrl}",
               "sha1": "A6E2F4FAC1EE2ED44D90CEC38D45D87691618FB4",
+              "type": "test"
+            },
+            {
+              "name": "/domain.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "2406064A5B8F234ECB69E9C60F5FC1A5E9B7657A",
+              "type": "test"
+            },
+            {
+              "name": "/utils.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "0DEFEDA3EBBE4F4F8A0F8BF1F7426C48B638BF36",
+              "type": "test"
+            },
+            {
+              "name": "/environment.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "1889EFB487A85EF9CD9838312B36CAB97D332119",
               "type": "test"
             }
           ],
@@ -701,14 +723,14 @@
           "Logger/UpdateFeed: Fixed chained method calls on file handles (`handle:write():flush()` and `handle:write():close()`) that could silently swallow errors"
         ],
         "0.7.0": [
-          "change: The previously monolithic `DependencyControl.moon` has been broken up into focused sub-modules as groundwork for a future SQLite-based script registry backend: `PackageRecord` (version record management), `ModuleLoader` (module loading and dependency resolution), `SemanticVersion` (version number handling), and `Common` (shared enums and utilities).",
+          "change: The previously monolithic `DependencyControl.moon` has been broken up into focused sub-modules as groundwork for a future SQLite-based script registry backend: `PackageRecord` (version record management), `ModuleLoader` (module loading and dependency resolution), `SemanticVersion` (version number handling), and the `domain`, `environment`, and `utils` tables (script/record type enums and terminology, platform and headless detection, and general-purpose table/string helpers).",
           "change: Script types (automation macros vs. modules) and record types are now represented by proper enums (`ScriptType`, `RecordType`) instead of bare booleans, making the API more explicit and extensible.",
           "fix(UpdateFeed): Fixed two regressions caused by the refactoring, both of which caused the update process to fail.",
           "change: Global initialization has been moved into a dedicated setup method, reducing implicit global state for loggers and configuration.",
           "change!: DepCtrl now refuses to load if the installed Moonscript is below the minimum required version with a helpful error message directing users to update their Aegisub build.",
           "fix(ModuleLoader): Fixed a regression where DepCtrl init hooks were called again on already-initialized modules, causing errors in modules that mutate their exported state on first call (e.g. BadMutex).",
-          "fix(Common): Fixed a long-standing bug that guaranteed the `capitalize()` function to fail, that  was never caught because it was unused until the refactoring.",
-          "feat(Common): Added the `makeSet()`, `addDefaults()`, `trim()`, and `escapePattern()` utility helpers (building a set from a list, filling in missing table defaults, stripping surrounding whitespace from a string, and escaping Lua pattern magic characters), shared with the Functional module.",
+          "fix(domain): Fixed a long-standing bug that guaranteed the `capitalize()` function to fail, that  was never caught because it was unused until the refactoring.",
+          "feat(utils): Added the `makeSet()`, `addDefaults()`, `trim()`, and `escapePattern()` utility helpers (building a set from a list, filling in missing table defaults, stripping surrounding whitespace from a string, and escaping Lua pattern magic characters), shared with the Functional module.",
           "fix(Updater): Fixed a potential issue where a multi-assignment statement could corrupt record fields after an unsuccessful update.",
           "change: Automatic update scheduling is now centralized in the DependencyControl Toolbox and runs in a single Aegisub environment at startup, covering all installed scripts including modules not loaded by any automation script. Previously, each automation script's environment scheduled redundant checks for every module it loaded.",
           "feat(PackageRecord): Added `getAllRegisteredRecords()` to expose the full live record registry to tooling.",
@@ -772,7 +794,8 @@
           "feat: Feed packages are now versioned in lockstep: a release advances only the packages that changed to a single shared repo-level version. The CLI gained a `bump-version` task that picks that version from the feed's release dates and applies it, and an `update-feed --mark-released` option that records which builds have shipped.",
           "feat: Changelog entries may now carry conventional-commit markers (`feat`/`fix`/`change`, an optional scope, `!` for breaking); the update changelog and generated release notes group them by category and flag breaking changes. The CLI gained `merge-feed` and `release-notes` tasks used by the release workflow.",
           "feat(FileOps): Added `getAttributes()`, which returns a file or directory's attributes together with the parsed components of its path as one info table plus a separate error value, keeping a genuine lookup failure out of the returned value. The previous `attributes()` is retained as a deprecated compatibility wrapper.",
-          "fix(FileOps): A hard attributes lookup failure is no longer mistaken for a missing or wrong-typed file — `writeFile` no longer tries to open the error message as a path, and `listDir`, `rmdir`, and `remove` now surface the actual error instead of a misleading \"not a directory\" result."
+          "fix(FileOps): A hard attributes lookup failure is no longer mistaken for a missing or wrong-typed file — `writeFile` no longer tries to open the error message as a path, and `listDir`, `rmdir`, and `remove` now surface the actual error instead of a misleading \"not a directory\" result.",
+          "feat(Hash): Added `getObjectHash()`, reducing an arbitrary (possibly nested) Lua value to a stable, order-independent SHA-1 content signature."
         ]
       }
     },
@@ -833,7 +856,7 @@
             {
               "name": "/Parser.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "A9A543F5EEA48302C6C6C5E3137F473707427B94"
+              "sha1": "456935E97E00950AF0EF8793C67075D42CCCE579"
             },
             {
               "name": "/Emitter.moon",

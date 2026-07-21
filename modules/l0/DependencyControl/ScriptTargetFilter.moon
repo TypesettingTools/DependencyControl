@@ -1,8 +1,8 @@
-Common = require "l0.DependencyControl.Common"
+domain = require "l0.DependencyControl.domain"
 Accessors = require "l0.DependencyControl.Accessors"
 
 -- fresh copy of all script-type values, so the in-place sort below can't mutate the Enum's own list
-scriptTypeList = [v for v in *Common.ScriptType.values]
+scriptTypeList = [v for v in *domain.ScriptType.values]
 table.sort scriptTypeList
 
 ---Selects which packages a feed operation should process, by script type and namespace.
@@ -10,10 +10,10 @@ table.sort scriptTypeList
 ---returns self so calls can be chained. Because modules and automation scripts aren't required
 ---to have unique namespaces, rules are keyed by script type first.
 ---
----    ScriptTargetFilter!\include(Common.ScriptType.Module, "l0.DependencyControl")
----    ScriptTargetFilter!\includeAll Common.ScriptType.Module   -- every module
+---    ScriptTargetFilter!\include(domain.ScriptType.Module, "l0.DependencyControl")
+---    ScriptTargetFilter!\includeAll domain.ScriptType.Module   -- every module
 ---    ScriptTargetFilter!\includeAll!                            -- everything
----    ScriptTargetFilter {[Common.ScriptType.Module]: {include: {"l0.DependencyControl"}}}
+---    ScriptTargetFilter {[domain.ScriptType.Module]: {include: {"l0.DependencyControl"}}}
 ---@class ScriptTargetFilter
 ---@field scriptTypes ScriptType[] The script types this filter would process (those carrying any rule), sorted. Read-only.
 class ScriptTargetFilter

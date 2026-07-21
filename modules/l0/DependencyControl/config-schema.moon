@@ -3,7 +3,8 @@
 -- on that class (e.g. Updater.defaultCheckInterval, FileCache.defaultMaxAge). Only settings shared across
 -- subsystems default here.
 
-Common = require "l0.DependencyControl.Common"
+domain = require "l0.DependencyControl.domain"
+utils = require "l0.DependencyControl.utils"
 SemanticVersion = require "l0.DependencyControl.SemanticVersion"
 
 CONFIG_SCHEMA_ID_CURRENT = "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/master/schemas/config/v0.7.0.json"
@@ -53,7 +54,7 @@ droppedKeys = {"tryAllFeeds", "dumpFeeds"}
 -- `stable` their default. rewrite the pin so those installs track `stable`, scoped to DependencyControl's
 -- own packages so a channel deliberately chosen for a third-party feed is left alone.
 channelRename = {
-  packages: Common.makeSet {"l0.DependencyControl", "l0.DependencyControl.Toolbox"}
+  packages: utils.makeSet {"l0.DependencyControl", "l0.DependencyControl.Toolbox"}
   from: "alpha"
   to: "stable"
 }
@@ -86,12 +87,12 @@ migrate = (config, currentSchemaId, targetSchemaId) ->
 
   -- pre-0.7 stored a record's type as a boolean `unmanaged` flag and its version as a packed integer.
   -- rewrite the flag as a recordType and the version as a semver string
-  for section in *Common.ScriptTypeSection.values
+  for section in *domain.ScriptTypeSection.values
     records = config[section]
     continue unless type(records) == "table"
     for namespace, record in pairs records
       continue unless type(record) == "table"
-      record.recordType = Common.RecordType.Unmanaged if record.unmanaged
+      record.recordType = domain.RecordType.Unmanaged if record.unmanaged
       record.unmanaged = nil
       record.version = SemanticVersion\toString record.version if type(record.version) == "number"
       if channelRename.packages[namespace]

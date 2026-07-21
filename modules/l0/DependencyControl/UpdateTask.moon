@@ -3,17 +3,18 @@ Downloader = require "l0.DependencyControl.Downloader"
 UpdateFeed = require "l0.DependencyControl.UpdateFeed"
 FeedTrust = require "l0.DependencyControl.FeedTrust"
 fileOps = require "l0.DependencyControl.file-ops"
-Common = require "l0.DependencyControl.Common"
+domain = require "l0.DependencyControl.domain"
+environment = require "l0.DependencyControl.environment"
 Enum = require "l0.DependencyControl.Enum"
 ModuleLoader = require "l0.DependencyControl.ModuleLoader"
 SemanticVersion = require "l0.DependencyControl.SemanticVersion"
 UnitTestSuite = require "l0.DependencyControl.UnitTestSuite"
 
----The "installation"/"update" term for a record's task. Common.terms.isInstall is keyed by
+---The "installation"/"update" term for a record's task. domain.terms.isInstall is keyed by
 ---true/false, while an installed record leaves `virtual` nil.
 ---@param record PackageRecord
 ---@return string term
-getInstallTerm = (record) -> Common.terms.isInstall[record.virtual or false]
+getInstallTerm = (record) -> domain.terms.isInstall[record.virtual or false]
 
 -- How preferred a candidate package source is, in highest-to-lowest trust order.
 ---@alias UpdaterTrustBand
@@ -315,7 +316,7 @@ class UpdateTask
   ---Converts updater status/error codes into user-facing error messages.
   ---@param code? UpdateStatus A nil or unmapped code yields a generic message naming the code.
   ---@param name string
-  ---@param scriptType ScriptType A Common.ScriptType value.
+  ---@param scriptType ScriptType A domain.ScriptType value.
   ---@param isInstall boolean
   ---@param detailMsg? string
   ---@return string message The user-facing error text for the status code.
@@ -325,13 +326,13 @@ class UpdateTask
     if code and code <= -100
       -- a component-encoded status packs its component id as floor(-code / 100)
       return msgs.updateError.component\format -code, msgs.updaterErrorComponent[math.floor(-code/100)],
-        Common.terms.isInstall[isInstall], Common.terms.scriptType.singular[scriptType], name, detailMsg
+        domain.terms.isInstall[isInstall], domain.terms.scriptType.singular[scriptType], name, detailMsg
     template = msgs.updateError[code]
     unless template
-      return msgs.updateError.unknown\format Common.terms.isInstall[isInstall],
-        Common.terms.scriptType.singular[scriptType], name, tostring code
-    return template\format Common.terms.isInstall[isInstall],
-      Common.terms.scriptType.singular[scriptType],
+      return msgs.updateError.unknown\format domain.terms.isInstall[isInstall],
+        domain.terms.scriptType.singular[scriptType], name, tostring code
+    return template\format domain.terms.isInstall[isInstall],
+      domain.terms.scriptType.singular[scriptType],
       name, detailMsg
 
   ---Creates an update task for one record.
@@ -386,7 +387,7 @@ class UpdateTask
 
     version = SemanticVersion\toPacked updateRecord.version
     unless version
-      return nil, msgs.checkFeed.invalidVersion\format Common.terms.scriptType.singular[@record.scriptType],
+      return nil, msgs.checkFeed.invalidVersion\format domain.terms.scriptType.singular[@record.scriptType],
         @record.name, currentChannel, tostring updateRecord.version
     return updateRecord, nil, version
 
@@ -412,7 +413,7 @@ class UpdateTask
   ---@return string? feedUrl The derived feed URL, or nil if it can't be determined.
   ---@private
   __resolveRememberedFeedUrl: (previousSource) =>
-    view = @updater.config\getSectionHandler Common.ScriptTypeSection[Common.ScriptType.Module]
+    view = @updater.config\getSectionHandler domain.ScriptTypeSection[domain.ScriptType.Module]
     @@.resolveSourceUrl previousSource, @record.feed, @record.config.c.userFeed, view and view.c
 
   ---Finds the candidate corresponding to a remembered source that is still eligible to satisfy this task.
@@ -556,7 +557,7 @@ class UpdateTask
   ---@private
   __promptTrustFeed: (selectedCandidate) =>
     msg = msgs.run.untrustedPrompt\format getInstallTerm(@record),
-      Common.terms.scriptType.singular[@record.scriptType],
+      domain.terms.scriptType.singular[@record.scriptType],
       @record.name, selectedCandidate.feedUrl
     dlg = {{class: "label", label: msg, x: 0, y: 0, width: 1, height: 1}}
     buttons = {msgs.dialogCommon.cancel, msgs.__promptTrustFeed.trustOnce, msgs.__promptTrustFeed.trustAlways,
@@ -615,7 +616,7 @@ class UpdateTask
   ---@return any detail
   run: (waitLock) =>
     with @record do @logger\log msgs.run.starting, getInstallTerm(@record),
-      Common.terms.scriptType.singular[.scriptType], .name
+      domain.terms.scriptType.singular[.scriptType], .name
 
     -- don't perform update of a script when another one is already running for the same script
     return @__logUpdateError UpdateStatus.TaskAlreadyRunning if @running
@@ -646,7 +647,7 @@ class UpdateTask
 
     -- an installed module already satisfies the chosen (trusted) version
     if selectedSource.isDirect and not @record.virtual and @record\checkVersion selectedSource.updateRecord.version
-      @logger\log msgs.run.upToDate, Common.terms.scriptType.singular[@record.scriptType],
+      @logger\log msgs.run.upToDate, domain.terms.scriptType.singular[@record.scriptType],
         @record.name, SemanticVersion\toString @record.version
       return UpdateStatus.UpToDate
 
@@ -662,7 +663,7 @@ class UpdateTask
       code, detail = @__reportNoSuitablePackage maxVersion
       return code, detail
     @ref, @updated = ref, true
-    @logger\log msgs.run.providerResolved, @record.namespace, Common.terms.scriptType.singular[Common.ScriptType.Module],
+    @logger\log msgs.run.providerResolved, @record.namespace, domain.terms.scriptType.singular[domain.ScriptType.Module],
       selectedSource.updateRecord.name or selectedSource.updateRecord.namespace, selectedSource.updateRecord.version
     return UpdateStatus.Installed, selectedSource.updateRecord.version
 
@@ -704,7 +705,7 @@ class UpdateTask
   ---@private
   __reportNoSuitablePackage: (maxVersion, offeredPlatforms) =>
     detail = if offeredPlatforms and #offeredPlatforms > 0
-      msgs.run.noPlatformAvailable\format Common.platform, table.concat offeredPlatforms, ", "
+      msgs.run.noPlatformAvailable\format environment.platform, table.concat offeredPlatforms, ", "
     else
       msgs.run.noFeedAvailableExt\format @targetVersion == 0 and "any" or SemanticVersion\toString(@targetVersion),
         @record.virtual and "no" or SemanticVersion\toString(@record.version),
@@ -830,7 +831,7 @@ class UpdateTask
     unless selected
       if maxVer > 0 and not @record.virtual and @targetVersion <= @record.version
         -- dependency is already up-to-date, so no matter we don't have a candidate to install
-        @logger\log msgs.run.upToDate, Common.terms.scriptType.singular[@record.scriptType],
+        @logger\log msgs.run.upToDate, domain.terms.scriptType.singular[@record.scriptType],
           @record.name, SemanticVersion\toString @record.version
         return withoutInstall UpdateStatus.UpToDate
 
@@ -884,7 +885,7 @@ class UpdateTask
   performUpdate: (update) =>
     finish = (...) ->
       @running = false
-      if @record.virtual or @record.recordType == Common.RecordType.Unmanaged
+      if @record.virtual or @record.recordType == domain.RecordType.Unmanaged
         ModuleLoader.removeDummyRef @record
       return ...
 
@@ -892,7 +893,7 @@ class UpdateTask
 
     -- set a dummy ref (which hasn't yet been set for virtual and unmanaged modules)
     -- and record version to allow resolving circular dependencies
-    if @record.virtual or @record.updateRecordType == Common.RecordType.Unmanaged
+    if @record.virtual or @record.updateRecordType == domain.RecordType.Unmanaged
       ModuleLoader.createDummyRef @record
       @record\setVersion update.version
 
@@ -926,7 +927,7 @@ class UpdateTask
     @logger\log msgs.performUpdate.updateReady, tmpDir
 
     scriptSubDir = @record.namespace
-    scriptSubDir = scriptSubDir\gsub "%.","/" if @record.scriptType == Common.ScriptType.Module
+    scriptSubDir = scriptSubDir\gsub "%.","/" if @record.scriptType == domain.ScriptType.Module
 
     @@__downloader.blockPrivateHosts = @updater.config.c.updates.blockPrivateHosts
     @@__downloader\clear!
@@ -995,7 +996,7 @@ class UpdateTask
     oldVer, wasVirtual = @record.version, @record.virtual
 
     -- Update complete, refresh module information/configuration
-    if @record.scriptType == Common.ScriptType.Module
+    if @record.scriptType == domain.ScriptType.Module
       ref = ModuleLoader.loadModule @record, @record, false, true
       unless ref
         if @record._error
@@ -1009,7 +1010,7 @@ class UpdateTask
         -- look for any compatible non-DepCtrl version records and create an unmanaged record
         return finish UpdateStatus.MissingVersionRecord unless ref.version
         success, rec = pcall @@__DependencyControl, { moduleName: @record.moduleName, version: ref.version,
-          recordType: Common.RecordType.Unmanaged, name: @record.name }
+          recordType: domain.RecordType.Unmanaged, name: @record.name }
         return finish UpdateStatus.RecordCreateFailed, rec unless success
         @record = rec
       @ref = ref
@@ -1021,8 +1022,8 @@ class UpdateTask
       @record\writeConfig!
 
     @updated = true
-    @logger\log msgs.performUpdate.updSuccess, Common.terms.capitalize(Common.terms.isInstall[wasVirtual or false]),
-      Common.terms.scriptType.singular[@record.scriptType],
+    @logger\log msgs.performUpdate.updSuccess, domain.terms.capitalize(domain.terms.isInstall[wasVirtual or false]),
+      domain.terms.scriptType.singular[@record.scriptType],
       @record.name, SemanticVersion\toString @record.version
 
     -- Display changelog
@@ -1042,11 +1043,11 @@ class UpdateTask
       \loadConfig true
       if wasVirtual and not .virtual or .version > oldVersion
         @updated = true
-        @ref = ModuleLoader.loadModule @record, @record, false, true if .scriptType == Common.ScriptType.Module
+        @ref = ModuleLoader.loadModule @record, @record, false, true if .scriptType == domain.ScriptType.Module
         if wasVirtual
-          @logger\log msgs.refreshRecord.unsetVirtual, Common.terms.scriptType.singular[.scriptType], .name
+          @logger\log msgs.refreshRecord.unsetVirtual, domain.terms.scriptType.singular[.scriptType], .name
         else
-          @logger\log msgs.refreshRecord.otherUpdate, Common.terms.scriptType.singular[.scriptType], .name,
+          @logger\log msgs.refreshRecord.otherUpdate, domain.terms.scriptType.singular[.scriptType], .name,
             SemanticVersion\toString @record.version
 
 UpdateTask.UpdateStatus = UpdateStatus

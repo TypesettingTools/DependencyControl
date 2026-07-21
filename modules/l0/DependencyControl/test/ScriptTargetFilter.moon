@@ -1,10 +1,10 @@
 -- ScriptTargetFilter tests: include/exclude rules, matching, and fluent construction.
 -- Called from test.moon as: (controls\requireTest "ScriptTargetFilter")!
 () ->
-  Common = require "l0.DependencyControl.Common"
+  domain = require "l0.DependencyControl.domain"
   ScriptTargetFilter = require "l0.DependencyControl.ScriptTargetFilter"
-  Module = Common.ScriptType.Module
-  Automation = Common.ScriptType.Automation
+  Module = domain.ScriptType.Module
+  Automation = domain.ScriptType.Automation
 
   {
     _description: "Tests for ScriptTargetFilter: include/exclude rules, matching, and chaining."

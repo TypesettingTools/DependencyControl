@@ -4,7 +4,7 @@ fileOps = require "l0.DependencyControl.file-ops"
 Logger = require "l0.DependencyControl.Logger"
 Lock = require "l0.DependencyControl.Lock"
 ConfigView = require "l0.DependencyControl.ConfigView"
-Common = require "l0.DependencyControl.Common"
+utils = require "l0.DependencyControl.utils"
 JsonSchema = require "l0.DependencyControl.JsonSchema"
 
 defaultLogger = Logger fileBaseName: "#{constants.DEPCTRL_SHORT_NAME}.ConfigHandler", fileSubName: script_namespace
@@ -388,7 +388,7 @@ Reload your automation scripts to generate a new configuration file.]]
         @logger\warn msgs.load.migrationSaveFailed, @filePath, msg unless ok
       return true
 
-    viewsToRefresh = Common.makeSet views
+    viewsToRefresh = utils.makeSet views
 
     for view in *views
       hiveConfig, msg = traverseHive view.__hivePath, config
@@ -399,7 +399,7 @@ Reload your automation scripts to generate a new configuration file.]]
           mergeHive view.__hivePath, makeHive(view.__hivePath), @config
         else mergeHive view.__hivePath, makeHive(view.__hivePath, hiveConfig), @config
 
-      Common.makeSet @__getOverlappingViews(view), viewsToRefresh, false
+      utils.makeSet @__getOverlappingViews(view), viewsToRefresh, false
 
     view\refresh! for view, _ in pairs viewsToRefresh
 

@@ -2,7 +2,8 @@ ffi = require "ffi"
 lfs = require "lfs"
 constants = require "l0.DependencyControl.Constants"
 Logger = require "l0.DependencyControl.Logger"
-Common = require "l0.DependencyControl.Common"
+domain = require "l0.DependencyControl.domain"
+utils = require "l0.DependencyControl.utils"
 Hash = require "l0.DependencyControl.hash"
 
 ENOENT = 2 -- POSIX error code for "No such file or directory"
@@ -407,7 +408,7 @@ FileOps = {
     absolutePathRoot = type(firstStr) == "string" and FileOps.__getPathRoot firstStr
 
     invalidPathSegmentType = nil
-    flatPathSegments = Common.flatten args, 3, (value, typ) ->
+    flatPathSegments = utils.flatten args, 3, (value, typ) ->
       if typ != "string"
         invalidPathSegmentType = typ
         return {}, true -- error is raised below via invalidPathSegmentType; contribute nothing here
@@ -754,7 +755,7 @@ FileOps = {
   ---@return string? path
   ---@return string? err
   getNamespacedPath: (basePath, namespace, ext, nested = true) ->
-    res, msg = Common.validateNamespace namespace
+    res, msg = domain.validateNamespace namespace
     return nil, msg unless res
 
     fullBasePath, msg = FileOps.validateFullPath basePath

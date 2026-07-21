@@ -1,5 +1,5 @@
 constants = require "l0.DependencyControl.Constants"
-Common = require "l0.DependencyControl.Common"
+utils = require "l0.DependencyControl.utils"
 Hash = require "l0.DependencyControl.hash"
 Enum = require "l0.DependencyControl.Enum"
 FeedInventory = require "l0.DependencyControl.FeedInventory"
@@ -73,7 +73,7 @@ class FeedManager
     add FeedAction.Unblock if entry.trustStatus == TrustStatus.Blocked and blk and not blk.isOfficial and
       blk.matchMode == FeedTrust.BlockMatchMode.Exact
 
-    add FeedAction.Remove if Common.listIncludes(entry.provenance, Provenance.UserExtra) or entry.inTrustedFeeds
+    add FeedAction.Remove if utils.listIncludes(entry.provenance, Provenance.UserExtra) or entry.inTrustedFeeds
 
     add FeedAction.OpenBrowser
     actions
@@ -99,7 +99,7 @@ class FeedManager
         inUse: entry.inUse
         actions: acts
         browserUrl: FeedManager.getBrowserUrl entry.url
-        removable: Common.listIncludes acts, FeedAction.Remove
+        removable: utils.listIncludes acts, FeedAction.Remove
       }
     table.sort rows, (a, b) -> a.url < b.url
     rows
@@ -112,7 +112,7 @@ class FeedManager
   ---@param opts? { reason?: string } `reason` annotates a Block entry.
   ---@return boolean applied Whether trust state was changed.
   applyAction: (action, entry, opts = {}) =>
-    return false unless Common.listIncludes @@.getAvailableActions(entry), action
+    return false unless utils.listIncludes @@.getAvailableActions(entry), action
     switch action
       when FeedAction.Trust
         @feedTrust\trust entry.url

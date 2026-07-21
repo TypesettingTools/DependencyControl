@@ -1,5 +1,5 @@
 
-Common = require "l0.DependencyControl.Common"
+utils = require "l0.DependencyControl.utils"
 Logger = require "l0.DependencyControl.Logger"
 constants = require "l0.DependencyControl.Constants"
 Finalizer = require "l0.DependencyControl.Finalizer"
@@ -21,7 +21,7 @@ msgs = {
 
 _stubMatch = (call, expected) ->
   for i = 1, expected.n
-    return false unless Common.equals call[i], expected[i]
+    return false unless utils.equals call[i], expected[i]
   return true
 
 ---A callable stub that records invocations and supports fluent configuration and assertions.

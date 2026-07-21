@@ -2,7 +2,7 @@
 -- Called from test.moon as: (controls\requireTest "Updater")!
 () ->
   Updater = require "l0.DependencyControl.Updater"
-  Common = require "l0.DependencyControl.Common"
+  domain = require "l0.DependencyControl.domain"
   ModuleLoader = require "l0.DependencyControl.ModuleLoader"
   SemanticVersion = require "l0.DependencyControl.SemanticVersion"
   Lock = require "l0.DependencyControl.Lock"
@@ -39,7 +39,7 @@
       loadedRef = {loaded: true}
       loadStub = ut\stub(ModuleLoader, "loadModule")\returns loadedRef
       task = {updated: false, ref: {wrong: true}, record: {namespace: "l0.dep", name: "Dep"}, run: ((wait) => UpdateStatus.UpToDate)}
-      record = {scriptType: Common.ScriptType.Module, name: "Dep", namespace: "l0.dep", virtual: false}
+      record = {scriptType: domain.ScriptType.Module, name: "Dep", namespace: "l0.dep", virtual: false}
       ut\assertEquals (Updater.require makeRequireUpdater(task), record, 0), loadedRef
       -- loadModule must receive the record as its module spec, not the namespace string (a string would crash)
       loadStub\assertCalledWith task.record, task.record
@@ -47,7 +47,7 @@
     -- a successful (re)install returns the task's freshly-loaded ref along with the status code
     require_successReturnsRef: (ut) ->
       task = {updated: true, ref: {the: "ref"}, record: {namespace: "l0.dep", name: "Dep"}, run: ((wait) => UpdateStatus.Installed)}
-      record = {scriptType: Common.ScriptType.Module, name: "Dep", namespace: "l0.dep", virtual: false}
+      record = {scriptType: domain.ScriptType.Module, name: "Dep", namespace: "l0.dep", virtual: false}
       ref, code = Updater.require makeRequireUpdater(task), record, 0
       ut\assertEquals ref, task.ref
       ut\assertEquals code, UpdateStatus.Installed
@@ -55,7 +55,7 @@
     -- a skipped optional dependency yields no ref but still carries its status code
     require_skippedOptionalReturnsCode: (ut) ->
       task = {updated: false, record: {namespace: "l0.dep", name: "Dep"}, run: ((wait) => UpdateStatus.SkippedOptional)}
-      record = {scriptType: Common.ScriptType.Module, name: "Dep", namespace: "l0.dep", virtual: true}
+      record = {scriptType: domain.ScriptType.Module, name: "Dep", namespace: "l0.dep", virtual: true}
       ref, code = Updater.require makeRequireUpdater(task), record, 0
       ut\assertNil ref
       ut\assertEquals code, UpdateStatus.SkippedOptional
@@ -64,7 +64,7 @@
     require_upToDateLoadFailureReturnsCode: (ut) ->
       ut\stub(ModuleLoader, "loadModule")\calls -> nil
       task = {updated: false, record: {namespace: "l0.dep", name: "Dep"}, run: ((wait) => UpdateStatus.UpToDate)}
-      record = {scriptType: Common.ScriptType.Module, name: "Dep", namespace: "l0.dep", virtual: false}
+      record = {scriptType: domain.ScriptType.Module, name: "Dep", namespace: "l0.dep", virtual: false}
       ref, code, detail = Updater.require makeRequireUpdater(task), record, 0
       ut\assertNil ref
       ut\assertEquals code, UpdateStatus.UpToDate
@@ -73,7 +73,7 @@
     -- an update error (negative code) is passed through to the caller
     require_errorPropagates: (ut) ->
       task = {updated: false, ref: {}, record: {namespace: "l0.dep", name: "Dep"}, run: ((wait) => return UpdateStatus.NoSuitablePackage, "boom")}
-      record = {scriptType: Common.ScriptType.Module, name: "Dep", namespace: "l0.dep", virtual: false}
+      record = {scriptType: domain.ScriptType.Module, name: "Dep", namespace: "l0.dep", virtual: false}
       ref, code, detail = Updater.require makeRequireUpdater(task), record, 0
       ut\assertNil ref
       ut\assertEquals code, UpdateStatus.NoSuitablePackage
@@ -103,7 +103,7 @@
     scheduleUpdate_protectedInstallRejected: (ut) ->
       updater = makeScheduleUpdater {mode: ContextCeiling.AutoUpdate, updateInterval: 0}
       record = {
-        virtual: false, name: "X", namespace: "l0.x", scriptType: Common.ScriptType.Module
+        virtual: false, name: "X", namespace: "l0.x", scriptType: domain.ScriptType.Module
         config: {c: {}, save: (=>)}
         getEntryPointPath: (=> "data/path", false)
       }
@@ -115,7 +115,7 @@
       task = {run: (=> UpdateStatus.Installed)}
       updater = makeScheduleUpdater {mode: ContextCeiling.AutoUpdate, updateInterval: 0, :task}
       record = {
-        virtual: false, name: "X", namespace: "l0.x", scriptType: Common.ScriptType.Module
+        virtual: false, name: "X", namespace: "l0.x", scriptType: domain.ScriptType.Module
         config: {c: {}, save: (=>)}
         getEntryPointPath: (=> "user/path", true)
       }
@@ -131,7 +131,7 @@
       fakeLock = {lock: ((timeout) => Lock.LockState.Held, 0), getActiveHolder: (=>)}
       updater = stubSelf Updater, {
         hasLock: false, config: {c: {updates: {waitTimeout: 5}}}, logger: makeNullLogger!
-        tasks: {[Common.ScriptType.Module]: {}}
+        tasks: {[domain.ScriptType.Module]: {}}
         feedLoader: {cache: {expireAll: ->}}
         lock: fakeLock -- pre-set so the lazy `@lock or= Lock{…}` in acquireLock skips construction
       }
@@ -169,7 +169,7 @@
 
     addTask_versionParseErrorReturns: (ut) ->
       updater = stubSelf Updater, {tasks: {}}
-      record = {__class: DependencyControl, scriptType: Common.ScriptType.Module, namespace: "l0.x"}
+      record = {__class: DependencyControl, scriptType: domain.ScriptType.Module, namespace: "l0.x"}
       task, code, err = Updater.addTask updater, record, "not-a-version"
       ut\assertNil task
       ut\assertEquals code, UpdateStatus.InvalidVersion
@@ -178,9 +178,9 @@
     -- a record with a queued task updates that task in place rather than creating a new one
     addTask_updatesExistingTask: (ut) ->
       existing = {targetVersion: 0}
-      record = {__class: DependencyControl, scriptType: Common.ScriptType.Module, namespace: "l0.x"}
+      record = {__class: DependencyControl, scriptType: domain.ScriptType.Module, namespace: "l0.x"}
       updater = stubSelf Updater, {
-        tasks: {[Common.ScriptType.Module]: {[record.namespace]: existing}}
+        tasks: {[domain.ScriptType.Module]: {[record.namespace]: existing}}
       }
       task = Updater.addTask updater, record, "2.0.0", {"feed://a"}, true
       ut\assertIs task, existing
@@ -189,23 +189,23 @@
 
     -- a record with no queued task gets a fresh UpdateTask, which is cached under its scriptType/namespace
     addTask_createsNewTask: (ut) ->
-      record = {__class: DependencyControl, scriptType: Common.ScriptType.Module, namespace: "l0.new", validateNamespace: => true}
+      record = {__class: DependencyControl, scriptType: domain.ScriptType.Module, namespace: "l0.new", validateNamespace: => true}
       updater = stubSelf Updater, {
-        tasks: {[Common.ScriptType.Module]: {}}
+        tasks: {[domain.ScriptType.Module]: {}}
         logger: makeNullLogger!
         config: {c: {updates: {mode: ContextCeiling.AutoUpdate}, paths: {cache: "?user/cache"}}}
       }
       task = Updater.addTask updater, record, "1.0.0"
       ut\assertNotNil task
       ut\assertIs task.__class, UpdateTask
-      ut\assertIs updater.tasks[Common.ScriptType.Module][record.namespace], task
+      ut\assertIs updater.tasks[domain.ScriptType.Module][record.namespace], task
 
     -- addTask rejects creation for a disabled updater or an invalid namespace: a constructor's return value is
     -- discarded, so the guards live in addTask rather than UpdateTask.new
     addTask_disabledUpdaterRejects: (ut) ->
-      record = {__class: DependencyControl, scriptType: Common.ScriptType.Module, namespace: "l0.new", validateNamespace: => true}
+      record = {__class: DependencyControl, scriptType: domain.ScriptType.Module, namespace: "l0.new", validateNamespace: => true}
       updater = stubSelf Updater, {
-        tasks: {[Common.ScriptType.Module]: {}}, config: {c: {updates: {mode: ContextCeiling.Off}}}
+        tasks: {[domain.ScriptType.Module]: {}}, config: {c: {updates: {mode: ContextCeiling.Off}}}
       }
       task, code = Updater.addTask updater, record, "1.0.0"
       ut\assertNil task
@@ -214,9 +214,9 @@
     -- the update mode gates addTask by the task's reason: a user-requested action still passes a mode
     -- that blocks background checks
     addTask_modeGatesByReason: (ut) ->
-      record = {__class: DependencyControl, scriptType: Common.ScriptType.Module, namespace: "l0.new", validateNamespace: => true}
+      record = {__class: DependencyControl, scriptType: domain.ScriptType.Module, namespace: "l0.new", validateNamespace: => true}
       makeUpdater = -> stubSelf Updater, {
-        tasks: {[Common.ScriptType.Module]: {}}
+        tasks: {[domain.ScriptType.Module]: {}}
         logger: makeNullLogger!
         config: {c: {updates: {mode: ContextCeiling.UserRequested}, paths: {cache: "?user/cache"}}}
       }
@@ -227,9 +227,9 @@
       ut\assertNotNil task
 
     addTask_invalidNamespaceRejects: (ut) ->
-      record = {__class: DependencyControl, scriptType: Common.ScriptType.Module, namespace: "bad ns", validateNamespace: => false}
+      record = {__class: DependencyControl, scriptType: domain.ScriptType.Module, namespace: "bad ns", validateNamespace: => false}
       updater = stubSelf Updater, {
-        tasks: {[Common.ScriptType.Module]: {}}, config: {c: {updates: {mode: ContextCeiling.AutoUpdate}}}
+        tasks: {[domain.ScriptType.Module]: {}}, config: {c: {updates: {mode: ContextCeiling.AutoUpdate}}}
       }
       task, code = Updater.addTask updater, record, "1.0.0"
       ut\assertNil task

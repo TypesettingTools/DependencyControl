@@ -1,5 +1,6 @@
 constants = require "l0.DependencyControl.Constants"
-Common = require "l0.DependencyControl.Common"
+domain = require "l0.DependencyControl.domain"
+utils = require "l0.DependencyControl.utils"
 Enum = require "l0.DependencyControl.Enum"
 
 msgs = {
@@ -72,7 +73,7 @@ class FeedTrust
 
   -- Default fetch policy for untrusted feeds, applied when the config key is unset.
   ---@type FetchUntrustedFeeds
-  @defaultFetchUntrustedFeeds = Common.FetchUntrustedFeeds.Always
+  @defaultFetchUntrustedFeeds = domain.FetchUntrustedFeeds.Always
 
   ---@param config ConfigView The updater's config view; its `c` holds `extraFeeds`/`trustedFeeds`/`blockedFeeds`.
   ---@param logger? Logger Logger for the trust/block confirmations.
@@ -91,7 +92,7 @@ class FeedTrust
       -- when the load fails (e.g. offline), return the best-effort fallback without caching, so a
       -- later call retries once the feed becomes reachable (e.g. after the updater fetches it into the cache)
       return {:trusted, :blocked}
-    Common.makeSet feed\getKnownFeeds!, trusted
+    utils.makeSet feed\getKnownFeeds!, trusted
     blocked = feed.data.blockedFeeds or {}
     @__official = {:trusted, :blocked}
     return @__official
@@ -112,8 +113,8 @@ class FeedTrust
     unless @__userTrusted
       c = @config.c.feeds
       set = {}
-      Common.makeSet c.extraFeeds or {}, set
-      Common.makeSet c.trustedFeeds or {}, set
+      utils.makeSet c.extraFeeds or {}, set
+      utils.makeSet c.trustedFeeds or {}, set
       @__userTrusted = set
     return @__userTrusted
 
@@ -203,9 +204,9 @@ class FeedTrust
     return @@FetchDecision.Deny if @isBlocked url
     return @@FetchDecision.Allow if @isTrusted url
     switch @config.c.feeds.fetchUntrustedFeeds or @@defaultFetchUntrustedFeeds
-      when Common.FetchUntrustedFeeds.Never then @@FetchDecision.Deny
-      when Common.FetchUntrustedFeeds.Prompt then @@FetchDecision.Prompt
-      when Common.FetchUntrustedFeeds.Always then @@FetchDecision.Allow
+      when domain.FetchUntrustedFeeds.Never then @@FetchDecision.Deny
+      when domain.FetchUntrustedFeeds.Prompt then @@FetchDecision.Prompt
+      when domain.FetchUntrustedFeeds.Always then @@FetchDecision.Allow
       else
         @logger\warn msgs.fetchUntrustedFeeds.invalidPolicy, @config.c.feeds.fetchUntrustedFeeds
         @@FetchDecision.Deny
@@ -246,7 +247,7 @@ class FeedTrust
   ---@return boolean added True when the URL was added, false when it was already present.
   __addUserFeed: (configKey, feedUrl) =>
     list = [url for url in *(@config.c.feeds[configKey] or {})]
-    return false if Common.listIncludes list, feedUrl
+    return false if utils.listIncludes list, feedUrl
     list[#list + 1] = feedUrl
     @config.c.feeds[configKey] = list
     @__trusted, @__userTrusted = nil, nil

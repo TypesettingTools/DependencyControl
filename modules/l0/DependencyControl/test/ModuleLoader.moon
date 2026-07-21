@@ -2,7 +2,7 @@
 -- Called from Tests.moon as: (require "...test.ModuleLoader")!
 ->
   constants = require "l0.DependencyControl.Constants"
-  Common = require "l0.DependencyControl.Common"
+  domain = require "l0.DependencyControl.domain"
   ModuleLoader = require "l0.DependencyControl.ModuleLoader"
   ModuleProvider = require "l0.DependencyControl.ModuleProvider"
   SemanticVersion = require "l0.DependencyControl.SemanticVersion"
@@ -44,13 +44,13 @@
     -- createDummyRef: tests LOADED_MODULES manipulation
 
     createDummyRef_nonModule: (ut) ->
-      rec = {scriptType: Common.ScriptType.Automation, __class: {ScriptType: Common.ScriptType}}
+      rec = {scriptType: domain.ScriptType.Automation, __class: {ScriptType: domain.ScriptType}}
       result = ModuleLoader.createDummyRef rec
       ut\assertNil result
 
     createDummyRef_newRef: (ut) ->
       ns = "test.ModuleLoader.createNew"
-      rec = {scriptType: Common.ScriptType.Module, namespace: ns, __class: {ScriptType: Common.ScriptType}}
+      rec = {scriptType: domain.ScriptType.Module, namespace: ns, __class: {ScriptType: domain.ScriptType}}
       LOADED_MODULES = LOADED_MODULES or {}
       LOADED_MODULES[ns] = nil
       result = ModuleLoader.createDummyRef rec
@@ -61,7 +61,7 @@
 
     createDummyRef_existingRef: (ut) ->
       ns = "test.ModuleLoader.createExisting"
-      rec = {scriptType: Common.ScriptType.Module, namespace: ns, __class: {ScriptType: Common.ScriptType}}
+      rec = {scriptType: domain.ScriptType.Module, namespace: ns, __class: {ScriptType: domain.ScriptType}}
       LOADED_MODULES = LOADED_MODULES or {}
       LOADED_MODULES[ns] = {existing: true}
       result = ModuleLoader.createDummyRef rec
@@ -71,13 +71,13 @@
     -- removeDummyRef: tests LOADED_MODULES manipulation
 
     removeDummyRef_nonModule: (ut) ->
-      rec = {scriptType: Common.ScriptType.Automation, __class: {ScriptType: Common.ScriptType}}
+      rec = {scriptType: domain.ScriptType.Automation, __class: {ScriptType: domain.ScriptType}}
       result = ModuleLoader.removeDummyRef rec
       ut\assertNil result
 
     removeDummyRef_dummy: (ut) ->
       ns = "test.ModuleLoader.removeDummy"
-      rec = {scriptType: Common.ScriptType.Module, namespace: ns, __class: {ScriptType: Common.ScriptType}}
+      rec = {scriptType: domain.ScriptType.Module, namespace: ns, __class: {ScriptType: domain.ScriptType}}
       LOADED_MODULES = LOADED_MODULES or {}
       LOADED_MODULES[ns] = {[DEPCTRL_DUMMY_MODULE_MARKER]: true}
       result = ModuleLoader.removeDummyRef rec
@@ -86,7 +86,7 @@
 
     removeDummyRef_nonDummy: (ut) ->
       ns = "test.ModuleLoader.removeNonDummy"
-      rec = {scriptType: Common.ScriptType.Module, namespace: ns, __class: {ScriptType: Common.ScriptType}}
+      rec = {scriptType: domain.ScriptType.Module, namespace: ns, __class: {ScriptType: domain.ScriptType}}
       LOADED_MODULES = LOADED_MODULES or {}
       LOADED_MODULES[ns] = {[DEPCTRL_DUMMY_MODULE_MARKER]: false}
       result = ModuleLoader.removeDummyRef rec
@@ -99,7 +99,7 @@
       ns = "test.ModuleLoader.cached"
       mockRef = {loaded: true}
       mdl = {moduleName: ns}
-      rec = {namespace: "host.Module", __class: {ScriptType: Common.ScriptType, __name: "DependencyControl"}}
+      rec = {namespace: "host.Module", __class: {ScriptType: domain.ScriptType, __name: "DependencyControl"}}
       LOADED_MODULES = LOADED_MODULES or {}
       LOADED_MODULES[ns] = mockRef
       result = ModuleLoader.loadModule rec, mdl, false, false
@@ -110,7 +110,7 @@
       ns = "test.ModuleLoader.success"
       mockRef = {loaded: true}
       mdl = {moduleName: ns}
-      rec = {namespace: "host.Module", __class: {ScriptType: Common.ScriptType, __name: "DependencyControl"}}
+      rec = {namespace: "host.Module", __class: {ScriptType: domain.ScriptType, __name: "DependencyControl"}}
       LOADED_MODULES = LOADED_MODULES or {}
       LOADED_MODULES[ns] = nil
       (ut\stub _G, "require")\calls (name) -> mockRef
@@ -122,7 +122,7 @@
     loadModule_missing: (ut) ->
       ns = "test.ModuleLoader.missing"
       mdl = {moduleName: ns}
-      rec = {namespace: "host.Module", __class: {ScriptType: Common.ScriptType, __name: "DependencyControl"}}
+      rec = {namespace: "host.Module", __class: {ScriptType: domain.ScriptType, __name: "DependencyControl"}}
       LOADED_MODULES = LOADED_MODULES or {}
       LOADED_MODULES[ns] = nil
       (ut\stub _G, "require")\calls (name) -> error "module '#{name}' not found: no such file"
@@ -134,7 +134,7 @@
     loadModule_error: (ut) ->
       ns = "test.ModuleLoader.error"
       mdl = {moduleName: ns}
-      rec = {namespace: "host.Module", __class: {ScriptType: Common.ScriptType, __name: "DependencyControl"}}
+      rec = {namespace: "host.Module", __class: {ScriptType: domain.ScriptType, __name: "DependencyControl"}}
       LOADED_MODULES = LOADED_MODULES or {}
       LOADED_MODULES[ns] = nil
       (ut\stub _G, "require")\calls (name) -> error "syntax error in module"
@@ -150,7 +150,7 @@
       mdl = {moduleName: ns}
       loadModuleStub = ut\stub ModuleLoader, "loadModule"
       rec = {moduleName: "host.Module", feed: nil, name: "host",
-        __class: {ScriptType: Common.ScriptType, __name: "DependencyControl", updater: nil}}
+        __class: {ScriptType: domain.ScriptType, __name: "DependencyControl", updater: nil}}
       success, err = ModuleLoader.loadModules rec, {mdl}, nil, {[ns]: true}
       ut\assertTrue success
       ut\assertEquals err, ""
@@ -161,7 +161,7 @@
       mockRef = {loaded: true}
       mdl = {moduleName: ns, version: nil, name: ns}
       rec = {namespace: "host.Module", moduleName: "host.Module", feed: nil, name: "host",
-        __class: {ScriptType: Common.ScriptType, __name: "DependencyControl", updater: nil}}
+        __class: {ScriptType: domain.ScriptType, __name: "DependencyControl", updater: nil}}
       (ut\stub ModuleLoader, "loadModule")\calls (self, m, usePrivate) ->
         m._ref = mockRef unless usePrivate
       success, err = ModuleLoader.loadModules rec, {mdl}
@@ -175,7 +175,7 @@
       ns = "test.ModuleLoader.missingFetch"
       mockRef = {fetched: true}
       updater = {require: ((...) => mockRef)}
-      recClass = setmetatable {ScriptType: Common.ScriptType, __name: "DependencyControl", :updater},
+      recClass = setmetatable {ScriptType: domain.ScriptType, __name: "DependencyControl", :updater},
         {__call: (cls, args) -> {}}
       rec = {feed: nil, moduleName: "host.Module", name: "host", __class: recClass}
       mdl = {moduleName: ns, name: ns, version: nil}
@@ -192,7 +192,7 @@
       ns = "test.ModuleLoader.missingFail"
       updaterClass = {getUpdaterErrorMsg: (code, name) -> "fetch failed: #{name}"}
       updater = {require: ((...) => return nil, -6, "no feed"), __class: updaterClass}
-      recClass = setmetatable {ScriptType: Common.ScriptType, __name: "DependencyControl", :updater},
+      recClass = setmetatable {ScriptType: domain.ScriptType, __name: "DependencyControl", :updater},
         {__call: (cls, args) -> {}}
       rec = {feed: nil, moduleName: "host.Module", name: "host", __class: recClass}
       mdl = {moduleName: ns, name: ns, version: nil, optional: false}
@@ -210,7 +210,7 @@
       ns = "test.ModuleLoader.missingOptionalSkip"
       UpdateTask = require "l0.DependencyControl.UpdateTask"
       updater = {require: ((...) => return nil, UpdateTask.UpdateStatus.SkippedOptional)}
-      recClass = setmetatable {ScriptType: Common.ScriptType, __name: "DependencyControl", :updater},
+      recClass = setmetatable {ScriptType: domain.ScriptType, __name: "DependencyControl", :updater},
         {__call: (cls, args) -> {}}
       rec = {feed: nil, moduleName: "host.Module", name: "host", __class: recClass}
       mdl = {moduleName: ns, name: ns, version: nil, optional: true}
@@ -231,7 +231,7 @@
       UpdateTask = require "l0.DependencyControl.UpdateTask"
       innerReason = "— SubInspector.Inspector (v0.7.2)\n—— Reason: no build for your platform (Linux-x64)"
       updater = {require: ((...) => return nil, UpdateTask.UpdateStatus.RequirementsUnmet, innerReason), __class: UpdateTask}
-      recClass = setmetatable {ScriptType: Common.ScriptType, __name: "DependencyControl", :updater},
+      recClass = setmetatable {ScriptType: domain.ScriptType, __name: "DependencyControl", :updater},
         {__call: (cls, args) -> {}}
       rec = {feed: nil, moduleName: "host.Module", name: "Vector Gradient", __class: recClass}
       mdl = {moduleName: ns, name: ns, version: "0.5.0", optional: false}
@@ -250,7 +250,7 @@
       newRef = {updated: true}
       loadedRef = {version: {version: 65793, checkVersion: ((target) => false)}} -- installed but too old
       updater = {require: ((...) => newRef)}
-      recClass = setmetatable {ScriptType: Common.ScriptType, __name: "DependencyControl", :updater},
+      recClass = setmetatable {ScriptType: domain.ScriptType, __name: "DependencyControl", :updater},
         {__call: (cls, args) -> {}}
       rec = {feed: nil, moduleName: "host.Module", name: "host", __class: recClass}
       mdl = {moduleName: ns, name: ns, version: SemanticVersion\toPacked "2.0.0"}
@@ -267,7 +267,7 @@
       loadedRef = {version: {version: 65793, checkVersion: ((target) => false)}}
       updaterClass = {getUpdaterErrorMsg: (code, name) -> "too old: #{name}"}
       updater = {require: ((...) => return nil, -6, "no newer version"), __class: updaterClass}
-      recClass = setmetatable {ScriptType: Common.ScriptType, __name: "DependencyControl", :updater},
+      recClass = setmetatable {ScriptType: domain.ScriptType, __name: "DependencyControl", :updater},
         {__call: (cls, args) -> {}}
       rec = {feed: nil, moduleName: "host.Module", name: "host", __class: recClass}
       mdl = {moduleName: ns, name: ns, version: SemanticVersion\toPacked "2.0.0", optional: false}
@@ -283,7 +283,7 @@
       rec = {
         name: "test"
         requiredModules: {{moduleName: "SomeModule", name: "SomeModule", optional: false}}
-        __class: {ScriptType: Common.ScriptType, automationDir: {modules: "include"}}
+        __class: {ScriptType: domain.ScriptType, automationDir: {modules: "include"}}
       }
       result, err = ModuleLoader.checkOptionalModules rec, {"SomeModule"}
       ut\assertTrue result
@@ -296,7 +296,7 @@
           {moduleName: "MissingMod", name: "MissingMod", optional: true, _missing: true,
             _reason: "not found", version: nil, url: nil}
         }
-        __class: {ScriptType: Common.ScriptType, automationDir: {modules: "include"}}
+        __class: {ScriptType: domain.ScriptType, automationDir: {modules: "include"}}
       }
       result, err = ModuleLoader.checkOptionalModules rec, {"MissingMod"}
       ut\assertFalse result

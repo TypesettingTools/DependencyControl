@@ -26,7 +26,9 @@ provideBundled "l0.DependencyControl.shims.BadMutex", {"BM.BadMutex"}, "DEPCTRL_
 provideBundled "l0.DependencyControl.shims.DownloadManager", {"DM.DownloadManager"}, "DEPCTRL_FORCE_BUILTIN_DOWNLOADER"
 provideBundled "l0.DependencyControl.shims.PreciseTimer", {"PT.PreciseTimer"}, "DEPCTRL_FORCE_BUILTIN_TIMER"
 
-Common = require "l0.DependencyControl.Common"
+domain = require "l0.DependencyControl.domain"
+environment = require "l0.DependencyControl.environment"
+utils = require "l0.DependencyControl.utils"
 ConfigHandler = require "l0.DependencyControl.ConfigHandler"
 ConfigView = require "l0.DependencyControl.ConfigView"
 Hash = require "l0.DependencyControl.hash"
@@ -55,7 +57,9 @@ Updater = require "l0.DependencyControl.Updater"
 ---Provides package management and access to all sub-modules.
 ---@class DependencyControl: PackageRecord
 class DependencyControl extends PackageRecord
-  @Common = Common
+  @Domain = domain
+  @Environment = environment
+  @Utils = utils
   @ConfigHandler = ConfigHandler
   @ConfigView = ConfigView
   @Hash = Hash

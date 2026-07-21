@@ -3,7 +3,7 @@ NamedSemaphore = require "l0.DependencyControl.NamedSemaphore"
 FileLock = require "l0.DependencyControl.FileLock"
 Timer = require "l0.DependencyControl.Timer"
 Logger = require "l0.DependencyControl.Logger"
-Common = require "l0.DependencyControl.Common"
+utils = require "l0.DependencyControl.utils"
 Enum = require "l0.DependencyControl.Enum"
 Hash = require "l0.DependencyControl.hash"
 fileOps = require "l0.DependencyControl.file-ops"
@@ -150,7 +150,7 @@ class Lock
     @namespace or= ""
     @resource or= ""
     @recordHolder = true if @recordHolder == nil
-    @instanceId = Common.uuid!
+    @instanceId = utils.uuid!
 
     token, holderFilePath, lockFilePath = deriveNames @scope, @namespace, @resource
     @_holderFilePath = holderFilePath

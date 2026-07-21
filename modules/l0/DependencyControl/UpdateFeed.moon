@@ -3,7 +3,9 @@
 dkjson = require "l0.dkjson"
 constants = require "l0.DependencyControl.Constants"
 Logger = require "l0.DependencyControl.Logger"
-Common = require "l0.DependencyControl.Common"
+domain = require "l0.DependencyControl.domain"
+utils = require "l0.DependencyControl.utils"
+Hash = require "l0.DependencyControl.hash"
 Enum = require "l0.DependencyControl.Enum"
 fileOps = require "l0.DependencyControl.file-ops"
 Downloader = require "l0.DependencyControl.Downloader"
@@ -17,11 +19,11 @@ JsonSchema = nil
 
 defaultLogger = Logger fileBaseName: "#{constants.DEPCTRL_SHORT_NAME}.UpdateFeed"
 
-ScriptType = Common.ScriptType
+ScriptType = domain.ScriptType
 
 scriptTypeBySection = {
-  [Common.ScriptTypeSection[ScriptType.Automation]]: ScriptType.Automation
-  [Common.ScriptTypeSection[ScriptType.Module]]: ScriptType.Module
+  [domain.ScriptTypeSection[ScriptType.Automation]]: ScriptType.Automation
+  [domain.ScriptTypeSection[ScriptType.Module]]: ScriptType.Module
 }
 sectionKeys = {section, true for section in pairs scriptTypeBySection}
 
@@ -32,7 +34,7 @@ sectionKeys = {section, true for section in pairs scriptTypeBySection}
 walkPackages = (feed, filter) ->
   coroutine.wrap ->
     for scriptType in *filter.scriptTypes
-      section = Common.ScriptTypeSection[scriptType]
+      section = domain.ScriptTypeSection[scriptType]
       packages = feed.data[section]
       continue unless packages
 
@@ -256,7 +258,7 @@ class UpdateFeed
   ---@return string? err
   @getFileDeployPath = (namespace, scriptType, fileName, fileType = "script", rootDir) =>
     subDir = scriptType == ScriptType.Module and (namespace\gsub "%.", "/") or namespace
-    baseDir = fileType == "test" and Common\getTestDir(scriptType, rootDir) or Common\getAutomationDir scriptType, rootDir
+    baseDir = fileType == "test" and domain.getTestDir(scriptType, rootDir) or domain.getAutomationDir scriptType, rootDir
     return fileOps.validateFullPath "#{subDir}#{fileName}", false, baseDir
 
   fileBaseName = "#{constants.DEPCTRL_NAMESPACE}_"
@@ -286,7 +288,7 @@ class UpdateFeed
   ---@param logger? Logger
   new: (@_url, autoLoad = true, @fileName, @config = {}, @logger = defaultLogger) =>
     error msgs.errors.urlOrFilePathRequired if not @_url and not fileName
-    Common.addDefaults @config, @@defaultConfig
+    utils.addDefaults @config, @@defaultConfig
     @ensureLoaded! if autoLoad
 
   ---Returns URLs of all feeds referenced in the knownFeeds section of this feed.
@@ -306,8 +308,8 @@ class UpdateFeed
     ok, raw = pcall dkjson.decode, content, nil, dkjson.null
     return nil unless ok and raw
     unexpandedData = stripNulls raw
-    for section in *{ Common.ScriptTypeSection[ScriptType.Automation],
-      Common.ScriptTypeSection[ScriptType.Module], "knownFeeds" }
+    for section in *{ domain.ScriptTypeSection[ScriptType.Automation],
+      domain.ScriptTypeSection[ScriptType.Module], "knownFeeds" }
       unexpandedData[section] or= {}
     return unexpandedData, raw
 
@@ -413,7 +415,7 @@ class UpdateFeed
   ---@param mode? UpdateFeedExpansionMode Expansion mode; local mode additionally resolves rolling templates for local source file paths.
   ---@return table data
   expand: (mode = @expansionMode or (@_url and @@ExpansionMode.Remote or @@ExpansionMode.Local)) =>
-    @data = Common.deepCopy @unexpandedData
+    @data = utils.deepCopy @unexpandedData
     @__channelTemplateState = {}
     {:templates, :maxDepth, :sourceAt, :rolling, :sourceKeys} = templateData
     isLocalMode = mode == @@ExpansionMode.Local
@@ -537,7 +539,7 @@ class UpdateFeed
     if scriptType == true then scriptType = ScriptType.Module
     elseif scriptType == false then scriptType = ScriptType.Automation
 
-    haveSection, section = Common.ScriptTypeSection\test scriptType
+    haveSection, section = domain.ScriptTypeSection\test scriptType
     unless haveSection
       return nil, msgs.errors.invalidScriptType\format scriptType,
         ScriptType\describe nil, (_, v) -> v
@@ -714,7 +716,7 @@ class UpdateFeed
     -- (absent version == "", absent/false optional == false) so that purely representational
     -- differences don't register as changes.
     getDepSignature = (deps) ->
-      Common.getObjectHash {d.moduleName, {version: d.version or "", optional: d.optional and true or false} for d in *deps or {}}
+      Hash.getObjectHash {d.moduleName, {version: d.version or "", optional: d.optional and true or false} for d in *deps or {}}
     if getDepSignature(newDeps) != getDepSignature rawChannel.requiredModules
       rawChannel.requiredModules = #newDeps > 0 and newDeps or nil
       changed = true
@@ -722,7 +724,7 @@ class UpdateFeed
     -- Mirror the record's provided aliases onto the channel as ModuleAlias tables.
     -- A mere reordering or switching between string and table forms doesn't count as a change.
     providesSignature = (aliases) ->
-      Common.getObjectHash {a.name, {k, v for k, v in pairs a when k != "name"} for a in *aliases when a.name}
+      Hash.getObjectHash {a.name, {k, v for k, v in pairs a when k != "name"} for a in *aliases when a.name}
     newProvides = @@__normalizeModuleAliases record.provides
     if providesSignature(newProvides) != providesSignature @@__normalizeModuleAliases rawChannel.provides
       rawChannel.provides = #newProvides > 0 and newProvides or nil
@@ -774,7 +776,7 @@ class UpdateFeed
     result = {namespace: packageNamespace, :scriptType, changed: false, errors: {}}
     errors = result.errors
 
-    section = Common.ScriptTypeSection[scriptType]
+    section = domain.ScriptTypeSection[scriptType]
 
     rawPkg = @rawFeedData[section] and @rawFeedData[section][packageNamespace]
     unless rawPkg
@@ -840,7 +842,7 @@ class UpdateFeed
       for entry in *(@findUnlistedFiles(filter, opts.channel) or {})
         result = resultsByPackage[entry.scriptType .. "\0" .. entry.namespace]
         continue unless result
-        rawPkg = @rawFeedData[Common.ScriptTypeSection[entry.scriptType]]
+        rawPkg = @rawFeedData[domain.ScriptTypeSection[entry.scriptType]]
         rawChannel = rawPkg and rawPkg[entry.namespace]
         rawChannel = rawChannel and rawChannel.channels and rawChannel.channels[entry.channel]
         continue unless rawChannel
@@ -864,7 +866,7 @@ class UpdateFeed
       releaseDate = type(opts.markReleased) == "string" and opts.markReleased or os.date "!%Y-%m-%d"
       resultsByPackage = {result.scriptType .. "\0" .. result.namespace, result for result in *stats.packages}
       for pkg, scriptType in @walkPackages filter
-        rawPkg = @rawFeedData[Common.ScriptTypeSection[scriptType]]
+        rawPkg = @rawFeedData[domain.ScriptTypeSection[scriptType]]
         rawPkg = rawPkg and rawPkg[pkg.namespace]
         continue unless rawPkg and rawPkg.channels
         channelName = @@__resolveChannel rawPkg.channels, opts.channel
@@ -907,11 +909,11 @@ class UpdateFeed
     toChannels = opts.to or {}
     return nil, msgs.mergeChannels.noTo unless #toChannels > 0
 
-    -- Common.deepCopy only accepts a table; feed values are a mix of tables and scalars
-    copyValue = (v) -> type(v) == "table" and Common.deepCopy(v) or v
+    -- utils.deepCopy only accepts a table; feed values are a mix of tables and scalars
+    copyValue = (v) -> type(v) == "table" and utils.deepCopy(v) or v
 
     merged = {}
-    for section in *Common.ScriptTypeSection.values
+    for section in *domain.ScriptTypeSection.values
       srcSection = source.rawFeedData[section]
       continue unless type(srcSection) == "table"
       @rawFeedData[section] or= {}
@@ -928,7 +930,7 @@ class UpdateFeed
         else
           dstPkg[k] = copyValue v for k, v in pairs srcPkg when k != "channels"
         for toName in *toChannels
-          entry = Common.deepCopy fromChannel
+          entry = utils.deepCopy fromChannel
           entry.default = toName == opts.defaultChannel
           entry.released = opts.released if opts.released
           dstPkg.channels[toName] = entry
@@ -951,10 +953,10 @@ class UpdateFeed
   ---@return boolean ok
   ---@return string? err
   __bumpVersionInSource: (namespace, newVersion) =>
-    marker = Common.escapePattern "@{#{namespace}:version}"
+    marker = utils.escapePattern "@{#{namespace}:version}"
     pattern = '"[^"]*"([^"\n]*' .. marker .. ')'
     sources = {}
-    for section in *Common.ScriptTypeSection.values
+    for section in *domain.ScriptTypeSection.values
       pkg = @data[section] and @data[section][namespace]
       continue unless pkg and pkg.channels
       for _, ch in pairs pkg.channels
@@ -987,7 +989,7 @@ class UpdateFeed
 
     channel = opts.channel
     unless channel
-      for section in *Common.ScriptTypeSection.values
+      for section in *domain.ScriptTypeSection.values
         for _, pkg in pairs @rawFeedData[section] or {}
           continue unless type(pkg) == "table" and pkg.channels
           for name, ch in pairs pkg.channels
@@ -1007,8 +1009,8 @@ class UpdateFeed
     packed = (v) -> SemanticVersion(v)\toPacked!
 
     packages = {}
-    for scriptType in *Common.ScriptType.values
-      section = Common.ScriptTypeSection[scriptType]
+    for scriptType in *domain.ScriptType.values
+      section = domain.ScriptTypeSection[scriptType]
       for ns, pkg in pairs @rawFeedData[section] or {}
         continue unless type(pkg) == "table" and pkg.channels and pkg.channels[channel]
         ch = pkg.channels[channel]
@@ -1060,7 +1062,7 @@ class UpdateFeed
       continue if p.version == target
       ok, editErr = @__bumpVersionInSource ns, target
       return nil, editErr unless ok
-      section = Common.ScriptTypeSection[p.scriptType]
+      section = domain.ScriptTypeSection[p.scriptType]
       rawChannel = @rawFeedData[section][ns].channels[channel]
       rawChannel.version = target
       rawChannel.released = dkjson.null
