@@ -1,6 +1,8 @@
 Logger = require "l0.DependencyControl.Logger"
 constants = require "l0.DependencyControl.Constants"
 
+defaultLogger = Logger fileBaseName: "#{constants.DEPCTRL_SHORT_NAME}.Enum"
+
 reservedKeys = {
   "describe",
   "elements"
@@ -37,7 +39,6 @@ msgs = {
 ---An immutable enumeration type with value/key reverse lookup.
 ---@class Enum
 class Enum
-  @logger = Logger fileBaseName: "#{constants.DEPCTRL_SHORT_NAME}.Enum"
   ---Reports whether `k` is reserved as an enum key — a built-in member name or `__`-prefixed.
   ---@param k string
   ---@return boolean reserved
@@ -48,8 +49,8 @@ class Enum
   ---Creates an enum from a table of key/value pairs or a list of names.
   ---@param name string
   ---@param values table Key/value pairs, or a list of names whose value defaults to their position.
-  ---@param logger? Logger Logger for enum error messages (default: the class logger).
-  new: (@name, values, @__logger = @@logger) =>
+  ---@param logger? Logger Logger for enum error messages (default: a shared logger).
+  new: (@name, values, @__logger = defaultLogger) =>
     @__logger\assert type(@name) == "string", msgs.new.missingOrInvalidName, Logger\describeType @name
     @elements, @__keysByValue, @values, @keys = {}, {}, {}, {}
 

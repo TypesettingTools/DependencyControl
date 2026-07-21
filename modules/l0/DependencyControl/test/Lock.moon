@@ -3,6 +3,8 @@
 () ->
   Lock = require "l0.DependencyControl.Lock"
   Logger = require "l0.DependencyControl.Logger"
+  UnitTestSuite = require "l0.DependencyControl.UnitTestSuite"
+  {:defaultLogger} = UnitTestSuite\getTestExports Lock
 
   FILEOPS_MODULE_NAME = "l0.DependencyControl.FileOps"
   TIMER_MODULE_NAME = "l0.DependencyControl.Timer"
@@ -54,10 +56,10 @@
       ut\assertTrue found
       ut\assertEquals val, 2
 
-    -- class-level Logger: verifies Logger was constructed with the correct fileBaseName
+    -- shared default logger: verifies Logger was constructed with the correct fileBaseName
 
-    classLogger_fileBaseName: (ut) ->
-      ut\assertEquals Lock.logger.fileBaseName, "DepCtrl.Lock"
+    defaultLogger_fileBaseName: (ut) ->
+      ut\assertEquals defaultLogger.fileBaseName, "DepCtrl.Lock"
 
     -- constructor
 
@@ -82,7 +84,7 @@
 
     state_held: (ut) ->
       installFakeSemaphore ut, true
-      ut\stub Lock.logger, "trace"
+      ut\stub defaultLogger, "trace"
       lock = Lock namespace: "ns", resource: "res", recordHolder: false
       lock\lock!
       ut\assertEquals lock.state, Lock.LockState.Held
@@ -107,7 +109,7 @@
 
     lock_success: (ut) ->
       _, tryLockStub = installFakeSemaphore ut, true
-      ut\stub Lock.logger, "trace"
+      ut\stub defaultLogger, "trace"
       lock = Lock namespace: "ns", resource: "res", recordHolder: false
       state, timePassed = lock\lock!
       ut\assertEquals state, Lock.LockState.Held
@@ -117,7 +119,7 @@
 
     lock_alreadyHeld: (ut) ->
       _, tryLockStub = installFakeSemaphore ut, true
-      ut\stub Lock.logger, "trace"
+      ut\stub defaultLogger, "trace"
       lock = Lock namespace: "ns", resource: "res", recordHolder: false
       lock\lock! -- acquire
       state, timePassed = lock\lock! -- re-enter: already held path
@@ -128,7 +130,7 @@
     lock_timeout: (ut) ->
       _, tryLockStub = installFakeSemaphore ut, false
       sleepStub = ut\stub TIMER_MODULE_NAME, "sleep"
-      ut\stub Lock.logger, "trace"
+      ut\stub defaultLogger, "trace"
       lock = Lock namespace: "ns", resource: "res", recordHolder: false
       state, timePassed = lock\lock 0
       ut\assertEquals state, Lock.LockState.Unavailable
@@ -141,7 +143,7 @@
         callCount += 1
         callCount >= 2 -- fails first, succeeds second
       sleepStub = ut\stub TIMER_MODULE_NAME, "sleep"
-      ut\stub Lock.logger, "trace"
+      ut\stub defaultLogger, "trace"
       lock = Lock namespace: "ns", resource: "res", recordHolder: false
       state, timePassed = lock\lock!
       ut\assertEquals state, Lock.LockState.Held
@@ -153,8 +155,8 @@
     lock_primitiveUnavailable: (ut) ->
       sem = makeFakeSemaphore false -- isOpen = false
       (ut\stub Lock, "__createPrimitive")\returns sem
-      ut\stub Lock.logger, "warn"
-      ut\stub Lock.logger, "trace"
+      ut\stub defaultLogger, "warn"
+      ut\stub defaultLogger, "trace"
       lock = Lock namespace: "ns", resource: "res", recordHolder: false
       state = lock\lock 0
       ut\assertEquals state, Lock.LockState.Held
@@ -164,7 +166,7 @@
 
     tryLock_success: (ut) ->
       _, tryLockStub = installFakeSemaphore ut, true
-      ut\stub Lock.logger, "trace"
+      ut\stub defaultLogger, "trace"
       lock = Lock namespace: "ns", resource: "res", recordHolder: false
       state, timePassed = lock\tryLock!
       ut\assertEquals state, Lock.LockState.Held
@@ -174,7 +176,7 @@
     tryLock_fail: (ut) ->
       _, tryLockStub = installFakeSemaphore ut, false
       sleepStub = ut\stub TIMER_MODULE_NAME, "sleep"
-      ut\stub Lock.logger, "trace"
+      ut\stub defaultLogger, "trace"
       lock = Lock namespace: "ns", resource: "res", recordHolder: false
       state, timePassed = lock\tryLock!
       ut\assertEquals state, Lock.LockState.Unavailable
@@ -185,7 +187,7 @@
     -- distinct resources map to distinct semaphores, so they can be held at once;
     -- the same resource is mutually exclusive across instances. Uses real semaphores.
     multiResource_independent: (ut) ->
-      ut\stub Lock.logger, "trace"
+      ut\stub defaultLogger, "trace"
       a = Lock namespace: "ns", resource: "resA", recordHolder: false
       b = Lock namespace: "ns", resource: "resB", recordHolder: false
       ut\assertEquals (a\tryLock!), Lock.LockState.Held
@@ -194,7 +196,7 @@
       b\release!
 
     sameResource_mutuallyExclusive: (ut) ->
-      ut\stub Lock.logger, "trace"
+      ut\stub defaultLogger, "trace"
       a = Lock namespace: "ns", resource: "shared", recordHolder: false
       b = Lock namespace: "ns", resource: "shared", recordHolder: false
       ut\assertEquals (a\tryLock!), Lock.LockState.Held
@@ -207,7 +209,7 @@
 
     release_held: (ut) ->
       _, _, unlockStub = installFakeSemaphore ut, true
-      ut\stub Lock.logger, "trace"
+      ut\stub defaultLogger, "trace"
       lock = Lock namespace: "ns", resource: "res", recordHolder: false
       lock\lock!
       result, extra = lock\release!
@@ -217,7 +219,7 @@
 
     release_notHeld: (ut) ->
       installFakeSemaphore ut, true
-      ut\stub Lock.logger, "trace"
+      ut\stub defaultLogger, "trace"
       lock = Lock namespace: "ns", resource: "res", recordHolder: false
       result, err = lock\release!
       ut\assertNil result
@@ -233,7 +235,7 @@
         true
       removeStub = ut\stub FILEOPS_MODULE_NAME, "remove"
       installFakeSemaphore ut, true
-      ut\stub Lock.logger, "trace"
+      ut\stub defaultLogger, "trace"
       lock = Lock namespace: "ns", resource: "res", holderName: "TestHolder"
       lock\lock!
       ut\assertString written.data
@@ -248,7 +250,7 @@
         true
       ut\stub FILEOPS_MODULE_NAME, "remove"
       installFakeSemaphore ut, true
-      ut\stub Lock.logger, "trace"
+      ut\stub defaultLogger, "trace"
       lock = Lock namespace: "ns", resource: "res", expiresAfter: 120
       lock\lock!
       ut\assertContains written.data, "expiresAt" -- lease stamped into the record
@@ -257,7 +259,7 @@
 
     -- Global scope uses a real OS advisory file lock for cross-instance exclusion
     globalScope_mutuallyExclusive: (ut) ->
-      ut\stub Lock.logger, "trace"
+      ut\stub defaultLogger, "trace"
       a = Lock namespace: "ns", resource: "globalShared", scope: Lock.Scope.Global, recordHolder: false
       b = Lock namespace: "ns", resource: "globalShared", scope: Lock.Scope.Global, recordHolder: false
       ut\assertEquals (a\tryLock!), Lock.LockState.Held
@@ -273,8 +275,8 @@
       (ut\stub FILEOPS_MODULE_NAME, "readFile")\returns craftHolderRecord now - 1000, now - 10
       installFakeSemaphore ut, false -- never acquires: takes the heldByOther path
       ut\stub TIMER_MODULE_NAME, "sleep"
-      warnStub = ut\stub Lock.logger, "warn"
-      ut\stub Lock.logger, "trace"
+      warnStub = ut\stub defaultLogger, "warn"
+      ut\stub defaultLogger, "trace"
       lock = Lock namespace: "ns", resource: "res" -- recordHolder defaults true
       lock\lock 0
       warnStub\assertCalled! -- lease lapsed -> stale warning
@@ -284,8 +286,8 @@
       (ut\stub FILEOPS_MODULE_NAME, "readFile")\returns craftHolderRecord now - 10, now + 1000
       installFakeSemaphore ut, false
       ut\stub TIMER_MODULE_NAME, "sleep"
-      warnStub = ut\stub Lock.logger, "warn"
-      ut\stub Lock.logger, "trace"
+      warnStub = ut\stub defaultLogger, "warn"
+      ut\stub defaultLogger, "trace"
       lock = Lock namespace: "ns", resource: "res"
       lock\lock 0
       warnStub\assertNotCalled! -- still within the holder's lease
@@ -296,8 +298,8 @@
       (ut\stub FILEOPS_MODULE_NAME, "readFile")\returns craftHolderRecord now - 1000, now + 100000
       installFakeSemaphore ut, false
       ut\stub TIMER_MODULE_NAME, "sleep"
-      warnStub = ut\stub Lock.logger, "warn"
-      ut\stub Lock.logger, "trace"
+      warnStub = ut\stub defaultLogger, "warn"
+      ut\stub defaultLogger, "trace"
       lock = Lock namespace: "ns", resource: "res", overrideExpiry: true, expiresAfter: 10
       lock\lock 0
       warnStub\assertCalled! -- our (acquiredAt + 10) deadline has passed
@@ -311,7 +313,7 @@
         true
       ut\stub FILEOPS_MODULE_NAME, "remove"
       installFakeSemaphore ut, true
-      ut\stub Lock.logger, "trace"
+      ut\stub defaultLogger, "trace"
       lock = Lock namespace: "ns", resource: "res"
       lock\lock! -- writes holder record (#1)
       ok = lock\renew -1 -- -1 forces a rewrite (#2)
@@ -321,7 +323,7 @@
 
     renew_notHeld: (ut) ->
       installFakeSemaphore ut, true
-      ut\stub Lock.logger, "trace"
+      ut\stub defaultLogger, "trace"
       lock = Lock namespace: "ns", resource: "res", recordHolder: false
       ok, err = lock\renew!
       ut\assertNil ok
@@ -334,7 +336,7 @@
         true
       ut\stub FILEOPS_MODULE_NAME, "remove"
       installFakeSemaphore ut, true
-      ut\stub Lock.logger, "trace"
+      ut\stub defaultLogger, "trace"
       lock = Lock namespace: "ns", resource: "res", expiresAfter: 600
       lock\lock!
       renewed = lock\renew! -- default threshold: lease barely started
@@ -349,7 +351,7 @@
         true
       ut\stub FILEOPS_MODULE_NAME, "remove"
       installFakeSemaphore ut, true
-      ut\stub Lock.logger, "trace"
+      ut\stub defaultLogger, "trace"
       lock = Lock namespace: "ns", resource: "res", expiresAfter: 600
       lock\lock!
       lock._leaseExpiresMono = 0 -- force remaining time below the threshold
@@ -362,7 +364,7 @@
 
     guard_runsAndReleases: (ut) ->
       _, _, unlockStub = installFakeSemaphore ut, true
-      ut\stub Lock.logger, "trace"
+      ut\stub defaultLogger, "trace"
       ran = false
       result = Lock\guard {namespace: "ns", resource: "res", recordHolder: false}, (lock) ->
         ran = true
@@ -373,7 +375,7 @@
 
     guard_releasesOnError: (ut) ->
       _, _, unlockStub = installFakeSemaphore ut, true
-      ut\stub Lock.logger, "trace"
+      ut\stub defaultLogger, "trace"
       ok, err = pcall -> Lock\guard {namespace: "ns", resource: "res", recordHolder: false}, -> error "boom"
       ut\assertFalse ok -- the body's error is re-raised
       unlockStub\assertCalledOnce! -- but the lock was still released
@@ -381,7 +383,7 @@
     guard_failsToAcquire: (ut) ->
       installFakeSemaphore ut, false
       ut\stub TIMER_MODULE_NAME, "sleep"
-      ut\stub Lock.logger, "trace"
+      ut\stub defaultLogger, "trace"
       called = false
       result, err = Lock\guard {namespace: "ns", resource: "res", recordHolder: false, timeout: 0}, -> called = true
       ut\assertNil result
@@ -396,8 +398,8 @@
       unlockStub = ut\stub sem, "unlock"
       (ut\stub Lock, "__createPrimitive")\returns sem
       warned = false
-      warnStub = (ut\stub Lock.logger, "warn")\calls -> warned = true
-      ut\stub Lock.logger, "trace"
+      warnStub = (ut\stub defaultLogger, "warn")\calls -> warned = true
+      ut\stub defaultLogger, "trace"
       do
         lock = Lock namespace: "ns", resource: "res", recordHolder: false
         lock\lock!
@@ -411,7 +413,7 @@
 
     _order: {
       "lockState_values", "lockState_name",
-      "classLogger_fileBaseName",
+      "defaultLogger_fileBaseName",
       "new_defaults", "new_customLogger",
       "state_initial", "state_held",
       "scope_values", "scope_defaultsToProcess", "scope_globalOption",

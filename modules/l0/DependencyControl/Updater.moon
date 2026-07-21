@@ -15,13 +15,13 @@ UPDATER_LOCK_RESOURCE_RUN = "run"
 UpdateReason = UpdateTask.UpdateReason
 UpdateStatus = UpdateTask.UpdateStatus
 
+defaultLogger = Logger fileBaseName: "#{constants.DEPCTRL_SHORT_NAME}.Updater"
+
 ---Coordinates background update checks and update task lifecycle.
 ---@class Updater
 ---@field feedTrust FeedTrust The feed-trust model (official + user trust merge, trust queries, mutations).
 ---@field feedLoader FeedLoader The shared feed loader (owns the feed cache; builds every `UpdateFeed`).
 class Updater
-  @logger = Logger fileBaseName: "#{constants.DEPCTRL_SHORT_NAME}.Updater"
-
   -- Defaults for the config's `updates` section settings this class owns, applied when the key is unset.
   ---@type UpdateContextCeiling
   @defaultMode = UpdateTask.ContextCeiling.AutoUpdate
@@ -49,13 +49,15 @@ class Updater
   ---@param host? string Host script namespace (default script_namespace).
   ---@param config ConfigView The global DependencyControl config view.
   ---@param logger? Logger
-  new: (@host = script_namespace, @config, @logger = @@logger) =>
+  new: (@host = script_namespace, @config, @logger = defaultLogger) =>
     @tasks = {scriptType, {} for scriptType in *Common.ScriptType.values}
     -- one shared feed loader owns the on-disk feed cache and every UpdateFeed construction; feed trust
-    -- is likewise a singleton so its cache and trust/block invalidations are visible across all consumers
-    @@feedLoader or= FeedLoader @config, @@logger
+    -- is likewise a singleton so its cache and trust/block invalidations are visible across all consumers.
+    -- both take the logger of the first Updater to build them, so feed activity logs through the
+    -- primary record's main logger.
+    @@feedLoader or= FeedLoader @config, @logger
     @feedLoader = @@feedLoader
-    @@feedTrust or= FeedTrust @config, @@logger, @@feedLoader
+    @@feedTrust or= FeedTrust @config, @logger, @@feedLoader
     @feedTrust = @@feedTrust
 
   ---@private

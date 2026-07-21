@@ -11,6 +11,8 @@ Accessors = require "l0.DependencyControl.Accessors"
 Finalizer = require "l0.DependencyControl.Finalizer"
 json = require "json"
 
+defaultLogger = Logger fileBaseName: "#{constants.DEPCTRL_SHORT_NAME}.Lock"
+
 DEFAULT_LOCK_WAIT_INTERVAL = 250
 DEFAULT_EXPIRY_DURATION = 5 * 60
 DEFAULT_HOLDER_NAME = "unknown"
@@ -82,8 +84,6 @@ class Lock
     }
   }
 
-  @logger = Logger fileBaseName: "#{constants.DEPCTRL_SHORT_NAME}.Lock"
-
   ---@alias LockState
   ---| -1 # Unknown: the state can't be determined without trying to acquire (e.g. a foreign holder)
   ---| 0 # Unavailable: the lock is held elsewhere and couldn't be acquired
@@ -94,7 +94,7 @@ class Lock
     Unavailable: 0
     Available: 1
     Held: 2
-  }, @logger
+  }, defaultLogger
   LockState or= @LockState
 
   ---@alias LockScope
@@ -103,7 +103,7 @@ class Lock
   @Scope = Enum "LockScope", {
     Process: "process"
     Global: "global"
-  }, @logger
+  }, defaultLogger
   Scope = @Scope
 
   ---Builds the OS lock primitive backing a lock: a named semaphore for Process scope, an
@@ -144,7 +144,7 @@ class Lock
     @scope or= Scope.Process
     assert Scope\validate @scope, 'scope'
 
-    @logger or= @@logger
+    @logger or= defaultLogger
     @expiresAfter or= DEFAULT_EXPIRY_DURATION
     @holderName or= DEFAULT_HOLDER_NAME
     @namespace or= ""
@@ -356,3 +356,6 @@ class Lock
     return unpack results, 2, results.n
 
 Accessors.install Lock
+
+UnitTestSuite = require "l0.DependencyControl.UnitTestSuite"
+return UnitTestSuite\withTestExports Lock, {:defaultLogger}

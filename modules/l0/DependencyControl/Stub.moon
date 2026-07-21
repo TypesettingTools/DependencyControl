@@ -4,6 +4,8 @@ Logger = require "l0.DependencyControl.Logger"
 constants = require "l0.DependencyControl.Constants"
 Finalizer = require "l0.DependencyControl.Finalizer"
 
+defaultLogger = Logger fileBaseName: "#{constants.DEPCTRL_SHORT_NAME}.Stub"
+
 msgs = {
   notCalled: "Expected stub to have been called, but it was never called."
   wasCalled: "Expected stub not to have been called, but it was called %d time(s)."
@@ -26,8 +28,6 @@ _stubMatch = (call, expected) ->
 ---Can be used standalone or via UnitTest:stub for automatic lifecycle management.
 ---@class Stub
 class Stub
-  @logger = Logger fileBaseName: "#{constants.DEPCTRL_SHORT_NAME}.Stub"
-
   ---Creates a spy on a method, recording calls while still invoking the original method.
   ---@param table table|string The table to spy into, or a module name (looked up in the module cache).
   ---@param key string The field name to spy on.
@@ -61,7 +61,7 @@ class Stub
       table[key] = @
 
       -- warn if this stub is garbage-collected without restore() having been called
-      keyRef, logger = key, @logger or @@logger
+      keyRef, logger = key, @logger or defaultLogger
       Finalizer.guard @, ->
         unless restored[1]
           pcall logger.warn, logger, msgs.finalizer.notRestored, keyRef

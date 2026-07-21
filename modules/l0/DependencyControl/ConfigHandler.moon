@@ -7,6 +7,8 @@ ConfigView = require "l0.DependencyControl.ConfigView"
 Common = require "l0.DependencyControl.Common"
 JsonSchema = require "l0.DependencyControl.JsonSchema"
 
+defaultLogger = Logger fileBaseName: "#{constants.DEPCTRL_SHORT_NAME}.ConfigHandler", fileSubName: script_namespace
+
 ---JSON-backed configuration manager with cooperative cross-script locking.
 ---Manages one JSON file per instance. Use ConfigView (via getView or ConfigView.get)
 ---to access specific hives (nested sections) of the config.
@@ -72,7 +74,6 @@ Reload your automation scripts to generate a new configuration file.]]
 
   -- make references to provided handlers weak to allow for gc
   @handlers = setmetatable {}, {__mode: 'v'}
-  @logger = Logger fileBaseName: "#{constants.DEPCTRL_SHORT_NAME}.#{@__name}", fileSubName: script_namespace
 
   ---Returns an existing handler for filePath, or creates and optionally loads one.
   ---@param filePath string
@@ -81,7 +82,7 @@ Reload your automation scripts to generate a new configuration file.]]
   ---@param schemaOpts? { schemaId: string, migrate: fun(config: table, current?: string, target: string): boolean } Schema id this handler targets and the migration callback run when a loaded file's `$schema` differs. Applied on first creation; a cached handler keeps the opts it was created with.
   ---@return ConfigHandler? handler
   ---@return string? err
-  @get = (filePath, logger = @logger, noLoad = false, schemaOpts) =>
+  @get = (filePath, logger = defaultLogger, noLoad = false, schemaOpts) =>
     -- normalize first, then look up by the canonical path: the cache is keyed by the validated path,
     -- so comparing against the raw filePath would miss and construct a duplicate handler for one file
     path, msg = fileOps.validateFullPath filePath, true
