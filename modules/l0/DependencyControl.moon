@@ -37,7 +37,7 @@ FeedInventory = require "l0.DependencyControl.FeedInventory"
 FeedLoader = require "l0.DependencyControl.FeedLoader"
 FeedManager = require "l0.DependencyControl.FeedManager"
 FeedTrust = require "l0.DependencyControl.FeedTrust"
-FileOps = require "l0.DependencyControl.FileOps"
+fileOps = require "l0.DependencyControl.file-ops"
 Finalizer = require "l0.DependencyControl.Finalizer"
 GitRepository = require "l0.DependencyControl.GitRepository"
 Host = require "l0.DependencyControl.Host"
@@ -66,7 +66,7 @@ class DependencyControl extends PackageRecord
   @FeedLoader = FeedLoader
   @FeedManager = FeedManager
   @FeedTrust = FeedTrust
-  @FileOps = FileOps
+  @FileOps = fileOps
   @GitRepository = GitRepository
   @Host = Host
   @Lock = Lock

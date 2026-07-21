@@ -5,12 +5,12 @@
 -- Called from Tests.moon as: (require "...test.ZipArchiver") basePath
 (basePath) ->
   lfs = require "lfs"
-  FileOps = require "l0.DependencyControl.FileOps"
+  fileOps = require "l0.DependencyControl.file-ops"
   ZipArchiver = require "l0.DependencyControl.ZipArchiver"
 
-  FILEOPS_MODULE_NAME = "l0.DependencyControl.FileOps"
+  FILEOPS_MODULE_NAME = "l0.DependencyControl.file-ops"
   JSON_MODULE_NAME = "l0.dkjson"
-  pathSep = FileOps.pathSep
+  pathSep = fileOps.pathSep
 
   -- Fake io handle supporting the `h\write(data)\close!` chain the writers use.
   makeHandle = -> {write: ((self, data) -> self), close: ((self) -> nil)}

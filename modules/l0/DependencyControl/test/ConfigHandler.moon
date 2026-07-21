@@ -5,7 +5,7 @@
   ConfigView = require "l0.DependencyControl.ConfigView"
   Lock = require "l0.DependencyControl.Lock"
 
-  FILEOPS_MODULE_NAME = "l0.DependencyControl.FileOps"
+  FILEOPS_MODULE_NAME = "l0.DependencyControl.file-ops"
   JSON_MODULE_NAME = "json"
 
   {

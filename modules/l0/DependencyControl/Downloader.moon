@@ -12,7 +12,7 @@
 ffi = require "ffi"
 lfs = require "lfs"
 Enum = require "l0.DependencyControl.Enum"
-FileOps = require "l0.DependencyControl.FileOps"
+fileOps = require "l0.DependencyControl.file-ops"
 EventEmitter = require "l0.DependencyControl.EventEmitter"
 Host = require "l0.DependencyControl.Host"
 Accessors = require "l0.DependencyControl.Accessors"
@@ -612,7 +612,7 @@ class Downloader extends EventEmitter
       host = Host.fromUrl url
       return nil, msgs.privateHostBlocked\format url if host and host.isPrivate
 
-    FileOps.mkdir outfile, true, true
+    fileOps.mkdir outfile, true, true
 
     @_lastId = (@_lastId or 0) + 1
     download = Download url, outfile, @_lastId
@@ -622,7 +622,7 @@ class Downloader extends EventEmitter
       -- piggyback on the finish event to verify the downloaded file's hash (case-insensitive)
       download\on Download.Event.Finish, (dl) ->
         return unless dl.status == Download.Status.Finished -- only verify successful transfers
-        ok, msg = FileOps.verifyHash dl.outfile, expected
+        ok, msg = fileOps.verifyHash dl.outfile, expected
         dl\markFailed msg unless ok
 
     @downloads[#@downloads + 1] = download

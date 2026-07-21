@@ -5,7 +5,7 @@
 -- Called from Tests.moon as: (require "...test.integration.Downloader") basePath
 (basePath) ->
   Downloader = require "l0.DependencyControl.Downloader"
-  FileOps = require "l0.DependencyControl.FileOps"
+  fileOps = require "l0.DependencyControl.file-ops"
 
   {
     _description: "Real-HTTP Downloader tests against a local test server (runs when launchable)."
@@ -23,7 +23,7 @@
       MockServerController = require "l0.DependencyControl.test.helpers.MockHttpServerController"
       base = "#{basePath}_downloader"
       serveDir, downloadDir = "#{base}/fixtures", "#{base}/out"
-      FileOps.mkdir d, false, true for d in *{base, serveDir, downloadDir}
+      fileOps.mkdir d, false, true for d in *{base, serveDir, downloadDir}
 
       -- deterministic pseudo-random bytes (reproducible, no rng seeding dependency)
       makeBytes = (n) ->
@@ -40,7 +40,7 @@
         f = assert io.open path, "wb"
         f\write makeBytes size
         f\close!
-        sha1 = assert FileOps.getHash path
+        sha1 = assert fileOps.getHash path
         fixtures[#fixtures + 1] = {:name, :sha1}
 
       server = MockServerController :serveDir

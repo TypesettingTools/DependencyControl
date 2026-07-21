@@ -37,6 +37,7 @@ Scope: this file is about the code. Contributor and agent *workflow* (verifying 
   - Instance methods are fat-arrow, colon-called (`obj\method`).
   - A class static that touches class state (`@`/`@@`) is fat-arrow, colon-called (`Class\name`); a plain static helper is thin-arrow, dot-called (`Class.name`), as are all functions on a table module.
   - You **MUST NOT** push a table's functions into the colon form to chase uniformity — it misrepresents them as instance-bound and breaks the upgrade path (CT2). Preferring table modules for stateless namespaces keeps most "static utilities" dot-called, leaving colon for genuine class-state methods.
+- **CT6.** Bind a table module to a `camelCase` local at each import (`fileOps = require "l0.DependencyControl.file-ops"`); the module's own returned table and its public re-export stay on the PascalCase type name (CT4). The lowercase local marks a namespace rather than a constructor, and is the one binding a later table→class upgrade would rename. Keep a PascalCase local only where the camelCase form would shadow a value — `Hash`, since `hash` routinely names a digest.
 
 ## NM — Naming
 

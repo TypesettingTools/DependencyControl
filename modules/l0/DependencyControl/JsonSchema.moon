@@ -1,7 +1,7 @@
 json = require "json"
 Logger = require "l0.DependencyControl.Logger"
 constants = require "l0.DependencyControl.Constants"
-FileOps = require "l0.DependencyControl.FileOps"
+fileOps = require "l0.DependencyControl.file-ops"
 SemanticVersion = require "l0.DependencyControl.SemanticVersion"
 
 JSON_SCHEMA_ID_KEYWORD = "$schema"
@@ -97,7 +97,7 @@ class JsonSchema
   ---@return table<string, string>? schemaPathsByVersion Version → full file path, or nil when the directory can't be read or holds no matching file.
   ---@return string? err The failure message accompanying a nil result.
   @getSchemasInDirectory = (schemaDir, fileNamePattern = "^v(%d+%.%d+%.%d+)%.json$") =>
-    schemaDirContents, listErr = FileOps.listDir schemaDir
+    schemaDirContents, listErr = fileOps.listDir schemaDir
     unless schemaDirContents
       return nil, msgs.getSchemasInDirectory.errors.readDir\format schemaDir, listErr
 
@@ -106,7 +106,7 @@ class JsonSchema
     for fileName in *schemaDirContents
       version = fileName\match fileNamePattern
       if version
-        schemaPathsByVersion[version] = FileOps.joinPath schemaDir, fileName
+        schemaPathsByVersion[version] = fileOps.joinPath schemaDir, fileName
         foundAny = true
     unless foundAny
       return nil, msgs.getSchemasInDirectory.errors.noSchemasFound\format schemaDir, fileNamePattern
@@ -178,7 +178,7 @@ class JsonSchema
     -- load a schema JSON file from disk
     if dataType == "string"
       @schemaPath = schemaOrSchemaPath
-      raw, err = FileOps.readFile schemaOrSchemaPath
+      raw, err = fileOps.readFile schemaOrSchemaPath
       unless raw
         @logger\error msgs.load.errors.read, schemaOrSchemaPath, err
 

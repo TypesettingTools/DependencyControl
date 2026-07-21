@@ -121,12 +121,12 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "684B0CE64C640131482630260397359939315188"
+              "sha1": "8C3B510D71768A0E26B3E8FD4A2DC510B01B36B7"
             },
             {
               "name": "/Common.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "E5F52972E687747676CDEEB000AD8BFB68ABE916"
+              "sha1": "E638DFB4218F95024FB262E0C540CE90AF23A1BF"
             },
             {
               "name": "/Constants.moon",
@@ -136,7 +136,7 @@
             {
               "name": "/ConfigHandler.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "CCE4DADA6D316A94D21A22F7F6B95E8AA105DE70"
+              "sha1": "03AA674F0EA63E133C623F1981F98A20244B06B7"
             },
             {
               "name": "/ConfigView.moon",
@@ -146,17 +146,17 @@
             {
               "name": "/hash.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "72F3BDFC94B071DAAECA33C22893532967DBC18C"
+              "sha1": "FCFD96B28DF46F54FFB23CB216D027D0BCF74C58"
             },
             {
               "name": "/Downloader.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "402CF5F02DEECEAEDF899A6340723CFB7BEFED42"
+              "sha1": "A54363E987142389076A9B0E9B707F3D705784F4"
             },
             {
               "name": "/Enum.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "AFE5DBBEBE7DBFD21D62FF513CE8EED7F8C89ECC"
+              "sha1": "462C41A360F1EC1BBC182C79D3445DF547C17C58"
             },
             {
               "name": "/EventEmitter.moon",
@@ -166,7 +166,7 @@
             {
               "name": "/FileCache.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "99C54B3A4ED22334D11789A891C721E8249AB324"
+              "sha1": "600F604B26D4C74D7FDC1F5BEA37512A49AF983F"
             },
             {
               "name": "/FeedInventory.moon",
@@ -186,12 +186,12 @@
             {
               "name": "/FileLock.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "FB3D02A4DFA60B10623C256BEE710F27BF526989"
+              "sha1": "A4AE6ECAC9409606768A73EC502A50652DE398AE"
             },
             {
-              "name": "/FileOps.moon",
+              "name": "/file-ops.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "5DD830C735D03F00194586ECBFF535D2B8CDCEE7"
+              "sha1": "CFAE575739F752B5DCE9BC255131294E2FEDE188"
             },
             {
               "name": "/GitRepository.moon",
@@ -206,22 +206,22 @@
             {
               "name": "/JsonSchema.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "B317397877B3910C422C8CB612BC40A58AE3066A"
+              "sha1": "EFC06CC7642ABFA8C30A2437CB199546D48D5DE7"
             },
             {
               "name": "/Lock.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "3BF6C19B7A6F18D357027F9802C5CE82BDDA6848"
+              "sha1": "45F464DB29ECA6CDE9940ABB77661AB19AD963D5"
             },
             {
               "name": "/Logger.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "0E946BB9796B785BEEB51A7E7FACD40E0A7E56E7"
+              "sha1": "B39B2AB4A65B101ECDA0F303F60CE5D51ABA0155"
             },
             {
               "name": "/ModuleLoader.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "4A9218FD11FC371AE4E0919004E27C000C42ED2B"
+              "sha1": "C44751C8B39FB273A1886793B5A7AE42271FAA40"
             },
             {
               "name": "/ModuleProvider.moon",
@@ -236,27 +236,27 @@
             {
               "name": "/PackageRecord.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "EB2A794F1A97B2E143CA51DDF37EC8B65F6C3A8D"
+              "sha1": "48EB1F673BE6FF08AA001724EEE93BB1B29D3C00"
             },
             {
               "name": "/ScriptTargetFilter.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "B7A42191BF710644E95ABB60A4FF89157E3EA610"
+              "sha1": "A5253C9459DD571CF43F161CDC23776843F3B30E"
             },
             {
               "name": "/ScriptUpdateRecord.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "31432A4E042D23CC02C8F107F6A625176A1F92FF"
+              "sha1": "9206F607BC9DC310A694E17C378A5E2B59EB855F"
             },
             {
               "name": "/SemanticVersion.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "D3EB0B5A34B788D6E83FFC3F5559C31D61A533A1"
+              "sha1": "312E62DAAC4EF6A1770E1F9FB3AC8A1DB109315C"
             },
             {
               "name": "/Stub.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "01A127FAD588E39412E251D50823C52B19623175"
+              "sha1": "B41D3BD440C7EE5C392E0163B95AE6BC99B23299"
             },
             {
               "name": "/BadMutex.moon",
@@ -267,32 +267,32 @@
             {
               "name": "/Timer.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "3B43EE613F060B17BF891ABDFDBD3387264D153F"
+              "sha1": "A3D4FA244AC2685285EFB297E94C24F070A17201"
             },
             {
               "name": "/UnitTestSuite.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "F2BC7A123FD0238AA62E5B9B3C4D411B1EE7AB51"
+              "sha1": "9EECF4DCDAF3A6951384D66EFE9907BF687C6262"
             },
             {
               "name": "/UpdateFeed.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "EA7CF7B51C6FCA0B45EEFDF5279EB01B123F08BD"
+              "sha1": "0CB7E0C173F92628A1033D8A7B2678076039B8EC"
             },
             {
               "name": "/UpdateTask.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "BFF7C29FB77E6D7E59C99F9EBD414529B646B166"
+              "sha1": "5FA984514A8720ACFD0B0AA74BFB8E5AF783F96B"
             },
             {
               "name": "/Updater.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "23C63273869446FAC76C43427AADA4CC8A8C06D6"
+              "sha1": "FDFE395DE34F3FAC7656D4899889AE43BFD025DE"
             },
             {
               "name": "/ZipArchiver.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "F4DF3EE71C42BA6B246E70651093C8B63B5AFCFB"
+              "sha1": "9894F57C183637A6895046142E4E9ECD6ED05257"
             },
             {
               "name": "/helpers/ffi-posix.moon",
@@ -322,12 +322,12 @@
             {
               "name": "/shims/DownloadManager.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "D3820FD00B67E72DBEA0FB25D3530574DD5491B1"
+              "sha1": "6C76A29DBAE8EA947439C5CC13FD380A6179E2E8"
             },
             {
               "name": "/shims/PreciseTimer.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "B7186979A50EF5E9BF7D40BC7E9BBCB919AE2EE9"
+              "sha1": "FD5E729C378EA7216AF7C0E2EBAB42AF4A88339D"
             },
             {
               "name": "/Accessors.moon",
@@ -337,7 +337,7 @@
             {
               "name": "/FeedLoader.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "EB33B4B01F2104DABA1C08D760824E3330AC5BDA"
+              "sha1": "8A7058E838E42911D5AAFB8EE87D7F0936251E07"
             },
             {
               "name": "/config-schema.moon",
@@ -357,7 +357,7 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "0DCB52302FDDE065FC9FBA433769BA48F54F71F5",
+              "sha1": "8D87B67766B05429CC70CEACF51DAE6AF84F2E65",
               "type": "test"
             },
             {
@@ -369,19 +369,19 @@
             {
               "name": "/Common.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "1247E544704A7B5715A81A05DB426A679EA25998",
+              "sha1": "35800E58A367C9DC95C7F1952434974291A07A20",
               "type": "test"
             },
             {
               "name": "/ConfigHandler.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "BC01E8039806EE4D9DE244F33511F96510989342",
+              "sha1": "76BF6208FEF400DB562880E8575CEC3BFEB661CB",
               "type": "test"
             },
             {
               "name": "/ConfigView.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "826002646E080B8343C61EE869A50FE57B3246D3",
+              "sha1": "A0E00272169CA1FFAADF0A672C468A975D9B9F82",
               "type": "test"
             },
             {
@@ -393,7 +393,7 @@
             {
               "name": "/Downloader.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "2177DA3A6CDCB0393DE6A2728DE4CD77D3EA2786",
+              "sha1": "EB1E2A74550056002B55B5D4035E1BE5672232A3",
               "type": "test"
             },
             {
@@ -405,7 +405,7 @@
             {
               "name": "/FileCache.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "FD07C35526DFAE2EDD2F49E286AE81D8FE9F2EA3",
+              "sha1": "633106FDCDD0AB81CFC2BB85725B9A7B0077AF83",
               "type": "test"
             },
             {
@@ -429,25 +429,25 @@
             {
               "name": "/ffi-posix.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "7AC60D10FA37F6A7DB779C48CBCA84EF71EB3C1A",
+              "sha1": "1A437D8340748EE2E1A7213310E2DEFE5B3D551D",
               "type": "test"
             },
             {
               "name": "/FileLock.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "FDC65E7FD7EB3190C2F7B888A6D48DD6CE3C1407",
+              "sha1": "BDDBF39514737134726E90D5DDA6AD2798A861E6",
               "type": "test"
             },
             {
-              "name": "/FileOps.moon",
+              "name": "/file-ops.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "5A4664CDC3BDF8CA4A390E05D75C528242B4C0B8",
+              "sha1": "70A7516A93A044607BE0E46CFF3E7F3CC7189973",
               "type": "test"
             },
             {
               "name": "/GitRepository.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "2632772F0D940E29CE1B87306ABFDD68CD5C7111",
+              "sha1": "85FBCB85878CFE6FC9107CE6716072C681C897EC",
               "type": "test"
             },
             {
@@ -459,13 +459,13 @@
             {
               "name": "/JsonSchema.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "D37991222651A7CE0DCCDC629A6781B598CF536C",
+              "sha1": "125E4930956E7DCA578C2F88EDB4B56C14A031C6",
               "type": "test"
             },
             {
               "name": "/Lock.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "E61AAC93A994CF49A31E999DCFE08E6E78141208",
+              "sha1": "26B3D5CA9E6D91C6F4D9411F093C26B3AE58FA96",
               "type": "test"
             },
             {
@@ -501,13 +501,13 @@
             {
               "name": "/PackageRecord.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "4CA7D3C52CB77C4C0D3EC79D93D393D65CC334A9",
+              "sha1": "C5844DE0999A6E27C96A1E313D523B74DE25AFA6",
               "type": "test"
             },
             {
               "name": "/ScriptTargetFilter.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "6376ABC979162DD6BCD6BD5A55DE0ED0181525AD",
+              "sha1": "40C9370EFB194A76E2D0AF79833F3F43C5B68C84",
               "type": "test"
             },
             {
@@ -525,25 +525,25 @@
             {
               "name": "/Timer.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "D68DBBE933ACD6D775E7DDFE3DD6C765C8879CBD",
+              "sha1": "8194244E95E508CBAAED66120C25CBC0F47ABD50",
               "type": "test"
             },
             {
               "name": "/UnitTestSuite.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "3B9EB75D013ED42454CC80012975638E88E6A034",
+              "sha1": "CCDC45CAF499A14773BF59D5E80C7AA963A89BFF",
               "type": "test"
             },
             {
               "name": "/UpdateFeed.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "62794E9AB864D2AC425F9D448157C554B0921CAB",
+              "sha1": "597A1010EBB667F6CD6FF9C9FB9040506F784815",
               "type": "test"
             },
             {
               "name": "/UpdateTask.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "662AEA5C534B19DE9F31C7617D1106A04BFDE496",
+              "sha1": "D6B3D5362124CB847FAA2E104B92B55761F2D0DD",
               "type": "test"
             },
             {
@@ -555,19 +555,19 @@
             {
               "name": "/ZipArchiver.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "B9771F0B67F16AB2C0347DD9FEC61A736964D8B0",
+              "sha1": "508996E6E08DFDA179327AFD70219344E21BD66E",
               "type": "test"
             },
             {
               "name": "/integration/Downloader.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "F31043415B2236EE36BAC86D573C87583F32A288",
+              "sha1": "878216AB161182CDB2F45E553E9E35A66826273D",
               "type": "test"
             },
             {
               "name": "/integration/ZipArchiver.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "49A8E085B7B20D9C2F15A01EBDCE603FE150726B",
+              "sha1": "B96331C544F464FCC8B804837F9FD83B31E410A4",
               "type": "test"
             },
             {
@@ -579,7 +579,7 @@
             {
               "name": "/helpers/MockHttpServerController.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "87367E87AED2DDC00259A3DB5A760BBF2DC4D949",
+              "sha1": "42CEDC4B2884EA4B0431E8E61F0C628B04F23F69",
               "type": "test"
             },
             {
@@ -591,7 +591,7 @@
             {
               "name": "/FeedLoader.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "13EEAD2B7BD275F1E1C21118C1503178D7B428D8",
+              "sha1": "D380EC9A8F19A36F712D403F7EA2EC92932BF97E",
               "type": "test"
             },
             {
@@ -615,7 +615,7 @@
             {
               "name": "/integration/Logger.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "DCA83BB0D8D0E1EB0A08AF3CD670737B341938EB",
+              "sha1": "83655761675C1EF3F21C15A6348E5AD65BB40FE1",
               "type": "test"
             },
             {
@@ -833,7 +833,7 @@
             {
               "name": "/Parser.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "233FD3682D37B80E1C3B9E98B3FBE68002062A98"
+              "sha1": "A9A543F5EEA48302C6C6C5E3137F473707427B94"
             },
             {
               "name": "/Emitter.moon",

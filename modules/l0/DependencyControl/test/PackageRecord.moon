@@ -4,13 +4,13 @@
   ffi = require "ffi"
   constants = require "l0.DependencyControl.Constants"
   Common = require "l0.DependencyControl.Common"
-  FileOps = require "l0.DependencyControl.FileOps"
+  fileOps = require "l0.DependencyControl.file-ops"
   PackageRecord = require "l0.DependencyControl.PackageRecord"
   Stub = require "l0.DependencyControl.Stub"
   {:stubSelf} = require "l0.DependencyControl.test.helpers.stub-helpers"
 
   DEPCTRL_RECORDS_GLOBAL_KEY = "#{constants.DEPCTRL_PRIVATE_GLOBAL_VAR_PREFIX}Records"
-  FILEOPS_MODULE_NAME = "l0.DependencyControl.FileOps"
+  FILEOPS_MODULE_NAME = "l0.DependencyControl.file-ops"
 
   uniqueName = (prefix) -> "#{prefix}_#{'%08X'\format math.random 0, 16^8-1}"
 
@@ -32,7 +32,7 @@
 
   -- Normalize a sub-path under a base dir the same way getPossibleEntryPointPaths does,
   -- so expected paths in tests always match what the production code produces.
-  entryPath = (baseDir, subPath) -> FileOps.validateFullPath subPath, false, baseDir
+  entryPath = (baseDir, subPath) -> fileOps.validateFullPath subPath, false, baseDir
 
   moduleRecord = {
     scriptType: Common.ScriptType.Module, namespace: "l0.Foo",
@@ -227,14 +227,14 @@
     -- namespace part exactly, so a sibling package sharing the name prefix survives the
     -- recursive delete
     uninstall_moduleSparesPrefixSiblings: (ut) ->
-      root = FileOps.joinPath basePath, "uninstall-mod"
+      root = fileOps.joinPath basePath, "uninstall-mod"
       ut\assertString root
-      FileOps.mkdir FileOps.joinPath(root, "l0", "Functional"), false, true
-      FileOps.mkdir FileOps.joinPath(root, "l0", "FunctionalExtras"), false, true
-      FileOps.writeFile FileOps.joinPath(root, "l0", "Functional.moon"), "-- mod", true
-      FileOps.writeFile FileOps.joinPath(root, "l0", "Functional", "sub.moon"), "-- sub", true
-      FileOps.writeFile FileOps.joinPath(root, "l0", "FunctionalExtras.moon"), "-- sibling", true
-      FileOps.writeFile FileOps.joinPath(root, "l0", "FunctionalExtras", "sub.moon"), "-- sibling sub", true
+      fileOps.mkdir fileOps.joinPath(root, "l0", "Functional"), false, true
+      fileOps.mkdir fileOps.joinPath(root, "l0", "FunctionalExtras"), false, true
+      fileOps.writeFile fileOps.joinPath(root, "l0", "Functional.moon"), "-- mod", true
+      fileOps.writeFile fileOps.joinPath(root, "l0", "Functional", "sub.moon"), "-- sub", true
+      fileOps.writeFile fileOps.joinPath(root, "l0", "FunctionalExtras.moon"), "-- sibling", true
+      fileOps.writeFile fileOps.joinPath(root, "l0", "FunctionalExtras", "sub.moon"), "-- sibling sub", true
       rec = {
         virtual: false, recordType: Common.RecordType.Managed,
         scriptType: Common.ScriptType.Module,
@@ -246,20 +246,20 @@
       success, results = PackageRecord.uninstall rec
       ut\assertTrue success
       ut\assertTable results
-      ut\assertFalse FileOps.exists FileOps.joinPath(root, "l0", "Functional.moon"), "file"
-      ut\assertFalse FileOps.exists FileOps.joinPath(root, "l0", "Functional"), "directory"
-      ut\assertTrue FileOps.exists FileOps.joinPath(root, "l0", "FunctionalExtras.moon"), "file"
-      ut\assertTrue FileOps.exists FileOps.joinPath(root, "l0", "FunctionalExtras", "sub.moon"), "file"
+      ut\assertFalse fileOps.exists fileOps.joinPath(root, "l0", "Functional.moon"), "file"
+      ut\assertFalse fileOps.exists fileOps.joinPath(root, "l0", "Functional"), "directory"
+      ut\assertTrue fileOps.exists fileOps.joinPath(root, "l0", "FunctionalExtras.moon"), "file"
+      ut\assertTrue fileOps.exists fileOps.joinPath(root, "l0", "FunctionalExtras", "sub.moon"), "file"
 
     -- automation file matching anchors the namespace on both sides and escapes pattern magic
     -- (a hyphen would otherwise act as a lazy quantifier)
     uninstall_automationEscapesAndTerminates: (ut) ->
-      root = FileOps.joinPath basePath, "uninstall-auto"
+      root = fileOps.joinPath basePath, "uninstall-auto"
       ut\assertString root
-      FileOps.mkdir root, false, true
-      FileOps.writeFile FileOps.joinPath(root, "a-mo.Script.moon"), "-- macro", true
-      FileOps.writeFile FileOps.joinPath(root, "a-mo.ScriptExtra.moon"), "-- other macro", true
-      FileOps.writeFile FileOps.joinPath(root, "amo.Script.moon"), "-- hyphen bait", true
+      fileOps.mkdir root, false, true
+      fileOps.writeFile fileOps.joinPath(root, "a-mo.Script.moon"), "-- macro", true
+      fileOps.writeFile fileOps.joinPath(root, "a-mo.ScriptExtra.moon"), "-- other macro", true
+      fileOps.writeFile fileOps.joinPath(root, "amo.Script.moon"), "-- hyphen bait", true
       rec = {
         virtual: false, recordType: Common.RecordType.Managed,
         scriptType: Common.ScriptType.Automation,
@@ -271,9 +271,9 @@
       success, results = PackageRecord.uninstall rec
       ut\assertTrue success
       ut\assertTable results
-      ut\assertFalse FileOps.exists FileOps.joinPath(root, "a-mo.Script.moon"), "file"
-      ut\assertTrue FileOps.exists FileOps.joinPath(root, "a-mo.ScriptExtra.moon"), "file"
-      ut\assertTrue FileOps.exists FileOps.joinPath(root, "amo.Script.moon"), "file"
+      ut\assertFalse fileOps.exists fileOps.joinPath(root, "a-mo.Script.moon"), "file"
+      ut\assertTrue fileOps.exists fileOps.joinPath(root, "a-mo.ScriptExtra.moon"), "file"
+      ut\assertTrue fileOps.exists fileOps.joinPath(root, "amo.Script.moon"), "file"
 
     getSubmodules_virtual: (ut) ->
       rec = {

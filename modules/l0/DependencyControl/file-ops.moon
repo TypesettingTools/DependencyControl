@@ -9,7 +9,7 @@ ENOENT = 2 -- POSIX error code for "No such file or directory"
 ENOTDIR = 20 -- POSIX error code for "Not a directory"
 ERROR_PATH_NOT_FOUND = 3 -- Windows error code for "The system cannot find the path specified"
 
-local ConfigView
+local ConfigView, FileOps
 
 -- Filesystem path length limits.
 WINDOWS_MAX_PATH = 260 -- Windows with long path support disabled
@@ -17,26 +17,26 @@ WINDOWS_LONG_PATH_MAX = 32767 -- Windows with long path support enabled
 MAX_PATH_COMPONENT = 255 -- per-segment limit on NTFS and common POSIX filesystems
 POSIX_PATH_MAX = 4096 -- typical full-path limit on modern POSIX systems
 
--- Whether the *current process* can actually use paths beyond MAX_PATH.
--- ntdll!RtlAreLongPathsEnabled returns the effective per-process answer: it folds in
--- both the system registry policy AND the process's manifest opt-in (a process whose
--- executable manifest lacks the `longPathAware` setting stays capped at MAX_PATH even
--- when the registry enables long paths). Available since Windows 10 1607, which is
--- also when long path support was introduced -- on older systems the symbol is absent
--- and long paths are unsupported, so we correctly treat them as disabled.
+---Reports whether the current process can use paths beyond the legacy MAX_PATH limit.
+---@return boolean enabled True when this process may use long paths.
 detectProcessLongPathsEnabled = ->
+  -- ntdll!RtlAreLongPathsEnabled gives the effective per-process answer, folding in both the
+  -- system registry policy and the process's manifest opt-in. A process whose executable manifest
+  -- lacks the `longPathAware` setting stays capped at MAX_PATH even when the registry enables long
+  -- paths. The symbol arrived in Windows 10 1607, when long paths were introduced. On older systems
+  -- it is absent and long paths are unsupported, so they read as disabled.
   okLib, ntdll = pcall ffi.load, "ntdll"
   return false unless okLib
   pcall ffi.cdef, "unsigned char RtlAreLongPathsEnabled(void);"
   ok, enabled = pcall -> ntdll.RtlAreLongPathsEnabled! != 0
   return ok and enabled
 
--- Reads HKLM\SYSTEM\CurrentControlSet\Control\FileSystem\LongPathsEnabled via the
--- Win32 registry API. This is the *system* policy only (it ignores the per-process
--- manifest), so it's used solely to tailor the diagnostic when a path is rejected: it
--- lets us tell apart "long paths are off system-wide" from "they're on, but this
--- application isn't long-path-aware". Returns false if missing/zero or unreadable.
+---Reads the system-wide LongPathsEnabled policy from the Windows registry (HKLM\…\Control\FileSystem).
+---@return boolean enabled True when the value is present and set to 1; false when it is missing, zero, or unreadable.
 detectRegistryLongPathsEnabled = ->
+  -- This reflects the system policy only, not the per-process manifest. It exists just to tailor
+  -- the diagnostic when a path is rejected — telling "long paths are off system-wide" apart from
+  -- "they're on, but this application isn't long-path-aware".
   okLib, advapi = pcall ffi.load, "advapi32"
   return false unless okLib
   pcall ffi.cdef, [[
@@ -67,6 +67,144 @@ if ffi.os == "Windows"
     ok, res = pcall detectRegistryLongPathsEnabled
     windowsRegistryLongPathsEnabled = ok and res
 
+defaultLogger = Logger!
+
+msgs = {
+  generic: {
+    deletionRescheduled: "Another deletion attempt has been rescheduled for the next restart."
+  }
+  attributes: {
+    badPath: "Path failed verification: %s."
+    genericError: "Can't retrieve attributes: %s."
+    noAttribute: "Can't find attribute with name '%s'."
+  }
+
+  createConfig: {
+    handlerFailed: "Couldn't create ConfigHandler for the FileOps configuration file: %s"
+  },
+  createTempDir: {
+    failedCreate: "Failed to create temporary directory: %s"
+  }
+  mkdir: {
+    createError: "Error creating directory: %s."
+    otherExists: "Couldn't create directory because a %s of the same name is already present."
+  }
+  copy: {
+    genericError: "An error occurred while copying file '%s' to '%s':\n%s"
+    dirCopyUnsupported: "Copying directories is currently not supported."
+    missingSource: "Couldn't find source file '%s'."
+    openError: "Couldn't open %s file '%s' for reading: \n%s"
+  },
+  exists: {
+    notFound: "No such file or directory: '%s'."
+    wrongType: "Expected %s to be a %s but found a %s."
+  }
+  listDir: {
+    notADirectory: "Can only list directories but supplied path '%s' points to a %s."
+  },
+  joinPath: {
+    invalidSegment: "Invalid path segment type: expected a string or pure array table, got '%s'."
+  }
+  move: {
+    inUseTryingRename: "Target file '%s' already exists and appears to be in use. Trying to rename and delete existing file..."
+    renamedDeletionFailed: "The existing file was successfully renamed to '%s', but couldn't be deleted (%s).\n%s"
+    overwritingFile: "File '%s' already exists, overwriting..."
+    createdDir: "Created target directory '%s'."
+    exists: "Couldn't move file '%s' to '%s' because a %s of the same name is already present."
+    genericError: "An error occurred while moving file '%s' to '%s':\n%s"
+    createDirError: "Could not create target directory for '%s': %s"
+    cantRemove: "Couldn't overwrite file '%s': %s. Attempts at renaming the existing target file failed."
+    cantRenameTryingCopy: "Move operation failed to rename '%s' to '%s' (%s), trying copy+remove instead..."
+    removeFilesFailed: "Move operation succeeded in copying the file(s) to the target location, but some of the source files couldn't be removed:\n%s\n%s"
+    cantCopy: "Move operation failed to copy '%s' to '%s' (%s) after a failed rename attempt (%s)."
+  }
+  readFile: {
+    cantOpen: "Couldn't open file '%s' for reading: %s"
+    cantRead: "An error occurred while trying to read from file '%s': %s"
+    notAFile: "Can only read files but supplied path '%s' points to a %s."
+  }
+  writeFile: {
+    cantOpen: "Couldn't open file '%s' for writing: %s"
+    failedWrite: "An error occurred while trying to write to file '%s': %s",
+    notAFile: "Can only write to files but supplied path '%s' points to a %s.",
+    targetExists: "Target file '%s' already exists."
+  }
+  remove: {
+    noConfigReschedule: "Couldn't load the FileOps config file (%s) - deletions of %s cannot be rescheduled!"
+  }
+  rmdir: {
+    emptyPath: "Argument #1 (path) must not be an empty string."
+    removeFilesFailed: "Some of the files and folders in the specified directory couldn't be removed:\n%s"
+    removeDirFailed: "Error removing empty directory: %s.",
+    notFound: "No such file or directory: '%s'."
+    notDir: "Expected '%s' to be a directory but found a %s."
+  }
+  runScheduledRemoval: {
+    noConfigReschedule: "Couldn't load the FileOps config file (%s) - rescheduled deletions will not be performed!"
+  }
+  getNamespacedPath: {
+    badBasePath: "Provided base path '%s' is not a valid full path (%s)."
+    badPath: "Could not generate a valid full path from base path '%s' and namespaced sub-path '%s': %s."
+  }
+  validateFullPath: {
+    badType: "Argument #%s (%s) had the wrong type. Expected 'string', got '%s'."
+    tooLong: "The specified path exceeded the maximum length limit (%d > %d)."
+    tooLongRegistryDisabled: "The specified path exceeded the Windows MAX_PATH limit (%d > %d characters) and long path support is disabled on this system.\nEnable it by setting the registry value 'HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\FileSystem\\LongPathsEnabled' (DWORD) to 1 and restarting, e.g. by running this in an elevated PowerShell:\n  Set-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\FileSystem' -Name 'LongPathsEnabled' -Value 1 -Type DWord"
+    tooLongProcessUnaware: "The specified path exceeded the Windows MAX_PATH limit (%d > %d characters). Long path support is enabled system-wide, but the host application is not long-path-aware (its executable manifest lacks the 'longPathAware' setting), so paths remain capped at %d characters in this process."
+    segmentTooLong: "A path component exceeded the maximum length limit (%d > %d): '%s'."
+    invalidChars: "The specified path contains one or more invalid characters: '%s'."
+    reservedNames: "The specified path contains reserved path or file names: '%s'."
+    parentPath: "Accessing parent directories is not allowed."
+    notFullPath: "The specified path is not a valid full path."
+    missingExt: "The specified path is missing a file extension."
+  }
+}
+
+windowsReservedNameSet = {n, true for n in *{
+  "CON", "PRN", "AUX", "NUL",
+  "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+  "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"
+}}
+
+-- effective full-path limit; on Windows this depends on whether *this process*
+-- can use long paths (see detectProcessLongPathsEnabled)
+pathMaxLength = if ffi.os == "Windows"
+  windowsProcessLongPathsEnabled and WINDOWS_LONG_PATH_MAX or WINDOWS_MAX_PATH
+else POSIX_PATH_MAX
+
+---Lazily creates and caches the FileOps deletion-tracking config on the module table.
+---@param noLoad? boolean Don't read the file from disk when the handler is created.
+---@param configDir? string Directory holding the config; sets or overrides the cached location.
+---@return ConfigView? config The cached config view, or nil on failure.
+---@return string? err
+createConfig = (noLoad, configDir) ->
+  FileOps.configDir = configDir if configDir
+  ConfigView or= require "#{constants.DEPCTRL_NAMESPACE}.ConfigView"
+  unless FileOps.config
+    FileOps.config = ConfigView\get "#{FileOps.configDir}/#{constants.DEPCTRL_NAMESPACE}.json",
+      nil, {toRemove: {}}, defaultLogger, noLoad
+    return nil, msgs.createConfig.handlerFailed\format "constructor returned nil" unless FileOps.config
+  return FileOps.config
+
+---Creates `dir` along with any missing parent directories, building the path up one
+---segment at a time. Idempotent: levels that already exist are left untouched.
+---@param dir string A validated, absolute directory path.
+---@return boolean? success True on success, or nil on error.
+---@return string dirPathOrError The directory path on success, or an error message.
+mkdirRecursive = (dir) ->
+  -- preserve a leading separator so POSIX absolute paths keep their root
+  accumulator, first = dir\match("^[/\\]") and FileOps.pathSep or "", true
+  for segment in FileOps.pathSegments dir
+    accumulator = first and accumulator .. segment or "#{accumulator}#{FileOps.pathSep}#{segment}"
+    first = false
+    continue if accumulator\match "^%a:$" -- skip bare drive letters like "C:"
+    unless lfs.attributes accumulator, "mode"
+      _, err = lfs.mkdir accumulator
+      -- tolerate races and pre-existing levels; only fail if it's still absent
+      if err and not lfs.attributes accumulator, "mode"
+        return nil, msgs.mkdir.createError\format err
+  return true, dir
+
 ---@class FileOpsAttributesInfo
 ---@field attr table|string|number|false The requested attribute(s), or false when the entry doesn't exist.
 ---@field path string The validated full path.
@@ -76,132 +214,21 @@ if ffi.os == "Windows"
 
 ---Filesystem utility helpers used by DependencyControl.
 ---@class FileOps
-class FileOps
-  msgs = {
-    generic: {
-      deletionRescheduled: "Another deletion attempt has been rescheduled for the next restart."
-    }
-    attributes: {
-      badPath: "Path failed verification: %s."
-      genericError: "Can't retrieve attributes: %s."
-      noAttribute: "Can't find attribute with name '%s'."
-    }
-
-    createConfig: {
-      handlerFailed: "Couldn't create ConfigHandler for the FileOps configuration file: %s"
-    },
-    createTempDir: {
-      failedCreate: "Failed to create temporary directory: %s"
-    }
-    mkdir: {
-      createError: "Error creating directory: %s."
-      otherExists: "Couldn't create directory because a %s of the same name is already present."
-    }
-    copy: {
-      genericError: "An error occurred while copying file '%s' to '%s':\n%s"
-      dirCopyUnsupported: "Copying directories is currently not supported."
-      missingSource: "Couldn't find source file '%s'."
-      openError: "Couldn't open %s file '%s' for reading: \n%s"
-    },
-    exists: {
-      notFound: "No such file or directory: '%s'."
-      wrongType: "Expected %s to be a %s but found a %s."
-    }
-    listDir: {
-      notADirectory: "Can only list directories but supplied path '%s' points to a %s."
-    },
-    joinPath: {
-      invalidSegment: "Invalid path segment type: expected a string or pure array table, got '%s'."
-    }
-    move: {
-      inUseTryingRename: "Target file '%s' already exists and appears to be in use. Trying to rename and delete existing file..."
-      renamedDeletionFailed: "The existing file was successfully renamed to '%s', but couldn't be deleted (%s).\n%s"
-      overwritingFile: "File '%s' already exists, overwriting..."
-      createdDir: "Created target directory '%s'."
-      exists: "Couldn't move file '%s' to '%s' because a %s of the same name is already present."
-      genericError: "An error occurred while moving file '%s' to '%s':\n%s"
-      createDirError: "Could not create target directory for '%s': %s"
-      cantRemove: "Couldn't overwrite file '%s': %s. Attempts at renaming the existing target file failed."
-      cantRenameTryingCopy: "Move operation failed to rename '%s' to '%s' (%s), trying copy+remove instead..."
-      removeFilesFailed: "Move operation succeeded in copying the file(s) to the target location, but some of the source files couldn't be removed:\n%s\n%s"
-      cantCopy: "Move operation failed to copy '%s' to '%s' (%s) after a failed rename attempt (%s)."
-    }
-    readFile: {
-      cantOpen: "Couldn't open file '%s' for reading: %s"
-      cantRead: "An error occurred while trying to read from file '%s': %s"
-      notAFile: "Can only read files but supplied path '%s' points to a %s."
-    }
-    writeFile: {
-      cantOpen: "Couldn't open file '%s' for writing: %s"
-      failedWrite: "An error occurred while trying to write to file '%s': %s",
-      notAFile: "Can only write to files but supplied path '%s' points to a %s.",
-      targetExists: "Target file '%s' already exists."
-    }
-    remove: {
-      noConfigReschedule: "Couldn't load the FileOps config file (%s) - deletions of %s cannot be rescheduled!"
-    }
-    rmdir: {
-      emptyPath: "Argument #1 (path) must not be an empty string."
-      removeFilesFailed: "Some of the files and folders in the specified directory couldn't be removed:\n%s"
-      removeDirFailed: "Error removing empty directory: %s.",
-      notFound: "No such file or directory: '%s'."
-      notDir: "Expected '%s' to be a directory but found a %s."
-    }
-    runScheduledRemoval: {
-      noConfigReschedule: "Couldn't load the FileOps config file (%s) - rescheduled deletions will not be performed!"
-    }
-    getNamespacedPath: {
-      badBasePath: "Provided base path '%s' is not a valid full path (%s)."
-      badPath: "Could not generate a valid full path from base path '%s' and namespaced sub-path '%s': %s."
-    }
-    validateFullPath: {
-      badType: "Argument #%s (%s) had the wrong type. Expected 'string', got '%s'."
-      tooLong: "The specified path exceeded the maximum length limit (%d > %d)."
-      tooLongRegistryDisabled: "The specified path exceeded the Windows MAX_PATH limit (%d > %d characters) and long path support is disabled on this system.\nEnable it by setting the registry value 'HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\FileSystem\\LongPathsEnabled' (DWORD) to 1 and restarting, e.g. by running this in an elevated PowerShell:\n  Set-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\FileSystem' -Name 'LongPathsEnabled' -Value 1 -Type DWord"
-      tooLongProcessUnaware: "The specified path exceeded the Windows MAX_PATH limit (%d > %d characters). Long path support is enabled system-wide, but the host application is not long-path-aware (its executable manifest lacks the 'longPathAware' setting), so paths remain capped at %d characters in this process."
-      segmentTooLong: "A path component exceeded the maximum length limit (%d > %d): '%s'."
-      invalidChars: "The specified path contains one or more invalid characters: '%s'."
-      reservedNames: "The specified path contains reserved path or file names: '%s'."
-      parentPath: "Accessing parent directories is not allowed."
-      notFullPath: "The specified path is not a valid full path."
-      missingExt: "The specified path is missing a file extension."
-    }
-  }
-
-  windowsReservedNameSet = {n, true for n in *{
-    "CON", "PRN", "AUX", "NUL",
-    "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
-    "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"
-  }}
-  @pathSep = ffi.os == "Windows" and "\\" or "/"
-  @pathMatch = {
+FileOps = {
+  pathSep: ffi.os == "Windows" and "\\" or "/"
+  pathMatch: {
     sep: ffi.os == "Windows" and "\\" or "/"
     sepAll: ffi.os == "Windows" and "[\\/]" or "/"
     invalidChars: '[<>:"|%?%*%z%c;]'
   }
-  @logger = Logger!
-
-  -- effective full-path limit; on Windows this depends on whether *this process*
-  -- can use long paths (see detectProcessLongPathsEnabled)
-  @pathMaxLength = if ffi.os == "Windows"
-    windowsProcessLongPathsEnabled and WINDOWS_LONG_PATH_MAX or WINDOWS_MAX_PATH
-  else POSIX_PATH_MAX
-  @pathMaxSegmentLength = MAX_PATH_COMPONENT
+  pathMaxLength: pathMaxLength
+  pathMaxSegmentLength: MAX_PATH_COMPONENT
   -- true when running on Windows but capped at the legacy MAX_PATH limit because this process
   -- can't use long paths. Drives the descriptive error below, and is always false off Windows.
-  @longPathsDisabled = ffi.os == "Windows" and not windowsProcessLongPathsEnabled
+  longPathsDisabled: ffi.os == "Windows" and not windowsProcessLongPathsEnabled
   -- when capped, whether the system registry policy enables long paths -- lets the error
   -- tell a system-wide opt-out apart from an app that isn't long-path-aware
-  @windowsRegistryLongPathsEnabled = windowsRegistryLongPathsEnabled
-
-  createConfig = (noLoad, configDir) ->
-    FileOps.configDir = configDir if configDir
-    ConfigView or= require "#{constants.DEPCTRL_NAMESPACE}.ConfigView"
-    unless FileOps.config
-      FileOps.config = ConfigView\get "#{FileOps.configDir}/#{constants.DEPCTRL_NAMESPACE}.json",
-        nil, {toRemove: {}}, FileOps.logger, noLoad
-      return nil, msgs.createConfig.handlerFailed\format "constructor returned nil" unless FileOps.config
-    return FileOps.config
+  windowsRegistryLongPathsEnabled: windowsRegistryLongPathsEnabled
 
   ---Creates a unique temporary directory and returns its path.
   ---@return string? tempDirPath Absolute path to the created temporary directory, or nil if it couldn't be created.
@@ -253,7 +280,7 @@ class FileOps
               FileOps.config\load!
               configLoaded = true
             else
-              FileOps.logger\warn msgs.remove.noConfigReschedule, msg, FileOps.logger\dumpToString paths
+              defaultLogger\warn msgs.remove.noConfigReschedule, msg, defaultLogger\dumpToString paths
               details[path] = {nil, err}
               overallSuccess = nil
               continue
@@ -279,7 +306,7 @@ class FileOps
     config, msg = createConfig false, configDir
     unless config
       msg = msgs.runScheduledRemoval.noConfigReschedule\format msg
-      FileOps.logger\warn msg
+      defaultLogger\warn msg
       return nil, msg
     paths = [path for path, _ in pairs config.c.toRemove]
     if #paths > 0
@@ -429,12 +456,12 @@ class FileOps
     if mode == "file"
       unless overwrite
         return false, msgs.move.exists\format source, target, mode
-      FileOps.logger\trace msgs.move.overwritingFile, target
+      defaultLogger\trace msgs.move.overwritingFile, target
       res, _, err = FileOps.remove target
       unless res
         -- can't remove old target file, probably in use or lack of permissions
         -- try to rename and then delete it
-        FileOps.logger\debug msgs.move.inUseTryingRename, target
+        defaultLogger\debug msgs.move.inUseTryingRename, target
         junkName = "#{target}.depCtrlRemoved"
         -- There might be an old removed file we couldn't delete before
         FileOps.remove junkName
@@ -444,7 +471,7 @@ class FileOps
         -- rename succeeded, now clean up after ourselves
         res, _, err = FileOps.remove junkName, false, true
         unless res
-          FileOps.logger\debug msgs.move.renamedDeletionFailed, junkName, err, msgs.generic.deletionRescheduled
+          defaultLogger\debug msgs.move.renamedDeletionFailed, junkName, err, msgs.generic.deletionRescheduled
 
     elseif mode -- a directory (or something else) of the same name as the target file is already present
       return false, msgs.move.exists\format source, target, mode
@@ -454,7 +481,7 @@ class FileOps
       if res == nil
         return false, msgs.move.createDirError\format source, target, dirOrErr
       elseif res
-        FileOps.logger\trace msgs.move.createdDir, dirOrErr
+        defaultLogger\trace msgs.move.createdDir, dirOrErr
 
     -- at this point the target directory exists and the target file doesn't, move the file
     res, err = os.rename source, target
@@ -462,7 +489,7 @@ class FileOps
       -- renaming the file failed, could be because of a permission issue
       -- but me might a well be trying to rename over file system boundaries on *nix
       -- so we should try copy + remove before giving up
-      FileOps.logger\debug msgs.move.cantRenameTryingCopy, source, target, err
+      defaultLogger\debug msgs.move.cantRenameTryingCopy, source, target, err
       renErr, res, err = err, FileOps.copy source, target
       unless res
         return false, msgs.move.cantCopy\format source, target, err, renErr
@@ -470,7 +497,7 @@ class FileOps
 
       unless res
         fileList = table.concat ["#{path}: #{res[2]}" for path, res in pairs details when not res[1]], "\n"
-        FileOps.logger\debug msgs.move.removeFilesFailed, fileList, msgs.generic.deletionRescheduled
+        defaultLogger\debug msgs.move.removeFilesFailed, fileList, msgs.generic.deletionRescheduled
 
     return true
 
@@ -565,25 +592,6 @@ class FileOps
       return nil, msgs.rmdir.removeDirFailed\format(err or "unknown error")
 
     return true
-
-  ---Creates `dir` along with any missing parent directories, building the path up one
-  ---segment at a time. Idempotent: levels that already exist are left untouched.
-  ---@param dir string A validated, absolute directory path.
-  ---@return boolean? success True on success, or nil on error.
-  ---@return string dirPathOrError The directory path on success, or an error message.
-  mkdirRecursive = (dir) ->
-    -- preserve a leading separator so POSIX absolute paths keep their root
-    accumulator, first = dir\match("^[/\\]") and FileOps.pathSep or "", true
-    for segment in FileOps.pathSegments dir
-      accumulator = first and accumulator .. segment or "#{accumulator}#{FileOps.pathSep}#{segment}"
-      first = false
-      continue if accumulator\match "^%a:$" -- skip bare drive letters like "C:"
-      unless lfs.attributes accumulator, "mode"
-        _, err = lfs.mkdir accumulator
-        -- tolerate races and pre-existing levels; only fail if it's still absent
-        if err and not lfs.attributes accumulator, "mode"
-          return nil, msgs.mkdir.createError\format err
-    return true, dir
 
   ---Creates a directory.
   ---@param path string|string[] Path or path segments to the directory to create.
@@ -757,3 +765,6 @@ class FileOps
     return nil, msgs.getNamespacedPath.badPath\format fullBasePath, namespacePath, msg unless normalizedFullPath
 
     return normalizedFullPath
+}
+
+return FileOps

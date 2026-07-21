@@ -5,7 +5,7 @@ constants = require "l0.DependencyControl.Constants"
 Logger = require "l0.DependencyControl.Logger"
 Common = require "l0.DependencyControl.Common"
 Enum = require "l0.DependencyControl.Enum"
-FileOps = require "l0.DependencyControl.FileOps"
+fileOps = require "l0.DependencyControl.file-ops"
 Downloader = require "l0.DependencyControl.Downloader"
 ModuleProvider = require "l0.DependencyControl.ModuleProvider"
 SemanticVersion = require "l0.DependencyControl.SemanticVersion"
@@ -67,7 +67,7 @@ attachLocalFilePath = (file, feedDirPath, localPath, isFullPath) ->
     return unless localPath
     name = rawget self, "name"
     return unless isFullPath or name
-    path = FileOps.validateFullPath isFullPath and localPath or "#{localPath}#{name}", false, feedDirPath
+    path = fileOps.validateFullPath isFullPath and localPath or "#{localPath}#{name}", false, feedDirPath
     return path
 
 -- Deep-copies a decoded feed table while dropping any field whose value is the dkjson.null
@@ -257,7 +257,7 @@ class UpdateFeed
   @getFileDeployPath = (namespace, scriptType, fileName, fileType = "script", rootDir) =>
     subDir = scriptType == ScriptType.Module and (namespace\gsub "%.", "/") or namespace
     baseDir = fileType == "test" and Common\getTestDir(scriptType, rootDir) or Common\getAutomationDir scriptType, rootDir
-    return FileOps.validateFullPath "#{subDir}#{fileName}", false, baseDir
+    return fileOps.validateFullPath "#{subDir}#{fileName}", false, baseDir
 
   fileBaseName = "#{constants.DEPCTRL_NAMESPACE}_"
   fileMatchTemplate = "#{constants.DEPCTRL_NAMESPACE}_%x%x%x%x.*%.json"
@@ -323,7 +323,7 @@ class UpdateFeed
       feedsHaveBeenTrimmed or= Logger(fileMatchTemplate: fileMatchTemplate, logDir: @config.downloadPath, maxFiles: 20)\trimFiles!
       -- land the temp file inside downloadPath (joinPath adds the separator) so trimFiles can bound it
       rand = "%04X"\format math.random 0, 16^4 - 1
-      @fileName or= FileOps.joinPath @config.downloadPath, "#{fileBaseName}#{rand}.json"
+      @fileName or= fileOps.joinPath @config.downloadPath, "#{fileBaseName}#{rand}.json"
       @downloader = Downloader nil, {blockPrivateHosts: @config.blockPrivateHosts}
     @fileName = fileName if fileName
 
@@ -339,7 +339,7 @@ class UpdateFeed
     result, loadErr = @loadFile @fileName, expansionMode
     -- persist the freshly fetched feed to the on-disk cache (best-effort; a failure just skips caching)
     if result and @_url
-      rawJson = FileOps.readFile @fileName
+      rawJson = fileOps.readFile @fileName
       if rawJson
         cacheMeta = @config.cache\put @_url, rawJson, @data.name
         @lastFetchedAt = cacheMeta and cacheMeta.cachedAt or @lastFetchedAt
@@ -356,7 +356,7 @@ class UpdateFeed
   ---@return table? data The expanded feed data, or nil on failure.
   ---@return string? err Error message on failure.
   loadFile: (srcPath = @fileName, expansionMode) =>
-    content, err = FileOps.readFile srcPath
+    content, err = fileOps.readFile srcPath
     return nil, msgs.errors.cantOpen\format err unless content
 
     unexpandedData, raw = @@.deserialize content
@@ -621,7 +621,7 @@ class UpdateFeed
     return false, err unless loaded
     path or= @feedPath
     encoded = dkjson.encode @rawFeedData, {indentMode: "prettier", keyorder: feedKeyOrder}
-    FileOps.writeFile path, "#{encoded}\n", true
+    fileOps.writeFile path, "#{encoded}\n", true
 
   ---Validates @rawFeedData against the feed schema matching its declared format version.
   ---Best-effort: warns through @logger but never raises, so an unavailable schema rock or a
@@ -748,8 +748,8 @@ class UpdateFeed
       continue if rawFile.delete
       if not localPath
         errors[#errors + 1] = msgs.__refreshFiles.noLocalPath\format rawFile.name
-      elseif FileOps.exists localPath, "file"
-        newHash, err = FileOps.getHash localPath
+      elseif fileOps.exists localPath, "file"
+        newHash, err = fileOps.getHash localPath
         unless newHash
           errors[#errors + 1] = msgs.__refreshFiles.sha1Failed\format rawFile.name, tostring err
         else if newHash\upper! != (rawFile.sha1 or "")\upper!
@@ -844,7 +844,7 @@ class UpdateFeed
         rawChannel = rawPkg and rawPkg[entry.namespace]
         rawChannel = rawChannel and rawChannel.channels and rawChannel.channels[entry.channel]
         continue unless rawChannel
-        hash, hashErr = FileOps.getHash entry.localFilePath
+        hash, hashErr = fileOps.getHash entry.localFilePath
         unless hash
           result.errors[#result.errors + 1] = msgs.update.addFileHashFailed\format entry.name, tostring hashErr
           continue
@@ -963,12 +963,12 @@ class UpdateFeed
           sources[src] = true if src and not file.delete and file.type != "test" and src\match "%.moon$"
     hits = {}
     for src in pairs sources
-      text, readErr = FileOps.readFile src
+      text, readErr = fileOps.readFile src
       return false, readErr unless text
       newText, count = text\gsub pattern, '"' .. newVersion .. '"%1', 1
       hits[#hits + 1] = {:src, text: newText} if count == 1
     return false, msgs.__bumpVersionInSource.markerCount\format namespace, #hits unless #hits == 1
-    FileOps.writeFile hits[1].src, hits[1].text, true
+    fileOps.writeFile hits[1].src, hits[1].text, true
 
   ---Bumps package versions on a channel to the repo's lockstep version: rewrites the marked version
   ---literal in each affected package's source, sets the channel's version, clears its release date,
@@ -998,7 +998,7 @@ class UpdateFeed
     for file, _, pkg in @walkFiles!
       src = file.localFilePath
       continue unless src and file.sha1 and not file.delete
-      hash = FileOps.getHash src
+      hash = fileOps.getHash src
       stale[#stale + 1] = "#{pkg.namespace}#{file.name}" unless hash and hash\upper! == file.sha1\upper!
     if #stale > 0
       return nil, msgs.bumpVersions.outOfSync\format table.concat(stale, ", ")
@@ -1153,8 +1153,8 @@ class UpdateFeed
           @logger\warn msgs.bundle.invalidDeployPath, pkg.namespace, channel.name, file.name, distDir, tostring errMsg
           errCount += 1
           continue
-        if FileOps.exists dstPath, "file"
-          removed, _, remErr = FileOps.remove dstPath
+        if fileOps.exists dstPath, "file"
+          removed, _, remErr = fileOps.remove dstPath
           if removed
             @logger\hint msgs.bundle.deleted, dstPath
           else
@@ -1166,7 +1166,7 @@ class UpdateFeed
         errCount += 1
         continue
 
-      fileExists, errMsg = FileOps.exists file.localFilePath, "file"
+      fileExists, errMsg = fileOps.exists file.localFilePath, "file"
       unless fileExists
         @logger\warn errMsg
         errCount += 1
@@ -1179,12 +1179,12 @@ class UpdateFeed
         continue
 
       unless clobber
-        if FileOps.exists dstPath, "file"
+        if fileOps.exists dstPath, "file"
           @logger\hint msgs.bundle.skipped, dstPath
           continue
 
-      FileOps.mkdir dstPath, true, true
-      copied, copyErr = FileOps.copy file.localFilePath, dstPath, true
+      fileOps.mkdir dstPath, true, true
+      copied, copyErr = fileOps.copy file.localFilePath, dstPath, true
       if copied
         @logger\hint msgs.bundle.copied, file.localFilePath, dstPath
         fileCount += 1
@@ -1225,7 +1225,7 @@ class UpdateFeed
         if not prefix or prefix\find("@{", 1, true) or suffix\find("@{", 1, true)
           @logger\warn msgs.findUnlistedFiles.notInvertible, pkg.namespace, resolvedChannel, template
           continue
-        absPrefix, prefixErr = FileOps.validateFullPath prefix, false, @feedDir
+        absPrefix, prefixErr = fileOps.validateFullPath prefix, false, @feedDir
         unless absPrefix
           @logger\warn msgs.findUnlistedFiles.badScanPath, pkg.namespace, resolvedChannel, prefix, tostring prefixErr
           continue
@@ -1243,7 +1243,7 @@ class UpdateFeed
 
       listed = {file.name .. "\0" .. (file.type or "script"), true for file in *(pkg.channels[resolvedChannel].files or {})}
       for root in *scanRoots
-        for filePath in *(FileOps.listFilesRecursive(root) or {})
+        for filePath in *(fileOps.listFilesRecursive(root) or {})
           best = nil
           for spec in *specs
             matches = #filePath > #spec.prefix + #spec.suffix and

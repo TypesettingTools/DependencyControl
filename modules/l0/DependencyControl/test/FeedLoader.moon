@@ -3,7 +3,7 @@
 -- Called from test.moon as: (require "…test.FeedLoader") basePath, DepCtrl
 (basePath, DepCtrl) ->
   FeedLoader = require "l0.DependencyControl.FeedLoader"
-  FileOps = require "l0.DependencyControl.FileOps"
+  fileOps = require "l0.DependencyControl.file-ops"
   constants = require "l0.DependencyControl.Constants"
 
   url = "https://example.com/feed.json"
@@ -11,7 +11,7 @@
   -- a FeedLoader over a temp cache base; opts override the config's feed settings
   make = (opts = {}) ->
     config = {c: {
-      paths: {cache: FileOps.joinPath basePath, "feedLoader"}
+      paths: {cache: fileOps.joinPath basePath, "feedLoader"}
       feeds: {cacheMaxAge: opts.cacheMaxAge or 4242}
       updates: {blockPrivateHosts: opts.blockPrivateHosts}
     }}

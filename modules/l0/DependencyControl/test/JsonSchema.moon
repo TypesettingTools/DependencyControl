@@ -3,7 +3,7 @@
 -- Called from test.moon as: (require "...test.JsonSchema") basePath
 (basePath) ->
   JsonSchema = require "l0.DependencyControl.JsonSchema"
-  FILEOPS_MODULE_NAME = "l0.DependencyControl.FileOps"
+  FILEOPS_MODULE_NAME = "l0.DependencyControl.file-ops"
 
   -- a stand-in for a JsonSchema instance with a scripted validate(data) result
   mockSchema = (valid, err) -> {__class: JsonSchema, validate: (self, data) -> valid, err}

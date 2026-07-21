@@ -4,15 +4,15 @@
 -- Called from test.moon as: (require "…test.FileCache") basePath
 (basePath) ->
   FileCache = require "l0.DependencyControl.FileCache"
-  FileOps = require "l0.DependencyControl.FileOps"
+  fileOps = require "l0.DependencyControl.file-ops"
 
   -- a fresh cache in its own base subdir with a controllable clock; returns (cache, clock)
   makeCache = (name, opts = {}) ->
     clock = {t: opts.t or 1000}
     opts.now = -> clock.t
-    FileCache(FileOps.joinPath(basePath, "filecache", name), "testNamespace", "test", opts), clock
+    FileCache(fileOps.joinPath(basePath, "filecache", name), "testNamespace", "test", opts), clock
 
-  readFile = FileOps.readFile
+  readFile = fileOps.readFile
 
   {
     _description: "FileCache: persistent key-addressed JSON snapshots with freshness, readable names, and trimming."
@@ -32,7 +32,7 @@
 
     -- the default (real) clock path works end to end — put/get use os.time/os.date, not an injected stub
     put_worksWithDefaultClock: (ut) ->
-      cache = FileCache FileOps.joinPath(basePath, "filecache", "defaultClock"), "testNamespace", "test"
+      cache = FileCache fileOps.joinPath(basePath, "filecache", "defaultClock"), "testNamespace", "test"
       meta = cache\put "u://real", '{"name":"Real"}', "Real"
       ut\assertNotNil meta
       ut\assertEquals readFile(cache\getFile "u://real"), '{"name":"Real"}'
@@ -80,7 +80,7 @@
 
     -- .get reuses one instance per resolved directory, and constructs distinct ones for a different name
     get_sharesInstancePerDir: (ut) ->
-      base = FileOps.joinPath basePath, "filecache", "shared"
+      base = fileOps.joinPath basePath, "filecache", "shared"
       a1 = FileCache.get base, "ns", "one"
       a2 = FileCache.get base, "ns", "one"
       b = FileCache.get base, "ns", "two"
@@ -114,8 +114,8 @@
       third = cache\put "u://f", '{"v":3}', "f"
 
       -- the oldest, unprotected snapshot is gone; the newest (the index's target) survives
-      ut\assertFalsy FileOps.getAttributes(FileOps.joinPath(cache.cacheDir, first.latestFile), "mode").attr
-      ut\assertEquals "file", FileOps.getAttributes(FileOps.joinPath(cache.cacheDir, third.latestFile), "mode").attr
+      ut\assertFalsy fileOps.getAttributes(fileOps.joinPath(cache.cacheDir, first.latestFile), "mode").attr
+      ut\assertEquals "file", fileOps.getAttributes(fileOps.joinPath(cache.cacheDir, third.latestFile), "mode").attr
       path = cache\getFile "u://f"
       ut\assertEquals readFile(path), '{"v":3}'
 
@@ -131,7 +131,7 @@
 
     -- a memo is keyed to its snapshot's cache time, so another writer's newer put supersedes it: get re-reads L2
     get_memoSupersededByNewerSnapshot: (ut) ->
-      dir = FileOps.joinPath basePath, "filecache", "get-super"
+      dir = fileOps.joinPath basePath, "filecache", "get-super"
       codec = (content) -> {:content}
       a = FileCache dir, "ns", "s", {deserialize: codec, now: -> 1000}
       a\put "u://f", '{"v":1}', "f"
@@ -175,7 +175,7 @@
       cache\get "u://f" -- prime the L1 memo
       cache\expireAll 2000, true -- purge everything cached before 2000
       ut\assertNil (cache\get "u://f") -- memo dropped and L2 gone → full miss
-      ut\assertFalsy FileOps.getAttributes(FileOps.joinPath(cache.cacheDir, meta.latestFile), "mode").attr
+      ut\assertFalsy fileOps.getAttributes(fileOps.joinPath(cache.cacheDir, meta.latestFile), "mode").attr
 
     _order: {
       "put_roundTrip", "put_worksWithDefaultClock", "getFile_uncached", "isFresh_window", "put_updatesLatest"

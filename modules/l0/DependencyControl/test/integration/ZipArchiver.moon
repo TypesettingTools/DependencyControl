@@ -5,7 +5,7 @@
 -- Called from Tests.moon as: (require "...test.integration.ZipArchiver") basePath
 (basePath) ->
   ffi = require "ffi"
-  FileOps = require "l0.DependencyControl.FileOps"
+  fileOps = require "l0.DependencyControl.file-ops"
   ZipArchiver = require "l0.DependencyControl.ZipArchiver"
 
   isWindows = ffi.os == "Windows"
@@ -36,8 +36,8 @@
       base = "#{basePath}_zipArchiver"
       srcDir = "#{base}/src"
       extractDir = "#{base}/extracted"
-      FileOps.mkdir "#{srcDir}/sub", false, true
-      FileOps.mkdir extractDir, false, true
+      fileOps.mkdir "#{srcDir}/sub", false, true
+      fileOps.mkdir extractDir, false, true
 
       write = (path, data) ->
         f = assert io.open path, "wb"
@@ -50,7 +50,7 @@
       {:base, :srcDir, :extractDir, archivePath: "#{base}/out.zip"}
 
     _teardown: (ut, ctx) ->
-      FileOps.remove ctx.base, true if ctx and ctx.base
+      fileOps.remove ctx.base, true if ctx and ctx.base
 
     -- A directory added by ZipArchiver must round-trip through the real tooling with its
     -- nested entry recreated under a forward-slash subpath on every platform.
@@ -59,12 +59,12 @@
       arch\addDirectory ctx.srcDir
       ok, err = arch\write!
       ut\assertTrue ok, err
-      ut\assertTrue FileOps.exists ctx.archivePath
+      ut\assertTrue fileOps.exists ctx.archivePath
 
       ut\assertTrue execOk(extractCmd ctx.archivePath, ctx.extractDir), "extraction failed"
-      ut\assertTrue FileOps.exists "#{ctx.extractDir}/top.txt"
-      ut\assertTrue FileOps.exists "#{ctx.extractDir}/sub/c.txt" -- nested path materialized
+      ut\assertTrue fileOps.exists "#{ctx.extractDir}/top.txt"
+      ut\assertTrue fileOps.exists "#{ctx.extractDir}/sub/c.txt" -- nested path materialized
 
-      data = FileOps.readFile "#{ctx.extractDir}/sub/c.txt"
+      data = fileOps.readFile "#{ctx.extractDir}/sub/c.txt"
       ut\assertEquals data, "nested file contents"
   }

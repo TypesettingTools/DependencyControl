@@ -1010,10 +1010,10 @@ class UnitTestSuite
   ---@return boolean? success True on success, nil on failure.
   ---@return string? err An error message on failure.
   writeResults: (path) =>
-    FileOps = require "l0.DependencyControl.FileOps"
+    fileOps = require "l0.DependencyControl.file-ops"
     json = require "json" -- provided by DepCtrl (bundled dkjson) once it's loaded
 
-    dirRes, err = FileOps.mkdir path, true, true
+    dirRes, err = fileOps.mkdir path, true, true
     return nil, err if dirRes == nil
 
     handle, msg = io.open aegisub.decode_path(path), "wb"

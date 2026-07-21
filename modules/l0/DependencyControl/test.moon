@@ -22,7 +22,7 @@ UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
     ModuleProvider: (controls\requireTest "ModuleProvider") basePath, DepCtrl
     Downloader: (controls\requireTest "Downloader") basePath
     Common: (controls\requireTest "Common") basePath
-    FileOps: (controls\requireTest "FileOps") basePath, isWindows
+    FileOps: (controls\requireTest "file-ops") basePath, isWindows
     Logger: (controls\requireTest "Logger")!
     UnitTestSuite: (controls\requireTest "UnitTestSuite")!
     Enum: (controls\requireTest "Enum")!

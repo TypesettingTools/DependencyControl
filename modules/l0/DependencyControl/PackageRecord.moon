@@ -5,7 +5,7 @@ constants = require "l0.DependencyControl.Constants"
 Common = require "l0.DependencyControl.Common"
 Logger = require "l0.DependencyControl.Logger"
 ConfigView = require "l0.DependencyControl.ConfigView"
-FileOps = require "l0.DependencyControl.FileOps"
+fileOps = require "l0.DependencyControl.file-ops"
 Updater = require "l0.DependencyControl.Updater"
 ModuleLoader = require "l0.DependencyControl.ModuleLoader"
 ModuleProvider = require "l0.DependencyControl.ModuleProvider"
@@ -120,7 +120,7 @@ class PackageRecord
   @getAllRegisteredRecords = => {ns, record for ns, record in pairs recordsByNamespace}
 
   init = =>
-    FileOps.mkdir @depConf.file, true
+    fileOps.mkdir @depConf.file, true
     @loadGlobalConfig!
     {:logging, :paths} = @config.c
     @logger = Logger { fileBaseName: constants.DEPCTRL_SHORT_NAME, fileSubName: script_namespace, prefix: "[#{constants.DEPCTRL_SHORT_NAME}] ",
@@ -131,9 +131,9 @@ class PackageRecord
     @updater = Updater script_namespace, @config, @logger
     @configDir = paths.config
 
-    FileOps.mkdir aegisub.decode_path @configDir
+    fileOps.mkdir aegisub.decode_path @configDir
     @logger\trimFiles!
-    FileOps.runScheduledRemoval @configDir
+    fileOps.runScheduledRemoval @configDir
 
 
   ---Creates a DependencyControl record from explicit arguments and/or script globals.
@@ -498,10 +498,10 @@ class PackageRecord
     subPath = isModule and @namespace\gsub("%.", "/") or @namespace
     paths = {}
     for ext in *{".moon", ".lua"}
-      if path = FileOps.validateFullPath "#{subPath}#{ext}", false, baseDir
+      if path = fileOps.validateFullPath "#{subPath}#{ext}", false, baseDir
         paths[#paths+1] = path
       if isModule
-        if path = FileOps.validateFullPath "#{subPath}/init#{ext}", false, baseDir
+        if path = fileOps.validateFullPath "#{subPath}/init#{ext}", false, baseDir
           paths[#paths+1] = path
     return paths
 
@@ -511,13 +511,13 @@ class PackageRecord
   getEntryPointPath: =>
     userDir = Common\getAutomationDir @scriptType, "?user"
     for path in *@getPossibleEntryPointPaths userDir
-      info = FileOps.getAttributes path, "mode"
+      info = fileOps.getAttributes path, "mode"
       return path, true if info and info.attr == "file"
 
     dataDir = Common\getAutomationDir @scriptType, "?data"
     if dataDir and dataDir != userDir
       for path in *@getPossibleEntryPointPaths dataDir
-        info = FileOps.getAttributes path, "mode"
+        info = fileOps.getAttributes path, "mode"
         return path, false if info and info.attr == "file"
 
     -- TODO: what if a module is available in another package search path?
@@ -550,7 +550,7 @@ class PackageRecord
 
     lfs.chdir dir
     for file in lfs.dir dir
-      info = FileOps.getAttributes file, "mode"
+      info = fileOps.getAttributes file, "mode"
       mode, path = info and info.attr, info and info.path
       -- a file must be "<stem>.<ext>" and a module directory exactly "<stem>", so a
       -- sibling package sharing the name prefix never falls into the recursive delete
@@ -561,7 +561,7 @@ class PackageRecord
 
     -- drop the record from the registry so tooling no longer sees the removed script
     unregisterRecord @namespace
-    return FileOps.remove toRemove, true, true
+    return fileOps.remove toRemove, true, true
 
 -- wire the computed `version` accessor (returns PackageRecord, so the module still yields the class)
 Accessors.install PackageRecord

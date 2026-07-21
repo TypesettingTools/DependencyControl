@@ -7,7 +7,7 @@
 
 ffi = require "ffi"
 moonbase = require "moonscript.base"
-FileOps = require "l0.DependencyControl.FileOps"
+fileOps = require "l0.DependencyControl.file-ops"
 
 MOCK_SERVER_FILE_BASENAME = "mock-http-server"
 
@@ -15,8 +15,8 @@ isWindows = ffi.os == "Windows"
 interpreter = (arg and arg[-1]) or "luajit" -- run the server under the interpreter running us
 
 -- mock-http-server.moon sits next to this file; locate it from our own source path.
-_, device, dir = FileOps.validateFullPath debug.getinfo(1, "S").source\gsub("^@", ""), true
-serverSourcePath = FileOps.joinPath "#{device}#{dir}", "#{MOCK_SERVER_FILE_BASENAME}.moon"
+_, device, dir = fileOps.validateFullPath debug.getinfo(1, "S").source\gsub("^@", ""), true
+serverSourcePath = fileOps.joinPath "#{device}#{dir}", "#{MOCK_SERVER_FILE_BASENAME}.moon"
 
 quote = (s) -> "\"#{tostring(s)}\""
 
@@ -32,11 +32,11 @@ class MockHttpServerController
   @compileServer = =>
     return @compiledServerPath if @compiledServerPath
 
-    serverSource = assert FileOps.readFile serverSourcePath
+    serverSource = assert fileOps.readFile serverSourcePath
     compiledServerLua = assert moonbase.to_lua serverSource
-    tempDir = assert FileOps.createTempDir!
-    path = FileOps.joinPath tempDir, "#{MOCK_SERVER_FILE_BASENAME}.lua"
-    assert FileOps.writeFile path, compiledServerLua
+    tempDir = assert fileOps.createTempDir!
+    path = fileOps.joinPath tempDir, "#{MOCK_SERVER_FILE_BASENAME}.lua"
+    assert fileOps.writeFile path, compiledServerLua
     @compiledServerPath, @compiledServerTempDir = path, tempDir
     return @compiledServerPath
 

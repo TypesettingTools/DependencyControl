@@ -6,7 +6,7 @@
   UnitTestSuite = require "l0.DependencyControl.UnitTestSuite"
   {:defaultLogger} = UnitTestSuite\getTestExports Lock
 
-  FILEOPS_MODULE_NAME = "l0.DependencyControl.FileOps"
+  FILEOPS_MODULE_NAME = "l0.DependencyControl.file-ops"
   TIMER_MODULE_NAME = "l0.DependencyControl.Timer"
 
   -- A controllable stand-in for the OS lock primitive, installed via the

@@ -1,6 +1,6 @@
 json = require "json"
 constants = require "l0.DependencyControl.Constants"
-fileOps = require "l0.DependencyControl.FileOps"
+fileOps = require "l0.DependencyControl.file-ops"
 Logger = require "l0.DependencyControl.Logger"
 Lock = require "l0.DependencyControl.Lock"
 ConfigView = require "l0.DependencyControl.ConfigView"

@@ -167,7 +167,7 @@ local function setupDepCtrl(taskName)
     shims.setPathToken(token, workspace .. pathSep .. token)
   end
 
-  local FileOps = require "l0.DependencyControl.FileOps"
+  local FileOps = require "l0.DependencyControl.file-ops"
   FileOps.mkdir("?temp", false, true)
   FileOps.mkdir("?user/log", false, true)
 
@@ -253,7 +253,7 @@ end
 -- warning is printed for any unreadable source.
 local function collectModuleSources(feed, filter)
   local Common = require "l0.DependencyControl.Common"
-  local FileOps = require "l0.DependencyControl.FileOps"
+  local FileOps = require "l0.DependencyControl.file-ops"
 
   local selected = {}
   for pkg, scriptType in feed:walkPackages(filter) do
@@ -296,7 +296,7 @@ if args.command == "test" then
   end
 
   local DepCtrl = setupDepCtrl("tests")
-  local FileOps = require "l0.DependencyControl.FileOps"
+  local FileOps = require "l0.DependencyControl.file-ops"
 
   local feedPath = resolveAbsPath(args.feed)
   local feed = loadFeed(feedPath)
@@ -377,7 +377,7 @@ elseif args.command == "bundle" then
 
   setupDepCtrl("bundle")
 
-  local FileOps = require "l0.DependencyControl.FileOps"
+  local FileOps = require "l0.DependencyControl.file-ops"
   local ZipArchiver = require "l0.DependencyControl.ZipArchiver"
   local GitRepository = require "l0.DependencyControl.GitRepository"
 
@@ -599,7 +599,7 @@ elseif args.command == "validate-schema" then
   -- 'json' — the module JsonSchema (and hence lua-schema) needs to parse schema files.
   setupDepCtrl("validate-schema")
 
-  local FileOps = require "l0.DependencyControl.FileOps"
+  local FileOps = require "l0.DependencyControl.file-ops"
   local json = require "l0.dkjson"
   local JsonSchema = require "l0.DependencyControl.JsonSchema"
 
@@ -655,7 +655,7 @@ elseif args.command == "generate-types" then
 
   setupDepCtrl("generate-types")
 
-  local FileOps = require "l0.DependencyControl.FileOps"
+  local FileOps = require "l0.DependencyControl.file-ops"
 
   local feed = loadFeed(feedPath)
   local filter = buildFilter(args)
@@ -726,7 +726,7 @@ elseif args.command == "generate-docs" then
   setupDepCtrl("generate-docs")
 
   local Common = require "l0.DependencyControl.Common"
-  local FileOps = require "l0.DependencyControl.FileOps"
+  local FileOps = require "l0.DependencyControl.file-ops"
 
   local feed = loadFeed(feedPath)
   local filter = buildFilter(args)

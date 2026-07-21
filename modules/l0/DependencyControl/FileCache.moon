@@ -1,5 +1,5 @@
 Hash = require "l0.DependencyControl.hash"
-FileOps = require "l0.DependencyControl.FileOps"
+fileOps = require "l0.DependencyControl.file-ops"
 Logger = require "l0.DependencyControl.Logger"
 constants = require "l0.DependencyControl.Constants"
 Lock = require "l0.DependencyControl.Lock"
@@ -91,14 +91,14 @@ class FileCache
   ---@private
   ---@param key string The cache key.
   ---@return string path Filesystem path of the key's cache-index (meta) JSON file.
-  __metaPath: (key) => FileOps.joinPath @cacheDir, "#{keySlug key}.meta.json"
+  __metaPath: (key) => fileOps.joinPath @cacheDir, "#{keySlug key}.meta.json"
 
   ---Reads and decodes a cache index (meta) JSON file.
   ---@private
   ---@param path string
   ---@return FileCacheMeta? meta
   __readMeta: (path) =>
-    content = FileOps.readFile path
+    content = fileOps.readFile path
     return nil unless content
     -- a torn read from a concurrent write fails to decode and is treated as a cache miss
     ok, meta = pcall dkjson.decode, content
@@ -127,8 +127,8 @@ class FileCache
   getFile: (key) =>
     meta = @getMeta key
     return nil unless meta and meta.latestFile
-    path = FileOps.joinPath @cacheDir, meta.latestFile
-    info = FileOps.getAttributes path, "mode"
+    path = fileOps.joinPath @cacheDir, meta.latestFile
+    info = fileOps.getAttributes path, "mode"
     return nil, meta unless info and info.attr == "file"
     return path, meta
 
@@ -148,9 +148,9 @@ class FileCache
     return memo.value, meta, fresh if memo and memo.cachedAt == meta.cachedAt
     return nil, meta, fresh unless @__deserialize and meta.latestFile
 
-    path = FileOps.joinPath @cacheDir, meta.latestFile
-    info = FileOps.getAttributes path, "mode"
-    content = info and info.attr == "file" and FileOps.readFile path
+    path = fileOps.joinPath @cacheDir, meta.latestFile
+    info = fileOps.getAttributes path, "mode"
+    content = info and info.attr == "file" and fileOps.readFile path
     return nil, meta, fresh unless content
 
     value = @.__deserialize content
@@ -167,14 +167,14 @@ class FileCache
     @__staleBefore = before
     return unless purge
 
-    files = FileOps.listDir @cacheDir
+    files = fileOps.listDir @cacheDir
     return unless files
 
     -- collect the key slugs whose index predates the cut-off, dropping their memos as we go
     expiredSlugs = {}
     for file in *files
       continue unless file\match "%.meta%.json$"
-      meta = @__readMeta FileOps.joinPath @cacheDir, file
+      meta = @__readMeta fileOps.joinPath @cacheDir, file
       continue unless meta and meta.cachedAt and meta.cachedAt < before
       expiredSlugs[keySlug meta.key] = true
       @__l1[meta.key] = nil
@@ -182,7 +182,7 @@ class FileCache
     -- every file (snapshot or index) is named with its key's 7-hex slug prefix, so one pass removes both
     for file in *files
       slug = file\match "^(%x%x%x%x%x%x%x)"
-      FileOps.remove FileOps.joinPath @cacheDir, file if slug and expiredSlugs[slug]
+      fileOps.remove fileOps.joinPath @cacheDir, file if slug and expiredSlugs[slug]
 
   ---Stores a blob under a readable, timestamped snapshot and repoints the index at it, then trims old
   ---snapshots. The snapshot name is `<slug>-<label>-<utcTimestamp>-<rand>.json` (slug first so a key's
@@ -219,7 +219,7 @@ class FileCache
   ---@return FileCacheMeta? meta The written index entry, or nil on a filesystem error.
   ---@return string? err Error message when a write failed, nil on success.
   __write: (key, content, label, expiresAfter) =>
-    dirRes, dirErr = FileOps.mkdir @cacheDir, false, true
+    dirRes, dirErr = fileOps.mkdir @cacheDir, false, true
     return nil, dirErr if dirRes == nil
 
     now = @.now!
@@ -227,11 +227,11 @@ class FileCache
     rand = "%04X"\format math.random 0, 16^4 - 1
     fileName = "#{keySlug key}-#{sanitizeLabel label}-#{stamp}-#{rand}.json"
 
-    ok, err = FileOps.writeFile {@cacheDir, fileName}, content, true
+    ok, err = fileOps.writeFile {@cacheDir, fileName}, content, true
     return nil, err unless ok
 
     meta = {:key, cachedAt: now, expiresAt: now + expiresAfter, latestFile: fileName}
-    ok, err = FileOps.writeFile @__metaPath(key), (dkjson.encode meta, {indent: true, indentMode: "prettier"}), true
+    ok, err = fileOps.writeFile @__metaPath(key), (dkjson.encode meta, {indent: true, indentMode: "prettier"}), true
     return nil, err unless ok
 
     @__trim!
@@ -241,13 +241,13 @@ class FileCache
   ---index still points at (an entry's current snapshot survives regardless of the cap).
   ---@private
   __trim: =>
-    files = FileOps.listDir @cacheDir
+    files = fileOps.listDir @cacheDir
     return unless files
 
     protectedFiles, snapshots = {}, {}
     for file in *files
       if file\match "%.meta%.json$"
-        meta = @__readMeta FileOps.joinPath @cacheDir, file
+        meta = @__readMeta fileOps.joinPath @cacheDir, file
         protectedFiles[meta.latestFile] = true if meta and meta.latestFile
       elseif file\match "%.json$"
         snapshots[#snapshots + 1] = file
@@ -256,6 +256,6 @@ class FileCache
     table.sort snapshots, (a, b) -> snapshotStamp(a) > snapshotStamp(b)
     for i = @maxFiles + 1, #snapshots
       continue if protectedFiles[snapshots[i]]
-      FileOps.remove FileOps.joinPath @cacheDir, snapshots[i]
+      fileOps.remove fileOps.joinPath @cacheDir, snapshots[i]
 
 return FileCache

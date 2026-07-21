@@ -6,7 +6,7 @@ Logger = require "l0.DependencyControl.Logger"
 Common = require "l0.DependencyControl.Common"
 Enum = require "l0.DependencyControl.Enum"
 Hash = require "l0.DependencyControl.hash"
-FileOps = require "l0.DependencyControl.FileOps"
+fileOps = require "l0.DependencyControl.file-ops"
 Accessors = require "l0.DependencyControl.Accessors"
 Finalizer = require "l0.DependencyControl.Finalizer"
 json = require "json"
@@ -168,7 +168,7 @@ class Lock
       pcall logger.warn, logger, msgs.new.lockNotReleased, holderName, instanceId, namespace, resource
       pcall ->
         primitive\unlock!
-        FileOps.remove holderFilePath if recordHolder
+        fileOps.remove holderFilePath if recordHolder
         state.held = false
 
   ---Reads the holder record written by the current lock holder, or nil if none is
@@ -177,7 +177,7 @@ class Lock
   ---@private
   __readHolder: =>
     return nil unless @recordHolder
-    data = FileOps.readFile @_holderFilePath
+    data = fileOps.readFile @_holderFilePath
     return nil unless data
     ok, record = pcall json.decode, data
     return ok and type(record) == "table" and record or nil
@@ -199,12 +199,12 @@ class Lock
       acquiredAt: @acquiredAt, expiresAt: @expiresAt
     }
     ok, data = pcall json.encode, record
-    FileOps.writeFile @_holderFilePath, data, true if ok
+    fileOps.writeFile @_holderFilePath, data, true if ok
 
   -- Removes the holder side file. No-op when holder recording is disabled.
   ---@private
   __clearHolder: =>
-    FileOps.remove @_holderFilePath if @recordHolder
+    fileOps.remove @_holderFilePath if @recordHolder
 
   -- Human-readable description of the current foreign holder for log messages, e.g.
   -- "'ConfigHandler' (pid 1234)" or "another instance" when no record is available.

@@ -5,7 +5,7 @@
 -- Self-gating via _condition: skipped where a luajit child process can't be spawned.
 -- Called from Tests.moon as: (require "...test.integration.Logger") basePath
 (basePath) ->
-  FileOps = require "l0.DependencyControl.FileOps"
+  fileOps = require "l0.DependencyControl.file-ops"
 
   STATE_COUNT = 50
 
@@ -34,9 +34,9 @@
       return true
 
     isolatedStates_getDistinctRandomStreams: (ut) ->
-      FileOps.mkdir basePath, false, true
-      probePath = FileOps.joinPath basePath, "logger-seed-probe.lua"
-      ut\assertTruthy FileOps.writeFile probePath, buildProbeSource!
+      fileOps.mkdir basePath, false, true
+      probePath = fileOps.joinPath basePath, "logger-seed-probe.lua"
+      ut\assertTruthy fileOps.writeFile probePath, buildProbeSource!
 
       -- spawn every child before reading any, so their module loads and seedings overlap in time
       handles = [io.popen "luajit \"#{probePath}\" 2>&1" for _ = 1, STATE_COUNT]

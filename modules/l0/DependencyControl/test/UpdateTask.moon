@@ -5,7 +5,7 @@
   UpdateTask = require "l0.DependencyControl.UpdateTask"
   UnitTestSuite = require "l0.DependencyControl.UnitTestSuite"
   SemanticVersion = require "l0.DependencyControl.SemanticVersion"
-  FileOps = require "l0.DependencyControl.FileOps"
+  fileOps = require "l0.DependencyControl.file-ops"
   UpdateFeed = require "l0.DependencyControl.UpdateFeed"
   Downloader = require "l0.DependencyControl.Downloader"
   ModuleLoader = require "l0.DependencyControl.ModuleLoader"
@@ -877,15 +877,15 @@
 
     -- performUpdate: a temp-directory creation failure aborts with -30
     performUpdate_tempDirFailure: (ut) ->
-      ut\stub(FileOps, "getTempDir")\returns "tmp"
-      ut\stub(FileOps, "mkdir")\returns nil, "denied"
+      ut\stub(fileOps, "getTempDir")\returns "tmp"
+      ut\stub(fileOps, "mkdir")\returns nil, "denied"
       code = UpdateTask.performUpdate makePerformTask!, {version: 0x10000, files: {}}
       ut\assertEquals code, UpdateStatus.TempDirFailed
 
     -- performUpdate: a file name containing ".." is rejected as a path-traversal attempt (-33)
     performUpdate_rejectsPathTraversal: (ut) ->
-      ut\stub(FileOps, "getTempDir")\returns "tmp"
-      ut\stub(FileOps, "mkdir")\returns true, "tmp"
+      ut\stub(fileOps, "getTempDir")\returns "tmp"
+      ut\stub(fileOps, "mkdir")\returns true, "tmp"
       update = {version: 0x10000, files: {{name: "../evil.moon", type: "script"}}}
       code, detail = UpdateTask.performUpdate makePerformTask!, update
       ut\assertEquals code, UpdateStatus.PathTraversal
@@ -893,8 +893,8 @@
 
     -- performUpdate: a file with a malformed sha1 hash is rejected (-35)
     performUpdate_rejectsBadSha1: (ut) ->
-      ut\stub(FileOps, "getTempDir")\returns "tmp"
-      ut\stub(FileOps, "mkdir")\returns true, "tmp"
+      ut\stub(fileOps, "getTempDir")\returns "tmp"
+      ut\stub(fileOps, "mkdir")\returns true, "tmp"
       ut\stub(UpdateFeed, "getFileDeployPath")\returns "deploy/x.moon"
       update = {version: 0x10000, files: {{name: "x.moon", type: "script", sha1: "abc"}}} -- not 40 hex chars
       code = UpdateTask.performUpdate makePerformTask!, update
@@ -902,10 +902,10 @@
 
     -- performUpdate: a download that ends in a Failed status is reported (-245)
     performUpdate_reportsFailedDownloads: (ut) ->
-      ut\stub(FileOps, "getTempDir")\returns "tmp"
-      ut\stub(FileOps, "mkdir")\returns true, "tmp"
+      ut\stub(fileOps, "getTempDir")\returns "tmp"
+      ut\stub(fileOps, "mkdir")\returns true, "tmp"
       ut\stub(UpdateFeed, "getFileDeployPath")\returns "deploy/x.moon"
-      ut\stub(FileOps, "verifyHash")\returns false -- not already on disk → it gets downloaded
+      ut\stub(fileOps, "verifyHash")\returns false -- not already on disk → it gets downloaded
       task = makePerformTask {downloadStatus: Downloader.Download.Status.Failed}
       update = {version: 0x10000, files: {{name: "x.moon", type: "script", url: "http://x", sha1: string.rep "a", 40}}}
       code = UpdateTask.performUpdate task, update
@@ -913,11 +913,11 @@
 
     -- performUpdate: a failed file move (after a successful download) is reported (-50)
     performUpdate_reportsMoveFailures: (ut) ->
-      ut\stub(FileOps, "getTempDir")\returns "tmp"
-      ut\stub(FileOps, "mkdir")\returns true, "tmp"
+      ut\stub(fileOps, "getTempDir")\returns "tmp"
+      ut\stub(fileOps, "mkdir")\returns true, "tmp"
       ut\stub(UpdateFeed, "getFileDeployPath")\returns "deploy/x.moon"
-      ut\stub(FileOps, "verifyHash")\returns false
-      ut\stub(FileOps, "move")\returns nil, "move denied"
+      ut\stub(fileOps, "verifyHash")\returns false
+      ut\stub(fileOps, "move")\returns nil, "move denied"
       task = makePerformTask {downloadStatus: Downloader.Download.Status.Finished}
       update = {version: 0x10000, files: {{name: "x.moon", type: "script", url: "http://x", sha1: string.rep "a", 40}}}
       code = UpdateTask.performUpdate task, update
@@ -926,12 +926,12 @@
     -- performUpdate happy path (module): after a successful download+move, the module is reloaded and the
     -- task's record is swapped to the fresh DependencyControl version record; returns 1 and the new version
     performUpdate_reloadsModuleAndRefreshesRecord: (ut) ->
-      ut\stub(FileOps, "getTempDir")\returns "tmp"
-      ut\stub(FileOps, "mkdir")\returns true, "tmp"
+      ut\stub(fileOps, "getTempDir")\returns "tmp"
+      ut\stub(fileOps, "mkdir")\returns true, "tmp"
       ut\stub(UpdateFeed, "getFileDeployPath")\returns "deploy/x.moon"
-      ut\stub(FileOps, "verifyHash")\returns false
-      ut\stub(FileOps, "move")\returns true
-      ut\stub(FileOps, "rmdir")\returns true
+      ut\stub(fileOps, "verifyHash")\returns false
+      ut\stub(fileOps, "move")\returns true
+      ut\stub(fileOps, "rmdir")\returns true
       newRecord = {__class: {__name: "DependencyControl"}, version: SemanticVersion\toPacked "1.0.0"}
       ut\stub(ModuleLoader, "loadModule")\returns {version: newRecord}
       task = makePerformTask {downloadStatus: Downloader.Download.Status.Finished}

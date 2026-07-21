@@ -1,5 +1,5 @@
 Downloader = require "l0.DependencyControl.Downloader"
-FileOps = require "l0.DependencyControl.FileOps"
+fileOps = require "l0.DependencyControl.file-ops"
 Hash = require "l0.DependencyControl.hash"
 
 msgs = {
@@ -63,14 +63,14 @@ class DownloadManager
   ---@param filename string
   ---@return string? hexDigest
   ---@return string? err
-  getFileSHA1: (filename) => FileOps.getHash filename, "sha1"
+  getFileSHA1: (filename) => fileOps.getHash filename, "sha1"
 
   ---Verifies a file against an expected SHA-1 hash.
   ---@param filename string
   ---@param expected string Expected SHA-1 hex digest.
   ---@return boolean? match
   ---@return string? err
-  checkFileSHA1: (filename, expected) => FileOps.verifyHash filename, expected, "sha1"
+  checkFileSHA1: (filename, expected) => fileOps.verifyHash filename, expected, "sha1"
 
   ---Verifies a string against an expected SHA-1 hash.
   ---@param str string

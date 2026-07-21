@@ -2,7 +2,7 @@ lfs = require "lfs"
 ffi = require "ffi"
 Logger = require "l0.DependencyControl.Logger"
 constants = require "l0.DependencyControl.Constants"
-FileOps = require "l0.DependencyControl.FileOps"
+fileOps = require "l0.DependencyControl.file-ops"
 json = require "l0.dkjson"
 
 defaultLogger = Logger fileBaseName: "#{constants.DEPCTRL_SHORT_NAME}.ZipArchiver"
@@ -51,7 +51,7 @@ execOk = (cmd) ->
 ---@class ZipArchiver
 class ZipArchiver
   isWindows = ffi.os == "Windows"
-  pathSep = FileOps.pathSep
+  pathSep = fileOps.pathSep
 
   msgs = {
     errors: {
@@ -105,7 +105,7 @@ class ZipArchiver
   ---@return string|nil err
   write: =>
     return nil, msgs.errors.noEntries if #@entries == 0
-    FileOps.remove @outputPath -- ZipArchive 'Create' mode requires the target to be absent
+    fileOps.remove @outputPath -- ZipArchive 'Create' mode requires the target to be absent
     return @__writeWindows! if isWindows
     return @__writeUnix!
 
@@ -147,25 +147,25 @@ class ZipArchiver
   __writeUnix: =>
     token = "%04X"\format math.random 0, 16^4 - 1
     stageDir = "#{aegisub.decode_path '?temp'}#{pathSep}#{constants.DEPCTRL_SHORT_NAME}-#{@@__name}-#{token}"
-    FileOps.mkdir stageDir, false, true
+    fileOps.mkdir stageDir, false, true
 
     for entry in *@entries
       target = "#{stageDir}/#{entry.name}"
-      FileOps.mkdir target, true, true -- create the entry's parent directories
-      ok, err = FileOps.copy entry.source, target
+      fileOps.mkdir target, true, true -- create the entry's parent directories
+      ok, err = fileOps.copy entry.source, target
       unless ok
-        FileOps.remove stageDir, true
+        fileOps.remove stageDir, true
         return nil, msgs.errors.stageFailed\format entry.source, err
 
     prevDir = lfs.currentdir!
     unless lfs.chdir stageDir
-      FileOps.remove stageDir, true
+      fileOps.remove stageDir, true
       return nil, msgs.errors.enterStage\format stageDir
 
     names = [("'%s'")\format name for name in lfs.dir stageDir when name != "." and name != ".."]
     success = execOk ([[zip -r -q -X "%s" %s]])\format @outputPath, table.concat names, " "
     lfs.chdir prevDir
-    FileOps.remove stageDir, true
+    fileOps.remove stageDir, true
 
     return true if success
     return nil, msgs.errors.zipFailed\format "zip"
