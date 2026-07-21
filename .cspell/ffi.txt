@@ -31,6 +31,7 @@ HASHVAL
 HINSTANCE
 inet_pton
 libcrypto
+MAXFILESIZE
 MAXREDIRS
 nfds
 NOCTTY

@@ -117,6 +117,18 @@
               "type": "integer",
               "minimum": 0,
               "default": 3600
+            },
+            "maxFeedSize": {
+              "description": "Maximum size, in bytes, of a single feed response; a fetch that grows past it is aborted. Guards against a hostile or runaway feed. 0 removes the limit.",
+              "type": "integer",
+              "minimum": 0,
+              "default": 5000000
+            },
+            "feedFetchTimeout": {
+              "description": "Maximum time, in seconds, to spend fetching a single feed before the transfer is aborted. 0 removes the timeout.",
+              "type": "integer",
+              "minimum": 0,
+              "default": 15
             }
           }
         },

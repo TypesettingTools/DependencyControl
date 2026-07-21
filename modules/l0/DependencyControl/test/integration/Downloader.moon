@@ -91,5 +91,23 @@
       dm\await!
       ut\assertEquals dl.status, Downloader.Download.Status.Finished
 
-    _order: { "concurrentFast", "concurrentSlow", "queuedBeyondLimit", "httpError", "followsRedirect" }
+    -- a response larger than the configured byte cap is aborted, not written out whole
+    -- (curl's CURLOPT_MAXFILESIZE on Unix, the WinINet backend's read-loop byte cap on Windows)
+    capsFileSize: (ut, ctx) ->
+      f = ctx.fixtures[3] -- large.bin (256 KiB), well over the 64 KiB cap below
+      dm = Downloader nil, {maxFileSize: 64 * 1024}
+      dl = dm\addDownload "#{ctx.server.baseUrl}/fast/#{f.name}", "#{ctx.downloadDir}/capped_#{f.name}"
+      dm\await!
+      ut\assertEquals dl.status, Downloader.Download.Status.Failed
+
+    -- a fetch that outlasts the configured timeout is aborted rather than completing. The file is
+    -- dripped slowly (many delayed chunks) so the transfer can only finish long after the deadline.
+    capsTimeout: (ut, ctx) ->
+      f = ctx.fixtures[3]
+      dm = Downloader nil, {timeout: 1}
+      dl = dm\addDownload "#{ctx.server.baseUrl}/slow/#{f.name}?delay=200&chunk=8192", "#{ctx.downloadDir}/timeout_#{f.name}"
+      dm\await!
+      ut\assertEquals dl.status, Downloader.Download.Status.Failed
+
+    _order: { "concurrentFast", "concurrentSlow", "queuedBeyondLimit", "httpError", "followsRedirect", "capsFileSize", "capsTimeout" }
   }

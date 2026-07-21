@@ -234,6 +234,12 @@
       ut\assertNil dl
       ut\assertString err
 
+    -- fetch caps are stored on the downloader for the backend to enforce
+    new_storesFetchCaps: (ut) ->
+      dm = Downloader nil, {maxFileSize: 1000, timeout: 5}
+      ut\assertEquals dm.maxFileSize, 1000
+      ut\assertEquals dm.timeout, 5
+
     -- resolveRedirect: a Location header may be absolute, protocol-relative, root-relative, or path-relative
     resolveRedirect_resolvesAllForms: (ut) ->
       ut\assertEquals resolveRedirect("http://a/b/c", "https://x/y"), "https://x/y" -- absolute wins
@@ -251,6 +257,6 @@
       "clear_emptiesInPlace",
       "blockPrivateHosts_refusesPrivateLiteral", "blockPrivateHosts_allowsPublicLiteral",
       "blockPrivateHosts_optOutAllowsPrivate", "blockPrivateHosts_refusesNonHttpScheme",
-      "resolveRedirect_resolvesAllForms"
+      "new_storesFetchCaps", "resolveRedirect_resolvesAllForms"
     }
   }

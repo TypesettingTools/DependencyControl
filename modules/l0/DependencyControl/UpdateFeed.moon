@@ -335,7 +335,7 @@ class UpdateFeed
       -- land the temp file inside downloadPath (joinPath adds the separator) so trimFiles can bound it
       rand = "%04X"\format math.random 0, 16^4 - 1
       @fileName or= fileOps.joinPath @config.downloadPath, "#{fileBaseName}#{rand}.json"
-      @downloader = Downloader nil, {blockPrivateHosts: @config.blockPrivateHosts}
+      @downloader = Downloader nil, {blockPrivateHosts: @config.blockPrivateHosts, maxFileSize: @config.maxFeedSize, timeout: @config.feedFetchTimeout}
     @fileName = fileName if fileName
 
     dl, err = @downloader\addDownload @url, @fileName

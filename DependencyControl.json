@@ -131,12 +131,12 @@
             {
               "name": "/ConfigHandler.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "277138390E27D4B73E7034CB549603F90DA963B2"
+              "sha1": "F3C1707EBDE0C6BE408AFF2AD8AECA7FA519E9EA"
             },
             {
               "name": "/ConfigView.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "FF5F7B24528593348D632080551116F26A84D53C"
+              "sha1": "6B95B783B103869AAE13D366EA01CCBD633616C3"
             },
             {
               "name": "/hash.moon",
@@ -146,7 +146,7 @@
             {
               "name": "/Downloader.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "A54363E987142389076A9B0E9B707F3D705784F4"
+              "sha1": "153B19D16BD2CB2CCFB33C52470598F1BF2CCA7B"
             },
             {
               "name": "/Enum.moon",
@@ -166,7 +166,7 @@
             {
               "name": "/FeedInventory.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "2238F4DDBB64545EF7DCFF890A5C038624D4DAEF"
+              "sha1": "4EB32746AE7D048F15355350827C9A470CB5C384"
             },
             {
               "name": "/FeedManager.moon",
@@ -176,7 +176,7 @@
             {
               "name": "/FeedTrust.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "56FE5CA178E47E65E8AD7EED9385AC35090FEC93"
+              "sha1": "D0BA0089596E30601BA70DD537855320CFC311B0"
             },
             {
               "name": "/FileLock.moon",
@@ -186,27 +186,27 @@
             {
               "name": "/file-ops.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "7B6256216560723E10502787004D74C327CB5FD3"
+              "sha1": "31BBF872C4E15656E880580B7A8095FFB966928D"
             },
             {
               "name": "/GitRepository.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "F31F8C89A483EA8FC165398DEFE600F2B4B84BB5"
+              "sha1": "6F068A80E06720A165EBB3C6A593ED94F4D5C234"
             },
             {
               "name": "/Host.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "08B675EFA475ED5F171D90A66F3F25188FF851C2"
+              "sha1": "4C5DA5F5BC21C4B06D651CFFFB80D76CF3FF2608"
             },
             {
               "name": "/JsonSchema.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "EFC06CC7642ABFA8C30A2437CB199546D48D5DE7"
+              "sha1": "0FB3734E6A1CE24C7C04DDF3AD6F55BDC186B7C1"
             },
             {
               "name": "/Lock.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "5A1A699B9CB5F30A673BE1B2A48F2310DC478F6C"
+              "sha1": "CD9D4B1022CB943ACC004D692D58B3996A770B34"
             },
             {
               "name": "/Logger.moon",
@@ -216,7 +216,7 @@
             {
               "name": "/ModuleLoader.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "AAAC383B88E56E94395E62319DC54A9426F88CF0"
+              "sha1": "10A978983B6EB32CA23F31F867237EB518F0E819"
             },
             {
               "name": "/ModuleProvider.moon",
@@ -231,7 +231,7 @@
             {
               "name": "/PackageRecord.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "8ED1558AFE4F25DBBDCEB14357413CF027FAFECF"
+              "sha1": "4530D6B838BF50110D96CDB63CE2E215EDE5E489"
             },
             {
               "name": "/ScriptTargetFilter.moon",
@@ -241,12 +241,12 @@
             {
               "name": "/ScriptUpdateRecord.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "52A0925BB1EC28E5D894CA3D8327251E21C52E88"
+              "sha1": "B85BA306D509F3BC4AC5C09FB704CDEDE4C804A1"
             },
             {
               "name": "/SemanticVersion.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "FE7146185B0EFD4533196C498AA6462102C4EEF4"
+              "sha1": "A6AA2B94C548D25DB496A87347D80B87A5749DF4"
             },
             {
               "name": "/Stub.moon",
@@ -272,7 +272,7 @@
             {
               "name": "/UpdateFeed.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "475BE8CE1186060D7545CF3E45199B4BAF19B896"
+              "sha1": "718A07BBBBF95028BC41E1C828D4542DFC7129D5"
             },
             {
               "name": "/UpdateTask.moon",
@@ -282,12 +282,12 @@
             {
               "name": "/Updater.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "C08FED71390004D69149A2276771BA4074DC4392"
+              "sha1": "1E881F094A15652D2B56391BF372B040498BE0A0"
             },
             {
               "name": "/ZipArchiver.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "9894F57C183637A6895046142E4E9ECD6ED05257"
+              "sha1": "B2584499EB6F63AE34B0E6F38952FBE676C15007"
             },
             {
               "name": "/helpers/ffi-posix.moon",
@@ -332,7 +332,7 @@
             {
               "name": "/FeedLoader.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "8A7058E838E42911D5AAFB8EE87D7F0936251E07"
+              "sha1": "5FE277FC0957CF826F3EEC4F05DE633E216B3361"
             },
             {
               "name": "/config-schema.moon",
@@ -397,7 +397,7 @@
             {
               "name": "/Downloader.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "EB1E2A74550056002B55B5D4035E1BE5672232A3",
+              "sha1": "93C779DAC6F05150CFE92A733F9C33B6A6856286",
               "type": "test"
             },
             {
@@ -415,7 +415,7 @@
             {
               "name": "/FeedInventory.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "DC83066E8C54F1AE0649550CA77AE7264D206651",
+              "sha1": "5D820751E60E8609CD65427ED01DD312E869001B",
               "type": "test"
             },
             {
@@ -427,7 +427,7 @@
             {
               "name": "/FeedTrust.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "E251E85C52B3417591BC9DC403F4F34C2AB54974",
+              "sha1": "7377B4375F3576BF0ECEA720205A2BAF54CA84F1",
               "type": "test"
             },
             {
@@ -457,7 +457,7 @@
             {
               "name": "/Host.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "51EDA2375F9434FC47098BD57F3B133C83C7AF8F",
+              "sha1": "26C02949F93D08F199D45B13D9B86B579C68593B",
               "type": "test"
             },
             {
@@ -541,7 +541,7 @@
             {
               "name": "/UpdateFeed.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "BC3B4A04669C491CBE0DB3F177AA532CC9EAD249",
+              "sha1": "EAA098F1A2B4D096A56E6D50DF9C87CBF313FF08",
               "type": "test"
             },
             {
@@ -565,7 +565,7 @@
             {
               "name": "/integration/Downloader.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "878216AB161182CDB2F45E553E9E35A66826273D",
+              "sha1": "A5D67A70DBC896256430015764899AF98DECD585",
               "type": "test"
             },
             {
@@ -595,7 +595,7 @@
             {
               "name": "/FeedLoader.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "D380EC9A8F19A36F712D403F7EA2EC92932BF97E",
+              "sha1": "D24848390EC92F0FCD088ECFDA62C67D12700F8F",
               "type": "test"
             },
             {
@@ -613,7 +613,7 @@
             {
               "name": "/helpers/stub-helpers.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "531AF23A17A2D6B9D73CA462CF4EDDECE5F4EFE0",
+              "sha1": "ED12F95454B98E86A207D02EEDD42F84B19E2E3C",
               "type": "test"
             },
             {
@@ -756,7 +756,7 @@
           "fix: Disabling updates is now fully honored: it also prevents installing or updating modules on demand, not just scheduled background update checks.",
           "feat(Updater): Feed and package downloads now refuse hosts that resolve to a private, loopback, or link-local address (an SSRF safeguard), controlled by the new `blockPrivateHosts` setting (on by default; turn it off to use feeds on your local network).",
           "feat: Added `FeedInventory` and `FeedManager` — building blocks that list the feeds DependencyControl knows about, each with its provenance and trust status, and apply feed-trust actions. They back the Toolbox's new Manage Feeds macro and are available to other tooling.",
-          "feat: Feed discovery can now follow feeds' advertised `knownFeeds` transitively to surface feeds beyond the ones you've configured, with untrusted expansion bounded so a hostile feed can't drive unbounded fetches (new `fetchUntrustedFeeds` and `crawlLimits` settings).",
+          "feat: Feed discovery can now follow feeds' advertised `knownFeeds` transitively to surface feeds beyond the ones you've configured, with untrusted expansion bounded so a hostile feed can't drive unbounded fetches (new `fetchUntrustedFeeds` and `crawlLimits` settings). Each feed fetch is now also capped in size and time (new `maxFeedSize` and `feedFetchTimeout` settings), so a single oversized or unresponsive feed can't consume unbounded disk or time during discovery.",
           "feat: Fetched feeds are now cached to disk as timestamped snapshots (under `?user/cache/l0.DependencyControl/feeds`), so a recently-fetched feed is served from the cache instead of being re-downloaded, and a failed fetch falls back to the last cached copy for offline resilience. The freshness window is configurable via the new `cacheMaxAge` setting and the location via the shared `cache` path, replacing the former `dumpFeeds` debug dump.",
           "change: DependencyControl's settings file is now organized into topic sections (`updates`, `feeds`, `logging`, `paths`), and an existing config is migrated into the new layout automatically on first load, so no manual edits are needed. Several settings were renamed for consistency in the process (e.g. `updaterEnabled` became `updates.mode`, `updaterBlockPrivateHosts` became `updates.blockPrivateHosts`, and `feedCacheMaxAge` became `feeds.cacheMaxAge`), and the separate feed-cache directory gave way to a single `paths.cache` location that DependencyControl organizes by namespace internally.",
           "fix(UpdateFeed): a file marked for deletion in a feed is no longer reported as a missing-source error when deploying, and is now removed from the output directory when present.",

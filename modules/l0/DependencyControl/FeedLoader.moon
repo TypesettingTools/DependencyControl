@@ -11,15 +11,21 @@ defaultLogger = Logger fileBaseName: "#{constants.DEPCTRL_SHORT_NAME}.FeedLoader
 ---@class FeedLoader
 ---@field cache FileCache The shared feed cache, for metadata reads such as a feed's last-fetch time.
 class FeedLoader
+  -- Feed-fetch caps applied when the config leaves them unset. A feed is small JSON, so cap tightly.
+  @defaultMaxFeedSize = 5 * 10^6
+  @defaultFeedFetchTimeout = 15
+
   ---Reads the feed-fetch settings once and opens the shared feed cache under DepCtrl's namespace, wiring its
   ---L1 layer to `UpdateFeed`'s decoder so a cache hit serves a ready-parsed feed base.
-  ---@param config ConfigView The global config view; reads `paths.cache`, `feeds.cacheMaxAge` and `updates.blockPrivateHosts`.
+  ---@param config ConfigView The global config view; reads `paths.cache`, `feeds.cacheMaxAge`/`feeds.maxFeedSize`/`feeds.feedFetchTimeout` and `updates.blockPrivateHosts`.
   ---@param logger? Logger Logger for the cache and the feeds it loads.
   new: (config, @logger = defaultLogger) =>
     c = config.c
     @cache = FileCache.get c.paths.cache, constants.DEPCTRL_NAMESPACE, "feeds",
       {maxAge: c.feeds.cacheMaxAge, logger: @logger, deserialize: UpdateFeed.deserialize}
     @blockPrivateHosts = c.updates.blockPrivateHosts
+    @maxFeedSize = c.feeds.maxFeedSize or @@defaultMaxFeedSize
+    @feedFetchTimeout = c.feeds.feedFetchTimeout or @@defaultFeedFetchTimeout
 
   ---Builds an `UpdateFeed` for the given URL, injecting the shared cache and the configured fetch policy.
   ---@param url string The feed URL to load.
@@ -28,5 +34,5 @@ class FeedLoader
   load: (url, opts = {}) =>
     autoLoad = opts.autoLoad
     autoLoad = true if autoLoad == nil
-    feedConfig = {cache: @cache, blockPrivateHosts: @blockPrivateHosts}
+    feedConfig = {cache: @cache, blockPrivateHosts: @blockPrivateHosts, maxFeedSize: @maxFeedSize, feedFetchTimeout: @feedFetchTimeout}
     UpdateFeed url, autoLoad, nil, feedConfig, @logger

@@ -12,7 +12,7 @@
   make = (opts = {}) ->
     config = {c: {
       paths: {cache: fileOps.joinPath basePath, "feedLoader"}
-      feeds: {cacheMaxAge: opts.cacheMaxAge or 4242}
+      feeds: {cacheMaxAge: opts.cacheMaxAge or 4242, maxFeedSize: opts.maxFeedSize, feedFetchTimeout: opts.feedFetchTimeout}
       updates: {blockPrivateHosts: opts.blockPrivateHosts}
     }}
     FeedLoader config, DepCtrl.logger
@@ -35,7 +35,22 @@
       ut\assertTrue feed.config.blockPrivateHosts
       ut\assertNil feed.data -- autoLoad off: constructed but not fetched
 
+    -- feed-fetch caps fall back to FeedLoader's defaults when the config leaves them unset
+    load_appliesFeedCapDefaults: (ut) ->
+      loader = make!
+      feed = loader\load url, {autoLoad: false}
+      ut\assertEquals feed.config.maxFeedSize, FeedLoader.defaultMaxFeedSize
+      ut\assertEquals feed.config.feedFetchTimeout, FeedLoader.defaultFeedFetchTimeout
+
+    -- a configured feed-fetch cap overrides the default
+    load_usesConfiguredFeedCaps: (ut) ->
+      loader = make {maxFeedSize: 1000, feedFetchTimeout: 5}
+      feed = loader\load url, {autoLoad: false}
+      ut\assertEquals feed.config.maxFeedSize, 1000
+      ut\assertEquals feed.config.feedFetchTimeout, 5
+
     _order: {
-      "new_opensFeedCacheUnderNamespace", "load_wiresSharedCacheAndPolicy"
+      "new_opensFeedCacheUnderNamespace", "load_wiresSharedCacheAndPolicy",
+      "load_appliesFeedCapDefaults", "load_usesConfiguredFeedCaps"
     }
   }

@@ -30,6 +30,8 @@ msgs = {
   nonHttpScheme: "Refusing to download from a non-http(s) URL as an SSRF safeguard (a feed or package could otherwise point DependencyControl at a local file or other scheme): %s."
   tooManyRedirects: "Gave up following redirects while downloading '%s' (too many hops)."
   redirectNoLocation: "Redirect response from '%s' had no Location header."
+  tooLarge: "Aborting download: response exceeded the %d-byte size limit."
+  timedOut: "Aborting download: exceeded the %d-second fetch timeout."
 }
 
 -- Resolves a redirect Location (which may be relative) against the URL it came from. An absolute URL is
@@ -229,6 +231,8 @@ if ffi.os != "Windows"
     CURLOPT_LOW_SPEED_LIMIT = 19 -- abort if the transfer speed is below this (in bytes/sec) for too long (see LOW_SPEED_TIME)
     CURLOPT_LOW_SPEED_TIME = 20 -- the time (in seconds) the transfer speed should be below the limit before aborting
     CURLINFO_SIZE_DOWNLOAD = 0x300008 -- total bytes downloaded so far
+    CURLOPT_MAXFILESIZE = 114 -- abort a transfer curl finds to exceed this many bytes
+    CURLOPT_TIMEOUT = 13 -- abort if the whole transfer takes longer than this many seconds
     CURLINFO_CONTENT_LENGTH_DOWNLOAD = 0x30000F -- total expected size of the download, or -1 if unknown
     CURLMSG_DONE = 1 -- a transfer completed (with either success or error)
     CURLMOPT_MAX_TOTAL_CONNECTIONS = 13 -- max simultaneous connections of any kind
@@ -291,6 +295,8 @@ if ffi.os != "Windows"
         if manager.stallTimeout and manager.stallTimeout > 0
           setLong handle, CURLOPT_LOW_SPEED_LIMIT, 1
           setLong handle, CURLOPT_LOW_SPEED_TIME, manager.stallTimeout
+        setLong handle, CURLOPT_MAXFILESIZE, manager.maxFileSize if manager.maxFileSize and manager.maxFileSize > 0
+        setLong handle, CURLOPT_TIMEOUT, manager.timeout if manager.timeout and manager.timeout > 0
         dl._handle, dl._file = handle, file
         dl.status = DownloadStatus.Active
         handleMap[key handle] = dl
@@ -379,6 +385,8 @@ else
   INTERNET_FLAG_NO_AUTO_REDIRECT = 0x00200000 -- don't auto-follow redirects; we validate each hop ourselves
   INTERNET_OPTION_MAX_CONNS_PER_SERVER = 73 -- max simultaneous connections to the same HTTP/1.1 server
   INTERNET_OPTION_MAX_CONNS_PER_1_0_SERVER = 74 -- max simultaneous connections to the same HTTP/1.0 server
+  INTERNET_OPTION_CONNECT_TIMEOUT = 2 -- milliseconds to wait for a connection before failing
+  INTERNET_OPTION_RECEIVE_TIMEOUT = 6 -- milliseconds to wait for a single read to return before failing
   HTTP_QUERY_STATUS_CODE = 19 -- HTTP response status code (e.g. 200)
   HTTP_QUERY_CONTENT_LENGTH = 5 -- total expected size of the download, or -1 if unknown
   HTTP_QUERY_LOCATION = 33 -- the Location response header (a redirect's target URL)
@@ -412,12 +420,18 @@ else
         winInet.InternetSetOptionW nil, INTERNET_OPTION_MAX_CONNS_PER_SERVER, optVal, 4
         winInet.InternetSetOptionW nil, INTERNET_OPTION_MAX_CONNS_PER_1_0_SERVER, optVal, 4
       session = winInet.InternetOpenW toWide("DependencyControl"), 0, nil, nil, 0
+      -- bound each connect/read so a slow host can't block the automation thread indefinitely
+      if manager.timeout and manager.timeout > 0
+        timeoutMs = ffi.new "unsigned long[1]", manager.timeout * 1000
+        winInet.InternetSetOptionW session, INTERNET_OPTION_CONNECT_TIMEOUT, timeoutMs, 4
+        winInet.InternetSetOptionW session, INTERNET_OPTION_RECEIVE_TIMEOUT, timeoutMs, 4
       buffer = ffi.new "char[?]", CHUNK_SIZE
       read = ffi.new "unsigned long[1]"
       {
         start: (dl) ->
           outFileHandle, err = io.open dl.outfile, "wb"
           return false, (err or msgs.failedToOpen\format dl.outfile) unless outFileHandle
+          dl._deadline = os.time! + manager.timeout if manager.timeout and manager.timeout > 0
 
           -- Follow redirects by hand (NO_AUTO_REDIRECT) so we can validate each hop's host: WinINet
           -- would otherwise re-resolve and connect to a redirect target with no hook to inspect it.
@@ -454,11 +468,13 @@ else
           true
 
         step: (dl) ->
+          return msgs.timedOut\format manager.timeout if dl._deadline and os.time! > dl._deadline
           return msgs.readFailed if 0 == winInet.InternetReadFile dl._request, buffer, CHUNK_SIZE, read
           n = tonumber read[0]
           return "done" if n == 0
           dl._outFileHandle\write ffi.string buffer, n
           dl.bytesReceived += n
+          return msgs.tooLarge\format manager.maxFileSize if manager.maxFileSize and manager.maxFileSize > 0 and dl.bytesReceived > manager.maxFileSize
           "more"
 
         finish: (dl) ->
@@ -551,6 +567,8 @@ class Download extends EventEmitter
 ---@field stallTimeout? number Seconds a transfer may receive no data before it's aborted; 0/false disables stall detection.
 ---@field maxConnections? integer Maximum simultaneous transfers (also the per-server connection limit); excess transfers queue.
 ---@field blockPrivateHosts? boolean Refuse URLs whose host is a private/loopback/link-local address (an SSRF guard).
+---@field maxFileSize? number Maximum response size in bytes; a transfer found to exceed it is aborted (0/nil = unlimited).
+---@field timeout? number Maximum total seconds a transfer may take before it's aborted (0/nil = unlimited).
 
 ---Manages a set of concurrent downloads. This is DepCtrl's own engine; the
 ---DM.DownloadManager-compatible API lives in l0.DependencyControl.DownloadManager.
@@ -589,6 +607,8 @@ class Downloader extends EventEmitter
     @stallTimeout = options.stallTimeout if options.stallTimeout != nil
     @maxConnections = options.maxConnections if options.maxConnections != nil
     @blockPrivateHosts = options.blockPrivateHosts if options.blockPrivateHosts != nil
+    @maxFileSize = options.maxFileSize if options.maxFileSize != nil
+    @timeout = options.timeout if options.timeout != nil
 
     @downloads = {}
     @cancelled = false
