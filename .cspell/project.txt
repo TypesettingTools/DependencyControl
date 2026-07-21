@@ -29,6 +29,7 @@ DepCtrl
 dkjson
 DLUAJIT
 docusaurus
+downloaders
 Dunder
 editorconfig
 effectful
@@ -109,12 +110,14 @@ stdlib
 Tbls
 templater
 tmpl
+TOCTOU
 tojson
 tparam
 treturn
 typesettingtools
 typosquat
 unfetched
+ungated
 Uninvertible
 unmockable
 unparented

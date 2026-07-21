@@ -12,7 +12,11 @@ The "updater" is the subsystem that, given a version record, finds a trustworthy
 |---|---|
 | `Updater` | Per-host orchestrator. Owns the queue of update tasks, the cross-process lock, and the official trust lists. Exposes the `require` (dependency) and `scheduleUpdate` (background) entry points. |
 | `UpdateTask` | The worker for one record. Owns the whole resolve → trust-gate → download → deploy → reload flow for a single package. |
-| `UpdateFeed` | Loads/caches a feed (download + schema check) and answers queries: `getScript` (a package by namespace/channel), `getProviders` (modules that `provides` a name), `getKnownFeeds`. |
+| `UpdateFeed` | Wraps one loaded, schema-checked feed and answers queries: `getScript` (a package by namespace/channel), `getProviders` (modules that `provides` a name). A dumb consumer of a `FileCache` handed to it by `FeedLoader`. |
+| `FeedLoader` | Shared feed-access layer: opens the one feed `FileCache` and hands out `UpdateFeed` instances via `load(url, opts)`. Trust-free, so it sits below `FeedTrust`/`FeedInventory`. |
+| `FeedTrust` | Owns the trust model (`updater.feedTrust`): the merged trusted/blocked sets, the object block-list, and the trust mutators. |
+| `FeedInventory` | Gathers (offline) and crawls (bounded, trust-gated) the feed graph, tracking each feed's provenance. |
+| `Host` | Classifies a hostname/IP as private/loopback/link-local for the SSRF guard, resolving via a mockable resolver. |
 | `ModuleLoader` | Loads modules from disk (private then global copies), orchestrates `loadModules` for a record's requirements, and manages dummy refs for circular dependencies. |
 | `Lock` | Cross-process advisory lock (backed by an OS file lock) that serializes updates and survives a crashed holder. |
 | `SemanticVersioning` | Version encode/decode/compare and npm-style range matching (`parseRange`, `satisfiesRange`, `rangesIntersect`, `getRangeMaxVersion`). |
@@ -305,6 +309,34 @@ stateDiagram-v2
 - **`retain`** — reuse the remembered pick whenever it's still eligible; if gone, re-prompt interactively or downgrade to `once` non-interactively.
 - **`pinned`** — always reuse the pick; if it's gone, abort a required dependency (`-17`) or skip an optional one, and never re-prompt.
 - **`auto`** — never prompt; always take the ranked pick, refreshing the remembered pick for information.
+
+## Feed discovery, provenance, and trust management
+
+Beyond resolving a single record, DependencyControl maintains a picture of which feeds exist, where each came from, and whether it's trusted — surfaced through the Toolbox's Manage Feeds macro and shared with the install browser. `FeedTrust` owns the trust model (`updater.feedTrust`), `FeedInventory` gathers and crawls the feed graph, and `FeedLoader` is the shared feed-access layer beneath both: loading a feed is trust-free, so it sits below `FeedTrust`/`FeedInventory` and avoids a cycle.
+
+### Provenance
+
+A feed URL's **provenance is a set** — one feed can arrive through several sources at once, and its *removability* derives from which of those are user-controlled. The sources are DepCtrl's own feed (official), feeds in its `knownFeeds` (official-trusted), `extraFeeds` (user; discovery roots and trusted), `trustedFeeds` (user; trust-only), feeds declared by installed packages (`config.c.macros`/`modules[ns].feed`), feeds advertised in installed packages' `requiredModules[].feed` (`FeedInventory`'s `DependencyAdvertised` provenance), and the block list. Removing a feed drops one *user-controlled* contribution; when it's still reachable via another source, that is surfaced rather than implying the feed is gone.
+
+### Trust management
+
+`FeedTrust`'s mutators (`addTrustedFeed`/`untrust`, `block`/`unblock`, `addExtraFeed`/`removeExtraFeed`) dedup on every add path and invalidate the cached merged sets. The five resolver bands collapse, for a user, to three states: **trusted** (in `official ∪ extraFeeds ∪ trustedFeeds`), **blocked** (matched by the merged block list; overrides trust), and **untrusted** (the absence of trust — there is no stored "untrusted" list). Two rules constrain management:
+
+- **An official or package-advertised feed can't be untrusted** — untrust only touches the user lists, so the only way to stop trusting such a feed is to **block** it.
+- **The bootstrap feed (`DEPCTRL_FEED_URL`) can never be blocked** — that would collapse the trust bootstrap (every feed becomes untrusted), so any block matching it is refused.
+
+Before an action would cut off a package's update source — blocking or removing a feed an installed package's `currentSource` resolves to (re-derived per `SourceFeedKind`, not string-matched) — the user is warned. Block entries use the `{url, matchMode, reason?}` object form (see [Trust bands](#trust-bands)); `getBlockingEntry(url)` returns the matching entry so the reason can be shown, and because merged blocks are prefix-based only an *exact* block is individually removable.
+
+### Discovery and its security model
+
+`FeedInventory` is **config-first**: both `gather` (offline, config feeds only) and `crawl` (transitive) always include the user's feeds, so a dead `extraFeed` or block entry stays manageable even when unreachable (`crawl` records a per-feed `fetched` flag for an "unreachable" marker). `crawl` walks the feed graph breadth-first from the config-derived roots, following each feed's `knownFeeds`.
+
+Discovery **may recurse into untrusted feeds' `knownFeeds`, on by default** (`feeds.fetchUntrustedFeeds = always`; `never`/`prompt` for the cautious). The risk it manages is **SSRF-shaped, not classic SSRF**: an attacker controlling a feed's `knownFeeds` chooses URLs the client then fetches, but the requester is the user's own workstation (no privileged vantage), the fetch is blind (the body is parsed as a feed and discarded), and it's GET-only. Enumeration grants no install capability either — a feed reached this way is still untrusted, and installing from it still needs an explicit trust decision. The residual is fetch fan-out plus low-value blind GETs. Two mitigations, both at the layer that also protects the resolver, make the default acceptable:
+
+- **Private-host blocking (`Host`).** `Host` classifies a hostname or IP literal as private/loopback/link-local/reserved (`isPrivate!`), resolving through a mockable resolver (the FFI `getaddrinfo` in `helpers/resolve-host` by default) and catching encoded literals like `http://2130706433/`. `Downloader.addDownload` refuses private hosts under an opt-in per-instance `blockPrivateHosts` (the engine stays neutral for other consumers); the updater enables it on its own feed/package downloaders from `updates.blockPrivateHosts`.
+- **Bounded crawl.** Trusted feeds are explored freely (a finite, non-adversarial set); only *untrusted* expansion is budgeted, and each root gets its own subtree budget so one malicious subtree can't starve others, with a per-feed cap on untrusted children and a secondary depth cap (`feeds.crawlLimits`: per-root / per-feed / depth). Beyond-bounds feeds are recorded as "advertised, not fetched", and `crawl` returns `(feeds, stats)` whose `stats.truncations` reports each limit hit (which limit, its value, the offending feed and its route, a bounded sample of dropped URLs) so incomplete coverage is visible. The install browser discovers through this same crawl (`crawlWithPrompt`), retiring the former ungated, unbounded `getKnownFeeds` recursion.
+
+**Backend gaps (open).** Private-host blocking is robust on libcurl — validate the resolved IP per connection and redirect hop (`CURLOPT_PREREQFUNCTION`/`CURLINFO_PRIMARY_IP`) — but best-effort on WinINet, which re-resolves DNS internally with no connect-IP pin, leaving a residual DNS-rebinding (TOCTOU) gap only a raw-socket client would close. Neither backend yet caps response size (`maxFeedSize`) or fetch time (`feedFetchTimeout`). These are the remaining discovery-hardening items (tracked in PLAN.md).
 
 ## Notes for maintainers
 
