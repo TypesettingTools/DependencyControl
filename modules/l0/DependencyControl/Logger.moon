@@ -307,3 +307,5 @@ class Logger
     return if val.__class
       "#{val.__class.__name} object"
     else _type
+
+return Logger

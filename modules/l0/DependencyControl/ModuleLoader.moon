@@ -204,3 +204,5 @@ class ModuleLoader
       errorMsg = msgs.checkOptionalModules.missing\format @name, table.concat(missing, "\n"), downloadHint
       return false, errorMsg
     return true
+
+return ModuleLoader

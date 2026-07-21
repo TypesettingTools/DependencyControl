@@ -112,4 +112,4 @@ renderLog = (entries) ->
     lines[#lines + 1] = "  • #{item}" for item in *s.lines
   table.concat lines, "\n"
 
-{:parseEntry, :renderMarkdown, :renderLog}
+return {:parseEntry, :renderMarkdown, :renderLog}

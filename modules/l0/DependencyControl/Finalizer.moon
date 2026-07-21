@@ -26,3 +26,5 @@ class Finalizer
   @guard = (anchor, cleanup) ->
     anchor[FINALIZER_KEY] = Finalizer.create cleanup
     anchor
+
+return Finalizer

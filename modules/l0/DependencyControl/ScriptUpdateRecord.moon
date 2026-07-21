@@ -157,3 +157,5 @@ class ScriptUpdateRecord
       msg[#msg+1] = block unless block == ""
 
     return table.concat msg, "\n"
+
+return ScriptUpdateRecord

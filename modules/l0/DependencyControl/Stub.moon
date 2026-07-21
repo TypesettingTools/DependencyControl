@@ -159,3 +159,5 @@ class Stub
     call = @_calls[n]
     @__fail msgs.noNthCall, n, #@_calls unless call != nil
     @__fail msgs.wrongCall, n, @__dump(expected), @__dump call unless _stubMatch call, expected
+
+return Stub

@@ -232,3 +232,5 @@ class ConfigView
     return nil, msg unless view
     view\load! unless noLoad
     return view
+
+return ConfigView

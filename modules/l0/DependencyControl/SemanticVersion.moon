@@ -505,3 +505,5 @@ class SemanticVersion
     assert referenceVersionNumber, errMsg
 
     return version < referenceVersionNumber
+
+return SemanticVersion

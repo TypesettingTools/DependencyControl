@@ -1313,3 +1313,4 @@ class UpdateFeed
             coroutine.yield file, chanProxy, pkg, section, scriptType
 
 Accessors.install UpdateFeed
+return UpdateFeed

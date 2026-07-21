@@ -209,3 +209,5 @@ class JsonSchema
     return true if result.valid
     errors = collectValidationErrors result
     return false, #errors > 0 and table.concat(errors, "; ") or msgs.validate.errors.genericInvalid
+
+return JsonSchema

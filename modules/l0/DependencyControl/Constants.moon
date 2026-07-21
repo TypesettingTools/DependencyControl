@@ -1,4 +1,4 @@
-{
+return {
   DEPCTRL_NAME: "DependencyControl"
   DEPCTRL_SHORT_NAME: "DepCtrl"
   DEPCTRL_NAMESPACE: "l0.DependencyControl"

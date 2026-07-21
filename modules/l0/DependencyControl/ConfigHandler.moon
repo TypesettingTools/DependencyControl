@@ -465,3 +465,5 @@ class ConfigHandler
   purgeHive: (hive) =>
     purgeHive hive.__hivePath, @config
     return @getHive hive.__hivePath
+
+return ConfigHandler

@@ -1,7 +1,7 @@
 constants = require "l0.DependencyControl.Constants"
 UnitTestSuite = require "l0.DependencyControl.UnitTestSuite"
 
-UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
+return UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
   -- The suite controls object is appended by UnitTestSuite\import as the final argument.
   -- Its index varies by loader (CLI vs Aegisub pass different arg counts), so grab the last one.
   nArgs = select "#", ...

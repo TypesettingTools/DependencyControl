@@ -570,3 +570,4 @@ class PackageRecord
 
 -- wire the computed `version` accessor (returns PackageRecord, so the module still yields the class)
 Accessors.install PackageRecord
+return PackageRecord

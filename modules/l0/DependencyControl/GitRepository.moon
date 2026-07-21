@@ -37,3 +37,5 @@ class GitRepository
     branch = @getBranch(ref) or "unknown"
     hash = @getCommitHash(ref) or "0000000"
     "-#{branch}-g#{hash}"
+
+return GitRepository

@@ -122,3 +122,5 @@ class Enum
       return nil, msgs.validate.invalidValue\format prefix, value, @name
 
     return true
+
+return Enum

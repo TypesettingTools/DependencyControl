@@ -100,7 +100,7 @@ migrate = (config, currentSchemaId, targetSchemaId) ->
         record.activeChannel = channelRename.to if record.activeChannel == channelRename.from
   return true
 
-{
+return {
   :CONFIG_SCHEMA_ID_CURRENT
   :sections
   migration: {:migrate, :keyMap, :droppedKeys}

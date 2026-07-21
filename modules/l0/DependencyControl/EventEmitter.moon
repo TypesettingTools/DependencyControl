@@ -39,3 +39,5 @@ class EventEmitter
     listeners = @_listeners[event]
     return unless listeners
     cb @, ... for cb in *[l for l in *listeners]
+
+return EventEmitter

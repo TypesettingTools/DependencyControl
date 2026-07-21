@@ -36,3 +36,5 @@ class FeedLoader
     autoLoad = true if autoLoad == nil
     feedConfig = {cache: @cache, blockPrivateHosts: @blockPrivateHosts, maxFeedSize: @maxFeedSize, feedFetchTimeout: @feedFetchTimeout}
     UpdateFeed url, autoLoad, nil, feedConfig, @logger
+
+return FeedLoader

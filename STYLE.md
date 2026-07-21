@@ -26,6 +26,7 @@ Scope: this file is about the code. Contributor and agent *workflow* (verifying 
 - **MOD1.** A `.moon` file that defines and returns a single class **MUST** be named after that class in PascalCase (`FeedTrust.moon`). Any other file — a helper returning a function or table, an FFI shim — **MUST** be kebab-case (`resolve-host.moon`, `config-schema.moon`). Test files mirror the name of what they test.
 - **MOD2.** Requires go at the top: stdlib / `ffi` / `lfs` / `json` first, then `l0.DependencyControl.*`. Larger blocks **SHOULD** be alphabetized with the `=` column aligned; small files needn't.
 - **MOD3.** Inheritance **SHOULD** be rare and thin; composition and constructor injection are the norm.
+- **MOD4.** A module **MUST** end with an explicit `return` of the value it exports — the class it defines, the table it returns, or the `withTestExports`/`Accessors.install` result — never an implicit class-statement or final-expression return. Explicit is the one form that stays valid when a post-class attachment is added later, so the file's ending never has to change.
 
 ## CT — Class or plain table
 

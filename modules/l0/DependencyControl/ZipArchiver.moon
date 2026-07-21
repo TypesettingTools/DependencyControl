@@ -170,3 +170,5 @@ class ZipArchiver
 
     return true if success
     return nil, msgs.errors.zipFailed\format "zip"
+
+return ZipArchiver

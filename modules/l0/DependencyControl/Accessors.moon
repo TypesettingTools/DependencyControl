@@ -95,3 +95,5 @@ class Accessors
         name = readable[i]
         return name, accessors[name].get self if name
     cls
+
+return Accessors

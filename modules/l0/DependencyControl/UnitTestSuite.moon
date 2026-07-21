@@ -1025,3 +1025,4 @@ class UnitTestSuite
     return true
 
 Accessors.install UnitTestSuite
+return UnitTestSuite
