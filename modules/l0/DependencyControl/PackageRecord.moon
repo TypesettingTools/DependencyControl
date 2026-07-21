@@ -75,29 +75,33 @@ unregisterRecord = (namespace) -> recordsByNamespace[namespace] = nil
 ---@field readGlobalScriptVars? boolean Read script_* globals for unset fields (default true).
 ---@field saveRecordToConfig? boolean Persist this record to the config file (default true).
 
+msgs = {
+  registerTests: {
+    initFailed: "Couldn't initialize the test suite for %s '%s': %s"
+  }
+  new: {
+    badRecordError: "Bad #{constants.DEPCTRL_NAME} record (%s)."
+    badRecord: {
+      noUnmanagedMacros: "Creating unmanaged version records for macros is not allowed"
+      missingNamespace: "No namespace defined"
+      badVersion: "Couldn't parse version number: %s"
+      badModuleTable: "Invalid required module table #%d (%s)."
+    }
+  }
+  uninstall: {
+    noVirtualOrUnmanaged: "Can't uninstall %s %s '%s'. (Only installed scripts managed by #{constants.DEPCTRL_NAME} can be uninstalled)."
+  }
+  writeConfig: {
+    error: "An error occurred while writing the #{constants.DEPCTRL_NAME} config file: %s"
+    writing: "Writing updated %s data to config file..."
+  }
+}
+
 ---DependencyControl record representing one managed or unmanaged script/module.
 ---@class PackageRecord
 ---@field semanticVersion SemanticVersion This record's version as a value object (the canonical store).
 ---@field version integer This record's version as a packed integer; assignable from a string, packed integer, or SemanticVersion.
 class PackageRecord
-  msgs = {
-    new: {
-      badRecordError: "Error: Bad #{constants.DEPCTRL_NAME} record (%s)."
-      badRecord: {
-        noUnmanagedMacros: "Creating unmanaged version records for macros is not allowed"
-        missingNamespace: "No namespace defined"
-        badVersion: "Couldn't parse version number: %s"
-        badModuleTable: "Invalid required module table #%d (%s)."
-      }
-    }
-    uninstall: {
-      noVirtualOrUnmanaged: "Can't uninstall %s %s '%s'. (Only installed scripts managed by #{constants.DEPCTRL_NAME} can be uninstalled)."
-    }
-    writeConfig: {
-      error: "An error occurred while writing the #{constants.DEPCTRL_NAME} config file: %s"
-      writing: "Writing updated %s data to config file..."
-    }
-  }
 
   @depConf = {
     file: aegisub.decode_path "?user/config/#{constants.DEPCTRL_NAMESPACE}.json",
@@ -399,7 +403,7 @@ class PackageRecord
       @testSuiteInitialized = true
     else
       @testSuiteInitializeError = errMsg
-      @@logger\warn "Error initializing test suite for #{domain.terms.scriptType.singular[@scriptType]} '#{@name}': #{errMsg}"
+      @@logger\warn msgs.registerTests.initFailed, domain.terms.scriptType.singular[@scriptType], @name, errMsg
 
     -- Automation scripts run in their own isolated environment exactly once, so they register
     -- their own test menu right here. Modules, by contrast, load in every script's environment;

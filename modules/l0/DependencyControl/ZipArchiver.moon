@@ -39,6 +39,16 @@ execOk = (cmd) ->
   r = os.execute cmd
   return (type(r) == "number" and r == 0) or r == true
 
+msgs = {
+  errors: {
+    noEntries: "No files have been added to the archive."
+    helperWrite: "Couldn't write the archive helper file (%s)."
+    stageFailed: "Couldn't stage '%s' for archiving (%s)."
+    enterStage: "Couldn't enter the staging directory '%s'."
+    zipFailed: "Archive creation failed (the '%s' tool reported an error)."
+  }
+}
+
 ---Builds zip archives using each platform's stock tooling — no extra rocks or
 ---shared libraries to install or locate. Files are added with explicit, forward-slash
 ---entry names so the resulting archives extract correctly on every platform.
@@ -53,15 +63,6 @@ class ZipArchiver
   isWindows = ffi.os == "Windows"
   pathSep = fileOps.pathSep
 
-  msgs = {
-    errors: {
-      noEntries: "No files have been added to the archive."
-      helperWrite: "Couldn't write the archive helper file (%s)."
-      stageFailed: "Couldn't stage '%s' for archiving (%s)."
-      enterStage: "Couldn't enter the staging directory '%s'."
-      zipFailed: "Archive creation failed (the '%s' tool reported an error)."
-    }
-  }
 
   ---Creates an archiver that will write a zip to `outputPath`.
   ---@param outputPath string Absolute path of the archive to create.

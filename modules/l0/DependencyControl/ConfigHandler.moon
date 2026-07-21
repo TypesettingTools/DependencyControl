@@ -9,68 +9,69 @@ JsonSchema = require "l0.DependencyControl.JsonSchema"
 
 defaultLogger = Logger fileBaseName: "#{constants.DEPCTRL_SHORT_NAME}.ConfigHandler", fileSubName: script_namespace
 
+msgs = {
+  get: {
+    failedLoad: "Could not provide a ConfigHandler because there was an issue loading the configuration file: %s"
+    failedCreate: "Failed to create ConfigHandler for file '%s': %s"
+  }
+  getHive: {
+    unexpected: "An unexpected error occurred while trying to create hive '%s' on ConfigHandler for file '%s'"
+  }
+  __getOverlappingViews: {
+    differentHandler: "Other view on config file '%s' does not belong to this config handler of config file '%s'."
+  }
+  getView: {
+    failedView: "Failed to get #{ConfigView.__name} '%s' on ConfigHandler for file '%s': %s"
+    failedHandler: "Failed to get ConfigHandler for file '%s' while trying to acquire a view on #{ConfigView.__name}: %s"
+  }
+  mergeHive: {
+    badKey: "Can't merge hive because the path key #%d (%s) points to a %s."
+  }
+  new: {
+    badPath: "Couldn't validate specified config file path '%s': %s"
+    failedLoad: "Failed to load config file '%s': %s"
+  }
+  readFile: {
+    failedLock: "Failed to lock config file for reading: %s"
+    fileNotFound: "Couldn't find config file '%s'."
+    jsonDecodeError: "JSON parse error: %s"
+    configCorrupted: [[An error occurred while parsing the JSON config file.
+A backup of the corrupted configuration has been written to '%s'.
+Reload your automation scripts to generate a new configuration file.]]
+    failedHandle: "Failed to acquire a handle for reading the config file: %s"
+    badJsonRoot: "JSON root element must be an array or a hashtable, got a %s."
+  }
+  load: {
+    noFilePath: "Can't load because no config file is set."
+    noFile: "Starting with a fresh config because the config file '%s' is missing (%s)..."
+    migrationSaveFailed: "Migrated config '%s' to the current schema, but couldn't save it (%s); will retry on next load."
+  }
+  save: {
+    failedWhole: "Failed to save complete config to file '%s': %s"
+    failedHives: "Failed to save hives %s into config file '%s': %s"
+    failedMerge: "Failed to merge config hive %s into file '%s': %s"
+    failedClean: "Failed to clean config hive %s in file '%s': %s"
+    failedLock: "Failed to lock config file for saving: %s"
+    failedRead: "Failed to read config file '%s': %s."
+    noFile: "Can't save because no config file is set."
+    fileCreate: "Config file '%s' doesn't exist, will write a fresh one..."
+  }
+  traverseHive: {
+    badKey: "Can't retrieve hive because the path key #%d (%s) points to a %s."
+  }
+  writeFile: {
+    writing: "Writing config file '%s'..."
+    failedLock: "Failed to lock config file for writing: %s"
+    failedSerialize: "Failed to serialize configuration to JSON: %s"
+    failedHandle: "Failed to acquire a handle for writing the config file: %s"
+  }
+}
+
 ---JSON-backed configuration manager with cooperative cross-script locking.
 ---Manages one JSON file per instance. Use ConfigView (via getView or ConfigView.get)
 ---to access specific hives (nested sections) of the config.
 ---@class ConfigHandler
 class ConfigHandler
-  msgs = {
-    get: {
-      failedLoad: "Could not provide a ConfigHandler because there was an issue loading the configuration file: %s"
-      failedCreate: "Failed to create ConfigHandler for file '%s': %s"
-    }
-    getHive: {
-      unexpected: "An unexpected error occurred while trying to create hive '%s' on ConfigHandler for file '%s'"
-    }
-    __getOverlappingViews: {
-      differentHandler: "Other view on config file '%s' does not belong to this config handler of config file '%s'."
-    }
-    getView: {
-      failedView: "Failed to get #{ConfigView.__name} '%s' on ConfigHandler for file '%s': %s"
-      failedHandler: "Failed to get ConfigHandler for file '%s' while trying to acquire a view on #{ConfigView.__name}: %s"
-    }
-    mergeHive: {
-      badKey: "Can't merge hive because the path key #%d (%s) points to a %s."
-    }
-    new: {
-      badPath: "Couldn't validate specified config file path '%s': %s"
-      failedLoad: "Failed to load config file '%s': %s"
-    }
-    readFile: {
-      failedLock: "Failed to lock config file for reading: %s"
-      fileNotFound: "Couldn't find config file '%s'."
-      jsonDecodeError: "JSON parse error: %s"
-      configCorrupted: [[An error occurred while parsing the JSON config file.
-A backup of the corrupted configuration has been written to '%s'.
-Reload your automation scripts to generate a new configuration file.]]
-      failedHandle: "Failed to acquire a handle for reading the config file: %s"
-      badJsonRoot: "JSON root element must be an array or a hashtable, got a %s."
-    }
-    load: {
-      noFilePath: "Can't load because no config file is set."
-      noFile: "Starting with a fresh config because the config file '%s' is missing (%s)..."
-      migrationSaveFailed: "Migrated config '%s' to the current schema, but couldn't save it (%s); will retry on next load."
-    }
-    save: {
-      failedWhole: "Failed to save complete config to file '%s': %s"
-      failedHives: "Failed to save hives %s into config file '%s': %s"
-      failedMerge: "Failed to merge config hive %s into file '%s': %s"
-      failedClean: "Failed to clean config hive %s in file '%s': %s"
-      failedLock: "Failed to lock config file for saving: %s"
-      failedRead: "Failed to read config file '%s': %s."
-      noFile: "Can't save because no config file is set."
-      fileCreate: "Config file '%s' doesn't exist, will write a fresh one..."
-    }
-    traverseHive: {
-      badKey: "Can't retrieve hive because the path key #%d (%s) points to a %s."
-    }
-    writeFile: {
-      writing: "Writing config file '%s'..."
-      failedLock: "Failed to lock config file for writing: %s"
-      failedSerialize: "Failed to serialize configuration to JSON: %s"
-      failedHandle: "Failed to acquire a handle for writing the config file: %s"
-    }
-  }
 
   -- make references to provided handlers weak to allow for gc
   @handlers = setmetatable {}, {__mode: 'v'}

@@ -12,26 +12,27 @@ local UpdateTask
 
 DEPCTRL_DUMMY_MODULE_MARKER = "#{constants.DEPCTRL_PRIVATE_GLOBAL_VAR_PREFIX}Dummy"
 
+msgs = {
+  checkOptionalModules: {
+    downloadHint: "Please download the modules in question manually, put them in your %s folder and reload your automation scripts."
+    missing: "A %s feature you're trying to use requires additional modules that were not found on your system:\n%s\n%s"
+  }
+  formatVersionErrorTemplate: {
+    missing: "— %s %s%s\n—— Reason: %s"
+    outdated: "— %s (Installed: v%s; Required: v%s)%s\n—— Reason: %s"
+  }
+  loadModules: {
+    missing: "One or more of the modules required by %s could not be found on your system:\n%s\n%s"
+    missingRecord: "Module '%s' is missing a version record."
+    moduleError: "Error in required module %s:\n%s"
+    outdated: [[One or more of the modules required by %s are outdated on your system:
+%s\nPlease update the modules in question manually and reload your automation scripts.]]
+  }
+}
+
 ---Internal module loading helpers for DependencyControl-managed module dependencies.
 ---@class ModuleLoader
 class ModuleLoader
-  msgs = {
-    checkOptionalModules: {
-      downloadHint: "Please download the modules in question manually, put them in your %s folder and reload your automation scripts."
-      missing: "Error: a %s feature you're trying to use requires additional modules that were not found on your system:\n%s\n%s"
-    }
-    formatVersionErrorTemplate: {
-      missing: "— %s %s%s\n—— Reason: %s"
-      outdated: "— %s (Installed: v%s; Required: v%s)%s\n—— Reason: %s"
-    }
-    loadModules: {
-      missing: "Error: one or more of the modules required by %s could not be found on your system:\n%s\n%s"
-      missingRecord: "Error: module '%s' is missing a version record."
-      moduleError: "Error in required module %s:\n%s"
-      outdated: [[Error: one or more of the modules required by %s are outdated on your system:
-%s\nPlease update the modules in question manually and reload your automation scripts.]]
-    }
-  }
 
   ---Formats a single module's version-error line for a load-error summary.
   ---@param name string The module's display name.

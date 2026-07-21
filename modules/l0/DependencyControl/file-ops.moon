@@ -87,7 +87,7 @@ msgs = {
     failedCreate: "Failed to create temporary directory: %s"
   }
   mkdir: {
-    createError: "Error creating directory: %s."
+    createError: "Couldn't create directory: %s."
     otherExists: "Couldn't create directory because a %s of the same name is already present."
   }
   copy: {
@@ -136,7 +136,7 @@ msgs = {
   rmdir: {
     emptyPath: "Argument #1 (path) must not be an empty string."
     removeFilesFailed: "Some of the files and folders in the specified directory couldn't be removed:\n%s"
-    removeDirFailed: "Error removing empty directory: %s.",
+    removeDirFailed: "Couldn't remove empty directory: %s.",
     notFound: "No such file or directory: '%s'."
     notDir: "Expected '%s' to be a directory but found a %s."
   }

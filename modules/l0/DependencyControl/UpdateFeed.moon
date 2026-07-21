@@ -85,6 +85,85 @@ stripNulls = (tbl) ->
 ---@field localFileBasePaths? table<string, string> Per-file-type local path templates in effect.
 ---@field fileBaseUrls? table<string, string> Per-file-type URL templates in effect.
 
+msgs = {
+  __resolveChannel: {
+    notFound: "channel '%s' not found."
+    noDefault: "no default channel — specify one explicitly."
+  }
+  trace: {
+    usingCached: "Using cached feed."
+    downloaded: "Downloaded feed to %s."
+  }
+  warn: {
+    usingStale: "Couldn't refresh feed %s (%s); using the cached copy."
+  }
+  errors: {
+    urlOrFilePathRequired: "Either a URL or a file path must be provided."
+    downloadAdd: "Couldn't initiate download of %s to %s (%s)."
+    downloadFailed: "Download of feed %s to %s failed (%s)."
+    cantOpen: "Can't open downloaded feed for reading (%s)."
+    parse: "Error parsing feed."
+    invalidScriptType: "Invalid or unsupported script type: '%s'. Supported types: %s."
+  }
+  bundle: {
+    invalidSourcePath: "invalid source path for %s (%s): %s"
+    invalidDeployPath: "couldn't generate a valid deploy path for %s (channel %s) file '%s' with root dir '%s': %s"
+    srcNotFound: "source not found: %s"
+    copyFailed: "error copying %s: %s"
+    copied: "%s -> %s"
+    skipped: "skipped (already exists): %s"
+    deleted: "removed from dist (marked for deletion): %s"
+    removeFailed: "couldn't remove %s from dist (%s)"
+  }
+  ensureLoaded: {
+    noLocalPath: "Local expansion mode require a local feed file path to resolve local path templates against."
+  }
+  formatReleaseNotes: {
+    noChannel: "No version or channel given, and no channel is marked default: true."
+    channelEmpty: "No package advertises a version on channel '%s'."
+  }
+  __refreshFiles: {
+    noLocalPath: "Feed has no local path required to check file '%s' for changes."
+    sha1Failed: "Couldn't compute SHA-1 for file '%s' to check for changes: %s"
+  }
+  findUnlistedFiles: {
+    channelError: "Skipping file discovery for '%s': %s."
+    notInvertible: "Skipping file discovery for '%s' (channel '%s'): local path template '%s' must contain @{fileName} and no other unexpanded variables."
+    badScanPath: "Skipping file discovery for '%s' (channel '%s'): can't resolve scan path '%s' (%s)."
+  }
+  __refreshVersionRecord: {
+    loadFailed: "Failed to load %s '%s' for getting a fresh DependencyControl version record: %s"
+    missingDepctrlRecord: "No DependencyControl version record exposed by %s '%s'."
+  }
+  __updatePackage: {
+    failedRefreshVersionRecord: "Failed to refresh version/dependencies: %s"
+  }
+  update: {
+    notInRaw: "%s: not found in the feed data, skipping."
+    channelError: "%s: %s"
+    noRecord: "%s: no DependencyControl record (%s), skipping version/dependency refresh."
+    sha1Failed: "  '%s': couldn't compute SHA-1 — %s"
+    addFileHashFailed: "couldn't add discovered file '%s': SHA-1 failed (%s)"
+    schemaValid: "Feed conforms to schema (format v%s)."
+    schemaInvalid: "Feed fails schema validation (format v%s) — continuing anyway."
+    wrote: "Wrote %d updated package(s) to %s."
+    noRawData: "No raw feed data loaded — call loadFile or updateFeed first."
+  }
+  mergeChannels: {
+    noFrom: "No source channel (`from`) given."
+    noTo: "No destination channel(s) (`to`) given."
+  }
+  bumpVersions: {
+    badLevel: "Version level must be 'major', 'minor' or 'patch'."
+    noChannel: "No channel marked default: true; specify a channel."
+    outOfSync: "Feed is out of sync with the sources; run update-feed first. Stale: %s."
+    unknownPackage: "Unknown package: %s."
+  }
+  __bumpVersionInSource: {
+    markerCount: "Expected exactly one @{%s:version} marker in the package source, found %d."
+  }
+}
+
 ---Downloaded and expanded update feed data source.
 ---@class UpdateFeed
 ---@field url string This feed's source URL, or a file:// URL over its local file when it has no remote URL (read-only).
@@ -141,80 +220,6 @@ class UpdateFeed
     sourceAt: {}
   }
 
-  msgs = {
-    trace: {
-      usingCached: "Using cached feed."
-      downloaded: "Downloaded feed to %s."
-    }
-    warn: {
-      usingStale: "Couldn't refresh feed %s (%s); using the cached copy."
-    }
-    errors: {
-      urlOrFilePathRequired: "Either a URL or a file path must be provided."
-      downloadAdd: "Couldn't initiate download of %s to %s (%s)."
-      downloadFailed: "Download of feed %s to %s failed (%s)."
-      cantOpen: "Can't open downloaded feed for reading (%s)."
-      parse: "Error parsing feed."
-      invalidScriptType: "Invalid or unsupported script type: '%s'. Supported types: %s."
-    }
-    bundle: {
-      invalidSourcePath: "invalid source path for %s (%s): %s"
-      invalidDeployPath: "couldn't generate a valid deploy path for %s (channel %s) file '%s' with root dir '%s': %s"
-      srcNotFound: "source not found: %s"
-      copyFailed: "error copying %s: %s"
-      copied: "%s -> %s"
-      skipped: "skipped (already exists): %s"
-      deleted: "removed from dist (marked for deletion): %s"
-      removeFailed: "couldn't remove %s from dist (%s)"
-    }
-    ensureLoaded: {
-      noLocalPath: "Local expansion mode require a local feed file path to resolve local path templates against."
-    }
-    formatReleaseNotes: {
-      noChannel: "No version or channel given, and no channel is marked default: true."
-      channelEmpty: "No package advertises a version on channel '%s'."
-    }
-    __refreshFiles: {
-      noLocalPath: "Feed has no local path required to check file '%s' for changes."
-      sha1Failed: "Couldn't compute SHA-1 for file '%s' to check for changes: %s"
-    }
-    findUnlistedFiles: {
-      channelError: "Skipping file discovery for '%s': %s."
-      notInvertible: "Skipping file discovery for '%s' (channel '%s'): local path template '%s' must contain @{fileName} and no other unexpanded variables."
-      badScanPath: "Skipping file discovery for '%s' (channel '%s'): can't resolve scan path '%s' (%s)."
-    }
-    __refreshVersionRecord: {
-      loadFailed: "Failed to load %s '%s' for getting a fresh DependencyControl version record: %s"
-      missingDepctrlRecord: "No DependencyControl version record exposed by %s '%s'."
-    }
-    __updatePackage: {
-      failedRefreshVersionRecord: "Failed to refresh version/dependencies: %s"
-    }
-    update: {
-      notInRaw: "%s: not found in the feed data, skipping."
-      channelError: "%s: %s"
-      noRecord: "%s: no DependencyControl record (%s), skipping version/dependency refresh."
-      sha1Failed: "  '%s': couldn't compute SHA-1 — %s"
-      addFileHashFailed: "couldn't add discovered file '%s': SHA-1 failed (%s)"
-      schemaValid: "Feed conforms to schema (format v%s)."
-      schemaInvalid: "Feed fails schema validation (format v%s) — continuing anyway."
-      wrote: "Wrote %d updated package(s) to %s."
-      noRawData: "No raw feed data loaded — call loadFile or updateFeed first."
-    }
-    mergeChannels: {
-      noFrom: "No source channel (`from`) given."
-      noTo: "No destination channel(s) (`to`) given."
-    }
-    bumpVersions: {
-      badLevel: "Version level must be 'major', 'minor' or 'patch'."
-      noChannel: "No channel marked default: true; specify a channel."
-      outOfSync: "Feed is out of sync with the sources; run update-feed first. Stale: %s."
-      unknownPackage: "Unknown package: %s."
-    }
-    __bumpVersionInSource: {
-      markerCount: "Expected exactly one @{%s:version} marker in the package source, found %d."
-    }
-  }
 
   -- Stable key order for serializing a feed back to JSON. Keys absent from this list are
   -- appended afterwards in pairs() order (undefined, but stable for unchanged subtrees).
@@ -612,10 +617,10 @@ class UpdateFeed
   @__resolveChannel = (channels = {}, channelName) =>
     if channelName
       return channelName if channels[channelName]
-      return nil, "channel '#{channelName}' not found"
+      return nil, msgs.__resolveChannel.notFound\format channelName
     for name, channel in pairs channels
       return name if channel.default
-    return nil, "no default channel — specify one explicitly"
+    return nil, msgs.__resolveChannel.noDefault
 
   ---Writes the raw (unexpanded) feed data back to disk.
   ---@private

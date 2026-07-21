@@ -36,6 +36,16 @@ defaultLogger = Logger fileBaseName: "#{constants.DEPCTRL_SHORT_NAME}.ScriptUpda
 ---@field macros table<string, FeedScriptData> Automation scripts indexed by namespace.
 ---@field modules table<string, FeedScriptData> Modules indexed by namespace.
 
+msgs = {
+  errors: {
+    noActiveChannel: "No active channel."
+  }
+  changelog: {
+    header: "Changelog for %s v%s (released %s):"
+    verTemplate: "v %s:"
+  }
+}
+
 ---Feed-specific update information for a single script in a selected channel.
 ---
 ---Fields of the underlying [FeedScriptData](lua://FeedScriptData) (name, changelog, etc.)
@@ -53,15 +63,6 @@ defaultLogger = Logger fileBaseName: "#{constants.DEPCTRL_SHORT_NAME}.ScriptUpda
 ---@field files FeedFileData[] Platform-filtered file list for the active channel (set by setChannel).
 ---@field platforms? string[] Platforms supported by the active channel (set by setChannel).
 class ScriptUpdateRecord
-  msgs = {
-    errors: {
-      noActiveChannel: "No active channel."
-    }
-    changelog: {
-      header: "Changelog for %s v%s (released %s):"
-      verTemplate: "v %s:"
-    }
-  }
 
   -- Shared per-class metatable for the @data __index fallback; initialized lazily on first instantiation.
   instanceMetaTable = nil

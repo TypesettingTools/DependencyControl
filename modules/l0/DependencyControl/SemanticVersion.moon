@@ -67,7 +67,7 @@ msgs = {
   toPacked: {
     badString: "Can't parse version string '%s'. Make sure it conforms to semantic versioning standards."
     badType: "Argument had the wrong type: expected a string or number, got a %s."
-    overflow: "Error: %s version must be an integer <= 255, got %s."
+    overflow: "%s version must be an integer <= 255, got %s."
   }
   range: {
     badType: "Version range must be a string, got a %s."

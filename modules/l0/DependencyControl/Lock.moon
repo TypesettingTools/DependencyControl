@@ -38,6 +38,33 @@ NAMESPACE_RESOURCE_SEPARATOR = "\31"
 ---@field timeout? number Acquire timeout in milliseconds (default math.huge).
 ---@field lockWaitInterval? number Poll interval in milliseconds while waiting (default 250).
 
+msgs = {
+  new: {
+    lockNotReleased: "Lock holder '%s' (%s) did not release its lock on resource '%s.%s' before discarding it, cleaning up..."
+  }
+  lock: {
+    trying: "Trying to get a lock on resource '%s.%s' for holder '%s' (%s); timeout: %s..."
+    failed: "Could not attain lock on resource '%s.%s' for holder '%s' (%s): %s"
+    heldByOther: "Lock on resource '%s.%s' is currently held by %s, retrying in %ims..."
+    staleHolder: "Lock on resource '%s.%s' is held by %s whose lease lapsed %ds ago; the holder may have crashed or stalled without releasing it."
+    alreadyHeld: "'%s' (%s) is already holding the lock on resource '%s.%s'."
+    attained: "'%s' (%s) attained the lock on resource '%s.%s'."
+    timeout: "Gave up trying to attain a lock on resource '%s.%s' for holder '%s' (%s) after timeout was reached."
+    unavailable: "OS lock unavailable for resource '%s.%s'; '%s' (%s) is proceeding with a process-local lock only (no cross-process exclusion)."
+  }
+  release: {
+    failed: "Could not release lock on resource '%s.%s' for '%s' (%s): %s"
+    notHeld: "lock is not currently held by this instance"
+    released: "'%s' (%s) released its lock on resource '%s.%s'."
+  }
+  renew: {
+    notHeld: "cannot renew a lock that is not currently held by this instance"
+  }
+  guard: {
+    notAcquired: "Could not acquire lock on resource '%s.%s' for holder '%s' (%s): lock state %s."
+  }
+}
+
 ---Cooperative, named lock with per-resource granularity. Each distinct
 ---(scope, namespace, resource) maps to its own OS lock, so unrelated resources lock
 ---independently. A lock is mutually exclusive across every Lock instance -- and, for
@@ -57,32 +84,6 @@ NAMESPACE_RESOURCE_SEPARATOR = "\31"
 ---@class Lock
 ---@field state LockState Held when this instance holds the lock, otherwise Unknown (a foreign holder's state can't be told without acquiring). Read-only.
 class Lock
-  msgs = {
-    new: {
-      lockNotReleased: "Lock holder '%s' (%s) did not release its lock on resource '%s.%s' before discarding it, cleaning up..."
-    }
-    lock: {
-      trying: "Trying to get a lock on resource '%s.%s' for holder '%s' (%s); timeout: %s..."
-      failed: "Could not attain lock on resource '%s.%s' for holder '%s' (%s): %s"
-      heldByOther: "Lock on resource '%s.%s' is currently held by %s, retrying in %ims..."
-      staleHolder: "Lock on resource '%s.%s' is held by %s whose lease lapsed %ds ago; the holder may have crashed or stalled without releasing it."
-      alreadyHeld: "'%s' (%s) is already holding the lock on resource '%s.%s'."
-      attained: "'%s' (%s) attained the lock on resource '%s.%s'."
-      timeout: "Gave up trying to attain a lock on resource '%s.%s' for holder '%s' (%s) after timeout was reached."
-      unavailable: "OS lock unavailable for resource '%s.%s'; '%s' (%s) is proceeding with a process-local lock only (no cross-process exclusion)."
-    }
-    release: {
-      failed: "Could not release lock on resource '%s.%s' for '%s' (%s): %s"
-      notHeld: "lock is not currently held by this instance"
-      released: "'%s' (%s) released its lock on resource '%s.%s'."
-    }
-    renew: {
-      notHeld: "cannot renew a lock that is not currently held by this instance"
-    }
-    guard: {
-      notAcquired: "Could not acquire lock on resource '%s.%s' for holder '%s' (%s): lock state %s."
-    }
-  }
 
   ---@alias LockState
   ---| -1 # Unknown: the state can't be determined without trying to acquire (e.g. a foreign holder)

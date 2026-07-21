@@ -17,6 +17,24 @@ UpdateStatus = UpdateTask.UpdateStatus
 
 defaultLogger = Logger fileBaseName: "#{constants.DEPCTRL_SHORT_NAME}.Updater"
 
+msgs = {
+  acquireLock: {
+    waiting: "Waiting for update initiated by %s to finish..."
+  }
+  require: {
+    installing: "Installing required module '%s'..."
+    updating: "Updating outdated module '%s'..."
+    macroPassed: "%s is not a module."
+    upToDate: "Tried to require an update for up-to-date module '%s'."
+    notFoundDespiteInstalled: "its files were likely moved or deleted after installation, or installed for a different Aegisub setup — reinstalling the module should restore it"
+  }
+  scheduleUpdate: {
+    updaterDisabled: "Skipping update check for %s (Updater disabled)."
+    protectedInstall: "Skipping update check for %s '%s': its entry point (%s) is in Aegisub's data automation directory, managed outside of #{constants.DEPCTRL_NAME}."
+    runningUpdate: "Running scheduled update for %s '%s'..."
+  }
+}
+
 ---Coordinates background update checks and update task lifecycle.
 ---@class Updater
 ---@field feedTrust FeedTrust The feed-trust model (official + user trust merge, trust queries, mutations).
@@ -29,21 +47,6 @@ class Updater
   @defaultWaitTimeout = 60
   @defaultOrphanTimeout = 50
 
-  msgs = {
-    acquireLock: {
-      waiting: "Waiting for update initiated by %s to finish..."
-    }
-    require: {
-      macroPassed: "%s is not a module."
-      upToDate: "Tried to require an update for up-to-date module '%s'."
-      notFoundDespiteInstalled: "its files were likely moved or deleted after installation, or installed for a different Aegisub setup — reinstalling the module should restore it"
-    }
-    scheduleUpdate: {
-      updaterDisabled: "Skipping update check for %s (Updater disabled)."
-      protectedInstall: "Skipping update check for %s '%s': its entry point (%s) is in Aegisub's data automation directory, managed outside of #{constants.DEPCTRL_NAME}."
-      runningUpdate: "Running scheduled update for %s '%s'..."
-    }
-  }
 
   ---Creates an updater coordinator for one host script context.
   ---@param host? string Host script namespace (default script_namespace).
@@ -111,7 +114,7 @@ class Updater
   ---@return string? detail Error detail for a failing code, or the paradox reason when an up-to-date module then can't be loaded.
   require: (record, targetVersion, addFeeds, optional, channel, reason = UpdateReason.DependencyResolution) =>
     @logger\assert record.scriptType == domain.ScriptType.Module, msgs.require.macroPassed, record.name or record.namespace
-    @logger\log "%s module '%s'...", record.virtual and "Installing required" or "Updating outdated", record.name
+    @logger\log record.virtual and msgs.require.installing or msgs.require.updating, record.name
     task, code, res = @addTask record, targetVersion, addFeeds, optional, channel, reason
     code, res = task\run true if task
 

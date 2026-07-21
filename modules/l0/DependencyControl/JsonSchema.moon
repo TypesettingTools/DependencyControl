@@ -50,43 +50,44 @@ collectValidationErrors = (result, acc = {}) ->
     acc[#acc + 1] = "#{result.instanceLocation or '?'}: #{result.error}"
   return acc
 
+msgs = {
+  load: {
+    errors: {
+      read: "Couldn't read JSON schema file '%s': %s"
+      jsonParse: "Couldn't parse JSON schema file '%s' as JSON."
+      notAnObject: "JSON schema file '%s' did not decode to a JSON object (got %s).",
+      badArgument: "Invalid schema argument of type %s (expected table or string file path)."
+    }
+  }
+  getSchemasInDirectory: {
+    errors: {
+      readDir: "Couldn't read schema directory '%s': %s"
+      noSchemasFound: "No schema files found in directory '%s' matching pattern '%s'."
+    }
+  }
+  validate: {
+    errors: {
+      libMissing: "JSON schema validation requires 'lua-schema'. Manually install it via LuaRocks and/or ensure it's on the Lua path to enable validation."
+      genericInvalid: "Data did not conform to schema, but no specific error information is available."
+    }
+    noPcre: "rex_pcre2 not available — using LPeg.re `lpegPattern` fallback for `pattern` validation."
+  }
+  validateAny: {
+    errors: {
+      versionNotFound: "No schema available for version '%s'."
+      versionLoadFailed: "Failed to load schema for version '%s': %s"
+      validateErrored: "An error occurred while validating against schema version '%s': %s"
+      invalid: "Data did not validate against schema version '%s': %s"
+      allFailed: "Validation failed against all available schemas (feed version was '%s'). Errors by schema version:\n%s"
+    }
+  }
+}
+
 ---JSON schema loading and validation utilities.
 ---Depends on the `lua-schema` library for validation, which must be manually installed
 ---via LuaRocks and/or otherwise made available on the Lua path by the user.
 ---@class JsonSchema
 class JsonSchema
-  msgs = {
-    load: {
-      errors: {
-        read: "Couldn't read JSON schema file '%s': %s"
-        jsonParse: "Couldn't parse JSON schema file '%s' as JSON."
-        notAnObject: "JSON schema file '%s' did not decode to a JSON object (got %s).",
-        badArgument: "Invalid schema argument of type %s (expected table or string file path)."
-      }
-    }
-    getSchemasInDirectory: {
-      errors: {
-        readDir: "Couldn't read schema directory '%s': %s"
-        noSchemasFound: "No schema files found in directory '%s' matching pattern '%s'."
-      }
-    }
-    validate: {
-      errors: {
-        libMissing: "JSON schema validation requires 'lua-schema'. Manually install it via LuaRocks and/or ensure it's on the Lua path to enable validation."
-        genericInvalid: "Data did not conform to schema, but no specific error information is available."
-      }
-      noPcre: "rex_pcre2 not available — using LPeg.re `lpegPattern` fallback for `pattern` validation."
-    }
-    validateAny: {
-      errors: {
-        versionNotFound: "No schema available for version '%s'."
-        versionLoadFailed: "Failed to load schema for version '%s': %s"
-        validateErrored: "An error occurred while validating against schema version '%s': %s"
-        invalid: "Data did not validate against schema version '%s': %s"
-        allFailed: "Validation failed against all available schemas (feed version was '%s'). Errors by schema version:\n%s"
-      }
-    }
-  }
 
   -- The JSON Schema keyword whose value declares which schema a document conforms to (`$schema`).
   @JSON_SCHEMA_ID_KEYWORD = JSON_SCHEMA_ID_KEYWORD

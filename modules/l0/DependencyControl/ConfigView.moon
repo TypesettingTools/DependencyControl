@@ -31,19 +31,20 @@ mergeSection = (view, sectionKey, defaultSection) ->
       return next, merged
   }
 
+msgs = {
+  new: {
+    failedRetrieveHive: "Failed to retrieve hive %s from ConfigHandler: %s"
+  }
+  isOverlappingView: {
+    differentHandler: "Other view on config file '%s' does not belong to the same config handler as this view on config file '%s'."
+  }
+}
+
 ---A view into a hive (nested path) of a ConfigHandler's JSON config file.
 ---Holds the defaults-fallthrough machinery and exposes @c / @config / @userConfig.
 ---Multiple views on the same file are coordinated through their shared ConfigHandler.
 ---@class ConfigView
 class ConfigView
-  msgs = {
-    new: {
-      failedRetrieveHive: "Failed to retrieve hive %s from ConfigHandler: %s"
-    }
-    isOverlappingView: {
-      differentHandler: "Other view on config file '%s' does not belong to the same config handler as this view on config file '%s'."
-    }
-  }
 
   ---Returns a ConfigView for the given file and hive path, creating a handler if needed.
   ---@param filePath string|boolean Config file path, or false for an in-memory (orphan) view.
