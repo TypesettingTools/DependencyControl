@@ -1,5 +1,6 @@
 ffi = require "ffi"
 Finalizer = require "l0.DependencyControl.Finalizer"
+local Hash
 
 local formatName, openImpl, isOpenImpl, tryLockImpl, lockImpl, unlockImpl, closeImpl
 local pid, isAvailable, unlinkAtExit
@@ -71,8 +72,19 @@ else
   namesToUnlink = {}
   unlinkAtExit = Finalizer.create -> pcall(-> ffi.C.sem_unlink name) for name in pairs namesToUnlink
 
-  -- POSIX names must start with a single '/' and contain no other slashes.
-  formatName = (token) -> "/#{token}"
+  -- Darwin caps the whole name at 31 chars (including the NULL terminator) and fails with ENAMETOOLONG beyond it.
+  -- Linux allows 251 (255 - the length of the leading 'sem.'). If the token exceeds the OS-specific limit, we use a
+  -- truncated SHA-1 digest of it instead to ensure deterministic uniqueness.
+  PSEMNAMLEN = 31
+  MAX_POSIX_SEM_NAME = ffi.os == "OSX" and PSEMNAMLEN - 1 or 251
+
+  formatName = (token) ->
+    name = "/#{token}" -- POSIX names start with a single '/' and contain no other slashes.
+    return name if #name <= MAX_POSIX_SEM_NAME
+    -- required lazily to break a load cycle (Logger → NamedSemaphore → hash → Enum → Logger).
+    Hash or= require "l0.DependencyControl.hash"
+    return "/#{Hash.getDigest(Hash.HashType.Sha1, token)\sub(1, MAX_POSIX_SEM_NAME - 1)}"
+
   openImpl = (name) -> ffi.C.sem_open name, ffiPosix.FileCreationFlags.Create, SEMAPHORE_FILE_MODE, BINARY_SEMAPHORE_INITIAL_VALUE
   isOpenImpl = (handle) -> handle != nil and handle != SEM_FAILED
   tryLockImpl = (handle) -> ffi.C.sem_trywait(handle) == 0

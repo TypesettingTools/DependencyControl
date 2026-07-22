@@ -182,7 +182,7 @@
             {
               "name": "/FileLock.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "A4AE6ECAC9409606768A73EC502A50652DE398AE"
+              "sha1": "E3CFA85E0FE60096AC1E87F0A41961946EF606C0"
             },
             {
               "name": "/file-ops.moon",
@@ -233,7 +233,7 @@
             {
               "name": "/NamedSemaphore.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "B7AB49FF445D01845ACA7863409F3E20C07F44BF"
+              "sha1": "AD68DF342CF0A6068B22F75D9BC44D4B115FE1CE"
             },
             {
               "name": "/PackageRecord.moon",
@@ -293,7 +293,7 @@
             {
               "name": "/helpers/ffi-posix.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "2C10297D4490635DFB018AF6DC8F01FED751E6FC"
+              "sha1": "43C4F016D231AB2EA08B00D12BB4629BACCBA02F"
             },
             {
               "name": "/helpers/ffi-windows.moon",
@@ -434,7 +434,7 @@
             {
               "name": "/ffi-posix.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "1A437D8340748EE2E1A7213310E2DEFE5B3D551D",
+              "sha1": "5CCE5A5C81C20D76CA461377765DF5D99EE03FA3",
               "type": "test"
             },
             {

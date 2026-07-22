@@ -80,6 +80,7 @@ moonbase
 moonc
 mooncats
 moonpath
+msvc
 multiset
 myaamori
 NTFS
