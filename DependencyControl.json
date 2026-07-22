@@ -132,7 +132,7 @@
             {
               "name": "/ConfigHandler.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "2667DEBBB70A7DB217BEBE6F911C17882077BA50"
+              "sha1": "6C8ACA7DD2BBA8AD22AB7E488F918297B820EDF9"
             },
             {
               "name": "/ConfigView.moon",
@@ -238,7 +238,7 @@
             {
               "name": "/PackageRecord.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "EDA592882B607109FA8575C0DAADD31D94C392F3"
+              "sha1": "443CC1EBE9AC1D0A9696A0BCA8129487E2888FA2"
             },
             {
               "name": "/ScriptTargetFilter.moon",
@@ -273,12 +273,12 @@
             {
               "name": "/UpdateFeed.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "E4E024F606D31BAB258D380331969BC6466B990D"
+              "sha1": "7DA1F0C92857735BEF91BFC3F02D8B6286EBE243"
             },
             {
               "name": "/UpdateTask.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "6F5FEB171C8C85F3620C024F5B6B193DE22E0D1C"
+              "sha1": "5201D06833AA9D180680B3DE8014575FCA3C989A"
             },
             {
               "name": "/Updater.moon",
@@ -368,7 +368,7 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "2682F854649613DC37C9A78023050E146650D103",
+              "sha1": "987B9AA2FF029430233E2A01A8EC3926E9D074E8",
               "type": "test"
             },
             {
@@ -506,7 +506,7 @@
             {
               "name": "/PackageRecord.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "52A7A60235FDBE5EAF6D3F05AD00F58CAA0BEAFE",
+              "sha1": "2C74D8E781798D954A94C77D2FB327DBEF0EA5CA",
               "type": "test"
             },
             {
@@ -548,7 +548,7 @@
             {
               "name": "/UpdateTask.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "70E15CF66D045D60298B3D9C328DD41DF27F2DE4",
+              "sha1": "36ABF5C3392E2630CA9AA51FF39D3FF2F975FBFF",
               "type": "test"
             },
             {
@@ -645,6 +645,12 @@
               "name": "/environment.moon",
               "url": "@{fileBaseUrl}",
               "sha1": "1889EFB487A85EF9CD9838312B36CAB97D332119",
+              "type": "test"
+            },
+            {
+              "name": "/dkjson.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "8FC93EF2FCE158FBF32EA4303098F51E90DFA3D4",
               "type": "test"
             }
           ],
@@ -761,7 +767,8 @@
           "feat: The CLI gained documentation and maintenance tooling. `generate-types` extracts LuaCATS annotations into LuaLS type-definition files, and `generate-docs` renders browsable API docs from a feed's module sources. Both are powered by the new `l0.MoonCats` module. A new `update-feed --add-files` option discovers on-disk files missing from a feed and adds complete entries for them.",
           "feat: Releases now version feed packages in lockstep, advancing only the packages that changed to a single shared repo-level version. New `bump-version`, `merge-feed`, and `release-notes` CLI tasks and an `update-feed --mark-released` option drive the release workflow. Changelog entries can also carry conventional-commit markers that the generated release notes group by category and use to flag breaking changes.",
           "change: A short-form required-module dependency that names more than one module (such as `{\"ffi\", \"json\"}`) is now detected and reported with a warning. Only the first name is honored, as before.",
-          "fix: When several scripts install modules at the same time, a dependency that isn't installed yet is no longer mistaken for an installed one while waiting for another update to finish."
+          "fix: When several scripts install modules at the same time, a dependency that isn't installed yet is no longer mistaken for an installed one while waiting for another update to finish.",
+          "refactor: Reinstalling a managed module that exposes a plain version string instead of its DependencyControl record no longer demotes it to unmanaged, so it keeps receiving scheduled update checks."
         ]
       }
     },
@@ -779,7 +786,7 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "4F2FF2FFA9FFF0AD9880B52B75293A2E9A04B58C"
+              "sha1": "BCDC68B4443E1E4D54C0C870106C9DA506EB9AB2"
             },
             {
               "name": "/vendor/dkjson.lua",

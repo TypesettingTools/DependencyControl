@@ -1010,6 +1010,10 @@ class UpdateTask
       -- get a fresh version record
       if type(ref.version) == "table" and ref.version.__class.__name == @@__DependencyControl.__name
         @record = ref.version
+      elseif registered = @@__DependencyControl\getRegisteredRecord @record.namespace
+        -- the module registered a DependencyControl record during load but didn't expose it as `.version`;
+        -- adopt its self-declared record rather than demoting a managed module to unmanaged
+        @record = registered
       else
         -- look for any compatible non-DepCtrl version records and create an unmanaged record
         return finish UpdateStatus.MissingVersionRecord unless ref.version

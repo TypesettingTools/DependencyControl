@@ -946,6 +946,30 @@
       ut\assertTrue task.updated
       ut\assertIs task.record, newRecord -- record swapped to the freshly-loaded version record
 
+    -- a module that registered a DependencyControl record but exposes a plain string as its .version is
+    -- recovered as managed from the record registry, not demoted to a fresh unmanaged record
+    performUpdate_recoversManagedRecordFromRegistry: (ut) ->
+      ut\stub(fileOps, "getTempDir")\returns "tmp"
+      ut\stub(fileOps, "mkdir")\returns true, "tmp"
+      ut\stub(UpdateFeed, "getFileDeployPath")\returns "deploy/x.moon"
+      ut\stub(fileOps, "verifyHash")\returns false
+      ut\stub(fileOps, "move")\returns true
+      ut\stub(fileOps, "rmdir")\returns true
+      registered = {
+        name: "TestMod", scriptType: domain.ScriptType.Module, recordType: domain.RecordType.Managed
+        version: SemanticVersion\toPacked "1.8.5", __class: {__name: "DependencyControl"}
+      }
+      ut\stub(ModuleLoader, "loadModule")\returns {version: "1.8.5"} -- a bare string, not a DepCtrl record
+      task = makePerformTask {downloadStatus: Downloader.Download.Status.Finished}
+      task.__class.__DependencyControl.getRegisteredRecord = (self, ns) -> ns == task.record.namespace and registered or nil
+      update = {
+        version: "1.8.5", getChangelog: ((rec, ver) => "")
+        files: {{name: "x.moon", type: "script", url: "http://x", sha1: string.rep "a", 40}}
+      }
+      code = UpdateTask.performUpdate task, update
+      ut\assertEquals code, UpdateStatus.Installed
+      ut\assertIs task.record, registered -- adopted the self-registered managed record, not a new unmanaged one
+
     -- refreshRecord: another updater installed the module while we waited for the lock → adopt the result
     refreshRecord_detectsExternalInstall: (ut) ->
       loadedRef = {fresh: true}
@@ -1057,7 +1081,7 @@
       "installProvider_constructsRecordAndRequires",
       "performUpdate_tempDirFailure", "performUpdate_rejectsPathTraversal", "performUpdate_rejectsBadSha1",
       "performUpdate_reportsFailedDownloads", "performUpdate_reportsMoveFailures",
-      "performUpdate_reloadsModuleAndRefreshesRecord",
+      "performUpdate_reloadsModuleAndRefreshesRecord", "performUpdate_recoversManagedRecordFromRegistry",
       "refreshRecord_detectsExternalInstall", "refreshRecord_noChangeStaysUntouched"
     }
   }
