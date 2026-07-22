@@ -632,7 +632,7 @@ class UpdateFeed
     return false, err unless loaded
     path or= @feedPath
     encoded = dkjson.encode @rawFeedData, {indentMode: "prettier", keyorder: feedKeyOrder}
-    fileOps.writeFile path, "#{encoded}\n", true
+    fileOps.writeFile path, encoded, true
 
   ---Validates @rawFeedData against the feed schema matching its declared format version.
   ---Best-effort: warns through @logger but never raises, so an unavailable schema rock or a

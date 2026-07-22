@@ -216,7 +216,7 @@ class ConfigHandler
 
     @logger\trace msgs.writeFile.writing, @filePath
     handle\setvbuf "full", 10e6
-    handle\write res, "\n"
+    handle\write res
     handle\flush!
     handle\close!
 
