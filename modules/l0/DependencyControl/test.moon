@@ -34,6 +34,7 @@ return UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
     Lock: (controls\requireTest "Lock")!
     FileLock: (controls\requireTest "FileLock")!
     NamedSemaphore: (controls\requireTest "NamedSemaphore")!
+    DkJson: (controls\requireTest "dkjson")!
     ConfigHandler: (controls\requireTest "ConfigHandler")!
     ConfigView: (controls\requireTest "ConfigView")!
     ConfigSchema: (controls\requireTest "config-schema")!

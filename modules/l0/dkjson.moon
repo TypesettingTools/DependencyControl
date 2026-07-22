@@ -28,6 +28,9 @@ prettyEncode = (value, state = {}) ->
 
   rank = {k, i for i, k in ipairs keyorder}
   indentStr = (level) -> ("  ")\rep level
+  -- JSON object keys are always strings; a non-string key (e.g. a stray integer) encoded directly
+  -- would emit unquoted and produce invalid JSON
+  encodeKey = (k) -> dkjson.encode tostring k
 
   -- Classifies a table as a JSON "array" or "object", honoring dkjson's decode-time __jsontype
   -- tag and otherwise falling back to a key-shape heuristic (empty tables become objects).
@@ -56,7 +59,7 @@ prettyEncode = (value, state = {}) ->
     if classify(val, meta) == "array"
       "[#{table.concat [compact v for v in *val], ", "}]"
     else
-      "{#{table.concat ["#{dkjson.encode k}: #{compact val[k]}" for k in *orderedKeys val], ", "}}"
+      "{#{table.concat ["#{encodeKey k}: #{compact val[k]}" for k in *orderedKeys val], ", "}}"
 
   -- Whether a value must span multiple lines regardless of width: non-empty objects always break,
   -- and an array breaks if any of its elements does.
@@ -87,7 +90,7 @@ prettyEncode = (value, state = {}) ->
       return "{}" if #keys == 0
       inner = indentStr level + 1
       parts = for k in *keys
-        key = dkjson.encode k
+        key = encodeKey k
         "#{inner}#{key}: #{render val[k], #inner + #key + 2, level + 1}"
       "{\n#{table.concat parts, ",\n"}\n#{indentStr level}}"
 
