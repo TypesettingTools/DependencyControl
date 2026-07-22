@@ -122,7 +122,7 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "F6F5430E03D9AE33D7F0DF75896D9FF66FFE955C"
+              "sha1": "D27AA2A2EB8B0C498F6AA4F4E5025A87F1DCCC6F"
             },
             {
               "name": "/Constants.moon",
@@ -191,9 +191,9 @@
             },
             {
               "name": "/FileOps.moon",
-              "delete": true,
               "url": "@{fileBaseUrl}",
-              "sha1": "0000000000000000000000000000000000000000"
+              "sha1": "0000000000000000000000000000000000000000",
+              "delete": true
             },
             {
               "name": "/GitRepository.moon",
@@ -738,7 +738,7 @@
           "feat: Added `FeedInventory` and `FeedManager`, building blocks that list the feeds DependencyControl knows about with their provenance and trust status and apply trust actions. They back the Toolbox's new Manage Feeds macro and are available to other tooling.",
           "change: DependencyControl's settings file is now organized into `updates`, `feeds`, `logging`, and `paths` sections, and an existing config is migrated into the new layout automatically on first load. Several settings were renamed in the process, for example `updaterEnabled` to `updates.mode` and `feedCacheMaxAge` to `feeds.cacheMaxAge`. The separate feed-cache directory gave way to a single `paths.cache` location that DependencyControl organizes by namespace.",
           "change: The config file is now easier to read and maintain by hand. Each installed script's version is stored as a semantic-version string such as \"1.2.3\" rather than a packed integer, only the values you have actually changed are written, and the file is saved as indented, pretty-printed JSON. Existing configs are migrated automatically on first load.",
-          "change!: DependencyControl now refuses to load on a MoonScript version below the minimum it requires, showing an error that directs you to update your Aegisub build.",
+          "change: DependencyControl now refuses to load on an Aegisub build it can't run on, showing an error that directs you to update. It needs a MoonScript at or above its minimum version, and a LuaJIT built with Lua 5.2 compatibility, which its computed properties and cross-type version comparisons rely on.",
           "feat: Feed format v0.4.0 reduces repetition for feed authors. Per-file-type URL and path templates can be set once at the feed root or on a macros/modules section container and roll down to every package, while the single-string `fileBaseUrl` and `localFileBasePath` keep working as the fallback. Feeds can also define their own template variables, including lookup tables indexed by a computed key such as `@{tagSuffix:@{channel}}`, and the new `@{scriptType}` and `@{scriptTypeSection}` variables expose each package's type and feed section.",
           "feat(SemanticVersion): SemanticVersion is now a value object. You can construct it from a version string or from major, minor, and patch components, compare instances with the standard operators, read and bump the individual parts, and test it against a version range. A record's version is backed by one and exposed as `record.semanticVersion`, while `record.version` still returns the packed integer as before.",
           "feat: Added the Accessors module for declaring metatable-backed computed properties through one standardized transform, instead of hand-rolled metatable code. Each declared property is recorded on the class for inspection tooling.",

@@ -8,6 +8,23 @@ however the Version %s provided by your Aegisub installation is outdated.
 Update to a recent Aegisub build to resolve this issue. 
 ]]\format MIN_MOONSCRIPT_VERSION, moonscript.version
 
+-- DependencyControl also needs a LuaJIT built with Lua 5.2 compatibility (LUAJIT_ENABLE_LUA52COMPAT):
+-- Accessors expose computed properties through the __pairs metamethod, and SemanticVersion compares
+-- across types, neither of which works without it. Probe the __pairs feature we rely on directly.
+lua52CompatEnabled = ->
+  respected = false
+  probe = setmetatable {}, {
+    __pairs: ->
+      respected = true
+      -> nil
+  }
+  pairs probe
+  respected
+
+assert lua52CompatEnabled!,
+  [[DependencyControl requires a LuaJIT built with Lua 5.2 compatibility (LUAJIT_ENABLE_LUA52COMPAT), which your Aegisub installation is missing.
+Update to a recent Aegisub build to resolve this issue.]]
+
 
 -- Install the module-provides searcher and register DepCtrl's bundled fallbacks before
 -- the sub-modules below load.
