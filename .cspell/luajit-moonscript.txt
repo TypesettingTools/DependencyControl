@@ -1,9 +1,12 @@
 bnot
 bxor
 currentline
+lauxlib
 lightuserdata
 loadstring
 lshift
+luaconf
+lualib
 metamethod
 metamethods
 metatable

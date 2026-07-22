@@ -27,11 +27,11 @@ jobs:
 
       - uses: leafo/gh-actions-lua@v13
         with:
-          luaVersion: "luajit-2.1.0-beta3"
+          luaVersion: "luajit-2.1"
           # DepCtrl relies on Lua 5.2 features (table.unpack, __pairs/__len)
           luaCompileFlags: "XCFLAGS=-DLUAJIT_ENABLE_LUA52COMPAT"
 
-      - uses: leafo/gh-actions-luarocks@v6
+      - uses: luarocks/gh-actions-luarocks@v7
       # moonscript loader
       - run: luarocks install moonscript
       # lfs (Aegisub provides an internal copy)

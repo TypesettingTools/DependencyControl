@@ -116,9 +116,9 @@ jobs:
 
       - uses: leafo/gh-actions-lua@v13
         with:
-          luaVersion: "luajit-2.1.0-beta3"
+          luaVersion: "luajit-2.1"
           luaCompileFlags: "XCFLAGS=-DLUAJIT_ENABLE_LUA52COMPAT"
-      - uses: leafo/gh-actions-luarocks@v6
+      - uses: luarocks/gh-actions-luarocks@v7
       - run: luarocks install moonscript
       - run: luarocks install luafilesystem
       - run: luarocks install argparse

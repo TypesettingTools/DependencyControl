@@ -13,32 +13,113 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
         with:
           ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.ref || github.ref }}
 
+      # Windows uses MSVC for LuaJIT and the C rocks; activate the toolchain (sets VCINSTALLDIR + cl).
+      - uses: step-security/msvc-dev-cmd@v1
+        if: runner.os == 'Windows'
+
       - uses: leafo/gh-actions-lua@v13
+        if: runner.os != 'Windows'
         with:
-          luaVersion: "luajit-2.1.0-beta3"
+          luaVersion: "luajit-2.1"
           # DepCtrl relies on Lua 5.2 features (table.unpack, __pairs/__len)
           luaCompileFlags: "XCFLAGS=-DLUAJIT_ENABLE_LUA52COMPAT"
 
-      - uses: leafo/gh-actions-luarocks@v6
+      # Cache the MSVC LuaJIT build, keyed on the live v2.1 commit so it refreshes when upstream moves
+      # (leafo/gh-actions-lua already caches LuaJIT on Linux/macOS).
+      - name: Resolve LuaJIT revision
+        if: runner.os == 'Windows'
+        id: luajit-rev
+        shell: pwsh
+        run: |
+          $line = git ls-remote https://github.com/LuaJIT/LuaJIT.git refs/heads/v2.1 | Select-Object -First 1
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "sha=$(($line -split '\s+')[0])"
+
+      - name: Cache LuaJIT
+        if: runner.os == 'Windows'
+        id: cache-luajit
+        uses: actions/cache@v4
+        with:
+          path: .lua
+          key: luajit-msvc-x64-${{ steps.luajit-rev.outputs.sha }}
+
+      # The C rocks build with MSVC on Windows, so LuaJIT must too, for a matching lua51.lib and CRT.
+      # The Lua action only builds LuaJIT with mingw, so build it here with msvcbuild.bat and install
+      # into .lua/ using the layout the luarocks action expects.
+      - name: Build LuaJIT with MSVC
+        if: runner.os == 'Windows' && steps.cache-luajit.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          git clone --depth 1 --branch v2.1 https://github.com/LuaJIT/LuaJIT.git "$env:RUNNER_TEMP\luajit"
+          Set-Location "$env:RUNNER_TEMP\luajit\src"
+          cmd /c msvcbuild.bat lua52compat
+          $lua = "$env:GITHUB_WORKSPACE\.lua"
+          New-Item -ItemType Directory -Force -Path "$lua\bin", "$lua\lib", "$lua\include\luajit-2.1" | Out-Null
+          Copy-Item luajit.exe -Destination "$lua\bin\lua.exe"
+          Copy-Item lua51.dll -Destination "$lua\bin"
+          Copy-Item -Path lua51.dll, lua51.lib -Destination "$lua\lib"
+          Copy-Item -Path lua.h, lualib.h, lauxlib.h, luaconf.h, lua.hpp, luajit.h -Destination "$lua\include\luajit-2.1"
+
+      # .lua/bin holds lua.exe whether just built or restored from cache; put it on PATH either way.
+      - name: Add LuaJIT to PATH
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: Add-Content -Path $env:GITHUB_PATH -Value "$env:GITHUB_WORKSPACE\.lua\bin"
+
+      # Installs LuaRocks and builds the C rocks with the active toolchain — MSVC on Windows
+      # (VCINSTALLDIR set above), the system gcc/clang on Linux/macOS.
+      - uses: luarocks/gh-actions-luarocks@v7
+
+      # Pegasus's lzlib dependency links against zlib, which isn't on the Windows runner. Cache the
+      # vcpkg build; zlib 1.3.x is stable, so a fixed key is safe. Path matches VCPKG_INSTALLATION_ROOT.
+      - name: Cache zlib
+        if: runner.os == 'Windows'
+        id: cache-zlib
+        uses: actions/cache@v4
+        with:
+          path: C:\vcpkg\installed\x64-windows
+          key: zlib-x64-windows-1
+
+      - name: Set up zlib for lzlib
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          CACHE_HIT: ${{ steps.cache-zlib.outputs.cache-hit }}
+        run: |
+          $z = "$env:VCPKG_INSTALLATION_ROOT\installed\x64-windows"
+          if ($env:CACHE_HIT -ne 'true') {
+            & "$env:VCPKG_INSTALLATION_ROOT\vcpkg.exe" install zlib:x64-windows
+            # zlib 1.3.x's import lib is z.lib, but lzlib looks for zlib.lib.
+            Copy-Item "$z\lib\z.lib" "$z\lib\zlib.lib"
+          }
+          luarocks --lua-version=5.1 config variables.ZLIB_INCDIR "$z\include"
+          luarocks --lua-version=5.1 config variables.ZLIB_LIBDIR "$z\lib"
+
       # moonscript loader
-      - run: luarocks install moonscript
+      - run: luarocks --lua-version=5.1 install moonscript
       # lfs (Aegisub provides an internal copy)
-      - run: luarocks install luafilesystem
+      - run: luarocks --lua-version=5.1 install luafilesystem
       # CLI argument parsing
-      - run: luarocks install argparse
+      - run: luarocks --lua-version=5.1 install argparse
       # mock HTTP server dependencies
-      - run: luarocks install luasocket
-      - run: luarocks install copas
-      - run: luarocks install pegasus
+      - run: luarocks --lua-version=5.1 install luasocket
+      - run: luarocks --lua-version=5.1 install copas
+      - run: luarocks --lua-version=5.1 install pegasus
       # json schema validation
-      - run: luarocks install lua-schema
-      - run: luarocks install lpeg
+      - run: luarocks --lua-version=5.1 install lua-schema
+      - run: luarocks --lua-version=5.1 install lpeg
 
       - name: Run tests
         timeout-minutes: 5
@@ -51,6 +132,11 @@ jobs:
           report-path: ./ctrf/*.json
           pull-request: ${{ github.event_name == 'pull_request' && true || false }}
           overwrite-comment: ${{ github.event_name == 'pull_request' && true || false }}
+          # Per-platform keys keep the three matrix legs from colliding on one shared PR comment,
+          # status check, and artifact.
+          comment-tag: ${{ matrix.os }}
+          status-check-name: Test results (${{ matrix.os }})
+          artifact-name: ctrf-report-${{ matrix.os }}
           annotate: false
           use-suite-name: true
           status-check: true
@@ -71,4 +157,4 @@ jobs:
       # failure. --site none skips scaffolding; the output goes to a throwaway directory.
       - name: Smoke-test doc generation
         if: ${{ !cancelled() }}
-        run: lua depctrl.lua generate-docs --site none -o "$RUNNER_TEMP/docs"
+        run: lua depctrl.lua generate-docs --site none -o "${{ runner.temp }}/docs"

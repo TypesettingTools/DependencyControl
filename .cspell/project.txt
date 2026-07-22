@@ -46,6 +46,7 @@ githooks
 hashtable
 headlessly
 HKLM
+INCDIR
 inspectable
 intedit
 jsontype
@@ -69,6 +70,7 @@ LUA_CPATH
 LUA_IDSIZE
 LUA_PATH
 lyger
+lzlib
 markrel
 mdbook
 metatabled
@@ -81,6 +83,7 @@ moonc
 mooncats
 moonpath
 msvc
+msvcbuild
 multiset
 myaamori
 NTFS
@@ -128,6 +131,7 @@ unsets
 unvalidated
 Unvirtualized
 userinfo
+VCINSTALLDIR
 versionless
 worklist
 worktree
