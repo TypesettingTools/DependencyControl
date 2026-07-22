@@ -81,6 +81,7 @@ msgs = {
   }
   new: {
     badRecordError: "Bad #{constants.DEPCTRL_NAME} record (%s)."
+    strayRequiredModuleNames: "A required-module entry for %s carries extra names that are ignored: %s. Give each required module its own entry."
     badRecord: {
       noUnmanagedMacros: "Creating unmanaged version records for macros is not allowed"
       missingNamespace: "No namespace defined"
@@ -211,7 +212,10 @@ class PackageRecord
       switch type mdl
         when "table"
           mdl.moduleName or= mdl[1]
-          mdl[1] = nil
+          if #mdl > 1
+            strayNames = table.concat [tostring mdl[j] for j = 2, #mdl], ", "
+            @@logger\warn msgs.new.strayRequiredModuleNames, @name, strayNames
+          mdl[j] = nil for j = 1, #mdl
         when "string"
           @requiredModules[i] = {moduleName: mdl}
         else error msgs.new.badRecordError\format msgs.new.badRecord.badModuleTable\format i, tostring mdl

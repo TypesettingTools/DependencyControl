@@ -389,6 +389,28 @@
       ut\assertEquals ModuleProvider\getProvider(alias), ns
       ut\assertEquals ModuleProvider\getProvider("bare.#{ns}"), ns
 
+    -- Regression: a malformed short-form required-module spec with extra positional names
+    -- ({"ffi", "json"}) warns, honors only its first name, and drops the rest; a leftover positional
+    -- key would otherwise serialize into an invalid config file.
+    construct_dropsStrayRequiredModuleNames: (ut) ->
+      ns = uniqueName "req.mod"
+      warnStub = ut\stub PackageRecord.logger, "warn"
+      rec = PackageRecord {moduleName: ns, version: "1.0.0", feed: "https://example.com/feed.json",
+        requiredModules: {{"ffi", "json"}, {"clipper2.clipper2", version: "1.4.0"}}}
+      warnStub\assertCalled! -- the malformed {"ffi", "json"} entry is flagged
+
+      byName = {mdl.moduleName, mdl for mdl in *rec.requiredModules}
+      -- only the first name of {"ffi", "json"} is required; the stray "json" is dropped, not blessed
+      ut\assertNotNil byName.ffi
+      ut\assertNil byName.json
+      ut\assertNotNil byName["clipper2.clipper2"]
+      ut\assertEquals byName["clipper2.clipper2"].version, "1.4.0"
+      ut\assertEquals #rec.requiredModules, 2
+      -- no spec keeps a positional key, which is what corrupts the serialized config
+      for mdl in *rec.requiredModules
+        ut\assertNil mdl[1]
+        ut\assertNil mdl[2]
+
     -- getFileCache: a shared cache under the configured cache base, this script's namespace, and the given name
     getFileCache_namespacedUnderConfigBase: (ut) ->
       fakeSelf = {namespace: "l0.test.script", __class: {config: {c: {paths: {cache: "?user/cache"}}}}}
