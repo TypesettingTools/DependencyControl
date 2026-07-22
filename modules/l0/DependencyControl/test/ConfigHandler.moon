@@ -6,7 +6,8 @@
   Lock = require "l0.DependencyControl.Lock"
 
   FILEOPS_MODULE_NAME = "l0.DependencyControl.file-ops"
-  JSON_MODULE_NAME = "json"
+  -- ConfigHandler reads and writes config through the vendored dkjson (for its Prettier indent on write).
+  DKJSON_MODULE_NAME = "l0.dkjson"
 
   {
     _description: "Tests for the ConfigHandler JSON-backed config manager."
@@ -166,7 +167,7 @@
         read: (handle, fmt) -> '{"key":"value"}'
         close: (handle) ->
       }
-      (ut\stub JSON_MODULE_NAME, "decode")\returns {key: "value"}
+      (ut\stub DKJSON_MODULE_NAME, "decode")\returns {key: "value"}
       result = handler\load!
       ut\assertTrue result
       ut\assertEquals handler.config.key, "value"
@@ -188,7 +189,7 @@
       ut\stub handler.lock, "release"
       (ut\stub FILEOPS_MODULE_NAME, "getAttributes")\returns {attr: "file", path: "/config/test.json"}
       (ut\stub io, "open")\calls -> {read: ((h, f) -> "{}"), close: (->)}
-      (ut\stub JSON_MODULE_NAME, "decode")\returns {config: {flatKey: 1}} -- legacy: no $schema
+      (ut\stub DKJSON_MODULE_NAME, "decode")\returns {config: {flatKey: 1}} -- legacy: no $schema
       saveStub = (ut\stub handler, "save")\returns true
       ut\assertTrue handler\load!
       ut\assertNil captured.current -- the legacy file carried no $schema
@@ -210,7 +211,7 @@
       ut\stub handler.lock, "release"
       (ut\stub FILEOPS_MODULE_NAME, "getAttributes")\returns {attr: "file", path: "/config/test.json"}
       (ut\stub io, "open")\calls -> {read: ((h, f) -> "{}"), close: (->)}
-      (ut\stub JSON_MODULE_NAME, "decode")\returns {["$schema"]: "schema://v2", config: {}}
+      (ut\stub DKJSON_MODULE_NAME, "decode")\returns {["$schema"]: "schema://v2", config: {}}
       saveStub = (ut\stub handler, "save")\returns true
       ut\assertTrue handler\load!
       ut\assertFalse migrated -- current == target: callback never invoked
@@ -245,7 +246,7 @@
       (ut\stub FILEOPS_MODULE_NAME, "getAttributes")\returns {attr: false, path: "/config/test.json"}
       writeHandle = {setvbuf: ->, write: ->, flush: ->, close: ->}
       openStub = (ut\stub io, "open")\returns writeHandle
-      (ut\stub JSON_MODULE_NAME, "encode")\returns '{"key":"value"}'
+      (ut\stub DKJSON_MODULE_NAME, "encode")\returns '{"key":"value"}'
       result = handler\save!
       ut\assertTrue result
       openStub\assertCalledOnceWith "/config/test.json", "w"
@@ -274,7 +275,7 @@
       ut\stub handlerB.lock, "release"
       (ut\stub FILEOPS_MODULE_NAME, "getAttributes")\returns {attr: false, path: "/config/test.json"}
       (ut\stub io, "open")\returns {setvbuf: ->, write: ->, flush: ->, close: ->}
-      (ut\stub JSON_MODULE_NAME, "encode")\returns '{}'
+      (ut\stub DKJSON_MODULE_NAME, "encode")\returns '{}'
 
       -- Switch the view from Handler A to Handler B (what setFile does
       -- under the hood after a virtual module has been installed)
@@ -293,10 +294,34 @@
       ut\stub handler.lock, "release"
       (ut\stub FILEOPS_MODULE_NAME, "getAttributes")\returns {attr: false, path: "/config/test.json"}
       (ut\stub io, "open")\returns {setvbuf: ->, write: ->, flush: ->, close: ->}
-      (ut\stub JSON_MODULE_NAME, "encode")\returns '{}'
+      (ut\stub DKJSON_MODULE_NAME, "encode")\returns '{}'
       fakeView = {__hivePath: {"section", "key"}, __class: ConfigView}
       result = handler\save fakeView
       ut\assertTrue result
+
+    -- the config is written as Prettier-flavored JSON (two-space indent) with a trailing newline, so a
+    -- hand-edited config stays readable — encode runs through the real dkjson (not stubbed) to prove the format
+    save_writesPrettyPrintedJson: (ut) ->
+      handler = ConfigHandler nil
+      handler.filePath = "/config/test.json"
+      handler.config = {config: {updates: {mode: "off"}}}
+      handler.lock = {}
+      (ut\stub handler.lock, "lock")\returns Lock.LockState.Held, 0
+      ut\stub handler.lock, "release"
+      (ut\stub FILEOPS_MODULE_NAME, "getAttributes")\returns {attr: false, path: "/config/test.json"}
+      written = {}
+      writeHandle = {
+        setvbuf: ->
+        write: (_, ...) -> written[#written + 1] = table.concat {...}
+        flush: ->
+        close: ->
+      }
+      (ut\stub io, "open")\returns writeHandle
+      result = handler\save!
+      ut\assertTrue result
+      out = table.concat written
+      ut\assertMatches out, '\n  "config"' -- two-space-indented member (Prettier)
+      ut\assertMatches out, "\n$" -- trailing newline
 
     -- purgeHive
 
@@ -320,6 +345,7 @@
       "load_migratesOnSchemaMismatch", "load_skipsMigrationWhenSchemaMatches",
       "save_noFilePath", "save_lockFailed", "save_success",
       "save_withViewMissingHive", "save_withViewPopulatedHive",
+      "save_writesPrettyPrintedJson",
       "purgeHive_removesPath"
     }
   }

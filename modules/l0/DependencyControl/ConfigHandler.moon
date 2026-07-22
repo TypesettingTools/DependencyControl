@@ -1,4 +1,4 @@
-json = require "json"
+dkjson = require "l0.dkjson" -- vendored dkjson directly, for its Prettier `indentMode` and `null` sentinel (neither guaranteed via a user-supplied json)
 constants = require "l0.DependencyControl.Constants"
 fileOps = require "l0.DependencyControl.file-ops"
 Logger = require "l0.DependencyControl.Logger"
@@ -172,12 +172,13 @@ class ConfigHandler
 
     @lock\release! if useLock
 
-    success, res = pcall json.decode, data
-    unless success
+    -- dkjson.decode returns nil + an error message (it doesn't raise) when the file can't be parsed
+    res, _, decodeErr = dkjson.decode data
+    unless res
       -- JSON parse error usually points to a corrupted config file
       -- Rename the broken file to allow generating a new one
       -- so the user can continue their work
-      @logger\debug msgs.readFile.jsonDecodeError, res
+      @logger\debug msgs.readFile.jsonDecodeError, decodeErr
       backup = @filePath .. ".corrupted"
       fileOps.copy @filePath, backup
       fileOps.remove @filePath, false, true
@@ -199,7 +200,7 @@ class ConfigHandler
   ---@return boolean? success True on success, nil on failure.
   ---@return string? err
   __writeFile: (config, waitLockTime, haveLock = false) =>
-    success, res = pcall json.encode, ConfigHandler\getSerializableCopy config
+    success, res = pcall dkjson.encode, (ConfigHandler\getSerializableCopy config), {indentMode: "prettier"}
     unless success
       return nil, msgs.writeFile.failedSerialize\format res
 
@@ -215,7 +216,7 @@ class ConfigHandler
 
     @logger\trace msgs.writeFile.writing, @filePath
     handle\setvbuf "full", 10e6
-    handle\write res
+    handle\write res, "\n"
     handle\flush!
     handle\close!
 
