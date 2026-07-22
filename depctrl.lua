@@ -381,11 +381,22 @@ elseif args.command == "bundle" then
   local ZipArchiver = require "l0.DependencyControl.ZipArchiver"
   local GitRepository = require "l0.DependencyControl.GitRepository"
 
+  local canonicalOut, outErr = FileOps.validateFullPath({ outputDir }, false, lfs.currentdir())
+  if not canonicalOut then
+    io.stderr:write("Error resolving output directory '" .. outputDir .. "': " .. tostring(outErr) .. "\n")
+    os.exit(1)
+  end
+  outputDir = canonicalOut
+
   local feed = loadFeed(feedPath)
   local filter = buildFilter(args)
 
   local distDir = outputDir .. pathSep .. "dist"
-  FileOps.remove(distDir, true)
+  local cleared, _, clearErr = FileOps.remove(distDir, true)
+  if not cleared then
+    io.stderr:write("Error clearing dist directory '" .. distDir .. "': " .. tostring(clearErr) .. "\n")
+    os.exit(1)
+  end
   FileOps.mkdir(distDir, false, true)
 
   local fileCount, errCount = feed:deployFiles(distDir, filter, false)
