@@ -21,6 +21,13 @@ Scope: this file is about the code. Contributor and agent *workflow* (verifying 
 - **MS3.** `@@field arg` / `@field arg` compile to *colon* calls (`self.__class:field(arg)` / `self:field(arg)`), passing an implicit first argument. When the field holds a constructor or plain function you want to call plainly, you **MUST** write `@@.field arg` / `@.field arg` (or bind it to a local first).
 - **MS4.** A constructor's return value is discarded — `Cls(...)` always yields the instance, so a `return nil, err` inside `new` is dead code. Validation a caller can trip **MUST** happen before or around construction (in the factory), not inside `new`.
 
+## FFI — LuaJIT C bindings
+
+A `cdef` describes a raw C call, so one that misstates the real function's ABI produces silently wrong results, often on one platform only.
+
+- **FFI1.** A variadic C function **MUST** be `cdef`'d as variadic (`int open(const char*, int, ...)`), never with its optional arguments written out as fixed parameters. A fixed prototype is silently correct on x86-64, where varargs share the integer registers with fixed args, but wrong on the arm64 Apple ABI, which passes varargs on the stack, so the argument is read from garbage. It surfaces only on Apple Silicon, as a wrong file mode or a semaphore stuck at value 0 that hangs the first wait.
+- **FFI2.** An integer passed in a variadic position **MUST** be a typed cdata (`ffi.new "int", mode`), never a bare Lua number, because LuaJIT passes a number vararg as a `double` that a `va_arg(ap, int)` callee misreads on every platform. Wrap the value once — a module constant or a thin wrapper like `ffiPosix.open` — so call sites still pass plain numbers.
+
 ## MOD — Files & modules
 
 - **MOD1.** A `.moon` file that defines and returns a single class **MUST** be named after that class in PascalCase (`FeedTrust.moon`). Any other file — a helper returning a function or table, an FFI shim — **MUST** be kebab-case (`resolve-host.moon`, `config-schema.moon`). Test files mirror the name of what they test.

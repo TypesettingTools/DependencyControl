@@ -39,14 +39,17 @@ else
   -- until it is unlinked or reboot, so it does not self-heal after a holder process dies.
 
   ffiPosix = require "l0.DependencyControl.helpers.ffi-posix"
+  -- sem_open is variadic, so its mode and value are passed as typed cdata. LuaJIT converts a bare-number
+  -- vararg to a double, and the Apple-Silicon ABI passes varargs on the stack, so an untyped initial value
+  -- arrives as garbage (often 0) and makes the first sem_wait block forever.
   -- Aegisub runs per-user, so semaphores don't need to be shared with others.
-  SEMAPHORE_FILE_MODE = ffiPosix.getFileMode "rw"
-  BINARY_SEMAPHORE_INITIAL_VALUE = 1
+  SEMAPHORE_FILE_MODE = ffi.new "int", ffiPosix.getFileMode "rw"
+  BINARY_SEMAPHORE_INITIAL_VALUE = ffi.new "unsigned int", 1
   SEM_FAILED = ffi.cast "void *", -1 -- sem_open's failure sentinel ((void*)-1)
 
   pcall ffi.cdef, [[
     int getpid(void);
-    void *sem_open(const char *name, int oflag, unsigned int mode, unsigned int value);
+    void *sem_open(const char *name, int oflag, ...);
     int sem_wait(void *sem);
     int sem_trywait(void *sem);
     int sem_post(void *sem);

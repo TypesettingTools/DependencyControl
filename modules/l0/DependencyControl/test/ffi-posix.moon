@@ -9,8 +9,6 @@
   constants = require "l0.DependencyControl.Constants"
 
   pcall ffi.cdef, [[
-    int open(const char *path, int flags, int mode);
-    int close(int fd);
     unsigned int umask(unsigned int mask);
   ]]
 
@@ -28,28 +26,28 @@
     -- O_WRONLY | O_CREAT actually creates a file (proves the access mode + Create values)
     create_makesFile: (ut) ->
       path = tmpPath!
-      fd = ffi.C.open path, bit.bor(Access.Write, Create), ffiPosix.getFileMode "rw"
+      fd = ffiPosix.open path, bit.bor(Access.Write, Create), ffiPosix.getFileMode "rw"
       ut\assertGreaterThanOrEquals fd, 0
-      ffi.C.close fd if fd >= 0
+      ffiPosix.close fd if fd >= 0
       ut\assertEquals lfs.attributes(path, "mode"), "file"
       os.remove path
 
     -- O_CREAT | O_EXCL fails when the file already exists (proves the Exclusive value)
     exclusive_failsOnExisting: (ut) ->
       path = tmpPath!
-      fd1 = ffi.C.open path, bit.bor(Access.Write, Create), ffiPosix.getFileMode "rw"
-      ffi.C.close fd1 if fd1 >= 0
-      fd2 = ffi.C.open path, bit.bor(Access.Write, Create, Exclusive), ffiPosix.getFileMode "rw"
+      fd1 = ffiPosix.open path, bit.bor(Access.Write, Create), ffiPosix.getFileMode "rw"
+      ffiPosix.close fd1 if fd1 >= 0
+      fd2 = ffiPosix.open path, bit.bor(Access.Write, Create, Exclusive), ffiPosix.getFileMode "rw"
       ut\assertTrue fd2 < 0 -- EEXIST
-      ffi.C.close fd2 if fd2 >= 0
+      ffiPosix.close fd2 if fd2 >= 0
       os.remove path
 
     -- getFileMode's bits become the real on-disk permissions (with the umask cleared)
     getFileMode_setsPermissions: (ut) ->
       oldMask = ffi.C.umask 0
       path = tmpPath!
-      fd = ffi.C.open path, bit.bor(Access.Write, Create), ffiPosix.getFileMode "rw", "r", "r"
-      ffi.C.close fd if fd >= 0
+      fd = ffiPosix.open path, bit.bor(Access.Write, Create), ffiPosix.getFileMode "rw", "r", "r"
+      ffiPosix.close fd if fd >= 0
       ffi.C.umask oldMask
       perms = lfs.attributes path, "permissions"
       os.remove path

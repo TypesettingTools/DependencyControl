@@ -53,10 +53,9 @@ if ffi.os == "Windows"
 else
   ffiPosix = require "l0.DependencyControl.helpers.ffi-posix"
 
-  -- flock(2) on POSIX (per-open-file-description, so two independent opens contend even within one process);
+  -- flock(2) advisory lock (per-open-file-description, so two independent opens contend even within
+  -- one process). open/close are provided by ffi-posix.
   pcall ffi.cdef, [[
-    int open(const char* path, int flags, int mode);
-    int close(int fd);
     int flock(int fd, int operation);
   ]]
   isAvailable = true
@@ -70,12 +69,12 @@ else
   LOCK_EXCLUSIVE_NONBLOCKING = bit.bor(LOCK_EX, LOCK_NB)
 
   openImpl = (path) ->
-    fd = ffi.C.open path, bit.bor(ffiPosix.FileAccessMode.ReadWrite, ffiPosix.FileCreationFlags.Create), ffiPosix.getFileMode('rw', 'r', 'r')
+    fd = ffiPosix.open path, bit.bor(ffiPosix.FileAccessMode.ReadWrite, ffiPosix.FileCreationFlags.Create), ffiPosix.getFileMode 'rw', 'r', 'r'
     return nil if fd < 0
     return {fd: fd}
   tryLockImpl = (h) -> 0 == ffi.C.flock h.fd, LOCK_EXCLUSIVE_NONBLOCKING
   unlockImpl = (h) -> ffi.C.flock h.fd, LOCK_UN
-  closeImpl = (h) -> ffi.C.close h.fd
+  closeImpl = (h) -> ffiPosix.close h.fd
 
 ---A cross-process advisory lock on a file.
 ---Usable as a cross-process lock primitive.

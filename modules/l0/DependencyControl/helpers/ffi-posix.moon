@@ -9,7 +9,14 @@ isOSX = ffi.os == "OSX"
 
 filePermissionBits = {r: 4, w: 2, x: 1}
 
-{
+-- open(2) is variadic (int open(const char*, int, ...)); the open wrapper below passes the mode as
+-- typed cdata so the Apple-Silicon vararg ABI (stack-passed) receives it intact.
+pcall ffi.cdef, [[
+  int open(const char* path, int flags, ...);
+  int close(int fd);
+]]
+
+return {
   -- low two bits of the open(2) flags: the access mode (same on Linux and macOS)
   FileAccessMode: {
     Read: 0 -- O_RDONLY (read-only)
@@ -47,4 +54,16 @@ filePermissionBits = {r: 4, w: 2, x: 1}
     for perm in other\gmatch "."
       mode += filePermissionBits[perm] or 0
     return mode
+
+  ---Opens a file, creating it when the flags include Create (O_CREAT), and returns the raw descriptor.
+  ---@param path string
+  ---@param flags integer open(2) flags, e.g. FileAccessMode.ReadWrite | FileCreationFlags.Create.
+  ---@param mode integer Permission bits for a newly created file (from getFileMode).
+  ---@return integer fd The open descriptor, or a negative value on failure.
+  open: (path, flags, mode) -> ffi.C.open path, flags, ffi.new "int", mode
+
+  ---Closes an open file descriptor.
+  ---@param fd integer A descriptor returned by open.
+  ---@return integer status Zero on success, or a negative value on failure.
+  close: (fd) -> ffi.C.close fd
 }
