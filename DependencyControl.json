@@ -795,7 +795,8 @@
           "feat: Changelog entries may now carry conventional-commit markers (`feat`/`fix`/`change`, an optional scope, `!` for breaking); the update changelog and generated release notes group them by category and flag breaking changes. The CLI gained `merge-feed` and `release-notes` tasks used by the release workflow.",
           "feat(FileOps): Added `getAttributes()`, which returns a file or directory's attributes together with the parsed components of its path as one info table plus a separate error value, keeping a genuine lookup failure out of the returned value. The previous `attributes()` is retained as a deprecated compatibility wrapper.",
           "fix(FileOps): A hard attributes lookup failure is no longer mistaken for a missing or wrong-typed file — `writeFile` no longer tries to open the error message as a path, and `listDir`, `rmdir`, and `remove` now surface the actual error instead of a misleading \"not a directory\" result.",
-          "feat(Hash): Added `getObjectHash()`, reducing an arbitrary (possibly nested) Lua value to a stable, order-independent SHA-1 content signature."
+          "feat(Hash): Added `getObjectHash()`, reducing an arbitrary (possibly nested) Lua value to a stable, order-independent SHA-1 content signature.",
+          "fix(FileOps): remove() now reports a hard failure to resolve or stat a path as nil plus an error, instead of misreporting overall success."
         ]
       }
     },

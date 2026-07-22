@@ -259,8 +259,10 @@ FileOps = {
     for path in *paths
       info, attrErr = FileOps.getAttributes path, "mode"
       unless info
-        -- couldn't resolve or stat the path
+        -- report a hard failure to resolve or stat the path, which is distinct from an absent target
+        firstErr or= attrErr
         details[path] = {nil, attrErr}
+        overallSuccess = nil
         continue
 
       path = info.path

@@ -371,6 +371,15 @@
       ut\assertTrue result
       ut\assertTable details
 
+    -- a hard stat failure (an lfs error other than not-found) is a failure, not an absent
+    -- target: remove reports nil plus the error rather than a misleading overall success
+    remove_hardFailureReported: (ut) ->
+      (ut\stub lfs, "attributes")\calls (path, key) -> nil, "permission denied", 13
+      result, details, firstErr = fileOps.remove fileOps.joinPath basePath, "denied.txt"
+      ut\assertNil result
+      ut\assertTable details
+      ut\assertString firstErr
+
     -- a directory is removed non-recursively unless recurse is passed, so a stray directory path can't
     -- silently delete a whole tree (the recurse flag forwarded to rmdir must be false by default)
     remove_dirNonRecursiveByDefault: (ut) ->
@@ -503,7 +512,7 @@
       "verifyHash_match", "verifyHash_mismatch", "verifyHash_badArg",
       "copy_success", "copy_targetExists",
       "move_overwrite",
-      "remove_success", "remove_notFound", "remove_dirNonRecursiveByDefault",
+      "remove_success", "remove_notFound", "remove_hardFailureReported", "remove_dirNonRecursiveByDefault",
       "validateFullPath_withBasePath",
       "getPathRoot_windowsPath", "getPathRoot_posixPath", "getPathRoot_relative",
       "joinPath_segmentsArray", "joinPath_segmentsVarargs", "joinPath_segmentsMixed",
