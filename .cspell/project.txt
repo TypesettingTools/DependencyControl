@@ -47,6 +47,7 @@ hashtable
 headlessly
 HKLM
 inspectable
+intedit
 jsontype
 keyorder
 Kolf
@@ -122,6 +123,7 @@ Uninvertible
 unmockable
 unparented
 unparseable
+unsets
 unvalidated
 Unvirtualized
 userinfo

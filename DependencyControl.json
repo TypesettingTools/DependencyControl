@@ -60,12 +60,12 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "3BD7BDA1A114693CC34457D36EACA3E84AD5CC24"
+              "sha1": "E9E7B3C7D0129478A6285F57DE3A06C3C97D4046"
             },
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "D9AD1325DD19A317CFB6D5745AE65338411896B7",
+              "sha1": "4E323C80C4FAA70FED2470BB4E363CD811400B3B",
               "type": "test"
             }
           ],
@@ -101,6 +101,7 @@
           "Fixed the install/uninstall pickers erroring when an installed package's config entry lacks a version or name, as can happen with orphaned or unmanaged records."
         ],
         "0.7.0": [
+          "feat: Added a Global Configuration macro to view and edit DependencyControl's global settings — update behavior, feed discovery and caching, logging, and file paths — in one dialog, so common tweaks no longer need hand-editing the config file. The feed lists stay in the Manage Feeds macro.",
           "change: The Toolbox now updates from a `stable` channel by default; installations on the previous `alpha` channel are migrated automatically."
         ]
       }
@@ -126,17 +127,17 @@
             {
               "name": "/Constants.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "5DE49A672C4A16C0870181DC4B0D7724D8A9456C"
+              "sha1": "1CC29AA3173EED833054F699ADD75DA61E2BDB64"
             },
             {
               "name": "/ConfigHandler.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "F3C1707EBDE0C6BE408AFF2AD8AECA7FA519E9EA"
+              "sha1": "2667DEBBB70A7DB217BEBE6F911C17882077BA50"
             },
             {
               "name": "/ConfigView.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "6B95B783B103869AAE13D366EA01CCBD633616C3"
+              "sha1": "BCCB1B7E7A85245BCDD87CE0CCCC1955CB161827"
             },
             {
               "name": "/hash.moon",
@@ -151,12 +152,12 @@
             {
               "name": "/Enum.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "462C41A360F1EC1BBC182C79D3445DF547C17C58"
+              "sha1": "DD441AAF08C883F550061F8D8845D36969A2D629"
             },
             {
               "name": "/EventEmitter.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "96AE787B3EF078F9A21F37928E2529D19127F8B5"
+              "sha1": "F7B363DC9D131BA8FA92751394206AFC90CA8BB8"
             },
             {
               "name": "/FileCache.moon",
@@ -186,12 +187,12 @@
             {
               "name": "/file-ops.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "31BBF872C4E15656E880580B7A8095FFB966928D"
+              "sha1": "E4DF3728939D7B52675C300FE9B97B610DED98CD"
             },
             {
               "name": "/GitRepository.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "6F068A80E06720A165EBB3C6A593ED94F4D5C234"
+              "sha1": "87138B0F382B1748DEE326EB1BAC471BD12E5CDA"
             },
             {
               "name": "/Host.moon",
@@ -201,7 +202,7 @@
             {
               "name": "/JsonSchema.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "0FB3734E6A1CE24C7C04DDF3AD6F55BDC186B7C1"
+              "sha1": "2707158CB66573CEA10465C21E3AB42708E482F7"
             },
             {
               "name": "/Lock.moon",
@@ -211,12 +212,12 @@
             {
               "name": "/Logger.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "B39B2AB4A65B101ECDA0F303F60CE5D51ABA0155"
+              "sha1": "84939ADA4D8C32551AA50CC4B8D1E9E7B9EB8E7F"
             },
             {
               "name": "/ModuleLoader.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "10A978983B6EB32CA23F31F867237EB518F0E819"
+              "sha1": "661B5163CF29FC9F7821B5EBC624AD68E2C22776"
             },
             {
               "name": "/ModuleProvider.moon",
@@ -231,7 +232,7 @@
             {
               "name": "/PackageRecord.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "4530D6B838BF50110D96CDB63CE2E215EDE5E489"
+              "sha1": "EDA592882B607109FA8575C0DAADD31D94C392F3"
             },
             {
               "name": "/ScriptTargetFilter.moon",
@@ -241,17 +242,17 @@
             {
               "name": "/ScriptUpdateRecord.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "B85BA306D509F3BC4AC5C09FB704CDEDE4C804A1"
+              "sha1": "56B2C04A436337243E7D294B5C820445A0F733A7"
             },
             {
               "name": "/SemanticVersion.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "A6AA2B94C548D25DB496A87347D80B87A5749DF4"
+              "sha1": "663BB4263B99C01E69AD897DAD7CF6420E17A666"
             },
             {
               "name": "/Stub.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "BF1DE93F8AA1E53B0E4C309DCC656AC1A5C74228"
+              "sha1": "879B162D749DE53788152A6C36DFAB7B0A5E8B9B"
             },
             {
               "name": "/BadMutex.moon",
@@ -267,17 +268,17 @@
             {
               "name": "/UnitTestSuite.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "0F52DBF69EB46E4CAB866FF3A83EA0C2A2DAC2F3"
+              "sha1": "526D4F50834FADBBC70C4A9D93E28FFD1F952B34"
             },
             {
               "name": "/UpdateFeed.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "718A07BBBBF95028BC41E1C828D4542DFC7129D5"
+              "sha1": "E4E024F606D31BAB258D380331969BC6466B990D"
             },
             {
               "name": "/UpdateTask.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "F2723D96BB282B3EE6566193605F6E337142DA43"
+              "sha1": "6F5FEB171C8C85F3620C024F5B6B193DE22E0D1C"
             },
             {
               "name": "/Updater.moon",
@@ -287,7 +288,7 @@
             {
               "name": "/ZipArchiver.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "B2584499EB6F63AE34B0E6F38952FBE676C15007"
+              "sha1": "CC7A19E78B8B87DB70177A4A47CB10497232DF26"
             },
             {
               "name": "/helpers/ffi-posix.moon",
@@ -327,27 +328,27 @@
             {
               "name": "/Accessors.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "9C6D9B9C7E6F246D853B7D9EA1E7B108AF419DE5"
+              "sha1": "F953283D5405C668090C7939C7C1E2D7D980FF63"
             },
             {
               "name": "/FeedLoader.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "5FE277FC0957CF826F3EEC4F05DE633E216B3361"
+              "sha1": "D0B097BF0C5BFCD60DF0E04B0D42F723A01997CF"
             },
             {
               "name": "/config-schema.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "9C1605C2019F2C0A7F4B02C821CCCDB1AE6821C2"
+              "sha1": "EE8E11FD384FEEC541FF1C02C094F3394C3A64C0"
             },
             {
               "name": "/Finalizer.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "3E061756BFF7955E705EBD69E1B46F06E5E5F787"
+              "sha1": "9C04FED8500BCB662505F16411FC522BD0A69AAF"
             },
             {
               "name": "/release-notes.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "59DBF1610331C09E353679D40809810C74FE7152"
+              "sha1": "2B04AD21DDC44A8A1280900141BE4A5AD508495F"
             },
             {
               "name": "/domain.moon",
@@ -367,7 +368,7 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "8DEEC64398F1C5A19914DE59D1F9F48853C03D6D",
+              "sha1": "2682F854649613DC37C9A78023050E146650D103",
               "type": "test"
             },
             {
@@ -379,7 +380,7 @@
             {
               "name": "/ConfigHandler.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "76BF6208FEF400DB562880E8575CEC3BFEB661CB",
+              "sha1": "D0F735761CAC12540F7841DCF8A80AB6C20ECCE5",
               "type": "test"
             },
             {
@@ -445,7 +446,7 @@
             {
               "name": "/file-ops.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "70A7516A93A044607BE0E46CFF3E7F3CC7189973",
+              "sha1": "AB2BBDDFEDBB158963CFDFAE196C584E105598CC",
               "type": "test"
             },
             {

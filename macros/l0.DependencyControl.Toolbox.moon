@@ -5,8 +5,11 @@ export script_author = "line0"
 export script_namespace = "l0.DependencyControl.Toolbox"
 
 DepCtrl = require "l0.DependencyControl"
-{:ScriptType, :ScriptTypeSection, terms} = DepCtrl.Domain
+{:ScriptType, :ScriptTypeSection, :FetchUntrustedFeeds, terms} = DepCtrl.Domain
+configSchema = require "l0.DependencyControl.config-schema"
 constants = require "l0.DependencyControl.Constants"
+FileCache = require "l0.DependencyControl.FileCache"
+UpdateTask = require "l0.DependencyControl.UpdateTask"
 depRec = DepCtrl {
   feed: "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/master/DependencyControl.json",
   {
@@ -46,6 +49,11 @@ msgs = {
     cantBlockBootstrap: "Refusing that block — it would match DependencyControl's own feed and disable all trust."
     promptUntrusted: "This untrusted feed is advertised by another feed:\n%s\n\nFetch it to discover the feeds it lists? \"Trust\" remembers it for next time; \"Block\" hides it."
   }
+  globalConfig: {
+    confirmRestore: "Reset all these settings to their defaults? Your feed lists are not affected."
+    saved: "Configuration saved."
+    restored: "Settings restored to their defaults."
+  }
 }
 
 -- Shared Functions
@@ -56,6 +64,8 @@ FeedAction = DepCtrl.FeedManager.FeedAction
 -- touching dispatch logic — and shared with the tests through testExports, so a rename needs no test edits.
 buttons = {
   apply: "Apply"
+  save: "Save"
+  restoreDefaults: "Restore Defaults"
   close: "Close"
   discover: "Fetch/Discover"
   extraFeeds: "Extra Feeds"
@@ -599,14 +609,166 @@ scheduleUpdatesAndRegisterTests = ->
 
   DepCtrl.updater\releaseLock!
 
+-- Global Configuration macro: edit DependencyControl's global settings (updates/feeds/logging/paths). The three
+-- feed lists (extraFeeds/trustedFeeds/blockedFeeds) are left to Manage Feeds. Each field's effective default is
+-- sourced from its owning class or the central config-schema, so the form tracks the real defaults automatically.
+{:Updater, :FeedTrust, :FeedInventory, :FeedLoader, :Logger} = DepCtrl
+{:ContextCeiling} = UpdateTask
+crawlDefaults = FeedInventory.defaultCrawlLimits
+loggerDefaults = Logger.__base -- log-retention defaults live as Logger's base-field defaults
+sections = configSchema.sections
+
+configFields = {
+  {section: "updates", key: "mode", type: "enum", enum: ContextCeiling, default: Updater.defaultMode,
+    label: "Update mode", hint: "Which contexts may install/update: off < user-requested < dependency-resolution < auto-update."}
+  {section: "updates", key: "checkInterval", type: "int", default: Updater.defaultCheckInterval,
+    label: "Check interval (s)", hint: "Minimum seconds between automatic update checks for a script."}
+  {section: "updates", key: "waitTimeout", type: "int", default: Updater.defaultWaitTimeout,
+    label: "Update wait (s)", hint: "Seconds to wait for another process's in-progress update before giving up."}
+  {section: "updates", key: "orphanTimeout", type: "int", default: Updater.defaultOrphanTimeout,
+    label: "Stale-lock timeout (s)", hint: "Seconds before an updater lock whose owner vanished may be taken over."}
+  {section: "updates", key: "feedTrustPromptThreshold", type: "enum", enum: ContextCeiling, default: UpdateTask.defaultFeedTrustPromptThreshold,
+    label: "Trust-prompt up to", hint: "Highest context in which DepCtrl may ask to trust an untrusted feed; above it the install is skipped."}
+  {section: "updates", key: "packageChoicePromptThreshold", type: "enum", enum: ContextCeiling, default: UpdateTask.defaultPackageChoicePromptThreshold,
+    label: "Source-choice prompt up to", hint: "Highest context in which DepCtrl may ask you to pick among tied sources; above it a tie-breaker decides."}
+  {section: "updates", key: "offerAllSources", type: "bool", default: false,
+    label: "Offer all sources", hint: "Offer every eligible source when more than one qualifies, not only the top-ranked."}
+  {section: "updates", key: "blockPrivateHosts", type: "bool", default: sections.updates.blockPrivateHosts,
+    label: "Block private hosts", hint: "Refuse downloads from private, loopback, or link-local addresses (an SSRF safeguard)."}
+
+  {section: "feeds", key: "fetchUntrustedFeeds", type: "enum", enum: FetchUntrustedFeeds, default: FeedTrust.defaultFetchUntrustedFeeds,
+    label: "Fetch untrusted feeds", hint: "On reaching an untrusted feed during discovery: always fetch, never fetch, or prompt."}
+  {section: "feeds", crawlLimit: true, key: "per-feed", type: "int", default: crawlDefaults["per-feed"],
+    label: "Crawl cap per feed", hint: "Untrusted feeds a single feed may contribute during discovery."}
+  {section: "feeds", crawlLimit: true, key: "per-root", type: "int", default: crawlDefaults["per-root"],
+    label: "Crawl budget per root", hint: "Untrusted-expansion budget per configured discovery root."}
+  {section: "feeds", crawlLimit: true, key: "depth", type: "int", default: crawlDefaults.depth,
+    label: "Crawl depth", hint: "Crawl-depth limit; a feed reached at this depth is left unfetched."}
+  {section: "feeds", key: "cacheMaxAge", type: "int", default: FileCache.defaultMaxAge,
+    label: "Feed cache lifetime (s)", hint: "Seconds a cached feed snapshot stays fresh before it is re-fetched."}
+  {section: "feeds", key: "maxFeedSize", type: "int", default: FeedLoader.defaultMaxFeedSize,
+    label: "Max feed size (bytes)", hint: "Largest single feed response before the fetch is aborted; 0 removes the limit."}
+  {section: "feeds", key: "feedFetchTimeout", type: "int", default: FeedLoader.defaultFeedFetchTimeout,
+    label: "Feed fetch timeout (s)", hint: "Longest time to fetch a single feed before aborting; 0 removes the timeout."}
+
+  {section: "logging", key: "defaultLevel", type: "int", max: 5, default: sections.logging.defaultLevel,
+    label: "Log level (0-5)", hint: "Default verbosity; higher logs more (fatal 0 to trace 5)."}
+  {section: "logging", key: "toFile", type: "bool", default: sections.logging.toFile,
+    label: "Write logs to file", hint: "Write log messages to a file in the log directory."}
+  {section: "logging", key: "maxFiles", type: "int", default: loggerDefaults.maxFiles,
+    label: "Max log files", hint: "Old log files are trimmed once this count is exceeded."}
+  {section: "logging", key: "maxAge", type: "int", default: loggerDefaults.maxAge,
+    label: "Max log age (s)", hint: "Log files older than this many seconds are trimmed."}
+  {section: "logging", key: "maxSize", type: "int", default: loggerDefaults.maxSize,
+    label: "Max log size (bytes)", hint: "Cumulative size limit across all retained log files."}
+
+  {section: "paths", key: "config", type: "string", default: sections.paths.config,
+    label: "Config directory", hint: "Where DependencyControl keeps its config files. Aegisub path tokens like ?user are allowed."}
+  {section: "paths", key: "log", type: "string", default: sections.paths.log,
+    label: "Log directory", hint: "Where DependencyControl writes its log files."}
+  {section: "paths", key: "cache", type: "string", default: sections.paths.cache,
+    label: "Cache directory", hint: "Base directory for on-disk caches such as the feed cache."}
+}
+
+configFieldsBySection = {}
+for f in *configFields
+  bucket = configFieldsBySection[f.section]
+  unless bucket
+    bucket = {}
+    configFieldsBySection[f.section] = bucket
+  bucket[#bucket + 1] = f
+
+-- The widget's stable name; crawl-budget fields address a sub-key of the `crawlLimits` object.
+configFieldName = (f) -> f.crawlLimit and "feeds.crawlLimits.#{f.key}" or "#{f.section}.#{f.key}"
+
+configFieldCurrent = (f) ->
+  raw = if f.crawlLimit
+    limits = DepCtrl.config.c.feeds.crawlLimits
+    limits and limits[f.key]
+  else
+    DepCtrl.config.c[f.section][f.key]
+  if raw == nil then f.default else raw
+
+configFieldWidget = (f, x, y) ->
+  ctl = {name: configFieldName(f), x: x, y: y, width: 1, height: 1, hint: f.hint}
+  cur = configFieldCurrent f
+  switch f.type
+    when "bool" then ctl.class, ctl.label, ctl.value = "checkbox", "", cur
+    when "int"
+      ctl.class, ctl.value, ctl.min = "intedit", cur, 0
+      ctl.max = f.max if f.max
+    when "enum" then ctl.class, ctl.items, ctl.value = "dropdown", f.enum.values, cur
+    when "string" then ctl.class, ctl.text = "edit", cur
+  ctl
+
+configSectionTitles = {updates: "— Updates —", feeds: "— Feeds —", logging: "— Logging —", paths: "— Paths —"}
+-- Two columns keep a ~20-row form to a manageable height, since Aegisub dialogs don't scroll.
+configFormColumns = {
+  {x: 0, sections: {"updates", "logging"}}
+  {x: 2, sections: {"feeds", "paths"}}
+}
+
+buildConfigForm = ->
+  dlg = {}
+  for column in *configFormColumns
+    y = 0
+    for si, section in ipairs column.sections
+      y += 1 if si > 1 -- blank spacer row between two stacked sections
+      dlg[#dlg + 1] = {class: "label", x: column.x, y: y, width: 2, height: 1, label: configSectionTitles[section]}
+      y += 1
+      for f in *configFieldsBySection[section]
+        dlg[#dlg + 1] = {class: "label", x: column.x, y: y, width: 1, height: 1, label: f.label}
+        dlg[#dlg + 1] = configFieldWidget f, column.x + 1, y
+        y += 1
+  dlg
+
+-- Write the edited values, unsetting any key left at its effective default so the file stays minimal and keeps
+-- tracking upstream default changes. crawlLimits is reassigned as a fresh object (ConfigView persists an
+-- array/object write only through assignment, not in-place mutation). The feed lists are never touched.
+applyConfigEdits = (res) ->
+  crawl = {}
+  for f in *configFields
+    v = res[configFieldName f]
+    v = nil if f.type == "string" and v == ""
+    if f.crawlLimit
+      crawl[f.key] = v if v != nil and v != f.default
+    elseif v == nil or v == f.default
+      DepCtrl.config.c[f.section][f.key] = nil
+    else
+      DepCtrl.config.c[f.section][f.key] = v
+  DepCtrl.config.c.feeds.crawlLimits = next(crawl) and crawl or nil
+  DepCtrl.config\save!
+
+restoreConfigDefaults = ->
+  for f in *configFields
+    DepCtrl.config.c[f.section][f.key] = nil unless f.crawlLimit
+  DepCtrl.config.c.feeds.crawlLimits = nil
+  DepCtrl.config\save!
+
+globalConfig = ->
+  while true
+    btn, res = aegisub.dialog.display buildConfigForm!,
+      {buttons.save, buttons.restoreDefaults, buttons.cancel},
+      {ok: buttons.save, cancel: buttons.cancel}
+    break if not btn or btn == buttons.cancel
+    if btn == buttons.restoreDefaults
+      if confirmDialog msgs.globalConfig.confirmRestore
+        restoreConfigDefaults!
+        logger\log msgs.globalConfig.restored
+    else
+      applyConfigEdits res
+      logger\log msgs.globalConfig.saved
+      break
+
 depRec\registerMacros {
   {"Install Script", "Installs an automation script or module on your system.", install},
   {"Update Script", "Manually check and perform updates to any installed script.", update},
   {"Uninstall Script", "Removes an automation script or module from your system.", uninstall},
   {"Manage Feeds", "See and manage the feeds DependencyControl knows about and their trust status.", manageFeeds},
   {"Macro Configuration", "Lets you change per-automation script settings.", macroConfig},
+  {"Global Configuration", "View and edit DependencyControl's global settings.", globalConfig},
 }, "DependencyControl", {:shortenUrl, :expandUrl, :formatAge, :buildInstalledDlgList, :promptUntrustedFeed,
-  :confirmDialog, :manageExtraFeeds, :manageBlockList, :buttons, :feedActionLabels,
+  :confirmDialog, :manageExtraFeeds, :manageBlockList, :buttons, :feedActionLabels, :configFields,
   :scheduleUpdatesAndRegisterTests}
 
 -- The startup sweep is an Aegisub-session concern; headless (CLI/test runner) has no session to

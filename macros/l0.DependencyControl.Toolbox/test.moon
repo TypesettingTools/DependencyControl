@@ -18,6 +18,22 @@ UnitTestSuite "l0.DependencyControl.Toolbox", (macros, dependencies, testExports
   -- record. Held at suite scope because tests don't receive their class's setup context.
   uninstallSeam = {}
 
+  -- The GlobalConfig seam: swaps the class-level DepCtrl.config for an in-memory fake config view so the macro's
+  -- reads/writes hit a plain table, restored in the class _teardown. Held at suite scope like uninstallSeam.
+  globalConfigSeam = {}
+  -- Installs a fresh fake global config for one GlobalConfig test — the class-level _setup runs once, so each test
+  -- reinstalls to start from an empty config with its own save spy. Captures the real config once for _teardown.
+  setupGlobalConfigFake = ->
+    globalConfigSeam.original or= DepCtrl.config
+    saved = {}
+    fake = {
+      c: {updates: {}, feeds: {extraFeeds: {"https://keep.me/feed.json"}}, logging: {}, paths: {}}
+      save: => saved.yes = true
+    }
+    globalConfigSeam.saved = saved
+    globalConfigSeam.fake = fake
+    DepCtrl.config = fake
+
   -- a fake config the way buildInstalledDlgList reads it: config.c[section] is the installed-package map
   makeConfig = (section, entries) -> {c: {[section]: entries}}
   -- the set of script display names present in a buildInstalledDlgList map
@@ -423,6 +439,85 @@ UnitTestSuite "l0.DependencyControl.Toolbox", (macros, dependencies, testExports
         built = dlg._calls[1][1]
         ut\assertNotNil built[1]
         ut\assertEquals built[1].y, 0
+    }
+
+    GlobalConfig: {
+      _description: "Global Configuration: seeds effective defaults, writes changes, unsets values equal to default, and never touches feed lists."
+
+      _teardown: (ut) -> DepCtrl.config = globalConfigSeam.original
+
+      -- with nothing configured, every field's widget is present and seeded with its effective default
+      buildForm_seedsEveryEffectiveDefault: (ut) ->
+        setupGlobalConfigFake!
+        dlg = queueDialog ut, {{buttons.cancel}}
+        macros["Global Configuration"].process!
+        byName = {ctl.name, ctl for ctl in *dlg._calls[1][1] when ctl.name}
+        for f in *testExports.configFields
+          name = f.crawlLimit and "feeds.crawlLimits.#{f.key}" or "#{f.section}.#{f.key}"
+          ctl = byName[name]
+          ut\assertNotNil ctl
+          seeded = ctl.class == "edit" and ctl.text or ctl.value
+          ut\assertEquals seeded, f.default
+
+      -- a stored value overrides the default; widgets use the type-appropriate control class
+      buildForm_seedsStoredValueAndTypes: (ut) ->
+        setupGlobalConfigFake!
+        globalConfigSeam.fake.c.updates.mode = "off"
+        dlg = queueDialog ut, {{buttons.cancel}}
+        macros["Global Configuration"].process!
+        byName = {ctl.name, ctl for ctl in *dlg._calls[1][1] when ctl.name}
+        ut\assertEquals byName["updates.mode"].value, "off" -- stored user value, not the default
+        ut\assertEquals byName["updates.mode"].class, "dropdown"
+        ut\assertEquals byName["updates.checkInterval"].class, "intedit"
+        ut\assertEquals byName["updates.blockPrivateHosts"].class, "checkbox"
+        ut\assertEquals byName["paths.cache"].class, "edit"
+
+      -- Save writes changed scalar and crawl-budget values and leaves the feed lists untouched
+      save_writesChangesKeepsFeeds: (ut) ->
+        setupGlobalConfigFake!
+        queueDialog ut, {{buttons.save, {"updates.mode": "off", "logging.maxFiles": 50, "feeds.crawlLimits.depth": 3}}}
+        macros["Global Configuration"].process!
+        cfg = globalConfigSeam.fake.c
+        ut\assertEquals cfg.updates.mode, "off"
+        ut\assertEquals cfg.logging.maxFiles, 50
+        ut\assertEquals cfg.feeds.crawlLimits.depth, 3
+        ut\assertEquals cfg.feeds.extraFeeds[1], "https://keep.me/feed.json"
+        ut\assertTrue globalConfigSeam.saved.yes
+
+      -- a value left at its effective default is unset, and an all-default crawlLimits object drops out entirely
+      save_unsetsValuesEqualToDefault: (ut) ->
+        setupGlobalConfigFake!
+        globalConfigSeam.fake.c.updates.checkInterval = 999
+        queueDialog ut, {{buttons.save, {"updates.checkInterval": DepCtrl.Updater.defaultCheckInterval,
+          "feeds.crawlLimits.depth": DepCtrl.FeedInventory.defaultCrawlLimits.depth}}}
+        macros["Global Configuration"].process!
+        cfg = globalConfigSeam.fake.c
+        ut\assertNil cfg.updates.checkInterval
+        ut\assertNil cfg.feeds.crawlLimits
+
+      -- Restore Defaults (once confirmed) clears every managed key but preserves the feed lists
+      restore_clearsManagedKeepsFeeds: (ut) ->
+        setupGlobalConfigFake!
+        globalConfigSeam.fake.c.updates.mode = "off"
+        globalConfigSeam.fake.c.feeds.crawlLimits = {depth: 2}
+        queueDialog ut, {{buttons.restoreDefaults}, {buttons.yes}, {false}}
+        macros["Global Configuration"].process!
+        cfg = globalConfigSeam.fake.c
+        ut\assertNil cfg.updates.mode
+        ut\assertNil cfg.feeds.crawlLimits
+        ut\assertEquals cfg.feeds.extraFeeds[1], "https://keep.me/feed.json"
+        ut\assertTrue globalConfigSeam.saved.yes
+
+      -- Cancel writes nothing
+      cancel_writesNothing: (ut) ->
+        setupGlobalConfigFake!
+        queueDialog ut, {{buttons.cancel}}
+        macros["Global Configuration"].process!
+        ut\assertNil globalConfigSeam.saved.yes
+
+      _order: {"buildForm_seedsEveryEffectiveDefault", "buildForm_seedsStoredValueAndTypes",
+        "save_writesChangesKeepsFeeds", "save_unsetsValuesEqualToDefault",
+        "restore_clearsManagedKeepsFeeds", "cancel_writesNothing"}
     }
 
     ManageFeeds: {
