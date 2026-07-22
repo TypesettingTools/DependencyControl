@@ -3,7 +3,7 @@ name: Docs
 on:
   push:
     branches:
-      - 'master'
+      - 'main'
     tags:
       - 'v*'
   workflow_dispatch:
@@ -59,7 +59,7 @@ jobs:
             echo "slug=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
             echo "release=true" >> "$GITHUB_OUTPUT"
           else
-            # branch deploys (master pushes and manual dispatches) use the branch name,
+            # branch deploys (main pushes and manual dispatches) use the branch name,
             # with slashes flattened so the slug stays a single path segment
             echo "slug=${GITHUB_REF_NAME//\//-}" >> "$GITHUB_OUTPUT"
             echo "release=false" >> "$GITHUB_OUTPUT"
@@ -79,10 +79,10 @@ jobs:
             mike set-default --push latest
           else
             mike deploy --push "$slug"
-            # Before the first release there is no 'latest' for the root to point at, so a master
-            # deploy claims the root; once a release exists it owns the root and master leaves it be.
+            # Before the first release there is no 'latest' for the root to point at, so a main
+            # deploy claims the root; once a release exists it owns the root and main leaves it be.
             # Feature-branch previews never touch the root.
-            if [[ "${GITHUB_REF}" == "refs/heads/master" ]] && ! mike list | grep -qw latest; then
+            if [[ "${GITHUB_REF}" == "refs/heads/main" ]] && ! mike list | grep -qw latest; then
               mike set-default --push "$slug"
             fi
           fi

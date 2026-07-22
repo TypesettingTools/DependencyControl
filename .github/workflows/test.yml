@@ -3,13 +3,13 @@ name: Tests
 on:
   pull_request:
     branches:
-      - 'master'
+      - 'main'
   workflow_dispatch:
     inputs:
       ref:
         description: 'Release tag or branch to scan.'
         required: true
-        default: 'master'
+        default: 'main'
 
 jobs:
   test:
