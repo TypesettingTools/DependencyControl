@@ -436,6 +436,45 @@
       PackageRecord.__base.loadConfig record, true
       ut\assertEquals record.recordType, domain.RecordType.Unmanaged
 
+    -- Regression: ConfigView\load returns true even for an absent hive, so a still-virtual module
+    -- whose config hive doesn't exist must stay virtual with its identity intact. Mistaking the empty
+    -- hive for an install blanked moduleName/namespace and crashed the module loader (table index nil).
+    loadConfig_absentHiveStaysVirtual: (ut) ->
+      record = stubSelf PackageRecord, {
+        __class: PackageRecord, virtual: true, namespace: "l0.x", moduleName: "l0.x"
+        scriptType: domain.ScriptType.Module
+        config: {load: (=> true), setFile: (=>), unsetFile: (=>), c: {}}
+      }
+      PackageRecord.__base.loadConfig record, true
+      ut\assertTrue record.virtual              -- an empty hive is not an install
+      ut\assertEquals record.moduleName, "l0.x" -- identity preserved, not blanked
+      ut\assertEquals record.namespace, "l0.x"
+
+    -- Regression: a real install's hive is authoritative, so a field the update dropped (a module that
+    -- no longer declares provides) is cleared on reload rather than left stale.
+    loadConfig_clearsFieldDroppedByUpdate: (ut) ->
+      record = stubSelf PackageRecord, {
+        __class: PackageRecord, virtual: false, namespace: "l0.x", moduleName: "l0.x"
+        scriptType: domain.ScriptType.Module, provides: {{name: "old.alias"}}
+        config: {load: (=> true), c: {version: "2.0.0", moduleName: "l0.x", namespace: "l0.x"}}
+      }
+      PackageRecord.__base.loadConfig record, true
+      ut\assertNil record.provides               -- dropped field cleared, not left stale
+      ut\assertEquals record.moduleName, "l0.x"  -- identity carried by the hive is kept
+
+    -- Corrupt config: a hive that omits moduleName/namespace must not blank the record's identity
+    -- (that inconsistency is what crashed the loader), while its other fields still import.
+    loadConfig_neverBlanksIdentityFields: (ut) ->
+      record = stubSelf PackageRecord, {
+        __class: PackageRecord, virtual: false, namespace: "l0.x", moduleName: "l0.x"
+        scriptType: domain.ScriptType.Module
+        config: {load: (=> true), c: {version: "2.0.0", feed: "http://feed"}}
+      }
+      PackageRecord.__base.loadConfig record, true
+      ut\assertEquals record.moduleName, "l0.x"   -- identity kept despite the hive omitting it
+      ut\assertEquals record.namespace, "l0.x"
+      ut\assertEquals record.feed, "http://feed"  -- non-identity fields still import
+
     _order: {
       "getFileCache_namespacedUnderConfigBase", "getVersion_compatMethods",
       "loadConfig_importsRecordType",

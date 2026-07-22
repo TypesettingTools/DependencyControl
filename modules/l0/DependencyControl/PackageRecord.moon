@@ -110,6 +110,8 @@ class PackageRecord
     -- writeConfig convert it explicitly
     scriptFields: {"author", "configFile", "feed", "moduleName", "name", "namespace", "url",
       "requiredModules", "recordType", "provides"}
+    -- identity fields must survive a reload from a corrupt or incomplete hive, so loadConfig never blanks them
+    identityFields: {moduleName: true, namespace: true}
   }
 
   ---Returns the live, installed record registered for a namespace, or nil if none is registered
@@ -261,7 +263,8 @@ class PackageRecord
       haveConfig = false
       if @virtual
         @config\setFile @@depConf.file
-        if @config\load!
+        -- require a persisted record before treating a still-virtual module as installed
+        if @config\load! and @config.c.version != nil
           haveConfig, @virtual = true, false
         else @config\unsetFile!
       else
@@ -269,7 +272,11 @@ class PackageRecord
 
       -- only need to refresh data if the record was changed by an update
       if haveConfig
-        @[key] = @config.c[key] for key in *@@depConf.scriptFields
+        -- a real install's config hive is authoritative, but in case of config file corruption
+        -- we at least need to prevent blanking of the records namespace/module name to avoid crashes
+        for key in *@@depConf.scriptFields
+          value = @config.c[key]
+          @[key] = value unless value == nil and @@depConf.identityFields[key]
         -- version isn't in scriptFields, so read it explicitly
         @version = @config.c.version if @config.c.version != nil
 
