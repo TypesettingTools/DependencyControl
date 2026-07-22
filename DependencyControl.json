@@ -190,6 +190,12 @@
               "sha1": "E4DF3728939D7B52675C300FE9B97B610DED98CD"
             },
             {
+              "name": "/FileOps.moon",
+              "delete": true,
+              "url": "@{fileBaseUrl}",
+              "sha1": "0000000000000000000000000000000000000000"
+            },
+            {
               "name": "/GitRepository.moon",
               "url": "@{fileBaseUrl}",
               "sha1": "87138B0F382B1748DEE326EB1BAC471BD12E5CDA"
@@ -253,12 +259,6 @@
               "name": "/Stub.moon",
               "url": "@{fileBaseUrl}",
               "sha1": "879B162D749DE53788152A6C36DFAB7B0A5E8B9B"
-            },
-            {
-              "name": "/BadMutex.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "6B1C4E43BB588DDD2DE0FF730F3F288C641C535E",
-              "delete": true
             },
             {
               "name": "/Timer.moon",
