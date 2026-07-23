@@ -54,6 +54,7 @@ class Host
   -- Default resolver for non-literal hosts, mapping a hostname to a list of address byte arrays. Each
   -- instance copies it at construction, and tests override it via the constructor.
   ---@private
+  ---@type fun(host: string): integer[][]?
   @__resolver = resolveHost
 
   ---@param host string A hostname or IP-literal string.

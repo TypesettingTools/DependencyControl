@@ -108,6 +108,7 @@ class NamedSemaphore
   @pid = pid
 
   -- anchor the teardown-unlink finalizer to the class so it lives as long as the module (nil on Windows)
+  ---@type userdata?
   @__unlinkFinalizer = unlinkAtExit
 
   ---Gets a handle to the named semaphore for the given token, creating it if it doesn't exist.

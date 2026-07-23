@@ -237,6 +237,10 @@ class PackageRecord
     shouldWriteConfig = @loadConfig!
     @writeConfig! if shouldWriteConfig and saveRecordToConfig
 
+  ---Validates optional module availability for the requested feature set.
+  ---@param modules string|string[] Feature name(s) whose optional modules to check.
+  ---@return boolean available
+  ---@return string? err Error message listing missing modules.
   checkOptionalModules: ModuleLoader.checkOptionalModules
 
   ---Loads global DependencyControl configuration.
