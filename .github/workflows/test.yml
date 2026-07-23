@@ -50,7 +50,7 @@ jobs:
       - name: Cache LuaJIT
         if: runner.os == 'Windows'
         id: cache-luajit
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: .lua
           key: luajit-msvc-x64-${{ steps.luajit-rev.outputs.sha }}
@@ -87,7 +87,7 @@ jobs:
       - name: Cache zlib
         if: runner.os == 'Windows'
         id: cache-zlib
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: C:\vcpkg\installed\x64-windows
           key: zlib-x64-windows-1
@@ -125,26 +125,27 @@ jobs:
         timeout-minutes: 5
         run: lua depctrl.lua test
 
-      - name: Publish test report
+      # Per-platform status check; the raw CTRF reports are uploaded next for the merged-comment job.
+      - name: Publish status check
         uses: ctrf-io/github-test-reporter@v1
         if: ${{ !cancelled() }}
         with:
           report-path: ./ctrf/*.json
-          pull-request: ${{ github.event_name == 'pull_request' && true || false }}
-          overwrite-comment: ${{ github.event_name == 'pull_request' && true || false }}
-          # Per-platform keys keep the three matrix legs from colliding on one shared PR comment,
-          # status check, and artifact.
-          comment-tag: ${{ matrix.os }}
+          status-check: true
           status-check-name: Test results (${{ matrix.os }})
-          artifact-name: ctrf-report-${{ matrix.os }}
           annotate: false
           use-suite-name: true
-          status-check: true
           summary-report: true
           failed-report: true
-          upload-artifact: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload CTRF reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: ctrf-report-${{ matrix.os }}
+          path: ctrf/*.json
 
       # Lint the module sources' LuaCATS annotations: missing docs on public members and
       # @param/@return that disagree with the real signature fail the build. This also emits every
@@ -158,3 +159,60 @@ jobs:
       - name: Smoke-test doc generation
         if: ${{ !cancelled() }}
         run: lua depctrl.lua generate-docs --site none -o "${{ runner.temp }}/docs"
+
+  # Post one PR comment covering every platform. Each test's suite is prefixed with its platform, then
+  # the per-platform reports are merged into one the reporter renders.
+  report:
+    needs: test
+    if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: ctrf-report-*
+          path: reports
+
+      - name: Prefix each test's suite with its platform
+        run: |
+          mkdir -p merged-input
+          for dir in reports/ctrf-report-*/; do
+            os=$(basename "$dir" | sed 's/^ctrf-report-//')
+            for f in "$dir"*.json; do
+              jq --arg os "$os" '.results.tests = ((.results.tests // []) | map(.suite = ("[" + $os + "] " + (.suite // ""))))' "$f" > "merged-input/${os}-$(basename "$f")"
+            done
+          done
+
+      - name: Merge into one report
+        run: npx --yes ctrf-cli merge merged-input --output merged.json
+
+      # Per-platform pass/fail line for the comment title, read off the [platform]-prefixed suites.
+      - name: Per-platform summary line
+        id: summary
+        run: |
+          line=$(jq -r '
+            [ .results.tests[] | { os: (.suite | capture("^\\[(?<os>[^\\]]+)\\]").os), status } ]
+            | group_by(.os)
+            | map({ os: .[0].os,
+                    p: ([ .[] | select(.status == "passed") ] | length),
+                    f: ([ .[] | select(.status == "failed") ] | length) })
+            | map("\(.os) ✅\(.p)" + (if .f > 0 then " ❌\(.f)" else "" end))
+            | join(" · ")
+          ' merged-input/merged.json)
+          echo "title=Test results — $line" >> "$GITHUB_OUTPUT"
+
+      - name: Publish merged test report
+        uses: ctrf-io/github-test-reporter@v1
+        with:
+          report-path: merged-input/merged.json
+          pull-request: true
+          overwrite-comment: true
+          comment-tag: all-platforms
+          title: ${{ steps.summary.outputs.title }}
+          use-suite-name: true
+          group-by: suite
+          # per-test listing with 3k+ passing tests × 3 platforms would blow past GitHub's 65 KB comment limit
+          suite-folded-report: false
+          summary-report: true
+          failed-report: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
