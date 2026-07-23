@@ -142,6 +142,23 @@ flatten = (value, depth = 1, toArrayTable) ->
 
 deepCopy = (tbl) -> {k, (type(v) == "table" and deepCopy(v) or v) for k, v in pairs tbl}
 
+mergeSearchPath = (pathStr, add, remove) ->
+  removed = remove and {p, true for p in *remove} or {}
+  seen, ordered = {}, {}
+  for path in pathStr\gmatch "[^;]+"
+    continue if removed[path] or seen[path]
+    seen[path] = true
+    ordered[#ordered + 1] = path
+
+  added = {}
+  for path in *add
+    continue if seen[path]
+    seen[path] = true
+    ordered[#ordered + 1] = path
+    added[#added + 1] = path
+
+  return table.concat(ordered, ";"), added
+
 -- Aegisub loads automation scripts concurrently, each into its own Lua state that seeds its rng as
 -- DependencyControl loads. Two states can seed at the same instant and share a process id, so the
 -- clock and PID don't tell them apart. Each live Lua state has a distinct address, read here from the
@@ -240,6 +257,25 @@ Utils = {
   ---@return table flattened A flattened array table containing the flattened values.
   ---@return number flattenedCount The number of elements in the flattened array.
   flatten: flatten
+
+  ---Merges new entries into a semicolon-separated Lua search path, appending only the ones not
+  ---already present and dropping any listed for removal, with the order of kept entries preserved.
+  ---@param pathStr string The existing search path, e.g. `package.path`.
+  ---@param add string[] Path entries to append, each only when not already present.
+  ---@param remove? string[] Path entries to drop before merging, e.g. to undo an earlier addition.
+  ---@return string pathStr The merged search-path string.
+  ---@return string[] added The entries actually appended, empty when all were already present.
+  mergeSearchPath: mergeSearchPath
+
+  ---Extends one of package's search-path fields in place, folding in the entries of a semicolon-
+  ---separated string and appending only those not already present. Does nothing when there is nothing to add.
+  ---@param field "path"|"cpath"|"moonpath" Which package search path to extend.
+  ---@param entries? string A semicolon-separated path string to fold in, such as an env var's value.
+  ---@return string[] added The entries actually added, empty when all were present or nothing was passed.
+  extendPackagePath: (field, entries) ->
+    return {} unless entries and entries != ""
+    package[field], added = mergeSearchPath (package[field] or ""), [entry for entry in entries\gmatch "[^;]+"]
+    return added
 
   ---Returns a random-number seed unique to this script's Lua state, differing from one launch to the next.
   ---@return number seed

@@ -7,6 +7,7 @@
 --   DEPCTRL_TEMP_DIR  — base for ?temp            (default: %TEMP% / /tmp)
 
 ffi = require "ffi"
+utils = require "l0.DependencyControl.utils"
 
 isWindows = ffi.os == "Windows"
 pathSep = isWindows and "\\" or "/"
@@ -63,27 +64,14 @@ setPathToken = (spec, dir) ->
   rebuildSortedTokens!
 
   if normalizedToken == "?user"
-    -- undo our previous additions to path list, add new ones that aren't already present,
-    -- and ensure the order of existing entries is unchanged to avoid messing up module shadowing
-    rebuildUserPaths = (pathStr, previouslyAdded, ext) ->
-      removed = {p, true for p in *previouslyAdded}
-      seen, ordered = {}, {}
-      for path in pathStr\gmatch "[^;]+"
-        continue if removed[path] or seen[path]
-        seen[path] = true
-        ordered[#ordered + 1] = path
-
-      added = {}
-      for path in *makePackagePaths "#{dir}/automation/modules", ext
-        continue if seen[path]
-        seen[path] = true
-        ordered[#ordered + 1] = path
-        added[#added + 1] = path
-
-      table.concat(ordered, ";"), added
-
-    package.path, userPathsAddedToPackagePathLua = rebuildUserPaths package.path, userPathsAddedToPackagePathLua, "lua"
-    package.moonpath, userPathsAddedToPackagePathMoon = rebuildUserPaths package.moonpath, userPathsAddedToPackagePathMoon, "moon"
+    -- Re-point the module search paths at the new ?user dir, dropping our prior additions so they
+    -- don't pile up. Order of the surviving entries is preserved, so module shadowing (first match
+    -- wins) holds.
+    modulesDir = "#{dir}/automation/modules"
+    package.path, userPathsAddedToPackagePathLua = utils.mergeSearchPath(
+      package.path, makePackagePaths(modulesDir, "lua"), userPathsAddedToPackagePathLua)
+    package.moonpath, userPathsAddedToPackagePathMoon = utils.mergeSearchPath(
+      package.moonpath, makePackagePaths(modulesDir, "moon"), userPathsAddedToPackagePathMoon)
   return dir
 
 ---Returns the directory an Aegisub path token currently resolves to.
