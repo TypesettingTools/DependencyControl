@@ -79,6 +79,9 @@ msgs = {
   registerTests: {
     initFailed: "Couldn't initialize the test suite for %s '%s': %s"
   }
+  registerMacro: {
+    badProcess: "Can't register macro '%s': its process callback must be a function, got a %s."
+  }
   new: {
     badRecordError: "Bad #{constants.DEPCTRL_NAME} record (%s)."
     strayRequiredModuleNames: "A required-module entry for %s carries extra names that are ignored: %s. Give each required module its own entry."
@@ -454,6 +457,8 @@ class PackageRecord
     if type(name)=="function"
       process, validate, isActive, submenu = name, description, process, validate
       name, description = @name, @description
+
+    @@logger\assert type(process) == "function", msgs.registerMacro.badProcess, name, type process
 
     -- use automation script name for submenu by default
     submenu = @name if submenu == true

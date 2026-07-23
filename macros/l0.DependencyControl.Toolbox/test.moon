@@ -604,14 +604,15 @@ UnitTestSuite "l0.DependencyControl.Toolbox", (macros, dependencies, testExports
     StartupSweep: {
       _description: "scheduleUpdatesAndRegisterTests: the startup sweep schedules every record, registers module test menus, and survives per-record failures."
 
-      -- every registered record gets a schedule attempt, module suites get their test menus registered
-      -- (automation scripts register their own), an installed module that fails to load is tolerated,
-      -- and the updater lock is released at the end
+      -- Every registered record gets a schedule attempt. A module whose test suite initialized gets its
+      -- test menu registered, while an uninitialized suite and automation scripts (which register their
+      -- own) are skipped. An installed module that fails to load is tolerated, and the lock is released.
       sweepsRecordsAndRegistersModuleTests: (ut) ->
         ut\stub(DepCtrl.config, "getSectionHandler")\returns {c: {modules: {"toolbox.test.notARealModule": {}}}}
         registered = {}
         records = {
-          {name: "Mod", namespace: "a.mod", scriptType: domain.ScriptType.Module, tests: {registerMacros: => registered.mdl = true}}
+          {name: "Mod", namespace: "a.mod", scriptType: domain.ScriptType.Module, testSuiteInitialized: true, tests: {registerMacros: => registered.mdl = true}}
+          {name: "Broken", namespace: "a.broken", scriptType: domain.ScriptType.Module, tests: {registerMacros: => registered.broken = true}}
           {name: "Mac", namespace: "a.mac", scriptType: domain.ScriptType.Automation, tests: {registerMacros: => registered.macro = true}}
         }
         ut\stub(DepCtrl, "getAllRegisteredRecords")\returns records
@@ -621,8 +622,9 @@ UnitTestSuite "l0.DependencyControl.Toolbox", (macros, dependencies, testExports
           0
         released = ut\stub DepCtrl.updater, "releaseLock"
         scheduleUpdatesAndRegisterTests!
-        ut\assertEquals #scheduled, 2
-        ut\assertTrue registered.mdl -- module suites are registered by the sweep
+        ut\assertEquals #scheduled, 3
+        ut\assertTrue registered.mdl -- an initialized module suite is registered by the sweep
+        ut\assertNil registered.broken -- a module whose suite failed to initialize is skipped
         ut\assertNil registered.macro -- automation scripts register their own
         released\assertCalledOnce!
 

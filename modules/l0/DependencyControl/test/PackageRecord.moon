@@ -12,6 +12,9 @@
   DEPCTRL_RECORDS_GLOBAL_KEY = "#{constants.DEPCTRL_PRIVATE_GLOBAL_VAR_PREFIX}Records"
   FILEOPS_MODULE_NAME = "l0.DependencyControl.file-ops"
 
+  -- a logger stub mirroring Logger\assert: raises on a falsy condition, returns otherwise
+  assertingLogger = { assert: (cond, msg, ...) => error msg unless cond }
+
   uniqueName = (prefix) -> "#{prefix}_#{'%08X'\format math.random 0, 16^8-1}"
 
   -- Drive prefix so stubbed paths are recognized as absolute on Windows too.
@@ -321,7 +324,7 @@
         config: {c: {customMenu: "Automation"}},
         registerTests: registerTestsStub,
         registeredMacros: {},
-        __class: {updater: updaterMock}
+        __class: {updater: updaterMock, logger: assertingLogger}
       }
       process = (->)
       PackageRecord.registerMacro rec, "MyMacro", "My macro", process
@@ -330,6 +333,19 @@
       registerTestsStub\assertCalledOnceWith rec
       -- the macro is recorded under its name, exposing the unhooked process to the test suite
       ut\assertIs rec.registeredMacros.MyMacro.process, process
+
+    -- a missing (or non-function) process callback is a common mistake, so it fails at registration
+    -- with a clear message instead of an "attempt to call a nil value" when the macro is later run
+    registerMacro_rejectsNonFunctionProcess: (ut) ->
+      ut\stub aegisub, "register_macro"
+      rec = {
+        name: "TestScript", description: "desc",
+        config: {c: {customMenu: "Automation"}},
+        registerTests: Stub!, registeredMacros: {},
+        __class: {updater: {scheduleUpdate: (->), releaseLock: ->}, logger: assertingLogger}
+      }
+      err = ut\assertError -> PackageRecord.registerMacro rec, "MyMacro", "My macro" -- process omitted
+      ut\assertContains err, "must be a function"
 
     -- namespace registry: getRegisteredRecord is the public lookup; registration happens
     -- internally (via the constructor), so these seed the process-global registry directly
@@ -487,7 +503,7 @@
       "uninstall_virtual", "uninstall_unmanaged",
       "uninstall_moduleSparesPrefixSiblings", "uninstall_automationEscapesAndTerminates",
       "getSubmodules_virtual", "getSubmodules_unmanaged", "getSubmodules_nonModule",
-      "getConfigFileName_basic", "registerMacro_basic",
+      "getConfigFileName_basic", "registerMacro_basic", "registerMacro_rejectsNonFunctionProcess",
       "registry_getReturnsRegistered", "registry_getMissing",
       "registry_getSkipsVirtual", "registry_returnsAfterUnvirtualized",
       "registry_getRegisteredReturnsCopy", "registry_getRegisteredIncludesVirtual",

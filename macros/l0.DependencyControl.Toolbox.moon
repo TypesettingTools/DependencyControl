@@ -136,6 +136,10 @@ buildFeedInventory = ->
   DepCtrl.FeedInventory {c: mergedC}, DepCtrl.updater.feedTrust, DepCtrl.updater.feedLoader
 
 getScriptListDlg = (macros, modules) ->
+  -- Lead each list with an empty entry so the dropdowns open on "nothing selected". On macOS a
+  -- dropdown whose value isn't among its items shows the first real item instead and can't be cleared.
+  macros = {"", unpack macros}
+  modules = {"", unpack modules}
   {
     {label: "Automation Scripts: ", class: "label", x: 0, y: 0, width: 1, height: 1 },
     {name: "macro", class: "dropdown", x: 1, y: 0, width: 1, height: 1, items: macros, value: "" },
