@@ -159,6 +159,10 @@
       ut\assertMatches text, "| logger | %[Logger%]%(#Logger%) |"
       ut\assertMatches text, "| maxSize | `integer` |"
 
+    fields_setmetatableTypedTable: (ut) ->
+      text = render ut, "class Foo\n  @instances = setmetatable {}, {__mode: \"v\"}\nreturn Foo"
+      ut\assertMatches text, "| instances | `table` |"
+
     -- ── enums and aliases ───────────────────────────────────────────────────
 
     enum_tableWithAliasDescriptions: (ut) ->

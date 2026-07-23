@@ -204,7 +204,8 @@ resolveDataType = (state, ir, cls, member) ->
     when ValueKind.Reference
       chaseRef(valueInfo.refName) or "any"
     when ValueKind.Call
-      chaseRef(valueInfo.baseName) or "any"
+      -- setmetatable(t, mt) returns t; the common `setmetatable {}, …` form is a table
+      valueInfo.baseName == "setmetatable" and "table" or chaseRef(valueInfo.baseName) or "any"
     when ValueKind.Table then "table"
     when ValueKind.Expression then inferExpressionType valueInfo.node
     else "any"
