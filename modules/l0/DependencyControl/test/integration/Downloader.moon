@@ -2,8 +2,8 @@
 -- (test/helpers/mock-http-server). Self-gating via _condition: skipped unless the
 -- server's Lua deps are installed, so the default offline run never needs
 -- luasocket/copas/pegasus.
--- Called from Tests.moon as: (require "...test.integration.Downloader") basePath
-(basePath) ->
+-- Called from test.moon as: (controls\requireTest "integration.Downloader") basePath, requireHelper
+(basePath, requireHelper) ->
   Downloader = require "l0.DependencyControl.Downloader"
   fileOps = require "l0.DependencyControl.file-ops"
 
@@ -13,14 +13,14 @@
     -- The controller is required lazily and pcall-guarded, so this is harmless where the test
     -- helpers aren't reachable (e.g. a stripped-down install) — it just skips.
     _condition: ->
-      ok, MockServerController = pcall require, "l0.DependencyControl.test.helpers.MockHttpServerController"
+      ok, MockServerController = pcall requireHelper, "MockHttpServerController"
       return false, "mock server helper unavailable (#{MockServerController})" unless ok
       isReady, err = MockServerController\isReady!
       return false, "mock server is not ready to start: #{err}" unless isReady
       return true
 
     _setup: (ut) ->
-      MockServerController = require "l0.DependencyControl.test.helpers.MockHttpServerController"
+      MockServerController = requireHelper "MockHttpServerController"
       base = "#{basePath}_downloader"
       serveDir, downloadDir = "#{base}/fixtures", "#{base}/out"
       fileOps.mkdir d, false, true for d in *{base, serveDir, downloadDir}

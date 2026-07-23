@@ -11,10 +11,17 @@ return UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
   isWindows = ffi.os == "Windows"
   basePath = aegisub.decode_path "?temp/l0.#{DepCtrl.__name}.#{UnitTestSuite.__name}_#{'%04X'\format math.random 0, 16^4-1}"
 
+  -- Shared test helpers are themselves sibling test modules, so they load through requireTest
+  -- and resolve under both the Aegisub-default and custom (CI) suite roots. requireHelper stays
+  -- lazy for the optional integration deps, which must fail soft when their rocks aren't installed.
+  requireHelper = (name) -> controls\requireTest "helpers.#{name}"
+  stubHelpers = requireHelper "stub-helpers"
+
   -- Each test class lives in its own sibling module under `test/`, loaded via the suite's
   -- requireTest helper so the same call resolves in both the Aegisub-default and custom (CI)
   -- test locations. Classes needing shared fixtures receive them as arguments (basePath for
-  -- temp-file paths, DepCtrl for the live record/logger, isWindows for platform branches).
+  -- temp-file paths, DepCtrl for the live record/logger, isWindows for platform branches,
+  -- stubHelpers for the shared stub-self/null-logger/feed-trust builders).
   {
     Timer: (controls\requireTest "Timer")!
     BadMutex: (controls\requireTest "BadMutex")!
@@ -39,10 +46,10 @@ return UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
     ConfigView: (controls\requireTest "ConfigView")!
     ConfigSchema: (controls\requireTest "config-schema")!
     ModuleLoader: (controls\requireTest "ModuleLoader")!
-    PackageRecord: (controls\requireTest "PackageRecord") basePath
-    UpdateTask: (controls\requireTest "UpdateTask")!
-    Updater: (controls\requireTest "Updater")!
-    FeedTrust: (controls\requireTest "FeedTrust")!
+    PackageRecord: (controls\requireTest "PackageRecord") basePath, stubHelpers
+    UpdateTask: (controls\requireTest "UpdateTask") stubHelpers
+    Updater: (controls\requireTest "Updater") stubHelpers
+    FeedTrust: (controls\requireTest "FeedTrust") stubHelpers
     FeedLoader: (controls\requireTest "FeedLoader") basePath, DepCtrl
     Host: (controls\requireTest "Host")!
     FeedInventory: (controls\requireTest "FeedInventory")!
@@ -50,14 +57,14 @@ return UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
     FileCache: (controls\requireTest "FileCache") basePath
     ScriptUpdateRecord: (controls\requireTest "ScriptUpdateRecord")!
     ReleaseNotes: (controls\requireTest "release-notes")!
-    UpdateFeed: (controls\requireTest "UpdateFeed") basePath, DepCtrl
+    UpdateFeed: (controls\requireTest "UpdateFeed") basePath, DepCtrl, stubHelpers
     GitRepository: (controls\requireTest "GitRepository")!
     ScriptTargetFilter: (controls\requireTest "ScriptTargetFilter")!
     ZipArchiver: (controls\requireTest "ZipArchiver") basePath
     JsonSchema: (controls\requireTest "JsonSchema") basePath
     FfiPosix: (controls\requireTest "ffi-posix")!
     OpenUrl: (controls\requireTest "open-url")!
-    DownloaderIntegration: (controls\requireTest "integration.Downloader") basePath
+    DownloaderIntegration: (controls\requireTest "integration.Downloader") basePath, requireHelper
     LoggerIntegration: (controls\requireTest "integration.Logger") basePath
     ZipArchiverIntegration: (controls\requireTest "integration.ZipArchiver") basePath
   }

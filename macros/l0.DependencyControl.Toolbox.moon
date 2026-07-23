@@ -602,7 +602,7 @@ scheduleUpdatesAndRegisterTests = ->
       -- and its message stands on its own
       logger\trace DepCtrl.UpdateTask.getUpdaterErrorMsg errMsgOrErrCode, record.name or record.namespace, record.scriptType, false, errDetail
 
-    if record.tests and record.scriptType == ScriptType.Module
+    if record.testSuiteInitialized and record.scriptType == ScriptType.Module
       success, errMsg = pcall record.tests\registerMacros
       unless success
         logger\trace msgs.scheduleUpdatesAndRegisterTests.registerMacrosError, record.name or record.namespace, errMsg

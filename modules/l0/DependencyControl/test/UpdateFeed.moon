@@ -1,13 +1,13 @@
 -- UpdateFeed tests: feed data access, script record retrieval, file deployment,
 -- and feed refresh.
--- Called from Tests.moon as: (require "...test.UpdateFeed") basePath, DepCtrl
-(basePath, DepCtrl) ->
+-- Called from test.moon as: (controls\requireTest "UpdateFeed") basePath, DepCtrl, stubHelpers
+(basePath, DepCtrl, stubHelpers) ->
   domain = require "l0.DependencyControl.domain"
   fileOps = require "l0.DependencyControl.file-ops"
   FileCache = require "l0.DependencyControl.FileCache"
   UpdateFeed = require "l0.DependencyControl.UpdateFeed"
   dkjson = require "l0.dkjson"
-  {:stubSelf} = require "l0.DependencyControl.test.helpers.stub-helpers"
+  {:stubSelf} = stubHelpers
   FILEOPS_MODULE_NAME = "l0.DependencyControl.file-ops"
 
   -- Builds a stub feed around unexpanded data for driving expand directly.

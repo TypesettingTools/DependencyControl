@@ -1,6 +1,6 @@
 -- Updater tests.
--- Called from test.moon as: (controls\requireTest "Updater")!
-() ->
+-- Called from test.moon as: (controls\requireTest "Updater") stubHelpers
+(stubHelpers) ->
   Updater = require "l0.DependencyControl.Updater"
   domain = require "l0.DependencyControl.domain"
   ModuleLoader = require "l0.DependencyControl.ModuleLoader"
@@ -8,7 +8,7 @@
   Lock = require "l0.DependencyControl.Lock"
   UpdateTask = require "l0.DependencyControl.UpdateTask"
   DependencyControl = require "l0.DependencyControl"
-  {:stubSelf, :makeNullLogger} = require "l0.DependencyControl.test.helpers.stub-helpers"
+  {:stubSelf, :makeNullLogger} = stubHelpers
   UpdateStatus = UpdateTask.UpdateStatus
   UpdateReason = UpdateTask.UpdateReason
   ContextCeiling = UpdateTask.ContextCeiling

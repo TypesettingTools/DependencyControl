@@ -1,6 +1,6 @@
 -- UpdateTask tests: extracted from the main test suite.
--- Called from test.moon as: (controls\requireTest "UpdateTask")!
-() ->
+-- Called from test.moon as: (controls\requireTest "UpdateTask") stubHelpers
+(stubHelpers) ->
   domain = require "l0.DependencyControl.domain"
   environment = require "l0.DependencyControl.environment"
   UpdateTask = require "l0.DependencyControl.UpdateTask"
@@ -11,7 +11,7 @@
   Downloader = require "l0.DependencyControl.Downloader"
   ModuleLoader = require "l0.DependencyControl.ModuleLoader"
   FeedTrust = require "l0.DependencyControl.FeedTrust"
-  {:stubSelf, :makeNullLogger, :makeSeededFeedTrust} = require "l0.DependencyControl.test.helpers.stub-helpers"
+  {:stubSelf, :makeNullLogger, :makeSeededFeedTrust} = stubHelpers
 
   UpdateStatus = UpdateTask.UpdateStatus
   ContextCeiling = UpdateTask.ContextCeiling

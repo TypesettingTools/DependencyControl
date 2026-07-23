@@ -1,9 +1,9 @@
 -- FeedTrust tests: the consolidated feed-trust model — official/user merge, trust queries, and mutations.
--- Called from test.moon as: (controls\requireTest "FeedTrust")!
-() ->
+-- Called from test.moon as: (controls\requireTest "FeedTrust") stubHelpers
+(stubHelpers) ->
   FeedTrust = require "l0.DependencyControl.FeedTrust"
   TrustStatus = FeedTrust.TrustStatus
-  {:makeSeededFeedTrust} = require "l0.DependencyControl.test.helpers.stub-helpers"
+  {:makeSeededFeedTrust} = stubHelpers
 
   -- A FeedTrust seeded with the official sets (so it never loads the live DepCtrl feed) over a stub config.
   -- opts: officialTrusted (set), officialBlocked (list), extraFeeds, trustedFeeds, blockedFeeds, onSave.

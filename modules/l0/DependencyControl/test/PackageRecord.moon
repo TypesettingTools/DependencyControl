@@ -1,13 +1,13 @@
 -- PackageRecord tests: extracted from the main test suite.
--- Called from test.moon as: (controls\requireTest "PackageRecord") basePath
-(basePath) ->
+-- Called from test.moon as: (controls\requireTest "PackageRecord") basePath, stubHelpers
+(basePath, stubHelpers) ->
   ffi = require "ffi"
   constants = require "l0.DependencyControl.Constants"
   domain = require "l0.DependencyControl.domain"
   fileOps = require "l0.DependencyControl.file-ops"
   PackageRecord = require "l0.DependencyControl.PackageRecord"
   Stub = require "l0.DependencyControl.Stub"
-  {:stubSelf} = require "l0.DependencyControl.test.helpers.stub-helpers"
+  {:stubSelf} = stubHelpers
 
   DEPCTRL_RECORDS_GLOBAL_KEY = "#{constants.DEPCTRL_PRIVATE_GLOBAL_VAR_PREFIX}Records"
   FILEOPS_MODULE_NAME = "l0.DependencyControl.file-ops"
