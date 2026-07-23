@@ -16,7 +16,8 @@
   "vars": {
     "tagSuffix": {
       "alpha": "-alpha",
-      "stable": ""
+      "stable": "",
+      "main": ""
     }
   },
   "maintainer": "line0",

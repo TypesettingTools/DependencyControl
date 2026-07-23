@@ -81,7 +81,7 @@ updateFeedCmd:option("--release-date",
 addTargets(updateFeedCmd)
 
 local resolveFeedCmd = parser:command("resolve-feed",
-  "Expand a feed's templates into a static feed a pre-0.4.0 client can read (the one-time <0.7.0 upgrade feed)")
+  "Expand a feed's templates into a static feed with no template variables. Useful to downgrade a feed that uses template variables added in feed version 0.4.0 that older DependencyControl versions don't support.")
 resolveFeedCmd:option("-f --feed", "Feed JSON path"):default("DependencyControl.json")
 resolveFeedCmd:option("--file-base-url",
   "Override the feed's fileBaseUrl before expansion, re-homing every file download (e.g. onto a local mirror)")
@@ -96,6 +96,10 @@ local serveCmd = parser:command("serve-updates",
 serveCmd:option("-f --feed",
   "Source feed JSON path, next to its files (a resolvable-channel feed, e.g. alpha)"):default("DependencyControl.json")
 serveCmd:option("--lifetime", "Seconds to serve before the server self-terminates"):argname("<seconds>"):default("3600")
+serveCmd:option("--serve-channel",
+  "Graft the feed's dev channel onto this channel before serving, so a client tracking it matches")
+  :argname("<name>")
+serveCmd:option("--from-channel", "Dev channel to graft from when --serve-channel is given"):argname("<name>"):default("main")
 
 local bumpCmd = parser:command("bump-version",
   "Bump package version(s) to the feed's lockstep version, then refresh the feed")
@@ -523,6 +527,132 @@ elseif args.command == "update-feed" then
     io.stdout:write(("%d package(s) had errors (see above).\n"):format(stats.errored))
   end
   os.exit(stats.errored > 0 and 1 or 0)
+
+-- ─── resolve-feed ─────────────────────────────────────────────────────────────
+elseif args.command == "resolve-feed" then
+  local feedPath = resolveAbsPath(args.feed)
+
+  setupDepCtrl("resolve-feed")
+
+  local UpdateFeed = require "l0.DependencyControl.UpdateFeed"
+  local feed = UpdateFeed(nil, false, feedPath)
+
+  local outPath, err = feed:resolve({
+    fileBaseUrl = args.file_base_url,
+    feedSchemaVersion = args.feed_schema_version,
+    outPath = args.out_file and resolveAbsPath(args.out_file) or nil,
+  })
+  if not outPath then
+    io.stderr:write("resolve-feed: " .. tostring(err) .. "\n")
+    os.exit(1)
+  end
+
+  io.stdout:write(("Resolved feed written to %s\n"):format(outPath))
+  os.exit(0)
+
+-- ─── serve-updates ────────────────────────────────────────────────────────────
+elseif args.command == "serve-updates" then
+  local feedPath = resolveAbsPath(args.feed)
+  local lifetime = tonumber(args.lifetime) or 3600
+
+  setupDepCtrl("serve-updates")
+
+  local UpdateFeed = require "l0.DependencyControl.UpdateFeed"
+  local FileOps = require "l0.DependencyControl.file-ops"
+  local json = require "l0.dkjson"
+  local socket = require "socket"
+  local copas = require "copas"
+  local Handler = require "pegasus.handler"
+
+  -- Refresh the feed's hashes/versions from the working copy into a throwaway copy (never the input), so
+  -- the served feed matches what's on disk and vanished files drop out; then resolve it into a static
+  -- feed an older client can read.
+  local sourceFeed = UpdateFeed(nil, false, feedPath)
+  registerFeedSearcher(sourceFeed)
+  local refreshedPath = FileOps.joinPath(assert(FileOps.createTempDir()), "refreshed.json")
+  local refreshed, refreshErr = sourceFeed:updateFeed({ outPath = refreshedPath })
+  if not refreshed then
+    io.stderr:write("serve-updates: couldn't refresh the feed: " .. tostring(refreshErr) .. "\n")
+    os.exit(1)
+  end
+
+  -- Optionally graft the dev channel onto a channel a client tracks (e.g. main -> alpha), so an older
+  -- Aegisub can be tested against this feed without merging channels by hand first.
+  local feedToServe = refreshedPath
+  if args.serve_channel then
+    local mergedPath = FileOps.joinPath(dirname(refreshedPath), "merged.json")
+    local merged, mergeErr = UpdateFeed(nil, false, refreshedPath):mergeChannels(UpdateFeed(nil, false, refreshedPath), {
+      from = args.from_channel,
+      to = { args.serve_channel },
+      outPath = mergedPath,
+    })
+    if not merged or #merged == 0 then
+      io.stderr:write(("serve-updates: couldn't graft channel '%s' -> '%s' (%s)\n"):format(
+        args.from_channel, args.serve_channel, merged and "no package uses that channel" or tostring(mergeErr)))
+      os.exit(1)
+    end
+    feedToServe = mergedPath
+  end
+
+  -- Bind first so the feed's file URLs can carry the real port.
+  local listener = assert(socket.bind("127.0.0.1", 0))
+  local _, port = listener:getsockname()
+  local base = "http://127.0.0.1:" .. port
+
+  local feed = UpdateFeed(nil, false, feedToServe)
+  local resolved, resolveErr = feed:resolve({ fileBaseUrl = base .. "/", outPath = false })
+  if not resolved then
+    io.stderr:write("serve-updates: " .. tostring(resolveErr) .. "\n")
+    os.exit(1)
+  end
+  -- the refreshed feed sits in a temp dir; point its file lookups back at the working copy
+  feed.feedDir = dirname(feedPath)
+
+  -- Map each URL path to the on-disk source it serves live (no copies); the feed itself is served from
+  -- memory. A file dropped on refresh (missing source) simply isn't mapped.
+  local manifest = { ["/DependencyControl.json"] = { body = json.encode(resolved, { indent = true }), mime = "application/json" } }
+  local served = 0
+  for file in feed:walkFiles() do
+    if not (file.delete or not file.localFilePath) then
+      manifest[file.url:sub(#base + 1)] = { path = file.localFilePath }
+      served = served + 1
+    end
+  end
+  local feedUrl = base .. "/DependencyControl.json"
+
+  local function handleRequest(req, res)
+    local entry = manifest[req:path()]
+    local body = entry and (entry.body or FileOps.readFile(entry.path))
+    if not body then
+      res:statusCode(404):write("not found")
+      return res:close()
+    end
+    res:statusCode(200)
+    res:addHeader("Content-Type", entry.mime or "application/octet-stream")
+    res:write(body)
+    res:close()
+  end
+
+  -- Self-terminate after the lifetime so a forgotten server can't linger.
+  copas.addthread(function()
+    local startedAt = os.time()
+    while os.time() - startedAt < lifetime do copas.sleep(1) end
+    os.exit(0)
+  end)
+  -- Point pegasus' static doc-root at an empty dir: it serves real files there before falling to our
+  -- handler, and a repo-root doc-root would shadow our in-memory feed with the on-disk DependencyControl.json.
+  local handler = Handler:new(handleRequest, assert(FileOps.createTempDir()), {}, nil)
+  copas.addserver(listener, copas.handler(function(client) handler:processRequest(port, client) end))
+
+  io.stdout:write(("\nServing %d file(s) live from %s\n"):format(served, dirname(feedPath)))
+  io.stdout:write("\n  Feed URL:\n    " .. feedUrl .. "\n")
+  io.stdout:write("\n  Point a package at it via its userFeed in the DepCtrl config, e.g.:\n")
+  io.stdout:write(('    "userFeed": "%s"\n'):format(feedUrl))
+  io.stdout:write("\n  For a 0.7.0+ client, also set updates.blockPrivateHosts = false (loopback is blocked by default).\n")
+  io.stdout:write(("\nServing for up to %d s. Press Ctrl-C to stop.\n"):format(lifetime))
+  io.stdout:flush() -- flush so a caller reading our output sees the URL before copas blocks
+
+  copas.loop()
 
 -- ─── bump-version ─────────────────────────────────────────────────────────────
 elseif args.command == "bump-version" then

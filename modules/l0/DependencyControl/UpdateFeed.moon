@@ -206,6 +206,7 @@ msgs = {
 ---@class UpdateFeed
 ---@field url string This feed's source URL, or a file:// URL over its local file when it has no remote URL (read-only).
 ---@field knownFeeds string[] URLs referenced in this feed's `knownFeeds` section; empty when the feed isn't loaded. Read-only.
+---@field feedDir? string Directory of the loaded feed file; local file paths resolve against it during local-mode expansion.
 ---@field private __channelTemplateState table<string, table<string, table<string, UpdateFeedChannelTemplateState>>> Captured channel template state, keyed by section, namespace, and channel name.
 class UpdateFeed
   ---Declares one template variable. A regular template captures its value at a fixed tree
