@@ -177,6 +177,13 @@
       ut\assertMatches text, "| Ok | `1` |"
       ut\assertMatches text, "| Failed | `%-1` |"
 
+    enum_computedKeyShowsSourceExpression: (ut) ->
+      -- a key referencing another enum's member shows the source Enum.Member expression, value joined from the alias
+      src = 'Enum = require "l0.DependencyControl.Enum"\nKind = Enum "Kind", {A: "a", B: "b"}\n---@alias Section\n---| "macros" # automation scripts\n---| "modules" # modules\nSection = Enum "Section", {[Kind.A]: "macros", [Kind.B]: "modules"}\n---@class Domain\nreturn {:Kind, :Section}'
+      text = render ut, src
+      ut\assertMatches text, "| Kind%.A | `\"macros\"` | automation scripts |"
+      ut\assertMatches text, "| Kind%.B | `\"modules\"` | modules |"
+
     types_aliasVariantTable: (ut) ->
       text = render ut, "---Precision selector.\n---@alias Precision\n---| 'major' # Major: whole releases\n---| 'minor' # Minor: feature releases\n\nx = 1\n\nf = -> 1\nreturn {f: f}"
       ut\assertMatches text, "## Types"

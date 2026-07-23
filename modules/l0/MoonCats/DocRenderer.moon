@@ -334,7 +334,7 @@ renderEnum = (out, state, enum, block, anchorPrefix) ->
   for enumMember in *enum.members
     variant = variantsByKey[enumMember.key] or variantsByValue[enumMember.literal]
     description = variant and variant.description or nil
-    table.insert out, "| #{enumMember.key} | `#{enumMember.literal}` | #{cellText description} |"
+    table.insert out, "| #{enumMember.display or enumMember.key} | `#{enumMember.literal}` | #{cellText description} |"
   table.insert out, ""
 
 ---Renders a standalone alias or annotation-only class segment in a module's Types section.

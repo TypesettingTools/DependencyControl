@@ -143,7 +143,7 @@ metamethodNames = utils.makeSet {
 ---@class MoonCatsEnumIR
 ---@field name string The Enum's declared runtime name.
 ---@field line integer
----@field members {key: string, literal: string}[] Literal-valued members in definition order.
+---@field members {key: string, literal: string, display?: string}[] Literal-valued members in definition order; display holds a computed key's source `Enum.Member` expression.
 ---@field computedKeyCount integer Number of members skipped for non-literal keys or values.
 ---@field exportedAs? string Member/field name the Enum is exported under, when it is.
 
@@ -506,6 +506,20 @@ fndefHasValueReturn = (fndefNode) ->
     search stm
   found
 
+---Resolves a computed table key written as `SomeEnum.Member` against an already-parsed enum.
+---@param keyNode any
+---@param resolveSymbol fun(name: string): MoonCatsSymbol?
+---@return string? valueToken The referenced member's literal value token.
+---@return string? keyExpr The source `Enum.Member` expression, for display.
+resolveEnumMemberKey = (keyNode, resolveSymbol) ->
+  info = describeChain keyNode
+  return nil unless info and info.baseName and info.accessor and info.accessorKind == "dot"
+  sym = resolveSymbol info.baseName
+  return nil unless sym and sym.kind == SymbolKind.Enum and sym.enum
+  for member in *sym.enum.members
+    return member.literal, "#{info.baseName}.#{info.accessor}" if member.key == info.accessor
+  nil
+
 ---Recognizes an `Enum "Name", {...}` definition chain.
 ---@param node any
 ---@param resolveSymbol fun(name: string): MoonCatsSymbol?
@@ -524,6 +538,13 @@ enumSpecFromChain = (node, resolveSymbol) ->
     token = value != nil and literalTokenFromNode value
     if nodeType(key) == "key_literal" and token
       table.insert members, {key: key[2], literal: token}
+    elseif token
+      -- a `[SomeEnum.Member]` key is that member's value at runtime, so key the field by the resolved literal
+      valueToken, keyExpr = resolveEnumMemberKey key, resolveSymbol
+      if valueToken
+        table.insert members, {key: "[#{valueToken}]", display: keyExpr, literal: token}
+      else
+        computedKeyCount += 1
     else
       computedKeyCount += 1
   {:name, :members, :computedKeyCount}

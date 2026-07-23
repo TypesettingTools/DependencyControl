@@ -187,6 +187,14 @@
       _, diagnostics = emit ut, 'Enum = require "l0.DependencyControl.Enum"\nkey = "K"\nclass Foo\n  @Map = Enum "Map", {[key]: "v", Plain: "p"}\nreturn Foo'
       ut\assertTrue hasFinding diagnostics, FindingCode.ComputedKeySkipped
 
+    enum_computedKeyResolvesViaReferencedEnum: (ut) ->
+      -- a `[OtherEnum.Member]` key resolves to that member's value, keying the field by the literal
+      src = 'Enum = require "l0.DependencyControl.Enum"\nKind = Enum "Kind", {A: "a", B: "b"}\nclass Foo\n  @Section = Enum "Section", {[Kind.A]: "macros", [Kind.B]: "modules"}\nreturn Foo'
+      text, diagnostics = emit ut, src
+      ut\assertMatches text, '%-%-%-@field %["a"%] "macros"'
+      ut\assertMatches text, '%-%-%-@field %["b"%] "modules"'
+      ut\assertFalse hasFinding diagnostics, FindingCode.ComputedKeySkipped
+
     enum_augmentationEmitsOntoClass: (ut) ->
       text = emit ut, 'Enum = require "l0.DependencyControl.Enum"\nStatus = Enum "Status", {Ok: 0}\nclass Task\n  go: => 1\nTask.Status = Status\nreturn Task'
       ut\assertMatches text, "%-%-%-@class StatusEnum: Enum"
