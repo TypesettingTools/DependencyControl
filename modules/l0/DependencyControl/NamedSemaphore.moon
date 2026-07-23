@@ -99,10 +99,12 @@ else
 ---Usable as a per-process or cross-process lock primitive.
 ---@class NamedSemaphore
 class NamedSemaphore
-  -- whether the OS semaphore FFI is isAvailable at all on this platform/build
+  -- whether the OS semaphore FFI is available at all on this platform/build
+  ---@type boolean
   @isAvailable = isAvailable
 
   -- this process's id, exposed so callers can build process-scoped names and holder records
+  ---@type integer
   @pid = pid
 
   -- anchor the teardown-unlink finalizer to the class so it lives as long as the module (nil on Windows)

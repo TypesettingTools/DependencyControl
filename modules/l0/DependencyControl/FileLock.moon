@@ -82,7 +82,8 @@ else
 ---However, unlike a semaphore, it cannot be forcibly taken from a process that is alive but hung.
 ---@class FileLock
 class FileLock
-  -- whether the OS file-lock FFI is isAvailable on this platform/build
+  -- whether the OS file-lock FFI is available on this platform/build
+  ---@type boolean
   @isAvailable = isAvailable
 
   ---Opens (creating if absent) the lock file and prepares it for locking.

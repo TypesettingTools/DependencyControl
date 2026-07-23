@@ -15,6 +15,7 @@ haveKernel32, kernel32 = pcall ffi.load, "kernel32"
   kernel32: haveKernel32 and kernel32 or nil
 
   -- whether kernel32 loaded successfully; gate any use of `kernel32`/`toWide` on this
+  ---@type boolean
   haveKernel32: haveKernel32
 
   ---Converts a UTF-8 string to a NUL-terminated wide-char (UTF-16) buffer for the *W Win32 APIs.
