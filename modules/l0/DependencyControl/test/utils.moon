@@ -80,11 +80,33 @@
     escapePattern_plainStringUnchanged: (ut) ->
       ut\assertEquals utils.escapePattern("l0_Functional"), "l0_Functional"
 
+    -- Aegisub loads each automation script concurrently, each into its own Lua state, and those states
+    -- seed their rng at the same instant while sharing one pid, so the clock and pid don't tell them
+    -- apart. Hold both fixed and give each the identity of a state at a neighbouring address; the seeds
+    -- and their first draws must still come out distinct, or per-script log file names and temp paths
+    -- would collide.
+    seedRandom_divergesAcrossSimultaneousStates: (ut) ->
+      ut\assertNumber utils.seedRandom!
+      seeds, heads = {}, {}
+      base = 0x1a2b00000000 -- a plausible Lua state address; neighbours differ by an allocation offset
+      for i = 0, 199
+        seed = utils.__deriveSeed base + i * 0x10, 1234.5, 4242 -- frozen clock and pid
+        ut\assertNil seeds[seed]
+        seeds[seed] = true
+        math.randomseed seed
+        heads[math.random 0, 16^4 - 1] = true
+      distinctHeads = 0
+      distinctHeads += 1 for _ in pairs heads
+      -- the head is a 16-bit draw, so a few of the 200 may collide by birthday chance; requiring the
+      -- vast majority distinct still fails hard for a repeating seed, which collapses to a single head
+      ut\assertGreaterThan distinctHeads, 190
+
     _order: {
       "flatten_depth2Array", "flatten_depth1StopsEarly", "flatten_depth0NoFlatten",
       "flatten_scalar", "flatten_returnsCount", "flatten_toArrayTable",
       "listIncludes_found", "listIncludes_notFoundAndEmpty",
       "equals_cyclicRefs", "itemsEqual_duplicateScalars",
-      "escapePattern_matchesLiterally", "escapePattern_plainStringUnchanged"
+      "escapePattern_matchesLiterally", "escapePattern_plainStringUnchanged",
+      "seedRandom_divergesAcrossSimultaneousStates"
     }
   }

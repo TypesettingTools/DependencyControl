@@ -218,7 +218,7 @@
             {
               "name": "/Logger.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "84939ADA4D8C32551AA50CC4B8D1E9E7B9EB8E7F"
+              "sha1": "CBFC4B9C5699D3606D7AEE92137DA91DEC1B4EBD"
             },
             {
               "name": "/ModuleLoader.moon",
@@ -363,12 +363,12 @@
             {
               "name": "/utils.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "063074381094F2F26408CA9DCA90D7270ACC02B7"
+              "sha1": "748DA150EA5FCC8B5AACC0727CFA1BA432828D83"
             },
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "987B9AA2FF029430233E2A01A8EC3926E9D074E8",
+              "sha1": "30C9DAB080A711CAAF8C8C7AC6B89E0BA9292290",
               "type": "test"
             },
             {
@@ -618,12 +618,6 @@
               "type": "test"
             },
             {
-              "name": "/integration/Logger.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "83655761675C1EF3F21C15A6348E5AD65BB40FE1",
-              "type": "test"
-            },
-            {
               "name": "/release-notes.moon",
               "url": "@{fileBaseUrl}",
               "sha1": "A6E2F4FAC1EE2ED44D90CEC38D45D87691618FB4",
@@ -638,7 +632,7 @@
             {
               "name": "/utils.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "0DEFEDA3EBBE4F4F8A0F8BF1F7426C48B638BF36",
+              "sha1": "F78238492CB05F9F1568C14DE363A83CE1CAB6D8",
               "type": "test"
             },
             {
@@ -759,7 +753,7 @@
           "feat(Hash): Added `getObjectHash()`, which reduces an arbitrary, possibly nested Lua value to a stable, order-independent SHA-1 signature.",
           "feat(utils): Added the `makeSet`, `addDefaults`, `trim`, and `escapePattern` helpers, shared with the Functional module.",
           "change(Lock): Locks are now per-resource, so distinct resources no longer contend over a single global mutex. An optional `Global` scope enforces mutual exclusion across separate Aegisub instances, used when reading and writing shared config files. A Global lock is backed by an OS advisory lock that the system releases if the holder crashes, so a config file can never stay permanently locked. A held lock records its holder for troubleshooting, warns when it waits on a lapsed lease, and adds a `renew()` method and a `Lock.guard` helper that always releases the lock.",
-          "change: Scripts using DependencyControl no longer pause about half a second while loading. The wait that spread the random seed across simultaneously loading scripts is gone, replaced by a monotonic-clock seed that is unique per script environment on its own.",
+          "change: Scripts using DependencyControl no longer pause about half a second while loading. The wait that spread the random seed across simultaneously loading scripts is gone. Each script's Lua state now seeds from its own identity together with the monotonic clock and process id, so states loading at the same instant still get distinct log file names and temp paths.",
           "fix: Many updater and installer messages and error reports were corrected. Among them, \"Couldn't installation module\" and \"Starting nil of ...\" are fixed, dependency-resolution errors no longer print \"of nil Module\" or drop the failing sub-requirement, and a failing optional dependency or module initializer now surfaces with its name and the real error instead of being mislabeled or dropped.",
           "fix(Logger): Progress bars now fill incrementally instead of jumping from empty to full, the log window no longer repeats the indentation prefix inside incrementally written output, and the `usePrefix` option applies to both the log file and the window.",
           "fix: Several smaller correctness fixes. `mkdir` no longer reports success when creation failed, the temporary download directory is removed after a successful install, and `SemanticVersion.toString` renders nil as \"0.0.0\" instead of erroring.",

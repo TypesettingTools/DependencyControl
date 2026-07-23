@@ -1,6 +1,5 @@
-Timer = require "l0.DependencyControl.Timer"
-NamedSemaphore = require "l0.DependencyControl.NamedSemaphore"
 lfs = require "lfs"
+utils = require "l0.DependencyControl.utils"
 
 ---Structured logger that writes to Aegisub's log window and optional log files.
 ---@class Logger
@@ -36,12 +35,8 @@ class Logger
       if args.usePrefix ~= nil
         @usePrefixFile, @usePrefixWindow = args.usePrefix, args.usePrefix
 
-    -- scripts load simultaneously in separate Lua states, so a whole-second seed would collide;
-    -- the monotonic clock's sub-microsecond reading diverges per state, and the pid separates
-    -- whole processes
     unless seeded
-      math.randomseed Timer.getTime! * 1000 + NamedSemaphore.pid
-      math.random! for i = 1, 3
+      utils.seedRandom!
       seeded = true
 
     @lastHadLineFeed = true

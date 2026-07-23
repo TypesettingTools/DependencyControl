@@ -65,6 +65,5 @@ return UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
     FfiPosix: (controls\requireTest "ffi-posix")!
     OpenUrl: (controls\requireTest "open-url")!
     DownloaderIntegration: (controls\requireTest "integration.Downloader") basePath, requireHelper
-    LoggerIntegration: (controls\requireTest "integration.Logger") basePath
     ZipArchiverIntegration: (controls\requireTest "integration.ZipArchiver") basePath
   }

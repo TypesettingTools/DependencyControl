@@ -1,6 +1,9 @@
--- General-purpose Lua helpers with no DependencyControl dependencies: deep equality, table
--- copying, set and list operations, string trimming and pattern escaping, array flattening,
--- and UUID generation. Sits at the bottom of the dependency graph.
+-- General-purpose Lua helpers: deep equality, table copying, set and list operations, string
+-- trimming and pattern escaping, array flattening, UUID generation, and rng seeding. Loads at the
+-- bottom of the dependency graph with no DependencyControl requires; seedRandom and getRandomSeed
+-- lazily pull Timer and NamedSemaphore when first called.
+
+local Timer, NamedSemaphore
 
 -- Compares two values for deep equality. Tables are compared recursively;
 -- other types use == except that two identical values always compare equal.
@@ -139,6 +142,26 @@ flatten = (value, depth = 1, toArrayTable) ->
 
 deepCopy = (tbl) -> {k, (type(v) == "table" and deepCopy(v) or v) for k, v in pairs tbl}
 
+-- Aegisub loads automation scripts concurrently, each into its own Lua state that seeds its rng as
+-- DependencyControl loads. Two states can seed at the same instant and share a process id, so the
+-- clock and PID don't tell them apart. Each live Lua state has a distinct address, read here from the
+-- running state's main thread, whose tostring yields "thread: 0x<address>".
+getStateToken = ->
+  addr = tostring(coroutine.running!)\match "0x(%x+)"
+  addr and tonumber(addr, 16) or 0
+
+__deriveSeed = (token, clockMs, pid) -> clockMs * 1000 + pid + token
+
+getRandomSeed = ->
+  Timer or= require "l0.DependencyControl.Timer"
+  NamedSemaphore or= require "l0.DependencyControl.NamedSemaphore"
+  __deriveSeed getStateToken!, Timer.getTime!, NamedSemaphore.pid
+
+seedRandom = ->
+  seed = getRandomSeed!
+  math.randomseed seed
+  return seed
+
 ---@class Utils
 Utils = {
   ---Deep equality comparison. Tables compared recursively; other types use ==.
@@ -217,6 +240,23 @@ Utils = {
   ---@return table flattened A flattened array table containing the flattened values.
   ---@return number flattenedCount The number of elements in the flattened array.
   flatten: flatten
+
+  ---Returns a random-number seed unique to this script's Lua state, differing from one launch to the next.
+  ---@return number seed
+  getRandomSeed: getRandomSeed
+
+  ---Reseeds this Lua state's random number generator so `math.random` yields a stream unique to the
+  ---script and to this launch. DependencyControl seeds it on load; call this to reseed it yourself.
+  ---@return number seed The applied seed.
+  seedRandom: seedRandom
+
+  ---Pure (token, clockMs, pid) seed combiner, reachable for the seed-divergence test.
+  ---@param token number Distinct per-Lua-state identity token.
+  ---@param clockMs number Clock reading in milliseconds.
+  ---@param pid number The current process id.
+  ---@return number seed
+  ---@private
+  __deriveSeed: __deriveSeed
 
   ---Generates a random RFC-4122 version-4 UUID string.
   ---@return string uuid
