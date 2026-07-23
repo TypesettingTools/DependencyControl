@@ -234,7 +234,7 @@ Hash = {
   ---@private
   ---@param msg string The input bytes to hash (assumed to be a string; not validated).
   ---@return string digest A 40-character lowercase hex digest.
-  _sha1Lua: sha1Lua
+  __sha1Lua: sha1Lua
 }
 
 return Hash

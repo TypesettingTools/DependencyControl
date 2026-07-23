@@ -32,7 +32,7 @@
     -- whichever backend is active (native or lua) must match the reference impl
     sha1_backendMatchesReference: (ut) ->
       for input in *{"", "abc", "The quick brown fox jumps over the lazy dog", "\0\1\2\254\255"}
-        ut\assertEquals Hash.getDigest(ht.Sha1, input), Hash._sha1Lua input
+        ut\assertEquals Hash.getDigest(ht.Sha1, input), Hash.__sha1Lua input
 
     verify_matchIsCaseInsensitive: (ut) ->
       digest = "a9993e364706816aba3e25717850c26c9cd0d89d"
