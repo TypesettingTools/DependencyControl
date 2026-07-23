@@ -1,15 +1,13 @@
--- DependencyControl wrapper around the vendored upstream dkjson.
---
--- The upstream library is kept pristine and unmodified at `modules/l0/dkjson/vendor/dkjson.lua`
--- so it can be updated by dropping in a new copy. The wrapper is a thin overlay that only
--- carries a DependencyControl version record, adds a Prettier-flavored `indentMode` encode option,
--- and defers everything else to the upstream module.
---
--- Resolving the bare module specifiers this module `provides` ("json", "dkjson") is
--- handled by DependencyControl's module searcher. Locally installed copies of dkjson,
--- luajson or any other JSON module will take precedence over this one if imported
--- via bare specifier.
+---DependencyControl wrapper around David Kolf's dkjson: a thin overlay on the vendored upstream module,
+---adding a DependencyControl version record and a Prettier-flavored `indentMode` encode option while
+---deferring every other call to upstream dkjson.
+---
+---The bare specifiers this module `provides` are "json" and "dkjson", resolved by DependencyControl's
+---module searcher. A locally installed dkjson, luajson, or other JSON module imported by bare specifier
+---takes precedence over this one.
 
+-- The vendored upstream library is kept pristine at `modules/l0/dkjson/vendor/dkjson.lua`, so a new
+-- release can be dropped in as a straight copy.
 dkjson = require "l0.dkjson.vendor.dkjson"
 
 DEFAULT_PRETTIER_PRINT_WIDTH = 80
@@ -21,9 +19,11 @@ msgs = {
   }
 }
 
--- Detects a reference cycle: a table reachable from itself through nested tables. A `__tojson`
--- value is treated as an opaque leaf, matching the renderer; dkjson cycle-checks its own contents
--- when the renderer delegates to it.
+---Detects a reference cycle: a table reachable from itself through nested tables. A `__tojson` value
+---is treated as an opaque leaf, since dkjson performs its own cycle check on the contents it renders.
+---@param val any The value to inspect.
+---@param ancestors? table Tables already on the current path, tracked internally by the recursion.
+---@return boolean cyclic True when val reaches itself through nested tables.
 hasReferenceCycle = (val, ancestors = {}) ->
   meta = getmetatable val
   return false if type(val) != "table" or (meta and meta.__tojson)
@@ -34,17 +34,22 @@ hasReferenceCycle = (val, ancestors = {}) ->
   ancestors[val] = nil
   false
 
--- Serializes a Lua value to Prettier-flavored JSON: two-space indents, a space after every colon,
--- one property per line for objects, arrays kept on a single line when they fit within the print
--- width (otherwise one element per line), and a single trailing newline. Object keys listed in
--- `state.keyorder` are emitted first in that order; any remaining keys follow `state.defaultKeyOrder`
--- (case-insensitive alphabetical by default), so the output is fully deterministic. Scalars and the
--- null sentinel are delegated to upstream dkjson for correct escaping.
+---Serializes a Lua value to Prettier-flavored JSON: two-space indents, a space after every colon, one
+---property per line for objects, arrays kept on one line when they fit the print width (otherwise one
+---element per line), and a trailing newline. Keys in `state.keyorder` are emitted first in that order.
+---Remaining keys follow `state.defaultKeyOrder`, case-insensitive alphabetical by default, so output is
+---deterministic. Scalars and the null sentinel are delegated to upstream dkjson for correct escaping.
+---@param value any The value to serialize.
+---@param state? DkJsonEncodeState The Prettier formatting options.
+---@return string json The Prettier-formatted JSON, ending in a newline.
 prettyEncode = (value, state = {}) ->
   keyorder = state.keyorder or {}
   printWidth = state.indentPrintWidth or DEFAULT_PRETTIER_PRINT_WIDTH
-  -- case-insensitive ties are broken by the raw key, so keys that fold to the same lowercase
-  -- string still get a stable total order and the serialized output stays byte-identical
+  ---Default object-key comparator: case-insensitive, breaking ties on the raw key so keys that fold to
+  ---the same lowercase string keep a stable total order and byte-identical output.
+  ---@param a any The first key.
+  ---@param b any The second key.
+  ---@return boolean before True when a should sort before b.
   defaultKeySorter = (a, b) ->
     la, lb = string.lower(tostring a), string.lower tostring b
     return la < lb unless la == lb
@@ -52,20 +57,30 @@ prettyEncode = (value, state = {}) ->
   defaultKeySorter = state.defaultKeyOrder if type(state.defaultKeyOrder) == "function"
 
   rank = {k, i for i, k in ipairs keyorder}
+  ---Renders an indent level as two-space indentation.
+  ---@param level integer The indent depth.
+  ---@return string indent The indentation string.
   indentStr = (level) -> ("  ")\rep level
-  -- JSON object keys are always strings; a non-string key (e.g. a stray integer) encoded directly
-  -- would emit unquoted and produce invalid JSON
+  ---Encodes an object key as a JSON string, coercing non-string keys with tostring first, since a raw
+  ---non-string key would emit unquoted and produce invalid JSON.
+  ---@param k any The key to encode.
+  ---@return string json The key as a quoted JSON string.
   encodeKey = (k) -> dkjson.encode tostring k
 
-  -- Classifies a table as a JSON "array" or "object", honoring dkjson's decode-time __jsontype
-  -- tag and otherwise falling back to a key-shape heuristic (empty tables become objects).
+  ---Classifies a table as a JSON "array" or "object", honoring dkjson's decode-time `__jsontype` tag and
+  ---otherwise falling back to a key-shape heuristic. Empty tables classify as objects.
+  ---@param tbl table The table to classify.
+  ---@param meta? table The table's metatable, or nil when it has none.
+  ---@return "array"|"object" jsontype The JSON container kind.
   classify = (tbl, meta) ->
     return meta.__jsontype if meta and meta.__jsontype
     len, count = #tbl, 0
     count += 1 for _ in pairs tbl
     return len > 0 and len == count and "array" or "object"
 
-  -- Object keys ordered by `keyorder` rank first, then alphabetically.
+  ---Returns a table's keys ordered by `keyorder` rank first, then by the default sorter.
+  ---@param tbl table The object table whose keys to order.
+  ---@return any[] keys The keys in emission order.
   orderedKeys = (tbl) ->
     keys = [k for k in pairs tbl]
     table.sort keys, (a, b) ->
@@ -77,7 +92,9 @@ prettyEncode = (value, state = {}) ->
 
   local compact, forcesBreak, render
 
-  -- Single-line rendering, used only to measure whether an array fits on the current line.
+  ---Renders a value on a single line, used only to measure whether an array fits the current line.
+  ---@param val any The value to render.
+  ---@return string json The value serialized without line breaks.
   compact = (val) ->
     meta = getmetatable val
     return dkjson.encode val if type(val) != "table" or (meta and meta.__tojson)
@@ -86,8 +103,10 @@ prettyEncode = (value, state = {}) ->
     else
       "{#{table.concat ["#{encodeKey k}: #{compact val[k]}" for k in *orderedKeys val], ", "}}"
 
-  -- Whether a value must span multiple lines regardless of width: non-empty objects always break,
-  -- and an array breaks if any of its elements does.
+  ---Reports whether a value must span multiple lines regardless of width: a non-empty object always
+  ---breaks, and an array breaks when any of its elements does.
+  ---@param val any The value to test.
+  ---@return boolean breaks True when the value cannot render on a single line.
   forcesBreak = (val) ->
     meta = getmetatable val
     return false if type(val) != "table" or (meta and meta.__tojson)
@@ -97,8 +116,11 @@ prettyEncode = (value, state = {}) ->
       false
     else next(val) != nil
 
-  -- Full rendering. `col` is the column the value begins at, used to decide whether an array
-  -- still fits on the current line.
+  ---Renders a value as Prettier-formatted JSON, breaking objects and over-width arrays across lines.
+  ---@param val any The value to render.
+  ---@param col integer The column the value begins at, used to decide whether an array still fits the line.
+  ---@param level integer The current indent depth.
+  ---@return string json The formatted JSON fragment.
   render = (val, col, level) ->
     meta = getmetatable val
     return dkjson.encode val if type(val) != "table" or (meta and meta.__tojson)
@@ -124,27 +146,32 @@ prettyEncode = (value, state = {}) ->
   error msgs.prettyEncode.referenceCycle, 2 if hasReferenceCycle value
   "#{render value, 0, 0}\n"
 
+---dkjson encode state, extended with the DependencyControl wrapper's Prettier options.
+---@class DkJsonEncodeState
+---@field indentMode? string Set to `"prettier"` for Prettier-flavored formatting; any other value defers to upstream dkjson.
+---@field indentPrintWidth? integer Target line width for the prettier indent mode. Defaults to 80.
+---@field defaultKeyOrder? fun(a: any, b: any): boolean Sorts object keys absent from `keyorder`, returning true when the first sorts ahead. Defaults to case-insensitive alphabetical, and applies only in the prettier indent mode.
+---@field keyorder? any[] Object keys emitted first, in this order, ahead of `defaultKeyOrder`.
+
+---David Kolf's dkjson, wrapped for DependencyControl.
+---@class DkJson
+---@field version DependencyControl The DependencyControl record, populated on initialization.
 wrapper = setmetatable {}, __index: dkjson
 
----Encodes a Lua value as JSON.
----The DependencyControl-bundled package adds the following state options on top of upstream dkjson:
----- `state.indentMode`: when set to 'prettier', formatting matches Prettier (two-space indents, a space
----  after each colon, objects one-property-per-line, arrays collapsed when they fit within the configured
----  print width, and a single trailing newline).
----- `state.indentPrintWidth`: the target line width for the 'prettier' indent mode (default: 80).
----- `state.defaultKeyOrder`: a function that accepts two keys and returns true if the first should appear
----  before the second when encoding objects, and false otherwise. Used to sort object keys not present in
----  `state.keyorder` (which takes precedence). Default is case-insensitive alphabetical, and currently only
----  applies in the 'prettier' indent mode.
----Any other `indentMode` (or none) defers entirely to upstream dkjson.
----A reference cycle raises `"reference cycle"`, as upstream dkjson does for every other encode mode.
+---Encodes a Lua value as JSON. With `state.indentMode` set to `"prettier"`, output is Prettier-flavored:
+---two-space indents, one property per line, arrays inlined when they fit `state.indentPrintWidth`, and a
+---trailing newline. Any other indent mode (or none) defers entirely to upstream dkjson.
+---A reference cycle raises `"reference cycle"`, as upstream dkjson does in every other encode mode.
 ---@param value any The value to encode.
----@param state? table dkjson encode state, optionally carrying `indentMode`/`keyorder`.
----@return string|boolean json The JSON string, or dkjson's native return value for non-prettier modes.
+---@param state? DkJsonEncodeState Encode state carrying the Prettier options plus any upstream dkjson state.
+---@return string|boolean json The JSON string, or `true` when `state.buffer` is supplied (upstream dkjson's native return).
 wrapper.encode = (value, state) ->
   return prettyEncode value, state if state and state.indentMode == "prettier"
   return dkjson.encode value, state
 
+---Initializes this module's DependencyControl version record, invoked once by the module loader.
+---@private
+---@param DependencyControl table The DependencyControl class handed to the initializer.
 wrapper.__depCtrlInit = (DependencyControl) ->
   wrapper.version = DependencyControl {
     name: "dkjson"

@@ -786,7 +786,7 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "BCDC68B4443E1E4D54C0C870106C9DA506EB9AB2"
+              "sha1": "B0F04C0EE71EA899C3D06C51115CB2646BC7D214"
             },
             {
               "name": "/vendor/dkjson.lua",
