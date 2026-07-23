@@ -1,0 +1,3162 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Dependency manager and automatic script updater for Aegisub macros and modules.">
+      
+      
+      
+      
+        <link rel="prev" href="../..">
+      
+      
+        <link rel="next" href="../../reference/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Updater Architecture - DependencyControl</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#dependencycontrol-updater-design-architecture" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="DependencyControl" class="md-header__button md-logo" aria-label="DependencyControl" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            DependencyControl
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Updater Architecture
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TypesettingTools/DependencyControl" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="DependencyControl" class="md-nav__button md-logo" aria-label="DependencyControl" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    DependencyControl
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TypesettingTools/DependencyControl" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Design
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Design
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Updater Architecture
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Updater Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scope
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#component-map" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Component map
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#entry-points" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Entry points
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#core-concepts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core concepts
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Core concepts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#records-feeds-candidates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Records, feeds, candidates
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trust-bands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trust bands
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reasons-the-context-ladder-and-prompt-thresholds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reasons, the context ladder, and prompt thresholds
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#source-stickiness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Source stickiness
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#status-codes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Status codes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-update-process" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The update process
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The update process">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#resolution-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resolution flow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cascade-and-ranking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cascade and ranking
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dependency-resolution-and-recursion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dependency resolution and recursion
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#concurrency-and-locking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Concurrency and locking
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#source-stickiness-state" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Source stickiness state
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#feed-discovery-provenance-and-trust-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feed discovery, provenance, and trust management
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Feed discovery, provenance, and trust management">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#provenance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Provenance
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trust-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trust management
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#discovery-and-its-security-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Discovery and its security model
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#notes-for-maintainers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Notes for maintainers
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_2" id="__nav_3_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DependencyControl
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    DependencyControl
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.Accessors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.Accessors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.ConfigHandler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.ConfigHandler
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.ConfigView/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.ConfigView
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.Constants/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.Constants
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.Downloader/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.Downloader
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.Enum/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.Enum
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.EventEmitter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.EventEmitter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.FeedInventory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.FeedInventory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.FeedLoader/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.FeedLoader
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.FeedManager/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.FeedManager
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.FeedTrust/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.FeedTrust
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.FileCache/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.FileCache
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.FileLock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.FileLock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.Finalizer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.Finalizer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.GitRepository/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.GitRepository
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.Host/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.Host
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.JsonSchema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.JsonSchema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.Lock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.Lock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.Logger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.Logger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.ModuleLoader/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.ModuleLoader
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.ModuleProvider/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.ModuleProvider
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.NamedSemaphore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.NamedSemaphore
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.PackageRecord/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.PackageRecord
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.ScriptTargetFilter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.ScriptTargetFilter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.ScriptUpdateRecord/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.ScriptUpdateRecord
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.SemanticVersion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.SemanticVersion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.Stub/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.Stub
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.Timer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.Timer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.UnitTestSuite/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.UnitTestSuite
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.UpdateFeed/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.UpdateFeed
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.UpdateTask/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.UpdateTask
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.Updater/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.Updater
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.ZipArchiver/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.ZipArchiver
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.config-schema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.config-schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.domain/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.domain
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.environment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.environment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.file-ops/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.file-ops
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.hash/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.hash
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.helpers.ffi-posix/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.helpers.ffi-posix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.helpers.ffi-windows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.helpers.ffi-windows
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.helpers.open-url/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.helpers.open-url
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.helpers.resolve-host/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.helpers.resolve-host
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.release-notes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.release-notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.shims.BadMutex/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.shims.BadMutex
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.shims.DownloadManager/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.shims.DownloadManager
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.shims.PreciseTimer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.shims.PreciseTimer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.DependencyControl.utils/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.utils
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_3" id="__nav_3_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MoonCATS
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    MoonCATS
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.MoonCats/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.MoonCats
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.MoonCats.Diagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.MoonCats.Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.MoonCats.DocRenderer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.MoonCats.DocRenderer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.MoonCats.Emitter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.MoonCats.Emitter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.MoonCats.Parser/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.MoonCats.Parser
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.MoonCats.annotations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.MoonCats.annotations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_4" id="__nav_3_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dkjson
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    dkjson
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/l0.dkjson/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.dkjson
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scope
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#component-map" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Component map
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#entry-points" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Entry points
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#core-concepts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core concepts
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Core concepts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#records-feeds-candidates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Records, feeds, candidates
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trust-bands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trust bands
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reasons-the-context-ladder-and-prompt-thresholds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reasons, the context ladder, and prompt thresholds
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#source-stickiness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Source stickiness
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#status-codes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Status codes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-update-process" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The update process
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The update process">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#resolution-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resolution flow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cascade-and-ranking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cascade and ranking
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dependency-resolution-and-recursion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dependency resolution and recursion
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#concurrency-and-locking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Concurrency and locking
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#source-stickiness-state" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Source stickiness state
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#feed-discovery-provenance-and-trust-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feed discovery, provenance, and trust management
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Feed discovery, provenance, and trust management">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#provenance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Provenance
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trust-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trust management
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#discovery-and-its-security-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Discovery and its security model
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#notes-for-maintainers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Notes for maintainers
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="dependencycontrol-updater-design-architecture">DependencyControl Updater — Design &amp; Architecture</h1>
+<p>This document describes how DependencyControl installs and updates scripts and modules: the components involved, how an update is triggered, and the full decision flow of a single update task. It targets contributors working on the updater, not end users (see the README for user-facing behavior).</p>
+<h2 id="scope">Scope</h2>
+<p>The "updater" is the subsystem that, given a version record, finds a trustworthy source that satisfies a required version, downloads it, deploys its files, and reloads the affected module. It also resolves a script's required modules (installing missing or outdated ones) and runs periodic background update checks.</p>
+<h2 id="component-map">Component map</h2>
+<table>
+<thead>
+<tr>
+<th>Module</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Updater</code></td>
+<td>Per-host orchestrator. Owns the queue of update tasks, the cross-process lock, and the official trust lists. Exposes the <code>require</code> (dependency) and <code>scheduleUpdate</code> (background) entry points.</td>
+</tr>
+<tr>
+<td><code>UpdateTask</code></td>
+<td>The worker for one record. Owns the whole resolve → trust-gate → download → deploy → reload flow for a single package.</td>
+</tr>
+<tr>
+<td><code>UpdateFeed</code></td>
+<td>Wraps one loaded, schema-checked feed and answers queries: <code>getScript</code> (a package by namespace/channel), <code>getProviders</code> (modules that <code>provides</code> a name). A dumb consumer of a <code>FileCache</code> handed to it by <code>FeedLoader</code>.</td>
+</tr>
+<tr>
+<td><code>FeedLoader</code></td>
+<td>Shared feed-access layer: opens the one feed <code>FileCache</code> and hands out <code>UpdateFeed</code> instances via <code>load(url, opts)</code>. Trust-free, so it sits below <code>FeedTrust</code>/<code>FeedInventory</code>.</td>
+</tr>
+<tr>
+<td><code>FeedTrust</code></td>
+<td>Owns the trust model (<code>updater.feedTrust</code>): the merged trusted/blocked sets, the object block-list, and the trust mutators.</td>
+</tr>
+<tr>
+<td><code>FeedInventory</code></td>
+<td>Gathers (offline) and crawls (bounded, trust-gated) the feed graph, tracking each feed's provenance.</td>
+</tr>
+<tr>
+<td><code>Host</code></td>
+<td>Classifies a hostname/IP as private/loopback/link-local for the SSRF guard, resolving via a mockable resolver.</td>
+</tr>
+<tr>
+<td><code>ModuleLoader</code></td>
+<td>Loads modules from disk (private then global copies), orchestrates <code>loadModules</code> for a record's requirements, and manages dummy refs for circular dependencies.</td>
+</tr>
+<tr>
+<td><code>Lock</code></td>
+<td>Cross-process advisory lock (backed by an OS file lock) that serializes updates and survives a crashed holder.</td>
+</tr>
+<tr>
+<td><code>SemanticVersioning</code></td>
+<td>Version encode/decode/compare and npm-style range matching (<code>parseRange</code>, <code>satisfiesRange</code>, <code>rangesIntersect</code>, <code>getRangeMaxVersion</code>).</td>
+</tr>
+<tr>
+<td><code>Record</code> (<code>DependencyControl</code>)</td>
+<td>The version record: identity, version, config, requirements, <code>provides</code> aliases, and the persisted <code>currentSource</code>.</td>
+</tr>
+<tr>
+<td><code>ConfigView</code></td>
+<td>Per-package and global config persistence.</td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-mermaid">flowchart LR
+    subgraph Triggers
+      Macro[&quot;Macro run hook&lt;br/&gt;(Record.registerMacro)&quot;]
+      Reqs[&quot;Record.requireModules&lt;br/&gt;(at load time)&quot;]
+      Toolbox[&quot;Toolbox&lt;br/&gt;(scheduled &amp; manual)&quot;]
+    end
+    subgraph Orchestration
+      Updater
+    end
+    subgraph Worker
+      UpdateTask
+    end
+    subgraph Support
+      UpdateFeed
+      ModuleLoader
+      Lock
+      SemVer[&quot;SemanticVersioning&quot;]
+      Record
+      Config[&quot;ConfigView&quot;]
+    end
+
+    Reqs --&gt; ModuleLoader
+    Macro --&gt; Updater
+    Toolbox --&gt; Updater
+    ModuleLoader --&gt;|require missing/outdated| Updater
+    Updater --&gt;|addTask + run| UpdateTask
+    UpdateTask --&gt; UpdateFeed
+    UpdateTask --&gt;|load reqs, reload| ModuleLoader
+    UpdateTask --&gt; Lock
+    UpdateTask --&gt; SemVer
+    UpdateTask --&gt; Record
+    UpdateTask --&gt; Config
+    Updater --&gt; Lock
+</code></pre>
+<h2 id="entry-points">Entry points</h2>
+<p>Every update originates from one of three places, each carrying a different <code>UpdateReason</code> that later gates whether the user may be prompted (see <a href="#reasons-the-context-ladder-and-prompt-thresholds">Reasons and prompt thresholds</a>).</p>
+<ul>
+<li><strong>Dependency resolution</strong> — when a record is constructed, <code>Record.requireModules</code> calls <code>ModuleLoader.loadModules</code>, which loads each requirement (private copy, then global). A requirement that is missing or fails its version constraint is forwarded to <code>Updater.require</code>, defaulting to reason <code>DependencyResolution</code>. This path is <strong>blocking</strong>: it waits on the updater lock because the caller needs the module now.</li>
+<li><strong>Macro run hook</strong> — <code>Record.registerMacro</code> wraps the macro callback so that running the macro first calls <code>Updater.scheduleUpdate</code> for the script, then releases the lock, then runs the macro. This is a <strong>non-blocking</strong> background check (reason <code>AutoUpdate</code>).</li>
+<li><strong>Toolbox</strong> — the DependencyControl Toolbox runs centralized scheduled checks for every installed record at startup (reason <code>AutoUpdate</code>) and performs explicit user-initiated installs/updates (reason <code>UserRequested</code>).</li>
+</ul>
+<h2 id="core-concepts">Core concepts</h2>
+<h3 id="records-feeds-candidates">Records, feeds, candidates</h3>
+<p>A <strong>record</strong> describes one package (a macro or a module). A <strong>feed</strong> is a JSON registry that lists packages and, per release, the files and <code>provides</code> aliases. During resolution, every package a feed can supply for the requirement becomes a <strong>candidate</strong> (<code>CandidatePackageSource</code>: <code>{updateRecord, feedUrl, isDirect, trustBand, providesVersion?}</code>). A candidate is <strong>direct</strong> (<code>isDirect</code>) when the feed offers the package by its own name, or <strong>indirect</strong> when it comes from a <strong>provider</strong> — a different module that declares it <code>provides</code> the required name (e.g. <code>dkjson</code> provides <code>json</code>).</p>
+<h3 id="trust-bands">Trust bands</h3>
+<p>Candidates are ranked by <strong>trust band first, version second</strong>, so a feed can't win merely by advertising a higher version. Lower band = preferred.</p>
+<table>
+<thead>
+<tr>
+<th>Band</th>
+<th>Name</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>DeclaredDirect</code></td>
+<td>The package's own/declared feed (trusted), by name. Also the band a <em>remembered provider</em> is boosted to.</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>TrustedDirect</code></td>
+<td>Another trusted feed, by name.</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>TrustedProvider</code></td>
+<td>A trusted feed, via a provider.</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>UntrustedDirect</code></td>
+<td>An untrusted feed, by name.</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>UntrustedProvider</code></td>
+<td>An untrusted feed, via a provider.</td>
+</tr>
+</tbody>
+</table>
+<p>Trust sets come from <code>getTrustedFeeds</code>/<code>getBlockedFeeds</code>: trusted = DepCtrl's official feeds (<code>getOfficialTrustedFeeds</code>, cached) ∪ user <code>extraFeeds</code> ∪ <code>trustedFeeds</code>; blocked = official block list (<code>getOfficialBlockedFeeds</code>) ∪ user <code>blockedFeeds</code>. <code>extraFeeds</code> and <code>trustedFeeds</code> both grant trust, but only <code>extraFeeds</code> are discovery roots and tier-2 search candidates: <code>trustedFeeds</code> are trust-only — they raise a feed's trust when it's reached another way, but are never themselves searched (tier 2) or crawled. <code>isUserTrusted</code> reports membership in either user list, distinct from <code>getOfficialTrustedFeeds</code>. Each block entry is a <code>{url, matchMode, reason?}</code> object matched case-insensitively as a URL prefix or an exact URL; <code>getBlockedFeeds</code> normalizes them to <code>BlockedFeedEntry</code>. A blocked feed is dropped before banding and overrides everything, including <code>userFeed</code>.</p>
+<h3 id="reasons-the-context-ladder-and-prompt-thresholds">Reasons, the context ladder, and prompt thresholds</h3>
+<p>The <code>UpdateReason</code> values double as the rungs of the update-context ladder, ordered by autonomy: <code>user-requested</code> &lt; <code>dependency-resolution</code> &lt; <code>auto-update</code>. Settings that gate behavior by context hold an <code>UpdateContextCeiling</code> — one of those rungs, or <code>off</code> (below all of them) — meaning "up to and including this context". The shared predicate is <code>UpdateTask.isWithinContextCeiling(reason, ceiling)</code>, a rank comparison on the ladder.</p>
+<p>Two behaviors are gated this way: whether an update context may <strong>run at all</strong> (<code>updates.mode</code>, default <code>auto-update</code> = everything; checked by <code>Updater.__isEnabledFor</code> in <code>addTask</code>/<code>scheduleUpdate</code>) and whether a task may <strong>prompt</strong> (<code>shouldPrompt(threshold)</code> tests the task's reason against the relevant threshold).</p>
+<p>The two prompt kinds have <strong>separate</strong> thresholds: <code>feedTrustPromptThreshold</code> (default <code>auto-update</code> — decides update success, so it may prompt in every context) and <code>packageChoicePromptThreshold</code> (default <code>user-requested</code> — a minor preference, so only for user-initiated actions). <code>off</code> disables a prompt kind entirely.</p>
+<p>The trust prompt (<code>promptTrustFeed</code>) returns a <code>FeedTrustDecision</code>: <code>once</code> proceeds for this install only, <code>always</code> records the feed via <code>addTrustedFeed</code>, <code>never</code> records it via <code>addBlockedFeed</code> (then fails <code>-19</code>); a cancelled prompt is <code>nil</code> (fails <code>-16</code>). The source chooser (<code>promptSelectPackageSource</code>) likewise returns the picked candidate plus the <code>SourceChoiceStickiness</code> to persist.</p>
+<h3 id="source-stickiness">Source stickiness</h3>
+<p>After a source satisfies a package, the choice is remembered per-package in <code>currentSource</code> (<code>{feedSource, feedUrl?, channel, provider?, stickiness}</code>) so the chooser isn't re-shown needlessly. <code>feedSource</code> (<code>SourceFeedKind</code>: <code>self-declared</code>/<code>user-feed</code>/<code>provider</code>/<code>other</code>) records <em>where</em> the source came from; the URL is derived at resolution for every kind but <code>other</code>, so a remembered choice follows feed migration. <code>stickiness</code> (<code>SourceChoiceStickiness</code>) records <em>how sticky</em> the choice is — see the <a href="#source-stickiness-state">state diagram</a>.</p>
+<h3 id="status-codes">Status codes</h3>
+<p>The run/require result is a <code>(code, detail)</code> pair. <strong>Sign is the convention:</strong> <code>&gt;= 0</code> means success or a benign skip; <code>&lt; 0</code> is an error whose message comes from <code>getUpdaterErrorMsg</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>1</code></td>
+<td>Installed/updated successfully (detail: version).</td>
+</tr>
+<tr>
+<td><code>0</code></td>
+<td>Already up-to-date; nothing to do.</td>
+</tr>
+<tr>
+<td><code>2</code></td>
+<td>Already updated earlier this session (or by another updater).</td>
+</tr>
+<tr>
+<td><code>3</code></td>
+<td>Optional dependency skipped (any reason).</td>
+</tr>
+<tr>
+<td><code>-5</code></td>
+<td>Another update is already running (detail: holder).</td>
+</tr>
+<tr>
+<td><code>-6</code></td>
+<td>No suitable package found in any reachable feed.</td>
+</tr>
+<tr>
+<td><code>-7</code></td>
+<td>No internet connection.</td>
+</tr>
+<tr>
+<td><code>-9</code></td>
+<td>Entry point lives in Aegisub's <code>?data</code> dir — managed elsewhere.</td>
+</tr>
+<tr>
+<td><code>-10</code></td>
+<td>This task is already running.</td>
+</tr>
+<tr>
+<td><code>-15</code></td>
+<td>Requirements couldn't be satisfied.</td>
+</tr>
+<tr>
+<td><code>-16</code></td>
+<td>Only an untrusted feed could satisfy, and trust wasn't granted.</td>
+</tr>
+<tr>
+<td><code>-17</code></td>
+<td>A pinned source is no longer available.</td>
+</tr>
+<tr>
+<td><code>-18</code></td>
+<td>Aborted by the user at the source chooser.</td>
+</tr>
+<tr>
+<td><code>-19</code></td>
+<td>The only feed that could satisfy was blocked by the user at the trust prompt.</td>
+</tr>
+<tr>
+<td><code>-30 / -33 / -35 / -50</code></td>
+<td>File-stage errors (temp dir, path escape, bad SHA-1, move failed).</td>
+</tr>
+<tr>
+<td><code>-55…-58</code></td>
+<td>Installed, but the module couldn't be located/loaded/recorded afterward.</td>
+</tr>
+<tr>
+<td><code>-140 / -245</code></td>
+<td>Download-manager component errors (codes <code>&lt;= -100</code>).</td>
+</tr>
+</tbody>
+</table>
+<p>(<code>new()</code> may also return <code>-1</code> updater disabled / <code>-2</code> invalid namespace; <code>scheduleUpdate</code> has its own pre-check returns: <code>-1</code> disabled, <code>-3</code> virtual/unmanaged, <code>0</code> interval not elapsed, <code>-9</code> protected path.)</p>
+<h2 id="the-update-process">The update process</h2>
+<p><code>UpdateTask.run(waitLock)</code> is the heart of the system. The top-level flow runs guard checks, resolves a source, gates trust, persists the choice, and dispatches the install.</p>
+<pre><code class="language-mermaid">flowchart TD
+    Start([&quot;UpdateTask.run(waitLock)&quot;]) --&gt; Running{another run&lt;br/&gt;in progress?}
+    Running -- yes --&gt; E10[&quot;return -10&quot;]
+    Running -- no --&gt; Protected{entry point&lt;br/&gt;in ?data dir?}
+    Protected -- yes --&gt; E9[&quot;return -9&quot;]
+    Protected -- no --&gt; AlreadyUpd{already updated&lt;br/&gt;&amp; meets target?}
+    AlreadyUpd -- yes --&gt; R2[&quot;return 2&quot;]
+    AlreadyUpd -- no --&gt; Net{internet&lt;br/&gt;connected?}
+    Net -- no --&gt; E7[&quot;return -7&quot;]
+    Net -- yes --&gt; Lock{acquire&lt;br/&gt;updater lock}
+    Lock -- &quot;fail&quot; --&gt; E5[&quot;return -5 (holder)&quot;]
+    Lock -- &quot;ok (refresh tasks if we waited)&quot; --&gt; Resolve[[&quot;Resolve source&lt;br/&gt;(see Resolution flow)&quot;]]
+
+    Resolve --&gt; Outcome{resolution&lt;br/&gt;outcome}
+    Outcome -- &quot;pinned gone / aborted&quot; --&gt; RErr[&quot;return -17 / -18&lt;br/&gt;(optional: 3)&quot;]
+    Outcome -- &quot;none, but installed up-to-date&quot; --&gt; R0[&quot;return 0&quot;]
+    Outcome -- &quot;none at all&quot; --&gt; NoPkg{optional?}
+    NoPkg -- yes --&gt; R3a[&quot;return 3&quot;]
+    NoPkg -- no --&gt; E6[&quot;return -6&quot;]
+    Outcome -- &quot;candidate selected&quot; --&gt; Trust{band &gt;=&lt;br/&gt;UntrustedDirect?}
+
+    Trust -- yes --&gt; TrustPrompt[&quot;promptTrustFeed&lt;br/&gt;(if reason meets feedTrustPromptThreshold)&quot;]
+    TrustPrompt --&gt; TrustOK{trusted&lt;br/&gt;once/always?}
+    TrustOK -- &quot;no (cancel: -16 / never: block feed, -19)&quot; --&gt; TrustFail[&quot;return -16 / -19&lt;br/&gt;(optional: 3)&quot;]
+    TrustOK -- &quot;yes (always -&gt; trust feed)&quot; --&gt; Persist
+    Trust -- no --&gt; Persist[&quot;persistSource(selected, stickiness)&quot;]
+
+    Persist --&gt; UpToDate{installed already&lt;br/&gt;satisfies version?}
+    UpToDate -- yes --&gt; R0b[&quot;return 0&quot;]
+    UpToDate -- no --&gt; Direct{direct&lt;br/&gt;candidate?}
+    Direct -- yes --&gt; Perform[[&quot;performUpdate&lt;br/&gt;(download, deploy, reload)&quot;]]
+    Direct -- no --&gt; InstallProv[[&quot;installProvider&lt;br/&gt;(require the provider)&quot;]]
+    Perform --&gt; Done([&quot;return (code, detail)&quot;])
+    InstallProv --&gt; Done
+</code></pre>
+<h3 id="resolution-flow">Resolution flow</h3>
+<p>Resolution turns the feed landscape into a single chosen candidate. It first honors a sticky choice (pinned/retain), otherwise runs a lazy, trust-ordered cascade, then optionally lets the user pick.</p>
+<pre><code class="language-mermaid">flowchart TD
+    R([&quot;Resolve&quot;]) --&gt; Read[&quot;read currentSource:&lt;br/&gt;remembered, stickiness, stickyProvider&quot;]
+    Read --&gt; Sticky{stickiness ==&lt;br/&gt;pinned or retain?}
+
+    Sticky -- yes --&gt; LoadRem[&quot;gather remembered feed early&lt;br/&gt;(constrained to userFeed if set)&lt;br/&gt;matchRememberedCandidate&quot;]
+    LoadRem --&gt; Reuse{remembered candidate&lt;br/&gt;still eligible?}
+    Reuse -- yes --&gt; UseReuse[&quot;selected = remembered&lt;br/&gt;(skip chooser)&quot;]
+    Reuse -- &quot;no, pinned&quot; --&gt; PinMiss[&quot;pinned gone&lt;br/&gt;-&gt; -17 (optional: 3)&quot;]
+    Reuse -- &quot;no, retain&quot; --&gt; Cascade
+
+    Sticky -- no --&gt; Cascade[&quot;Lazy feed cascade&lt;br/&gt;(see Cascade)&quot;]
+    Cascade --&gt; Have{candidate&lt;br/&gt;selected?}
+    Have -- no --&gt; NoneOut[&quot;none -&gt; run() handles&lt;br/&gt;up-to-date / no-package&quot;]
+    Have -- yes --&gt; SkipPrompt{reuse, or&lt;br/&gt;stickiness == auto?}
+    SkipPrompt -- yes --&gt; Out([&quot;selected&quot;])
+    SkipPrompt -- no --&gt; ChoiceLogic
+
+    ChoiceLogic{stickiness} --&gt;|retain miss| RetMiss{interactive?&lt;br/&gt;(packageChoicePromptThreshold)}
+    RetMiss -- yes --&gt; RePrompt[&quot;promptSelectPackageSource&lt;br/&gt;(flagged: choice unavailable)&quot;]
+    RetMiss -- no --&gt; Downgrade[&quot;stickiness = once&lt;br/&gt;keep algorithm pick&quot;]
+    ChoiceLogic --&gt;|once / unset| RealChoice{&gt;1 source &amp;&lt;br/&gt;interactive?}
+    RealChoice -- yes --&gt; Prompt[&quot;promptSelectPackageSource&lt;br/&gt;(preselect remembered/winner)&quot;]
+    RealChoice -- no --&gt; Out
+    RePrompt --&gt; AbortQ
+    Prompt --&gt; AbortQ{aborted?}
+    AbortQ -- yes --&gt; AbortOut[&quot;-&gt; -18 (optional: 3)&quot;]
+    AbortQ -- no --&gt; Out
+    Downgrade --&gt; Out
+    UseReuse --&gt; Out
+</code></pre>
+<p><code>packageChoiceOfferAllSources</code> (global, default false) widens the chooser: when false it only fires on an exact band+version tie (<code>tied</code>); when true it offers every eligible source (<code>eligible</code>, sorted best-first), including lower-ranked and untrusted ones (flagged). Picking an untrusted source still passes through <code>promptTrustFeed</code> in <code>run</code>.</p>
+<h3 id="cascade-and-ranking">Cascade and ranking</h3>
+<p>Feeds are fetched lazily, closest-first, and <code>selectCandidate</code> is re-run after each tier so a satisfying, sufficiently-trusted source short-circuits the rest.</p>
+<pre><code class="language-mermaid">flowchart TD
+    C([&quot;Cascade&quot;]) --&gt; UF{userFeed set?}
+    UF -- yes --&gt; UFOnly[&quot;gather {userFeed} (exclusive, trusted unless blocked)&quot;]
+    UFOnly --&gt; Sel0[&quot;selectCandidate&quot;]
+    Sel0 --&gt; CEnd([&quot;candidate or nil&quot;])
+
+    UF -- no --&gt; T1[&quot;tier 1: declared feed&quot;]
+    T1 --&gt; Sel1[&quot;selectCandidate&quot;]
+    Sel1 --&gt; Q1{DeclaredDirect&lt;br/&gt;winner?}
+    Q1 -- yes --&gt; CEnd
+    Q1 -- no --&gt; T2[&quot;tier 2: extraFeeds,&lt;br/&gt;trusted addFeeds, official registry*&quot;]
+    T2 --&gt; Sel2[&quot;selectCandidate&quot;]
+    Sel2 --&gt; Q2{band &lt;=&lt;br/&gt;TrustedProvider?}
+    Q2 -- yes --&gt; CEnd
+    Q2 -- no --&gt; T3[&quot;tier 3: untrusted addFeeds&quot;]
+    T3 --&gt; Sel3[&quot;selectCandidate&quot;]
+    Sel3 --&gt; CEnd
+</code></pre>
+<p>* The official registry crawl is skipped for <strong>optional</strong> dependencies (a nice-to-have shouldn't trigger a registry-wide fetch).</p>
+<p>For each gathered candidate, <code>getCandidateRankVersion</code> decides eligibility and the ranking version:</p>
+<ul>
+<li><strong>Direct</strong> — eligible if its release version meets the target; ranked by that version.</li>
+<li><strong>Provider</strong> — eligible if its declared alias range (or <code>*</code> when it declares none) can still supply a version meeting the target (<code>rangesIntersect(range, "&gt;=target")</code>); ranked by the highest version that range covers (<code>getRangeMaxVersion</code>). The provider's <em>own</em> release version doesn't affect its rank as a provider.</li>
+<li>Either way, the candidate must support the current platform and list files to install.</li>
+</ul>
+<p><code>selectCandidate</code> then sorts eligible candidates by band → ranking version (desc) → declared-feed tie-break → namespace, returning the winner, the tied top set, and the full eligible list. A <strong>remembered provider</strong> (<code>currentSource.provider.namespace</code>) found on a trusted feed is boosted to <code>DeclaredDirect</code> during gathering, so a version bump updates it in place instead of switching providers.</p>
+<h2 id="dependency-resolution-and-recursion">Dependency resolution and recursion</h2>
+<p>Installing a package can require installing <em>its</em> dependencies, so <code>performUpdate</code> re-enters the loader, which can re-enter the updater. Dummy refs registered before requirements are loaded let circular dependencies resolve without infinite recursion.</p>
+<pre><code class="language-mermaid">sequenceDiagram
+    participant ML as ModuleLoader.loadModules
+    participant U as Updater
+    participant T as UpdateTask
+    participant F as UpdateFeed
+    participant PU as performUpdate
+
+    ML-&gt;&gt;U: require(record, version, …, DependencyResolution)
+    U-&gt;&gt;T: addTask + run(waitLock=true)
+    T-&gt;&gt;T: guard checks, acquire lock
+    T-&gt;&gt;F: gather feeds, getScript / getProviders
+    F--&gt;&gt;T: candidates
+    T-&gt;&gt;T: selectCandidate + trust gate + persistSource
+    alt direct
+        T-&gt;&gt;PU: performUpdate(record)
+    else indirect
+        T-&gt;&gt;U: installProvider → require(provider)
+    end
+    PU-&gt;&gt;PU: createDummyRef (virtual/unmanaged)
+    PU-&gt;&gt;ML: loadModules(requirements)  %% recursion
+    ML--&gt;&gt;PU: requirements satisfied
+    PU-&gt;&gt;PU: re-check (circular dep may have completed)
+    PU-&gt;&gt;F: download files (verify SHA-1, skip unchanged)
+    PU-&gt;&gt;PU: move files, reload module, refresh record, changelog
+    PU--&gt;&gt;T: (1, version)
+    T--&gt;&gt;U: (code, detail)
+    U--&gt;&gt;ML: ref / (nil, code, detail)
+</code></pre>
+<h2 id="concurrency-and-locking">Concurrency and locking</h2>
+<p>A single global, cross-process lock (<code>UPDATER_LOCK_NAMESPACE/run</code>, <code>Lock.Scope.Global</code>) serializes all updates so two scripts or processes don't deploy at once. <code>run</code> acquires it after the cheap guard checks; <code>performUpdate</code> and the download loop <code>renewLock</code> to keep the lease alive during long downloads; the macro hook and <code>requireModules</code> release it when done. The lease is backed by an OS advisory file lock that the system frees if the holder crashes, so a crash can't permanently wedge updates. If a task had to <strong>wait</strong> for the lock, another updater may have finished the same work in the meantime, so on acquisition each queued module task runs <code>refreshRecord</code> to pick up that result instead of re-installing. <code>Updater.isRunning()</code> reports the current holder without taking the lock.</p>
+<h2 id="source-stickiness-state">Source stickiness state</h2>
+<p><code>currentSource.stickiness</code> starts <code>unset</code> and is set by the source chooser; thereafter it governs whether the chooser reappears.</p>
+<pre><code class="language-mermaid">stateDiagram-v2
+    [*] --&gt; unset
+
+    unset --&gt; once: chooser → &quot;Just This Once&quot;
+    unset --&gt; retain: chooser → &quot;Remember&quot;
+    unset --&gt; pinned: chooser → &quot;Pin/Lock&quot;
+    unset --&gt; auto: chooser → &quot;Auto-Pick&quot;
+
+    once --&gt; once: prompt again (choice remains)
+    once --&gt; retain: re-chosen
+    once --&gt; pinned: re-chosen
+    once --&gt; auto: re-chosen
+
+    retain --&gt; retain: remembered pick still eligible (reuse, no prompt)
+    retain --&gt; once: pick gone, non-interactive (downgrade)
+    retain --&gt; retain: pick gone, interactive → re-chosen
+
+    pinned --&gt; pinned: reuse when eligible; abort/skip when gone (never re-prompts)
+    auto --&gt; auto: never prompts; always takes the ranked pick
+</code></pre>
+<ul>
+<li><strong><code>unset</code></strong> — no preference; resolve normally and prompt only if interactive.</li>
+<li><strong><code>once</code></strong> — always prompt when a choice remains, preselecting the remembered pick.</li>
+<li><strong><code>retain</code></strong> — reuse the remembered pick whenever it's still eligible; if gone, re-prompt interactively or downgrade to <code>once</code> non-interactively.</li>
+<li><strong><code>pinned</code></strong> — always reuse the pick; if it's gone, abort a required dependency (<code>-17</code>) or skip an optional one, and never re-prompt.</li>
+<li><strong><code>auto</code></strong> — never prompt; always take the ranked pick, refreshing the remembered pick for information.</li>
+</ul>
+<h2 id="feed-discovery-provenance-and-trust-management">Feed discovery, provenance, and trust management</h2>
+<p>Beyond resolving a single record, DependencyControl maintains a picture of which feeds exist, where each came from, and whether it's trusted — surfaced through the Toolbox's Manage Feeds macro and shared with the install browser. <code>FeedTrust</code> owns the trust model (<code>updater.feedTrust</code>), <code>FeedInventory</code> gathers and crawls the feed graph, and <code>FeedLoader</code> is the shared feed-access layer beneath both: loading a feed is trust-free, so it sits below <code>FeedTrust</code>/<code>FeedInventory</code> and avoids a cycle.</p>
+<h3 id="provenance">Provenance</h3>
+<p>A feed URL's <strong>provenance is a set</strong> — one feed can arrive through several sources at once, and its <em>removability</em> derives from which of those are user-controlled. The sources are DepCtrl's own feed (official), feeds in its <code>knownFeeds</code> (official-trusted), <code>extraFeeds</code> (user; discovery roots and trusted), <code>trustedFeeds</code> (user; trust-only), feeds declared by installed packages (<code>config.c.macros</code>/<code>modules[ns].feed</code>), feeds advertised in installed packages' <code>requiredModules[].feed</code> (<code>FeedInventory</code>'s <code>DependencyAdvertised</code> provenance), and the block list. Removing a feed drops one <em>user-controlled</em> contribution; when it's still reachable via another source, that is surfaced rather than implying the feed is gone.</p>
+<h3 id="trust-management">Trust management</h3>
+<p><code>FeedTrust</code>'s mutators (<code>addTrustedFeed</code>/<code>untrust</code>, <code>block</code>/<code>unblock</code>, <code>addExtraFeed</code>/<code>removeExtraFeed</code>) dedup on every add path and invalidate the cached merged sets. The five resolver bands collapse, for a user, to three states: <strong>trusted</strong> (in <code>official ∪ extraFeeds ∪ trustedFeeds</code>), <strong>blocked</strong> (matched by the merged block list; overrides trust), and <strong>untrusted</strong> (the absence of trust — there is no stored "untrusted" list). Two rules constrain management:</p>
+<ul>
+<li><strong>An official or package-advertised feed can't be untrusted</strong> — untrust only touches the user lists, so the only way to stop trusting such a feed is to <strong>block</strong> it.</li>
+<li><strong>The bootstrap feed (<code>DEPCTRL_FEED_URL</code>) can never be blocked</strong> — that would collapse the trust bootstrap (every feed becomes untrusted), so any block matching it is refused.</li>
+</ul>
+<p>Before an action would cut off a package's update source — blocking or removing a feed an installed package's <code>currentSource</code> resolves to (re-derived per <code>SourceFeedKind</code>, not string-matched) — the user is warned. Block entries use the <code>{url, matchMode, reason?}</code> object form (see <a href="#trust-bands">Trust bands</a>); <code>getBlockingEntry(url)</code> returns the matching entry so the reason can be shown, and because merged blocks are prefix-based only an <em>exact</em> block is individually removable.</p>
+<h3 id="discovery-and-its-security-model">Discovery and its security model</h3>
+<p><code>FeedInventory</code> is <strong>config-first</strong>: both <code>gather</code> (offline, config feeds only) and <code>crawl</code> (transitive) always include the user's feeds, so a dead <code>extraFeed</code> or block entry stays manageable even when unreachable (<code>crawl</code> records a per-feed <code>fetched</code> flag for an "unreachable" marker). <code>crawl</code> walks the feed graph breadth-first from the config-derived roots, following each feed's <code>knownFeeds</code>.</p>
+<p>Discovery <strong>may recurse into untrusted feeds' <code>knownFeeds</code>, on by default</strong> (<code>feeds.fetchUntrustedFeeds = always</code>; <code>never</code>/<code>prompt</code> for the cautious). The risk it manages is <strong>SSRF-shaped, not classic SSRF</strong>: an attacker controlling a feed's <code>knownFeeds</code> chooses URLs the client then fetches, but the requester is the user's own workstation (no privileged vantage), the fetch is blind (the body is parsed as a feed and discarded), and it's GET-only. Enumeration grants no install capability either — a feed reached this way is still untrusted, and installing from it still needs an explicit trust decision. The residual is fetch fan-out plus low-value blind GETs. Two mitigations, both at the layer that also protects the resolver, make the default acceptable:</p>
+<ul>
+<li><strong>Private-host blocking (<code>Host</code>).</strong> <code>Host</code> classifies a hostname or IP literal as private/loopback/link-local/reserved (<code>isPrivate!</code>), resolving through a mockable resolver (the FFI <code>getaddrinfo</code> in <code>helpers/resolve-host</code> by default) and catching encoded literals like <code>http://2130706433/</code>. <code>Downloader.addDownload</code> refuses private hosts under an opt-in per-instance <code>blockPrivateHosts</code> (the engine stays neutral for other consumers); the updater enables it on its own feed/package downloaders from <code>updates.blockPrivateHosts</code>.</li>
+<li><strong>Bounded crawl.</strong> Trusted feeds are explored freely (a finite, non-adversarial set); only <em>untrusted</em> expansion is budgeted, and each root gets its own subtree budget so one malicious subtree can't starve others, with a per-feed cap on untrusted children and a secondary depth cap (<code>feeds.crawlLimits</code>: per-root / per-feed / depth). Beyond-bounds feeds are recorded as "advertised, not fetched", and <code>crawl</code> returns <code>(feeds, stats)</code> whose <code>stats.truncations</code> reports each limit hit (which limit, its value, the offending feed and its route, a bounded sample of dropped URLs) so incomplete coverage is visible. The install browser discovers through this same crawl (<code>crawlWithPrompt</code>), retiring the former ungated, unbounded <code>getKnownFeeds</code> recursion.</li>
+</ul>
+<p><strong>Backend gaps (open).</strong> Private-host blocking is robust on libcurl — validate the resolved IP per connection and redirect hop (<code>CURLOPT_PREREQFUNCTION</code>/<code>CURLINFO_PRIMARY_IP</code>) — but best-effort on WinINet, which re-resolves DNS internally with no connect-IP pin, leaving a residual DNS-rebinding (TOCTOU) gap only a raw-socket client would close. Neither backend yet caps response size (<code>maxFeedSize</code>) or fetch time (<code>feedFetchTimeout</code>). These are the remaining discovery-hardening items (tracked in PLAN.md).</p>
+<h2 id="notes-for-maintainers">Notes for maintainers</h2>
+<ul>
+<li>The whole resolution path runs only after DependencyControl itself is loaded; a raw <code>require "json"</code> before DepCtrl loads won't resolve through this mechanism (accepted boundary).</li>
+<li><code>getOfficialTrustedFeeds</code>/<code>getOfficialBlockedFeeds</code> (backed by the cached <code>loadOfficialFeedTrust</code> loader) are best-effort: if DepCtrl's own feed can't be loaded, only the DepCtrl feed URL is trusted, so third-party feeds are distrusted until it's reachable. A persistent cross-session trust cache would harden this.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

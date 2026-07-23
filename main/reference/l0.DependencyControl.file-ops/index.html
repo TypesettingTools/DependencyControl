@@ -1,0 +1,3586 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Dependency manager and automatic script updater for Aegisub macros and modules.">
+      
+      
+      
+      
+        <link rel="prev" href="../l0.DependencyControl.environment/">
+      
+      
+        <link rel="next" href="../l0.DependencyControl.hash/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>l0.DependencyControl.file-ops - DependencyControl</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#l0dependencycontrolfile-ops" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="DependencyControl" class="md-header__button md-logo" aria-label="DependencyControl" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            DependencyControl
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              l0.DependencyControl.file-ops
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TypesettingTools/DependencyControl" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="DependencyControl" class="md-nav__button md-logo" aria-label="DependencyControl" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    DependencyControl
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TypesettingTools/DependencyControl" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Design
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Design
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../design/updater-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Updater Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3_2" id="__nav_3_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DependencyControl
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    DependencyControl
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Accessors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.Accessors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.ConfigHandler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.ConfigHandler
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.ConfigView/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.ConfigView
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Constants/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.Constants
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Downloader/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.Downloader
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Enum/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.Enum
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.EventEmitter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.EventEmitter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.FeedInventory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.FeedInventory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.FeedLoader/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.FeedLoader
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.FeedManager/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.FeedManager
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.FeedTrust/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.FeedTrust
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.FileCache/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.FileCache
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.FileLock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.FileLock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Finalizer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.Finalizer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.GitRepository/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.GitRepository
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Host/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.Host
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.JsonSchema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.JsonSchema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Lock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.Lock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Logger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.Logger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.ModuleLoader/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.ModuleLoader
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.ModuleProvider/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.ModuleProvider
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.NamedSemaphore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.NamedSemaphore
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.PackageRecord/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.PackageRecord
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.ScriptTargetFilter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.ScriptTargetFilter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.ScriptUpdateRecord/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.ScriptUpdateRecord
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.SemanticVersion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.SemanticVersion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Stub/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.Stub
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Timer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.Timer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.UnitTestSuite/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.UnitTestSuite
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.UpdateFeed/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.UpdateFeed
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.UpdateTask/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.UpdateTask
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Updater/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.Updater
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.ZipArchiver/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.ZipArchiver
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.config-schema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.config-schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.domain/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.domain
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.environment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.environment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.file-ops
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.file-ops
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Functions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Functions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#createtempdir" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        createTempDir
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gettempdir" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getTempDir
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#remove" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        remove
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#runscheduledremoval" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        runScheduledRemoval
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#copy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        copy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#listdir" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        listDir
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#listfilesrecursive" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        listFilesRecursive
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#joinpath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        joinPath
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pathsegments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pathSegments
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#move" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        move
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#readfile" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        readFile
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#writefile" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        writeFile
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gethash" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getHash
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#verifyhash" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        verifyHash
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rmdir" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rmdir
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mkdir" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        mkdir
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getattributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getAttributes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#attributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        attributes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exists" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        exists
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validatefullpath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validateFullPath
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getnamespacedpath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getNamespacedPath
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fields
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Types
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fileopsattributesinfo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FileOpsAttributesInfo
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fileops" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FileOps
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.hash/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.hash
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.helpers.ffi-posix/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.helpers.ffi-posix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.helpers.ffi-windows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.helpers.ffi-windows
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.helpers.open-url/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.helpers.open-url
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.helpers.resolve-host/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.helpers.resolve-host
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.release-notes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.release-notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.shims.BadMutex/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.shims.BadMutex
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.shims.DownloadManager/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.shims.DownloadManager
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.shims.PreciseTimer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.shims.PreciseTimer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.utils/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.utils
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_3" id="__nav_3_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MoonCATS
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    MoonCATS
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.MoonCats/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.MoonCats
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.MoonCats.Diagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.MoonCats.Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.MoonCats.DocRenderer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.MoonCats.DocRenderer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.MoonCats.Emitter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.MoonCats.Emitter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.MoonCats.Parser/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.MoonCats.Parser
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.MoonCats.annotations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.MoonCats.annotations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_4" id="__nav_3_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dkjson
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    dkjson
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.dkjson/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.dkjson
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Functions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Functions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#createtempdir" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        createTempDir
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gettempdir" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getTempDir
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#remove" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        remove
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#runscheduledremoval" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        runScheduledRemoval
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#copy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        copy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#listdir" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        listDir
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#listfilesrecursive" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        listFilesRecursive
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#joinpath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        joinPath
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pathsegments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pathSegments
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#move" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        move
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#readfile" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        readFile
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#writefile" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        writeFile
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gethash" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getHash
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#verifyhash" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        verifyHash
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rmdir" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rmdir
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mkdir" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        mkdir
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getattributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getAttributes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#attributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        attributes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exists" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        exists
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validatefullpath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validateFullPath
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getnamespacedpath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getNamespacedPath
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fields
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Types
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fileopsattributesinfo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FileOpsAttributesInfo
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fileops" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FileOps
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="l0dependencycontrolfile-ops">l0.DependencyControl.file-ops</h1>
+<pre><code class="language-lua">file_ops = require &quot;l0.DependencyControl.file-ops&quot;        -- MoonScript
+local file_ops = require(&quot;l0.DependencyControl.file-ops&quot;)  -- Lua
+</code></pre>
+<h2 id="functions">Functions</h2>
+<h4 id="createtempdir">createTempDir <a name="FileOps.createTempDir"></a></h4>
+<pre><code class="language-lua">FileOps.createTempDir!   -- MoonScript
+FileOps.createTempDir()  -- Lua
+</code></pre>
+<p>Creates a unique temporary directory and returns its path.</p>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>tempDirPath</code> <code>string</code>? — Absolute path to the created temporary directory, or nil if it couldn't be created.</li>
+<li><code>err</code> <code>string</code>? — Error message if the directory couldn't be created.</li>
+</ul>
+<h4 id="gettempdir">getTempDir <a name="FileOps.getTempDir"></a></h4>
+<pre><code class="language-lua">FileOps.getTempDir!   -- MoonScript
+FileOps.getTempDir()  -- Lua
+</code></pre>
+<p>Generates a unique temporary directory path that does not exist yet.</p>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>tempDirPath</code> <code>string</code> — Absolute path to a unique, not-yet-existing temporary directory.</li>
+</ul>
+<h4 id="remove">remove <a name="FileOps.remove"></a></h4>
+<pre><code class="language-lua">FileOps.remove paths, recurse, reSchedule   -- MoonScript
+FileOps.remove(paths, recurse, reSchedule)  -- Lua
+</code></pre>
+<p>Removes one or more files/directories and optionally reschedules failed removals.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>paths</td>
+<td><code>string</code>|(<code>string</code>|<code>string</code>[])[]</td>
+<td>Path, or list of paths (each a string or an array of path segments).</td>
+</tr>
+<tr>
+<td>recurse?</td>
+<td><code>boolean</code></td>
+<td>Recurse into directories (default false, so a non-empty directory is not removed).</td>
+</tr>
+<tr>
+<td>reSchedule?</td>
+<td><code>boolean</code></td>
+<td>Reschedule failed removals for the next restart.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>overallSuccess</code> <code>boolean</code>? — True if all succeeded, false if any were rescheduled, nil on hard failure.</li>
+<li><code>details</code> <code>table</code> — Per-path result tables keyed by path.</li>
+<li><code>firstErr</code> <code>string</code>? — The first error encountered.</li>
+</ul>
+<h4 id="runscheduledremoval">runScheduledRemoval <a name="FileOps.runScheduledRemoval"></a></h4>
+<pre><code class="language-lua">FileOps.runScheduledRemoval configDir   -- MoonScript
+FileOps.runScheduledRemoval(configDir)  -- Lua
+</code></pre>
+<p>Replays removals previously scheduled by remove().</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>configDir?</td>
+<td><code>string</code></td>
+<td>Directory holding the FileOps config (defaults to the configured dir).</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>success</code> <code>boolean</code>?</li>
+<li><code>err</code> <code>string</code>?</li>
+</ul>
+<h4 id="copy">copy <a name="FileOps.copy"></a></h4>
+<pre><code class="language-lua">FileOps.copy source, target, clobber   -- MoonScript
+FileOps.copy(source, target, clobber)  -- Lua
+</code></pre>
+<p>Copies a file to a target path.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>source</td>
+<td><code>string</code></td>
+<td></td>
+</tr>
+<tr>
+<td>target</td>
+<td><code>string</code></td>
+<td></td>
+</tr>
+<tr>
+<td>clobber?</td>
+<td><code>boolean</code></td>
+<td>Overwrite an existing target file.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>success</code> <code>boolean</code></li>
+<li><code>err</code> <code>string</code>?</li>
+</ul>
+<h4 id="listdir">listDir <a name="FileOps.listDir"></a></h4>
+<pre><code class="language-lua">FileOps.listDir dirPath   -- MoonScript
+FileOps.listDir(dirPath)  -- Lua
+</code></pre>
+<p>Lists the names of a directory's entries, excluding <code>.</code> and <code>..</code>.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>dirPath</td>
+<td><code>string</code>|<code>string</code>[]</td>
+<td>Path or path segments of the directory.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>entries</code> <code>string</code>[]? — The entry names, or nil when the path isn't a directory.</li>
+<li><code>err</code> <code>string</code>?</li>
+</ul>
+<h4 id="listfilesrecursive">listFilesRecursive <a name="FileOps.listFilesRecursive"></a></h4>
+<pre><code class="language-lua">FileOps.listFilesRecursive dirPath   -- MoonScript
+FileOps.listFilesRecursive(dirPath)  -- Lua
+</code></pre>
+<p>Recursively collects all files below a directory.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>dirPath</td>
+<td><code>string</code>|<code>string</code>[]</td>
+<td>Path or path segments of the directory to walk.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>files</code> <code>string</code>[]? — Full paths of every file below the directory (joined onto the given path), or nil when it can't be listed.</li>
+<li><code>err</code> <code>string</code>?</li>
+</ul>
+<h4 id="joinpath">joinPath <a name="FileOps.joinPath"></a></h4>
+<pre><code class="language-lua">FileOps.joinPath ...   -- MoonScript
+FileOps.joinPath(...)  -- Lua
+</code></pre>
+<p>Joins and resolves multiple path segments into a single path string.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>...</td>
+<td><code>string</code>|<code>string</code>[]</td>
+<td>One or more path segments, or arrays of path segments.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>joinedPath</code> <code>string</code>? — The path segments joined by OS-specific separators, or nil on error.</li>
+<li><code>err</code> <code>string</code>?</li>
+</ul>
+<h4 id="pathsegments">pathSegments <a name="FileOps.pathSegments"></a></h4>
+<pre><code class="language-lua">FileOps.pathSegments path   -- MoonScript
+FileOps.pathSegments(path)  -- Lua
+</code></pre>
+<p>Returns an iterator over the non-empty components of a path, split on any separator.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>path</td>
+<td><code>string</code></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>iterator</code> <code>fun(): string?</code></li>
+</ul>
+<h4 id="move">move <a name="FileOps.move"></a></h4>
+<pre><code class="language-lua">FileOps.move source, target, overwrite   -- MoonScript
+FileOps.move(source, target, overwrite)  -- Lua
+</code></pre>
+<p>Moves a file to a target path, optionally replacing existing targets.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>source</td>
+<td><code>string</code></td>
+<td></td>
+</tr>
+<tr>
+<td>target</td>
+<td><code>string</code></td>
+<td></td>
+</tr>
+<tr>
+<td>overwrite?</td>
+<td><code>boolean</code></td>
+<td>Replace an existing target file.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>success</code> <code>boolean</code></li>
+<li><code>err</code> <code>string</code>?</li>
+</ul>
+<h4 id="readfile">readFile <a name="FileOps.readFile"></a></h4>
+<pre><code class="language-lua">FileOps.readFile path   -- MoonScript
+FileOps.readFile(path)  -- Lua
+</code></pre>
+<p>Reads and returns the full contents of a file.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>path</td>
+<td><code>string</code>|<code>string</code>[]</td>
+<td>Path or path segments to the file to read.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>data</code> <code>string</code>? — The contents of the file, or nil if an error occurred.</li>
+<li><code>err</code> <code>string</code>? — An error message if an error occurred.</li>
+</ul>
+<h4 id="writefile">writeFile <a name="FileOps.writeFile"></a></h4>
+<pre><code class="language-lua">FileOps.writeFile path, data, clobber   -- MoonScript
+FileOps.writeFile(path, data, clobber)  -- Lua
+</code></pre>
+<p>Writes data to a file, creating the file if it doesn't exist and optionally overwriting existing files.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>path</td>
+<td><code>string</code>|<code>string</code>[]</td>
+<td>Path or path segments to the file to write.</td>
+</tr>
+<tr>
+<td>data</td>
+<td><code>string</code></td>
+<td>The data to write to the file.</td>
+</tr>
+<tr>
+<td>clobber?</td>
+<td><code>boolean</code></td>
+<td>Overwrite the file if it already exists (default false).</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>success</code> <code>boolean</code> — True if the file was written successfully.</li>
+<li><code>err</code> <code>string</code>?</li>
+</ul>
+<h4 id="gethash">getHash <a name="FileOps.getHash"></a></h4>
+<pre><code class="language-lua">FileOps.getHash fileName, hashType   -- MoonScript
+FileOps.getHash(fileName, hashType)  -- Lua
+</code></pre>
+<p>Reads a file and computes the hash of its contents.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>fileName</td>
+<td><code>string</code>|<code>string</code>[]</td>
+<td>Path or path segments to the file to hash.</td>
+</tr>
+<tr>
+<td>hashType?</td>
+<td><a href="../l0.DependencyControl.hash/#HashType">HashType</a></td>
+<td>The hash algorithm to use (default Sha1).</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>hexDigest</code> <code>string</code>? — The lowercase hex digest, or nil if an error occurred.</li>
+<li><code>err</code> <code>string</code>? — An error message if an error occurred.</li>
+</ul>
+<h4 id="verifyhash">verifyHash <a name="FileOps.verifyHash"></a></h4>
+<pre><code class="language-lua">FileOps.verifyHash fileName, hash, hashType   -- MoonScript
+FileOps.verifyHash(fileName, hash, hashType)  -- Lua
+</code></pre>
+<p>Reads a file and verifies its contents match an expected hash.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>fileName</td>
+<td><code>string</code>|<code>string</code>[]</td>
+<td>Path or path segments to the file to verify.</td>
+</tr>
+<tr>
+<td>hash</td>
+<td><code>string</code></td>
+<td>The expected hex digest (compared case-insensitively).</td>
+</tr>
+<tr>
+<td>hashType?</td>
+<td><a href="../l0.DependencyControl.hash/#HashType">HashType</a></td>
+<td>The hash algorithm to use (default Sha1).</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>match</code> <code>boolean</code>? — True on match, false on mismatch, or nil on error.</li>
+<li><code>err</code> <code>string</code>? — The mismatch detail or error message.</li>
+</ul>
+<h4 id="rmdir">rmdir <a name="FileOps.rmdir"></a></h4>
+<pre><code class="language-lua">FileOps.rmdir path, recurse   -- MoonScript
+FileOps.rmdir(path, recurse)  -- Lua
+</code></pre>
+<p>Removes a directory, by default together with everything it contains.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>path</td>
+<td><code>string</code>|<code>string</code>[]</td>
+<td>Path or path segments to the directory to remove.</td>
+</tr>
+<tr>
+<td>recurse?</td>
+<td><code>boolean</code></td>
+<td>Remove the directory's contents first (default true); when false, only an already-empty directory is removed.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>success</code> <code>boolean</code>? — True on success, or nil on error.</li>
+<li><code>err</code> <code>string</code>? — An error message when the path is empty, doesn't exist, isn't a directory, or something couldn't be removed.</li>
+</ul>
+<h4 id="mkdir">mkdir <a name="FileOps.mkdir"></a></h4>
+<pre><code class="language-lua">FileOps.mkdir path, isFile, recurse   -- MoonScript
+FileOps.mkdir(path, isFile, recurse)  -- Lua
+</code></pre>
+<p>Creates a directory.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>path</td>
+<td><code>string</code>|<code>string</code>[]</td>
+<td>Path or path segments to the directory to create.</td>
+</tr>
+<tr>
+<td>isFile</td>
+<td><code>boolean</code></td>
+<td>Whether the path is a file path (discards the last segment when checking/creating the directory).</td>
+</tr>
+<tr>
+<td>recurse?</td>
+<td><code>boolean</code></td>
+<td>Also create any missing parent directories (default false).</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>created</code> <code>boolean</code>? — True if created, false if it already existed, nil if an error occurred.</li>
+<li><code>dirPathOrError</code> <code>string</code> — The existing/created directory path, or an error message.</li>
+</ul>
+<h4 id="getattributes">getAttributes <a name="FileOps.getAttributes"></a></h4>
+<pre><code class="language-lua">FileOps.getAttributes path, key   -- MoonScript
+FileOps.getAttributes(path, key)  -- Lua
+</code></pre>
+<p>Retrieves file or directory attributes along with the parsed components of its path.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>path</td>
+<td><code>string</code>|<code>string</code>[]</td>
+<td>Either a path or an array of path segments.</td>
+</tr>
+<tr>
+<td>key?</td>
+<td><code>string</code></td>
+<td>Attribute name to retrieve (e.g. "mode", "size", "modification"), or nil for the full attribute table.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>info</code> <a href="#FileOpsAttributesInfo">FileOpsAttributesInfo</a>? — The attributes and path components, or nil on a hard error (an invalid path or an lfs failure). A path that simply doesn't exist is not an error: <code>info.attr</code> is then false.</li>
+<li><code>err</code> <code>string</code>? — An error message, present only when info is nil.</li>
+</ul>
+<h4 id="attributes">attributes <a name="FileOps.attributes"></a></h4>
+<blockquote>
+<p><strong>Deprecated</strong> — Use <code>getAttributes</code>, which returns a single info table plus an error message.</p>
+</blockquote>
+<pre><code class="language-lua">FileOps.attributes path, key   -- MoonScript
+FileOps.attributes(path, key)  -- Lua
+</code></pre>
+<p>Retrieves file or directory attributes.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>path</td>
+<td><code>string</code>|<code>string</code>[]</td>
+<td>Either a path or an array of path segments.</td>
+</tr>
+<tr>
+<td>key?</td>
+<td><code>string</code></td>
+<td>Attribute name to retrieve (e.g. "mode", "size", "modification"), or nil for the full attribute table.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>attr</code> <code>table</code>|<code>string</code>|<code>number</code>|<code>boolean</code>|<code>nil</code> — The requested attribute(s), false if absent, or nil on error.</li>
+<li><code>fullPath</code> <code>string</code> — The validated full path, or an error message if the path was invalid.</li>
+<li><code>device</code> <code>string</code>? — The device component of the path.</li>
+<li><code>dir</code> <code>string</code>? — The directory component of the path.</li>
+<li><code>file</code> <code>string</code>? — The file name component of the path.</li>
+</ul>
+<h4 id="exists">exists <a name="FileOps.exists"></a></h4>
+<pre><code class="language-lua">FileOps.exists path, expectedMode   -- MoonScript
+FileOps.exists(path, expectedMode)  -- Lua
+</code></pre>
+<p>Checks whether a file or directory exists and optionally verifies its type.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>path</td>
+<td><code>string</code>|<code>string</code>[]</td>
+<td>Either a path or an array of path segments.</td>
+</tr>
+<tr>
+<td>expectedMode?</td>
+<td><code>string</code></td>
+<td>If specified, the required type of the filesystem entry.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>exists</code> <code>boolean</code>? — True if it exists and matches the expected type, false if not, nil on error.</li>
+<li><code>err</code> <code>string</code>? — An error message if the file doesn't exist or is of the wrong type.</li>
+</ul>
+<h4 id="validatefullpath">validateFullPath <a name="FileOps.validateFullPath"></a></h4>
+<pre><code class="language-lua">FileOps.validateFullPath path, checkFileExt, basePath   -- MoonScript
+FileOps.validateFullPath(path, checkFileExt, basePath)  -- Lua
+</code></pre>
+<p>Validates and normalizes an absolute filesystem path.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>path</td>
+<td><code>string</code>|<code>string</code>[]</td>
+<td>Either a path or an array of path segments.</td>
+</tr>
+<tr>
+<td>checkFileExt?</td>
+<td><code>boolean</code></td>
+<td>Require the path to have a file extension.</td>
+</tr>
+<tr>
+<td>basePath?</td>
+<td><code>string</code>|<code>string</code>[]</td>
+<td>Base path to resolve relative paths against; relative paths are rejected without it.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>normalizedPath</code> <code>string</code>|<code>false</code>|<code>nil</code> — The normalized path, or false/nil on error.</li>
+<li><code>deviceOrErr</code> <code>string</code>? — The device/root component on success, or an error message on failure.</li>
+<li><code>dir</code> <code>string</code>? — The directory component (success only).</li>
+<li><code>file</code> <code>string</code>? — The file name component (success only).</li>
+</ul>
+<h4 id="getnamespacedpath">getNamespacedPath <a name="FileOps.getNamespacedPath"></a></h4>
+<pre><code class="language-lua">FileOps.getNamespacedPath basePath, namespace, ext, nested   -- MoonScript
+FileOps.getNamespacedPath(basePath, namespace, ext, nested)  -- Lua
+</code></pre>
+<p>Converts a base path and namespace into a namespaced filesystem path.
+Dots in the namespace are converted to path separators when nested is true.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>basePath</td>
+<td><code>string</code>|<code>string</code>[]</td>
+<td>Base path (or segments) the namespaced path is created under.</td>
+</tr>
+<tr>
+<td>namespace</td>
+<td><code>string</code></td>
+<td></td>
+</tr>
+<tr>
+<td>ext</td>
+<td><code>string</code></td>
+<td>File extension (including the dot).</td>
+</tr>
+<tr>
+<td>nested?</td>
+<td><code>boolean</code></td>
+<td>Convert namespace dots to path separators (default true).</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>path</code> <code>string</code>?</li>
+<li><code>err</code> <code>string</code>?</li>
+</ul>
+<h2 id="fields">Fields</h2>
+<table>
+<thead>
+<tr>
+<th>field</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>pathSep</td>
+<td><code>string</code></td>
+<td></td>
+</tr>
+<tr>
+<td>pathMatch</td>
+<td><code>table</code></td>
+<td></td>
+</tr>
+<tr>
+<td>pathMaxLength</td>
+<td><code>any</code></td>
+<td></td>
+</tr>
+<tr>
+<td>pathMaxSegmentLength</td>
+<td><code>integer</code></td>
+<td></td>
+</tr>
+<tr>
+<td>longPathsDisabled</td>
+<td><code>string</code></td>
+<td></td>
+</tr>
+<tr>
+<td>windowsRegistryLongPathsEnabled</td>
+<td><code>boolean</code></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h2 id="types">Types</h2>
+<h3 id="fileopsattributesinfo">FileOpsAttributesInfo <a name="FileOpsAttributesInfo"></a></h3>
+<table>
+<thead>
+<tr>
+<th>field</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>attr</td>
+<td><code>table</code>|<code>string</code>|<code>number</code>|<code>false</code></td>
+<td>The requested attribute(s), or false when the entry doesn't exist.</td>
+</tr>
+<tr>
+<td>path</td>
+<td><code>string</code></td>
+<td>The validated full path.</td>
+</tr>
+<tr>
+<td>dev</td>
+<td><code>string</code></td>
+<td>The device component of the path.</td>
+</tr>
+<tr>
+<td>dir</td>
+<td><code>string</code></td>
+<td>The directory component of the path.</td>
+</tr>
+<tr>
+<td>file</td>
+<td><code>string</code></td>
+<td>The file name component of the path.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="fileops">FileOps <a name="FileOps"></a></h3>
+<p>Filesystem utility helpers used by DependencyControl.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

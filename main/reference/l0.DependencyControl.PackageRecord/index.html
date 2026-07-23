@@ -1,0 +1,3771 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Dependency manager and automatic script updater for Aegisub macros and modules.">
+      
+      
+      
+      
+        <link rel="prev" href="../l0.DependencyControl.NamedSemaphore/">
+      
+      
+        <link rel="next" href="../l0.DependencyControl.ScriptTargetFilter/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>l0.DependencyControl.PackageRecord - DependencyControl</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#l0dependencycontrolpackagerecord" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="DependencyControl" class="md-header__button md-logo" aria-label="DependencyControl" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            DependencyControl
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              l0.DependencyControl.PackageRecord
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TypesettingTools/DependencyControl" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="DependencyControl" class="md-nav__button md-logo" aria-label="DependencyControl" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    DependencyControl
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TypesettingTools/DependencyControl" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Design
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Design
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../design/updater-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Updater Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3_2" id="__nav_3_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DependencyControl
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    DependencyControl
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Accessors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.Accessors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.ConfigHandler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.ConfigHandler
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.ConfigView/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.ConfigView
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Constants/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.Constants
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Downloader/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.Downloader
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Enum/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.Enum
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.EventEmitter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.EventEmitter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.FeedInventory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.FeedInventory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.FeedLoader/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.FeedLoader
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.FeedManager/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.FeedManager
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.FeedTrust/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.FeedTrust
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.FileCache/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.FileCache
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.FileLock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.FileLock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Finalizer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.Finalizer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.GitRepository/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.GitRepository
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Host/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.Host
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.JsonSchema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.JsonSchema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Lock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.Lock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Logger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.Logger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.ModuleLoader/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.ModuleLoader
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.ModuleProvider/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.ModuleProvider
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.NamedSemaphore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.NamedSemaphore
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.PackageRecord
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.PackageRecord
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#packagerecord" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PackageRecord
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="PackageRecord">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#constructor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Constructor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#instance-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Instance methods
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Instance methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#loadconfig" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        loadConfig
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#writeconfig" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        writeConfig
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getversionnumber" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getVersionNumber
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getversionstring" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getVersionString
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getconfigfilename" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getConfigFileName
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getconfighandler" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getConfigHandler
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getlogger" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getLogger
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getfilecache" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getFileCache
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#checkversion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        checkVersion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getsubmodules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getSubmodules
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#requiremodules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        requireModules
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#registertests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        registerTests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#register" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        register
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#registermacro" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        registerMacro
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#registermacros" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        registerMacros
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#setversion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        setVersion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validatenamespace" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validateNamespace
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getpossibleentrypointpaths" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getPossibleEntryPointPaths
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getentrypointpath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getEntryPointPath
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#uninstall" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        uninstall
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#class-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Class methods
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Class methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#getregisteredrecord" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getRegisteredRecord
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getallregisteredrecords" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getAllRegisteredRecords
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#loadglobalconfig" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        loadGlobalConfig
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fields
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Types
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#modulealias" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ModuleAlias
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#requiredmodulespec" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RequiredModuleSpec
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#packagerecordargs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PackageRecordArgs
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.ScriptTargetFilter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.ScriptTargetFilter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.ScriptUpdateRecord/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.ScriptUpdateRecord
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.SemanticVersion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.SemanticVersion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Stub/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.Stub
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Timer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.Timer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.UnitTestSuite/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.UnitTestSuite
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.UpdateFeed/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.UpdateFeed
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.UpdateTask/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.UpdateTask
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Updater/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.Updater
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.ZipArchiver/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.ZipArchiver
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.config-schema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.config-schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.domain/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.domain
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.environment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.environment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.file-ops/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.file-ops
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.hash/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.hash
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.helpers.ffi-posix/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.helpers.ffi-posix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.helpers.ffi-windows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.helpers.ffi-windows
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.helpers.open-url/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.helpers.open-url
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.helpers.resolve-host/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.helpers.resolve-host
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.release-notes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.release-notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.shims.BadMutex/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.shims.BadMutex
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.shims.DownloadManager/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.shims.DownloadManager
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.shims.PreciseTimer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.shims.PreciseTimer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.utils/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.DependencyControl.utils
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_3" id="__nav_3_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MoonCATS
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    MoonCATS
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.MoonCats/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.MoonCats
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.MoonCats.Diagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.MoonCats.Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.MoonCats.DocRenderer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.MoonCats.DocRenderer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.MoonCats.Emitter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.MoonCats.Emitter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.MoonCats.Parser/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.MoonCats.Parser
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.MoonCats.annotations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.MoonCats.annotations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_4" id="__nav_3_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dkjson
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    dkjson
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.dkjson/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    l0.dkjson
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#packagerecord" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PackageRecord
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="PackageRecord">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#constructor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Constructor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#instance-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Instance methods
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Instance methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#loadconfig" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        loadConfig
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#writeconfig" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        writeConfig
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getversionnumber" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getVersionNumber
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getversionstring" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getVersionString
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getconfigfilename" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getConfigFileName
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getconfighandler" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getConfigHandler
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getlogger" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getLogger
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getfilecache" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getFileCache
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#checkversion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        checkVersion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getsubmodules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getSubmodules
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#requiremodules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        requireModules
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#registertests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        registerTests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#register" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        register
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#registermacro" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        registerMacro
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#registermacros" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        registerMacros
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#setversion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        setVersion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validatenamespace" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validateNamespace
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getpossibleentrypointpaths" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getPossibleEntryPointPaths
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getentrypointpath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getEntryPointPath
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#uninstall" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        uninstall
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#class-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Class methods
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Class methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#getregisteredrecord" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getRegisteredRecord
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getallregisteredrecords" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getAllRegisteredRecords
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#loadglobalconfig" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        loadGlobalConfig
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fields
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Types
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#modulealias" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ModuleAlias
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#requiredmodulespec" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RequiredModuleSpec
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#packagerecordargs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PackageRecordArgs
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="l0dependencycontrolpackagerecord">l0.DependencyControl.PackageRecord</h1>
+<pre><code class="language-lua">PackageRecord = require &quot;l0.DependencyControl.PackageRecord&quot;        -- MoonScript
+local PackageRecord = require(&quot;l0.DependencyControl.PackageRecord&quot;)  -- Lua
+</code></pre>
+<h2 id="packagerecord">PackageRecord <a name="PackageRecord"></a></h2>
+<p>DependencyControl record representing one managed or unmanaged script/module.</p>
+<h3 id="constructor">Constructor <a name="PackageRecord.new"></a></h3>
+<pre><code class="language-lua">packageRecord = PackageRecord args         -- MoonScript
+local packageRecord = PackageRecord(args)  -- Lua
+</code></pre>
+<p>Creates a DependencyControl record from explicit arguments and/or script globals.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>args</td>
+<td><a href="#PackageRecordArgs">PackageRecordArgs</a></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="instance-methods">Instance methods</h3>
+<h4 id="loadconfig">loadConfig <a name="PackageRecord.loadConfig"></a></h4>
+<pre><code class="language-lua">packageRecord\loadConfig importRecord   -- MoonScript
+packageRecord:loadConfig(importRecord)  -- Lua
+</code></pre>
+<p>Loads this record's script/module configuration hive.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>importRecord?</td>
+<td><code>boolean</code></td>
+<td>Overwrite this record's fields from the stored config (default false).</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>shouldWriteConfig</code> <code>boolean</code></li>
+</ul>
+<h4 id="writeconfig">writeConfig <a name="PackageRecord.writeConfig"></a></h4>
+<pre><code class="language-lua">packageRecord\writeConfig!   -- MoonScript
+packageRecord:writeConfig()  -- Lua
+</code></pre>
+<p>Writes this record's persisted fields to the shared config file.</p>
+<h4 id="getversionnumber">getVersionNumber <a name="PackageRecord.getVersionNumber"></a></h4>
+<blockquote>
+<p><strong>Deprecated</strong> — Use <code>SemanticVersion.toPacked</code>.</p>
+</blockquote>
+<pre><code class="language-lua">packageRecord\getVersionNumber value   -- MoonScript
+packageRecord:getVersionNumber(value)  -- Lua
+</code></pre>
+<p>Converts a version to its packed-integer form, defaulting to this record's version.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>value?</td>
+<td><code>number</code>|<code>string</code></td>
+<td>Version to convert (default: this record's version).</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>versionNumber</code> <code>number</code>? — nil on an invalid version string.</li>
+<li><code>err</code> <code>string</code>?</li>
+</ul>
+<h4 id="getversionstring">getVersionString <a name="PackageRecord.getVersionString"></a></h4>
+<blockquote>
+<p><strong>Deprecated</strong> — Use <code>SemanticVersion.toString</code>.</p>
+</blockquote>
+<pre><code class="language-lua">packageRecord\getVersionString version   -- MoonScript
+packageRecord:getVersionString(version)  -- Lua
+</code></pre>
+<p>Converts a version to its string form, defaulting to this record's version.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>version?</td>
+<td><code>number</code>|<code>string</code></td>
+<td>Version to convert (default: this record's version).</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>versionString</code> <code>string</code>? — nil on an invalid version.</li>
+<li><code>err</code> <code>string</code>?</li>
+</ul>
+<h4 id="getconfigfilename">getConfigFileName <a name="PackageRecord.getConfigFileName"></a></h4>
+<pre><code class="language-lua">packageRecord\getConfigFileName!   -- MoonScript
+packageRecord:getConfigFileName()  -- Lua
+</code></pre>
+<p>Resolves this record's external config file path. Config files share one directory so
+they stay discoverable to other scripts through the DependencyControl config file.</p>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>path</code> <code>string</code></li>
+</ul>
+<h4 id="getconfighandler">getConfigHandler <a name="PackageRecord.getConfigHandler"></a></h4>
+<pre><code class="language-lua">packageRecord\getConfigHandler defaults, section, noLoad   -- MoonScript
+packageRecord:getConfigHandler(defaults, section, noLoad)  -- Lua
+</code></pre>
+<p>Creates a ConfigView for this record's script-specific config file.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>defaults?</td>
+<td><code>table</code></td>
+<td>Default values for the config.</td>
+</tr>
+<tr>
+<td>section?</td>
+<td><code>string</code>|<code>string</code>[]</td>
+<td>Config section path.</td>
+</tr>
+<tr>
+<td>noLoad?</td>
+<td><code>boolean</code></td>
+<td>Skip loading the file immediately.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><a href="../l0.DependencyControl.ConfigView/#ConfigView">ConfigView</a></li>
+</ul>
+<h4 id="getlogger">getLogger <a name="PackageRecord.getLogger"></a></h4>
+<pre><code class="language-lua">packageRecord\getLogger args   -- MoonScript
+packageRecord:getLogger(args)  -- Lua
+</code></pre>
+<p>Creates a logger preconfigured for this record.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>args?</td>
+<td><code>table</code></td>
+<td>Logger options; missing fields are filled from this record's config.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><a href="../l0.DependencyControl.Logger/#Logger">Logger</a></li>
+</ul>
+<h4 id="getfilecache">getFileCache <a name="PackageRecord.getFileCache"></a></h4>
+<pre><code class="language-lua">packageRecord\getFileCache name, opts   -- MoonScript
+packageRecord:getFileCache(name, opts)  -- Lua
+</code></pre>
+<p>Returns a shared, persistent on-disk cache for this script, under the user's configured cache location.
+It lives at <code>&lt;the configured cache dir&gt;/&lt;this script's namespace&gt;/&lt;name&gt;</code>, so each script gets its own
+namespaced caches and honors the DependencyControl config. Repeated calls for the same name share one instance.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>name</td>
+<td><code>string</code></td>
+<td>A short name for the cache's purpose (e.g. "thumbnails").</td>
+</tr>
+<tr>
+<td>opts?</td>
+<td><a href="../l0.DependencyControl.FileCache/#FileCacheOptions">FileCacheOptions</a></td>
+<td>Default cache options; applied only when the cache is first created.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><a href="../l0.DependencyControl.FileCache/#FileCache">FileCache</a></li>
+</ul>
+<h4 id="checkversion">checkVersion <a name="PackageRecord.checkVersion"></a></h4>
+<pre><code class="language-lua">packageRecord\checkVersion value, precision   -- MoonScript
+packageRecord:checkVersion(value, precision)  -- Lua
+</code></pre>
+<p>Checks whether this record's version satisfies a minimum version.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>value</td>
+<td><code>number</code>|<code>string</code>|<a href="#PackageRecord">PackageRecord</a></td>
+<td>Version, or record, to compare against.</td>
+</tr>
+<tr>
+<td>precision?</td>
+<td><a href="../l0.DependencyControl.SemanticVersion/#SemverPrecision">SemverPrecision</a></td>
+<td>Precision to compare at (default "patch").</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>satisfied</code> <code>boolean</code>?</li>
+<li><code>maskedOrError</code> <code>number</code>|<code>string</code>|<code>nil</code> — Masked comparison value on success, or an error message.</li>
+</ul>
+<h4 id="getsubmodules">getSubmodules <a name="PackageRecord.getSubmodules"></a></h4>
+<pre><code class="language-lua">packageRecord\getSubmodules!   -- MoonScript
+packageRecord:getSubmodules()  -- Lua
+</code></pre>
+<p>Retrieves managed submodules registered under this module namespace.</p>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>submodules</code> <code>string</code>[]? — Submodule namespaces, or nil for non-module records.</li>
+<li><code>config</code> <a href="../l0.DependencyControl.ConfigView/#ConfigView">ConfigView</a>? — The module config section handler.</li>
+</ul>
+<h4 id="requiremodules">requireModules <a name="PackageRecord.requireModules"></a></h4>
+<pre><code class="language-lua">packageRecord\requireModules modules, addFeeds   -- MoonScript
+packageRecord:requireModules(modules, addFeeds)  -- Lua
+</code></pre>
+<p>Loads or updates required modules and returns their references.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>modules?</td>
+<td>(<code>string</code>|<a href="#RequiredModuleSpec">RequiredModuleSpec</a>)[]</td>
+<td>Module specs to load (default: this record's requiredModules).</td>
+</tr>
+<tr>
+<td>addFeeds?</td>
+<td><code>string</code>[]</td>
+<td>Extra feed URLs to search (default: this record's feed).</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>...</code> <code>any</code> — The loaded module references, in order; an absent optional module comes back as nil.</li>
+</ul>
+<h4 id="registertests">registerTests <a name="PackageRecord.registerTests"></a></h4>
+<pre><code class="language-lua">packageRecord\registerTests ...   -- MoonScript
+packageRecord:registerTests(...)  -- Lua
+</code></pre>
+<p>Registers DepUnit tests for this record if test modules are available.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>...</td>
+<td><code>any</code></td>
+<td>Extra arguments forwarded to the suite's import function (see UnitTestSuite for its full signature).</td>
+</tr>
+</tbody>
+</table>
+<h4 id="register">register <a name="PackageRecord.register"></a></h4>
+<pre><code class="language-lua">packageRecord\register selfRef, ...   -- MoonScript
+packageRecord:register(selfRef, ...)  -- Lua
+</code></pre>
+<p>Finalizes module registration and swaps dummy module refs for real refs. Call it in place of
+returning the module. Modules registered this way may depend on each other circularly, provided
+they don't use each other during construction.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>selfRef</td>
+<td><code>table</code></td>
+<td>The module's real exported table.</td>
+</tr>
+<tr>
+<td>...</td>
+<td><code>any</code></td>
+<td>Forwarded to registerTests().</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>selfRef</code> <code>table</code></li>
+</ul>
+<h4 id="registermacro">registerMacro <a name="PackageRecord.registerMacro"></a></h4>
+<pre><code class="language-lua">packageRecord\registerMacro name, description, process, validate, isActive, submenu   -- MoonScript
+packageRecord:registerMacro(name, description, process, validate, isActive, submenu)  -- Lua
+</code></pre>
+<p>Registers a single Aegisub macro with DependencyControl update hooks.
+When the first argument is a function, name and description are taken from the script and the
+remaining arguments shift left. A <code>customMenu</code> property in the script's config overrides the
+macro's menu location; it is a user-owned setting, so scripts must not change it without consent.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>name?</td>
+<td><code>string</code>|<code>function</code></td>
+<td>Macro name, or the process function in the short signature.</td>
+</tr>
+<tr>
+<td>description?</td>
+<td><code>string</code>|<code>function</code></td>
+<td>Macro description, or the validate function in the short signature.</td>
+</tr>
+<tr>
+<td>process</td>
+<td><code>function</code></td>
+<td>Macro processing callback.</td>
+</tr>
+<tr>
+<td>validate?</td>
+<td><code>function</code></td>
+<td>Aegisub validation callback.</td>
+</tr>
+<tr>
+<td>isActive?</td>
+<td><code>function</code></td>
+<td>Aegisub is-active callback.</td>
+</tr>
+<tr>
+<td>submenu?</td>
+<td><code>string</code>|<code>boolean</code></td>
+<td>Submenu name, or true to use the script name.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="registermacros">registerMacros <a name="PackageRecord.registerMacros"></a></h4>
+<pre><code class="language-lua">packageRecord\registerMacros macros, submenuDefault, testExports   -- MoonScript
+packageRecord:registerMacros(macros, submenuDefault, testExports)  -- Lua
+</code></pre>
+<p>Registers multiple macros declared in table form.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>macros?</td>
+<td><code>table</code>[]</td>
+<td>Macro definitions, each an argument list for registerMacro.</td>
+</tr>
+<tr>
+<td>submenuDefault?</td>
+<td><code>string</code>|<code>boolean</code></td>
+<td>Default submenu value applied when a macro omits it (default true).</td>
+</tr>
+<tr>
+<td>testExports?</td>
+<td><code>table</code></td>
+<td>Internals to expose to this record's DepUnit test suite, forwarded to its test import function.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="setversion">setVersion <a name="PackageRecord.setVersion"></a></h4>
+<pre><code class="language-lua">packageRecord\setVersion version   -- MoonScript
+packageRecord:setVersion(version)  -- Lua
+</code></pre>
+<p>Parses and sets this record's semantic version without raising on invalid input.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>version</td>
+<td><code>number</code>|<code>string</code></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>version</code> <code>number</code>? — The parsed integer version, or nil on error.</li>
+<li><code>err</code> <code>string</code>?</li>
+</ul>
+<h4 id="validatenamespace">validateNamespace <a name="PackageRecord.validateNamespace"></a></h4>
+<pre><code class="language-lua">packageRecord\validateNamespace!   -- MoonScript
+packageRecord:validateNamespace()  -- Lua
+</code></pre>
+<p>Validates this record's namespace, always passing for virtual records.</p>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>valid</code> <code>boolean</code></li>
+<li><code>err</code> <code>string</code>?</li>
+</ul>
+<h4 id="getpossibleentrypointpaths">getPossibleEntryPointPaths <a name="PackageRecord.getPossibleEntryPointPaths"></a></h4>
+<pre><code class="language-lua">packageRecord\getPossibleEntryPointPaths baseDir   -- MoonScript
+packageRecord:getPossibleEntryPointPaths(baseDir)  -- Lua
+</code></pre>
+<p>Returns all candidate entry point paths for this record under a given base directory,
+covering .moon and .lua extensions and init.* variants for modules.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>baseDir</td>
+<td><code>string</code></td>
+<td>Absolute automation base directory.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>paths</code> <code>string</code>[]</li>
+</ul>
+<h4 id="getentrypointpath">getEntryPointPath <a name="PackageRecord.getEntryPointPath"></a></h4>
+<pre><code class="language-lua">packageRecord\getEntryPointPath!   -- MoonScript
+packageRecord:getEntryPointPath()  -- Lua
+</code></pre>
+<p>Finds this record's primary entry point file, checking ?user then ?data automation directories.</p>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>path</code> <code>string</code>?</li>
+<li><code>isUserPath</code> <code>boolean</code>? — True when found under ?user, false when found under ?data, nil when not found.</li>
+</ul>
+<h4 id="uninstall">uninstall <a name="PackageRecord.uninstall"></a></h4>
+<pre><code class="language-lua">packageRecord\uninstall removeConfig   -- MoonScript
+packageRecord:uninstall(removeConfig)  -- Lua
+</code></pre>
+<p>Uninstalls this managed record and removes matching files from automation paths.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>removeConfig?</td>
+<td><code>boolean</code></td>
+<td>Also delete the record's config (default true).</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>success</code> <code>boolean</code>? — nil when the record can't be uninstalled (virtual/unmanaged).</li>
+<li><code>result</code> <code>table</code>|<code>string</code>|<code>nil</code> — Per-file removal results, or an error message.</li>
+</ul>
+<h3 id="class-methods">Class methods</h3>
+<h4 id="getregisteredrecord">getRegisteredRecord <a name="PackageRecord.getRegisteredRecord"></a></h4>
+<pre><code class="language-lua">PackageRecord\getRegisteredRecord namespace   -- MoonScript
+PackageRecord:getRegisteredRecord(namespace)  -- Lua
+</code></pre>
+<p>Returns the live, installed record registered for a namespace, or nil if none is registered
+or the registered one is still a virtual (not-yet-installed) placeholder.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>namespace</td>
+<td><code>string</code></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>record</code> <a href="#PackageRecord">PackageRecord</a>?</li>
+</ul>
+<h4 id="getallregisteredrecords">getAllRegisteredRecords <a name="PackageRecord.getAllRegisteredRecords"></a></h4>
+<pre><code class="language-lua">PackageRecord\getAllRegisteredRecords!   -- MoonScript
+PackageRecord:getAllRegisteredRecords()  -- Lua
+</code></pre>
+<p>Returns all currently registered live records keyed by namespace.
+Includes virtual (not-yet-installed) placeholders.</p>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>records</code> <code>table&lt;string, PackageRecord&gt;</code></li>
+</ul>
+<h4 id="loadglobalconfig">loadGlobalConfig <a name="PackageRecord.loadGlobalConfig"></a></h4>
+<pre><code class="language-lua">PackageRecord\loadGlobalConfig!   -- MoonScript
+PackageRecord:loadGlobalConfig()  -- Lua
+</code></pre>
+<p>Loads global DependencyControl configuration.</p>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>config</code> <a href="../l0.DependencyControl.ConfigView/#ConfigView">ConfigView</a></li>
+</ul>
+<h3 id="fields">Fields</h3>
+<table>
+<thead>
+<tr>
+<th>field</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>semanticVersion</td>
+<td><a href="../l0.DependencyControl.SemanticVersion/#SemanticVersion">SemanticVersion</a></td>
+<td>This record's version as a value object (the canonical store).</td>
+</tr>
+<tr>
+<td>version</td>
+<td><code>integer</code></td>
+<td>This record's version as a packed integer; assignable from a string, packed integer, or SemanticVersion.</td>
+</tr>
+<tr>
+<td>depConf</td>
+<td><code>table</code></td>
+<td></td>
+</tr>
+<tr>
+<td>checkOptionalModules</td>
+<td><code>any</code></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h2 id="types">Types</h2>
+<h3 id="modulealias">ModuleAlias <a name="ModuleAlias"></a></h3>
+<p>A provided-module alias: the <code>require</code> name this module satisfies plus optional metadata. In a
+<code>provides</code> list a bare string is shorthand for <code>{name = &lt;string&gt;}</code>; records and feeds store the
+normalized table form. <code>version</code> is the version of the provided module the provider satisfies
+(reserved — not yet consulted during resolution, which uses the provider's own release version).</p>
+<h3 id="requiredmodulespec">RequiredModuleSpec <a name="RequiredModuleSpec"></a></h3>
+<p>A required-module dependency. A bare <code>require</code> name is shorthand for a version-agnostic
+requirement. The table form below adds a version floor and a source to fetch the module from
+when it is missing.</p>
+<table>
+<thead>
+<tr>
+<th>field</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>[1]?</td>
+<td><code>string</code></td>
+<td>The module namespace (alternative to <code>moduleName</code>).</td>
+</tr>
+<tr>
+<td>moduleName?</td>
+<td><code>string</code></td>
+<td>The module namespace, as used in <code>require</code>.</td>
+</tr>
+<tr>
+<td>version?</td>
+<td><code>string</code>|<code>number</code></td>
+<td>Minimum version; the module must carry a compatible DependencyControl version record.</td>
+</tr>
+<tr>
+<td>url?</td>
+<td><code>string</code></td>
+<td>Where the module can be downloaded, shown to the user in error messages.</td>
+</tr>
+<tr>
+<td>feed?</td>
+<td><code>string</code></td>
+<td>Update feed used to fetch the module when it is missing.</td>
+</tr>
+<tr>
+<td>optional?</td>
+<td><code>boolean</code></td>
+<td>When true a missing module is not an error, but a module that is found is still version-checked.</td>
+</tr>
+<tr>
+<td>name?</td>
+<td><code>string</code></td>
+<td>Friendly name used in error messages.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="packagerecordargs">PackageRecordArgs <a name="PackageRecordArgs"></a></h3>
+<p>Constructor arguments for a <a href="lua://PackageRecord">PackageRecord</a>. All fields are optional; unset fields are
+filled from script_* globals (for automation scripts) or sensible defaults.</p>
+<table>
+<thead>
+<tr>
+<th>field</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>[1]?</td>
+<td>(<code>string</code>|<a href="#RequiredModuleSpec">RequiredModuleSpec</a>)[]</td>
+<td>Required module specs, passed positionally.</td>
+</tr>
+<tr>
+<td>moduleName?</td>
+<td><code>string</code></td>
+<td>Module namespace; its presence marks this record as a module rather than an automation script.</td>
+</tr>
+<tr>
+<td>name?</td>
+<td><code>string</code></td>
+<td>Display name (defaults to the script/module name).</td>
+</tr>
+<tr>
+<td>description?</td>
+<td><code>string</code></td>
+<td>Description (defaults to script_description).</td>
+</tr>
+<tr>
+<td>author?</td>
+<td><code>string</code></td>
+<td>Author (defaults to script_author).</td>
+</tr>
+<tr>
+<td>version?</td>
+<td><code>number</code>|<code>string</code></td>
+<td>Semantic version (defaults to script_version).</td>
+</tr>
+<tr>
+<td>namespace?</td>
+<td><code>string</code></td>
+<td>Unique namespace (defaults to script_namespace).</td>
+</tr>
+<tr>
+<td>url?</td>
+<td><code>string</code></td>
+<td>Project or homepage URL.</td>
+</tr>
+<tr>
+<td>feed?</td>
+<td><code>string</code></td>
+<td>Update feed URL.</td>
+</tr>
+<tr>
+<td>configFile?</td>
+<td><code>string</code></td>
+<td>Config file name (defaults to "<namespace>.json").</td>
+</tr>
+<tr>
+<td>virtual?</td>
+<td><code>boolean</code></td>
+<td>Mark as a not-yet-installed placeholder record.</td>
+</tr>
+<tr>
+<td>recordType?</td>
+<td><a href="../l0.DependencyControl.domain/#RecordType">RecordType</a></td>
+<td>A domain.RecordType value (default Managed).</td>
+</tr>
+<tr>
+<td>requiredModules?</td>
+<td>(<code>string</code>|<a href="#RequiredModuleSpec">RequiredModuleSpec</a>)[]</td>
+<td>Required module specs (alternative to the positional list).</td>
+</tr>
+<tr>
+<td>provides?</td>
+<td>(<code>string</code>|<a href="#ModuleAlias">ModuleAlias</a>)[]</td>
+<td>Module aliases this module satisfies for <code>require</code> (bare strings are normalized to ModuleAlias tables).</td>
+</tr>
+<tr>
+<td>readGlobalScriptVars?</td>
+<td><code>boolean</code></td>
+<td>Read script_* globals for unset fields (default true).</td>
+</tr>
+<tr>
+<td>saveRecordToConfig?</td>
+<td><code>boolean</code></td>
+<td>Persist this record to the config file (default true).</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
