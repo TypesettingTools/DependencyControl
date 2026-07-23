@@ -113,10 +113,14 @@ typeFromValueInfo = (valueInfo, state, cls, name, line) ->
         report state, FindingCode.UnresolvedReference, line, valueInfo.refName
       typeName or "any"
     when ValueKind.Call
-      typeName = resolveRefType valueInfo.baseName, state, cls
-      unless typeName
-        report state, FindingCode.UnresolvedReference, line, name
-      typeName or "any"
+      -- setmetatable(t, mt) returns t; the common `setmetatable {}, …` form is a table
+      if valueInfo.baseName == "setmetatable"
+        "table"
+      else
+        typeName = resolveRefType valueInfo.baseName, state, cls
+        unless typeName
+          report state, FindingCode.UnresolvedReference, line, name
+        typeName or "any"
     when ValueKind.Table
       "table"
     when ValueKind.Expression

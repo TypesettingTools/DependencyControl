@@ -141,6 +141,19 @@
       ut\assertMatches text, "%-%-%-@field thing any"
       ut\assertTrue hasFinding diagnostics, FindingCode.UnresolvedReference
 
+    data_emptyAndInterpolatedStringsTypedString: (ut) ->
+      -- their token can't be reconstructed, but they are still strings, not any
+      text, diagnostics = emit ut, 'x = "y"\nclass Foo\n  @blank = ""\n  @interpolated = "#{x}z"\nreturn Foo'
+      ut\assertMatches text, "%-%-%-@field blank string"
+      ut\assertMatches text, "%-%-%-@field interpolated string"
+      ut\assertFalse hasFinding diagnostics, FindingCode.UnresolvedReference
+
+    data_setmetatableFieldTypedTable: (ut) ->
+      -- a field seeded with setmetatable is a table, not an unresolved call
+      text, diagnostics = emit ut, "class Foo\n  @instances = setmetatable {}, {__mode: \"v\"}\nreturn Foo"
+      ut\assertMatches text, "%-%-%-@field instances table"
+      ut\assertFalse hasFinding diagnostics, FindingCode.UnresolvedReference
+
     data_privateSynthesizedForDunder: (ut) ->
       text = emit ut, "class Foo\n  @__instances = 42\nreturn Foo"
       ut\assertMatches text, "%-%-%-@field private __instances integer"

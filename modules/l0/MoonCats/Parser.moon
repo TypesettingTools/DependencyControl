@@ -546,6 +546,9 @@ valueInfoFromNode = (value) ->
   token, literalKind = literalTokenFromNode value
   return {kind: ValueKind.Literal, :token, :literalKind} if token
   switch nodeType value
+    when "string"
+      -- an empty or interpolated string still types as string, even when its token can't be reconstructed
+      {kind: ValueKind.Literal, literalKind: "string"}
     when "ref"
       {kind: ValueKind.Reference, refName: value[2]}
     when "table"
