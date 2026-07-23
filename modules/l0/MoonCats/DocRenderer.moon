@@ -531,6 +531,9 @@ renderClass = (out, state, ir, cls) ->
 ---@param ir MoonCatsModuleIR
 renderTableModule = (out, state, ir) ->
   varName = ir.export.name and ir.export.name\match("^[%w_]+$") and ir.export.name or moduleVarName ir.requireId
+  -- anchor for the module's own declared type, so a re-export elsewhere links here. Its @class is
+  -- dropped from the Types listing, which would otherwise carry the anchor.
+  table.insert out, "<a name=\"#{ir.export.name}\"></a>" if ir.export.name
   fieldRows = {}
   fnMembers = {}
   enumMembers = {}

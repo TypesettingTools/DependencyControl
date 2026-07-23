@@ -37,8 +37,11 @@ buildPackageSymbols = (irs) ->
       when Parser.ExportKind.Class
         ir.export.class and ir.export.class.typeName
       when Parser.ExportKind.Table
-        -- table modules declare a synthesized class named after their require identifier
-        ir.requireId
+        -- the module's own declared @class name when it has one, else the synthesized require-id class
+        declared = nil
+        for seg in *ir.segments
+          declared = ir.export.name if seg.kind == Parser.SegmentKind.Class and seg.name == ir.export.name
+        declared or ir.requireId
     packageSymbols.typeNameByRequireId[ir.requireId] = typeName if typeName
     for name in pairs ir.aliases
       packageSymbols.aliases[name] = true

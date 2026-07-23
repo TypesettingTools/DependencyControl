@@ -236,6 +236,11 @@
       ut\assertFalse text\match("## Types") != nil
       ut\assertMatches text, '<a name="Mode"></a>'
 
+    module_ownTypeGetsAnchor: (ut) ->
+      -- a table module's own declared type gets an anchor so a re-export elsewhere can link to it
+      text = render ut, '---@class Ops\nOps = {NAME: "x"}\nreturn Ops', "l0.Test.ops"
+      ut\assertMatches text, '<a name="Ops"></a>'
+
     module_functionExport: (ut) ->
       text = render ut, "---Resolves a host.\n---@param host string The host.\n---@return string resolved The resolution.\nresolveHost = (host) -> host\nreturn resolveHost", "l0.Test.resolve-host"
       ut\assertMatches text, "#### resolveHost"
