@@ -12,23 +12,41 @@ DependencyControl provides versioning, automatic script update, dependency manag
 - Supports optional modules and private module copies for cases where an older or custom version of a module is required
 - Resolves circular dependencies (limitations apply)
 
-**Requirements**:
-
-- Aegisub [v3.4.0+](https://github.com/TypesettingTools/Aegisub/releases) or releases of [arch1t3cht's Aegisub fork](https://github.com/arch1t3cht/Aegisub/releases) based on v3.4.0+. Older versions of Aegisub may work, but you're on your own if you run into any issues.
-
 DependencyControl is self-contained: it bundles a JSON library ([dkjson](https://dkolf.de/dkjson-lua/)), though if you have another `json` module installed, it is used instead. It also now ships with pure-FFI implementations of functionality previously provided by [ffi-experiments](https://github.com/torque/ffi-experiments) modules (_DownloadManager_, _BadMutex_, _PreciseTimer_).
 
 ---
 
 ## Table of Contents
 
-1. [DependencyControl for Users](#dependency-control-for-users)
-2. [Usage for Automation Scripts](#usage-for-automation-scripts)
-3. [Namespaces and Paths](#namespaces-and-paths)
-4. [The Updater Feed](#the-updater-feed)
-5. [Reference](#reference)
-6. [CLI](#cli)
-7. [Release Automation](#release-automation)
+1. [Prerequisites](#prerequisites)
+2. [DependencyControl for Users](#dependency-control-for-users)
+3. [Usage for Automation Scripts](#usage-for-automation-scripts)
+4. [Namespaces and Paths](#namespaces-and-paths)
+5. [The Updater Feed](#the-updater-feed)
+6. [Reference](#reference)
+7. [CLI](#cli)
+8. [Release Automation](#release-automation)
+
+---
+
+## Prerequisites
+
+DependencyControl downloads and verifies packages, which on some systems relies on a couple of standard shared libraries. What (if anything) you need to install depends on your platform and on whether you use DependencyControl inside Aegisub or through its standalone [CLI](#cli).
+
+### For Aegisub Users
+
+On **Windows** and **macOS** there is nothing to install beyond Aegisub [v3.4.0+](https://github.com/TypesettingTools/Aegisub/releases) itself — or a release of [arch1t3cht's Aegisub fork](https://github.com/arch1t3cht/Aegisub/releases) based on v3.4.0+ (older versions may work, but you're on your own if you run into issues).
+
+On **Linux**, two additional system libraries are used to download and verify packages. Both are almost certainly already installed on any distribution, so you would only need to add them on a very bare-bones system:
+
+- **libcurl 7.30.0 or newer** (`libcurl.so.4`) — downloads packages and updates.
+- **OpenSSL 1.1.0 or newer** (`libcrypto.so.1.1` or `libcrypto.so.3`) — computes the SHA-1 hashes DependencyControl relies on, both to verify downloaded files and internally for its locking between concurrent Aegisub instances.
+
+DependencyControl also guards against [server-side request forgery](https://en.wikipedia.org/wiki/Server-side_request_forgery) — a hostile feed trying to point a download at an address inside your own network — through the [`blockPrivateHosts`](#1-global-configuration) setting. For that guard to cover redirects as well, **libcurl 7.80.0 or newer** is needed; with an older libcurl the address you start from is still checked, but the targets of any redirects along the way are not.
+
+### For CLI Users (Script Authors & Contributors)
+
+The [CLI](#cli) runs outside Aegisub and needs its own Lua toolchain (LuaJIT, LuaRocks, and a set of rocks) on top of the system libraries above. See [CLI → Toolchain setup](#toolchain-setup) for the full requirements and install commands.
 
 ---
 
@@ -544,19 +562,36 @@ The `l0.MoonCats` module extracts the [LuaCATS](https://luals.github.io/wiki/ann
 
 DependencyControl ships a CLI launcher (`depctrl.lua`) for running tests, building release bundles, and deploying to a local Aegisub installation — all **without** a running Aegisub process. All commands read their package list from a feed JSON file and can operate on any DepCtrl-managed package, not only DependencyControl itself.
 
-### Prerequisites
+### Toolchain setup
 
-- _LuaJIT_ on your `PATH`, built with `DLUAJIT_ENABLE_LUA52COMPAT`
+Beyond the native runtime libraries the CLI shares with Aegisub (see [Prerequisites](#prerequisites)), running the CLI needs a standalone Lua toolchain:
+
+- _LuaJIT_ on your `PATH`, built with `-DLUAJIT_ENABLE_LUA52COMPAT`
 - _LuaRocks_, configured for Lua v5.1, which _LuaJIT_ is ABI-compatible with. You may have to select the Lua version explicitly via `luarocks --lua-version=5.1`
-- The [moonscript](https://luarocks.org/modules/leafo/moonscript), [LuaFileSystem](https://luarocks.org/modules/hisham/luafilesystem) and [argparse](https://luarocks.org/modules/mpeterv/argparse) rocks, installed into that 5.1 tree:
-
-  ```sh
-  luarocks --lua-version=5.1 install moonscript
-  luarocks --lua-version=5.1 install luafilesystem
-  luarocks --lua-version=5.1 install argparse
-  ```
-
 - Your `LUA_PATH` / `LUA_CPATH` must let `luajit` find the LuaRocks-installed modules (`luarocks --lua-version=5.1 path --bin` prints the correct values).
+
+Every command needs three core rocks: [moonscript](https://luarocks.org/modules/leafo/moonscript) (to load the `.moon` sources), [LuaFileSystem](https://luarocks.org/modules/hisham/luafilesystem), and [argparse](https://luarocks.org/modules/mpeterv/argparse).
+
+```sh
+luarocks --lua-version=5.1 install moonscript
+luarocks --lua-version=5.1 install luafilesystem
+luarocks --lua-version=5.1 install argparse
+```
+
+Individual commands pull in a few more rocks; install a group only if you run the commands that need it. The [test workflow](.github/workflows/test.yml) installs the full superset.
+
+- **Feed validation:** commands that refresh or write the feed (led by `update-feed`) validate it against the bundled JSON schema using `lua-schema`, with `lpeg` for its pattern rules. Without `lua-schema` present, validation is skipped with a warning rather than failing.
+- **`test` with the mock HTTP server:** test suites that exercise download and update code spin up a small mock web server built on `luasocket`, `copas`, and `pegasus`. DependencyControl's own suite needs all three; a package whose tests don't reach the network does not.
+
+```sh
+# feed validation
+luarocks --lua-version=5.1 install lua-schema
+luarocks --lua-version=5.1 install lpeg
+# mock HTTP server for network tests
+luarocks --lua-version=5.1 install luasocket
+luarocks --lua-version=5.1 install copas
+luarocks --lua-version=5.1 install pegasus
+```
 
 General form:
 
