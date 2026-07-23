@@ -506,13 +506,13 @@ fndefHasValueReturn = (fndefNode) ->
     search stm
   found
 
----Resolves a computed table key written as `SomeEnum.Member` against an already-parsed enum.
----@param keyNode any
+---Resolves an `SomeEnum.Member` reference, in key or value position, against an already-parsed enum.
+---@param node any
 ---@param resolveSymbol fun(name: string): MoonCatsSymbol?
----@return string? valueToken The referenced member's literal value token.
----@return string? keyExpr The source `Enum.Member` expression, for display.
-resolveEnumMemberKey = (keyNode, resolveSymbol) ->
-  info = describeChain keyNode
+---@return string? literal The referenced member's literal token.
+---@return string? expr The source `Enum.Member` expression, for display.
+resolveEnumMemberRef = (node, resolveSymbol) ->
+  info = describeChain node
   return nil unless info and info.baseName and info.accessor and info.accessorKind == "dot"
   sym = resolveSymbol info.baseName
   return nil unless sym and sym.kind == SymbolKind.Enum and sym.enum
@@ -535,18 +535,19 @@ enumSpecFromChain = (node, resolveSymbol) ->
   members, computedKeyCount = {}, 0
   for pair in *tableNode[2]
     key, value = pair[1], pair[2]
-    token = value != nil and literalTokenFromNode value
-    if nodeType(key) == "key_literal" and token
-      table.insert members, {key: key[2], literal: token}
-    elseif token
+    -- a value referencing another enum's member carries that member's literal
+    valueToken = value != nil and (literalTokenFromNode(value) or resolveEnumMemberRef(value, resolveSymbol))
+    if not valueToken
+      computedKeyCount += 1
+    elseif nodeType(key) == "key_literal"
+      table.insert members, {key: key[2], literal: valueToken}
+    else
       -- a `[SomeEnum.Member]` key is that member's value at runtime, so key the field by the resolved literal
-      valueToken, keyExpr = resolveEnumMemberKey key, resolveSymbol
-      if valueToken
-        table.insert members, {key: "[#{valueToken}]", display: keyExpr, literal: token}
+      keyToken, keyExpr = resolveEnumMemberRef key, resolveSymbol
+      if keyToken
+        table.insert members, {key: "[#{keyToken}]", display: keyExpr, literal: valueToken}
       else
         computedKeyCount += 1
-    else
-      computedKeyCount += 1
   {:name, :members, :computedKeyCount}
 
 ---Recognizes an `Accessors.property {...}` computed-property value.

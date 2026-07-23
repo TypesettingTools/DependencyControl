@@ -195,6 +195,14 @@
       ut\assertMatches text, '%-%-%-@field %["b"%] "modules"'
       ut\assertFalse hasFinding diagnostics, FindingCode.ComputedKeySkipped
 
+    enum_computedValueResolvesViaReferencedEnum: (ut) ->
+      -- a value referencing another enum's member resolves to that member's literal
+      src = 'Enum = require "l0.DependencyControl.Enum"\nBase = Enum "Base", {A: "a", B: "b"}\nclass Foo\n  @Derived = Enum "Derived", {X: Base.A, Y: Base.B}\nreturn Foo'
+      text, diagnostics = emit ut, src
+      ut\assertMatches text, '%-%-%-@field X "a"'
+      ut\assertMatches text, '%-%-%-@field Y "b"'
+      ut\assertFalse hasFinding diagnostics, FindingCode.ComputedKeySkipped
+
     enum_augmentationEmitsOntoClass: (ut) ->
       text = emit ut, 'Enum = require "l0.DependencyControl.Enum"\nStatus = Enum "Status", {Ok: 0}\nclass Task\n  go: => 1\nTask.Status = Status\nreturn Task'
       ut\assertMatches text, "%-%-%-@class StatusEnum: Enum"

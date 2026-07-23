@@ -72,9 +72,9 @@ UpdateReason = Enum "UpdateReason", {
 ContextCeiling = Enum "UpdateContextCeiling", {
   Off: "off"
   -- the three shared rungs carry UpdateReason's own values, so a reason ranks directly against a ceiling
-  UserRequested: "user-requested"
-  DependencyResolution: "dependency-resolution"
-  AutoUpdate: "auto-update"
+  UserRequested: UpdateReason.UserRequested
+  DependencyResolution: UpdateReason.DependencyResolution
+  AutoUpdate: UpdateReason.AutoUpdate
 }
 
 -- Each context's rank on the ladder, for ceiling comparisons (`off` ranks below every context).
