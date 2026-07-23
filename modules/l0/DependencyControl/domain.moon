@@ -6,6 +6,7 @@ msgs = {
   }
 }
 
+---Whether a record is managed (installed and updated) or unmanaged (tracked only).
 ---@alias RecordType
 ---| "managed" # Managed: a script/module DependencyControl installs and keeps up to date
 ---| "unmanaged" # Unmanaged: a record describing a module DependencyControl tracks but does not update
@@ -14,6 +15,7 @@ RecordType = Enum "RecordType", {
   Unmanaged: "unmanaged"
 }
 
+---Whether a script is an automation script or a require()-able module.
 ---@alias ScriptType
 ---| "automation" # Automation: an automation script (macro / applied filter)
 ---| "module" # Module: a require()-able module
@@ -22,6 +24,7 @@ ScriptType = Enum "ScriptType", {
   Module: "module"
 }
 
+---The config/feed section a script type is stored under.
 ---@alias ScriptTypeSection
 ---| "macros" # Automation scripts are stored in the "macros" section
 ---| "modules" # Modules are stored in the "modules" section
@@ -30,6 +33,9 @@ ScriptTypeSection = Enum "ScriptTypeSection", {
   [ScriptType.Module]: "modules"
 }
 
+---User policy for fetching feeds that are neither trusted nor blocked.
+---`prompt` only applies to feed discovery; dependency resolution always fetches and instead
+---gates *installing* from an untrusted feed via the `feedTrustPromptThreshold` setting.
 ---@alias FetchUntrustedFeeds
 ---| "always" # Always: fetch untrusted feeds without asking (the default)
 ---| "never" # Never: never fetch untrusted feeds
@@ -44,14 +50,10 @@ FetchUntrustedFeeds = Enum "FetchUntrustedFeeds", {
 ---manages, the human-readable terms for them, namespace rules, and install/test locations.
 ---@class Domain
 Domain = {
+  :FetchUntrustedFeeds
   :RecordType
   :ScriptType
   :ScriptTypeSection
-
-  ---User policy for whether DependencyControl fetches feeds that are neither trusted nor blocked.
-  ---`prompt` only applies to feed discovery; dependency resolution always fetches and instead
-  ---gates *installing* from an untrusted feed via the `feedTrustPromptThreshold` setting.
-  :FetchUntrustedFeeds
 
   terms: {
     scriptType: {
