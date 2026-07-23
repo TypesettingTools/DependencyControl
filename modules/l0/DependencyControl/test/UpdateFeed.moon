@@ -23,6 +23,34 @@
 
   normalizePath = (path) -> path\gsub "[/\\]", "/"
 
+  -- A small feed whose file-URL template resolves on any channel (no tagSuffix), for resolve() tests. Its
+  -- changelog holds a literal @{fileName} the templater never expands, to prove prose keeps its markers.
+  resolveFeedJson = [[{
+    "dependencyControlFeedFormatVersion": "0.4.0",
+    "name": "T",
+    "baseUrl": "https://example.com/proj",
+    "url": "@{baseUrl}",
+    "fileBaseUrl": "https://x.test/",
+    "fileBaseUrls": {"script": "@{fileBaseUrl}v@{version}/@{scriptTypeSection}/@{namespacePath}@{fileName}"},
+    "localFileBasePaths": {"script": "@{localFileBasePath}@{scriptTypeSection}/@{namespacePath}@{fileName}"},
+    "vars": {},
+    "modules": {"l0.Thing": {
+      "name": "Thing", "author": "a", "url": "@{baseUrl}#@{namespace}",
+      "channels": {"release": {"version": "1.2.3", "default": true, "files": [
+        {"name": ".moon", "url": "@{fileBaseUrl}", "sha1": "1111111111111111111111111111111111111111"},
+        {"name": "/Sub.moon", "url": "@{fileBaseUrl}", "sha1": "2222222222222222222222222222222222222222"}
+      ]}},
+      "changelog": {"1.2.3": ["Documented the @{fileName} template variable."]}
+    }}
+  }]]
+
+  writeResolveFeed = (dirName, json = resolveFeedJson) ->
+    root = fileOps.joinPath basePath, dirName
+    fileOps.mkdir root, false, true
+    feedPath = fileOps.joinPath root, "feed.json"
+    fileOps.writeFile feedPath, json, true
+    feedPath, root
+
   {
     _description: "Tests for UpdateFeed feed data access, script record retrieval, and file deployment."
 
@@ -824,6 +852,66 @@
       ut\assertEquals #result.errors, 1
       ut\assertContains result.errors[1], "no record"
 
+    -- resolve: flatten a feed's templates into a static feed a pre-0.4.0 client can read
+
+    resolve_expandsUrlsAndStripsPlumbing: (ut) ->
+      feedPath = writeResolveFeed "resolve1"
+      feed = UpdateFeed nil, false, feedPath
+      resolved = feed\resolve {outPath: false}
+      ut\assertTable resolved
+      files = resolved.modules["l0.Thing"].channels.release.files
+      ut\assertEquals files[1].url, "https://x.test/v1.2.3/modules/l0/Thing.moon"
+      ut\assertEquals files[2].url, "https://x.test/v1.2.3/modules/l0/Thing/Sub.moon"
+      ut\assertNil resolved.fileBaseUrl
+      ut\assertNil resolved.fileBaseUrls
+      ut\assertNil resolved.localFileBasePaths
+      ut\assertNil resolved.vars
+
+    resolve_fileBaseUrlOverrideRedirectsAndNormalizesSlash: (ut) ->
+      feedPath = writeResolveFeed "resolve2"
+      feed = UpdateFeed nil, false, feedPath
+      -- override lacks a trailing slash; resolve adds one so the template joins cleanly
+      resolved = feed\resolve {fileBaseUrl: "http://127.0.0.1:9000", outPath: false}
+      files = resolved.modules["l0.Thing"].channels.release.files
+      ut\assertEquals files[1].url, "http://127.0.0.1:9000/v1.2.3/modules/l0/Thing.moon"
+
+    resolve_carriesSha1AndStampsSchemaVersion: (ut) ->
+      feedPath = writeResolveFeed "resolve3"
+      feed = UpdateFeed nil, false, feedPath
+      resolved = feed\resolve {feedSchemaVersion: "0.3.0", outPath: false}
+      ut\assertEquals resolved.dependencyControlFeedFormatVersion, "0.3.0"
+      ut\assertEquals resolved.modules["l0.Thing"].channels.release.files[1].sha1,
+        "1111111111111111111111111111111111111111"
+
+    resolve_keepsLiteralMarkerInProse: (ut) ->
+      feedPath = writeResolveFeed "resolve4"
+      feed = UpdateFeed nil, false, feedPath
+      resolved = feed\resolve {outPath: false}
+      ut\assertTable resolved
+      ut\assertContains resolved.modules["l0.Thing"].changelog["1.2.3"][1], "@{fileName}"
+
+    resolve_unresolvedUrlVariableErrors: (ut) ->
+      -- a file-URL template referencing an undefined variable must fail rather than ship a broken URL
+      json = resolveFeedJson\gsub "v@{version}/", "v@{version}/@{noSuchVar}/"
+      feedPath = writeResolveFeed "resolve5", json
+      feed = UpdateFeed nil, false, feedPath
+      result, err = feed\resolve {outPath: false}
+      ut\assertNil result
+      ut\assertString err
+      ut\assertContains err, "noSuchVar"
+
+    resolve_writesResolvedFeedToOutFile: (ut) ->
+      feedPath, root = writeResolveFeed "resolve6"
+      feed = UpdateFeed nil, false, feedPath
+      outPath = fileOps.joinPath root, "out.json"
+      result, err = feed\resolve {outPath: outPath, feedSchemaVersion: "0.3.0"}
+      ut\assertNil err
+      ut\assertEquals result, outPath
+      decoded = dkjson.decode fileOps.readFile outPath
+      ut\assertEquals decoded.dependencyControlFeedFormatVersion, "0.3.0"
+      ut\assertEquals decoded.modules["l0.Thing"].channels.release.files[1].url,
+        "https://x.test/v1.2.3/modules/l0/Thing.moon"
+
     _order: {
       "knownFeeds_noData", "knownFeeds_withData",
       "getScript_invalidType", "getScript_missing", "getScript_found",
@@ -850,6 +938,9 @@
       "refreshFiles_updatesChangedSha", "refreshFiles_unchangedSha", "refreshFiles_missingFileFlagsDelete",
       "refreshFiles_sha1FailureCollectsError", "refreshFiles_noLocalPathCollectsError",
       "updatePackage_notInRaw", "updatePackage_collectsResultAndResetsReleased",
-      "updatePackage_collectsRefreshError"
+      "updatePackage_collectsRefreshError",
+      "resolve_expandsUrlsAndStripsPlumbing", "resolve_fileBaseUrlOverrideRedirectsAndNormalizesSlash",
+      "resolve_carriesSha1AndStampsSchemaVersion", "resolve_keepsLiteralMarkerInProse",
+      "resolve_unresolvedUrlVariableErrors", "resolve_writesResolvedFeedToOutFile"
     }
   }

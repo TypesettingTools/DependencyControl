@@ -80,6 +80,23 @@ updateFeedCmd:option("--release-date",
   "Date to stamp with --mark-released (default: today, UTC)"):argname("<date>")
 addTargets(updateFeedCmd)
 
+local resolveFeedCmd = parser:command("resolve-feed",
+  "Expand a feed's templates into a static feed a pre-0.4.0 client can read (the one-time <0.7.0 upgrade feed)")
+resolveFeedCmd:option("-f --feed", "Feed JSON path"):default("DependencyControl.json")
+resolveFeedCmd:option("--file-base-url",
+  "Override the feed's fileBaseUrl before expansion, re-homing every file download (e.g. onto a local mirror)")
+  :argname("<url>")
+resolveFeedCmd:option("--feed-schema-version",
+  "Stamp this dependencyControlFeedFormatVersion on the output (default: keep the source's)"):argname("<ver>")
+resolveFeedCmd:option("--out-file",
+  "Destination path (default: DependencyControl.resolved.json beside the feed)"):argname("<path>")
+
+local serveCmd = parser:command("serve-updates",
+  "Serve a resolved feed and its working-copy files over local HTTP, for end-to-end update testing in a real Aegisub install")
+serveCmd:option("-f --feed",
+  "Source feed JSON path, next to its files (a resolvable-channel feed, e.g. alpha)"):default("DependencyControl.json")
+serveCmd:option("--lifetime", "Seconds to serve before the server self-terminates"):argname("<seconds>"):default("3600")
+
 local bumpCmd = parser:command("bump-version",
   "Bump package version(s) to the feed's lockstep version, then refresh the feed")
 bumpCmd:option("-f --feed", "Feed JSON path"):default("DependencyControl.json")

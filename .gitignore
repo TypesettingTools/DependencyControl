@@ -1,6 +1,8 @@
 /ctrf/*.json
 /dist/
 /DependencyControl-*.zip
+# resolve-feed output (the one-time master upgrade feed); pushed to master by hand, never to main/publish
+/DependencyControl.resolved.json
 /types/
 # generated API reference (the rest of docs/ is committed source); mkdocs build output
 /docs/reference/

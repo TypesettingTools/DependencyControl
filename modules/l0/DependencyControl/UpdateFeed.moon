@@ -78,6 +78,41 @@ attachLocalFilePath = (file, feedDirPath, localPath, isFullPath) ->
 stripNulls = (tbl) ->
   {k, (type(v) == "table" and stripNulls(v) or v) for k, v in pairs tbl when v != dkjson.null}
 
+-- Feed keys holding URL/path templates or the root `vars` map — plumbing, not resolved data. A resolved
+-- feed drops them so an older client's templater sees only concrete values. localFileBasePaths in
+-- particular still holds unexpanded @{…} after a remote-mode expansion, so it must go.
+resolvePlumbingKeys = {key, true for key in *{"fileBaseUrl", "fileBaseUrls", "localFileBasePath", "localFileBasePaths", "vars"}}
+
+---Removes template-plumbing keys from a feed tree in place, at every level they can occur.
+---@param tbl table The feed subtree to clean, mutated in place.
+---@return table tbl The same table.
+stripTemplatePlumbing = (tbl) ->
+  for key in pairs resolvePlumbingKeys
+    tbl[key] = nil
+  for _, value in pairs tbl
+    stripTemplatePlumbing value if type(value) == "table"
+  tbl
+
+-- Feed keys whose string values are URLs, so they must be fully resolved. Other strings such as changelog
+-- prose may legitimately carry a literal @{…} the templater never expands (its variables aren't in scope
+-- at that depth), so scanning them would report false positives.
+resolveUrlKeys = {key, true for key in *{"url", "feed", "baseUrl"}}
+
+---Finds the first URL-bearing string still carrying an unexpanded @{…} marker in a feed tree.
+---@param tbl table The feed subtree to scan.
+---@param path? string Location prefix accumulated for the report.
+---@return string? location Dotted path to the offending value, or nil when none remains.
+---@return string? value The offending string.
+findResidualMarker = (tbl, path = "") ->
+  for key, value in pairs tbl
+    location = "#{path}.#{key}"
+    if type(value) == "string"
+      return location, value if resolveUrlKeys[key] and value\find "@{", 1, true
+    elseif type(value) == "table"
+      markerLocation, markerValue = findResidualMarker value, location
+      return markerLocation, markerValue if markerLocation
+  return nil
+
 ---The rolling-template values in effect at one channel, captured during local-mode expansion
 ---so the local path templates can be inverted for file discovery.
 ---@class UpdateFeedChannelTemplateState
@@ -104,6 +139,9 @@ msgs = {
     cantOpen: "Can't open downloaded feed for reading (%s)."
     parse: "Error parsing feed."
     invalidScriptType: "Invalid or unsupported script type: '%s'. Supported types: %s."
+  }
+  resolve: {
+    residualMarker: "Feed resolution left an unexpanded template variable at %s (%s). Resolve a channel whose variables are all defined."
   }
   bundle: {
     invalidSourcePath: "invalid source path for %s (%s): %s"
@@ -1083,6 +1121,43 @@ class UpdateFeed
       wrote, writeErr = @__writeRawFeed (opts.outPath == true or opts.outPath == nil) and @feedPath or opts.outPath
       return nil, writeErr unless wrote
     return {:channel, :target, :bumped}
+
+  ---Expands every template variable in the feed to a concrete value and drops the template plumbing
+  ---(`fileBaseUrl(s)`, `localFileBasePath(s)`, root `vars`), so a client whose feed templater predates
+  ---those features reads it literally. File SHA-1s are carried over untouched — no local files are read.
+  ---@param opts? { fileBaseUrl?: string, feedSchemaVersion?: string, outPath?: string|false } `fileBaseUrl` overrides the download base before expansion, adding a trailing slash when missing; `feedSchemaVersion` stamps `dependencyControlFeedFormatVersion`; `outPath` is the destination (default `<feed>.resolved.json` beside the source), or false to return the resolved table without writing.
+  ---@return string|table|nil result The path written to, the resolved table when `outPath` is false, or nil on error.
+  ---@return string? err Error message on failure, including a URL field that still carries an unexpanded variable.
+  resolve: (opts = {}) =>
+    srcPath = @feedPath or @fileName
+    content, readErr = fileOps.readFile srcPath
+    return nil, msgs.errors.cantOpen\format readErr unless content
+    @unexpandedData = @@.deserialize content
+    return nil, msgs.errors.parse unless @unexpandedData
+    -- record the source location as loadFile does, so the feed is left consistently loaded for a caller
+    -- that follows up with a local-mode walk (which resolves each file's on-disk path against feedDir)
+    @feedPath = srcPath
+    @feedDir = srcPath\match("^(.*)[/\\][^/\\]*$") or "."
+
+    if opts.fileBaseUrl
+      base = opts.fileBaseUrl
+      base ..= "/" unless base\sub(-1) == "/"
+      @unexpandedData.fileBaseUrl = base
+
+    resolved = @expand @@ExpansionMode.Remote
+    stripTemplatePlumbing resolved
+
+    location, value = findResidualMarker resolved
+    return nil, msgs.resolve.residualMarker\format location, value if location
+
+    resolved.dependencyControlFeedFormatVersion = opts.feedSchemaVersion if opts.feedSchemaVersion
+    return resolved if opts.outPath == false
+
+    outPath = opts.outPath or srcPath\gsub "%.json$", ".resolved.json"
+    encoded = dkjson.encode resolved, {indentMode: "prettier", keyorder: feedKeyOrder}
+    wrote, writeErr = fileOps.writeFile outPath, encoded, true
+    return nil, writeErr unless wrote
+    return outPath
 
   ---Renders a GitHub-flavored markdown release body from one version's changelog across every package
   ---that has entries for it. Marker scopes become bold lead-ins; the package whose name matches the

@@ -765,7 +765,8 @@
           "feat: Releases now version feed packages in lockstep, advancing only the packages that changed to a single shared repo-level version. New `bump-version`, `merge-feed`, and `release-notes` CLI tasks and an `update-feed --mark-released` option drive the release workflow. Changelog entries can also carry conventional-commit markers that the generated release notes group by category and use to flag breaking changes.",
           "change: A short-form required-module dependency that names more than one module (such as `{\"ffi\", \"json\"}`) is now detected and reported with a warning. Only the first name is honored, as before.",
           "fix: When several scripts install modules at the same time, a dependency that isn't installed yet is no longer mistaken for an installed one while waiting for another update to finish.",
-          "refactor: Reinstalling a managed module that exposes a plain version string instead of its DependencyControl record no longer demotes it to unmanaged, so it keeps receiving scheduled update checks."
+          "refactor: Reinstalling a managed module that exposes a plain version string instead of its DependencyControl record no longer demotes it to unmanaged, so it keeps receiving scheduled update checks.",
+          "feat: New `resolve-feed` CLI command expands a feed's templates into a static, template-free feed compatible with the legacy v0.3.0 feed format."
         ]
       }
     },
