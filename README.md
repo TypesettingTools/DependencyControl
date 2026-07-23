@@ -19,8 +19,8 @@ DependencyControl is self-contained: it bundles a JSON library ([dkjson](https:/
 ## Table of Contents
 
 1. [Prerequisites](#prerequisites)
-2. [DependencyControl for Users](#dependency-control-for-users)
-3. [Usage for Automation Scripts](#usage-for-automation-scripts)
+2. [DependencyControl for Users](#dependencycontrol-for-users)
+3. [DependencyControl for Script Authors](#dependencycontrol-for-script-authors)
 4. [Namespaces and Paths](#namespaces-and-paths)
 5. [The Updater Feed](#the-updater-feed)
 6. [Reference](#reference)
@@ -50,7 +50,7 @@ The [CLI](#cli) runs outside Aegisub and needs its own Lua toolchain (LuaJIT, Lu
 
 ---
 
-## Dependency Control for Users
+## DependencyControl for Users
 
 As an end-user you don't get to decide whether your scripts use DependencyControl or not, but you can control many aspects of its operation. The updater works out-of-the-box (for any script with an update feed) and is run automatically.
 
@@ -171,9 +171,9 @@ When a package can be installed from more than one source and DependencyControl 
 
 A remembered choice follows the source even if its feed URL changes, so moving a feed won't break it. When the picked source is reached through a [provider](#providing-module-aliases), it's the provider that's remembered, so version bumps update it in place instead of switching to a different one.
 
-## Usage for Automation Scripts
+## DependencyControl for Script Authors
 
-### For Macros
+### Usage for Automation Scripts
 
 Load DependencyControl at the start of your macro and create a version record. Script and version information is automatically pulled from the `script_*` variables (the additional `script_namespace` variable is **required**).
 
@@ -225,7 +225,7 @@ version:registerMacros{
 
 Using this method for macro registration is a requirement for the **custom submenus** feature to work with your script and lets DependencyControl hook your macro processing function to run an update check when your macro is run.
 
-### For Modules
+### Usage for Modules
 
 Creating a record for a module is very similar to how it does for macros, with the key difference being that name and version information is passed to DependencyControl correctly and a _moduleName_ is required.
 
@@ -424,7 +424,7 @@ An automation script or module object looks like this:
         {
           "name": ".lua",
           // the file name relative to the path assigned to the script by your namespace choice
-          // (see 3. Namespaces and Paths for more information). Available as the @{fileName} template variable
+          // (see the Namespaces and Paths section for more information). Available as the @{fileName} template variable
           // for use in the url field below.
           "url": "@{fileBaseUrl}@{fileName}",
           // URL from which the **raw** file can be downloaded from (no archives, no javascript
@@ -455,7 +455,7 @@ An automation script or module object looks like this:
       "requiredModules": [
       // an exhaustive list of modules required by this script. Must be identical to the required
       // module entries in your DependencyControl record, but you may not use short style here.
-      // (see 2. Usage for Automation Scripts for more information)
+      // (see the DependencyControl for Script Authors section for more information)
         {
           "moduleName": "a-mo.LineCollection",
           "name": "Aegisub-Motion (LineCollection)",
