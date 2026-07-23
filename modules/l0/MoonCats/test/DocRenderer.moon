@@ -277,9 +277,9 @@
       ut\assertMatches result.scaffold[1].text, "%* %[Overview%]%(index%.md%)"
       ut\assertMatches result.scaffold[1].text, "%* %[l0%.Test%.Foo%]%(l0%.Test%.Foo%.md%)"
 
-    -- Grouped entries drop the namespace their package header already shows. The package's root
-    -- module is labeled "Overview"; ungrouped leftovers stay fully qualified.
-    scaffold_literateNavStripsGroupedNamespace: (ut) ->
+    -- Under a plain section header, the root module leads as "Overview" and the rest drop the
+    -- namespace. Ungrouped leftovers stay fully qualified.
+    scaffold_literateNavRootAsOverview: (ut) ->
       result = renderModules ut, {
         {source: "class Root\n  go: => 1\nreturn Root", requireId: "l0.Test"}
         {source: "class Foo\n  go: => 1\nreturn Foo", requireId: "l0.Test.Foo"}
@@ -289,7 +289,17 @@
         packages: {"l0.Test": {name: "Test Package", modules: {"l0.Test", "l0.Test.Foo"}}}
       }
       summary = result.scaffold[1].text
-      ut\assertMatches summary, "%* %[Foo%]%(l0%.Test%.Foo%.md%)"
       ut\assertMatches summary, "%* %[Overview%]%(l0%.Test%.md%)"
+      ut\assertMatches summary, "%* %[Foo%]%(l0%.Test%.Foo%.md%)"
       ut\assertMatches summary, "%* %[l0%.Other%.Bar%]%(l0%.Other%.Bar%.md%)"
+
+    -- In the embeddable "none" mode the require snippet and signatures render as linked MoonScript/Lua
+    -- content tabs. Other modes keep one inline block.
+    page_noneModeRendersLanguageTabs: (ut) ->
+      tabbed = render ut, "class Foo\n  go: (x) => x\nreturn Foo", "l0.Test.Foo", {site: "none"}
+      ut\assertMatches tabbed, '=== "MoonScript"'
+      ut\assertMatches tabbed, '=== "Lua"'
+      inline = render ut, "class Foo\n  go: (x) => x\nreturn Foo", "l0.Test.Foo", {site: "mkdocs"}
+      ut\assertMatches inline, "%-%- MoonScript"
+      ut\assertFalse inline\match('=== "MoonScript"') != nil
   }

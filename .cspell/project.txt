@@ -47,6 +47,7 @@ hashtable
 headlessly
 HKLM
 INCDIR
+inlinehilite
 inspectable
 intedit
 jsontype
@@ -56,6 +57,7 @@ launchable
 ldoc
 leafo
 libaegisub
+linenums
 linkified
 linkify
 lpeg
@@ -96,6 +98,7 @@ phoscity
 pkgs
 PreciseTimer
 prereq
+pymdownx
 refetch
 refetched
 refetches
@@ -112,6 +115,7 @@ rvars
 settimeout
 shouty
 stdlib
+superfences
 Tbls
 templater
 tmpl

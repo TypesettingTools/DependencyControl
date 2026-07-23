@@ -4,12 +4,54 @@ repo_url: https://github.com/TypesettingTools/DependencyControl
 
 theme:
   name: material
+  features:
+    - content.code.copy # copy button on code blocks
+    - content.tabs.link # selecting a language tab syncs every tab on the page
+    - navigation.instant # SPA-style page loads
+    - navigation.top # back-to-top button
+    - search.suggest # autocomplete in the search box
+    - search.highlight # highlight matches on the opened page
+    - toc.follow # sidebar TOC tracks the reading position
+  palette:
+    # auto follows the OS setting; the toggle cycles auto -> light -> dark
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to system preference
 
 plugins:
   - search
   # expands `- API Reference: reference/` from the generated reference/SUMMARY.md
   - literate-nav:
       nav_file: SUMMARY.md
+
+markdown_extensions:
+  # Material's code-block stack; superfences also hosts the mermaid custom fence
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences:
+      # ```mermaid fences render as diagrams; Material bundles mermaid.js and themes it to the palette
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  # language-labeled code tabs; content.tabs.link keeps a reader's choice across the page
+  - pymdownx.tabbed:
+      alternate_style: true
+  # anchor links on headings, so the in-page cross-references resolve
+  - toc:
+      permalink: true
 
 extra:
   # mike maintains versions.json on the published site; Material shows its version picker when present

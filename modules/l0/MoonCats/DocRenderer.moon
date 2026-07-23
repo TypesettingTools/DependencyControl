@@ -141,17 +141,32 @@ pushProse = (out, blockLines) ->
   table.insert out, ""
   true
 
----Emits a fenced signature block with aligned MoonScript and Lua call forms.
+---Emits a construct's MoonScript and Lua forms as linked content tabs, falling back to one aligned
+---block where the host lacks tab support (mdbook and the standalone mkdocs scaffold).
 ---@param out string[]
+---@param tabbed boolean
 ---@param moonLine string
 ---@param luaLine string
-pushSignature = (out, moonLine, luaLine) ->
-  width = math.max #moonLine, #luaLine
-  pad = (line) -> line .. (" ")\rep width - #line
-  table.insert out, "```lua"
-  table.insert out, "#{pad moonLine}  -- MoonScript"
-  table.insert out, "#{pad luaLine}  -- Lua"
-  table.insert out, "```"
+pushLanguageForms = (out, tabbed, moonLine, luaLine) ->
+  if tabbed
+    table.insert out, "=== \"MoonScript\""
+    table.insert out, ""
+    table.insert out, "    ```moonscript"
+    table.insert out, "    #{moonLine}"
+    table.insert out, "    ```"
+    table.insert out, ""
+    table.insert out, "=== \"Lua\""
+    table.insert out, ""
+    table.insert out, "    ```lua"
+    table.insert out, "    #{luaLine}"
+    table.insert out, "    ```"
+  else
+    width = math.max #moonLine, #luaLine
+    pad = (line) -> line .. (" ")\rep width - #line
+    table.insert out, "```lua"
+    table.insert out, "#{pad moonLine}  -- MoonScript"
+    table.insert out, "#{pad luaLine}  -- Lua"
+    table.insert out, "```"
   table.insert out, ""
 
 ---Resolves the documented type of a plain-data member, chasing identifier references
@@ -251,7 +266,7 @@ renderFunctionMember = (out, state, member, moonCallee, luaCallee, anchorPrefix)
   else
     [tag.name for tag in *tags]
   moonLine, luaLine = callForms moonCallee, luaCallee, paramNames
-  pushSignature out, moonLine, luaLine
+  pushLanguageForms out, state.tabbedForms, moonLine, luaLine
 
   pushProse out, member.block
 
@@ -448,7 +463,7 @@ renderClass = (out, state, ir, cls) ->
     tags, _ = collectBlockTags ctor.block
     paramNames = [param.name for param in *ctor.params or {}]
     moonLine, luaLine = callForms typeName, typeName, paramNames, receiver
-    pushSignature out, moonLine, luaLine
+    pushLanguageForms out, state.tabbedForms, moonLine, luaLine
     pushProse out, ctor.block
     if #tags > 0
       table.insert out, "| param | type | description |"
@@ -572,11 +587,9 @@ renderModulePage = (state, ir) ->
     ir.export.name
   else
     moduleVarName ir.requireId
-  table.insert out, "```lua"
-  table.insert out, "#{varName} = require \"#{ir.requireId}\"        -- MoonScript"
-  table.insert out, "local #{varName} = require(\"#{ir.requireId}\")  -- Lua"
-  table.insert out, "```"
-  table.insert out, ""
+  moonRequire = "#{varName} = require \"#{ir.requireId}\""
+  luaRequire = "local #{varName} = require(\"#{ir.requireId}\")"
+  pushLanguageForms out, state.tabbedForms, moonRequire, luaRequire
 
   pushProse out, ir.moduleDoc if ir.moduleDoc
 
@@ -692,12 +705,14 @@ buildLiterateNav = (pages, opts) ->
     table.sort namespaces
     for namespace in *namespaces
       pkg = opts.packages[namespace]
-      table.insert out, "* #{pkg.name or namespace}"
       moduleIds = [id for id in *pkg.modules or {}]
       table.sort moduleIds
+      table.insert out, "* #{pkg.name or namespace}"
+      -- the root module (id == namespace) leads as "Overview"; the rest drop the namespace prefix
       for id in *moduleIds
         covered[id] = true
-        table.insert out, "    * [#{navLabel id, namespace}](#{id}.md)"
+        label = if id == namespace then "Overview" else navLabel id, namespace
+        table.insert out, "    * [#{label}](#{id}.md)"
   leftovers = [id for id in *requireIds when not covered[id]]
   if #leftovers > 0
     table.insert out, "* Other modules" if opts.packages
@@ -769,6 +784,9 @@ class MoonCatsDocRenderer
       -- standalone sites (mkdocs/mdbook) keep pages in a docs/ subdir beside their config;
       -- the embeddable "none" section drops them flat, to sit inside a host site's docs dir
       docsPrefix: (opts.site or "mkdocs") == "none" and "" or "docs/"
+      -- content tabs need pymdownx.tabbed, configured only on the embeddable "none" host;
+      -- the standalone scaffolds fall back to one inline block
+      tabbedForms: (opts.site or "mkdocs") == "none"
     }
     buildLinkIndex state, irs
 
