@@ -208,6 +208,11 @@
       ut\assertMatches text, "%-%-%-@class StatusEnum: Enum"
       ut\assertMatches text, "%-%-%-@field Status StatusEnum"
 
+    augment_classDunderPathSkipped: (ut) ->
+      -- a `Class.__class.field =` path manipulates the runtime class object, not the type surface
+      text = emit ut, 'class Foo\n  ---does\n  go: => 1\nFoo.__class.tag = 42\nreturn Foo'
+      ut\assertFalse text\match("field tag") != nil
+
     -- ── duplicate members ───────────────────────────────────────────────────
 
     duplicate_documentedBeatsUndocumented: (ut) ->
@@ -229,6 +234,12 @@
       text = emit ut, '{\n  NAME: "depctrl"\n  COUNT: 42\n}', "l0.Test.Constants"
       ut\assertMatches text, "%-%-%-@class l0%.Test%.Constants\n%-%-%-@field NAME string\n%-%-%-@field COUNT integer\nlocal Constants = {}"
       ut\assertMatches text, "return Constants\n$"
+
+    module_tableLocalReferenceTypedTable: (ut) ->
+      -- an export referencing a table-literal local resolves to table, not any
+      text, diagnostics = emit ut, 'cfg = {a: 1, b: 2}\nreturn {:cfg}', "l0.Test.Config"
+      ut\assertMatches text, "%-%-%-@field cfg table"
+      ut\assertFalse hasFinding diagnostics, FindingCode.UnresolvedReference
 
     module_tableWithFunctionField: (ut) ->
       text = emit ut, 'return {\n  ---Builds a mode string.\n  ---@param user? string\n  ---@return string mode\n  getFileMode: (user = "") -> user\n}', "l0.Test.ffi-posix"

@@ -801,6 +801,10 @@ walkModuleAssign = (stm, ctx) ->
   if #names == 1 and firstType == "chain"
     info = describeChain first
     if info and info.baseName and info.accessor and info.accessorKind == "dot" and not info.callArgs
+      -- a `Class.__class.field =` path manipulates the runtime class object, not the documented type surface
+      for i = 3, #first
+        item = first[i]
+        return if "table" == type(item) and item[1] == "dot" and item[2] == "__class"
       value = values[1]
       aug = {
         targetName: info.baseName

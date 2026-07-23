@@ -89,6 +89,8 @@ resolveRefType = (name, state, cls, depth = 0) ->
       resolveRefType sym.target, state, cls, depth + 1
     when SymbolKind.Literal
       sym.literalKind != "nil" and inferLiteralType(sym.token, sym.literalKind) or nil
+    when SymbolKind.Table
+      "table"
     else
       nil
 
