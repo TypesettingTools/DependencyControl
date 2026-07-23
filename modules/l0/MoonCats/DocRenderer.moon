@@ -666,8 +666,8 @@ renderIndexPage = (state, irs, opts) ->
 
   {path: "#{state.docsPrefix}index.md", title: state.siteName, text: table.concat(out, "\n") .. "\n"}
 
----Sidebar label for a package-grouped module page: the require id minus the namespace prefix the
----package header already shows.
+---Derives a package-grouped module's sidebar label by dropping the namespace prefix its package
+---header already shows.
 ---@param requireId string
 ---@param namespace string
 ---@return string label
