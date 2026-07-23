@@ -82,7 +82,9 @@ resolveRefType = (name, state, cls, depth = 0) ->
         report state, FindingCode.ExternalRequire, nil, sym.requireId
       typeName
     when SymbolKind.Enum
-      sym.enum.exportedAs and "#{sym.enum.name}Enum" or nil
+      -- An exported enum resolves to its synthesized <Name>Enum class. An unexported module-local,
+      -- reached only through the returned table, resolves to the base Enum type.
+      sym.enum.exportedAs and "#{sym.enum.name}Enum" or "Enum"
     when SymbolKind.Reference
       resolveRefType sym.target, state, cls, depth + 1
     when SymbolKind.Literal
@@ -564,6 +566,9 @@ class MoonCatsEmitter
       -- the module table must precede its fields; plain-data fields live on its header
       add -1, -> emitTableModuleHeader state, varName
       for field in *exportIR.fields or {}
+        if field.enum
+          add field.line, -> emitEnumClass state, field.enum
+          continue
         fnRef = resolveFunctionReference state, nil, field
         if fnRef
           add field.line, -> emitFunction state, varName, fnRef, fnRef.arrow == "fat" and ":" or "."

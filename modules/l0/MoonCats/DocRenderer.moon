@@ -190,7 +190,9 @@ resolveDataType = (state, ir, cls, member) ->
     switch sym.kind
       when SymbolKind.Class then sym.class.typeName
       when SymbolKind.Require then state.typeNameByRequireId[sym.requireId]
-      when SymbolKind.Enum then sym.enum.exportedAs and "#{sym.enum.name}Enum" or nil
+      when SymbolKind.Enum
+        -- unexported module-local enums have no synthesized <Name>Enum class, so they use base Enum
+        sym.enum.exportedAs and "#{sym.enum.name}Enum" or "Enum"
       when SymbolKind.Reference then chaseRef sym.target, depth + 1
       when SymbolKind.Literal
         sym.literalKind != "nil" and inferLiteralType(sym.token, sym.literalKind) or nil
@@ -312,6 +314,9 @@ renderFieldsTable = (out, state, rows) ->
 ---@param block? string[] The exporting member's annotation block, for lead prose.
 ---@param anchorPrefix string
 renderEnum = (out, state, enum, block, anchorPrefix) ->
+  -- a bare-name anchor so a `param: Name` value-type link resolves here; the heading keeps the
+  -- prefixed anchor used by the enum-object type (<Name>Enum)
+  table.insert out, "<a name=\"#{enum.name}\"></a>"
   table.insert out, memberHeading enum.name, "#{anchorPrefix}.#{enum.name}", "####"
   table.insert out, ""
   pushProse out, block
@@ -528,9 +533,13 @@ renderTableModule = (out, state, ir) ->
   varName = ir.export.name and ir.export.name\match("^[%w_]+$") and ir.export.name or moduleVarName ir.requireId
   fieldRows = {}
   fnMembers = {}
+  enumMembers = {}
 
   collect = (entry) ->
     return if isHiddenPrivate entry, state
+    if entry.enum
+      table.insert enumMembers, entry
+      return
     fnMember = resolveFunctionMember ir, nil, entry
     if fnMember
       table.insert fnMembers, fnMember
@@ -559,6 +568,12 @@ renderTableModule = (out, state, ir) ->
     table.insert out, "## Fields"
     table.insert out, ""
     renderFieldsTable out, state, fieldRows
+
+  if #enumMembers > 0
+    table.insert out, "## Enums"
+    table.insert out, ""
+    for entry in *enumMembers
+      renderEnum out, state, entry.enum, entry.block, varName
 
 ---Renders a function-module's single exported function.
 ---@param out string[]
@@ -602,7 +617,16 @@ renderModulePage = (state, ir) ->
   for cls in *ir.classes
     renderClass out, state, ir, cls
 
-  namedSegments = [segment for segment in *ir.segments when segment.name]
+  -- an exported enum's @alias is already shown with its members under Enums, and a table module's own
+  -- @class describes the module itself — drop both from the Types listing to avoid the duplicate
+  enumNames = {}
+  for enum in *ir.enums
+    enumNames[enum.name] = true if enum.exportedAs
+  shouldKeep = (seg) ->
+    return false if seg.kind == SegmentKind.Alias and enumNames[seg.name]
+    return false if seg.kind == SegmentKind.Class and seg.name == ir.export.name
+    true
+  namedSegments = [segment for segment in *ir.segments when segment.name and shouldKeep segment]
   if #namedSegments > 0
     table.insert out, "## Types"
     table.insert out, ""

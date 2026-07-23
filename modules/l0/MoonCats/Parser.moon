@@ -176,6 +176,7 @@ metamethodNames = utils.makeSet {
 ---@field line integer
 ---@field block? string[]
 ---@field valueInfo MoonCatsValueInfo
+---@field enum? MoonCatsEnumIR Set when the field holds an Enum, mirroring a class-static enum export.
 ---@field params? MoonCatsParam[] Signature when the value is a function literal.
 ---@field arrow? string
 ---@field hasExplicitValueReturn? boolean
@@ -896,6 +897,16 @@ buildExportFields = (ctx) ->
       continue
     line = nodeLine(value, ctx.source) or 0
     field = {name: key[2], :line, valueInfo: valueInfoFromNode value}
+    -- a field holding an Enum (inline or a module-local reference) is an enum export, like a class static
+    spec = enumSpecFromChain value, (n) -> ctx.symbols[n]
+    if spec
+      field.enum = recordEnum ctx, spec, line
+      field.enum.exportedAs = field.name
+    elseif field.valueInfo.kind == ValueKind.Reference
+      sym = ctx.symbols[field.valueInfo.refName]
+      if sym and sym.kind == SymbolKind.Enum
+        sym.enum.exportedAs or= field.name
+        field.enum = sym.enum
     if field.valueInfo.kind == ValueKind.Function
       field.params, field.arrow = field.valueInfo.params, field.valueInfo.arrow
       field.hasExplicitValueReturn = fndefHasValueReturn value

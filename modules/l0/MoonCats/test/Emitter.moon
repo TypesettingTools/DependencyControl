@@ -163,6 +163,13 @@
       text = emit ut, 'Enum = require "l0.DependencyControl.Enum"\nOp = Enum "Op", {Eq: "="}\nclass Foo\n  go: => 1\nreturn Foo'
       ut\assertFalse text\match("OpEnum") != nil
 
+    enum_tableFieldExportsSynthesizedClass: (ut) ->
+      -- a table field holding a module-local enum is an enum export: typed <Name>Enum, class synthesized
+      text, diagnostics = emit ut, 'Enum = require "l0.DependencyControl.Enum"\nOp = Enum "Op", {Eq: "="}\n---@class Ops\nOps = {:Op}\nreturn Ops'
+      ut\assertMatches text, "%-%-%-@field Op OpEnum"
+      ut\assertMatches text, "%-%-%-@class OpEnum: Enum"
+      ut\assertFalse hasFinding diagnostics, FindingCode.UnresolvedReference
+
     enum_computedKeysReported: (ut) ->
       _, diagnostics = emit ut, 'Enum = require "l0.DependencyControl.Enum"\nkey = "K"\nclass Foo\n  @Map = Enum "Map", {[key]: "v", Plain: "p"}\nreturn Foo'
       ut\assertTrue hasFinding diagnostics, FindingCode.ComputedKeySkipped

@@ -221,6 +221,21 @@
       ut\assertMatches text, "## Fields"
       ut\assertMatches text, "| NAME | `string` |"
 
+    module_tableEnumFieldUnderEnumsSection: (ut) ->
+      -- a table field holding a module-local enum renders under its own Enums section, like a class enum
+      text = render ut, 'Enum = require "l0.DependencyControl.Enum"\nOp = Enum "Op", {Eq: "="}\nreturn {:Op}', "l0.Test.ops"
+      ut\assertMatches text, "## Enums"
+      ut\assertFalse text\match("| Op |") != nil
+
+    module_enumAliasAndOwnClassNotUnderTypes: (ut) ->
+      -- an exported enum's alias shows under Enums, not duplicated under Types, and the table's own
+      -- @class is dropped from Types too — leaving no Types section here, while the value type still links
+      src = 'Enum = require "l0.DependencyControl.Enum"\n---@alias Mode\n---| "a" # A: first\nMode = Enum "Mode", {A: "a"}\n---@class Ops\nOps = {:Mode}\nreturn Ops'
+      text = render ut, src, "l0.Test.ops"
+      ut\assertMatches text, "## Enums"
+      ut\assertFalse text\match("## Types") != nil
+      ut\assertMatches text, '<a name="Mode"></a>'
+
     module_functionExport: (ut) ->
       text = render ut, "---Resolves a host.\n---@param host string The host.\n---@return string resolved The resolution.\nresolveHost = (host) -> host\nreturn resolveHost", "l0.Test.resolve-host"
       ut\assertMatches text, "#### resolveHost"
