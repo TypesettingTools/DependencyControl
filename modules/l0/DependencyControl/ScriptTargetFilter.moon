@@ -17,6 +17,7 @@ table.sort scriptTypeList
 ---@class ScriptTargetFilter
 ---@field scriptTypes ScriptType[] The script types this filter would process (those carrying any rule), sorted. Read-only.
 class ScriptTargetFilter
+  ---@type ScriptType[]
   @scriptTypeList = scriptTypeList
 
   ---@param spec? table<ScriptType, true | { include?: string[], exclude?: string[] }> Initial rules keyed by script type.

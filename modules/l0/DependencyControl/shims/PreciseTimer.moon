@@ -11,6 +11,7 @@ class PreciseTimer
   -- mirrors the native PT.PreciseTimer version this shim is API-compatible with
   @version = 0x000106
   @version_string = "0.1.6"
+  ---@type string
   @loadedLibraryPath = selfPath
 
   ---Starts a new timer, capturing the current time as its start point.

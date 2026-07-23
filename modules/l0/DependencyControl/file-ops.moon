@@ -222,6 +222,7 @@ FileOps = {
     sepAll: ffi.os == "Windows" and "[\\/]" or "/"
     invalidChars: '[<>:"|%?%*%z%c;]'
   }
+  ---@type integer
   pathMaxLength: pathMaxLength
   pathMaxSegmentLength: MAX_PATH_COMPONENT
   -- true when running on Windows but capped at the legacy MAX_PATH limit because this process
