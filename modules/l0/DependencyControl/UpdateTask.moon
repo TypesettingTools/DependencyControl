@@ -71,9 +71,10 @@ UpdateReason = Enum "UpdateReason", {
 ---| "auto-update" # AutoUpdate: also background scheduled update checks
 ContextCeiling = Enum "UpdateContextCeiling", {
   Off: "off"
-  UserRequested: UpdateReason.UserRequested
-  DependencyResolution: UpdateReason.DependencyResolution
-  AutoUpdate: UpdateReason.AutoUpdate
+  -- the three shared rungs carry UpdateReason's own values, so a reason ranks directly against a ceiling
+  UserRequested: "user-requested"
+  DependencyResolution: "dependency-resolution"
+  AutoUpdate: "auto-update"
 }
 
 -- Each context's rank on the ladder, for ceiling comparisons (`off` ranks below every context).
