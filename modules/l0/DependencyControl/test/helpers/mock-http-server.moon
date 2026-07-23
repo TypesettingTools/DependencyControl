@@ -14,8 +14,10 @@
 --   GET /redirect-to/<path>               302 with a relative Location of /<path>
 --   GET /__quit                           stop the server (the clean shutdown route)
 --
--- Flags: --port <n> (loopback port to listen on), --dir <d>, --max-lifetime <s> (orphan
--- safety, default 120), --check (verify deps load, then exit 0/1 without starting a server).
+-- Flags: --dir <d>, --port <n> (loopback port; 0 or omitted binds an ephemeral one), --ready-file
+-- <p> (the bound port is written here once the server is dispatching), --quit-file <p> (the server
+-- exits when this file appears), --max-lifetime <s> (orphan safety, default 120), --check (verify
+-- deps load, then exit 0/1 without starting a server).
 
 -- "--flag value" / "--flag" parser (a flag with no following value is a boolean)
 
@@ -54,9 +56,11 @@ socket = require "socket"
 copas = require "copas"
 Handler = require "pegasus.handler"
 
-listenPort = assert tonumber(opts.port), "--port is required"
+requestedPort = tonumber(opts.port) or 0
 serveDir = opts.dir or "."
 maxLifetime = tonumber(opts["max-lifetime"]) or 120
+readyFile = opts["ready-file"]
+quitFile = opts["quit-file"]
 
 readFile = (path) ->
   f = io.open path, "rb"
@@ -64,6 +68,13 @@ readFile = (path) ->
   data = f\read "*a"
   f\close!
   data
+
+fileExists = (path) ->
+  return false unless path
+  f = io.open path, "r"
+  return false unless f
+  f\close!
+  true
 
 -- map a request name to a file inside serveDir, rejecting traversal
 resolve = (name) ->
@@ -116,19 +127,27 @@ handleRequest = (req, res) ->
   res\write "unknown endpoint"
   res\close!
 
--- bind to the loopback port the controller chose for us
-server = assert socket.bind LOCALHOST_IP, listenPort
+-- bind the loopback port the controller chose, or an ephemeral one when it passed 0
+server = assert socket.bind LOCALHOST_IP, requestedPort
+_, listenPort = server\getsockname!
+listenPort = assert tonumber(listenPort), "couldn't determine the bound port"
 
 handler = Handler\new handleRequest, serveDir, {}, nil
 copas.addserver server, copas.handler (client) -> handler\processRequest listenPort, client
 
-io.stderr\write "mock-http-server listening on #{LOCALHOST_IP}:#{listenPort} (dir=#{serveDir})\n"
+-- announce readiness from inside the copas loop: the ready-file appears once the scheduler is
+-- dispatching, so the controller never reads a port before the server can serve
+if readyFile
+  copas.addthread ->
+    f = assert io.open readyFile, "w"
+    f\write tostring listenPort
+    f\close!
 
--- shut down on the /__quit route, or after max-lifetime so we can never orphan
+-- shut down on the /__quit route or the controller's quit-file, or after max-lifetime so we never orphan
 startedAt = os.time!
 copas.addthread ->
   while true
     copas.sleep 0.1
-    os.exit 0 if quitRequested or os.time! - startedAt > maxLifetime
+    os.exit 0 if quitRequested or (quitFile and fileExists quitFile) or os.time! - startedAt > maxLifetime
 
 copas.loop!
