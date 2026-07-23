@@ -276,4 +276,20 @@
       ut\assertEquals result.scaffold[1].path, "SUMMARY.md"
       ut\assertMatches result.scaffold[1].text, "%* %[Overview%]%(index%.md%)"
       ut\assertMatches result.scaffold[1].text, "%* %[l0%.Test%.Foo%]%(l0%.Test%.Foo%.md%)"
+
+    -- Grouped entries drop the namespace their package header already shows. The package's root
+    -- module is labeled "Overview"; ungrouped leftovers stay fully qualified.
+    scaffold_literateNavStripsGroupedNamespace: (ut) ->
+      result = renderModules ut, {
+        {source: "class Root\n  go: => 1\nreturn Root", requireId: "l0.Test"}
+        {source: "class Foo\n  go: => 1\nreturn Foo", requireId: "l0.Test.Foo"}
+        {source: "class Bar\n  go: => 1\nreturn Bar", requireId: "l0.Other.Bar"}
+      }, {
+        site: "none"
+        packages: {"l0.Test": {name: "Test Package", modules: {"l0.Test", "l0.Test.Foo"}}}
+      }
+      summary = result.scaffold[1].text
+      ut\assertMatches summary, "%* %[Foo%]%(l0%.Test%.Foo%.md%)"
+      ut\assertMatches summary, "%* %[Overview%]%(l0%.Test%.md%)"
+      ut\assertMatches summary, "%* %[l0%.Other%.Bar%]%(l0%.Other%.Bar%.md%)"
   }

@@ -666,6 +666,16 @@ renderIndexPage = (state, irs, opts) ->
 
   {path: "#{state.docsPrefix}index.md", title: state.siteName, text: table.concat(out, "\n") .. "\n"}
 
+---Sidebar label for a package-grouped module page: the require id minus the namespace prefix the
+---package header already shows.
+---@param requireId string
+---@param namespace string
+---@return string label
+navLabel = (requireId, namespace) ->
+  prefix = "#{namespace}."
+  return requireId\sub #prefix + 1 if requireId\sub(1, #prefix) == prefix
+  requireId
+
 ---Builds a literate-nav SUMMARY.md for the embeddable reference section, grouping module pages by
 ---their feed package. A host site includes it with a `- Reference: <dir>/` nav entry and the
 ---mkdocs-literate-nav plugin. Links are bare filenames, resolved against the section's own dir.
@@ -687,7 +697,7 @@ buildLiterateNav = (pages, opts) ->
       table.sort moduleIds
       for id in *moduleIds
         covered[id] = true
-        table.insert out, "    * [#{id}](#{id}.md)"
+        table.insert out, "    * [#{navLabel id, namespace}](#{id}.md)"
   leftovers = [id for id in *requireIds when not covered[id]]
   if #leftovers > 0
     table.insert out, "* Other modules" if opts.packages

@@ -72,7 +72,16 @@ These are prose habits common in AI output but rare in human contributors', so t
   ```
 
 - **WR3.** Prefer natural language over backticked identifier names in prose. A declared `---@param feedUrl` reads as "the given feed URL", not "`feedUrl`"; drop reflexive "(see `otherMethod`)" pointers. Reserve backticks for when the exact name is what the caller acts on — a config key they set (`extraFeeds`), an enum value the result equals, a field they inspect (`stats.truncated`) — not as an echo of a declared parameter. LuaCATS has no inline link syntax, so a backticked name is just literal clutter.
-- **WR4.** Clustered punctuation is a smell — in `--` comments, doc comments, and Markdown alike. No single mark is banned, but when parentheses, semicolons, colons, and em dashes pile up in one sentence, reorganize it. Watch for a semicolon nested inside a parenthetical, stacked parentheticals, an em-dash aside in a clause that already carries parens or a semicolon, a closing paren shoved against a semicolon, or a `label:` headline hung off a colon. The fix is one aside per sentence.
+- **WR4.** Clustered punctuation is a smell — in `--` comments, doc comments, and Markdown alike. No single mark is banned, but when parentheses, semicolons, colons, and em dashes pile up in one sentence, reorganize it. Watch for a semicolon nested inside a parenthetical, stacked parentheticals, an em-dash aside in a clause that already carries parens or a semicolon, or a closing paren shoved against a semicolon. The fix is one aside per sentence.
 - **WR5.** Keep annotation prose short. A doc comment **SHOULD** default to one line, gaining a second only for a genuinely separate contract (a precondition, a side effect), never to pad.
 - **WR6.** Don't manufacture detail to fill space. The summary and the `---@return` **MUST NOT** be padded with invented specifics to force a difference between them; a concise `@return` shape label that echoes the summary is fine.
 - **WR7.** A comment **MUST** stay inside the method it documents — state this call's contract, not what another method does ("(run acquires the lock first)").
+- **WR8.** Never front a comment or sentence with a `label:` colon that reads like a blog subhead. The tell is a short topic label, then a colon, then the real point standing in as the subhead's body, as in `next, not pairs: a subclass has no instance to iterate`. Write the point as a plain sentence. A `label:` headline is a smell in its own right, distinct from WR4 clustering — it is wrong even as the only punctuation on the line. Colons that genuinely introduce a list or an appositive are fine.
+
+  ```moon
+  -- BAD — a label: headline standing in for the sentence:
+  -- next, not pairs: a subclass has no instance to iterate
+
+  -- GOOD — a plain sentence:
+  -- iterate a class base with next, not pairs, since a subclass has no instance
+  ```
