@@ -68,6 +68,7 @@ Stub = require "l0.DependencyControl.Stub"
 Timer = require "l0.DependencyControl.Timer"
 UnitTestSuite = require "l0.DependencyControl.UnitTestSuite"
 UpdateFeed = require "l0.DependencyControl.UpdateFeed"
+UpdateTask = require "l0.DependencyControl.UpdateTask"
 Updater = require "l0.DependencyControl.Updater"
 
 ---Main DependencyControl entry point.
@@ -96,6 +97,7 @@ class DependencyControl extends PackageRecord
   @Stub = Stub
   @Timer = Timer
   @UpdateFeed = UpdateFeed
+  @UpdateTask = UpdateTask
   @Updater = Updater
   @UnitTestSuite = UnitTestSuite
   @Finalizer = Finalizer

@@ -9,7 +9,7 @@
   UpdateTask = require "l0.DependencyControl.UpdateTask"
   DependencyControl = require "l0.DependencyControl"
   {:stubSelf, :makeNullLogger} = require "l0.DependencyControl.test.helpers.stub-helpers"
-  UpdateStatus = Updater.UpdateStatus
+  UpdateStatus = UpdateTask.UpdateStatus
   UpdateReason = UpdateTask.UpdateReason
   ContextCeiling = UpdateTask.ContextCeiling
 

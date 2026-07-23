@@ -217,14 +217,4 @@ class Updater
     })\getActiveHolder!
     return holder != nil, holder and holder.holderName
 
--- Re-expose UpdateTask, its version-related enums, and its error-message decoder on the public API,
--- so callers holding only an Updater reference (e.g. ModuleLoader, the Toolbox) can reach them.
-Updater.UpdateStatus = UpdateTask.UpdateStatus
-Updater.ContextCeiling = UpdateTask.ContextCeiling
-Updater.UpdateReason = UpdateTask.UpdateReason
-Updater.SourceChoiceStickiness = UpdateTask.SourceChoiceStickiness
-Updater.SourceFeedKind = UpdateTask.SourceFeedKind
-Updater.FeedTrustDecision = UpdateTask.FeedTrustDecision
-Updater.getUpdaterErrorMsg = UpdateTask.getUpdaterErrorMsg
-Updater.UpdateTask = UpdateTask
 return Updater

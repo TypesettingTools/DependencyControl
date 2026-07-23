@@ -147,10 +147,10 @@ runUpdaterTask = (scriptData, isInstall) ->
   return unless scriptData
 
   task, code, extErr = DepCtrl.updater\addTask scriptData, nil, nil, nil, scriptData.channel,
-    DepCtrl.Updater.UpdateReason.UserRequested
+    DepCtrl.UpdateTask.UpdateReason.UserRequested
   return task\run! if task
   with scriptData
-    logger\log DepCtrl.Updater.getUpdaterErrorMsg code, .moduleName or .name,
+    logger\log DepCtrl.UpdateTask.getUpdaterErrorMsg code, .moduleName or .name,
       .moduleName and ScriptType.Module or ScriptType.Automation, isInstall, extErr
 
 -- our feeds all live under raw.githubusercontent.com; abbreviate that host in the UI and expand it back on input
@@ -600,7 +600,7 @@ scheduleUpdatesAndRegisterTests = ->
     elseif errMsgOrErrCode < 0
       -- a structured status is a deliberate refusal or an already-reported run result,
       -- and its message stands on its own
-      logger\trace DepCtrl.Updater.getUpdaterErrorMsg errMsgOrErrCode, record.name or record.namespace, record.scriptType, false, errDetail
+      logger\trace DepCtrl.UpdateTask.getUpdaterErrorMsg errMsgOrErrCode, record.name or record.namespace, record.scriptType, false, errDetail
 
     if record.tests and record.scriptType == ScriptType.Module
       success, errMsg = pcall record.tests\registerMacros
