@@ -823,7 +823,7 @@ DependencyControl's own feed URL served from `master` through v0.6.x; from v0.7.
 
 ### Using the workflows in your own package
 
-1. **Set up the branches.** Make your dev branch the default and create a publish branch. In your feed, give each package a single dev channel (its name is the `source-channel` input, default `main`); the release workflow creates the published channels.
+1. **Set up the branches.** Make your dev branch the default. The first release creates the publish branch for you, so you needn't create it by hand. In your feed, give each package a single dev channel (its name is the `source-channel` input, default `main`); the release workflow creates the published channels.
 2. **Add two thin caller workflows** that pin a DependencyControl version and pass your layout. A publish caller (`.github/workflows/release.yml`):
 
    ```yaml
