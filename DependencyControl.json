@@ -3,57 +3,83 @@
   "name": "DependencyControl",
   "description": "The official DependencyControl repository.",
   "baseUrl": "https://github.com/TypesettingTools/DependencyControl",
-  "url": "@{baseUrl}",
-  "fileBaseUrl": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/",
+  "url": "https://github.com/TypesettingTools/DependencyControl",
   "maintainer": "line0",
   "knownFeeds": {
-    "line0scripts": "https://raw.githubusercontent.com/TypesettingTools/line0-Aegisub-Scripts/master/DependencyControl.json",
     "a-mo": "https://raw.githubusercontent.com/TypesettingTools/Aegisub-Motion/DepCtrl/DependencyControl.json",
-    "SubInspector": "https://raw.githubusercontent.com/TypesettingTools/SubInspector/master/DependencyControl.json",
+    "arch1t3cht-scripts": "https://raw.githubusercontent.com/TypesettingTools/arch1t3cht-Aegisub-Scripts/main/DependencyControl.json",
     "ASSFoundation": "https://raw.githubusercontent.com/TypesettingTools/ASSFoundation/master/DependencyControl.json",
-    "ffi-experiments": "https://raw.githubusercontent.com/torque/ffi-experiments/master/DependencyControl.json",
-    "lyger-scripts": "https://raw.githubusercontent.com/TypesettingTools/lyger-Aegisub-Scripts/master/DependencyControl.json",
-    "unanimated-scripts": "https://raw.githubusercontent.com/TypesettingTools/unanimated-Aegisub-Scripts/master/DependencyControl.json",
     "coffeeflux-scripts": "https://raw.githubusercontent.com/TypesettingTools/CoffeeFlux-Aegisub-Scripts/master/DependencyControl.json",
+    "ffi-experiments": "https://raw.githubusercontent.com/torque/ffi-experiments/master/DependencyControl.json",
+    "ILL": "https://raw.githubusercontent.com/TypesettingTools/ILL-Aegisub-Scripts/main/DependencyControl.json",
+    "line0scripts": "https://raw.githubusercontent.com/TypesettingTools/line0-Aegisub-Scripts/master/DependencyControl.json",
+    "lyger-scripts": "https://raw.githubusercontent.com/TypesettingTools/lyger-Aegisub-Scripts/master/DependencyControl.json",
     "myaamori-scripts": "https://raw.githubusercontent.com/TypesettingTools/Myaamori-Aegisub-Scripts/master/DependencyControl.json",
     "petzku-scripts": "https://raw.githubusercontent.com/petzku/Aegisub-Scripts/master/DependencyControl.json",
-    "zahuczky-scripts": "https://raw.githubusercontent.com/Zahuczky/Zahuczkys-Aegisub-Scripts/main/DependencyControl.json",
     "phoscity-scripts": "https://raw.githubusercontent.com/PhosCity/Aegisub-Scripts/main/DependencyControl.json",
-    "zeref-scripts": "https://raw.githubusercontent.com/TypesettingTools/zeref-Aegisub-Scripts/main/DependencyControl.json",
-    "arch1t3cht-scripts": "https://raw.githubusercontent.com/TypesettingTools/arch1t3cht-Aegisub-Scripts/main/DependencyControl.json",
-    "ILL": "https://raw.githubusercontent.com/TypesettingTools/ILL-Aegisub-Scripts/main/DependencyControl.json"
+    "SubInspector": "https://raw.githubusercontent.com/TypesettingTools/SubInspector/master/DependencyControl.json",
+    "unanimated-scripts": "https://raw.githubusercontent.com/TypesettingTools/unanimated-Aegisub-Scripts/master/DependencyControl.json",
+    "zahuczky-scripts": "https://raw.githubusercontent.com/Zahuczky/Zahuczkys-Aegisub-Scripts/main/DependencyControl.json",
+    "zeref-scripts": "https://raw.githubusercontent.com/TypesettingTools/zeref-Aegisub-Scripts/main/DependencyControl.json"
   },
   "macros": {
     "l0.DependencyControl.Toolbox": {
-      "url": "@{baseUrl}#@{namespace}",
-      "author": "line0",
       "name": "DependencyControl Toolbox",
       "description": "Provides DependencyControl maintenance and configuration utilities.",
-      "fileBaseUrl": "@{fileBaseUrl}macros-v@{version}-@{channel}/macros/@{namespace}",
+      "author": "line0",
+      "url": "https://github.com/TypesettingTools/DependencyControl#l0.DependencyControl.Toolbox",
       "channels": {
         "alpha": {
-          "version": "0.1.3",
-          "released": "2016-01-27",
-          "default": true,
+          "version": "0.7.0",
+          "released": "2026-07-24",
+          "default": false,
           "files": [
             {
               "name": ".moon",
-              "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "3677B2817C3D1FFE86981C8ABCC092B3D2CCEE7B"
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.7.0-alpha/macros/l0.DependencyControl.Toolbox.moon",
+              "sha1": "ABAB9B3A82C6B47144ED160F484B3617651DDF81"
+            },
+            {
+              "name": ".moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.7.0-alpha/macros/l0.DependencyControl.Toolbox/test.moon",
+              "sha1": "59B666472F097BE5D71ADB788A96D7A650830BB5",
+              "type": "test"
             }
           ],
           "requiredModules": [
             {
               "moduleName": "l0.DependencyControl",
-              "version": "0.6.1"
+              "version": "0.7.0"
+            }
+          ]
+        },
+        "stable": {
+          "version": "0.7.0",
+          "released": "2026-07-24",
+          "default": true,
+          "files": [
+            {
+              "name": ".moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.7.0/macros/l0.DependencyControl.Toolbox.moon",
+              "sha1": "ABAB9B3A82C6B47144ED160F484B3617651DDF81"
+            },
+            {
+              "name": ".moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.7.0/macros/l0.DependencyControl.Toolbox/test.moon",
+              "sha1": "59B666472F097BE5D71ADB788A96D7A650830BB5",
+              "type": "test"
+            }
+          ],
+          "requiredModules": [
+            {
+              "moduleName": "l0.DependencyControl",
+              "version": "0.7.0"
             }
           ]
         }
       },
       "changelog": {
-        "0.1.0": [
-          "initial release"
-        ],
+        "0.1.0": ["initial release"],
         "0.1.1": [
           "The Install/Uninstall/Update dialogs now sort scripts by name.",
           "DependencyControl and its requirements no longer appear in the uninstall menu."
@@ -63,97 +89,1161 @@
         ],
         "0.1.3": [
           "Fixed an issue where trying to uninstall an unmanaged script resulted in an error unrelated to the intended error message."
+        ],
+        "0.2.0": [
+          "Centralized automatic update scheduling for all installed scripts, including modules not loaded by any automation script, eliminating redundant per-environment checks at startup.",
+          "Unit test menus for installed modules with a DependencyControl test suite are now registered automatically at startup."
+        ],
+        "0.3.0": [
+          "Added a Manage Feeds macro to review and manage the feeds DependencyControl knows about and their trust status: trust, block (with a reason), unblock, or remove feeds; discover feeds advertised by other feeds; and manage your extra feeds and block list in dedicated panels. It warns before an action would change an installed package's update source, opens feed details in the DepCtrl Browser, and won't let you block DependencyControl's own feed.",
+          "Manage Feeds now shows a Fetched column with how long ago each feed was last retrieved into the cache, read straight from the cache so it's visible even before Discover ΓÇö letting you see at a glance which feeds have recent data.",
+          "The Toolbox now ships a DependencyControl unit test suite, adding it to the Run Tests menu.",
+          "The startup update sweep no longer reports expected conditions, such as skipping the update of an unmanaged module, as unexpected scheduling errors.",
+          "Fixed the install/uninstall pickers erroring when an installed package's config entry lacks a version or name, as can happen with orphaned or unmanaged records."
+        ],
+        "0.7.0": [
+          "feat: Added a Global Configuration macro to view and edit DependencyControl's global settings ΓÇö update behavior, feed discovery and caching, logging, and file paths ΓÇö in one dialog, so common tweaks no longer need hand-editing the config file. The feed lists stay in the Manage Feeds macro.",
+          "change: The Toolbox now updates from a `stable` channel by default; installations on the previous `alpha` channel are migrated automatically.",
+          "fix: The Install, Uninstall, and Update script dropdowns now start empty on macOS instead of defaulting to, and being stuck on, their first entry."
         ]
       }
     }
   },
   "modules": {
     "l0.DependencyControl": {
-      "url": "@{baseUrl}#@{namespace}",
-      "author": "line0",
       "name": "DependencyControl",
       "description": "Dependency manager and automatic script updater for Aegisub macros and modules.",
-      "fileBaseUrl": "@{fileBaseUrl}v@{version}-@{channel}/modules/@{scriptName}",
+      "author": "line0",
+      "url": "https://github.com/TypesettingTools/DependencyControl#l0.DependencyControl",
       "channels": {
         "alpha": {
-          "version": "0.6.3",
-          "released": "2016-02-06",
-          "default": true,
+          "version": "0.8.0",
+          "released": "2026-07-24",
+          "default": false,
           "files": [
             {
               "name": ".moon",
-              "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "76C22149258CB1189265A367C1B28046F54F8FB3"
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl.moon",
+              "sha1": "EA116FC2F7C3EDA9DC16E603C25669E3ABBA07EA"
+            },
+            {
+              "name": "/Constants.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/Constants.moon",
+              "sha1": "E3FE6C143BA1B268C0B9F7A2840D729DBF7E1C35"
             },
             {
               "name": "/ConfigHandler.moon",
-              "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "97BCD3207FE8158261FA7851057464535FCEFBC6"
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/ConfigHandler.moon",
+              "sha1": "6C8ACA7DD2BBA8AD22AB7E488F918297B820EDF9"
+            },
+            {
+              "name": "/ConfigView.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/ConfigView.moon",
+              "sha1": "BCCB1B7E7A85245BCDD87CE0CCCC1955CB161827"
+            },
+            {
+              "name": "/hash.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/hash.moon",
+              "sha1": "452C471ADC2C3BD916B706637E412BB97D27C8DA"
+            },
+            {
+              "name": "/Downloader.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/Downloader.moon",
+              "sha1": "153B19D16BD2CB2CCFB33C52470598F1BF2CCA7B"
+            },
+            {
+              "name": "/Enum.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/Enum.moon",
+              "sha1": "DD441AAF08C883F550061F8D8845D36969A2D629"
+            },
+            {
+              "name": "/EventEmitter.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/EventEmitter.moon",
+              "sha1": "F7B363DC9D131BA8FA92751394206AFC90CA8BB8"
+            },
+            {
+              "name": "/FileCache.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/FileCache.moon",
+              "sha1": "600F604B26D4C74D7FDC1F5BEA37512A49AF983F"
+            },
+            {
+              "name": "/FeedInventory.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/FeedInventory.moon",
+              "sha1": "4EB32746AE7D048F15355350827C9A470CB5C384"
+            },
+            {
+              "name": "/FeedManager.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/FeedManager.moon",
+              "sha1": "9058C2FB8F273E6F0D72876BDADA029BAA8327D6"
+            },
+            {
+              "name": "/FeedTrust.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/FeedTrust.moon",
+              "sha1": "D0BA0089596E30601BA70DD537855320CFC311B0"
+            },
+            {
+              "name": "/FileLock.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/FileLock.moon",
+              "sha1": "28F79DB790CF4746441B6127A8953708D1A52501"
+            },
+            {
+              "name": "/file-ops.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/file-ops.moon",
+              "sha1": "2FB92DBDC1AA861B7D5A859B165CE71C39E8FBD0"
             },
             {
               "name": "/FileOps.moon",
-              "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "D999D34DB93BA76EF0E991CEB1CD63F5CC5F8E68"
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/FileOps.moon",
+              "sha1": "0000000000000000000000000000000000000000",
+              "delete": true
+            },
+            {
+              "name": "/GitRepository.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/GitRepository.moon",
+              "sha1": "87138B0F382B1748DEE326EB1BAC471BD12E5CDA"
+            },
+            {
+              "name": "/Host.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/Host.moon",
+              "sha1": "3A05ABCE9F229CDA731DD0F83A93AC2E58BEA3AD"
+            },
+            {
+              "name": "/JsonSchema.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/JsonSchema.moon",
+              "sha1": "2707158CB66573CEA10465C21E3AB42708E482F7"
+            },
+            {
+              "name": "/Lock.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/Lock.moon",
+              "sha1": "CD9D4B1022CB943ACC004D692D58B3996A770B34"
             },
             {
               "name": "/Logger.moon",
-              "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "1E479FE95F0DFBEE8B098302AB589F32D0C40A00"
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/Logger.moon",
+              "sha1": "CBFC4B9C5699D3606D7AEE92137DA91DEC1B4EBD"
+            },
+            {
+              "name": "/ModuleLoader.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/ModuleLoader.moon",
+              "sha1": "F1ACB8570A361F9006A6E6BA74FFF84D1F058F3A"
+            },
+            {
+              "name": "/ModuleProvider.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/ModuleProvider.moon",
+              "sha1": "C740B9D7BC6C6651F25BA170215988644037B291"
+            },
+            {
+              "name": "/NamedSemaphore.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/NamedSemaphore.moon",
+              "sha1": "E86D0C92DAC01797DA4A043814CDE252244657D3"
+            },
+            {
+              "name": "/PackageRecord.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/PackageRecord.moon",
+              "sha1": "8BF956EEF2223D75B42FEBAE3BE21E2FC2A1CDA7"
+            },
+            {
+              "name": "/ScriptTargetFilter.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/ScriptTargetFilter.moon",
+              "sha1": "4AD5EA4A952D81AFA4AF5200378444A7D129BB2B"
+            },
+            {
+              "name": "/ScriptUpdateRecord.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/ScriptUpdateRecord.moon",
+              "sha1": "56B2C04A436337243E7D294B5C820445A0F733A7"
+            },
+            {
+              "name": "/SemanticVersion.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/SemanticVersion.moon",
+              "sha1": "663BB4263B99C01E69AD897DAD7CF6420E17A666"
+            },
+            {
+              "name": "/Stub.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/Stub.moon",
+              "sha1": "879B162D749DE53788152A6C36DFAB7B0A5E8B9B"
+            },
+            {
+              "name": "/Timer.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/Timer.moon",
+              "sha1": "A3D4FA244AC2685285EFB297E94C24F070A17201"
             },
             {
               "name": "/UnitTestSuite.moon",
-              "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "ADAB6EFB05E08A7828DCA01BC1FC43D6482979A1"
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/UnitTestSuite.moon",
+              "sha1": "526D4F50834FADBBC70C4A9D93E28FFD1F952B34"
             },
             {
               "name": "/UpdateFeed.moon",
-              "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "1EE16D9D551FF82C2D7E448F2CD980E528874108"
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/UpdateFeed.moon",
+              "sha1": "521AD8915BF09A02167ACDF73CE4C39E928F504A"
+            },
+            {
+              "name": "/UpdateTask.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/UpdateTask.moon",
+              "sha1": "D7296244D4B9DAEAD0463CF6FE699AAF5CDF39A8"
             },
             {
               "name": "/Updater.moon",
-              "url": "@{fileBaseUrl}@{fileName}",
-              "sha1": "A4AE061724E68B2EFBB7495A477263E1746E228A"
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/Updater.moon",
+              "sha1": "C4BAFF29F7FBE58EBF91C687B34D204B9AF49927"
+            },
+            {
+              "name": "/ZipArchiver.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/ZipArchiver.moon",
+              "sha1": "CC7A19E78B8B87DB70177A4A47CB10497232DF26"
+            },
+            {
+              "name": "/helpers/ffi-posix.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/helpers/ffi-posix.moon",
+              "sha1": "43C4F016D231AB2EA08B00D12BB4629BACCBA02F"
+            },
+            {
+              "name": "/helpers/ffi-windows.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/helpers/ffi-windows.moon",
+              "sha1": "C7A8C868F2F5A49A8A50754492C934DE12086AD8"
+            },
+            {
+              "name": "/helpers/open-url.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/helpers/open-url.moon",
+              "sha1": "9D06DA8BFE952C79FE5C2872CB4ABB5278A1A03F"
+            },
+            {
+              "name": "/helpers/resolve-host.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/helpers/resolve-host.moon",
+              "sha1": "B39C90E66A4869BF1561A2C2842906087D31F5D0"
+            },
+            {
+              "name": "/shims/BadMutex.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/shims/BadMutex.moon",
+              "sha1": "4B8E87AEC8AEB772EE593D07AA063960EBD6DA98"
+            },
+            {
+              "name": "/shims/DownloadManager.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/shims/DownloadManager.moon",
+              "sha1": "6C76A29DBAE8EA947439C5CC13FD380A6179E2E8"
+            },
+            {
+              "name": "/shims/PreciseTimer.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/shims/PreciseTimer.moon",
+              "sha1": "DC13468D9A31DC5E3DF4E1C20641C1F5853B1777"
+            },
+            {
+              "name": "/Accessors.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/Accessors.moon",
+              "sha1": "F953283D5405C668090C7939C7C1E2D7D980FF63"
+            },
+            {
+              "name": "/FeedLoader.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/FeedLoader.moon",
+              "sha1": "D0B097BF0C5BFCD60DF0E04B0D42F723A01997CF"
+            },
+            {
+              "name": "/config-schema.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/config-schema.moon",
+              "sha1": "CC74ACBE7A7CD8761AD714564F3805AC96F68067"
+            },
+            {
+              "name": "/Finalizer.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/Finalizer.moon",
+              "sha1": "9C04FED8500BCB662505F16411FC522BD0A69AAF"
+            },
+            {
+              "name": "/release-notes.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/release-notes.moon",
+              "sha1": "2B04AD21DDC44A8A1280900141BE4A5AD508495F"
+            },
+            {
+              "name": "/domain.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/domain.moon",
+              "sha1": "C5D9BC686DFA4A85A28EE6E2E392B1E012A83909"
+            },
+            {
+              "name": "/environment.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/environment.moon",
+              "sha1": "5D383C75F2E97A53B2343D554E9E2FC26C613FFF"
+            },
+            {
+              "name": "/utils.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/utils.moon",
+              "sha1": "FA8307BC15AD2FEC1535F9B862E1D92C2A3A1AB9"
+            },
+            {
+              "name": ".moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test.moon",
+              "sha1": "1FE9D211C256E84F4C0F95BBA10659A1F7B9A0C7",
+              "type": "test"
+            },
+            {
+              "name": "/BadMutex.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/BadMutex.moon",
+              "sha1": "36D24DA8FEB591C18C0A8020A8062D5B19A72C24",
+              "type": "test"
+            },
+            {
+              "name": "/ConfigHandler.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/ConfigHandler.moon",
+              "sha1": "D0F735761CAC12540F7841DCF8A80AB6C20ECCE5",
+              "type": "test"
+            },
+            {
+              "name": "/ConfigView.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/ConfigView.moon",
+              "sha1": "A0E00272169CA1FFAADF0A672C468A975D9B9F82",
+              "type": "test"
+            },
+            {
+              "name": "/hash.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/hash.moon",
+              "sha1": "B1C6AC7433296675E6A686F16D977510D922BF26",
+              "type": "test"
+            },
+            {
+              "name": "/Downloader.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/Downloader.moon",
+              "sha1": "93C779DAC6F05150CFE92A733F9C33B6A6856286",
+              "type": "test"
+            },
+            {
+              "name": "/Enum.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/Enum.moon",
+              "sha1": "1BF9FF97C5668EB5046EE80B24F52F9C53F54A02",
+              "type": "test"
+            },
+            {
+              "name": "/FileCache.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/FileCache.moon",
+              "sha1": "633106FDCDD0AB81CFC2BB85725B9A7B0077AF83",
+              "type": "test"
+            },
+            {
+              "name": "/FeedInventory.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/FeedInventory.moon",
+              "sha1": "5D820751E60E8609CD65427ED01DD312E869001B",
+              "type": "test"
+            },
+            {
+              "name": "/FeedManager.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/FeedManager.moon",
+              "sha1": "5859561F6CAA7E1B3178A14E281BAFD87E7CD42D",
+              "type": "test"
+            },
+            {
+              "name": "/FeedTrust.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/FeedTrust.moon",
+              "sha1": "FF605ACEC47E863CE5DACFB80760119F15608931",
+              "type": "test"
+            },
+            {
+              "name": "/ffi-posix.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/ffi-posix.moon",
+              "sha1": "5CCE5A5C81C20D76CA461377765DF5D99EE03FA3",
+              "type": "test"
+            },
+            {
+              "name": "/FileLock.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/FileLock.moon",
+              "sha1": "BDDBF39514737134726E90D5DDA6AD2798A861E6",
+              "type": "test"
+            },
+            {
+              "name": "/file-ops.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/file-ops.moon",
+              "sha1": "AB2BBDDFEDBB158963CFDFAE196C584E105598CC",
+              "type": "test"
+            },
+            {
+              "name": "/GitRepository.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/GitRepository.moon",
+              "sha1": "85FBCB85878CFE6FC9107CE6716072C681C897EC",
+              "type": "test"
+            },
+            {
+              "name": "/Host.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/Host.moon",
+              "sha1": "26C02949F93D08F199D45B13D9B86B579C68593B",
+              "type": "test"
+            },
+            {
+              "name": "/JsonSchema.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/JsonSchema.moon",
+              "sha1": "125E4930956E7DCA578C2F88EDB4B56C14A031C6",
+              "type": "test"
+            },
+            {
+              "name": "/Lock.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/Lock.moon",
+              "sha1": "26B3D5CA9E6D91C6F4D9411F093C26B3AE58FA96",
+              "type": "test"
+            },
+            {
+              "name": "/Logger.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/Logger.moon",
+              "sha1": "8D16E1C97C53D33E4250F4BEA8A988BBD02D9417",
+              "type": "test"
+            },
+            {
+              "name": "/ModuleLoader.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/ModuleLoader.moon",
+              "sha1": "8FE0E4ED90D3ED719F7DE80877591EF2F30014AA",
+              "type": "test"
+            },
+            {
+              "name": "/ModuleProvider.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/ModuleProvider.moon",
+              "sha1": "410D1F611788DFF50775F00E77EDEAD1CA929C76",
+              "type": "test"
+            },
+            {
+              "name": "/NamedSemaphore.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/NamedSemaphore.moon",
+              "sha1": "0FB8F5A84507F9CDAB3C02A882B149DC3C885442",
+              "type": "test"
+            },
+            {
+              "name": "/open-url.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/open-url.moon",
+              "sha1": "A6ADC29FF30AB670AB2D0D8ED2A18740B591CD66",
+              "type": "test"
+            },
+            {
+              "name": "/PackageRecord.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/PackageRecord.moon",
+              "sha1": "9AB3488762804B65BF48CE33C44BA99628DF3F9D",
+              "type": "test"
+            },
+            {
+              "name": "/ScriptTargetFilter.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/ScriptTargetFilter.moon",
+              "sha1": "C731DA153C97FD92AF4F8465CC2B3865C086691E",
+              "type": "test"
+            },
+            {
+              "name": "/ScriptUpdateRecord.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/ScriptUpdateRecord.moon",
+              "sha1": "0B66CB43DC28194E93D5CC25426698010FCC436D",
+              "type": "test"
+            },
+            {
+              "name": "/SemanticVersion.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/SemanticVersion.moon",
+              "sha1": "E242FE3C0332C60468E4B3F76DCFDE1D631172F9",
+              "type": "test"
+            },
+            {
+              "name": "/Timer.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/Timer.moon",
+              "sha1": "8194244E95E508CBAAED66120C25CBC0F47ABD50",
+              "type": "test"
+            },
+            {
+              "name": "/UnitTestSuite.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/UnitTestSuite.moon",
+              "sha1": "CCDC45CAF499A14773BF59D5E80C7AA963A89BFF",
+              "type": "test"
+            },
+            {
+              "name": "/UpdateFeed.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/UpdateFeed.moon",
+              "sha1": "3094DFD9B29DB2F238D8E9986DDB6DEC64BC8D5F",
+              "type": "test"
+            },
+            {
+              "name": "/UpdateTask.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/UpdateTask.moon",
+              "sha1": "5CA6FC899341677F702788F543373C8F3EDCFAA0",
+              "type": "test"
+            },
+            {
+              "name": "/Updater.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/Updater.moon",
+              "sha1": "7945FCE5A2DC11257301DE5A2B2423E56A0AC4CB",
+              "type": "test"
+            },
+            {
+              "name": "/ZipArchiver.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/ZipArchiver.moon",
+              "sha1": "508996E6E08DFDA179327AFD70219344E21BD66E",
+              "type": "test"
+            },
+            {
+              "name": "/integration/Downloader.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/integration/Downloader.moon",
+              "sha1": "30B80FCF880C7139A0C86E26CD04F6DB41162698",
+              "type": "test"
+            },
+            {
+              "name": "/integration/ZipArchiver.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/integration/ZipArchiver.moon",
+              "sha1": "B96331C544F464FCC8B804837F9FD83B31E410A4",
+              "type": "test"
+            },
+            {
+              "name": "/helpers/mock-http-server.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/helpers/mock-http-server.moon",
+              "sha1": "FD34253C875C7DC0AE52DC18BDAEFE0534BBD10F",
+              "type": "test"
+            },
+            {
+              "name": "/helpers/MockHttpServerController.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/helpers/MockHttpServerController.moon",
+              "sha1": "F4F84B3E954CB41DF6157ECF623B36DA3FF8EEBD",
+              "type": "test"
+            },
+            {
+              "name": "/Accessors.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/Accessors.moon",
+              "sha1": "4DF5070BE92B4F61F53A75F01CEC93E36BC4D51C",
+              "type": "test"
+            },
+            {
+              "name": "/FeedLoader.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/FeedLoader.moon",
+              "sha1": "D24848390EC92F0FCD088ECFDA62C67D12700F8F",
+              "type": "test"
+            },
+            {
+              "name": "/config-schema.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/config-schema.moon",
+              "sha1": "C65BC75E4ACF11F2CA174255CB6792C3C4FAD7A7",
+              "type": "test"
+            },
+            {
+              "name": "/Finalizer.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/Finalizer.moon",
+              "sha1": "10A76A5FC556B3283F1677AD93457C60632A9CD6",
+              "type": "test"
+            },
+            {
+              "name": "/helpers/stub-helpers.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/helpers/stub-helpers.moon",
+              "sha1": "ED12F95454B98E86A207D02EEDD42F84B19E2E3C",
+              "type": "test"
+            },
+            {
+              "name": "/release-notes.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/release-notes.moon",
+              "sha1": "A6E2F4FAC1EE2ED44D90CEC38D45D87691618FB4",
+              "type": "test"
+            },
+            {
+              "name": "/domain.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/domain.moon",
+              "sha1": "2406064A5B8F234ECB69E9C60F5FC1A5E9B7657A",
+              "type": "test"
+            },
+            {
+              "name": "/utils.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/utils.moon",
+              "sha1": "F78238492CB05F9F1568C14DE363A83CE1CAB6D8",
+              "type": "test"
+            },
+            {
+              "name": "/environment.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0-alpha/modules/l0/DependencyControl/test/environment.moon",
+              "sha1": "1889EFB487A85EF9CD9838312B36CAB97D332119",
+              "type": "test"
             }
           ],
           "requiredModules": [
             {
-              "moduleName": "requireffi.requireffi",
-              "version": "0.1.1",
-              "feed": "@{feed:ffi-experiments}"
+              "moduleName": "l0.dkjson",
+              "version": "0.7.0"
+            }
+          ],
+          "provides": [
+            {
+              "name": "BM.BadMutex",
+              "version": "^0.1.3"
             },
             {
-              "moduleName": "DM.DownloadManager",
-              "version": "0.3.1",
-              "feed": "@{feed:ffi-experiments}"
+              "name": "DM.DownloadManager",
+              "version": "^0.3.1"
             },
             {
-              "moduleName": "BM.BadMutex",
-              "version": "0.1.3",
-              "feed": "@{feed:ffi-experiments}"
+              "name": "PT.PreciseTimer",
+              "version": "^0.1.6"
+            }
+          ]
+        },
+        "stable": {
+          "version": "0.8.0",
+          "released": "2026-07-24",
+          "default": true,
+          "files": [
+            {
+              "name": ".moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl.moon",
+              "sha1": "EA116FC2F7C3EDA9DC16E603C25669E3ABBA07EA"
             },
             {
-              "moduleName": "PT.PreciseTimer",
-              "version": "0.1.5",
-              "feed": "@{feed:ffi-experiments}"
+              "name": "/Constants.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/Constants.moon",
+              "sha1": "E3FE6C143BA1B268C0B9F7A2840D729DBF7E1C35"
+            },
+            {
+              "name": "/ConfigHandler.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/ConfigHandler.moon",
+              "sha1": "6C8ACA7DD2BBA8AD22AB7E488F918297B820EDF9"
+            },
+            {
+              "name": "/ConfigView.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/ConfigView.moon",
+              "sha1": "BCCB1B7E7A85245BCDD87CE0CCCC1955CB161827"
+            },
+            {
+              "name": "/hash.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/hash.moon",
+              "sha1": "452C471ADC2C3BD916B706637E412BB97D27C8DA"
+            },
+            {
+              "name": "/Downloader.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/Downloader.moon",
+              "sha1": "153B19D16BD2CB2CCFB33C52470598F1BF2CCA7B"
+            },
+            {
+              "name": "/Enum.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/Enum.moon",
+              "sha1": "DD441AAF08C883F550061F8D8845D36969A2D629"
+            },
+            {
+              "name": "/EventEmitter.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/EventEmitter.moon",
+              "sha1": "F7B363DC9D131BA8FA92751394206AFC90CA8BB8"
+            },
+            {
+              "name": "/FileCache.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/FileCache.moon",
+              "sha1": "600F604B26D4C74D7FDC1F5BEA37512A49AF983F"
+            },
+            {
+              "name": "/FeedInventory.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/FeedInventory.moon",
+              "sha1": "4EB32746AE7D048F15355350827C9A470CB5C384"
+            },
+            {
+              "name": "/FeedManager.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/FeedManager.moon",
+              "sha1": "9058C2FB8F273E6F0D72876BDADA029BAA8327D6"
+            },
+            {
+              "name": "/FeedTrust.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/FeedTrust.moon",
+              "sha1": "D0BA0089596E30601BA70DD537855320CFC311B0"
+            },
+            {
+              "name": "/FileLock.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/FileLock.moon",
+              "sha1": "28F79DB790CF4746441B6127A8953708D1A52501"
+            },
+            {
+              "name": "/file-ops.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/file-ops.moon",
+              "sha1": "2FB92DBDC1AA861B7D5A859B165CE71C39E8FBD0"
+            },
+            {
+              "name": "/FileOps.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/FileOps.moon",
+              "sha1": "0000000000000000000000000000000000000000",
+              "delete": true
+            },
+            {
+              "name": "/GitRepository.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/GitRepository.moon",
+              "sha1": "87138B0F382B1748DEE326EB1BAC471BD12E5CDA"
+            },
+            {
+              "name": "/Host.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/Host.moon",
+              "sha1": "3A05ABCE9F229CDA731DD0F83A93AC2E58BEA3AD"
+            },
+            {
+              "name": "/JsonSchema.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/JsonSchema.moon",
+              "sha1": "2707158CB66573CEA10465C21E3AB42708E482F7"
+            },
+            {
+              "name": "/Lock.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/Lock.moon",
+              "sha1": "CD9D4B1022CB943ACC004D692D58B3996A770B34"
+            },
+            {
+              "name": "/Logger.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/Logger.moon",
+              "sha1": "CBFC4B9C5699D3606D7AEE92137DA91DEC1B4EBD"
+            },
+            {
+              "name": "/ModuleLoader.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/ModuleLoader.moon",
+              "sha1": "F1ACB8570A361F9006A6E6BA74FFF84D1F058F3A"
+            },
+            {
+              "name": "/ModuleProvider.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/ModuleProvider.moon",
+              "sha1": "C740B9D7BC6C6651F25BA170215988644037B291"
+            },
+            {
+              "name": "/NamedSemaphore.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/NamedSemaphore.moon",
+              "sha1": "E86D0C92DAC01797DA4A043814CDE252244657D3"
+            },
+            {
+              "name": "/PackageRecord.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/PackageRecord.moon",
+              "sha1": "8BF956EEF2223D75B42FEBAE3BE21E2FC2A1CDA7"
+            },
+            {
+              "name": "/ScriptTargetFilter.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/ScriptTargetFilter.moon",
+              "sha1": "4AD5EA4A952D81AFA4AF5200378444A7D129BB2B"
+            },
+            {
+              "name": "/ScriptUpdateRecord.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/ScriptUpdateRecord.moon",
+              "sha1": "56B2C04A436337243E7D294B5C820445A0F733A7"
+            },
+            {
+              "name": "/SemanticVersion.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/SemanticVersion.moon",
+              "sha1": "663BB4263B99C01E69AD897DAD7CF6420E17A666"
+            },
+            {
+              "name": "/Stub.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/Stub.moon",
+              "sha1": "879B162D749DE53788152A6C36DFAB7B0A5E8B9B"
+            },
+            {
+              "name": "/Timer.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/Timer.moon",
+              "sha1": "A3D4FA244AC2685285EFB297E94C24F070A17201"
+            },
+            {
+              "name": "/UnitTestSuite.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/UnitTestSuite.moon",
+              "sha1": "526D4F50834FADBBC70C4A9D93E28FFD1F952B34"
+            },
+            {
+              "name": "/UpdateFeed.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/UpdateFeed.moon",
+              "sha1": "521AD8915BF09A02167ACDF73CE4C39E928F504A"
+            },
+            {
+              "name": "/UpdateTask.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/UpdateTask.moon",
+              "sha1": "D7296244D4B9DAEAD0463CF6FE699AAF5CDF39A8"
+            },
+            {
+              "name": "/Updater.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/Updater.moon",
+              "sha1": "C4BAFF29F7FBE58EBF91C687B34D204B9AF49927"
+            },
+            {
+              "name": "/ZipArchiver.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/ZipArchiver.moon",
+              "sha1": "CC7A19E78B8B87DB70177A4A47CB10497232DF26"
+            },
+            {
+              "name": "/helpers/ffi-posix.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/helpers/ffi-posix.moon",
+              "sha1": "43C4F016D231AB2EA08B00D12BB4629BACCBA02F"
+            },
+            {
+              "name": "/helpers/ffi-windows.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/helpers/ffi-windows.moon",
+              "sha1": "C7A8C868F2F5A49A8A50754492C934DE12086AD8"
+            },
+            {
+              "name": "/helpers/open-url.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/helpers/open-url.moon",
+              "sha1": "9D06DA8BFE952C79FE5C2872CB4ABB5278A1A03F"
+            },
+            {
+              "name": "/helpers/resolve-host.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/helpers/resolve-host.moon",
+              "sha1": "B39C90E66A4869BF1561A2C2842906087D31F5D0"
+            },
+            {
+              "name": "/shims/BadMutex.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/shims/BadMutex.moon",
+              "sha1": "4B8E87AEC8AEB772EE593D07AA063960EBD6DA98"
+            },
+            {
+              "name": "/shims/DownloadManager.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/shims/DownloadManager.moon",
+              "sha1": "6C76A29DBAE8EA947439C5CC13FD380A6179E2E8"
+            },
+            {
+              "name": "/shims/PreciseTimer.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/shims/PreciseTimer.moon",
+              "sha1": "DC13468D9A31DC5E3DF4E1C20641C1F5853B1777"
+            },
+            {
+              "name": "/Accessors.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/Accessors.moon",
+              "sha1": "F953283D5405C668090C7939C7C1E2D7D980FF63"
+            },
+            {
+              "name": "/FeedLoader.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/FeedLoader.moon",
+              "sha1": "D0B097BF0C5BFCD60DF0E04B0D42F723A01997CF"
+            },
+            {
+              "name": "/config-schema.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/config-schema.moon",
+              "sha1": "CC74ACBE7A7CD8761AD714564F3805AC96F68067"
+            },
+            {
+              "name": "/Finalizer.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/Finalizer.moon",
+              "sha1": "9C04FED8500BCB662505F16411FC522BD0A69AAF"
+            },
+            {
+              "name": "/release-notes.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/release-notes.moon",
+              "sha1": "2B04AD21DDC44A8A1280900141BE4A5AD508495F"
+            },
+            {
+              "name": "/domain.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/domain.moon",
+              "sha1": "C5D9BC686DFA4A85A28EE6E2E392B1E012A83909"
+            },
+            {
+              "name": "/environment.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/environment.moon",
+              "sha1": "5D383C75F2E97A53B2343D554E9E2FC26C613FFF"
+            },
+            {
+              "name": "/utils.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/utils.moon",
+              "sha1": "FA8307BC15AD2FEC1535F9B862E1D92C2A3A1AB9"
+            },
+            {
+              "name": ".moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test.moon",
+              "sha1": "1FE9D211C256E84F4C0F95BBA10659A1F7B9A0C7",
+              "type": "test"
+            },
+            {
+              "name": "/BadMutex.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/BadMutex.moon",
+              "sha1": "36D24DA8FEB591C18C0A8020A8062D5B19A72C24",
+              "type": "test"
+            },
+            {
+              "name": "/ConfigHandler.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/ConfigHandler.moon",
+              "sha1": "D0F735761CAC12540F7841DCF8A80AB6C20ECCE5",
+              "type": "test"
+            },
+            {
+              "name": "/ConfigView.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/ConfigView.moon",
+              "sha1": "A0E00272169CA1FFAADF0A672C468A975D9B9F82",
+              "type": "test"
+            },
+            {
+              "name": "/hash.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/hash.moon",
+              "sha1": "B1C6AC7433296675E6A686F16D977510D922BF26",
+              "type": "test"
+            },
+            {
+              "name": "/Downloader.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/Downloader.moon",
+              "sha1": "93C779DAC6F05150CFE92A733F9C33B6A6856286",
+              "type": "test"
+            },
+            {
+              "name": "/Enum.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/Enum.moon",
+              "sha1": "1BF9FF97C5668EB5046EE80B24F52F9C53F54A02",
+              "type": "test"
+            },
+            {
+              "name": "/FileCache.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/FileCache.moon",
+              "sha1": "633106FDCDD0AB81CFC2BB85725B9A7B0077AF83",
+              "type": "test"
+            },
+            {
+              "name": "/FeedInventory.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/FeedInventory.moon",
+              "sha1": "5D820751E60E8609CD65427ED01DD312E869001B",
+              "type": "test"
+            },
+            {
+              "name": "/FeedManager.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/FeedManager.moon",
+              "sha1": "5859561F6CAA7E1B3178A14E281BAFD87E7CD42D",
+              "type": "test"
+            },
+            {
+              "name": "/FeedTrust.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/FeedTrust.moon",
+              "sha1": "FF605ACEC47E863CE5DACFB80760119F15608931",
+              "type": "test"
+            },
+            {
+              "name": "/ffi-posix.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/ffi-posix.moon",
+              "sha1": "5CCE5A5C81C20D76CA461377765DF5D99EE03FA3",
+              "type": "test"
+            },
+            {
+              "name": "/FileLock.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/FileLock.moon",
+              "sha1": "BDDBF39514737134726E90D5DDA6AD2798A861E6",
+              "type": "test"
+            },
+            {
+              "name": "/file-ops.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/file-ops.moon",
+              "sha1": "AB2BBDDFEDBB158963CFDFAE196C584E105598CC",
+              "type": "test"
+            },
+            {
+              "name": "/GitRepository.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/GitRepository.moon",
+              "sha1": "85FBCB85878CFE6FC9107CE6716072C681C897EC",
+              "type": "test"
+            },
+            {
+              "name": "/Host.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/Host.moon",
+              "sha1": "26C02949F93D08F199D45B13D9B86B579C68593B",
+              "type": "test"
+            },
+            {
+              "name": "/JsonSchema.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/JsonSchema.moon",
+              "sha1": "125E4930956E7DCA578C2F88EDB4B56C14A031C6",
+              "type": "test"
+            },
+            {
+              "name": "/Lock.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/Lock.moon",
+              "sha1": "26B3D5CA9E6D91C6F4D9411F093C26B3AE58FA96",
+              "type": "test"
+            },
+            {
+              "name": "/Logger.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/Logger.moon",
+              "sha1": "8D16E1C97C53D33E4250F4BEA8A988BBD02D9417",
+              "type": "test"
+            },
+            {
+              "name": "/ModuleLoader.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/ModuleLoader.moon",
+              "sha1": "8FE0E4ED90D3ED719F7DE80877591EF2F30014AA",
+              "type": "test"
+            },
+            {
+              "name": "/ModuleProvider.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/ModuleProvider.moon",
+              "sha1": "410D1F611788DFF50775F00E77EDEAD1CA929C76",
+              "type": "test"
+            },
+            {
+              "name": "/NamedSemaphore.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/NamedSemaphore.moon",
+              "sha1": "0FB8F5A84507F9CDAB3C02A882B149DC3C885442",
+              "type": "test"
+            },
+            {
+              "name": "/open-url.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/open-url.moon",
+              "sha1": "A6ADC29FF30AB670AB2D0D8ED2A18740B591CD66",
+              "type": "test"
+            },
+            {
+              "name": "/PackageRecord.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/PackageRecord.moon",
+              "sha1": "9AB3488762804B65BF48CE33C44BA99628DF3F9D",
+              "type": "test"
+            },
+            {
+              "name": "/ScriptTargetFilter.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/ScriptTargetFilter.moon",
+              "sha1": "C731DA153C97FD92AF4F8465CC2B3865C086691E",
+              "type": "test"
+            },
+            {
+              "name": "/ScriptUpdateRecord.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/ScriptUpdateRecord.moon",
+              "sha1": "0B66CB43DC28194E93D5CC25426698010FCC436D",
+              "type": "test"
+            },
+            {
+              "name": "/SemanticVersion.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/SemanticVersion.moon",
+              "sha1": "E242FE3C0332C60468E4B3F76DCFDE1D631172F9",
+              "type": "test"
+            },
+            {
+              "name": "/Timer.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/Timer.moon",
+              "sha1": "8194244E95E508CBAAED66120C25CBC0F47ABD50",
+              "type": "test"
+            },
+            {
+              "name": "/UnitTestSuite.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/UnitTestSuite.moon",
+              "sha1": "CCDC45CAF499A14773BF59D5E80C7AA963A89BFF",
+              "type": "test"
+            },
+            {
+              "name": "/UpdateFeed.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/UpdateFeed.moon",
+              "sha1": "3094DFD9B29DB2F238D8E9986DDB6DEC64BC8D5F",
+              "type": "test"
+            },
+            {
+              "name": "/UpdateTask.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/UpdateTask.moon",
+              "sha1": "5CA6FC899341677F702788F543373C8F3EDCFAA0",
+              "type": "test"
+            },
+            {
+              "name": "/Updater.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/Updater.moon",
+              "sha1": "7945FCE5A2DC11257301DE5A2B2423E56A0AC4CB",
+              "type": "test"
+            },
+            {
+              "name": "/ZipArchiver.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/ZipArchiver.moon",
+              "sha1": "508996E6E08DFDA179327AFD70219344E21BD66E",
+              "type": "test"
+            },
+            {
+              "name": "/integration/Downloader.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/integration/Downloader.moon",
+              "sha1": "30B80FCF880C7139A0C86E26CD04F6DB41162698",
+              "type": "test"
+            },
+            {
+              "name": "/integration/ZipArchiver.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/integration/ZipArchiver.moon",
+              "sha1": "B96331C544F464FCC8B804837F9FD83B31E410A4",
+              "type": "test"
+            },
+            {
+              "name": "/helpers/mock-http-server.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/helpers/mock-http-server.moon",
+              "sha1": "FD34253C875C7DC0AE52DC18BDAEFE0534BBD10F",
+              "type": "test"
+            },
+            {
+              "name": "/helpers/MockHttpServerController.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/helpers/MockHttpServerController.moon",
+              "sha1": "F4F84B3E954CB41DF6157ECF623B36DA3FF8EEBD",
+              "type": "test"
+            },
+            {
+              "name": "/Accessors.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/Accessors.moon",
+              "sha1": "4DF5070BE92B4F61F53A75F01CEC93E36BC4D51C",
+              "type": "test"
+            },
+            {
+              "name": "/FeedLoader.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/FeedLoader.moon",
+              "sha1": "D24848390EC92F0FCD088ECFDA62C67D12700F8F",
+              "type": "test"
+            },
+            {
+              "name": "/config-schema.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/config-schema.moon",
+              "sha1": "C65BC75E4ACF11F2CA174255CB6792C3C4FAD7A7",
+              "type": "test"
+            },
+            {
+              "name": "/Finalizer.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/Finalizer.moon",
+              "sha1": "10A76A5FC556B3283F1677AD93457C60632A9CD6",
+              "type": "test"
+            },
+            {
+              "name": "/helpers/stub-helpers.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/helpers/stub-helpers.moon",
+              "sha1": "ED12F95454B98E86A207D02EEDD42F84B19E2E3C",
+              "type": "test"
+            },
+            {
+              "name": "/release-notes.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/release-notes.moon",
+              "sha1": "A6E2F4FAC1EE2ED44D90CEC38D45D87691618FB4",
+              "type": "test"
+            },
+            {
+              "name": "/domain.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/domain.moon",
+              "sha1": "2406064A5B8F234ECB69E9C60F5FC1A5E9B7657A",
+              "type": "test"
+            },
+            {
+              "name": "/utils.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/utils.moon",
+              "sha1": "F78238492CB05F9F1568C14DE363A83CE1CAB6D8",
+              "type": "test"
+            },
+            {
+              "name": "/environment.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/DependencyControl/test/environment.moon",
+              "sha1": "1889EFB487A85EF9CD9838312B36CAB97D332119",
+              "type": "test"
+            }
+          ],
+          "requiredModules": [
+            {
+              "moduleName": "l0.dkjson",
+              "version": "0.7.0"
+            }
+          ],
+          "provides": [
+            {
+              "name": "BM.BadMutex",
+              "version": "^0.1.3"
+            },
+            {
+              "name": "DM.DownloadManager",
+              "version": "^0.3.1"
+            },
+            {
+              "name": "PT.PreciseTimer",
+              "version": "^0.1.6"
             }
           ]
         }
       },
       "changelog": {
-        "0.6.3": [
-          "Fixed a v0.6.2 regression that caused DependencyControl to fail loading the first time after a scheduled self-update."
+        "0.5.0": [
+          "DependencyControl does now auto-update itself and its dependencies.",
+          "Provided Sub-Modules (Logger, ConfigHandler, ...) can now easily be accessed as class properties of the main DependencyControl module.",
+          "A bug was fixed that caused macros always being registered with the overall script description, ignoring specific descriptions for the macro menu entries.",
+          "The \\getConfigHandler() method no longer ignores the defaults parameter.",
+          "Fixed a FileOps bug that would cause path validation to fail on paths relative to the working directory.",
+          "ConfigHandler: writes to the configuration table are no longer accidentally routed to the defaults table when a value is updated that only exists in the Defaults.",
+          "ConfigHandler: Looping over the configuration table is now completely transparent wrt which fields are user configuration or defaults.",
+          "ConfigHandler: fixed a bug that prevented a global lock on the config file from being released on certain error conditions.",
+          "The update feed format has been updated to v0.2.0 and introduces a new template variable to reference knownFeeds specified at the top level."
         ],
-        "0.6.2": [
-          "An issue was fixed that would cause DepCtrl initializer code in modules previously loaded with regular Lua loading mechanisms to be skipped when requested in a _DependencyControl_- context. This kept the [requireffi](https://github.com/torque/ffi-experiments/tree/master/requireffi) _DependencyControl_ record from being established, preventing any updates from taking place.",
-          "UnitTestSuite: Fixed several broken assertions and related error messages, among them the `assertMatches` and `assertErrorMatches` assertions always returning `true`. Please make sure to rerun your tests after upgrading to confirm your tested actually return values whatever they were supposed to match.",
-          "Updater: Identical or duplicate feeds from different sources (user configuration, feeds and API use) are no longer being checked for updates multiple times.",
-          "Updater / FileOps: Fixed several broken error messages and return values."
+        "0.5.1": [
+          "Macros registered using DependencyControl now get passed the previously missing 'active_line' parameter.",
+          "Fixed a bug that would cause an unrelated error to be thrown in place of the real error message when an updated module failed to load."
         ],
-        "0.6.1": [
-          "The Updater component now supports the DownloadManager v0.4.0 API changes.",
-          "Updater: A regression introduced in v0.6.0 was fixed that caused update or installation processes to fail when the feed contained deletion records.",
-          "FileOps.mkdir() no longer falsely retuns an error state when a path to an existing file is passed with the `isFile` flag set."
+        "0.5.2": [
+          "Updates and installations no longer fail when no suitable version of a module marked as an optional dependency can be found.",
+          "ConfigHandlers now recover gracefully when a corrupted config is encountered.",
+          "Fixed a bug that may have caused updates of unmanaged modules to throw an error after completion.",
+          "DependencyControl initialization functions in modules with optional DepCtrl support are now expected to use the predefined name __depCtrlInit. This lifts the unreasonable requirement of having to specify the name of the function in the dependency tables of the loading scripts. By extension, this also fixes errors when trying to update the binary modules required by DependencyControl (such as DownloadManager).",
+          "The Updater now checks for an active internet connection before going ahead with downloading feeds and packages.",
+          "FileOps: added a copy function for files."
+        ],
+        "0.5.3": [
+          "ConfigHandler: A host of longstanding issues related to config file corruption and concurrent access to config files from multiple DepCtrl-hosting automation scripts have been fixed.",
+          "Error Reports of required modules loaded by DependencyControl now actually provide semi-useful stack traces.",
+          "A bug was fixed that could cause DepCtrl to rerun the __depCtrlInit method on modules even though a prior DependencyControl record had already been initialized.",
+          "The DependencyControl self-update now runs through properly without throwing an error at the end of the process."
         ],
         "0.6.0": [
           "The UnitTestSuite framework for automatically testing automation scripts and modules has been added.",
@@ -165,34 +1255,207 @@
           "FileOps.move() no longer fails to move files across file systems on *nix operating systems and properly cleans up after itself if files could not be overwritten and were renamed instead.",
           "FileOps: path validation is no longer broken on non-windows systems"
         ],
-        "0.5.3": [
-          "ConfigHandler: A host of longstanding issues related to config file corruption and concurrent access to config files from multiple DepCtrl-hosting automation scripts have been fixed.",
-          "Error Reports of required modules loaded by DependencyControl now actually provide semi-useful stack traces.",
-          "A bug was fixed that could cause DepCtrl to rerun the __depCtrlInit method on modules even though a prior DependencyControl record had already been initialized.",
-          "The DependencyControl self-update now runs through properly without throwing an error at the end of the process."
+        "0.6.1": [
+          "The Updater component now supports the DownloadManager v0.4.0 API changes.",
+          "Updater: A regression introduced in v0.6.0 was fixed that caused update or installation processes to fail when the feed contained deletion records.",
+          "FileOps.mkdir() no longer falsely returns an error state when a path to an existing file is passed with the `isFile` flag set."
         ],
-        "0.5.2": [
-          "Updates and installations no longer fail when no suitable version of a module marked as an optional dependency can be found.",
-          "ConfigHandlers now recover gracefully when a corrupted config is encountered.",
-          "Fixed a bug that may have caused updates of unmanaged modules to throw an error after completion.",
-          "DependencyControl initialization functions in modules with optional DepCtrl support are now expected to use the predefined name __depCtrlInit. This lifts the unreasonable requirement of having to specify the name of the function in the dependency tables of the loading scripts. By extension, this also fixes errors when trying to update the binary modules required by DependencyControl (such as DownloadManager).",
-          "The Updater now checks for an active internet connection before going ahead with downloading feeds and packages.",
-          "FileOps: added a copy function for files."
+        "0.6.2": [
+          "An issue was fixed that would cause DepCtrl initializer code in modules previously loaded with regular Lua loading mechanisms to be skipped when requested in a _DependencyControl_- context. This kept the [requireffi](https://github.com/torque/ffi-experiments/tree/master/requireffi) _DependencyControl_ record from being established, preventing any updates from taking place.",
+          "UnitTestSuite: Fixed several broken assertions and related error messages, among them the `assertMatches` and `assertErrorMatches` assertions always returning `true`. Please make sure to rerun your tests after upgrading to confirm your tested actually return values whatever they were supposed to match.",
+          "Updater: Identical or duplicate feeds from different sources (user configuration, feeds and API use) are no longer being checked for updates multiple times.",
+          "Updater / FileOps: Fixed several broken error messages and return values."
         ],
-        "0.5.1": [
-          "Macros registered using DependencyControl now get passed the previously missing 'active_line' paramter.",
-          "Fixed a bug that would cause an unrelated error to be thrown in place of the real error message when an updated module failed to load."
+        "0.6.3": [
+          "Fixed a v0.6.2 regression that caused DependencyControl to fail loading the first time after a scheduled self-update."
         ],
-        "0.5.0": [
-          "DependencyControl does now auto-update itself and its dependencies.",
-          "Provided Sub-Modules (Logger, ConfigHandler, ...) can now easily be accessed as class properties of the main DependencyControl module.",
-          "A bug was fixed that caused macros always being registered with the overall script description, ignoring specific descriptions for the macro menu entries.",
-          "The \\getConfigHandler() method no longer ignores the defaults parameter.",
-          "Fixed a FileOps bug that would cause path validation to fail on paths relative to the working directory.",
-          "ConfigHandler: writes to the configuration table are no longer accidentally routed to the defaults table when a value is updated that only exists in the Defaults.",
-          "ConfigHandler: Looping over the configuration table is now completely transparent wrt which fields are user configuration or defaults.",
-          "ConfigHandler: fixed a bug that prevented a global lock on the config file from being released on certain error conditions.",
-          "The update feed format has been updated to v0.2.0 and introduces a new template variable to reference knownFeeds specifed at the top level."
+        "0.6.4": [
+          "Logger: Fixed a crash when `logEx()` is called without format arguments ΓÇö `msg:format(...)` is now skipped when no varargs are supplied.",
+          "Logger: `fileBaseName` now falls back to `\"UNKNOWN\"` when `script_namespace` is nil, preventing errors during Logger initialization in contexts where no namespace is available.",
+          "Logger/UpdateFeed: Fixed chained method calls on file handles (`handle:write():flush()` and `handle:write():close()`) that could silently swallow errors"
+        ],
+        "0.7.0": [
+          "change(Updater)!: Package sources are now chosen by trust, not just version, to harden against supply-chain attacks. Feeds are consulted closest-first, starting with the feed a script declares for a dependency, then the feeds DependencyControl trusts, then any others. The trusted set is DependencyControl's own feed plus your `extraFeeds`, and an install is refused when a requirement can only be met from an untrusted feed. Your `trustedFeeds` grant trust without being searched for updates, while a new `blockedFeeds` config and an official block list reject compromised feeds outright. The obsolete `tryAllFeeds` setting and its exhaustive update mode were removed.",
+          "feat(Updater): DependencyControl can now prompt on trust decisions. When an install can only come from an untrusted feed, it asks whether to use the feed once, trust it, or block it, and when several equally-ranked sources qualify, it asks you to pick one. The new `feedTrustPromptThreshold` and `packageChoicePromptThreshold` settings control how freely it prompts. Your pick can stick in different ways, from a single use up to a pin that never switches silently, and it follows a source across feed-URL changes. The new `offerAllSources` setting offers every eligible source so you can override the ranking.",
+          "feat(Updater): Feed and package downloads now refuse hosts that resolve to a private, loopback, or link-local address, an SSRF safeguard controlled by the new `blockPrivateHosts` setting. It is on by default, so turn it off to use feeds on your local network. Each feed fetch is also capped in size and time through the new `maxFeedSize` and `feedFetchTimeout` settings.",
+          "feat(Updater): A required module that no feed offers directly can now be satisfied by a module that declares it in `provides`. For example, a script that requires `json` can be satisfied by installing `dkjson`. A directly-named module is always preferred over a provider, and once a provider is chosen it keeps being used and updated. Feeds advertise `provides` per release, and a provider can pin an npm-style version range such as `~1.2` that it satisfies, so it need not be re-published for every patch release.",
+          "change(Updater): The updater's on/off switch became an update mode. The new `updates.mode` takes 'off', 'user-requested', 'dependency-resolution', or 'auto-update' to control which contexts may install and update, so you can allow manual installs while disabling background checks. An existing `updaterEnabled` setting migrates automatically, and the two prompt-threshold settings now take the same context values.",
+          "change(Updater): Automatic update scheduling is now centralized. One Aegisub environment at startup covers every installed script, including modules that no automation script loads, instead of each script redundantly scheduling checks for the modules it uses.",
+          "change(Updater): Scripts installed in Aegisub's data automation directory, such as modules from a system package manager, are no longer auto-updated. Scheduled checks skip them, and manual installs or updates report a clear error. Portable setups where the user and data directories are the same are unaffected.",
+          "change(Updater): Concurrent updates across Aegisub instances are now coordinated by a cross-process lock that releases automatically if an updater crashes, so a stale in-progress flag can no longer get stuck in the config. The new `Updater.isRunning()` reports whether an update is in flight and which script it is for.",
+          "fix(Updater): Disabling updates now also prevents on-demand installs and dependency resolution, not just scheduled background checks.",
+          "feat: Fetched feeds are now cached to disk as timestamped snapshots. A recently fetched feed is served from the cache instead of being re-downloaded, and a failed fetch falls back to the last cached copy for offline resilience. The freshness window is the new `cacheMaxAge` setting, and the location is the shared `paths.cache`, which replaces the former `dumpFeeds` debug dump.",
+          "feat: Feed discovery can now follow feeds' advertised `knownFeeds` to surface feeds beyond the ones you configured. Untrusted expansion is bounded by the new `fetchUntrustedFeeds` and `crawlLimits` settings, so a hostile feed cannot drive unbounded fetches.",
+          "feat: Added `FeedInventory` and `FeedManager`, building blocks that list the feeds DependencyControl knows about with their provenance and trust status and apply trust actions. They back the Toolbox's new Manage Feeds macro and are available to other tooling.",
+          "change: DependencyControl's settings file is now organized into `updates`, `feeds`, `logging`, and `paths` sections, and an existing config is migrated into the new layout automatically on first load. Several settings were renamed in the process, for example `updaterEnabled` to `updates.mode` and `feedCacheMaxAge` to `feeds.cacheMaxAge`. The separate feed-cache directory gave way to a single `paths.cache` location that DependencyControl organizes by namespace.",
+          "change: The config file is now easier to read and maintain by hand. Each installed script's version is stored as a semantic-version string such as \"1.2.3\" rather than a packed integer, only the values you have actually changed are written, and the file is saved as indented, pretty-printed JSON. Existing configs are migrated automatically on first load.",
+          "change: DependencyControl now refuses to load on an Aegisub build it can't run on, showing an error that directs you to update. It needs a MoonScript at or above its minimum version, and a LuaJIT built with Lua 5.2 compatibility, which its computed properties and cross-type version comparisons rely on.",
+          "feat: Feed format v0.4.0 reduces repetition for feed authors. Per-file-type URL and path templates can be set once at the feed root or on a macros/modules section container and roll down to every package, while the single-string `fileBaseUrl` and `localFileBasePath` keep working as the fallback. Feeds can also define their own template variables, including lookup tables indexed by a computed key such as a per-channel tag suffix, and the new `scriptType` and `scriptTypeSection` variables expose each package's type and feed section.",
+          "feat(SemanticVersion): SemanticVersion is now a value object. You can construct it from a version string or from major, minor, and patch components, compare instances with the standard operators, read and bump the individual parts, and test it against a version range. A record's version is backed by one and exposed as `record.semanticVersion`, while `record.version` still returns the packed integer as before.",
+          "feat: Added the Accessors module for declaring metatable-backed computed properties through one standardized transform, instead of hand-rolled metatable code. Each declared property is recorded on the class for inspection tooling.",
+          "change: The monolithic `DependencyControl.moon` was split into focused sub-modules as groundwork for a future registry backend. `PackageRecord`, `ModuleLoader`, `SemanticVersion`, and the `domain`, `environment`, and `utils` tables now own version records, module loading, version handling, and the shared enums and helpers. Script and record types are represented by proper enums, `ScriptType` and `RecordType`, rather than bare booleans.",
+          "feat(Tests): Automation scripts can now ship a DependencyControl unit-test suite, just as modules can. `registerMacros` accepts an optional table of test exports and passes it, together with the script's registered macros, to the suite. Modules with a test suite also have their test menus registered automatically by the Toolbox.",
+          "feat(Tests): Added `ut\\skip(reason)` to skip a single test from within its body, reported as skipped rather than passed or failed. A test class's `_order` now sets only the run and report order, so a test left out of it still runs and is appended after the listed ones.",
+          "fix(Tests): Fixed a cluster of long-broken assertions and behaviors. `assertContains` now honors its case-insensitive option, `assertItemsEqual`, `assertContinuous`, `assertNotAlmostEquals`, and `assertError` report correct results and messages, `ut\\stub` works inside a class `_setup`, a failing setup is reported as a failure instead of aborting the whole run, and the CTRF report records accurate timings.",
+          "feat(FileOps): Added `getAttributes()`, which returns a file or directory's attributes together with the parsed components of its path, keeping a genuine lookup failure out of the returned value. The previous `attributes()` remains as a deprecated wrapper. A hard attribute-lookup failure is no longer mistaken for a missing or wrong-typed file, so `writeFile`, `listDir`, `rmdir`, and `remove` surface the real error.",
+          "fix(FileOps): Uninstalling a package no longer deletes files belonging to a sibling package whose name shares a prefix, and namespaces containing hyphens now match only their own files.",
+          "fix(PackageRecord): registerMacro now fails at registration with a clear message when its process callback is missing or not a function, instead of an opaque \"attempt to call a nil value\" when the macro is run.",
+          "fix: Installs and updates inside Aegisub no longer fail with a spurious \"failed to create temporary download directory\" error, which came from Aegisub's bundled lfs reporting directory creation differently from stock LuaFileSystem.",
+          "feat(Timer): Exposed a shared monotonic `Timer.getTime()` clock, added stopwatch `start()`, `stop()`, and `reset()` methods and an `elapsed` property in milliseconds, and routed PreciseTimer through the same bundled-provider mechanism as BadMutex and DownloadManager.",
+          "feat(Hash): Added `getObjectHash()`, which reduces an arbitrary, possibly nested Lua value to a stable, order-independent SHA-1 signature.",
+          "feat(utils): Added the `makeSet`, `addDefaults`, `trim`, and `escapePattern` helpers, shared with the Functional module.",
+          "feat(utils): Added `seedRandom` and `getRandomSeed` for seeding Lua's random number generator with a value unique to the current script's Lua state. A script can call `seedRandom` to reseed the generator itself rather than depend on DependencyControl's load-time seeding.",
+          "change(Lock): Locks are now per-resource, so distinct resources no longer contend over a single global mutex. An optional `Global` scope enforces mutual exclusion across separate Aegisub instances, used when reading and writing shared config files. A Global lock is backed by an OS advisory lock that the system releases if the holder crashes, so a config file can never stay permanently locked. A held lock records its holder for troubleshooting, warns when it waits on a lapsed lease, and adds a `renew()` method and a `Lock.guard` helper that always releases the lock.",
+          "change: Scripts using DependencyControl no longer pause about half a second while loading. The wait that spread the random seed across simultaneously loading scripts is gone. Each script's Lua state now seeds from its own identity together with the monotonic clock and process id, so states loading at the same instant still get distinct log file names and temp paths.",
+          "fix: Many updater and installer messages and error reports were corrected. Among them, \"Couldn't installation module\" and \"Starting nil of ...\" are fixed, dependency-resolution errors no longer print \"of nil Module\" or drop the failing sub-requirement, and a failing optional dependency or module initializer now surfaces with its name and the real error instead of being mislabeled or dropped.",
+          "fix(Logger): Progress bars now fill incrementally instead of jumping from empty to full, the log window no longer repeats the indentation prefix inside incrementally written output, and the `usePrefix` option applies to both the log file and the window.",
+          "fix: Several smaller correctness fixes. `mkdir` no longer reports success when creation failed, the temporary download directory is removed after a successful install, and `SemanticVersion.toString` renders nil as \"0.0.0\" instead of erroring.",
+          "change: DependencyControl and its Toolbox now update from a `stable` channel by default, with the `alpha` channel kept for pre-release builds. An installation pinned to `alpha` is moved to `stable` automatically the first time v0.7.0 loads.",
+          "feat: The CLI gained documentation and maintenance tooling. `generate-types` extracts LuaCATS annotations into LuaLS type-definition files, and `generate-docs` renders browsable API docs from a feed's module sources. Both are powered by the new `l0.MoonCats` module. A new `update-feed --add-files` option discovers on-disk files missing from a feed and adds complete entries for them.",
+          "feat: Releases now version feed packages in lockstep, advancing only the packages that changed to a single shared repo-level version. New `bump-version`, `merge-feed`, and `release-notes` CLI tasks and an `update-feed --mark-released` option drive the release workflow. Changelog entries can also carry conventional-commit markers that the generated release notes group by category and use to flag breaking changes.",
+          "change: A short-form required-module dependency that names more than one module (such as `{\"ffi\", \"json\"}`) is now detected and reported with a warning. Only the first name is honored, as before.",
+          "fix: When several scripts install modules at the same time, a dependency that isn't installed yet is no longer mistaken for an installed one while waiting for another update to finish.",
+          "refactor: Reinstalling a managed module that exposes a plain version string instead of its DependencyControl record no longer demotes it to unmanaged, so it keeps receiving scheduled update checks.",
+          "feat: New `resolve-feed` CLI command expands a feed's templates into a static, template-free feed compatible with the legacy v0.3.0 feed format.",
+          "fix: Reloading a freshly updated module also evicts its cached submodules, so a multi-file module no longer reloads into a mix of new and stale code."
+        ],
+        "0.8.0": [
+          "feat: New `get-version` and `get-current-versions` CLI commands report a feed channel's highest version or its distinct package versions."
+        ]
+      }
+    },
+    "l0.dkjson": {
+      "name": "dkjson",
+      "description": "David Kolf's JSON module for Lua, vendored with and managed by DependencyControl.",
+      "author": "David Kolf",
+      "url": "http://dkolf.de/dkjson-lua/",
+      "channels": {
+        "stable": {
+          "version": "0.8.0",
+          "released": "2026-07-24",
+          "default": true,
+          "files": [
+            {
+              "name": ".moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/dkjson.moon",
+              "sha1": "3FACCD40F487E8205300E576B78F10D5AFFDDEE4"
+            },
+            {
+              "name": "/vendor/dkjson.lua",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/dkjson/vendor/dkjson.lua",
+              "sha1": "A0597E1AEEB14D42DABB3A0E8C05129EB024EDCA"
+            },
+            {
+              "name": ".moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.8.0/modules/l0/dkjson/test.moon",
+              "sha1": "46F563422E13C4D74FA630887DE0DEA917D767EB",
+              "type": "test"
+            }
+          ],
+          "provides": [
+            {
+              "name": "json"
+            },
+            {
+              "name": "dkjson"
+            }
+          ]
+        }
+      },
+      "changelog": {
+        "0.7.0": [
+          "feat: Vendored dkjson v2.10 with a DependencyControl version record and json/dkjson self-registration."
+        ],
+        "0.8.0": [
+          "fix: Upgrading from a DependencyControl v0.6.x install no longer fails when dkjson is pulled in as a new dependency; dkjson now skips a self-registration step that breaks pre-0.7.0 loaders."
+        ]
+      }
+    },
+    "l0.MoonCats": {
+      "name": "MoonCATS",
+      "description": "Extracts LuaCATS annotations from MoonScript sources into LuaLS type definitions for IntelliSense and API-doc generation.",
+      "author": "line0",
+      "url": "https://github.com/TypesettingTools/DependencyControl#l0.MoonCats",
+      "channels": {
+        "stable": {
+          "version": "0.7.0",
+          "released": "2026-07-24",
+          "default": true,
+          "files": [
+            {
+              "name": ".moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.7.0/modules/l0/MoonCats.moon",
+              "sha1": "6DCB5356005FC7048A4D15C5F65D017C47B35476"
+            },
+            {
+              "name": "/Parser.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.7.0/modules/l0/MoonCats/Parser.moon",
+              "sha1": "555504F2E546FFD9DBA5A9756AEAAC9A486C99A8"
+            },
+            {
+              "name": "/Emitter.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.7.0/modules/l0/MoonCats/Emitter.moon",
+              "sha1": "FBE53CF7A471A1CAB92B87BFB6DEBF991A4E2D43"
+            },
+            {
+              "name": "/Diagnostics.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.7.0/modules/l0/MoonCats/Diagnostics.moon",
+              "sha1": "44646FD16DF6FE48C7DFF3AC9D8B43ACF9D7636A"
+            },
+            {
+              "name": "/annotations.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.7.0/modules/l0/MoonCats/annotations.moon",
+              "sha1": "4B8389755C45A9A65F7BC7880AE025427D31D22F"
+            },
+            {
+              "name": "/DocRenderer.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.7.0/modules/l0/MoonCats/DocRenderer.moon",
+              "sha1": "371B726FB05EE39BD6DF1E086588E3A31A6AE1DB"
+            },
+            {
+              "name": ".moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.7.0/modules/l0/MoonCats/test.moon",
+              "sha1": "F906E8E37CBDE31469A4F2227FC21D882D4FB5EE",
+              "type": "test"
+            },
+            {
+              "name": "/annotations.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.7.0/modules/l0/MoonCats/test/annotations.moon",
+              "sha1": "DA3E4775DC33B82BF30443D55E9E35923629C9C8",
+              "type": "test"
+            },
+            {
+              "name": "/DocRenderer.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.7.0/modules/l0/MoonCats/test/DocRenderer.moon",
+              "sha1": "E8EBB732700725A7214BDEA0A82AC1020575A3C2",
+              "type": "test"
+            },
+            {
+              "name": "/Parser.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.7.0/modules/l0/MoonCats/test/Parser.moon",
+              "sha1": "FEE1E627C58E32871BF7DB44D8647E96D0DFCD13",
+              "type": "test"
+            },
+            {
+              "name": "/Emitter.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.7.0/modules/l0/MoonCats/test/Emitter.moon",
+              "sha1": "51FF7EC64C90F549F7849FE2171D53F093A18FED",
+              "type": "test"
+            },
+            {
+              "name": "/MoonCats.moon",
+              "url": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/v0.7.0/modules/l0/MoonCats/test/MoonCats.moon",
+              "sha1": "C39D3DA2C999D8130E8D99ACE7F65E247FF91EDD",
+              "type": "test"
+            }
+          ]
+        }
+      },
+      "changelog": {
+        "0.7.0": [
+          "feat: Initial release: extracts LuaCATS annotations from MoonScript sources into LuaLS .d.lua type-definition files, with enum-class synthesis, constructor overloads, cross-module type resolution, and an annotation lint mode.",
+          "feat: Renders API documentation straight from the parsed annotations: one markdown page per module with MoonScript and Lua call forms for every method, constructor parameter tables, cross-linked types, enum member tables with per-value descriptions, deprecation notices, and private members omitted (or badged on request). Emits ready-to-serve mkdocs or mdBook site scaffolding.",
+          "feat: Class fields, enum exports, and instance defaults are declared as typed `@field` annotations on the class, and re-exported local functions resolve to their full signature and documentation, so both IntelliSense and generated docs show real types instead of placeholders."
         ]
       }
     }
