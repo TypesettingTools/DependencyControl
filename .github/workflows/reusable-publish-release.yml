@@ -47,6 +47,10 @@ on:
         description: "Branch that serves the feed URL"
         type: string
         default: publish
+      tag-prefix:
+        description: "Prefix for the version tags this creates; must match the feed's file-URL tag scheme"
+        type: string
+        default: v
       stable-channel:
         description: "Publishing this channel also records the release date on the dev branch"
         type: string
@@ -77,6 +81,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      TAG_PREFIX: ${{ inputs.tag-prefix }}
     steps:
       - name: Generate a token from the release App
         id: app-token
@@ -146,19 +152,40 @@ jobs:
             git push origin "HEAD:${{ inputs.dev-branch }}"
           fi
 
-      # Each published channel resolves files from a tag v<version><tagSuffix[channel]>. Derive them
-      # from the source channel's versions and create the missing ones at the released commit.
+      # Define the tag-naming scheme <prefix><version><tagSuffix[channel]> once for all
+      # the three steps that build tag names (create tags, publish guard, GitHub release).
+      - name: Define shared release helpers
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/release-lib.sh" <<'SH'
+          # tag_name <prefix> <version> <feed> <channel>: the git tag a package version resolves to on a
+          # channel, as <prefix><version><tagSuffix[channel]>.
+          tag_name() {
+            local suffix
+            suffix=$(jq -r --arg c "$4" '(.vars.tagSuffix // {})[$c] // ""' "$3")
+            printf '%s%s%s\n' "$1" "$2" "$suffix"
+          }
+          # emit_tags <prefix> <feed> <version-channel> <suffix-channel>: one tag per distinct version the
+          # feed advertises on version-channel, each suffixed for suffix-channel. The two channels differ
+          # when tagging a source channel's versions for a destination channel that will carry them.
+          emit_tags() {
+            local v
+            while IFS= read -r v; do
+              [ -n "$v" ] || continue
+              tag_name "$1" "$v" "$2" "$4"
+            done < <(lua _depctrl/depctrl.lua get-current-versions -f "$2" -c "$3")
+          }
+          SH
+
+      # The versions come from the source channel; the suffix from each destination channel.
+      # Create the missing ones at the released commit.
       - name: Create the version tags
         run: |
           set -euo pipefail
-          jq -r --arg channels "${{ inputs.channels }}" --arg src "${{ inputs.source-channel }}" '
-            ($channels | split(" ")) as $to
-            | (.vars.tagSuffix // {}) as $suf
-            | [ (.macros // {}), (.modules // {})
-                | to_entries[]
-                | (.value.channels[$src].version // empty) as $v
-                | $to[] | "v" + ($v | tostring) + ($suf[.] // "") ]
-            | unique[]' DependencyControl.json > "$RUNNER_TEMP/tags.txt"
+          source "$RUNNER_TEMP/release-lib.sh"
+          for chan in ${{ inputs.channels }}; do
+            emit_tags "$TAG_PREFIX" DependencyControl.json "${{ inputs.source-channel }}" "$chan"
+          done | sort -u > "$RUNNER_TEMP/tags.txt"
           echo "Tags:"; sed 's/^/  /' "$RUNNER_TEMP/tags.txt"
           released_sha=$(git rev-parse HEAD)
           while IFS= read -r tag; do
@@ -197,12 +224,11 @@ jobs:
             --default-channel "${{ inputs.default-channel }}" --released "$RELEASE_DATE"
 
           git fetch --tags --force --quiet
-          jq -r '
-            (.vars.tagSuffix // {}) as $suf
-            | [ (.macros // {}), (.modules // {})
-                | to_entries[] | (.value.channels // {}) | to_entries[]
-                | "v" + (.value.version | tostring) + ($suf[.key] // "") ]
-            | unique[]' _publish/DependencyControl.json > "$RUNNER_TEMP/publish-tags.txt"
+          source "$RUNNER_TEMP/release-lib.sh"
+          channels=$(jq -r '[ (.macros // {}), (.modules // {}) | .[] | select(type == "object") | .channels // {} | keys[] ] | unique[]' _publish/DependencyControl.json)
+          for chan in $channels; do
+            emit_tags "$TAG_PREFIX" _publish/DependencyControl.json "$chan" "$chan"
+          done | sort -u > "$RUNNER_TEMP/publish-tags.txt"
           while IFS= read -r tag; do
             [ -n "$tag" ] || continue
             git rev-parse -q --verify "refs/tags/$tag^{commit}" >/dev/null \
@@ -227,13 +253,12 @@ jobs:
         if: ${{ inputs.release-channels != '' }}
         run: |
           set -euo pipefail
-          ver=$(jq -r --arg src "${{ inputs.source-channel }}" '
-            [ (.macros // {}), (.modules // {}) | to_entries[] | .value.channels[$src].version // empty ]
-            | if length == 0 then empty else max_by(split(".") | map(tonumber)) end' DependencyControl.json)
-          [ -n "$ver" ] || { echo "::error::Could not resolve a release version from the '${{ inputs.source-channel }}' channel."; exit 1; }
+          ver=$(lua _depctrl/depctrl.lua get-version -f DependencyControl.json -c "${{ inputs.source-channel }}")
           echo "Release version: v$ver"
           echo "RELEASE_VERSION=$ver" >> "$GITHUB_ENV"
 
+      # The bundler names the archive after the same release version (highest on the default channel),
+      # so the asset matches the release with no post-rename.
       - name: Build the release bundle
         id: bundle
         if: ${{ inputs.release-channels != '' }}
@@ -243,12 +268,6 @@ jobs:
           lua _depctrl/depctrl.lua bundle --out-dir "$RUNNER_TEMP/bundle"
           zip=$(find "$RUNNER_TEMP/bundle" -maxdepth 1 -name '*.zip' -print -quit)
           if [ -n "$zip" ]; then
-            # The bundler names the archive after the namesake module, which lags the release version
-            # under lockstep, so rename it to the resolved version the release is cut at.
-            feedName=$(jq -r '.name // "release"' DependencyControl.json)
-            aligned="$(dirname "$zip")/${feedName}-v${RELEASE_VERSION}.zip"
-            [ "$zip" = "$aligned" ] || mv "$zip" "$aligned"
-            zip="$aligned"
             echo "Bundled $(basename "$zip")"
           else
             echo "::warning::The bundle produced no archive; the release(s) will carry no asset."
@@ -265,14 +284,14 @@ jobs:
           BUNDLE_ZIP: ${{ steps.bundle.outputs.zip }}
         run: |
           set -euo pipefail
+          source "$RUNNER_TEMP/release-lib.sh"
           notes="$RUNNER_TEMP/release-notes.md"
           lua _depctrl/depctrl.lua release-notes --channel "${{ inputs.source-channel }}" --output "$notes" \
             || echo "(no changelog entries for this release)" > "$notes"
           [ -s "$notes" ] || echo "(no changelog entries for this release)" > "$notes"
           for chan in ${{ inputs.channels }}; do
             case " ${{ inputs.release-channels }} " in *" $chan "*) ;; *) continue ;; esac
-            suffix=$(jq -r --arg c "$chan" '(.vars.tagSuffix // {})[$c] // ""' _publish/DependencyControl.json)
-            tag="v${RELEASE_VERSION}${suffix}"
+            tag=$(tag_name "$TAG_PREFIX" "$RELEASE_VERSION" _publish/DependencyControl.json "$chan")
             prerelease=""; [ "$chan" = "${{ inputs.stable-channel }}" ] || prerelease="--prerelease"
             if gh release view "$tag" >/dev/null 2>&1; then
               echo "· release $tag already exists — leaving it"

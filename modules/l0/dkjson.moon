@@ -175,7 +175,7 @@ wrapper.encode = (value, state) ->
 wrapper.__depCtrlInit = (DependencyControl) ->
   wrapper.version = DependencyControl {
     name: "dkjson"
-    version: "0.7.1" -- @{l0.dkjson:version}
+    version: "0.8.0" -- @{l0.dkjson:version}
     description: "David Kolf's JSON module for Lua."
     author: "David Kolf"
     moduleName: "l0.dkjson"
