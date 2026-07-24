@@ -54,19 +54,19 @@
       "url": "@{baseUrl}#@{namespace}",
       "channels": {
         "alpha": {
-          "version": "0.7.0",
+          "version": "0.8.1",
           "released": "2026-07-24",
           "default": false,
           "files": [
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "ABAB9B3A82C6B47144ED160F484B3617651DDF81"
+              "sha1": "F7B62EAC79C4FBA001B50C12506231C204CC7E80"
             },
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "59B666472F097BE5D71ADB788A96D7A650830BB5",
+              "sha1": "9329D7020A486DE3F5202963522327AB709FF815",
               "type": "test"
             }
           ],
@@ -102,19 +102,19 @@
           ]
         },
         "stable": {
-          "version": "0.7.0",
+          "version": "0.8.1",
           "released": "2026-07-24",
           "default": true,
           "files": [
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "ABAB9B3A82C6B47144ED160F484B3617651DDF81"
+              "sha1": "F7B62EAC79C4FBA001B50C12506231C204CC7E80"
             },
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "59B666472F097BE5D71ADB788A96D7A650830BB5",
+              "sha1": "9329D7020A486DE3F5202963522327AB709FF815",
               "type": "test"
             }
           ],
@@ -153,6 +153,9 @@
           "feat: Added a Global Configuration macro to view and edit DependencyControl's global settings — update behavior, feed discovery and caching, logging, and file paths — in one dialog, so common tweaks no longer need hand-editing the config file. The feed lists stay in the Manage Feeds macro.",
           "change: The Toolbox now updates from a `stable` channel by default; installations on the previous `alpha` channel are migrated automatically.",
           "fix: The Install, Uninstall, and Update script dropdowns now start empty on macOS instead of defaulting to, and being stuck on, their first entry."
+        ],
+        "0.8.1": [
+          "fix: The Install Script macro no longer fails while scanning feeds that set URL templates per section, DependencyControl's own feed among them."
         ]
       }
     }
@@ -165,14 +168,14 @@
       "url": "@{baseUrl}#@{namespace}",
       "channels": {
         "alpha": {
-          "version": "0.8.0",
+          "version": "0.8.1",
           "released": "2026-07-24",
           "default": false,
           "files": [
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "EA116FC2F7C3EDA9DC16E603C25669E3ABBA07EA"
+              "sha1": "87CDA007933A971BAEFC91A044CF7FC941535D0D"
             },
             {
               "name": "/Constants.moon",
@@ -298,7 +301,7 @@
             {
               "name": "/ScriptUpdateRecord.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "56B2C04A436337243E7D294B5C820445A0F733A7"
+              "sha1": "9553BD9771DFEF0E35BA04814E2EAFFA0E27C51A"
             },
             {
               "name": "/SemanticVersion.moon",
@@ -568,7 +571,7 @@
             {
               "name": "/ScriptUpdateRecord.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "0B66CB43DC28194E93D5CC25426698010FCC436D",
+              "sha1": "287B0C04CC3A4BA92FE30E2258D7EFEA922AFE58",
               "type": "test"
             },
             {
@@ -592,7 +595,7 @@
             {
               "name": "/UpdateFeed.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "3094DFD9B29DB2F238D8E9986DDB6DEC64BC8D5F",
+              "sha1": "4A3CE78253A52C70D6C28394BF724F9D0552DB0E",
               "type": "test"
             },
             {
@@ -1263,14 +1266,14 @@
           ]
         },
         "stable": {
-          "version": "0.8.0",
+          "version": "0.8.1",
           "released": "2026-07-24",
           "default": true,
           "files": [
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "EA116FC2F7C3EDA9DC16E603C25669E3ABBA07EA"
+              "sha1": "87CDA007933A971BAEFC91A044CF7FC941535D0D"
             },
             {
               "name": "/Constants.moon",
@@ -1396,7 +1399,7 @@
             {
               "name": "/ScriptUpdateRecord.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "56B2C04A436337243E7D294B5C820445A0F733A7"
+              "sha1": "9553BD9771DFEF0E35BA04814E2EAFFA0E27C51A"
             },
             {
               "name": "/SemanticVersion.moon",
@@ -1666,7 +1669,7 @@
             {
               "name": "/ScriptUpdateRecord.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "0B66CB43DC28194E93D5CC25426698010FCC436D",
+              "sha1": "287B0C04CC3A4BA92FE30E2258D7EFEA922AFE58",
               "type": "test"
             },
             {
@@ -1690,7 +1693,7 @@
             {
               "name": "/UpdateFeed.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "3094DFD9B29DB2F238D8E9986DDB6DEC64BC8D5F",
+              "sha1": "4A3CE78253A52C70D6C28394BF724F9D0552DB0E",
               "type": "test"
             },
             {
@@ -1918,6 +1921,9 @@
         ],
         "0.8.0": [
           "feat: New `get-version` and `get-current-versions` CLI commands report a feed channel's highest version or its distinct package versions."
+        ],
+        "0.8.1": [
+          "fix: Reading the channel list of a package that declares no channels returns an empty list instead of throwing an error."
         ]
       }
     },

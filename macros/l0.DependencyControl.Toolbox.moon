@@ -1,6 +1,6 @@
 export script_name = "DependencyControl Toolbox"
 export script_description = "Provides DependencyControl maintenance and configuration tools."
-export script_version = "0.7.0" -- @{l0.DependencyControl.Toolbox:version}
+export script_version = "0.8.1" -- @{l0.DependencyControl.Toolbox:version}
 export script_author = "line0"
 export script_namespace = "l0.DependencyControl.Toolbox"
 
@@ -191,24 +191,24 @@ crawlWithPrompt = (inventory) ->
 install = ->
   config = getConfig!
 
-  addAvailableToInstall = (tbl, feed, scriptType) ->
-    scriptTypeConfigAndFeedKeyName = ScriptTypeSection[scriptType]
 
-    for namespace, data in pairs feed.data[scriptTypeConfigAndFeedKeyName]
+  addAvailableToInstall = (macros, modules, feed) ->
+    for pkg, scriptType, section in feed\walkPackages!
+      namespace = pkg.namespace
       scriptData, err = feed\getScript namespace, scriptType, nil, false
       if err
         logger\warn msgs.install.createScriptUpdateRecordFailed\format terms.scriptType.singular[scriptType], namespace, feed.url, err
         continue
 
+      tbl = scriptType == ScriptType.Module and modules or macros
       channels, defaultChannel = scriptData\getChannels!
       tbl[namespace] or= {}
       for channel in *channels
         record = scriptData.data.channels[channel]
         verNum = DepCtrl.SemanticVersion\toPacked record.version
-        unless config.c[scriptTypeConfigAndFeedKeyName][namespace] or (tbl[namespace][channel] and verNum < tbl[namespace][channel].verNum)
+        unless config.c[section][namespace] or (tbl[namespace][channel] and verNum < tbl[namespace][channel].verNum)
           tbl[namespace][channel] = { name: scriptData.name, version: record.version, verNum: verNum, feed: feed.url,
             default: defaultChannel == channel, moduleName: scriptType == ScriptType.Module and namespace }
-    return tbl
 
   buildDlgList = (tbl) ->
     buildSortedDlgList (add) ->
@@ -229,8 +229,7 @@ install = ->
     continue unless entry.fetched
     feed = DepCtrl.updater.feedLoader\load entry.url
     continue unless feed.data
-    macros = addAvailableToInstall macros, feed, ScriptType.Automation
-    modules = addAvailableToInstall modules, feed, ScriptType.Module
+    addAvailableToInstall macros, modules, feed
 
   moduleList, moduleMap = buildDlgList modules
   macroList, macroMap = buildDlgList macros
