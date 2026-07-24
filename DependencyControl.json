@@ -16,8 +16,8 @@
   "vars": {
     "tagSuffix": {
       "alpha": "-alpha",
-      "stable": "",
-      "main": ""
+      "main": "",
+      "stable": ""
     }
   },
   "maintainer": "line0",
@@ -61,7 +61,7 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "D98DB9A983627E49B5991B108F0D77513779D0E5"
+              "sha1": "ABAB9B3A82C6B47144ED160F484B3617651DDF81"
             },
             {
               "name": ".moon",
@@ -124,12 +124,12 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "27D105863DE6D5B8055420AA467AF4131635B0BC"
+              "sha1": "FC202CDDF83FC14CE784836E9C8D93CC6BC227DF"
             },
             {
               "name": "/Constants.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "1CC29AA3173EED833054F699ADD75DA61E2BDB64"
+              "sha1": "E3FE6C143BA1B268C0B9F7A2840D729DBF7E1C35"
             },
             {
               "name": "/ConfigHandler.moon",
@@ -225,7 +225,7 @@
             {
               "name": "/ModuleLoader.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "661B5163CF29FC9F7821B5EBC624AD68E2C22776"
+              "sha1": "F1ACB8570A361F9006A6E6BA74FFF84D1F058F3A"
             },
             {
               "name": "/ModuleProvider.moon",
@@ -240,7 +240,7 @@
             {
               "name": "/PackageRecord.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "235139F889F0E32B3B1F5EB62A82AB094E24AD4F"
+              "sha1": "8BF956EEF2223D75B42FEBAE3BE21E2FC2A1CDA7"
             },
             {
               "name": "/ScriptTargetFilter.moon",
@@ -275,7 +275,7 @@
             {
               "name": "/UpdateFeed.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "7DA1F0C92857735BEF91BFC3F02D8B6286EBE243"
+              "sha1": "3F565A4F1A9B530909BE6F0DB59561857842E689"
             },
             {
               "name": "/UpdateTask.moon",
@@ -340,7 +340,7 @@
             {
               "name": "/config-schema.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "EE8E11FD384FEEC541FF1C02C094F3394C3A64C0"
+              "sha1": "CC74ACBE7A7CD8761AD714564F3805AC96F68067"
             },
             {
               "name": "/Finalizer.moon",
@@ -365,12 +365,12 @@
             {
               "name": "/utils.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "F42018262A7E4E92333A33F8287FB3CBA8AF6986"
+              "sha1": "FA8307BC15AD2FEC1535F9B862E1D92C2A3A1AB9"
             },
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "30C9DAB080A711CAAF8C8C7AC6B89E0BA9292290",
+              "sha1": "1FE9D211C256E84F4C0F95BBA10659A1F7B9A0C7",
               "type": "test"
             },
             {
@@ -484,7 +484,7 @@
             {
               "name": "/ModuleLoader.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "C83F6D1317CE6E952E67C064D65A564DA91358DA",
+              "sha1": "8FE0E4ED90D3ED719F7DE80877591EF2F30014AA",
               "type": "test"
             },
             {
@@ -544,7 +544,7 @@
             {
               "name": "/UpdateFeed.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "16FA94A0BBAE41051C3312425890E2054609AF56",
+              "sha1": "6B566A8CE16D0292FA07303506A2D254C4CCC4DC",
               "type": "test"
             },
             {
@@ -580,13 +580,13 @@
             {
               "name": "/helpers/mock-http-server.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "8CD8CD54F81A82A0114DD560464A463EE986C408",
+              "sha1": "FD34253C875C7DC0AE52DC18BDAEFE0534BBD10F",
               "type": "test"
             },
             {
               "name": "/helpers/MockHttpServerController.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "42CEDC4B2884EA4B0431E8E61F0C628B04F23F69",
+              "sha1": "F4F84B3E954CB41DF6157ECF623B36DA3FF8EEBD",
               "type": "test"
             },
             {
@@ -786,7 +786,7 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "B0F04C0EE71EA899C3D06C51115CB2646BC7D214"
+              "sha1": "D88659A96EC9C7EC7D19ABB2A8192213136F834B"
             },
             {
               "name": "/vendor/dkjson.lua",
