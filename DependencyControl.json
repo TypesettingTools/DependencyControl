@@ -117,14 +117,14 @@
       "url": "@{baseUrl}#@{namespace}",
       "channels": {
         "main": {
-          "version": "0.7.0",
-          "released": "2026-07-24",
+          "version": "0.8.0",
+          "released": null,
           "default": true,
           "files": [
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "FC202CDDF83FC14CE784836E9C8D93CC6BC227DF"
+              "sha1": "EA116FC2F7C3EDA9DC16E603C25669E3ABBA07EA"
             },
             {
               "name": "/Constants.moon",
@@ -275,7 +275,7 @@
             {
               "name": "/UpdateFeed.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "3F565A4F1A9B530909BE6F0DB59561857842E689"
+              "sha1": "521AD8915BF09A02167ACDF73CE4C39E928F504A"
             },
             {
               "name": "/UpdateTask.moon",
@@ -544,7 +544,7 @@
             {
               "name": "/UpdateFeed.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "6B566A8CE16D0292FA07303506A2D254C4CCC4DC",
+              "sha1": "3094DFD9B29DB2F238D8E9986DDB6DEC64BC8D5F",
               "type": "test"
             },
             {
@@ -769,6 +769,9 @@
           "refactor: Reinstalling a managed module that exposes a plain version string instead of its DependencyControl record no longer demotes it to unmanaged, so it keeps receiving scheduled update checks.",
           "feat: New `resolve-feed` CLI command expands a feed's templates into a static, template-free feed compatible with the legacy v0.3.0 feed format.",
           "fix: Reloading a freshly updated module also evicts its cached submodules, so a multi-file module no longer reloads into a mix of new and stale code."
+        ],
+        "0.8.0": [
+          "feat: New `get-version` and `get-current-versions` CLI commands report a feed channel's highest version or its distinct package versions."
         ]
       }
     },
@@ -779,14 +782,14 @@
       "url": "http://dkolf.de/dkjson-lua/",
       "channels": {
         "main": {
-          "version": "0.7.1",
-          "released": "2026-07-24",
+          "version": "0.8.0",
+          "released": null,
           "default": true,
           "files": [
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "20D35A98AFCE11D67576CB8CE58040C663F23308"
+              "sha1": "3FACCD40F487E8205300E576B78F10D5AFFDDEE4"
             },
             {
               "name": "/vendor/dkjson.lua",
@@ -814,7 +817,7 @@
         "0.7.0": [
           "feat: Vendored dkjson v2.10 with a DependencyControl version record and json/dkjson self-registration."
         ],
-        "0.7.1": [
+        "0.8.0": [
           "fix: Upgrading from a DependencyControl v0.6.x install no longer fails when dkjson is pulled in as a new dependency; dkjson now skips a self-registration step that breaks pre-0.7.0 loaders."
         ]
       }

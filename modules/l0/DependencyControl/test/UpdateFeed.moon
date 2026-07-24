@@ -138,6 +138,55 @@
       feed = {data: {modules: {}}, __class: UpdateFeed}
       ut\assertNil UpdateFeed.getModuleVersion feed, "no.Such.NS"
 
+    -- getVersionsOnChannel / getHighestVersionOnChannel / getPackageVersionOnChannel: channel version queries
+
+    getVersionsOnChannel_distinctAscendingBySemver: (ut) ->
+      feed = stubSelf UpdateFeed, {__class: UpdateFeed, rawFeedData: {
+        macros: {"a.M": {channels: {stable: {version: "0.7.0"}}}}
+        modules: {
+          "l0.A": {channels: {stable: {version: "0.7.0"}}}   -- duplicate of the macro's version
+          "l0.B": {channels: {stable: {version: "0.7.10"}}}
+          "l0.C": {channels: {stable: {version: "0.7.9"}}}
+        }
+      }}
+      versions = feed\getVersionsOnChannel "stable"
+      ut\assertItemsEqual versions, {"0.7.0", "0.7.9", "0.7.10"}
+      -- ordered by semantic version, so 0.7.10 sorts after 0.7.9 rather than lexically before it
+      ut\assertEquals versions[#versions], "0.7.10"
+
+    getVersionsOnChannel_absentChannelIsEmpty: (ut) ->
+      feed = stubSelf UpdateFeed, {__class: UpdateFeed, rawFeedData: {
+        modules: {"l0.A": {channels: {stable: {version: "1.0.0"}}}}
+      }}
+      ut\assertEquals #feed\getVersionsOnChannel("nightly"), 0
+
+    getHighestVersionOnChannel_returnsHighest: (ut) ->
+      feed = stubSelf UpdateFeed, {__class: UpdateFeed, rawFeedData: {modules: {
+        "l0.A": {channels: {stable: {version: "0.7.0"}}}
+        "l0.B": {channels: {stable: {version: "0.7.1"}}}
+      }}}
+      ut\assertEquals feed\getHighestVersionOnChannel("stable"), "0.7.1"
+
+    getHighestVersionOnChannel_defaultsToDefaultChannel: (ut) ->
+      feed = stubSelf UpdateFeed, {__class: UpdateFeed, rawFeedData: {modules: {
+        "l0.A": {channels: {main: {default: true, version: "0.7.0"}}}
+        "l0.B": {channels: {main: {default: true, version: "0.7.1"}}}
+      }}}
+      ut\assertEquals feed\getHighestVersionOnChannel!, "0.7.1"
+
+    getPackageVersionOnChannel_found: (ut) ->
+      feed = stubSelf UpdateFeed, {__class: UpdateFeed, rawFeedData: {modules: {
+        "l0.A": {channels: {stable: {version: "0.7.0"}, alpha: {version: "0.8.0"}}}
+      }}}
+      ut\assertEquals feed\getPackageVersionOnChannel("l0.A", "alpha"), "0.8.0"
+
+    getPackageVersionOnChannel_missingPackageOrChannel: (ut) ->
+      feed = stubSelf UpdateFeed, {__class: UpdateFeed, rawFeedData: {modules: {
+        "l0.A": {channels: {stable: {version: "0.7.0"}}}
+      }}}
+      ut\assertNil feed\getPackageVersionOnChannel("l0.Nope", "stable")
+      ut\assertNil feed\getPackageVersionOnChannel("l0.A", "nightly")
+
     -- getProviders: virtual-package resolution lookup over the feed's module section
 
     getProviders_findsByBareAlias: (ut) ->
