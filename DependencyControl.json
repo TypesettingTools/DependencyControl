@@ -118,7 +118,7 @@
       "channels": {
         "main": {
           "version": "0.8.0",
-          "released": null,
+          "released": "2026-07-24",
           "default": true,
           "files": [
             {
@@ -783,7 +783,7 @@
       "channels": {
         "main": {
           "version": "0.8.0",
-          "released": null,
+          "released": "2026-07-24",
           "default": true,
           "files": [
             {
