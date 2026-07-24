@@ -175,7 +175,7 @@ wrapper.encode = (value, state) ->
 wrapper.__depCtrlInit = (DependencyControl) ->
   wrapper.version = DependencyControl {
     name: "dkjson"
-    version: "0.7.0" -- @{l0.dkjson:version}
+    version: "0.7.1" -- @{l0.dkjson:version}
     description: "David Kolf's JSON module for Lua."
     author: "David Kolf"
     moduleName: "l0.dkjson"
@@ -183,6 +183,8 @@ wrapper.__depCtrlInit = (DependencyControl) ->
     feed: "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/publish/DependencyControl.json"
     provides: {"json", "dkjson"}
   }
-  wrapper.version\register wrapper
+  -- prevent update failure when coming from DependencyControl v0.6.x, which breaks when modules register
+  -- themselves from the initializer hook by checking for presence of a field that only exists in v0.7.0+.
+  wrapper.version\register wrapper if wrapper.version.semanticVersion
 
 return wrapper
