@@ -172,15 +172,24 @@ jobs:
           done < "$RUNNER_TEMP/tags.txt"
 
       # Copy the source channel onto the published channel(s), preserving the others, then guard that
-      # every tag the published feed references exists before pushing.
+      # every tag the published feed references exists before pushing. On the first release the publish
+      # branch doesn't exist yet, so seed the worktree from the released commit and let the final push
+      # create it.
       - name: Publish to the publish branch
         run: |
           set -euo pipefail
-          git fetch origin "${{ inputs.publish-branch }}:refs/remotes/origin/${{ inputs.publish-branch }}"
-          git worktree add --detach _publish "origin/${{ inputs.publish-branch }}"
+          if git ls-remote --exit-code --heads origin "${{ inputs.publish-branch }}" >/dev/null 2>&1; then
+            git fetch origin "${{ inputs.publish-branch }}:refs/remotes/origin/${{ inputs.publish-branch }}"
+            git worktree add --detach _publish "origin/${{ inputs.publish-branch }}"
+          else
+            echo "Publish branch '${{ inputs.publish-branch }}' doesn't exist yet — bootstrapping it from the released commit."
+            git worktree add --detach _publish HEAD
+          fi
+
           rsync -a --delete \
             --exclude '.git' --exclude '_publish' --exclude '_depctrl' \
             --exclude 'ctrf' --exclude 'types' --exclude 'build' \
+            --exclude '.lua' --exclude '.luarocks' \
             --exclude 'DependencyControl.json' \
             ./ _publish/
           lua _depctrl/depctrl.lua merge-feed -f DependencyControl.json --into _publish/DependencyControl.json \
@@ -206,7 +215,7 @@ jobs:
             echo "publish branch already matches this release; nothing to publish."
           else
             git commit -m "release: publish ${{ inputs.channels }} for ${{ inputs.ref }} [skip ci]"
-            git push origin "HEAD:${{ inputs.publish-branch }}"
+            git push origin "HEAD:refs/heads/${{ inputs.publish-branch }}"
           fi
 
       # Optionally cut a GitHub Release for each requested channel that shipped this run. Notes are
