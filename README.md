@@ -191,12 +191,12 @@ local version = DependencyControl{
   feed = "https://raw.githubusercontent.com/TypesettingTools/line0-Aegisub-Scripts/master/DependencyControl.json",
   {
     "aegisub.util",
-    {"a-mo.LineCollection", version="1.0.1", url="https://github.com/torque/Aegisub-Motion"},
-    {"a-mo.Line", version="1.0.0", url="https://github.com/TypesettingTools/Aegisub-Motion"},
-    {"a-mo.Log", url="https://github.com/torque/Aegisub-Motion"},
-    {"l0.ASSFoundation", version="0.1.1", url="https://github.com/TypesettingTools/ASSFoundation",
+    {"a-mo.LineCollection", version = "1.0.1", url = "https://github.com/torque/Aegisub-Motion"},
+    {"a-mo.Line", version = "1.0.0", url = "https://github.com/TypesettingTools/Aegisub-Motion"},
+    {"a-mo.Log", url = "https://github.com/torque/Aegisub-Motion"},
+    {"l0.ASSFoundation", version = "0.1.1", url = "https://github.com/TypesettingTools/ASSFoundation",
       feed = "https://raw.githubusercontent.com/TypesettingTools/ASSFoundation/master/DependencyControl.json"},
-    {"l0.ASSFoundation.Common", version="0.1.1", url="https://github.com/TypesettingTools/ASSFoundation",
+    {"l0.ASSFoundation.Common", version = "0.1.1", url = "https://github.com/TypesettingTools/ASSFoundation",
       feed = "https://raw.githubusercontent.com/TypesettingTools/ASSFoundation/master/DependencyControl.json"},
     "YUtils"
   }
@@ -242,14 +242,15 @@ local version = DependencyControl{
   {
     "l0.ASSFoundation.ClassFactory",
     "aegisub.re", "aegisub.util", "aegisub.unicode",
-    {"l0.ASSFoundation.Common", version="0.1.1", url="https://github.com/TypesettingTools/ASSFoundation",
+    {"l0.ASSFoundation.Common", version = "0.1.1", url = "https://github.com/TypesettingTools/ASSFoundation",
       feed = "https://raw.githubusercontent.com/TypesettingTools/ASSFoundation/master/DependencyControl.json"},
-    {"a-mo.LineCollection", version="1.0.1", url="https://github.com/TypesettingTools/Aegisub-Motion"},
-    {"a-mo.Line", version="1.0.0", url="https://github.com/TypesettingTools/Aegisub-Motion"},
-    {"a-mo.Log", url="https://github.com/TypesettingTools/Aegisub-Motion"},
+    {"a-mo.LineCollection", version = "1.0.1", url = "https://github.com/TypesettingTools/Aegisub-Motion"},
+    {"a-mo.Line", version ="1.0.0", url = "https://github.com/TypesettingTools/Aegisub-Motion"},
+    {"a-mo.Log", url = "https://github.com/TypesettingTools/Aegisub-Motion"},
     "ASSInspector.Inspector",
-    {"YUtils", optional=true},
-    }
+    {"YUtils", optional = true},
+  }
+}
 
 local createASSClass, re, util, unicode, Common, LineCollection, Line, Log, ASSInspector, YUtils = version:requireModules()
 ```
