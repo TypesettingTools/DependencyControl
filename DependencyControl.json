@@ -1925,14 +1925,14 @@
       "url": "http://dkolf.de/dkjson-lua/",
       "channels": {
         "alpha": {
-          "version": "0.7.0",
+          "version": "0.7.1",
           "released": "2026-07-24",
           "default": false,
           "files": [
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "D88659A96EC9C7EC7D19ABB2A8192213136F834B"
+              "sha1": "20D35A98AFCE11D67576CB8CE58040C663F23308"
             },
             {
               "name": "/vendor/dkjson.lua",
@@ -1987,14 +1987,14 @@
           ]
         },
         "stable": {
-          "version": "0.7.0",
+          "version": "0.7.1",
           "released": "2026-07-24",
           "default": true,
           "files": [
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "D88659A96EC9C7EC7D19ABB2A8192213136F834B"
+              "sha1": "20D35A98AFCE11D67576CB8CE58040C663F23308"
             },
             {
               "name": "/vendor/dkjson.lua",
@@ -2021,6 +2021,9 @@
       "changelog": {
         "0.7.0": [
           "feat: Vendored dkjson v2.10 with a DependencyControl version record and json/dkjson self-registration."
+        ],
+        "0.7.1": [
+          "fix: Upgrading from a DependencyControl v0.6.x install no longer fails when dkjson is pulled in as a new dependency; dkjson now skips a self-registration step that breaks pre-0.7.0 loaders."
         ]
       }
     },
@@ -2254,7 +2257,7 @@
         "0.7.0": [
           "feat: Initial release: extracts LuaCATS annotations from MoonScript sources into LuaLS .d.lua type-definition files, with enum-class synthesis, constructor overloads, cross-module type resolution, and an annotation lint mode.",
           "feat: Renders API documentation straight from the parsed annotations: one markdown page per module with MoonScript and Lua call forms for every method, constructor parameter tables, cross-linked types, enum member tables with per-value descriptions, deprecation notices, and private members omitted (or badged on request). Emits ready-to-serve mkdocs or mdBook site scaffolding.",
-          "feat: Class fields, enum exports, and instance defaults are declared as typed @field annotations on the class, and re-exported local functions resolve to their full signature and documentation, so both IntelliSense and generated docs show real types instead of placeholders."
+          "feat: Class fields, enum exports, and instance defaults are declared as typed `@field` annotations on the class, and re-exported local functions resolve to their full signature and documentation, so both IntelliSense and generated docs show real types instead of placeholders."
         ]
       }
     }
