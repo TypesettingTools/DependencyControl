@@ -118,6 +118,14 @@ rec = DependencyControl{
     {name: "BM.BadMutex", version: "^0.1.3"},
     {name: "DM.DownloadManager", version: "^0.3.1"},
     {name: "PT.PreciseTimer", version: "^0.1.6"},
+  },
+  {
+    {
+      moduleName:"l0.dkjson",
+      version: "0.7.0",
+      url: "http://github.com/TypesettingTools/DependencyControl",
+      feed: "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/publish/DependencyControl.json"
+    }
   }
 }
 DependencyControl.__class.version = rec

@@ -650,6 +650,12 @@
               "type": "test"
             }
           ],
+          "requiredModules": [
+            {
+              "moduleName": "l0.dkjson",
+              "version": "0.7.0"
+            }
+          ],
           "provides": [
             {
               "name": "BM.BadMutex",
