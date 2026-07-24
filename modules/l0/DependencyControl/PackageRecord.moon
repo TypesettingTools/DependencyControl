@@ -436,8 +436,11 @@ class PackageRecord
   ---@param ... any Forwarded to registerTests().
   ---@return table selfRef
   register: (selfRef, ...) =>
-    -- replace dummy refs with real refs to own module
-    @ref.__index, @ref, LOADED_MODULES[@moduleName] = selfRef, selfRef, selfRef
+    -- forward  dummy refs to the real module for dependencies that already captured it.
+    -- A module that defers creating its DepCtrl record to the __depCtrlInit hook doesn't
+    -- get a dummy ref because it already finished loading by the time the hook is called.
+    @ref.__index = selfRef if @ref
+    @ref, LOADED_MODULES[@moduleName] = selfRef, selfRef
     @registerTests selfRef, ...
     return selfRef
 

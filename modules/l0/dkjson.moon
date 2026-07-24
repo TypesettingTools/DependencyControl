@@ -183,5 +183,6 @@ wrapper.__depCtrlInit = (DependencyControl) ->
     feed: "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/publish/DependencyControl.json"
     provides: {"json", "dkjson"}
   }
+  wrapper.version\register wrapper
 
 return wrapper
