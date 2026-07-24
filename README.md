@@ -552,7 +552,7 @@ For an example that serves updates from the HEAD of a GitHub repository's main b
 
 ## Reference
 
-The full API reference — every class, method, parameter, and return, for every module — is published at **[typesettingtools.github.io/DependencyControl](https://typesettingtools.github.io/DependencyControl/)**, showing the latest release (with a version picker for earlier releases and the in-development `master`). To build it from your own checkout, or to get the same annotations as editor IntelliSense, see [MoonCATS](#mooncats) below.
+The full API reference — every class, method, parameter, and return, for every module — is published at **[typesettingtools.github.io/DependencyControl](https://typesettingtools.github.io/DependencyControl/)**, showing the latest release (with a version picker for earlier releases and the in-development `main`). To build it from your own checkout, or to get the same annotations as editor IntelliSense, see [MoonCATS](#mooncats) below.
 
 ### MoonCATS
 
@@ -789,7 +789,7 @@ Renders browsable API documentation straight from the module sources' LuaCATS an
 
 For a **standalone API site**, `--site mkdocs` emits a ready-to-serve, self-contained [MkDocs](https://www.mkdocs.org/) project, and `--site mdbook` the [mdBook](https://rust-lang.github.io/mdBook/) equivalent. The **default, `--site none`**, is the advanced path DependencyControl's own site takes: it writes only an **embeddable reference section**, which a committed `mkdocs.yml` folds into a larger, hand-written site through the [`mkdocs-literate-nav`](https://github.com/oprypin/mkdocs-literate-nav) plugin, keeping `docs/` and `mkdocs.yml` as committed source with only the generated `docs/reference/` gitignored.
 
-Published API docs are versioned on GitHub Pages by the `Docs` workflow (`.github/workflows/docs.yml`), which regenerates the docs and deploys them with [mike](https://github.com/jimporter/mike): every merge to master updates `/master/`, every `v*` tag publishes an immutable `/<tag>/` copy and moves the `latest` alias, and a manual workflow dispatch on any branch publishes a `/<branch>/` preview. The site's root URL redirects to `latest` once the first release exists, and to `/master/` before then, so it is never a dead link. The Material theme's version picker lists all published versions; a stale preview can be dropped with `mike delete <branch> --push` from the repository root (where the committed `mkdocs.yml` lives). Serving requires the repository's Pages source to be set to the `gh-pages` branch (root).
+Published API docs are versioned on GitHub Pages by the `Docs` workflow (`.github/workflows/docs.yml`), which regenerates the docs and deploys them with [mike](https://github.com/jimporter/mike): every merge to main updates `/main/`, every `v*` tag publishes an immutable `/<tag>/` copy and moves the `latest` alias, and a manual workflow dispatch on any branch publishes a `/<branch>/` preview. The site's root URL redirects to `latest` once the first release exists, and to `/main/` before then, so it is never a dead link. The Material theme's version picker lists all published versions; a stale preview can be dropped with `mike delete <branch> --push` from the repository root (where the committed `mkdocs.yml` lives). Serving requires the repository's Pages source to be set to the `gh-pages` branch (root).
 
 | Option              | Default                         | Description                                              |
 | ------------------- | ------------------------------- | -------------------------------------------------------- |
@@ -818,7 +818,7 @@ The feed URL baked into installed configs points at one branch, so that branch m
 
 A release _copies_ the dev channel onto a chosen published channel and leaves the channels it isn't releasing untouched, so the published channels can sit at different versions. Each channel's files resolve from a `v<version>` tag (with the channel's tag suffix) that the release workflow creates.
 
-DependencyControl's own repository keeps this branch as `master` for historical reasons — its published feed URL predates this layout and can't move — so its `release.yml` overrides `publish-branch: master`. New packages need no such override: the workflow defaults to `publish`, and any name works as long as it's the branch your feed URL points at.
+DependencyControl's own feed URL served from `master` through v0.6.x; from v0.7.0 it serves from `publish`, the workflow's default. Because clients older than v0.7.0 can't read the current feed format, a one-time resolved feed left on `master` advertises v0.7.0 so they can upgrade onto `publish`. Any branch name works, as long as it's the one your feed URL points at.
 
 ### Using the workflows in your own package
 

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/master/schemas/config/v0.6.3.json",
+  "$id": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/publish/schemas/config/v0.6.3.json",
   "title": "DependencyControl Config File v0.6.3 (legacy)",
   "description": "The pre-0.7.0 DependencyControl configuration file, whose global settings under `config` use a flat, un-sectioned layout.",
   "type": "object",

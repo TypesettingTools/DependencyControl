@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/master/schemas/feed/v0.4.0.json",
+  "$id": "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/publish/schemas/feed/v0.4.0.json",
   "title": "DependencyControl Feed Format v0.4.0",
   "description": "An index for a repository of automation macros and modules available for installation or update via DependencyControl.",
   "type": "object",

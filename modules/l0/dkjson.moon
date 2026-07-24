@@ -180,7 +180,7 @@ wrapper.__depCtrlInit = (DependencyControl) ->
     author: "David Kolf"
     moduleName: "l0.dkjson"
     url: "http://dkolf.de/dkjson-lua/"
-    feed: "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/master/DependencyControl.json"
+    feed: "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/publish/DependencyControl.json"
     provides: {"json", "dkjson"}
   }
 

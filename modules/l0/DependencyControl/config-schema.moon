@@ -7,7 +7,7 @@ domain = require "l0.DependencyControl.domain"
 utils = require "l0.DependencyControl.utils"
 SemanticVersion = require "l0.DependencyControl.SemanticVersion"
 
-CONFIG_SCHEMA_ID_CURRENT = "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/master/schemas/config/v0.7.0.json"
+CONFIG_SCHEMA_ID_CURRENT = "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/publish/schemas/config/v0.7.0.json"
 
 -- Per-section defaults. Each section under `sections` is loaded as its own ConfigView with these defaults
 -- and handed to the classes of that domain. A section key is kept even when the section has no shared

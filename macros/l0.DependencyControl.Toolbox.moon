@@ -11,7 +11,7 @@ constants = require "l0.DependencyControl.Constants"
 FileCache = require "l0.DependencyControl.FileCache"
 UpdateTask = require "l0.DependencyControl.UpdateTask"
 depRec = DepCtrl {
-  feed: "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/master/DependencyControl.json",
+  feed: "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/publish/DependencyControl.json",
   {
     {"l0.DependencyControl", version: "0.7.0"}
   }

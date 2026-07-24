@@ -113,7 +113,7 @@ rec = DependencyControl{
   author: "line0",
   url: "http://github.com/TypesettingTools/DependencyControl",
   moduleName: "l0.DependencyControl",
-  feed: "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/master/DependencyControl.json",
+  feed: "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/publish/DependencyControl.json",
   provides: {
     {name: "BM.BadMutex", version: "^0.1.3"},
     {name: "DM.DownloadManager", version: "^0.3.1"},
