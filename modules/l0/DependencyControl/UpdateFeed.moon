@@ -1175,7 +1175,7 @@ class UpdateFeed
     unless version
       channel = opts.channel or @__defaultChannelName!
       return nil, msgs.formatReleaseNotes.noChannel unless channel
-      version = @__versionOnChannel channel
+      version = @getHighestVersionOnChannel channel
       return nil, msgs.formatReleaseNotes.channelEmpty\format channel unless version
 
     feedName = @rawFeedData.name
@@ -1197,19 +1197,45 @@ class UpdateFeed
       a.name < b.name
     ReleaseNotes.renderMarkdown packages, {title: opts.title}
 
-  ---Highest version any package advertises on the given channel.
-  ---@param channel string Channel name to inspect.
-  ---@return string? version The version string, or nil when no package uses the channel.
-  ---@private
-  __versionOnChannel: (channel) =>
-    best = nil
+  ---Distinct versions any feed advertises on the given channel, ascending by semantic version.
+  ---@param channel? string Channel to inspect; defaults to the channel marked default: true.
+  ---@return string[] versions Distinct version strings, lowest first; empty when the channel is absent or unused.
+  getVersionsOnChannel: (channel) =>
+    channel or= @__defaultChannelName!
+    versions, seen = {}, {}
+    return versions unless channel
     for section in *{"macros", "modules"}
       for _, pkg in pairs @rawFeedData[section] or {}
         continue unless type(pkg) == "table" and pkg.channels
         ch = pkg.channels[channel]
-        continue unless ch and ch.version
-        best = ch.version if not best or SemanticVersion\toPacked(ch.version) > SemanticVersion\toPacked(best)
-    best
+        continue unless ch and ch.version and not seen[ch.version]
+        seen[ch.version] = true
+        versions[#versions + 1] = ch.version
+    table.sort versions, (a, b) -> SemanticVersion\toPacked(a) < SemanticVersion\toPacked(b)
+    versions
+
+  ---Highest version on the given channel across the feed's packages. Under monorepo-style lockstep
+  ---versioning, where each release advances only the packages that changed, this is the repo's
+  ---release version.
+  ---@param channel? string Channel to inspect; defaults to the channel marked default: true.
+  ---@return string? version The highest version string, or nil when the channel is absent or unused.
+  getHighestVersionOnChannel: (channel) =>
+    versions = @getVersionsOnChannel channel
+    versions[#versions]
+
+  ---Version a single package advertises on the given channel.
+  ---@param namespace string Package namespace, found in either the macros or modules section.
+  ---@param channel? string Channel to inspect; defaults to the channel marked default: true.
+  ---@return string? version The version string, or nil when the package or channel is absent.
+  getPackageVersionOnChannel: (namespace, channel) =>
+    channel or= @__defaultChannelName!
+    return nil unless channel
+    for section in *{"macros", "modules"}
+      pkg = @rawFeedData[section] and @rawFeedData[section][namespace]
+      if type(pkg) == "table" and pkg.channels
+        ch = pkg.channels[channel]
+        return ch.version if ch and ch.version
+    nil
 
   ---Name of the channel marked default: true, taken from the first package that declares one.
   ---@return string? channel The default channel name, or nil when no package marks a default.

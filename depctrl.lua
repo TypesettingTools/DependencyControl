@@ -132,6 +132,17 @@ notesCmd:option("--version", "Version whose changelog to render (overrides --cha
 notesCmd:option("--title", "Optional top-level heading to prepend"):argname("<text>")
 notesCmd:option("-o --output", "Write the notes to this file instead of stdout"):argname("<path>")
 
+local getVersionCmd = parser:command("get-version",
+  "Print a channel's highest version, or one package's version on it")
+getVersionCmd:option("-f --feed", "Feed JSON path"):default("DependencyControl.json")
+getVersionCmd:option("-c --channel", "Channel to read (default: the channel marked default: true)"):argname("<name>")
+getVersionCmd:option("-p --package", "Print this package's version instead of the channel's highest"):argname("<namespace>")
+
+local getVersionsCmd = parser:command("get-current-versions",
+  "Print the distinct versions a channel advertises, one per line, lowest first")
+getVersionsCmd:option("-f --feed", "Feed JSON path"):default("DependencyControl.json")
+getVersionsCmd:option("-c --channel", "Channel to read (default: the channel marked default: true)"):argname("<name>")
+
 local typesCmd = parser:command("generate-types",
   "Extract LuaCATS annotations from module sources into LuaLS .d.lua type-definition files")
 typesCmd:option("-f --feed", "Feed JSON path"):default("DependencyControl.json")
@@ -422,16 +433,7 @@ elseif args.command == "bundle" then
 
   local fileCount, errCount = feed:deployFiles(distDir, filter, false)
 
-  -- Name the archive after the feed's headline module (DepCtrl's own feed) where present,
-  -- otherwise fall back to the first module version so other feeds still bundle.
-  local mainVersion = feed:getModuleVersion("l0.DependencyControl")
-  if not mainVersion then
-    for ns in pairs(feed.data.modules or {}) do
-      mainVersion = feed:getModuleVersion(ns)
-      if mainVersion then break end
-    end
-    mainVersion = mainVersion or "0.0.0"
-  end
+  local mainVersion = feed:getHighestVersionOnChannel() or "0.0.0"
 
   local suffix = GitRepository(feed.feedDir):getVersionSuffix()
   local zipPath = outputDir .. pathSep .. (feed.data.name .. "-v%s%s.zip"):format(mainVersion, suffix)
@@ -741,6 +743,33 @@ elseif args.command == "release-notes" then
     io.stdout:write("Wrote release notes to " .. path .. "\n")
   else
     io.stdout:write(body)
+  end
+  os.exit(0)
+
+-- ─── get-version ────────────────────────────────────────────────────────────────
+elseif args.command == "get-version" then
+  setupDepCtrl("get-version")
+  local feed = loadFeed(resolveAbsPath(args.feed))
+  local version
+  if args.package then
+    version = feed:getPackageVersionOnChannel(args.package, args.channel)
+  else
+    version = feed:getHighestVersionOnChannel(args.channel)
+  end
+  if not version then
+    io.stderr:write("get-version: no version found for the requested channel"
+      .. (args.package and (" and package '" .. args.package .. "'") or "") .. ".\n")
+    os.exit(1)
+  end
+  io.stdout:write(version .. "\n")
+  os.exit(0)
+
+-- ─── get-current-versions ─────────────────────────────────────────────────────────
+elseif args.command == "get-current-versions" then
+  setupDepCtrl("get-current-versions")
+  local feed = loadFeed(resolveAbsPath(args.feed))
+  for _, version in ipairs(feed:getVersionsOnChannel(args.channel)) do
+    io.stdout:write(version .. "\n")
   end
   os.exit(0)
 
