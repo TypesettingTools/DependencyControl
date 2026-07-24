@@ -1,0 +1,3632 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Dependency manager and automatic script updater for Aegisub macros and modules.">
+      
+      
+      
+      
+        <link rel="prev" href="../l0.DependencyControl.UpdateFeed/">
+      
+      
+        <link rel="next" href="../l0.DependencyControl.Updater/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>UpdateTask - DependencyControl</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#l0dependencycontrolupdatetask" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="DependencyControl" class="md-header__button md-logo" aria-label="DependencyControl" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            DependencyControl
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              UpdateTask
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TypesettingTools/DependencyControl" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="DependencyControl" class="md-nav__button md-logo" aria-label="DependencyControl" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    DependencyControl
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TypesettingTools/DependencyControl" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Design
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Design
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../design/updater-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Updater Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3_2" id="__nav_3_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DependencyControl
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    DependencyControl
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Accessors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Accessors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.ConfigHandler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ConfigHandler
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.ConfigView/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ConfigView
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Constants/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Constants
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Downloader/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Downloader
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Enum/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Enum
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.EventEmitter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    EventEmitter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.FeedInventory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FeedInventory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.FeedLoader/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FeedLoader
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.FeedManager/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FeedManager
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.FeedTrust/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FeedTrust
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.FileCache/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FileCache
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.FileLock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FileLock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Finalizer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalizer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.GitRepository/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GitRepository
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Host/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Host
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.JsonSchema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JsonSchema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Lock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Logger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Logger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.ModuleLoader/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ModuleLoader
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.ModuleProvider/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ModuleProvider
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.NamedSemaphore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NamedSemaphore
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.PackageRecord/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PackageRecord
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.ScriptTargetFilter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ScriptTargetFilter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.ScriptUpdateRecord/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ScriptUpdateRecord
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.SemanticVersion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SemanticVersion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Stub/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Stub
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Timer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Timer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.UnitTestSuite/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UnitTestSuite
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.UpdateFeed/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UpdateFeed
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UpdateTask
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UpdateTask
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#updatetask" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UpdateTask
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="UpdateTask">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#constructor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Constructor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#instance-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Instance methods
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Instance methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#run" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        run
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#refreshrecord" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        refreshRecord
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#class-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Class methods
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Class methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#iswithincontextceiling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        isWithinContextCeiling
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getupdatererrormsg" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getUpdaterErrorMsg
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#resolvesourceurl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        resolveSourceUrl
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fields
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#enums" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enums
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Enums">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#updatestatus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UpdateStatus
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#updatecontextceiling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UpdateContextCeiling
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#updatereason" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UpdateReason
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sourcechoicestickiness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SourceChoiceStickiness
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sourcefeedkind" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SourceFeedKind
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#feedtrustdecision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FeedTrustDecision
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Types
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#updatertrustband" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UpdaterTrustBand
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#candidatepackagesource" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CandidatePackageSource
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#updaterresolution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UpdaterResolution
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sourcechoicerecord" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SourceChoiceRecord
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Updater/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Updater
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.ZipArchiver/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ZipArchiver
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.config-schema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    config-schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.domain/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    domain
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.environment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    environment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.file-ops/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    file-ops
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.hash/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    hash
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.helpers.ffi-posix/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    helpers.ffi-posix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.helpers.ffi-windows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    helpers.ffi-windows
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.helpers.open-url/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    helpers.open-url
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.helpers.resolve-host/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    helpers.resolve-host
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.release-notes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    release-notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.shims.BadMutex/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    shims.BadMutex
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.shims.DownloadManager/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    shims.DownloadManager
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.shims.PreciseTimer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    shims.PreciseTimer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.utils/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    utils
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_3" id="__nav_3_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MoonCATS
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    MoonCATS
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.MoonCats/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.MoonCats.Diagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.MoonCats.DocRenderer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DocRenderer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.MoonCats.Emitter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Emitter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.MoonCats.Parser/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parser
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.MoonCats.annotations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    annotations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_4" id="__nav_3_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dkjson
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    dkjson
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.dkjson/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#updatetask" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UpdateTask
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="UpdateTask">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#constructor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Constructor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#instance-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Instance methods
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Instance methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#run" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        run
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#refreshrecord" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        refreshRecord
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#class-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Class methods
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Class methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#iswithincontextceiling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        isWithinContextCeiling
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getupdatererrormsg" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getUpdaterErrorMsg
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#resolvesourceurl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        resolveSourceUrl
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fields
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#enums" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enums
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Enums">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#updatestatus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UpdateStatus
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#updatecontextceiling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UpdateContextCeiling
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#updatereason" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UpdateReason
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sourcechoicestickiness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SourceChoiceStickiness
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sourcefeedkind" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SourceFeedKind
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#feedtrustdecision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FeedTrustDecision
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Types
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#updatertrustband" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UpdaterTrustBand
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#candidatepackagesource" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CandidatePackageSource
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#updaterresolution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UpdaterResolution
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sourcechoicerecord" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SourceChoiceRecord
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="l0dependencycontrolupdatetask">l0.DependencyControl.UpdateTask<a class="headerlink" href="#l0dependencycontrolupdatetask" title="Permanent link">&para;</a></h1>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">MoonScript</label><label for="__tabbed_1_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nc">UpdateTask</span> <span class="o">=</span> <span class="nb">require</span> <span class="s2">&quot;</span><span class="s">l0.DependencyControl.UpdateTask</span><span class="s2">&quot;</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">UpdateTask</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">require</span><span class="p">(</span><span class="s2">&quot;l0.DependencyControl.UpdateTask&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<h2 id="updatetask">UpdateTask <a name="UpdateTask"></a><a class="headerlink" href="#updatetask" title="Permanent link">&para;</a></h2>
+<p>Mutable execution state for one install/update operation.</p>
+<h3 id="constructor">Constructor <a name="UpdateTask.new"></a><a class="headerlink" href="#constructor" title="Permanent link">&para;</a></h3>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">MoonScript</label><label for="__tabbed_2_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">updateTask</span> <span class="o">=</span> <span class="nc">UpdateTask</span> <span class="n">record</span><span class="p">,</span> <span class="n">targetVersionNumber</span><span class="p">,</span> <span class="n">addFeeds</span><span class="p">,</span> <span class="n">optional</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">reason</span><span class="p">,</span> <span class="n">updater</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">updateTask</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">UpdateTask</span><span class="p">(</span><span class="nv">record</span><span class="p">,</span><span class="w"> </span><span class="nv">targetVersionNumber</span><span class="p">,</span><span class="w"> </span><span class="nv">addFeeds</span><span class="p">,</span><span class="w"> </span><span class="nv">optional</span><span class="p">,</span><span class="w"> </span><span class="nv">channel</span><span class="p">,</span><span class="w"> </span><span class="nv">reason</span><span class="p">,</span><span class="w"> </span><span class="nv">updater</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>Creates an update task for one record.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>record</td>
+<td><a href="../l0.DependencyControl.PackageRecord/#PackageRecord">PackageRecord</a></td>
+<td></td>
+</tr>
+<tr>
+<td>targetVersionNumber?</td>
+<td><code>number</code></td>
+<td>Minimum version to install (default 0, i.e. any).</td>
+</tr>
+<tr>
+<td>addFeeds?</td>
+<td><code>string</code>[]</td>
+<td></td>
+</tr>
+<tr>
+<td>optional?</td>
+<td><code>boolean</code></td>
+<td>Treat this as an optional dependency.</td>
+</tr>
+<tr>
+<td>channel?</td>
+<td><code>string</code></td>
+<td>Update channel to use.</td>
+</tr>
+<tr>
+<td>reason?</td>
+<td><a href="#UpdateReason">UpdateReason</a></td>
+<td>Why this task runs; a prompt is allowed only when this reason is permitted by that prompt kind's configured threshold.</td>
+</tr>
+<tr>
+<td>updater</td>
+<td><a href="../l0.DependencyControl.Updater/#Updater">Updater</a></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="instance-methods">Instance methods<a class="headerlink" href="#instance-methods" title="Permanent link">&para;</a></h3>
+<h4 id="run">run <a name="UpdateTask.run"></a><a class="headerlink" href="#run" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">MoonScript</label><label for="__tabbed_3_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">updateTask</span><span class="o">\</span><span class="n">run</span> <span class="n">waitLock</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nv">updateTask</span><span class="p">:</span><span class="nf">run</span><span class="p">(</span><span class="nv">waitLock</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>Runs the full update/install flow for this task.
+Acquires the global updater lock but does not release it — the caller (a PackageRecord.requireModules /
+macro-hook / Toolbox entry point) must call <code>updater\releaseLock</code> once its whole operation is done,
+or the lock is held until its lease lapses (orphanTimeout), blocking other scripts' updates.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>waitLock?</td>
+<td><code>boolean</code></td>
+<td>Wait for a concurrent update to finish instead of bailing.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>statusCode</code> <a href="#UpdateStatus">UpdateStatus</a></li>
+<li><code>detail</code> <code>any</code></li>
+</ul>
+<h4 id="refreshrecord">refreshRecord <a name="UpdateTask.refreshRecord"></a><a class="headerlink" href="#refreshrecord" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">MoonScript</label><label for="__tabbed_4_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">updateTask</span><span class="o">\</span><span class="n">refreshRecord</span><span class="o">!</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nv">updateTask</span><span class="p">:</span><span class="nf">refreshRecord</span><span class="p">()</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>Reloads this task's record from its config file to pick up an install/update another updater performed
+concurrently: on a version bump (or a virtual record becoming real) it reloads the module and marks the
+task updated. Called after waiting on the updater lock, so a task doesn't redo work already done.</p>
+<h3 id="class-methods">Class methods<a class="headerlink" href="#class-methods" title="Permanent link">&para;</a></h3>
+<h4 id="iswithincontextceiling">isWithinContextCeiling <a name="UpdateTask.isWithinContextCeiling"></a><a class="headerlink" href="#iswithincontextceiling" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">MoonScript</label><label for="__tabbed_5_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nc">UpdateTask</span><span class="o">.</span><span class="n">isWithinContextCeiling</span> <span class="n">reason</span><span class="p">,</span> <span class="n">ceiling</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nv">UpdateTask</span><span class="p">.</span><span class="nf">isWithinContextCeiling</span><span class="p">(</span><span class="nv">reason</span><span class="p">,</span><span class="w"> </span><span class="nv">ceiling</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>Reports whether an update context is allowed under a ceiling on the context ladder.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>reason</td>
+<td><a href="#UpdateReason">UpdateReason</a></td>
+<td>The context asking to act.</td>
+</tr>
+<tr>
+<td>ceiling?</td>
+<td><a href="#UpdateContextCeiling">UpdateContextCeiling</a></td>
+<td>The most autonomous context still allowed.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>within</code> <code>boolean</code> — True when the context sits at or below the ceiling; false when the ceiling is <code>off</code>, unset, or unrecognized.</li>
+</ul>
+<h4 id="getupdatererrormsg">getUpdaterErrorMsg <a name="UpdateTask.getUpdaterErrorMsg"></a><a class="headerlink" href="#getupdatererrormsg" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">MoonScript</label><label for="__tabbed_6_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nc">UpdateTask</span><span class="o">.</span><span class="n">getUpdaterErrorMsg</span> <span class="n">code</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">scriptType</span><span class="p">,</span> <span class="n">isInstall</span><span class="p">,</span> <span class="n">detailMsg</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nv">UpdateTask</span><span class="p">.</span><span class="nf">getUpdaterErrorMsg</span><span class="p">(</span><span class="nv">code</span><span class="p">,</span><span class="w"> </span><span class="nv">name</span><span class="p">,</span><span class="w"> </span><span class="nv">scriptType</span><span class="p">,</span><span class="w"> </span><span class="nv">isInstall</span><span class="p">,</span><span class="w"> </span><span class="nv">detailMsg</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>Converts updater status/error codes into user-facing error messages.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>code?</td>
+<td><a href="#UpdateStatus">UpdateStatus</a></td>
+<td>A nil or unmapped code yields a generic message naming the code.</td>
+</tr>
+<tr>
+<td>name</td>
+<td><code>string</code></td>
+<td></td>
+</tr>
+<tr>
+<td>scriptType</td>
+<td><a href="../l0.DependencyControl.domain/#ScriptType">ScriptType</a></td>
+<td>A domain.ScriptType value.</td>
+</tr>
+<tr>
+<td>isInstall</td>
+<td><code>boolean</code></td>
+<td></td>
+</tr>
+<tr>
+<td>detailMsg?</td>
+<td><code>string</code></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>message</code> <code>string</code> — The user-facing error text for the status code.</li>
+</ul>
+<h4 id="resolvesourceurl">resolveSourceUrl <a name="UpdateTask.resolveSourceUrl"></a><a class="headerlink" href="#resolvesourceurl" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">MoonScript</label><label for="__tabbed_7_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="nc">UpdateTask</span><span class="o">.</span><span class="n">resolveSourceUrl</span> <span class="n">source</span><span class="p">,</span> <span class="n">selfFeed</span><span class="p">,</span> <span class="n">userFeed</span><span class="p">,</span> <span class="n">modulesSection</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="nv">UpdateTask</span><span class="p">.</span><span class="nf">resolveSourceUrl</span><span class="p">(</span><span class="nv">source</span><span class="p">,</span><span class="w"> </span><span class="nv">selfFeed</span><span class="p">,</span><span class="w"> </span><span class="nv">userFeed</span><span class="p">,</span><span class="w"> </span><span class="nv">modulesSection</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>Resolves the feed URL a persisted source record maps to, given the owning package's feed fields.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>source</td>
+<td><a href="#SourceChoiceRecord">SourceChoiceRecord</a></td>
+<td>The persisted source record.</td>
+</tr>
+<tr>
+<td>selfFeed?</td>
+<td><code>string</code></td>
+<td>The package's declared feed (used for a self-declared source).</td>
+</tr>
+<tr>
+<td>userFeed?</td>
+<td><code>string</code></td>
+<td>The package's per-package override feed (used for a user-feed source).</td>
+</tr>
+<tr>
+<td>modulesSection?</td>
+<td><code>table&lt;string, table&gt;</code></td>
+<td>The modules config section (used to resolve a provider source).</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>url</code> <code>string</code>? — The resolved feed URL, or nil if it can't be determined.</li>
+</ul>
+<h3 id="fields">Fields<a class="headerlink" href="#fields" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>field</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>defaultFeedTrustPromptThreshold</td>
+<td><a href="#UpdateContextCeiling">UpdateContextCeiling</a></td>
+<td></td>
+</tr>
+<tr>
+<td>defaultPackageChoicePromptThreshold</td>
+<td><a href="#UpdateContextCeiling">UpdateContextCeiling</a></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="enums">Enums<a class="headerlink" href="#enums" title="Permanent link">&para;</a></h3>
+<p><a name="UpdateStatus"></a></p>
+<h4 id="updatestatus">UpdateStatus <a name="UpdateTask.UpdateStatus"></a><a class="headerlink" href="#updatestatus" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>member</th>
+<th>value</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>UpToDate</td>
+<td><code>0</code></td>
+<td>the installed version already satisfies the target</td>
+</tr>
+<tr>
+<td>Installed</td>
+<td><code>1</code></td>
+<td>the install or update succeeded</td>
+</tr>
+<tr>
+<td>AlreadyUpdated</td>
+<td><code>2</code></td>
+<td>another in-flight update already brought the package to the target version</td>
+</tr>
+<tr>
+<td>SkippedOptional</td>
+<td><code>3</code></td>
+<td>an optional dependency couldn't be satisfied and was skipped</td>
+</tr>
+<tr>
+<td>UpdaterDisabled</td>
+<td><code>-1</code></td>
+<td>the updater is disabled in the config</td>
+</tr>
+<tr>
+<td>InvalidNamespace</td>
+<td><code>-2</code></td>
+<td>the record's namespace doesn't conform to the rules</td>
+</tr>
+<tr>
+<td>Unmanaged</td>
+<td><code>-3</code></td>
+<td>the record is virtual or unmanaged, so it isn't updated</td>
+</tr>
+<tr>
+<td>AnotherUpdateRunning</td>
+<td><code>-5</code></td>
+<td>another script or process holds the updater lock</td>
+</tr>
+<tr>
+<td>NoSuitablePackage</td>
+<td><code>-6</code></td>
+<td>no feed offered a package satisfying the requirement</td>
+</tr>
+<tr>
+<td>NoInternet</td>
+<td><code>-7</code></td>
+<td>no internet connection is available</td>
+</tr>
+<tr>
+<td>InvalidVersion</td>
+<td><code>-8</code></td>
+<td>the requested version string couldn't be parsed</td>
+</tr>
+<tr>
+<td>ProtectedInstall</td>
+<td><code>-9</code></td>
+<td>the entry point is in Aegisub's ?data automation directory</td>
+</tr>
+<tr>
+<td>TaskAlreadyRunning</td>
+<td><code>-10</code></td>
+<td>this update task is already running</td>
+</tr>
+<tr>
+<td>RequirementsUnmet</td>
+<td><code>-15</code></td>
+<td>the package's own required modules couldn't be satisfied</td>
+</tr>
+<tr>
+<td>UntrustedFeed</td>
+<td><code>-16</code></td>
+<td>the only suitable package is in an untrusted feed</td>
+</tr>
+<tr>
+<td>PinnedUnavailable</td>
+<td><code>-17</code></td>
+<td>the pinned package source is no longer available</td>
+</tr>
+<tr>
+<td>UserAborted</td>
+<td><code>-18</code></td>
+<td>the user aborted the update</td>
+</tr>
+<tr>
+<td>BlockedFeed</td>
+<td><code>-19</code></td>
+<td>the only suitable package is in a feed the user blocked</td>
+</tr>
+<tr>
+<td>TempDirFailed</td>
+<td><code>-30</code></td>
+<td>the temporary download directory couldn't be created</td>
+</tr>
+<tr>
+<td>PathTraversal</td>
+<td><code>-33</code></td>
+<td>a feed file tried to deploy outside its namespaced path</td>
+</tr>
+<tr>
+<td>BadHash</td>
+<td><code>-35</code></td>
+<td>a feed file carried a missing or malformed SHA-1 hash</td>
+</tr>
+<tr>
+<td>MoveFailed</td>
+<td><code>-50</code></td>
+<td>some downloaded files couldn't be moved into place</td>
+</tr>
+<tr>
+<td>ModuleNotFound</td>
+<td><code>-55</code></td>
+<td>the install succeeded but the module loader couldn't find the module</td>
+</tr>
+<tr>
+<td>ModuleLoadFailed</td>
+<td><code>-56</code></td>
+<td>the install succeeded but the module raised while loading</td>
+</tr>
+<tr>
+<td>MissingVersionRecord</td>
+<td><code>-57</code></td>
+<td>the installed module exposes no version record</td>
+</tr>
+<tr>
+<td>RecordCreateFailed</td>
+<td><code>-58</code></td>
+<td>creating an unmanaged record for the installed module failed</td>
+</tr>
+<tr>
+<td>DownloadAddFailed</td>
+<td><code>-140</code></td>
+<td>a file download couldn't be queued</td>
+</tr>
+<tr>
+<td>DownloadFailed</td>
+<td><code>-245</code></td>
+<td>one or more file downloads failed</td>
+</tr>
+</tbody>
+</table>
+<p><a name="UpdateContextCeiling"></a></p>
+<h4 id="updatecontextceiling">UpdateContextCeiling <a name="UpdateTask.UpdateContextCeiling"></a><a class="headerlink" href="#updatecontextceiling" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>member</th>
+<th>value</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Off</td>
+<td><code>"off"</code></td>
+<td>no context at all</td>
+</tr>
+<tr>
+<td>UserRequested</td>
+<td><code>"user-requested"</code></td>
+<td>only actions the user starts themselves (e.g. via the Toolbox)</td>
+</tr>
+<tr>
+<td>DependencyResolution</td>
+<td><code>"dependency-resolution"</code></td>
+<td>also installing/updating a module as a dependency</td>
+</tr>
+<tr>
+<td>AutoUpdate</td>
+<td><code>"auto-update"</code></td>
+<td>also background scheduled update checks</td>
+</tr>
+</tbody>
+</table>
+<p><a name="UpdateReason"></a></p>
+<h4 id="updatereason">UpdateReason <a name="UpdateTask.UpdateReason"></a><a class="headerlink" href="#updatereason" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>member</th>
+<th>value</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>UserRequested</td>
+<td><code>"user-requested"</code></td>
+<td>an explicit user/UI request (e.g. the Toolbox)</td>
+</tr>
+<tr>
+<td>DependencyResolution</td>
+<td><code>"dependency-resolution"</code></td>
+<td>installing/updating a module as a dependency of another</td>
+</tr>
+<tr>
+<td>AutoUpdate</td>
+<td><code>"auto-update"</code></td>
+<td>a background scheduled update check</td>
+</tr>
+</tbody>
+</table>
+<p><a name="SourceChoiceStickiness"></a></p>
+<h4 id="sourcechoicestickiness">SourceChoiceStickiness <a name="UpdateTask.SourceChoiceStickiness"></a><a class="headerlink" href="#sourcechoicestickiness" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>member</th>
+<th>value</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Unset</td>
+<td><code>"unset"</code></td>
+<td>no preference recorded yet; resolve normally and prompt only if interactive</td>
+</tr>
+<tr>
+<td>Once</td>
+<td><code>"once"</code></td>
+<td>prompt again whenever a choice remains, preselecting the remembered pick</td>
+</tr>
+<tr>
+<td>Retain</td>
+<td><code>"retain"</code></td>
+<td>reuse the remembered pick whenever it's still eligible, without prompting</td>
+</tr>
+<tr>
+<td>Pinned</td>
+<td><code>"pinned"</code></td>
+<td>always reuse the remembered pick; if it's gone, abort (required) or skip (optional)</td>
+</tr>
+<tr>
+<td>Auto</td>
+<td><code>"auto"</code></td>
+<td>never prompt; always resolve via the ranking, refreshing the remembered pick for information</td>
+</tr>
+</tbody>
+</table>
+<p><a name="SourceFeedKind"></a></p>
+<h4 id="sourcefeedkind">SourceFeedKind <a name="UpdateTask.SourceFeedKind"></a><a class="headerlink" href="#sourcefeedkind" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>member</th>
+<th>value</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SelfDeclared</td>
+<td><code>"self-declared"</code></td>
+<td>the feed declared in the record</td>
+</tr>
+<tr>
+<td>UserFeed</td>
+<td><code>"user-feed"</code></td>
+<td>the per-package user override feed</td>
+</tr>
+<tr>
+<td>Provider</td>
+<td><code>"provider"</code></td>
+<td>another module that provides the required one (URL taken from the provider's own source)</td>
+</tr>
+<tr>
+<td>Other</td>
+<td><code>"other"</code></td>
+<td>a third-party trusted/extra feed; stores a literal feedUrl</td>
+</tr>
+</tbody>
+</table>
+<p><a name="FeedTrustDecision"></a></p>
+<h4 id="feedtrustdecision">FeedTrustDecision <a name="UpdateTask.FeedTrustDecision"></a><a class="headerlink" href="#feedtrustdecision" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>member</th>
+<th>value</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Once</td>
+<td><code>"once"</code></td>
+<td>use the untrusted feed for this install only</td>
+</tr>
+<tr>
+<td>Always</td>
+<td><code>"always"</code></td>
+<td>add the feed to the user's trusted feeds</td>
+</tr>
+<tr>
+<td>Never</td>
+<td><code>"never"</code></td>
+<td>add the feed to the user's blocked feeds</td>
+</tr>
+</tbody>
+</table>
+<h2 id="types">Types<a class="headerlink" href="#types" title="Permanent link">&para;</a></h2>
+<h3 id="updatertrustband">UpdaterTrustBand <a name="UpdaterTrustBand"></a><a class="headerlink" href="#updatertrustband" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>value</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>1</code></td>
+<td>DeclaredDirect: the declared/own feed, trusted, offering the module by name</td>
+</tr>
+<tr>
+<td><code>2</code></td>
+<td>TrustedDirect: another trusted feed, offering the module by name</td>
+</tr>
+<tr>
+<td><code>3</code></td>
+<td>TrustedProvider: a trusted feed, offering a module that provides it</td>
+</tr>
+<tr>
+<td><code>4</code></td>
+<td>UntrustedDirect: an untrusted feed, offering the module by name</td>
+</tr>
+<tr>
+<td><code>5</code></td>
+<td>UntrustedProvider: an untrusted feed, offering a provider</td>
+</tr>
+</tbody>
+</table>
+<h3 id="candidatepackagesource">CandidatePackageSource <a name="CandidatePackageSource"></a><a class="headerlink" href="#candidatepackagesource" title="Permanent link">&para;</a></h3>
+<p>A potential package source pooled during resolution to collect a feed's update record, where it came from
+and its trust status.</p>
+<table>
+<thead>
+<tr>
+<th>field</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>updateRecord</td>
+<td><a href="../l0.DependencyControl.ScriptUpdateRecord/#ScriptUpdateRecord">ScriptUpdateRecord</a></td>
+<td>The feed's update record for this candidate, channel already selected.</td>
+</tr>
+<tr>
+<td>feedUrl</td>
+<td><code>string</code></td>
+<td>URL of the feed the candidate was found in.</td>
+</tr>
+<tr>
+<td>isDirect</td>
+<td><code>boolean</code></td>
+<td>True when the feed offers the required package by name; false when via a provider.</td>
+</tr>
+<tr>
+<td>trustBand</td>
+<td><a href="#UpdaterTrustBand">UpdaterTrustBand</a></td>
+<td>The candidate's trust band.</td>
+</tr>
+<tr>
+<td>providesVersion?</td>
+<td><code>string</code></td>
+<td>For a provider, the alias version range it declares (nil = any version).</td>
+</tr>
+</tbody>
+</table>
+<h3 id="updaterresolution">UpdaterResolution <a name="UpdaterResolution"></a><a class="headerlink" href="#updaterresolution" title="Permanent link">&para;</a></h3>
+<p>The outcome of resolving a package source: either a source to install or a status to return.</p>
+<table>
+<thead>
+<tr>
+<th>field</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>installRequired</td>
+<td><code>boolean</code></td>
+<td>Whether the caller must perform an install/update.</td>
+</tr>
+<tr>
+<td>statusCode?</td>
+<td><a href="#UpdateStatus">UpdateStatus</a></td>
+<td>The status to return when no install is required (installRequired false).</td>
+</tr>
+<tr>
+<td>statusDetailMessage?</td>
+<td><code>any</code></td>
+<td>Detail accompanying statusCode (e.g. an untrusted feed URL or an error string).</td>
+</tr>
+<tr>
+<td>selectedSource?</td>
+<td><a href="#CandidatePackageSource">CandidatePackageSource</a></td>
+<td>The source to install; set when installRequired is true.</td>
+</tr>
+<tr>
+<td>stickiness?</td>
+<td><a href="#SourceChoiceStickiness">SourceChoiceStickiness</a></td>
+<td>The source-choice stickiness to persist; set when installRequired is true.</td>
+</tr>
+<tr>
+<td>maxVersion?</td>
+<td><code>number</code></td>
+<td>The highest candidate version found during resolution; set when installRequired is true.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="sourcechoicerecord">SourceChoiceRecord <a name="SourceChoiceRecord"></a><a class="headerlink" href="#sourcechoicerecord" title="Permanent link">&para;</a></h3>
+<p>A package's remembered source, persisted per-package as <code>currentSource</code>.</p>
+<table>
+<thead>
+<tr>
+<th>field</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>feedSource</td>
+<td><a href="#SourceFeedKind">SourceFeedKind</a></td>
+<td>Where the source came from.</td>
+</tr>
+<tr>
+<td>feedUrl?</td>
+<td><code>string</code></td>
+<td>The literal feed URL; only stored (and required) for the <code>other</code> feedSource.</td>
+</tr>
+<tr>
+<td>channel</td>
+<td><code>string</code></td>
+<td>The update channel the source was resolved on.</td>
+</tr>
+<tr>
+<td>provider?</td>
+<td><code>{ namespace: string, version?: string }</code></td>
+<td>The provider that satisfied the requirement, when resolved indirectly.</td>
+</tr>
+<tr>
+<td>stickiness</td>
+<td><a href="#SourceChoiceStickiness">SourceChoiceStickiness</a></td>
+<td>How sticky the choice is.</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.code.copy", "content.tabs.link", "navigation.instant", "navigation.top", "search.suggest", "search.highlight", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,4224 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Dependency manager and automatic script updater for Aegisub macros and modules.">
+      
+      
+      
+      
+        <link rel="prev" href="../l0.DependencyControl.UnitTestSuite/">
+      
+      
+        <link rel="next" href="../l0.DependencyControl.UpdateTask/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>UpdateFeed - DependencyControl</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#l0dependencycontrolupdatefeed" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="DependencyControl" class="md-header__button md-logo" aria-label="DependencyControl" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            DependencyControl
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              UpdateFeed
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TypesettingTools/DependencyControl" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="DependencyControl" class="md-nav__button md-logo" aria-label="DependencyControl" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    DependencyControl
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TypesettingTools/DependencyControl" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Design
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Design
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../design/updater-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Updater Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3_2" id="__nav_3_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DependencyControl
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    DependencyControl
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Accessors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Accessors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.ConfigHandler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ConfigHandler
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.ConfigView/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ConfigView
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Constants/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Constants
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Downloader/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Downloader
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Enum/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Enum
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.EventEmitter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    EventEmitter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.FeedInventory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FeedInventory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.FeedLoader/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FeedLoader
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.FeedManager/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FeedManager
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.FeedTrust/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FeedTrust
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.FileCache/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FileCache
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.FileLock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FileLock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Finalizer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalizer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.GitRepository/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GitRepository
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Host/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Host
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.JsonSchema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JsonSchema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Lock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Logger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Logger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.ModuleLoader/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ModuleLoader
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.ModuleProvider/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ModuleProvider
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.NamedSemaphore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NamedSemaphore
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.PackageRecord/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PackageRecord
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.ScriptTargetFilter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ScriptTargetFilter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.ScriptUpdateRecord/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ScriptUpdateRecord
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.SemanticVersion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SemanticVersion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Stub/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Stub
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Timer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Timer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.UnitTestSuite/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UnitTestSuite
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UpdateFeed
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UpdateFeed
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#updatefeed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UpdateFeed
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="UpdateFeed">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#constructor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Constructor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#instance-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Instance methods
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Instance methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#getknownfeeds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getKnownFeeds
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fetch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        fetch
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#loadfile" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        loadFile
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ensureloaded" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ensureLoaded
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#expand" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        expand
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getscript" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getScript
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getmacro" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getMacro
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getmodule" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getModule
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getmoduleversion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getModuleVersion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getproviders" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getProviders
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validateagainstschema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validateAgainstSchema
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#updatefeed_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        updateFeed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mergechannels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        mergeChannels
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bumpversions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        bumpVersions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#resolve" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        resolve
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#formatreleasenotes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        formatReleaseNotes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deployfiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        deployFiles
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#findunlistedfiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        findUnlistedFiles
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#walkpackages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        walkPackages
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#walkfiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        walkFiles
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#class-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Class methods
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Class methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#getfiledeploypath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getFileDeployPath
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deserialize" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        deserialize
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fields
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#enums" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enums
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Enums">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#updatefeedexpansionmode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UpdateFeedExpansionMode
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Types
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#updatefeedchanneltemplatestate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UpdateFeedChannelTemplateState
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#updatefeedtemplatespec" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UpdateFeedTemplateSpec
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.UpdateTask/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UpdateTask
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.Updater/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Updater
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.ZipArchiver/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ZipArchiver
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.config-schema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    config-schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.domain/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    domain
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.environment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    environment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.file-ops/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    file-ops
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.hash/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    hash
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.helpers.ffi-posix/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    helpers.ffi-posix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.helpers.ffi-windows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    helpers.ffi-windows
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.helpers.open-url/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    helpers.open-url
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.helpers.resolve-host/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    helpers.resolve-host
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.release-notes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    release-notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.shims.BadMutex/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    shims.BadMutex
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.shims.DownloadManager/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    shims.DownloadManager
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.shims.PreciseTimer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    shims.PreciseTimer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.DependencyControl.utils/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    utils
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_3" id="__nav_3_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MoonCATS
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    MoonCATS
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.MoonCats/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.MoonCats.Diagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.MoonCats.DocRenderer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DocRenderer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.MoonCats.Emitter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Emitter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.MoonCats.Parser/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parser
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.MoonCats.annotations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    annotations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_4" id="__nav_3_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dkjson
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    dkjson
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../l0.dkjson/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#updatefeed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UpdateFeed
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="UpdateFeed">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#constructor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Constructor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#instance-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Instance methods
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Instance methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#getknownfeeds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getKnownFeeds
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fetch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        fetch
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#loadfile" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        loadFile
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ensureloaded" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ensureLoaded
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#expand" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        expand
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getscript" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getScript
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getmacro" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getMacro
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getmodule" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getModule
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getmoduleversion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getModuleVersion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getproviders" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getProviders
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validateagainstschema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validateAgainstSchema
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#updatefeed_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        updateFeed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mergechannels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        mergeChannels
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bumpversions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        bumpVersions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#resolve" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        resolve
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#formatreleasenotes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        formatReleaseNotes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deployfiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        deployFiles
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#findunlistedfiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        findUnlistedFiles
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#walkpackages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        walkPackages
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#walkfiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        walkFiles
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#class-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Class methods
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Class methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#getfiledeploypath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getFileDeployPath
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deserialize" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        deserialize
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fields
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#enums" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enums
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Enums">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#updatefeedexpansionmode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UpdateFeedExpansionMode
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Types
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#updatefeedchanneltemplatestate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UpdateFeedChannelTemplateState
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#updatefeedtemplatespec" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UpdateFeedTemplateSpec
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="l0dependencycontrolupdatefeed">l0.DependencyControl.UpdateFeed<a class="headerlink" href="#l0dependencycontrolupdatefeed" title="Permanent link">&para;</a></h1>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">MoonScript</label><label for="__tabbed_1_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nc">UpdateFeed</span> <span class="o">=</span> <span class="nb">require</span> <span class="s2">&quot;</span><span class="s">l0.DependencyControl.UpdateFeed</span><span class="s2">&quot;</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">UpdateFeed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">require</span><span class="p">(</span><span class="s2">&quot;l0.DependencyControl.UpdateFeed&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<h2 id="updatefeed">UpdateFeed <a name="UpdateFeed"></a><a class="headerlink" href="#updatefeed" title="Permanent link">&para;</a></h2>
+<p>Downloaded and expanded update feed data source.</p>
+<h3 id="constructor">Constructor <a name="UpdateFeed.new"></a><a class="headerlink" href="#constructor" title="Permanent link">&para;</a></h3>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">MoonScript</label><label for="__tabbed_2_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">updateFeed</span> <span class="o">=</span> <span class="nc">UpdateFeed</span> <span class="n">url</span><span class="p">,</span> <span class="n">autoLoad</span><span class="p">,</span> <span class="n">fileName</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">logger</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">updateFeed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">UpdateFeed</span><span class="p">(</span><span class="nv">url</span><span class="p">,</span><span class="w"> </span><span class="nv">autoLoad</span><span class="p">,</span><span class="w"> </span><span class="nv">fileName</span><span class="p">,</span><span class="w"> </span><span class="nv">config</span><span class="p">,</span><span class="w"> </span><span class="nv">logger</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>Creates an update feed wrapper and optionally fetches feed data.
+Raises when neither a URL nor a file name is given.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>url?</td>
+<td><code>string</code></td>
+<td>Feed URL (or nil when loading from a local file via fileName).</td>
+</tr>
+<tr>
+<td>autoLoad?</td>
+<td><code>boolean</code></td>
+<td>Fetch/load the feed immediately (default true).</td>
+</tr>
+<tr>
+<td>fileName?</td>
+<td><code>string</code></td>
+<td>Local feed file path.</td>
+</tr>
+<tr>
+<td>config?</td>
+<td><code>table</code></td>
+<td>Feed-fetch settings, normally supplied by <code>FeedLoader</code>: <code>cache</code> (the on-disk <code>FileCache</code>) and <code>blockPrivateHosts</code>.</td>
+</tr>
+<tr>
+<td>logger?</td>
+<td><a href="../l0.DependencyControl.Logger/#Logger">Logger</a></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="instance-methods">Instance methods<a class="headerlink" href="#instance-methods" title="Permanent link">&para;</a></h3>
+<h4 id="getknownfeeds">getKnownFeeds <a name="UpdateFeed.getKnownFeeds"></a><a class="headerlink" href="#getknownfeeds" title="Permanent link">&para;</a></h4>
+<blockquote>
+<p><strong>Deprecated</strong> — Use the <code>knownFeeds</code> property. Retained for callers written against DepCtrl &lt; 0.7.</p>
+</blockquote>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">MoonScript</label><label for="__tabbed_3_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">updateFeed</span><span class="o">\</span><span class="n">getKnownFeeds</span><span class="o">!</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nv">updateFeed</span><span class="p">:</span><span class="nf">getKnownFeeds</span><span class="p">()</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>urls</code> <code>string</code>[]</li>
+</ul>
+<h4 id="fetch">fetch <a name="UpdateFeed.fetch"></a><a class="headerlink" href="#fetch" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">MoonScript</label><label for="__tabbed_4_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">updateFeed</span><span class="o">\</span><span class="n">fetch</span> <span class="n">fileName</span><span class="p">,</span> <span class="n">expansionMode</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nv">updateFeed</span><span class="p">:</span><span class="nf">fetch</span><span class="p">(</span><span class="nv">fileName</span><span class="p">,</span><span class="w"> </span><span class="nv">expansionMode</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>Downloads feed to a temporary JSON file and sets the .fileName property for subsequent loading.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>fileName?</td>
+<td><code>string</code></td>
+<td>Destination path (defaults to a generated temp path).</td>
+</tr>
+<tr>
+<td>expansionMode?</td>
+<td><a href="#UpdateFeedExpansionMode">UpdateFeedExpansionMode</a></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>data</code> <code>table</code>? — The expanded feed data, or nil on failure.</li>
+<li><code>err</code> <code>string</code>? — Error message on failure.</li>
+</ul>
+<h4 id="loadfile">loadFile <a name="UpdateFeed.loadFile"></a><a class="headerlink" href="#loadfile" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">MoonScript</label><label for="__tabbed_5_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">updateFeed</span><span class="o">\</span><span class="n">loadFile</span> <span class="n">srcPath</span><span class="p">,</span> <span class="n">expansionMode</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nv">updateFeed</span><span class="p">:</span><span class="nf">loadFile</span><span class="p">(</span><span class="nv">srcPath</span><span class="p">,</span><span class="w"> </span><span class="nv">expansionMode</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>Loads and parses a local feed JSON file, expanding all template variables in-place.
+Use this to load a feed already on disk without going through the network.
+Defaults to the .fileName property, which was either provided in the
+constructor, or set to a temporary path when the feed is fetched.
+was loaded from a URL; otherwise local, which resolves the rolling localFileBasePath template
+variables and exposes the <code>localFilePath</code> property on file records for build tooling such as the bundler.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>srcPath?</td>
+<td><code>string</code></td>
+<td>Local filesystem path to the feed JSON file.</td>
+</tr>
+<tr>
+<td>expansionMode?</td>
+<td><a href="#UpdateFeedExpansionMode">UpdateFeedExpansionMode</a></td>
+<td>Expansion mode. Defaults to remote if the feed</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>data</code> <code>table</code>? — The expanded feed data, or nil on failure.</li>
+<li><code>err</code> <code>string</code>? — Error message on failure.</li>
+</ul>
+<h4 id="ensureloaded">ensureLoaded <a name="UpdateFeed.ensureLoaded"></a><a class="headerlink" href="#ensureloaded" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">MoonScript</label><label for="__tabbed_6_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">updateFeed</span><span class="o">\</span><span class="n">ensureLoaded</span> <span class="n">expansionMode</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nv">updateFeed</span><span class="p">:</span><span class="nf">ensureLoaded</span><span class="p">(</span><span class="nv">expansionMode</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>Fetches the feed (or loads it from disk if local) in case it hasn't been loaded yet.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>expansionMode?</td>
+<td><a href="#UpdateFeedExpansionMode">UpdateFeedExpansionMode</a></td>
+<td>The expansion mode required for the operation.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>feedData</code> <code>table</code>? — The expanded feed data, or nil on failure.</li>
+<li><code>err</code> <code>string</code>? — An error message in case of failure.</li>
+</ul>
+<h4 id="expand">expand <a name="UpdateFeed.expand"></a><a class="headerlink" href="#expand" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">MoonScript</label><label for="__tabbed_7_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="n">updateFeed</span><span class="o">\</span><span class="n">expand</span> <span class="n">mode</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="nv">updateFeed</span><span class="p">:</span><span class="nf">expand</span><span class="p">(</span><span class="nv">mode</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>Expands and returns @data for the requested mode, rebuilt each call from a fresh deep copy of
+another consumer's expansion. The feed must be loaded (@unexpandedData set) first.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>mode?</td>
+<td><a href="#UpdateFeedExpansionMode">UpdateFeedExpansionMode</a></td>
+<td>Expansion mode; local mode additionally resolves rolling templates for local source file paths.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>data</code> <code>table</code></li>
+</ul>
+<h4 id="getscript">getScript <a name="UpdateFeed.getScript"></a><a class="headerlink" href="#getscript" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="8:2"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><div class="tabbed-labels"><label for="__tabbed_8_1">MoonScript</label><label for="__tabbed_8_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="n">updateFeed</span><span class="o">\</span><span class="n">getScript</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">scriptType</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">autoChannel</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="nv">updateFeed</span><span class="p">:</span><span class="nf">getScript</span><span class="p">(</span><span class="nv">namespace</span><span class="p">,</span><span class="w"> </span><span class="nv">scriptType</span><span class="p">,</span><span class="w"> </span><span class="nv">config</span><span class="p">,</span><span class="w"> </span><span class="nv">autoChannel</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>Retrieves a script update record by namespace and type.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>namespace</td>
+<td><code>string</code></td>
+<td></td>
+</tr>
+<tr>
+<td>scriptType</td>
+<td><a href="../l0.DependencyControl.domain/#ScriptType">ScriptType</a>|<code>boolean</code></td>
+<td>A ScriptType value (true/false accepted for legacy module/automation).</td>
+</tr>
+<tr>
+<td>config?</td>
+<td><code>table</code></td>
+<td></td>
+</tr>
+<tr>
+<td>autoChannel?</td>
+<td><code>boolean</code></td>
+<td>Select the default channel automatically.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>record</code> <a href="../l0.DependencyControl.ScriptUpdateRecord/#ScriptUpdateRecord">ScriptUpdateRecord</a>|<code>boolean</code>|<code>nil</code> — False when not found, nil on error.</li>
+<li><code>err</code> <code>string</code>?</li>
+</ul>
+<h4 id="getmacro">getMacro <a name="UpdateFeed.getMacro"></a><a class="headerlink" href="#getmacro" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="9:2"><input checked="checked" id="__tabbed_9_1" name="__tabbed_9" type="radio" /><input id="__tabbed_9_2" name="__tabbed_9" type="radio" /><div class="tabbed-labels"><label for="__tabbed_9_1">MoonScript</label><label for="__tabbed_9_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="n">updateFeed</span><span class="o">\</span><span class="n">getMacro</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">autoChannel</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="nv">updateFeed</span><span class="p">:</span><span class="nf">getMacro</span><span class="p">(</span><span class="nv">namespace</span><span class="p">,</span><span class="w"> </span><span class="nv">config</span><span class="p">,</span><span class="w"> </span><span class="nv">autoChannel</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>Retrieves an automation script update record by namespace.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>namespace</td>
+<td><code>string</code></td>
+<td></td>
+</tr>
+<tr>
+<td>config?</td>
+<td><code>table</code></td>
+<td></td>
+</tr>
+<tr>
+<td>autoChannel?</td>
+<td><code>boolean</code></td>
+<td>Select the default channel automatically.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>record</code> <a href="../l0.DependencyControl.ScriptUpdateRecord/#ScriptUpdateRecord">ScriptUpdateRecord</a>|<code>boolean</code>|<code>nil</code> — False when not found, nil on error.</li>
+<li><code>err</code> <code>string</code>?</li>
+</ul>
+<h4 id="getmodule">getModule <a name="UpdateFeed.getModule"></a><a class="headerlink" href="#getmodule" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="10:2"><input checked="checked" id="__tabbed_10_1" name="__tabbed_10" type="radio" /><input id="__tabbed_10_2" name="__tabbed_10" type="radio" /><div class="tabbed-labels"><label for="__tabbed_10_1">MoonScript</label><label for="__tabbed_10_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="n">updateFeed</span><span class="o">\</span><span class="n">getModule</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">autoChannel</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="nv">updateFeed</span><span class="p">:</span><span class="nf">getModule</span><span class="p">(</span><span class="nv">namespace</span><span class="p">,</span><span class="w"> </span><span class="nv">config</span><span class="p">,</span><span class="w"> </span><span class="nv">autoChannel</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>Retrieves a module update record by namespace.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>namespace</td>
+<td><code>string</code></td>
+<td></td>
+</tr>
+<tr>
+<td>config?</td>
+<td><code>table</code></td>
+<td></td>
+</tr>
+<tr>
+<td>autoChannel?</td>
+<td><code>boolean</code></td>
+<td>Select the default channel automatically.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>record</code> <a href="../l0.DependencyControl.ScriptUpdateRecord/#ScriptUpdateRecord">ScriptUpdateRecord</a>|<code>boolean</code>|<code>nil</code> — False when not found, nil on error.</li>
+<li><code>err</code> <code>string</code>?</li>
+</ul>
+<h4 id="getmoduleversion">getModuleVersion <a name="UpdateFeed.getModuleVersion"></a><a class="headerlink" href="#getmoduleversion" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="11:2"><input checked="checked" id="__tabbed_11_1" name="__tabbed_11" type="radio" /><input id="__tabbed_11_2" name="__tabbed_11" type="radio" /><div class="tabbed-labels"><label for="__tabbed_11_1">MoonScript</label><label for="__tabbed_11_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="n">updateFeed</span><span class="o">\</span><span class="n">getModuleVersion</span> <span class="n">namespace</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="nv">updateFeed</span><span class="p">:</span><span class="nf">getModuleVersion</span><span class="p">(</span><span class="nv">namespace</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>Returns the default channel's version for a module namespace, or nil.
+"Default" means the channel with default:true; falls back to the first channel found.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>namespace</td>
+<td><code>string</code></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>version</code> <code>string</code>?</li>
+</ul>
+<h4 id="getproviders">getProviders <a name="UpdateFeed.getProviders"></a><a class="headerlink" href="#getproviders" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="12:2"><input checked="checked" id="__tabbed_12_1" name="__tabbed_12" type="radio" /><input id="__tabbed_12_2" name="__tabbed_12" type="radio" /><div class="tabbed-labels"><label for="__tabbed_12_1">MoonScript</label><label for="__tabbed_12_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="n">updateFeed</span><span class="o">\</span><span class="n">getProviders</span> <span class="n">alias</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="nv">updateFeed</span><span class="p">:</span><span class="nf">getProviders</span><span class="p">(</span><span class="nv">alias</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>Returns the modules in this feed whose default channel <code>provides</code> the given name. Only the
+<code>modules</code> section is searched (automation scripts can't be <code>require</code>d). The feed must be loaded.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>alias</td>
+<td><code>string</code></td>
+<td>The required module name to find providers for.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>providers</code> <a href="../l0.DependencyControl.ScriptUpdateRecord/#ScriptUpdateRecord">ScriptUpdateRecord</a>[] — Update records (default channel selected) whose <code>provides</code> lists the name.</li>
+</ul>
+<h4 id="validateagainstschema">validateAgainstSchema <a name="UpdateFeed.validateAgainstSchema"></a><a class="headerlink" href="#validateagainstschema" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="13:2"><input checked="checked" id="__tabbed_13_1" name="__tabbed_13" type="radio" /><input id="__tabbed_13_2" name="__tabbed_13" type="radio" /><div class="tabbed-labels"><label for="__tabbed_13_1">MoonScript</label><label for="__tabbed_13_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="n">updateFeed</span><span class="o">\</span><span class="n">validateAgainstSchema</span> <span class="n">schemaDir</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="nv">updateFeed</span><span class="p">:</span><span class="nf">validateAgainstSchema</span><span class="p">(</span><span class="nv">schemaDir</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>Validates @rawFeedData against the feed schema matching its declared format version.
+Best-effort: warns through @logger but never raises, so an unavailable schema rock or a
+non-conforming feed doesn't block an update.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>schemaDir</td>
+<td><code>string</code>|<code>string</code>[]</td>
+<td>Directory holding the feed schemas (named <code>v&lt;version&gt;.json</code>).</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>valid</code> <code>boolean</code>? — Whether the feed is valid, or nil if validation couldn't be performed.</li>
+<li><code>schemaVersion</code> <code>string</code>? — The feed format version validated against, if any.</li>
+<li><code>message</code> <code>string</code>? — A success or error message.</li>
+</ul>
+<h4 id="updatefeed_1">updateFeed <a name="UpdateFeed.updateFeed"></a><a class="headerlink" href="#updatefeed_1" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="14:2"><input checked="checked" id="__tabbed_14_1" name="__tabbed_14" type="radio" /><input id="__tabbed_14_2" name="__tabbed_14" type="radio" /><div class="tabbed-labels"><label for="__tabbed_14_1">MoonScript</label><label for="__tabbed_14_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="n">updateFeed</span><span class="o">\</span><span class="n">updateFeed</span> <span class="n">opts</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="nv">updateFeed</span><span class="p">:</span><span class="nf">updateFeed</span><span class="p">(</span><span class="nv">opts</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>Loads the feed (unless already loaded), optionally validates it, refreshes the targeted
+packages in place and writes the result back to disk. The feed path is the one supplied to
+the constructor; pre-load with loadFile() if you need to act on the feed before refresh.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>opts?</td>
+<td><code>{ channel?: string, filter?: ScriptTargetFilter, schemaDir?: string|string[], outPath?: string|boolean, addFiles?: boolean, markReleased?: boolean|string }</code></td>
+<td>Options. <code>outPath</code> false performs a dry run; nil/true defaults to the loaded feed's source path. <code>addFiles</code> appends entries (with computed SHA-1s) for on-disk files missing from the targeted channel; the added names are reported per package in <code>addedFiles</code>. <code>markReleased</code> stamps a release date on each targeted channel still marked unreleased — a date string sets that date, <code>true</code> uses today (UTC).</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>stats</code> <code>{ changed: integer, errored: integer, packages: table[] }|nil</code> — Per-run statistics, or nil on a fatal load/write error.</li>
+<li><code>err</code> <code>string</code>?</li>
+</ul>
+<h4 id="mergechannels">mergeChannels <a name="UpdateFeed.mergeChannels"></a><a class="headerlink" href="#mergechannels" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="15:2"><input checked="checked" id="__tabbed_15_1" name="__tabbed_15" type="radio" /><input id="__tabbed_15_2" name="__tabbed_15" type="radio" /><div class="tabbed-labels"><label for="__tabbed_15_1">MoonScript</label><label for="__tabbed_15_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="n">updateFeed</span><span class="o">\</span><span class="n">mergeChannels</span> <span class="n">source</span><span class="p">,</span> <span class="n">opts</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="nv">updateFeed</span><span class="p">:</span><span class="nf">mergeChannels</span><span class="p">(</span><span class="nv">source</span><span class="p">,</span><span class="w"> </span><span class="nv">opts</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>Copies channel data from another feed into this one, in place, and writes the result. For each
+package in the source, its <code>from</code> channel's raw data is copied into every <code>to</code> channel here,
+with each <code>to</code> channel's <code>default</code> flag set (true only for the given default channel) and its
+release date set when one is supplied. Channels not among <code>to</code> are left as they are, so they
+keep their previously published versions; a package missing here is added carrying only the
+<code>to</code> channels. Top-level feed metadata and each package's shared (non-channel) fields track the
+source. File hashes are copied verbatim — the <code>from</code> channel is assumed already in sync with
+its own source — so no files are read.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>source</td>
+<td><a href="#UpdateFeed">UpdateFeed</a></td>
+<td>The loaded feed to copy channel data from.</td>
+</tr>
+<tr>
+<td>opts</td>
+<td><code>{ from: string, to: string[], defaultChannel?: string, released?: string, outPath?: string|boolean }</code></td>
+<td><code>outPath</code> false does a dry run; nil/true writes to this feed's own path.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>merged</code> <code>string</code>[]? — The namespaces whose channels were written, or nil on error.</li>
+<li><code>err</code> <code>string</code>?</li>
+</ul>
+<h4 id="bumpversions">bumpVersions <a name="UpdateFeed.bumpVersions"></a><a class="headerlink" href="#bumpversions" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="16:2"><input checked="checked" id="__tabbed_16_1" name="__tabbed_16" type="radio" /><input id="__tabbed_16_2" name="__tabbed_16" type="radio" /><div class="tabbed-labels"><label for="__tabbed_16_1">MoonScript</label><label for="__tabbed_16_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="n">updateFeed</span><span class="o">\</span><span class="n">bumpVersions</span> <span class="n">opts</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="nv">updateFeed</span><span class="p">:</span><span class="nf">bumpVersions</span><span class="p">(</span><span class="nv">opts</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>Bumps package versions on a channel to the repo's lockstep version: rewrites the marked version
+literal in each affected package's source, sets the channel's version, clears its release date,
+and refreshes its file hashes in place, then writes the feed. The target version is derived from
+the channel's release dates: a released highest version starts a new cycle (bumped by <code>level</code>); an
+unreleased one is joined, unless a bigger <code>level</code> reaches past it, carrying every package already
+bumped into that cycle up with it so a release never spans two versions. Bailing early if the
+feed's file hashes don't already match the sources keeps the version bump its only feed change.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>opts</td>
+<td><code>{ channel?: string, level: SemverPrecision, namespaces?: string[], allChanged?: boolean, outPath?: string|boolean }</code></td>
+<td><code>namespaces</code> or <code>allChanged</code> selects what to bump; <code>outPath</code> false does a dry run.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>stats</code> <code>{ channel: string, target: string, bumped: { namespace: string, from: string, to: string }[] }|nil</code></li>
+<li><code>err</code> <code>string</code>?</li>
+</ul>
+<h4 id="resolve">resolve <a name="UpdateFeed.resolve"></a><a class="headerlink" href="#resolve" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="17:2"><input checked="checked" id="__tabbed_17_1" name="__tabbed_17" type="radio" /><input id="__tabbed_17_2" name="__tabbed_17" type="radio" /><div class="tabbed-labels"><label for="__tabbed_17_1">MoonScript</label><label for="__tabbed_17_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="n">updateFeed</span><span class="o">\</span><span class="n">resolve</span> <span class="n">opts</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="nv">updateFeed</span><span class="p">:</span><span class="nf">resolve</span><span class="p">(</span><span class="nv">opts</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>Expands every template variable in the feed to a concrete value and drops the template plumbing
+(<code>fileBaseUrl(s)</code>, <code>localFileBasePath(s)</code>, root <code>vars</code>), so a client whose feed templater predates
+those features reads it literally. File SHA-1s are carried over untouched — no local files are read.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>opts?</td>
+<td><code>{ fileBaseUrl?: string, feedSchemaVersion?: string, outPath?: string|false }</code></td>
+<td><code>fileBaseUrl</code> overrides the download base before expansion, adding a trailing slash when missing; <code>feedSchemaVersion</code> stamps <code>dependencyControlFeedFormatVersion</code>; <code>outPath</code> is the destination (default <code>&lt;feed&gt;.resolved.json</code> beside the source), or false to return the resolved table without writing.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>result</code> <code>string</code>|<code>table</code>|<code>nil</code> — The path written to, the resolved table when <code>outPath</code> is false, or nil on error.</li>
+<li><code>err</code> <code>string</code>? — Error message on failure, including a URL field that still carries an unexpanded variable.</li>
+</ul>
+<h4 id="formatreleasenotes">formatReleaseNotes <a name="UpdateFeed.formatReleaseNotes"></a><a class="headerlink" href="#formatreleasenotes" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="18:2"><input checked="checked" id="__tabbed_18_1" name="__tabbed_18" type="radio" /><input id="__tabbed_18_2" name="__tabbed_18" type="radio" /><div class="tabbed-labels"><label for="__tabbed_18_1">MoonScript</label><label for="__tabbed_18_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="n">updateFeed</span><span class="o">\</span><span class="n">formatReleaseNotes</span> <span class="n">opts</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="nv">updateFeed</span><span class="p">:</span><span class="nf">formatReleaseNotes</span><span class="p">(</span><span class="nv">opts</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>Renders a GitHub-flavored markdown release body from one version's changelog across every package
+that has entries for it. Marker scopes become bold lead-ins; the package whose name matches the
+feed name is treated as primary, so its unscoped entries render with no lead-in, while other
+packages fall back to their namespace's last segment.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>opts?</td>
+<td><code>{version?: string, channel?: string, title?: string}</code></td>
+<td>Give <code>version</code> directly, or a <code>channel</code> whose highest advertised version is used; with neither, the channel marked default: true. <code>title</code> adds a top-level heading.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>notes</code> <code>string</code>? — The markdown body (empty string when no package has entries for the version), or nil on error.</li>
+<li><code>error</code> <code>string</code>?</li>
+</ul>
+<h4 id="deployfiles">deployFiles <a name="UpdateFeed.deployFiles"></a><a class="headerlink" href="#deployfiles" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="19:2"><input checked="checked" id="__tabbed_19_1" name="__tabbed_19" type="radio" /><input id="__tabbed_19_2" name="__tabbed_19" type="radio" /><div class="tabbed-labels"><label for="__tabbed_19_1">MoonScript</label><label for="__tabbed_19_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a><span class="n">updateFeed</span><span class="o">\</span><span class="n">deployFiles</span> <span class="n">distDir</span><span class="p">,</span> <span class="n">filter</span><span class="p">,</span> <span class="n">clobber</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a><span class="nv">updateFeed</span><span class="p">:</span><span class="nf">deployFiles</span><span class="p">(</span><span class="nv">distDir</span><span class="p">,</span><span class="w"> </span><span class="nv">filter</span><span class="p">,</span><span class="w"> </span><span class="nv">clobber</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>Copies every file listed in the feed to distDir using the Updater's install layout. A file the feed marks
+for deletion (<code>delete: true</code>) is removed from distDir if present, rather than deployed.
+The feed must have been loaded with ExpansionMode.Local so localFileBasePath is populated.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>distDir</td>
+<td><code>string</code></td>
+<td>Absolute path of the output dist directory.</td>
+</tr>
+<tr>
+<td>filter?</td>
+<td><a href="../l0.DependencyControl.ScriptTargetFilter/#ScriptTargetFilter">ScriptTargetFilter</a></td>
+<td>Restricts which packages are deployed (default: all).</td>
+</tr>
+<tr>
+<td>clobber?</td>
+<td><code>boolean</code></td>
+<td>Overwrite existing destination files (default false).</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>fileCount</code> <code>number</code> — Number of files successfully copied.</li>
+<li><code>errCount</code> <code>number</code> — Number of files that failed to deploy — a missing source, a copy error, or a deletion that couldn't be performed.</li>
+</ul>
+<h4 id="findunlistedfiles">findUnlistedFiles <a name="UpdateFeed.findUnlistedFiles"></a><a class="headerlink" href="#findunlistedfiles" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="20:2"><input checked="checked" id="__tabbed_20_1" name="__tabbed_20" type="radio" /><input id="__tabbed_20_2" name="__tabbed_20" type="radio" /><div class="tabbed-labels"><label for="__tabbed_20_1">MoonScript</label><label for="__tabbed_20_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a><span class="n">updateFeed</span><span class="o">\</span><span class="n">findUnlistedFiles</span> <span class="n">filter</span><span class="p">,</span> <span class="n">channelName</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-39-1" name="__codelineno-39-1" href="#__codelineno-39-1"></a><span class="nv">updateFeed</span><span class="p">:</span><span class="nf">findUnlistedFiles</span><span class="p">(</span><span class="nv">filter</span><span class="p">,</span><span class="w"> </span><span class="nv">channelName</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>Finds files present on disk that a package's targeted channel doesn't list, by inverting
+the channel's effective per-file-type local path templates. Only <code>localFileBasePaths</code>
+entries whose sole unexpanded variable is <code>@{fileName}</code> are scanned; a file matching
+several types is attributed to the one with the longest literal prefix. Loads the feed
+in local mode if needed.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>filter?</td>
+<td><a href="../l0.DependencyControl.ScriptTargetFilter/#ScriptTargetFilter">ScriptTargetFilter</a></td>
+<td>Restricts which packages are scanned (default: all).</td>
+</tr>
+<tr>
+<td>channelName?</td>
+<td><code>string</code></td>
+<td>Channel whose file list is diffed (default: each package's default channel).</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>unlisted</code> <code>{namespace: string, scriptType: ScriptType, channel: string, name: string, type?: string, url: string, localFilePath: string}[]?</code> — Feed-ready entries for the discovered files, sorted by namespace, type, and name (empty when everything on disk is listed; nil on a load error).</li>
+<li><code>err</code> <code>string</code>? — Error message on failure.</li>
+</ul>
+<h4 id="walkpackages">walkPackages <a name="UpdateFeed.walkPackages"></a><a class="headerlink" href="#walkpackages" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="21:2"><input checked="checked" id="__tabbed_21_1" name="__tabbed_21" type="radio" /><input id="__tabbed_21_2" name="__tabbed_21" type="radio" /><div class="tabbed-labels"><label for="__tabbed_21_1">MoonScript</label><label for="__tabbed_21_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-40-1" name="__codelineno-40-1" href="#__codelineno-40-1"></a><span class="n">updateFeed</span><span class="o">\</span><span class="n">walkPackages</span> <span class="n">filter</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-41-1" name="__codelineno-41-1" href="#__codelineno-41-1"></a><span class="nv">updateFeed</span><span class="p">:</span><span class="nf">walkPackages</span><span class="p">(</span><span class="nv">filter</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>Returns a coroutine-based iterator over the packages of this feed that pass the filter.
+The feed must have been loaded before calling this method.
+Each iteration yields three values:
+  pkg        – the package object; the package key is accessible via <code>.namespace</code>
+  scriptType – the script type (ScriptType.Module / .Automation)
+  section    – the section name (e.g. "macros" or "modules")</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>filter?</td>
+<td><a href="../l0.DependencyControl.ScriptTargetFilter/#ScriptTargetFilter">ScriptTargetFilter</a></td>
+<td>Restricts which packages are walked (default: all).</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>iterator</code> <code>function</code></li>
+</ul>
+<h4 id="walkfiles">walkFiles <a name="UpdateFeed.walkFiles"></a><a class="headerlink" href="#walkfiles" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="22:2"><input checked="checked" id="__tabbed_22_1" name="__tabbed_22" type="radio" /><input id="__tabbed_22_2" name="__tabbed_22" type="radio" /><div class="tabbed-labels"><label for="__tabbed_22_1">MoonScript</label><label for="__tabbed_22_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-42-1" name="__codelineno-42-1" href="#__codelineno-42-1"></a><span class="n">updateFeed</span><span class="o">\</span><span class="n">walkFiles</span> <span class="n">filter</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-43-1" name="__codelineno-43-1" href="#__codelineno-43-1"></a><span class="nv">updateFeed</span><span class="p">:</span><span class="nf">walkFiles</span><span class="p">(</span><span class="nv">filter</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>Returns a coroutine-based iterator over every file entry of the packages passing the filter.
+The feed must have been loaded before calling this method.
+Each iteration yields five values:
+  file    – the file object; <code>.localFilePath</code> resolves localFileBasePath+name against @feedDir
+  channel – the channel object; the channel key is accessible via <code>.name</code>
+  pkg     – the package object; the package key is accessible via <code>.namespace</code>
+  section – the section name (e.g. "macros" or "modules")
+  scriptType – the script type (ScriptType.Module / .Automation)</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>filter?</td>
+<td><a href="../l0.DependencyControl.ScriptTargetFilter/#ScriptTargetFilter">ScriptTargetFilter</a></td>
+<td>Restricts which packages are walked (default: all).</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>iterator</code> <code>function</code></li>
+</ul>
+<h3 id="class-methods">Class methods<a class="headerlink" href="#class-methods" title="Permanent link">&para;</a></h3>
+<h4 id="getfiledeploypath">getFileDeployPath <a name="UpdateFeed.getFileDeployPath"></a><a class="headerlink" href="#getfiledeploypath" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="23:2"><input checked="checked" id="__tabbed_23_1" name="__tabbed_23" type="radio" /><input id="__tabbed_23_2" name="__tabbed_23" type="radio" /><div class="tabbed-labels"><label for="__tabbed_23_1">MoonScript</label><label for="__tabbed_23_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-44-1" name="__codelineno-44-1" href="#__codelineno-44-1"></a><span class="nc">UpdateFeed</span><span class="o">\</span><span class="n">getFileDeployPath</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">scriptType</span><span class="p">,</span> <span class="n">fileName</span><span class="p">,</span> <span class="n">fileType</span><span class="p">,</span> <span class="n">rootDir</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-45-1" name="__codelineno-45-1" href="#__codelineno-45-1"></a><span class="nv">UpdateFeed</span><span class="p">:</span><span class="nf">getFileDeployPath</span><span class="p">(</span><span class="nv">namespace</span><span class="p">,</span><span class="w"> </span><span class="nv">scriptType</span><span class="p">,</span><span class="w"> </span><span class="nv">fileName</span><span class="p">,</span><span class="w"> </span><span class="nv">fileType</span><span class="p">,</span><span class="w"> </span><span class="nv">rootDir</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>Resolves the install path of a packaged file from its owning script's namespace,
+mirroring the layout the Updater installs into: automation scripts go to the
+autoload dir, modules to the include dir (under their namespace path), and test
+files to the matching DepUnit test dir.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>namespace</td>
+<td><code>string</code></td>
+<td></td>
+</tr>
+<tr>
+<td>scriptType</td>
+<td><a href="../l0.DependencyControl.domain/#ScriptType">ScriptType</a></td>
+<td>A ScriptType value.</td>
+</tr>
+<tr>
+<td>fileName</td>
+<td><code>string</code></td>
+<td>The file's feed name (e.g. ".moon", "/Common.moon").</td>
+</tr>
+<tr>
+<td>fileType?</td>
+<td><code>string</code></td>
+<td>"script" or "test" (default "script").</td>
+</tr>
+<tr>
+<td>rootDir?</td>
+<td><code>string</code></td>
+<td>The root directory for deployment.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>path</code> <code>string</code>?</li>
+<li><code>err</code> <code>string</code>?</li>
+</ul>
+<h4 id="deserialize">deserialize <a name="UpdateFeed.deserialize"></a><a class="headerlink" href="#deserialize" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="24:2"><input checked="checked" id="__tabbed_24_1" name="__tabbed_24" type="radio" /><input id="__tabbed_24_2" name="__tabbed_24" type="radio" /><div class="tabbed-labels"><label for="__tabbed_24_1">MoonScript</label><label for="__tabbed_24_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-46-1" name="__codelineno-46-1" href="#__codelineno-46-1"></a><span class="nc">UpdateFeed</span><span class="o">.</span><span class="n">deserialize</span> <span class="n">content</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-47-1" name="__codelineno-47-1" href="#__codelineno-47-1"></a><span class="nv">UpdateFeed</span><span class="p">.</span><span class="nf">deserialize</span><span class="p">(</span><span class="nv">content</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>Decodes a feed's JSON into its unexpanded working data — null sentinels stripped and the macros/modules/
+knownFeeds sections ensured present — alongside the raw null-preserving decode kept for write-back. Shared
+by loadFile and the feed cache's L1 layer so both agree on the shape.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>content</td>
+<td><code>string</code></td>
+<td>The raw feed JSON.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>unexpandedData</code> <code>table</code>? — The working feed data, before template expansion (nil on a JSON parse error).</li>
+<li><code>raw</code> <code>table</code>? — The pristine decode with <code>dkjson.null</code> sentinels intact, for write-back.</li>
+</ul>
+<h3 id="fields">Fields<a class="headerlink" href="#fields" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>field</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>url</td>
+<td><code>string</code></td>
+<td>This feed's source URL, or a file:// URL over its local file when it has no remote URL (read-only).</td>
+</tr>
+<tr>
+<td>knownFeeds</td>
+<td><code>string</code>[]</td>
+<td>URLs referenced in this feed's <code>knownFeeds</code> section; empty when the feed isn't loaded. Read-only.</td>
+</tr>
+<tr>
+<td>feedDir?</td>
+<td><code>string</code></td>
+<td>Directory of the loaded feed file; local file paths resolve against it during local-mode expansion.</td>
+</tr>
+<tr>
+<td>defaultConfig</td>
+<td><code>table</code></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="enums">Enums<a class="headerlink" href="#enums" title="Permanent link">&para;</a></h3>
+<p><a name="UpdateFeedExpansionMode"></a></p>
+<h4 id="updatefeedexpansionmode">UpdateFeedExpansionMode <a name="UpdateFeed.UpdateFeedExpansionMode"></a><a class="headerlink" href="#updatefeedexpansionmode" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>member</th>
+<th>value</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Remote</td>
+<td><code>"remote"</code></td>
+<td>Remote (default): expand <code>fileBaseUrl</code>/<code>url</code> to their download URLs.</td>
+</tr>
+<tr>
+<td>Local</td>
+<td><code>"local"</code></td>
+<td>additionally resolve the <code>localFileBasePath</code>/<code>localFilePath</code> sister fields to on-disk paths (used by the bundler), leaving the remote fields intact.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="types">Types<a class="headerlink" href="#types" title="Permanent link">&para;</a></h2>
+<h3 id="updatefeedchanneltemplatestate">UpdateFeedChannelTemplateState <a name="UpdateFeedChannelTemplateState"></a><a class="headerlink" href="#updatefeedchanneltemplatestate" title="Permanent link">&para;</a></h3>
+<p>The rolling-template values in effect at one channel, captured during local-mode expansion
+so the local path templates can be inverted for file discovery.</p>
+<table>
+<thead>
+<tr>
+<th>field</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>localFileBasePath?</td>
+<td><code>string</code></td>
+<td>Scalar local base path in effect.</td>
+</tr>
+<tr>
+<td>localFileBasePaths?</td>
+<td><code>table&lt;string, string&gt;</code></td>
+<td>Per-file-type local path templates in effect.</td>
+</tr>
+<tr>
+<td>fileBaseUrls?</td>
+<td><code>table&lt;string, string&gt;</code></td>
+<td>Per-file-type URL templates in effect.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="updatefeedtemplatespec">UpdateFeedTemplateSpec <a name="UpdateFeedTemplateSpec"></a><a class="headerlink" href="#updatefeedtemplatespec" title="Permanent link">&para;</a></h3>
+<p>Declares one template variable. A regular template captures its value at a fixed tree
+depth. A rolling template re-reads its key at every depth, so a value set at any level
+(feed root, section container, package, channel) rolls down until overridden.</p>
+<table>
+<thead>
+<tr>
+<th>field</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>depth?</td>
+<td><code>integer</code></td>
+<td>Tree depth the variable is captured at; absent for rolling templates.</td>
+</tr>
+<tr>
+<td>order?</td>
+<td><code>integer</code></td>
+<td>Collection order among same-depth templates; a template's own key expansion can only reference lower-order variables of its depth.</td>
+</tr>
+<tr>
+<td>key?</td>
+<td><code>string</code></td>
+<td>Field the value is read from on the visited object and written back to in expanded form.</td>
+</tr>
+<tr>
+<td>parentKeys?</td>
+<td><code>table&lt;string, boolean&gt;</code></td>
+<td>Captures the visited object's own key as the value when the key of the object's parent container is in this set.</td>
+</tr>
+<tr>
+<td>selfKeys?</td>
+<td><code>table&lt;string, boolean&gt;</code></td>
+<td>Captures the visited object's own key as the value when that key is in this set.</td>
+</tr>
+<tr>
+<td>map?</td>
+<td><code>table&lt;string, string&gt;</code></td>
+<td>Translates a selfKeys-captured key into the variable value; without a matching entry the key itself is used.</td>
+</tr>
+<tr>
+<td>repl?</td>
+<td><code>string</code></td>
+<td>Lua pattern replaced by <code>to</code> in the captured value.</td>
+</tr>
+<tr>
+<td>to?</td>
+<td><code>string</code></td>
+<td>Replacement for <code>repl</code> matches.</td>
+</tr>
+<tr>
+<td>rolling?</td>
+<td><code>boolean</code></td>
+<td>Marks a rolling template.</td>
+</tr>
+<tr>
+<td>expansionModes?</td>
+<td><code>table&lt;UpdateFeedExpansionMode, boolean&gt;</code></td>
+<td>Expansion modes the template participates in; absent means all.</td>
+</tr>
+<tr>
+<td>default?</td>
+<td><code>string</code></td>
+<td>Fallback value when no level of the feed sets the key.</td>
+</tr>
+<tr>
+<td>keyBy?</td>
+<td><code>string</code></td>
+<td>Field of a record under <code>keyAt</code> whose value selects an entry of the rolling map (e.g. a file's <code>type</code>).</td>
+</tr>
+<tr>
+<td>keyAt?</td>
+<td><code>string</code></td>
+<td>Container key whose records trigger the keyed collapse (e.g. "files").</td>
+</tr>
+<tr>
+<td>keyDefault?</td>
+<td><code>string</code></td>
+<td><code>keyBy</code> value assumed when the record lacks the field.</td>
+</tr>
+<tr>
+<td>collapseInto?</td>
+<td><code>string</code></td>
+<td>Name of the scalar rolling template the selected map entry replaces; the scalar stays in place as the fallback when the map has no entry for the key.</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.code.copy", "content.tabs.link", "navigation.instant", "navigation.top", "search.suggest", "search.highlight", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
