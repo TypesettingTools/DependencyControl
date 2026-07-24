@@ -218,6 +218,22 @@ jobs:
             git push origin "HEAD:refs/heads/${{ inputs.publish-branch }}"
           fi
 
+      # The release version is the highest version any package reaches this run. Lockstep versioning
+      # bumps only the packages that changed, so the namesake module can sit below it (a release that
+      # only touches a bundled helper). The bundle asset and the GitHub release(s) both key off this one
+      # value so they can't disagree, and every released channel carries it (the publish step copied the
+      # source channel onto them).
+      - name: Resolve the release version
+        if: ${{ inputs.release-channels != '' }}
+        run: |
+          set -euo pipefail
+          ver=$(jq -r --arg src "${{ inputs.source-channel }}" '
+            [ (.macros // {}), (.modules // {}) | to_entries[] | .value.channels[$src].version // empty ]
+            | if length == 0 then empty else max_by(split(".") | map(tonumber)) end' DependencyControl.json)
+          [ -n "$ver" ] || { echo "::error::Could not resolve a release version from the '${{ inputs.source-channel }}' channel."; exit 1; }
+          echo "Release version: v$ver"
+          echo "RELEASE_VERSION=$ver" >> "$GITHUB_ENV"
+
       - name: Build the release bundle
         id: bundle
         if: ${{ inputs.release-channels != '' }}
@@ -227,6 +243,12 @@ jobs:
           lua _depctrl/depctrl.lua bundle --out-dir "$RUNNER_TEMP/bundle"
           zip=$(find "$RUNNER_TEMP/bundle" -maxdepth 1 -name '*.zip' -print -quit)
           if [ -n "$zip" ]; then
+            # The bundler names the archive after the namesake module, which lags the release version
+            # under lockstep, so rename it to the resolved version the release is cut at.
+            feedName=$(jq -r '.name // "release"' DependencyControl.json)
+            aligned="$(dirname "$zip")/${feedName}-v${RELEASE_VERSION}.zip"
+            [ "$zip" = "$aligned" ] || mv "$zip" "$aligned"
+            zip="$aligned"
             echo "Bundled $(basename "$zip")"
           else
             echo "::warning::The bundle produced no archive; the release(s) will carry no asset."
@@ -249,12 +271,8 @@ jobs:
           [ -s "$notes" ] || echo "(no changelog entries for this release)" > "$notes"
           for chan in ${{ inputs.channels }}; do
             case " ${{ inputs.release-channels }} " in *" $chan "*) ;; *) continue ;; esac
-            ver=$(jq -r --arg c "$chan" \
-              '[ (.macros // {}), (.modules // {}) | to_entries[] | .value.channels[$c].version // empty ] | unique | .[0] // empty' \
-              _publish/DependencyControl.json)
-            [ -n "$ver" ] || { echo "· no version on channel '$chan'; skipping its release"; continue; }
             suffix=$(jq -r --arg c "$chan" '(.vars.tagSuffix // {})[$c] // ""' _publish/DependencyControl.json)
-            tag="v${ver}${suffix}"
+            tag="v${RELEASE_VERSION}${suffix}"
             prerelease=""; [ "$chan" = "${{ inputs.stable-channel }}" ] || prerelease="--prerelease"
             if gh release view "$tag" >/dev/null 2>&1; then
               echo "· release $tag already exists — leaving it"
