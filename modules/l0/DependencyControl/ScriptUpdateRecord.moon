@@ -92,10 +92,11 @@ class ScriptUpdateRecord
 
 
   ---Returns all available channel names for this script and the default channel.
-  ---@return string[] channels
+  ---@return string[] channels Channel names, empty when the package declares none.
   ---@return string? defaultChannel
   getChannels: =>
     channels, default = {}
+    return channels unless type(@data.channels) == "table"
     for name, channel in pairs @data.channels
       channels[#channels+1] = name
       if channel.default and not default

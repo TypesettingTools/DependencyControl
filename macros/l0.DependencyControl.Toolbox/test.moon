@@ -87,8 +87,12 @@ UnitTestSuite "l0.DependencyControl.Toolbox", (macros, dependencies, testExports
     }
     {
       url: "feed://x"
-      data: {macros: {"a.x": true}, modules: {}}
+      data: {macros: {"a.x": {channels: {main: {version: "1.0.0"}}}}, modules: {}}
       getScript: (ns, st) => scriptData, nil
+      -- mirrors UpdateFeed\walkPackages: yields the package (keyed by .namespace), its script type
+      -- and its section, having already skipped the section's non-package template keys
+      walkPackages: => coroutine.wrap ->
+        coroutine.yield {namespace: "a.x"}, domain.ScriptType.Automation, "macros"
     }
 
   {

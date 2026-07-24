@@ -3,9 +3,9 @@ MIN_MOONSCRIPT_VERSION = "0.3.0"
 SemanticVersion = require "l0.DependencyControl.SemanticVersion"
 moonscript = require 'moonscript.version'
 assert SemanticVersion\check(moonscript.version, MIN_MOONSCRIPT_VERSION),
-  [[ DependencyControl requires Moonscript v%s or later to work, 
+  [[ DependencyControl requires Moonscript v%s or later to work,
 however the Version %s provided by your Aegisub installation is outdated.
-Update to a recent Aegisub build to resolve this issue. 
+Update to a recent Aegisub build to resolve this issue.
 ]]\format MIN_MOONSCRIPT_VERSION, moonscript.version
 
 -- DependencyControl also needs a LuaJIT built with Lua 5.2 compatibility (LUAJIT_ENABLE_LUA52COMPAT):
@@ -108,7 +108,7 @@ Accessors.install DependencyControl
 
 rec = DependencyControl{
   name: "DependencyControl",
-  version: "0.8.0", -- @{l0.DependencyControl:version}
+  version: "0.8.1", -- @{l0.DependencyControl:version}
   description: "Provides script management and auto-updating for Aegisub macros and modules.",
   author: "line0",
   url: "http://github.com/TypesettingTools/DependencyControl",

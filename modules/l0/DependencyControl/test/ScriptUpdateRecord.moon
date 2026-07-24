@@ -21,6 +21,13 @@
       _, default = sur\getChannels!
       ut\assertNil default
 
+    -- feeds are third-party input, so a package declaring no channels must not take out its caller
+    getChannels_noChannels: (ut) ->
+      sur = ScriptUpdateRecord "test.NS", {name: "TestScript"}, {c:{}}, domain.ScriptType.Module, false
+      channels, default = sur\getChannels!
+      ut\assertEquals #channels, 0
+      ut\assertNil default
+
     setChannel_valid: (ut) ->
       data = {channels: {release: {default: true, version: "1.0.0", files: {}}, nightly: {version: "2.0.0", files: {}}}, name: "TestScript"}
       sur = ScriptUpdateRecord "test.NS", data, {c:{}}, domain.ScriptType.Module, false
@@ -108,7 +115,7 @@
       ut\assertFalsy result\find "Breaking Changes", 1, true -- breaking is not its own section
 
     _order: {
-      "getChannels_basic", "getChannels_noDefault",
+      "getChannels_basic", "getChannels_noDefault", "getChannels_noChannels",
       "setChannel_valid", "setChannel_invalid",
       "checkPlatform_noConstraint", "checkPlatform_currentPlatform", "checkPlatform_notMatching",
       "getChangelog_noTable", "getChangelog_inRange", "getChangelog_allOutOfRange",
