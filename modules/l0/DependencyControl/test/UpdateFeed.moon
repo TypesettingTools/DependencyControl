@@ -961,7 +961,24 @@
       ut\assertEquals decoded.modules["l0.Thing"].channels.release.files[1].url,
         "https://x.test/v1.2.3/modules/l0/Thing.moon"
 
+    -- a section carries the format's section-scoped template keys alongside its packages, so a walk
+    -- must yield only the latter
+    walkPackages_skipsSectionTemplateKeys: (ut) ->
+      feed = stubSelf UpdateFeed, {__class: UpdateFeed, data: {
+        macros: {
+          fileBaseUrls: {script: "https://x.test/@{fileName}"}
+          localFileBasePaths: {script: "@{localFileBasePath}@{fileName}"}
+          "l0.Macro": {channels: {main: {default: true, version: "1.0.0", files: {}}}}
+        }
+        modules: {
+          "l0.Module": {channels: {main: {default: true, version: "2.0.0", files: {}}}}
+        }
+      }}
+      seen = [pkg.namespace for pkg in feed\walkPackages!]
+      ut\assertItemsEqual seen, {"l0.Macro", "l0.Module"}
+
     _order: {
+      "walkPackages_skipsSectionTemplateKeys",
       "knownFeeds_noData", "knownFeeds_withData",
       "getScript_invalidType", "getScript_missing", "getScript_found",
       "getMacro_usesAutomationType", "getModule_usesModuleType",
