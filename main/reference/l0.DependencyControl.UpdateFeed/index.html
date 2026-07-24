@@ -1620,6 +1620,39 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#getversionsonchannel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getVersionsOnChannel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gethighestversiononchannel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getHighestVersionOnChannel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getpackageversiononchannel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getPackageVersionOnChannel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#deployfiles" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2834,6 +2867,39 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#getversionsonchannel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getVersionsOnChannel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gethighestversiononchannel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getHighestVersionOnChannel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getpackageversiononchannel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getPackageVersionOnChannel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#deployfiles" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3714,15 +3780,124 @@ packages fall back to their namespace's last segment.</p>
 <li><code>notes</code> <code>string</code>? — The markdown body (empty string when no package has entries for the version), or nil on error.</li>
 <li><code>error</code> <code>string</code>?</li>
 </ul>
-<h4 id="deployfiles">deployFiles <a name="UpdateFeed.deployFiles"></a><a class="headerlink" href="#deployfiles" title="Permanent link">&para;</a></h4>
+<h4 id="getversionsonchannel">getVersionsOnChannel <a name="UpdateFeed.getVersionsOnChannel"></a><a class="headerlink" href="#getversionsonchannel" title="Permanent link">&para;</a></h4>
 <div class="tabbed-set tabbed-alternate" data-tabs="19:2"><input checked="checked" id="__tabbed_19_1" name="__tabbed_19" type="radio" /><input id="__tabbed_19_2" name="__tabbed_19" type="radio" /><div class="tabbed-labels"><label for="__tabbed_19_1">MoonScript</label><label for="__tabbed_19_2">Lua</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a><span class="n">updateFeed</span><span class="o">\</span><span class="n">deployFiles</span> <span class="n">distDir</span><span class="p">,</span> <span class="n">filter</span><span class="p">,</span> <span class="n">clobber</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a><span class="n">updateFeed</span><span class="o">\</span><span class="n">getVersionsOnChannel</span> <span class="n">channel</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a><span class="nv">updateFeed</span><span class="p">:</span><span class="nf">deployFiles</span><span class="p">(</span><span class="nv">distDir</span><span class="p">,</span><span class="w"> </span><span class="nv">filter</span><span class="p">,</span><span class="w"> </span><span class="nv">clobber</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a><span class="nv">updateFeed</span><span class="p">:</span><span class="nf">getVersionsOnChannel</span><span class="p">(</span><span class="nv">channel</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>Distinct versions any feed advertises on the given channel, ascending by semantic version.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>channel?</td>
+<td><code>string</code></td>
+<td>Channel to inspect; defaults to the channel marked default: true.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>versions</code> <code>string</code>[] — Distinct version strings, lowest first; empty when the channel is absent or unused.</li>
+</ul>
+<h4 id="gethighestversiononchannel">getHighestVersionOnChannel <a name="UpdateFeed.getHighestVersionOnChannel"></a><a class="headerlink" href="#gethighestversiononchannel" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="20:2"><input checked="checked" id="__tabbed_20_1" name="__tabbed_20" type="radio" /><input id="__tabbed_20_2" name="__tabbed_20" type="radio" /><div class="tabbed-labels"><label for="__tabbed_20_1">MoonScript</label><label for="__tabbed_20_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a><span class="n">updateFeed</span><span class="o">\</span><span class="n">getHighestVersionOnChannel</span> <span class="n">channel</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-39-1" name="__codelineno-39-1" href="#__codelineno-39-1"></a><span class="nv">updateFeed</span><span class="p">:</span><span class="nf">getHighestVersionOnChannel</span><span class="p">(</span><span class="nv">channel</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>Highest version on the given channel across the feed's packages. Under monorepo-style lockstep
+versioning, where each release advances only the packages that changed, this is the repo's
+release version.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>channel?</td>
+<td><code>string</code></td>
+<td>Channel to inspect; defaults to the channel marked default: true.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>version</code> <code>string</code>? — The highest version string, or nil when the channel is absent or unused.</li>
+</ul>
+<h4 id="getpackageversiononchannel">getPackageVersionOnChannel <a name="UpdateFeed.getPackageVersionOnChannel"></a><a class="headerlink" href="#getpackageversiononchannel" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="21:2"><input checked="checked" id="__tabbed_21_1" name="__tabbed_21" type="radio" /><input id="__tabbed_21_2" name="__tabbed_21" type="radio" /><div class="tabbed-labels"><label for="__tabbed_21_1">MoonScript</label><label for="__tabbed_21_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-40-1" name="__codelineno-40-1" href="#__codelineno-40-1"></a><span class="n">updateFeed</span><span class="o">\</span><span class="n">getPackageVersionOnChannel</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">channel</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-41-1" name="__codelineno-41-1" href="#__codelineno-41-1"></a><span class="nv">updateFeed</span><span class="p">:</span><span class="nf">getPackageVersionOnChannel</span><span class="p">(</span><span class="nv">namespace</span><span class="p">,</span><span class="w"> </span><span class="nv">channel</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>Version a single package advertises on the given channel.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>namespace</td>
+<td><code>string</code></td>
+<td>Package namespace, found in either the macros or modules section.</td>
+</tr>
+<tr>
+<td>channel?</td>
+<td><code>string</code></td>
+<td>Channel to inspect; defaults to the channel marked default: true.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>version</code> <code>string</code>? — The version string, or nil when the package or channel is absent.</li>
+</ul>
+<h4 id="deployfiles">deployFiles <a name="UpdateFeed.deployFiles"></a><a class="headerlink" href="#deployfiles" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="22:2"><input checked="checked" id="__tabbed_22_1" name="__tabbed_22" type="radio" /><input id="__tabbed_22_2" name="__tabbed_22" type="radio" /><div class="tabbed-labels"><label for="__tabbed_22_1">MoonScript</label><label for="__tabbed_22_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-42-1" name="__codelineno-42-1" href="#__codelineno-42-1"></a><span class="n">updateFeed</span><span class="o">\</span><span class="n">deployFiles</span> <span class="n">distDir</span><span class="p">,</span> <span class="n">filter</span><span class="p">,</span> <span class="n">clobber</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-43-1" name="__codelineno-43-1" href="#__codelineno-43-1"></a><span class="nv">updateFeed</span><span class="p">:</span><span class="nf">deployFiles</span><span class="p">(</span><span class="nv">distDir</span><span class="p">,</span><span class="w"> </span><span class="nv">filter</span><span class="p">,</span><span class="w"> </span><span class="nv">clobber</span><span class="p">)</span>
 </code></pre></div>
 </div>
 </div>
@@ -3762,14 +3937,14 @@ The feed must have been loaded with ExpansionMode.Local so localFileBasePath is 
 <li><code>errCount</code> <code>number</code> — Number of files that failed to deploy — a missing source, a copy error, or a deletion that couldn't be performed.</li>
 </ul>
 <h4 id="findunlistedfiles">findUnlistedFiles <a name="UpdateFeed.findUnlistedFiles"></a><a class="headerlink" href="#findunlistedfiles" title="Permanent link">&para;</a></h4>
-<div class="tabbed-set tabbed-alternate" data-tabs="20:2"><input checked="checked" id="__tabbed_20_1" name="__tabbed_20" type="radio" /><input id="__tabbed_20_2" name="__tabbed_20" type="radio" /><div class="tabbed-labels"><label for="__tabbed_20_1">MoonScript</label><label for="__tabbed_20_2">Lua</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="23:2"><input checked="checked" id="__tabbed_23_1" name="__tabbed_23" type="radio" /><input id="__tabbed_23_2" name="__tabbed_23" type="radio" /><div class="tabbed-labels"><label for="__tabbed_23_1">MoonScript</label><label for="__tabbed_23_2">Lua</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a><span class="n">updateFeed</span><span class="o">\</span><span class="n">findUnlistedFiles</span> <span class="n">filter</span><span class="p">,</span> <span class="n">channelName</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-44-1" name="__codelineno-44-1" href="#__codelineno-44-1"></a><span class="n">updateFeed</span><span class="o">\</span><span class="n">findUnlistedFiles</span> <span class="n">filter</span><span class="p">,</span> <span class="n">channelName</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-39-1" name="__codelineno-39-1" href="#__codelineno-39-1"></a><span class="nv">updateFeed</span><span class="p">:</span><span class="nf">findUnlistedFiles</span><span class="p">(</span><span class="nv">filter</span><span class="p">,</span><span class="w"> </span><span class="nv">channelName</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-45-1" name="__codelineno-45-1" href="#__codelineno-45-1"></a><span class="nv">updateFeed</span><span class="p">:</span><span class="nf">findUnlistedFiles</span><span class="p">(</span><span class="nv">filter</span><span class="p">,</span><span class="w"> </span><span class="nv">channelName</span><span class="p">)</span>
 </code></pre></div>
 </div>
 </div>
@@ -3806,14 +3981,14 @@ in local mode if needed.</p>
 <li><code>err</code> <code>string</code>? — Error message on failure.</li>
 </ul>
 <h4 id="walkpackages">walkPackages <a name="UpdateFeed.walkPackages"></a><a class="headerlink" href="#walkpackages" title="Permanent link">&para;</a></h4>
-<div class="tabbed-set tabbed-alternate" data-tabs="21:2"><input checked="checked" id="__tabbed_21_1" name="__tabbed_21" type="radio" /><input id="__tabbed_21_2" name="__tabbed_21" type="radio" /><div class="tabbed-labels"><label for="__tabbed_21_1">MoonScript</label><label for="__tabbed_21_2">Lua</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="24:2"><input checked="checked" id="__tabbed_24_1" name="__tabbed_24" type="radio" /><input id="__tabbed_24_2" name="__tabbed_24" type="radio" /><div class="tabbed-labels"><label for="__tabbed_24_1">MoonScript</label><label for="__tabbed_24_2">Lua</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-40-1" name="__codelineno-40-1" href="#__codelineno-40-1"></a><span class="n">updateFeed</span><span class="o">\</span><span class="n">walkPackages</span> <span class="n">filter</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-46-1" name="__codelineno-46-1" href="#__codelineno-46-1"></a><span class="n">updateFeed</span><span class="o">\</span><span class="n">walkPackages</span> <span class="n">filter</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-41-1" name="__codelineno-41-1" href="#__codelineno-41-1"></a><span class="nv">updateFeed</span><span class="p">:</span><span class="nf">walkPackages</span><span class="p">(</span><span class="nv">filter</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-47-1" name="__codelineno-47-1" href="#__codelineno-47-1"></a><span class="nv">updateFeed</span><span class="p">:</span><span class="nf">walkPackages</span><span class="p">(</span><span class="nv">filter</span><span class="p">)</span>
 </code></pre></div>
 </div>
 </div>
@@ -3845,14 +4020,14 @@ Each iteration yields three values:
 <li><code>iterator</code> <code>function</code></li>
 </ul>
 <h4 id="walkfiles">walkFiles <a name="UpdateFeed.walkFiles"></a><a class="headerlink" href="#walkfiles" title="Permanent link">&para;</a></h4>
-<div class="tabbed-set tabbed-alternate" data-tabs="22:2"><input checked="checked" id="__tabbed_22_1" name="__tabbed_22" type="radio" /><input id="__tabbed_22_2" name="__tabbed_22" type="radio" /><div class="tabbed-labels"><label for="__tabbed_22_1">MoonScript</label><label for="__tabbed_22_2">Lua</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="25:2"><input checked="checked" id="__tabbed_25_1" name="__tabbed_25" type="radio" /><input id="__tabbed_25_2" name="__tabbed_25" type="radio" /><div class="tabbed-labels"><label for="__tabbed_25_1">MoonScript</label><label for="__tabbed_25_2">Lua</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-42-1" name="__codelineno-42-1" href="#__codelineno-42-1"></a><span class="n">updateFeed</span><span class="o">\</span><span class="n">walkFiles</span> <span class="n">filter</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-48-1" name="__codelineno-48-1" href="#__codelineno-48-1"></a><span class="n">updateFeed</span><span class="o">\</span><span class="n">walkFiles</span> <span class="n">filter</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-43-1" name="__codelineno-43-1" href="#__codelineno-43-1"></a><span class="nv">updateFeed</span><span class="p">:</span><span class="nf">walkFiles</span><span class="p">(</span><span class="nv">filter</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-49-1" name="__codelineno-49-1" href="#__codelineno-49-1"></a><span class="nv">updateFeed</span><span class="p">:</span><span class="nf">walkFiles</span><span class="p">(</span><span class="nv">filter</span><span class="p">)</span>
 </code></pre></div>
 </div>
 </div>
@@ -3887,14 +4062,14 @@ Each iteration yields five values:
 </ul>
 <h3 id="class-methods">Class methods<a class="headerlink" href="#class-methods" title="Permanent link">&para;</a></h3>
 <h4 id="getfiledeploypath">getFileDeployPath <a name="UpdateFeed.getFileDeployPath"></a><a class="headerlink" href="#getfiledeploypath" title="Permanent link">&para;</a></h4>
-<div class="tabbed-set tabbed-alternate" data-tabs="23:2"><input checked="checked" id="__tabbed_23_1" name="__tabbed_23" type="radio" /><input id="__tabbed_23_2" name="__tabbed_23" type="radio" /><div class="tabbed-labels"><label for="__tabbed_23_1">MoonScript</label><label for="__tabbed_23_2">Lua</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="26:2"><input checked="checked" id="__tabbed_26_1" name="__tabbed_26" type="radio" /><input id="__tabbed_26_2" name="__tabbed_26" type="radio" /><div class="tabbed-labels"><label for="__tabbed_26_1">MoonScript</label><label for="__tabbed_26_2">Lua</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-44-1" name="__codelineno-44-1" href="#__codelineno-44-1"></a><span class="nc">UpdateFeed</span><span class="o">\</span><span class="n">getFileDeployPath</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">scriptType</span><span class="p">,</span> <span class="n">fileName</span><span class="p">,</span> <span class="n">fileType</span><span class="p">,</span> <span class="n">rootDir</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-50-1" name="__codelineno-50-1" href="#__codelineno-50-1"></a><span class="nc">UpdateFeed</span><span class="o">\</span><span class="n">getFileDeployPath</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">scriptType</span><span class="p">,</span> <span class="n">fileName</span><span class="p">,</span> <span class="n">fileType</span><span class="p">,</span> <span class="n">rootDir</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-45-1" name="__codelineno-45-1" href="#__codelineno-45-1"></a><span class="nv">UpdateFeed</span><span class="p">:</span><span class="nf">getFileDeployPath</span><span class="p">(</span><span class="nv">namespace</span><span class="p">,</span><span class="w"> </span><span class="nv">scriptType</span><span class="p">,</span><span class="w"> </span><span class="nv">fileName</span><span class="p">,</span><span class="w"> </span><span class="nv">fileType</span><span class="p">,</span><span class="w"> </span><span class="nv">rootDir</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-51-1" name="__codelineno-51-1" href="#__codelineno-51-1"></a><span class="nv">UpdateFeed</span><span class="p">:</span><span class="nf">getFileDeployPath</span><span class="p">(</span><span class="nv">namespace</span><span class="p">,</span><span class="w"> </span><span class="nv">scriptType</span><span class="p">,</span><span class="w"> </span><span class="nv">fileName</span><span class="p">,</span><span class="w"> </span><span class="nv">fileType</span><span class="p">,</span><span class="w"> </span><span class="nv">rootDir</span><span class="p">)</span>
 </code></pre></div>
 </div>
 </div>
@@ -3945,14 +4120,14 @@ files to the matching DepUnit test dir.</p>
 <li><code>err</code> <code>string</code>?</li>
 </ul>
 <h4 id="deserialize">deserialize <a name="UpdateFeed.deserialize"></a><a class="headerlink" href="#deserialize" title="Permanent link">&para;</a></h4>
-<div class="tabbed-set tabbed-alternate" data-tabs="24:2"><input checked="checked" id="__tabbed_24_1" name="__tabbed_24" type="radio" /><input id="__tabbed_24_2" name="__tabbed_24" type="radio" /><div class="tabbed-labels"><label for="__tabbed_24_1">MoonScript</label><label for="__tabbed_24_2">Lua</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="27:2"><input checked="checked" id="__tabbed_27_1" name="__tabbed_27" type="radio" /><input id="__tabbed_27_2" name="__tabbed_27" type="radio" /><div class="tabbed-labels"><label for="__tabbed_27_1">MoonScript</label><label for="__tabbed_27_2">Lua</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-46-1" name="__codelineno-46-1" href="#__codelineno-46-1"></a><span class="nc">UpdateFeed</span><span class="o">.</span><span class="n">deserialize</span> <span class="n">content</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-52-1" name="__codelineno-52-1" href="#__codelineno-52-1"></a><span class="nc">UpdateFeed</span><span class="o">.</span><span class="n">deserialize</span> <span class="n">content</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-47-1" name="__codelineno-47-1" href="#__codelineno-47-1"></a><span class="nv">UpdateFeed</span><span class="p">.</span><span class="nf">deserialize</span><span class="p">(</span><span class="nv">content</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-53-1" name="__codelineno-53-1" href="#__codelineno-53-1"></a><span class="nv">UpdateFeed</span><span class="p">.</span><span class="nf">deserialize</span><span class="p">(</span><span class="nv">content</span><span class="p">)</span>
 </code></pre></div>
 </div>
 </div>
