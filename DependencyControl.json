@@ -900,7 +900,7 @@
         "0.7.0": [
           "feat: Initial release: extracts LuaCATS annotations from MoonScript sources into LuaLS .d.lua type-definition files, with enum-class synthesis, constructor overloads, cross-module type resolution, and an annotation lint mode.",
           "feat: Renders API documentation straight from the parsed annotations: one markdown page per module with MoonScript and Lua call forms for every method, constructor parameter tables, cross-linked types, enum member tables with per-value descriptions, deprecation notices, and private members omitted (or badged on request). Emits ready-to-serve mkdocs or mdBook site scaffolding.",
-          "feat: Class fields, enum exports, and instance defaults are declared as typed @field annotations on the class, and re-exported local functions resolve to their full signature and documentation, so both IntelliSense and generated docs show real types instead of placeholders."
+          "feat: Class fields, enum exports, and instance defaults are declared as typed `@field` annotations on the class, and re-exported local functions resolve to their full signature and documentation, so both IntelliSense and generated docs show real types instead of placeholders."
         ]
       }
     }
