@@ -642,12 +642,6 @@
               "url": "@{fileBaseUrl}",
               "sha1": "1889EFB487A85EF9CD9838312B36CAB97D332119",
               "type": "test"
-            },
-            {
-              "name": "/dkjson.moon",
-              "url": "@{fileBaseUrl}",
-              "sha1": "8FC93EF2FCE158FBF32EA4303098F51E90DFA3D4",
-              "type": "test"
             }
           ],
           "requiredModules": [
@@ -798,6 +792,12 @@
               "name": "/vendor/dkjson.lua",
               "url": "@{fileBaseUrl}",
               "sha1": "A0597E1AEEB14D42DABB3A0E8C05129EB024EDCA"
+            },
+            {
+              "name": ".moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "46F563422E13C4D74FA630887DE0DEA917D767EB",
+              "type": "test"
             }
           ],
           "provides": [

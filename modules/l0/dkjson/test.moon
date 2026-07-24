@@ -5,10 +5,10 @@
 -- since round-trips alone would pass even if the formatting were completely broken. A non-string
 -- object key — e.g. a stray integer left on a malformed required-module spec — has to be quoted, or
 -- the file it writes can no longer be parsed.
--- Called from test.moon as: (controls\requireTest "dkjson")!
-->
-  dkjson = require "l0.dkjson"
+-- The l0.dkjson package's own test suite; run via `depctrl test` or the DepUnit test menu.
+UnitTestSuite = require "l0.DependencyControl.UnitTestSuite"
 
+return UnitTestSuite "l0.dkjson", (dkjson) ->
   prettier = (value, extra) ->
     state = {indentMode: "prettier"}
     if extra then state[k] = v for k, v in pairs extra
@@ -18,7 +18,7 @@
   -- Prettier document ends with
   lines = (...) -> "#{table.concat {...}, '\n'}\n"
 
-  {
+  encoderTests = {
     _description: "Tests for the DependencyControl dkjson wrapper's Prettier encoder."
 
     -- layout: indentation, colon spacing, one property per line
@@ -185,3 +185,5 @@
       ut\assertEquals decoded.a.x, 1
       ut\assertEquals decoded.b.x, 1
   }
+
+  {Encoder: encoderTests}
