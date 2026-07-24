@@ -81,7 +81,7 @@ class ModuleLoader
   ---`mdl._error` with the load error.
   ---@param mdl table The module descriptor to load; mutated in place with the result and error flags.
   ---@param usePrivate? boolean Load this script's private copy (namespaced under its own name) instead of the shared module.
-  ---@param reload? boolean Discard any cached reference and load the module afresh.
+  ---@param reload? boolean Discard cached references to the module and its submodules and load afresh.
   ---@return table? ref The loaded module reference, or nil on failure.
   @loadModule = (mdl, usePrivate, reload) =>
     with mdl
@@ -91,7 +91,12 @@ class ModuleLoader
       name = "#{mdl.name or mdl.moduleName}#{usePrivate and ' (Private Copy)' or ''}"
 
       if .outdated or reload
-        -- clear old references
+        -- Submodules cached under the module's namespace belong to the version being replaced,
+        -- so the fresh load must not pick them up from the require cache.
+        submodulePrefix = "#{moduleName}."
+        for cachedName in pairs package.loaded
+          if type(cachedName) == "string" and cachedName\sub(1, #submodulePrefix) == submodulePrefix
+            package.loaded[cachedName] = nil
         package.loaded[moduleName], LOADED_MODULES[moduleName] = nil
 
       elseif ._ref = LOADED_MODULES[moduleName]

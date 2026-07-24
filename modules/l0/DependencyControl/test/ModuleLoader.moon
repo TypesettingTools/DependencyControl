@@ -143,6 +143,27 @@
       ut\assertFalse mdl._missing
       ut\assertString mdl._error
 
+    -- a reload purges the module's cached submodules so the fresh chunk can't be stitched
+    -- to code from the replaced version; a module merely sharing the name prefix is kept.
+    loadModule_reloadPurgesSubmoduleCache: (ut) ->
+      ns = "test.ModuleLoader.reloadPurge"
+      mockRef = {reloaded: true}
+      mdl = {moduleName: ns}
+      rec = {namespace: "host.Module", __class: {ScriptType: domain.ScriptType, __name: "DependencyControl"}}
+      LOADED_MODULES = LOADED_MODULES or {}
+      LOADED_MODULES[ns] = {stale: true}
+      package.loaded[ns] = {stale: true}
+      package.loaded["#{ns}.Helper"] = {stale: true}
+      package.loaded["#{ns}.sub.Deep"] = {stale: true}
+      package.loaded["#{ns}Sibling"] = {sibling: true} -- shares the name prefix but not the namespace
+      (ut\stub _G, "require")\calls (name) -> mockRef
+      result = ModuleLoader.loadModule rec, mdl, false, true
+      ut\assertEquals result, mockRef
+      ut\assertNil package.loaded["#{ns}.Helper"]
+      ut\assertNil package.loaded["#{ns}.sub.Deep"]
+      ut\assertNotNil package.loaded["#{ns}Sibling"]
+      package.loaded[ns], package.loaded["#{ns}Sibling"], LOADED_MODULES[ns] = nil
+
     -- loadModules: stubs loadModule to control loading behavior
 
     loadModules_skipsModule: (ut) ->
@@ -310,6 +331,7 @@
       "createDummyRef_nonModule", "createDummyRef_newRef", "createDummyRef_existingRef",
       "removeDummyRef_nonModule", "removeDummyRef_dummy", "removeDummyRef_nonDummy",
       "loadModule_cached", "loadModule_success", "loadModule_missing", "loadModule_error",
+      "loadModule_reloadPurgesSubmoduleCache",
       "loadModules_skipsModule", "loadModules_allLoaded",
       "loadModules_missingFetchedViaUpdater", "loadModules_missingRequiredFails",
       "loadModules_missingOptionalSkipped", "loadModules_requirementsUnmetSurfacesNestedReason",
