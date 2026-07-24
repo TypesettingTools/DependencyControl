@@ -218,6 +218,21 @@ jobs:
             git push origin "HEAD:refs/heads/${{ inputs.publish-branch }}"
           fi
 
+      - name: Build the release bundle
+        id: bundle
+        if: ${{ inputs.release-channels != '' }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/bundle"
+          lua _depctrl/depctrl.lua bundle --out-dir "$RUNNER_TEMP/bundle"
+          zip=$(find "$RUNNER_TEMP/bundle" -maxdepth 1 -name '*.zip' -print -quit)
+          if [ -n "$zip" ]; then
+            echo "Bundled $(basename "$zip")"
+          else
+            echo "::warning::The bundle produced no archive; the release(s) will carry no asset."
+          fi
+          echo "zip=$zip" >> "$GITHUB_OUTPUT"
+
       # Optionally cut a GitHub Release for each requested channel that shipped this run. Notes are
       # rendered from the feed's changelog for the released version; a channel other than the stable
       # one is marked prerelease. An existing release for a tag is left untouched.
@@ -225,6 +240,7 @@ jobs:
         if: ${{ inputs.release-channels != '' }}
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token || github.token }}
+          BUNDLE_ZIP: ${{ steps.bundle.outputs.zip }}
         run: |
           set -euo pipefail
           notes="$RUNNER_TEMP/release-notes.md"
@@ -243,7 +259,7 @@ jobs:
             if gh release view "$tag" >/dev/null 2>&1; then
               echo "· release $tag already exists — leaving it"
             else
-              gh release create "$tag" --title "$tag" --notes-file "$notes" $prerelease
+              gh release create "$tag" --title "$tag" --notes-file "$notes" $prerelease ${BUNDLE_ZIP:+"$BUNDLE_ZIP"}
               echo "· created release $tag $prerelease"
             fi
           done
