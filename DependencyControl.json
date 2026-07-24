@@ -779,14 +779,14 @@
       "url": "http://dkolf.de/dkjson-lua/",
       "channels": {
         "main": {
-          "version": "0.7.0",
-          "released": "2026-07-24",
+          "version": "0.7.1",
+          "released": null,
           "default": true,
           "files": [
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "D88659A96EC9C7EC7D19ABB2A8192213136F834B"
+              "sha1": "20D35A98AFCE11D67576CB8CE58040C663F23308"
             },
             {
               "name": "/vendor/dkjson.lua",
@@ -811,6 +811,9 @@
         }
       },
       "changelog": {
+        "0.7.1": [
+          "fix: Upgrading from a DependencyControl v0.6.x install no longer fails when dkjson is pulled in as a new dependency; dkjson now skips a self-registration step that breaks pre-0.7.0 loaders."
+        ],
         "0.7.0": [
           "feat: Vendored dkjson v2.10 with a DependencyControl version record and json/dkjson self-registration."
         ]
