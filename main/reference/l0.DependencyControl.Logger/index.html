@@ -25,11 +25,14 @@
     
     
       
-        <title>l0.DependencyControl.Logger - DependencyControl</title>
+        <title>Logger - DependencyControl</title>
       
     
     
       <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -57,7 +60,14 @@
   </head>
   
   
-    <body dir="ltr">
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -106,12 +116,48 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              l0.DependencyControl.Logger
+              Logger
             
           </span>
         </div>
       </div>
     </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
     
     
       <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
@@ -142,6 +188,8 @@
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
         </button>
       </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
       
     </form>
     <div class="md-search__output">
@@ -468,7 +516,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl
+    Overview
   
 
     
@@ -496,7 +544,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Accessors
+    Accessors
   
 
     
@@ -524,7 +572,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ConfigHandler
+    ConfigHandler
   
 
     
@@ -552,7 +600,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ConfigView
+    ConfigView
   
 
     
@@ -580,7 +628,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Constants
+    Constants
   
 
     
@@ -608,7 +656,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Downloader
+    Downloader
   
 
     
@@ -636,7 +684,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Enum
+    Enum
   
 
     
@@ -664,7 +712,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.EventEmitter
+    EventEmitter
   
 
     
@@ -692,7 +740,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedInventory
+    FeedInventory
   
 
     
@@ -720,7 +768,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedLoader
+    FeedLoader
   
 
     
@@ -748,7 +796,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedManager
+    FeedManager
   
 
     
@@ -776,7 +824,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedTrust
+    FeedTrust
   
 
     
@@ -804,7 +852,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FileCache
+    FileCache
   
 
     
@@ -832,7 +880,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FileLock
+    FileLock
   
 
     
@@ -860,7 +908,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Finalizer
+    Finalizer
   
 
     
@@ -888,7 +936,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.GitRepository
+    GitRepository
   
 
     
@@ -916,7 +964,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Host
+    Host
   
 
     
@@ -944,7 +992,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.JsonSchema
+    JsonSchema
   
 
     
@@ -972,7 +1020,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Lock
+    Lock
   
 
     
@@ -1009,7 +1057,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Logger
+    Logger
   
 
     
@@ -1027,7 +1075,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Logger
+    Logger
   
 
     
@@ -1346,7 +1394,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ModuleLoader
+    ModuleLoader
   
 
     
@@ -1374,7 +1422,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ModuleProvider
+    ModuleProvider
   
 
     
@@ -1402,7 +1450,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.NamedSemaphore
+    NamedSemaphore
   
 
     
@@ -1430,7 +1478,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.PackageRecord
+    PackageRecord
   
 
     
@@ -1458,7 +1506,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ScriptTargetFilter
+    ScriptTargetFilter
   
 
     
@@ -1486,7 +1534,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ScriptUpdateRecord
+    ScriptUpdateRecord
   
 
     
@@ -1514,7 +1562,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.SemanticVersion
+    SemanticVersion
   
 
     
@@ -1542,7 +1590,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Stub
+    Stub
   
 
     
@@ -1570,7 +1618,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Timer
+    Timer
   
 
     
@@ -1598,7 +1646,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UnitTestSuite
+    UnitTestSuite
   
 
     
@@ -1626,7 +1674,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UpdateFeed
+    UpdateFeed
   
 
     
@@ -1654,7 +1702,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UpdateTask
+    UpdateTask
   
 
     
@@ -1682,7 +1730,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Updater
+    Updater
   
 
     
@@ -1710,7 +1758,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ZipArchiver
+    ZipArchiver
   
 
     
@@ -1738,7 +1786,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.config-schema
+    config-schema
   
 
     
@@ -1766,7 +1814,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.domain
+    domain
   
 
     
@@ -1794,7 +1842,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.environment
+    environment
   
 
     
@@ -1822,7 +1870,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.file-ops
+    file-ops
   
 
     
@@ -1850,7 +1898,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.hash
+    hash
   
 
     
@@ -1878,7 +1926,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.ffi-posix
+    helpers.ffi-posix
   
 
     
@@ -1906,7 +1954,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.ffi-windows
+    helpers.ffi-windows
   
 
     
@@ -1934,7 +1982,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.open-url
+    helpers.open-url
   
 
     
@@ -1962,7 +2010,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.resolve-host
+    helpers.resolve-host
   
 
     
@@ -1990,7 +2038,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.release-notes
+    release-notes
   
 
     
@@ -2018,7 +2066,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.shims.BadMutex
+    shims.BadMutex
   
 
     
@@ -2046,7 +2094,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.shims.DownloadManager
+    shims.DownloadManager
   
 
     
@@ -2074,7 +2122,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.shims.PreciseTimer
+    shims.PreciseTimer
   
 
     
@@ -2102,7 +2150,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.utils
+    utils
   
 
     
@@ -2185,7 +2233,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats
+    Overview
   
 
     
@@ -2213,7 +2261,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Diagnostics
+    Diagnostics
   
 
     
@@ -2241,7 +2289,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.DocRenderer
+    DocRenderer
   
 
     
@@ -2269,7 +2317,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Emitter
+    Emitter
   
 
     
@@ -2297,7 +2345,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Parser
+    Parser
   
 
     
@@ -2325,7 +2373,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.annotations
+    annotations
   
 
     
@@ -2408,7 +2456,7 @@
   <span class="md-ellipsis">
     
   
-    l0.dkjson
+    Overview
   
 
     
@@ -2754,16 +2802,34 @@
   
 
 
-<h1 id="l0dependencycontrollogger">l0.DependencyControl.Logger</h1>
-<pre><code class="language-lua">Logger = require &quot;l0.DependencyControl.Logger&quot;        -- MoonScript
-local Logger = require(&quot;l0.DependencyControl.Logger&quot;)  -- Lua
-</code></pre>
-<h2 id="logger">Logger <a name="Logger"></a></h2>
+<h1 id="l0dependencycontrollogger">l0.DependencyControl.Logger<a class="headerlink" href="#l0dependencycontrollogger" title="Permanent link">&para;</a></h1>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">MoonScript</label><label for="__tabbed_1_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nc">Logger</span> <span class="o">=</span> <span class="nb">require</span> <span class="s2">&quot;</span><span class="s">l0.DependencyControl.Logger</span><span class="s2">&quot;</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">Logger</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">require</span><span class="p">(</span><span class="s2">&quot;l0.DependencyControl.Logger&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<h2 id="logger">Logger <a name="Logger"></a><a class="headerlink" href="#logger" title="Permanent link">&para;</a></h2>
 <p>Structured logger that writes to Aegisub's log window and optional log files.</p>
-<h3 id="constructor">Constructor <a name="Logger.new"></a></h3>
-<pre><code class="language-lua">logger = Logger args         -- MoonScript
-local logger = Logger(args)  -- Lua
-</code></pre>
+<h3 id="constructor">Constructor <a name="Logger.new"></a><a class="headerlink" href="#constructor" title="Permanent link">&para;</a></h3>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">MoonScript</label><label for="__tabbed_2_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">logger</span> <span class="o">=</span> <span class="nc">Logger</span> <span class="n">args</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">logger</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">Logger</span><span class="p">(</span><span class="nv">args</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Creates a logger, applying the given option overrides to the new instance.</p>
 <table>
 <thead>
@@ -2781,11 +2847,20 @@ local logger = Logger(args)  -- Lua
 </tr>
 </tbody>
 </table>
-<h3 id="instance-methods">Instance methods</h3>
-<h4 id="logex">logEx <a name="Logger.logEx"></a></h4>
-<pre><code class="language-lua">logger\logEx level, msg, insertLineFeed, prefix, indent, ...   -- MoonScript
-logger:logEx(level, msg, insertLineFeed, prefix, indent, ...)  -- Lua
-</code></pre>
+<h3 id="instance-methods">Instance methods<a class="headerlink" href="#instance-methods" title="Permanent link">&para;</a></h3>
+<h4 id="logex">logEx <a name="Logger.logEx"></a><a class="headerlink" href="#logex" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">MoonScript</label><label for="__tabbed_3_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">logger</span><span class="o">\</span><span class="n">logEx</span> <span class="n">level</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">insertLineFeed</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">indent</span><span class="p">,</span> <span class="o">...</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nv">logger</span><span class="p">:</span><span class="nf">logEx</span><span class="p">(</span><span class="nv">level</span><span class="p">,</span><span class="w"> </span><span class="nv">msg</span><span class="p">,</span><span class="w"> </span><span class="nv">insertLineFeed</span><span class="p">,</span><span class="w"> </span><span class="nv">prefix</span><span class="p">,</span><span class="w"> </span><span class="nv">indent</span><span class="p">,</span><span class="w"> </span><span class="p">...)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Writes a log message with explicit rendering options.</p>
 <table>
 <thead>
@@ -2832,10 +2907,19 @@ logger:logEx(level, msg, insertLineFeed, prefix, indent, ...)  -- Lua
 <ul>
 <li><code>written</code> <code>boolean</code> — False if msg was empty, otherwise true.</li>
 </ul>
-<h4 id="format">format <a name="Logger.format"></a></h4>
-<pre><code class="language-lua">logger\format msg, indent, ...   -- MoonScript
-logger:format(msg, indent, ...)  -- Lua
-</code></pre>
+<h4 id="format">format <a name="Logger.format"></a><a class="headerlink" href="#format" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">MoonScript</label><label for="__tabbed_4_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">logger</span><span class="o">\</span><span class="n">format</span> <span class="n">msg</span><span class="p">,</span> <span class="n">indent</span><span class="p">,</span> <span class="o">...</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nv">logger</span><span class="p">:</span><span class="nf">format</span><span class="p">(</span><span class="nv">msg</span><span class="p">,</span><span class="w"> </span><span class="nv">indent</span><span class="p">,</span><span class="w"> </span><span class="p">...)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Formats a message for display, substituting printf-style arguments and indenting each line after the first.</p>
 <table>
 <thead>
@@ -2867,10 +2951,19 @@ logger:format(msg, indent, ...)  -- Lua
 <ul>
 <li><code>msg</code> <code>string</code> — The formatted message.</li>
 </ul>
-<h4 id="log">log <a name="Logger.log"></a></h4>
-<pre><code class="language-lua">logger\log level, msg, ...   -- MoonScript
-logger:log(level, msg, ...)  -- Lua
-</code></pre>
+<h4 id="log">log <a name="Logger.log"></a><a class="headerlink" href="#log" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">MoonScript</label><label for="__tabbed_5_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">logger</span><span class="o">\</span><span class="n">log</span> <span class="n">level</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="o">...</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nv">logger</span><span class="p">:</span><span class="nf">log</span><span class="p">(</span><span class="nv">level</span><span class="p">,</span><span class="w"> </span><span class="nv">msg</span><span class="p">,</span><span class="w"> </span><span class="p">...)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Logs a message at the given severity level.</p>
 <table>
 <thead>
@@ -2902,10 +2995,19 @@ logger:log(level, msg, ...)  -- Lua
 <ul>
 <li><code>written</code> <code>boolean</code> — False when nothing was passed or the message was empty, otherwise true.</li>
 </ul>
-<h4 id="fatal">fatal <a name="Logger.fatal"></a></h4>
-<pre><code class="language-lua">logger\fatal ...   -- MoonScript
-logger:fatal(...)  -- Lua
-</code></pre>
+<h4 id="fatal">fatal <a name="Logger.fatal"></a><a class="headerlink" href="#fatal" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">MoonScript</label><label for="__tabbed_6_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">logger</span><span class="o">\</span><span class="n">fatal</span> <span class="o">...</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nv">logger</span><span class="p">:</span><span class="nf">fatal</span><span class="p">(...)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Logs the given message at the fatal level (0).</p>
 <table>
 <thead>
@@ -2927,10 +3029,19 @@ logger:fatal(...)  -- Lua
 <ul>
 <li><code>written</code> <code>boolean</code> — False when nothing was passed or the message was empty, otherwise true.</li>
 </ul>
-<h4 id="error">error <a name="Logger.error"></a></h4>
-<pre><code class="language-lua">logger\error ...   -- MoonScript
-logger:error(...)  -- Lua
-</code></pre>
+<h4 id="error">error <a name="Logger.error"></a><a class="headerlink" href="#error" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">MoonScript</label><label for="__tabbed_7_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="n">logger</span><span class="o">\</span><span class="nb">error</span> <span class="o">...</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="nv">logger</span><span class="p">:</span><span class="nf">error</span><span class="p">(...)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Logs the given message at the error level (1).</p>
 <table>
 <thead>
@@ -2952,10 +3063,19 @@ logger:error(...)  -- Lua
 <ul>
 <li><code>written</code> <code>boolean</code> — False when nothing was passed or the message was empty, otherwise true.</li>
 </ul>
-<h4 id="warn">warn <a name="Logger.warn"></a></h4>
-<pre><code class="language-lua">logger\warn ...   -- MoonScript
-logger:warn(...)  -- Lua
-</code></pre>
+<h4 id="warn">warn <a name="Logger.warn"></a><a class="headerlink" href="#warn" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="8:2"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><div class="tabbed-labels"><label for="__tabbed_8_1">MoonScript</label><label for="__tabbed_8_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="n">logger</span><span class="o">\</span><span class="nb">warn</span> <span class="o">...</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="nv">logger</span><span class="p">:</span><span class="nf">warn</span><span class="p">(...)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Logs the given message at the warning level (2).</p>
 <table>
 <thead>
@@ -2977,10 +3097,19 @@ logger:warn(...)  -- Lua
 <ul>
 <li><code>written</code> <code>boolean</code> — False when nothing was passed or the message was empty, otherwise true.</li>
 </ul>
-<h4 id="hint">hint <a name="Logger.hint"></a></h4>
-<pre><code class="language-lua">logger\hint ...   -- MoonScript
-logger:hint(...)  -- Lua
-</code></pre>
+<h4 id="hint">hint <a name="Logger.hint"></a><a class="headerlink" href="#hint" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="9:2"><input checked="checked" id="__tabbed_9_1" name="__tabbed_9" type="radio" /><input id="__tabbed_9_2" name="__tabbed_9" type="radio" /><div class="tabbed-labels"><label for="__tabbed_9_1">MoonScript</label><label for="__tabbed_9_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="n">logger</span><span class="o">\</span><span class="n">hint</span> <span class="o">...</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="nv">logger</span><span class="p">:</span><span class="nf">hint</span><span class="p">(...)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Logs the given message at the hint level (3).</p>
 <table>
 <thead>
@@ -3002,10 +3131,19 @@ logger:hint(...)  -- Lua
 <ul>
 <li><code>written</code> <code>boolean</code> — False when nothing was passed or the message was empty, otherwise true.</li>
 </ul>
-<h4 id="debug">debug <a name="Logger.debug"></a></h4>
-<pre><code class="language-lua">logger\debug ...   -- MoonScript
-logger:debug(...)  -- Lua
-</code></pre>
+<h4 id="debug">debug <a name="Logger.debug"></a><a class="headerlink" href="#debug" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="10:2"><input checked="checked" id="__tabbed_10_1" name="__tabbed_10" type="radio" /><input id="__tabbed_10_2" name="__tabbed_10" type="radio" /><div class="tabbed-labels"><label for="__tabbed_10_1">MoonScript</label><label for="__tabbed_10_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="n">logger</span><span class="o">\</span><span class="n">debug</span> <span class="o">...</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="nv">logger</span><span class="p">:</span><span class="nf">debug</span><span class="p">(...)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Logs the given message at the debug level (4).</p>
 <table>
 <thead>
@@ -3027,10 +3165,19 @@ logger:debug(...)  -- Lua
 <ul>
 <li><code>written</code> <code>boolean</code> — False when nothing was passed or the message was empty, otherwise true.</li>
 </ul>
-<h4 id="trace">trace <a name="Logger.trace"></a></h4>
-<pre><code class="language-lua">logger\trace ...   -- MoonScript
-logger:trace(...)  -- Lua
-</code></pre>
+<h4 id="trace">trace <a name="Logger.trace"></a><a class="headerlink" href="#trace" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="11:2"><input checked="checked" id="__tabbed_11_1" name="__tabbed_11" type="radio" /><input id="__tabbed_11_2" name="__tabbed_11" type="radio" /><div class="tabbed-labels"><label for="__tabbed_11_1">MoonScript</label><label for="__tabbed_11_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="n">logger</span><span class="o">\</span><span class="n">trace</span> <span class="o">...</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="nv">logger</span><span class="p">:</span><span class="nf">trace</span><span class="p">(...)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Logs the given message at the trace level (5).</p>
 <table>
 <thead>
@@ -3052,10 +3199,19 @@ logger:trace(...)  -- Lua
 <ul>
 <li><code>written</code> <code>boolean</code> — False when nothing was passed or the message was empty, otherwise true.</li>
 </ul>
-<h4 id="assert">assert <a name="Logger.assert"></a></h4>
-<pre><code class="language-lua">logger\assert cond, ...   -- MoonScript
-logger:assert(cond, ...)  -- Lua
-</code></pre>
+<h4 id="assert">assert <a name="Logger.assert"></a><a class="headerlink" href="#assert" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="12:2"><input checked="checked" id="__tabbed_12_1" name="__tabbed_12" type="radio" /><input id="__tabbed_12_2" name="__tabbed_12" type="radio" /><div class="tabbed-labels"><label for="__tabbed_12_1">MoonScript</label><label for="__tabbed_12_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="n">logger</span><span class="o">\</span><span class="nb">assert</span> <span class="n">cond</span><span class="p">,</span> <span class="o">...</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="nv">logger</span><span class="p">:</span><span class="nf">assert</span><span class="p">(</span><span class="nv">cond</span><span class="p">,</span><span class="w"> </span><span class="p">...)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Logs an error message when the given condition is falsy.</p>
 <table>
 <thead>
@@ -3082,10 +3238,19 @@ logger:assert(cond, ...)  -- Lua
 <ul>
 <li><code>cond</code> <code>any</code> — The condition and any trailing arguments, returned unchanged when truthy.</li>
 </ul>
-<h4 id="assertnotnil">assertNotNil <a name="Logger.assertNotNil"></a></h4>
-<pre><code class="language-lua">logger\assertNotNil cond, ...   -- MoonScript
-logger:assertNotNil(cond, ...)  -- Lua
-</code></pre>
+<h4 id="assertnotnil">assertNotNil <a name="Logger.assertNotNil"></a><a class="headerlink" href="#assertnotnil" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="13:2"><input checked="checked" id="__tabbed_13_1" name="__tabbed_13" type="radio" /><input id="__tabbed_13_2" name="__tabbed_13" type="radio" /><div class="tabbed-labels"><label for="__tabbed_13_1">MoonScript</label><label for="__tabbed_13_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="n">logger</span><span class="o">\</span><span class="n">assertNotNil</span> <span class="n">cond</span><span class="p">,</span> <span class="o">...</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="nv">logger</span><span class="p">:</span><span class="nf">assertNotNil</span><span class="p">(</span><span class="nv">cond</span><span class="p">,</span><span class="w"> </span><span class="p">...)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Logs an error message when the given condition is nil.</p>
 <table>
 <thead>
@@ -3112,10 +3277,19 @@ logger:assertNotNil(cond, ...)  -- Lua
 <ul>
 <li><code>cond</code> <code>any</code> — The condition and any trailing arguments, returned unchanged when not nil.</li>
 </ul>
-<h4 id="progress">progress <a name="Logger.progress"></a></h4>
-<pre><code class="language-lua">logger\progress progress, msg, ...   -- MoonScript
-logger:progress(progress, msg, ...)  -- Lua
-</code></pre>
+<h4 id="progress">progress <a name="Logger.progress"></a><a class="headerlink" href="#progress" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="14:2"><input checked="checked" id="__tabbed_14_1" name="__tabbed_14" type="radio" /><input id="__tabbed_14_2" name="__tabbed_14" type="radio" /><div class="tabbed-labels"><label for="__tabbed_14_1">MoonScript</label><label for="__tabbed_14_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="n">logger</span><span class="o">\</span><span class="n">progress</span> <span class="n">progress</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="o">...</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="nv">logger</span><span class="p">:</span><span class="nf">progress</span><span class="p">(</span><span class="nv">progress</span><span class="p">,</span><span class="w"> </span><span class="nv">msg</span><span class="p">,</span><span class="w"> </span><span class="p">...)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Draws an in-place progress bar, filling it toward the given completion percentage.</p>
 <table>
 <thead>
@@ -3143,10 +3317,19 @@ logger:progress(progress, msg, ...)  -- Lua
 </tr>
 </tbody>
 </table>
-<h4 id="dump">dump <a name="Logger.dump"></a></h4>
-<pre><code class="language-lua">logger\dump item, ignore, level, maxDepth   -- MoonScript
-logger:dump(item, ignore, level, maxDepth)  -- Lua
-</code></pre>
+<h4 id="dump">dump <a name="Logger.dump"></a><a class="headerlink" href="#dump" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="15:2"><input checked="checked" id="__tabbed_15_1" name="__tabbed_15" type="radio" /><input id="__tabbed_15_2" name="__tabbed_15" type="radio" /><div class="tabbed-labels"><label for="__tabbed_15_1">MoonScript</label><label for="__tabbed_15_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="n">logger</span><span class="o">\</span><span class="n">dump</span> <span class="n">item</span><span class="p">,</span> <span class="n">ignore</span><span class="p">,</span> <span class="n">level</span><span class="p">,</span> <span class="n">maxDepth</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="nv">logger</span><span class="p">:</span><span class="nf">dump</span><span class="p">(</span><span class="nv">item</span><span class="p">,</span><span class="w"> </span><span class="nv">ignore</span><span class="p">,</span><span class="w"> </span><span class="nv">level</span><span class="p">,</span><span class="w"> </span><span class="nv">maxDepth</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Logs a table dump (or scalar value) at the specified level.</p>
 <table>
 <thead>
@@ -3179,10 +3362,19 @@ logger:dump(item, ignore, level, maxDepth)  -- Lua
 </tr>
 </tbody>
 </table>
-<h4 id="dumptostring">dumpToString <a name="Logger.dumpToString"></a></h4>
-<pre><code class="language-lua">logger\dumpToString item, ignore, maxDepth   -- MoonScript
-logger:dumpToString(item, ignore, maxDepth)  -- Lua
-</code></pre>
+<h4 id="dumptostring">dumpToString <a name="Logger.dumpToString"></a><a class="headerlink" href="#dumptostring" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="16:2"><input checked="checked" id="__tabbed_16_1" name="__tabbed_16" type="radio" /><input id="__tabbed_16_2" name="__tabbed_16" type="radio" /><div class="tabbed-labels"><label for="__tabbed_16_1">MoonScript</label><label for="__tabbed_16_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="n">logger</span><span class="o">\</span><span class="n">dumpToString</span> <span class="n">item</span><span class="p">,</span> <span class="n">ignore</span><span class="p">,</span> <span class="n">maxDepth</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="nv">logger</span><span class="p">:</span><span class="nf">dumpToString</span><span class="p">(</span><span class="nv">item</span><span class="p">,</span><span class="w"> </span><span class="nv">ignore</span><span class="p">,</span><span class="w"> </span><span class="nv">maxDepth</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Converts a table dump (or scalar value) to a readable string.</p>
 <table>
 <thead>
@@ -3214,10 +3406,19 @@ logger:dumpToString(item, ignore, maxDepth)  -- Lua
 <ul>
 <li><code>string</code></li>
 </ul>
-<h4 id="trimfiles">trimFiles <a name="Logger.trimFiles"></a></h4>
-<pre><code class="language-lua">logger\trimFiles doWipe, maxAge, maxSize, maxFiles   -- MoonScript
-logger:trimFiles(doWipe, maxAge, maxSize, maxFiles)  -- Lua
-</code></pre>
+<h4 id="trimfiles">trimFiles <a name="Logger.trimFiles"></a><a class="headerlink" href="#trimfiles" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="17:2"><input checked="checked" id="__tabbed_17_1" name="__tabbed_17" type="radio" /><input id="__tabbed_17_2" name="__tabbed_17" type="radio" /><div class="tabbed-labels"><label for="__tabbed_17_1">MoonScript</label><label for="__tabbed_17_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="n">logger</span><span class="o">\</span><span class="n">trimFiles</span> <span class="n">doWipe</span><span class="p">,</span> <span class="n">maxAge</span><span class="p">,</span> <span class="n">maxSize</span><span class="p">,</span> <span class="n">maxFiles</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="nv">logger</span><span class="p">:</span><span class="nf">trimFiles</span><span class="p">(</span><span class="nv">doWipe</span><span class="p">,</span><span class="w"> </span><span class="nv">maxAge</span><span class="p">,</span><span class="w"> </span><span class="nv">maxSize</span><span class="p">,</span><span class="w"> </span><span class="nv">maxFiles</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Deletes log files that exceed the configured age, size, or count limits, keeping the newest.</p>
 <table>
 <thead>
@@ -3257,21 +3458,39 @@ logger:trimFiles(doWipe, maxAge, maxSize, maxFiles)  -- Lua
 <li><code>total</code> <code>integer</code> — Total number of matching log files found.</li>
 <li><code>totalSize</code> <code>integer</code> — Combined size in bytes of all matching files.</li>
 </ul>
-<h3 id="class-methods">Class methods</h3>
-<h4 id="isatlinestart">isAtLineStart <a name="Logger.isAtLineStart"></a></h4>
-<pre><code class="language-lua">Logger.isAtLineStart!   -- MoonScript
-Logger.isAtLineStart()  -- Lua
-</code></pre>
+<h3 id="class-methods">Class methods<a class="headerlink" href="#class-methods" title="Permanent link">&para;</a></h3>
+<h4 id="isatlinestart">isAtLineStart <a name="Logger.isAtLineStart"></a><a class="headerlink" href="#isatlinestart" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="18:2"><input checked="checked" id="__tabbed_18_1" name="__tabbed_18" type="radio" /><input id="__tabbed_18_2" name="__tabbed_18" type="radio" /><div class="tabbed-labels"><label for="__tabbed_18_1">MoonScript</label><label for="__tabbed_18_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="nc">Logger</span><span class="o">.</span><span class="n">isAtLineStart</span><span class="o">!</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="nv">Logger</span><span class="p">.</span><span class="nf">isAtLineStart</span><span class="p">()</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Whether the last message to the  log stream ended with a line feed, or left the stream mid-line.
 Lets a caller decide whether its next output continues that open line or starts fresh.</p>
 <p><strong>Returns:</strong></p>
 <ul>
 <li><code>boolean</code></li>
 </ul>
-<h4 id="windowerror">windowError <a name="Logger.windowError"></a></h4>
-<pre><code class="language-lua">Logger.windowError errorMessage   -- MoonScript
-Logger.windowError(errorMessage)  -- Lua
-</code></pre>
+<h4 id="windowerror">windowError <a name="Logger.windowError"></a><a class="headerlink" href="#windowerror" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="19:2"><input checked="checked" id="__tabbed_19_1" name="__tabbed_19" type="radio" /><input id="__tabbed_19_2" name="__tabbed_19" type="radio" /><div class="tabbed-labels"><label for="__tabbed_19_1">MoonScript</label><label for="__tabbed_19_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a><span class="nc">Logger</span><span class="o">.</span><span class="n">windowError</span> <span class="n">errorMessage</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a><span class="nv">Logger</span><span class="p">.</span><span class="nf">windowError</span><span class="p">(</span><span class="nv">errorMessage</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Displays the given error in a modal dialog with a Close button, then aborts the running script.</p>
 <table>
 <thead>
@@ -3289,10 +3508,19 @@ Logger.windowError(errorMessage)  -- Lua
 </tr>
 </tbody>
 </table>
-<h4 id="describetype">describeType <a name="Logger.describeType"></a></h4>
-<pre><code class="language-lua">Logger\describeType val   -- MoonScript
-Logger:describeType(val)  -- Lua
-</code></pre>
+<h4 id="describetype">describeType <a name="Logger.describeType"></a><a class="headerlink" href="#describetype" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="20:2"><input checked="checked" id="__tabbed_20_1" name="__tabbed_20" type="radio" /><input id="__tabbed_20_2" name="__tabbed_20" type="radio" /><div class="tabbed-labels"><label for="__tabbed_20_1">MoonScript</label><label for="__tabbed_20_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a><span class="nc">Logger</span><span class="o">\</span><span class="n">describeType</span> <span class="n">val</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-39-1" name="__codelineno-39-1" href="#__codelineno-39-1"></a><span class="nv">Logger</span><span class="p">:</span><span class="nf">describeType</span><span class="p">(</span><span class="nv">val</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Returns a human-readable type name for the given value.</p>
 <table>
 <thead>
@@ -3314,7 +3542,7 @@ Logger:describeType(val)  -- Lua
 <ul>
 <li><code>type</code> <code>string</code> — The Lua type name, or "<ClassName> object" for a DependencyControl class instance.</li>
 </ul>
-<h3 id="fields">Fields</h3>
+<h3 id="fields">Fields<a class="headerlink" href="#fields" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -3341,7 +3569,7 @@ Logger:describeType(val)  -- Lua
 </tr>
 <tr>
 <td>fileSubName</td>
-<td><code>any</code></td>
+<td><code>string</code></td>
 <td></td>
 </tr>
 <tr>
@@ -3361,7 +3589,7 @@ Logger:describeType(val)  -- Lua
 </tr>
 <tr>
 <td>prefix</td>
-<td><code>any</code></td>
+<td><code>string</code></td>
 <td></td>
 </tr>
 <tr>
@@ -3428,8 +3656,16 @@ Logger:describeType(val)  -- Lua
             </div>
           
           
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
 <script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
         </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
         
       </main>
       
@@ -3460,7 +3696,7 @@ Logger:describeType(val)  -- Lua
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.code.copy", "content.tabs.link", "navigation.instant", "navigation.top", "search.suggest", "search.highlight", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>

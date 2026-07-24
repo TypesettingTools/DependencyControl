@@ -25,11 +25,14 @@
     
     
       
-        <title>l0.DependencyControl.SemanticVersion - DependencyControl</title>
+        <title>SemanticVersion - DependencyControl</title>
       
     
     
       <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -57,7 +60,14 @@
   </head>
   
   
-    <body dir="ltr">
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -106,12 +116,48 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              l0.DependencyControl.SemanticVersion
+              SemanticVersion
             
           </span>
         </div>
       </div>
     </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
     
     
       <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
@@ -142,6 +188,8 @@
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
         </button>
       </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
       
     </form>
     <div class="md-search__output">
@@ -468,7 +516,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl
+    Overview
   
 
     
@@ -496,7 +544,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Accessors
+    Accessors
   
 
     
@@ -524,7 +572,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ConfigHandler
+    ConfigHandler
   
 
     
@@ -552,7 +600,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ConfigView
+    ConfigView
   
 
     
@@ -580,7 +628,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Constants
+    Constants
   
 
     
@@ -608,7 +656,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Downloader
+    Downloader
   
 
     
@@ -636,7 +684,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Enum
+    Enum
   
 
     
@@ -664,7 +712,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.EventEmitter
+    EventEmitter
   
 
     
@@ -692,7 +740,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedInventory
+    FeedInventory
   
 
     
@@ -720,7 +768,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedLoader
+    FeedLoader
   
 
     
@@ -748,7 +796,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedManager
+    FeedManager
   
 
     
@@ -776,7 +824,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedTrust
+    FeedTrust
   
 
     
@@ -804,7 +852,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FileCache
+    FileCache
   
 
     
@@ -832,7 +880,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FileLock
+    FileLock
   
 
     
@@ -860,7 +908,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Finalizer
+    Finalizer
   
 
     
@@ -888,7 +936,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.GitRepository
+    GitRepository
   
 
     
@@ -916,7 +964,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Host
+    Host
   
 
     
@@ -944,7 +992,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.JsonSchema
+    JsonSchema
   
 
     
@@ -972,7 +1020,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Lock
+    Lock
   
 
     
@@ -1000,7 +1048,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Logger
+    Logger
   
 
     
@@ -1028,7 +1076,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ModuleLoader
+    ModuleLoader
   
 
     
@@ -1056,7 +1104,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ModuleProvider
+    ModuleProvider
   
 
     
@@ -1084,7 +1132,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.NamedSemaphore
+    NamedSemaphore
   
 
     
@@ -1112,7 +1160,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.PackageRecord
+    PackageRecord
   
 
     
@@ -1140,7 +1188,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ScriptTargetFilter
+    ScriptTargetFilter
   
 
     
@@ -1168,7 +1216,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ScriptUpdateRecord
+    ScriptUpdateRecord
   
 
     
@@ -1205,7 +1253,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.SemanticVersion
+    SemanticVersion
   
 
     
@@ -1223,7 +1271,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.SemanticVersion
+    SemanticVersion
   
 
     
@@ -1581,7 +1629,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Stub
+    Stub
   
 
     
@@ -1609,7 +1657,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Timer
+    Timer
   
 
     
@@ -1637,7 +1685,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UnitTestSuite
+    UnitTestSuite
   
 
     
@@ -1665,7 +1713,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UpdateFeed
+    UpdateFeed
   
 
     
@@ -1693,7 +1741,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UpdateTask
+    UpdateTask
   
 
     
@@ -1721,7 +1769,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Updater
+    Updater
   
 
     
@@ -1749,7 +1797,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ZipArchiver
+    ZipArchiver
   
 
     
@@ -1777,7 +1825,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.config-schema
+    config-schema
   
 
     
@@ -1805,7 +1853,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.domain
+    domain
   
 
     
@@ -1833,7 +1881,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.environment
+    environment
   
 
     
@@ -1861,7 +1909,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.file-ops
+    file-ops
   
 
     
@@ -1889,7 +1937,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.hash
+    hash
   
 
     
@@ -1917,7 +1965,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.ffi-posix
+    helpers.ffi-posix
   
 
     
@@ -1945,7 +1993,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.ffi-windows
+    helpers.ffi-windows
   
 
     
@@ -1973,7 +2021,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.open-url
+    helpers.open-url
   
 
     
@@ -2001,7 +2049,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.resolve-host
+    helpers.resolve-host
   
 
     
@@ -2029,7 +2077,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.release-notes
+    release-notes
   
 
     
@@ -2057,7 +2105,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.shims.BadMutex
+    shims.BadMutex
   
 
     
@@ -2085,7 +2133,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.shims.DownloadManager
+    shims.DownloadManager
   
 
     
@@ -2113,7 +2161,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.shims.PreciseTimer
+    shims.PreciseTimer
   
 
     
@@ -2141,7 +2189,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.utils
+    utils
   
 
     
@@ -2224,7 +2272,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats
+    Overview
   
 
     
@@ -2252,7 +2300,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Diagnostics
+    Diagnostics
   
 
     
@@ -2280,7 +2328,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.DocRenderer
+    DocRenderer
   
 
     
@@ -2308,7 +2356,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Emitter
+    Emitter
   
 
     
@@ -2336,7 +2384,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Parser
+    Parser
   
 
     
@@ -2364,7 +2412,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.annotations
+    annotations
   
 
     
@@ -2447,7 +2495,7 @@
   <span class="md-ellipsis">
     
   
-    l0.dkjson
+    Overview
   
 
     
@@ -2832,19 +2880,37 @@
   
 
 
-<h1 id="l0dependencycontrolsemanticversion">l0.DependencyControl.SemanticVersion</h1>
-<pre><code class="language-lua">SemanticVersion = require &quot;l0.DependencyControl.SemanticVersion&quot;        -- MoonScript
-local SemanticVersion = require(&quot;l0.DependencyControl.SemanticVersion&quot;)  -- Lua
-</code></pre>
-<h2 id="semanticversion">SemanticVersion <a name="SemanticVersion"></a></h2>
+<h1 id="l0dependencycontrolsemanticversion">l0.DependencyControl.SemanticVersion<a class="headerlink" href="#l0dependencycontrolsemanticversion" title="Permanent link">&para;</a></h1>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">MoonScript</label><label for="__tabbed_1_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nc">SemanticVersion</span> <span class="o">=</span> <span class="nb">require</span> <span class="s2">&quot;</span><span class="s">l0.DependencyControl.SemanticVersion</span><span class="s2">&quot;</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">SemanticVersion</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">require</span><span class="p">(</span><span class="s2">&quot;l0.DependencyControl.SemanticVersion&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<h2 id="semanticversion">SemanticVersion <a name="SemanticVersion"></a><a class="headerlink" href="#semanticversion" title="Permanent link">&para;</a></h2>
 <p>A semantic version value (major.minor.patch) plus the static semantic-versioning utilities. Construct
 one from a version string or from numeric components; instances compare with <code>&lt;</code>/<code>==</code>, stringify to
 "major.minor.patch", and bump. The static helpers additionally accept an instance wherever they take a
 <code>number|string</code> version. Packed integers are an internal encoding, exposed only via <code>fromPacked</code>/<code>toPacked</code>.</p>
-<h3 id="constructor">Constructor <a name="SemanticVersion.new"></a></h3>
-<pre><code class="language-lua">semanticVersion = SemanticVersion major, minor, patch         -- MoonScript
-local semanticVersion = SemanticVersion(major, minor, patch)  -- Lua
-</code></pre>
+<h3 id="constructor">Constructor <a name="SemanticVersion.new"></a><a class="headerlink" href="#constructor" title="Permanent link">&para;</a></h3>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">MoonScript</label><label for="__tabbed_2_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">semanticVersion</span> <span class="o">=</span> <span class="nc">SemanticVersion</span> <span class="n">major</span><span class="p">,</span> <span class="n">minor</span><span class="p">,</span> <span class="n">patch</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">semanticVersion</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">SemanticVersion</span><span class="p">(</span><span class="nv">major</span><span class="p">,</span><span class="w"> </span><span class="nv">minor</span><span class="p">,</span><span class="w"> </span><span class="nv">patch</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>minor and patch supplied as the next two arguments. Raises on an invalid string or component.</p>
 <table>
 <thead>
@@ -2872,19 +2938,37 @@ local semanticVersion = SemanticVersion(major, minor, patch)  -- Lua
 </tr>
 </tbody>
 </table>
-<h3 id="instance-methods">Instance methods</h3>
-<h4 id="topacked">toPacked <a name="SemanticVersion.toPacked"></a></h4>
-<pre><code class="language-lua">semanticVersion\toPacked!   -- MoonScript
-semanticVersion:toPacked()  -- Lua
-</code></pre>
+<h3 id="instance-methods">Instance methods<a class="headerlink" href="#instance-methods" title="Permanent link">&para;</a></h3>
+<h4 id="topacked">toPacked <a name="SemanticVersion.toPacked"></a><a class="headerlink" href="#topacked" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">MoonScript</label><label for="__tabbed_3_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">semanticVersion</span><span class="o">\</span><span class="n">toPacked</span><span class="o">!</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nv">semanticVersion</span><span class="p">:</span><span class="nf">toPacked</span><span class="p">()</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p><strong>Returns:</strong></p>
 <ul>
 <li><code>packed</code> <code>integer</code> — This version in the internal packed encoding (major&lt;&lt;16 | minor&lt;&lt;8 | patch).</li>
 </ul>
-<h4 id="satisfies">satisfies <a name="SemanticVersion.satisfies"></a></h4>
-<pre><code class="language-lua">semanticVersion\satisfies range   -- MoonScript
-semanticVersion:satisfies(range)  -- Lua
-</code></pre>
+<h4 id="satisfies">satisfies <a name="SemanticVersion.satisfies"></a><a class="headerlink" href="#satisfies" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">MoonScript</label><label for="__tabbed_4_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">semanticVersion</span><span class="o">\</span><span class="n">satisfies</span> <span class="n">range</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nv">semanticVersion</span><span class="p">:</span><span class="nf">satisfies</span><span class="p">(</span><span class="nv">range</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Reports whether this version satisfies an npm-style range (see the static parseRange for the syntax).</p>
 <table>
 <thead>
@@ -2907,35 +2991,71 @@ semanticVersion:satisfies(range)  -- Lua
 <li><code>satisfies</code> <code>boolean</code>? — True/false, or nil on a malformed range.</li>
 <li><code>err</code> <code>string</code>? — Error message on a malformed range.</li>
 </ul>
-<h4 id="bumpmajor">bumpMajor <a name="SemanticVersion.bumpMajor"></a></h4>
-<pre><code class="language-lua">semanticVersion\bumpMajor!   -- MoonScript
-semanticVersion:bumpMajor()  -- Lua
-</code></pre>
+<h4 id="bumpmajor">bumpMajor <a name="SemanticVersion.bumpMajor"></a><a class="headerlink" href="#bumpmajor" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">MoonScript</label><label for="__tabbed_5_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">semanticVersion</span><span class="o">\</span><span class="n">bumpMajor</span><span class="o">!</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nv">semanticVersion</span><span class="p">:</span><span class="nf">bumpMajor</span><span class="p">()</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p><strong>Returns:</strong></p>
 <ul>
 <li><code>bumped</code> <a href="#SemanticVersion">SemanticVersion</a> — A new version with the major incremented and minor/patch reset to 0.</li>
 </ul>
-<h4 id="bumpminor">bumpMinor <a name="SemanticVersion.bumpMinor"></a></h4>
-<pre><code class="language-lua">semanticVersion\bumpMinor!   -- MoonScript
-semanticVersion:bumpMinor()  -- Lua
-</code></pre>
+<h4 id="bumpminor">bumpMinor <a name="SemanticVersion.bumpMinor"></a><a class="headerlink" href="#bumpminor" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">MoonScript</label><label for="__tabbed_6_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">semanticVersion</span><span class="o">\</span><span class="n">bumpMinor</span><span class="o">!</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nv">semanticVersion</span><span class="p">:</span><span class="nf">bumpMinor</span><span class="p">()</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p><strong>Returns:</strong></p>
 <ul>
 <li><code>bumped</code> <a href="#SemanticVersion">SemanticVersion</a> — A new version with the minor incremented and patch reset to 0.</li>
 </ul>
-<h4 id="bumppatch">bumpPatch <a name="SemanticVersion.bumpPatch"></a></h4>
-<pre><code class="language-lua">semanticVersion\bumpPatch!   -- MoonScript
-semanticVersion:bumpPatch()  -- Lua
-</code></pre>
+<h4 id="bumppatch">bumpPatch <a name="SemanticVersion.bumpPatch"></a><a class="headerlink" href="#bumppatch" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">MoonScript</label><label for="__tabbed_7_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="n">semanticVersion</span><span class="o">\</span><span class="n">bumpPatch</span><span class="o">!</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="nv">semanticVersion</span><span class="p">:</span><span class="nf">bumpPatch</span><span class="p">()</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p><strong>Returns:</strong></p>
 <ul>
 <li><code>bumped</code> <a href="#SemanticVersion">SemanticVersion</a> — A new version with the patch incremented.</li>
 </ul>
-<h3 id="class-methods">Class methods</h3>
-<h4 id="tostring">toString <a name="SemanticVersion.toString"></a></h4>
-<pre><code class="language-lua">SemanticVersion\toString version, precision   -- MoonScript
-SemanticVersion:toString(version, precision)  -- Lua
-</code></pre>
+<h3 id="class-methods">Class methods<a class="headerlink" href="#class-methods" title="Permanent link">&para;</a></h3>
+<h4 id="tostring">toString <a name="SemanticVersion.toString"></a><a class="headerlink" href="#tostring" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="8:2"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><div class="tabbed-labels"><label for="__tabbed_8_1">MoonScript</label><label for="__tabbed_8_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="nc">SemanticVersion</span><span class="o">\</span><span class="n">toString</span> <span class="n">version</span><span class="p">,</span> <span class="n">precision</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="nv">SemanticVersion</span><span class="p">:</span><span class="nf">toString</span><span class="p">(</span><span class="nv">version</span><span class="p">,</span><span class="w"> </span><span class="nv">precision</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Converts a version number, string, or instance to a semantic version string.</p>
 <table>
 <thead>
@@ -2963,10 +3083,19 @@ SemanticVersion:toString(version, precision)  -- Lua
 <li><code>versionString</code> <code>string</code>|<code>nil</code></li>
 <li><code>err</code> <code>string</code>|<code>nil</code></li>
 </ul>
-<h4 id="frompacked">fromPacked <a name="SemanticVersion.fromPacked"></a></h4>
-<pre><code class="language-lua">SemanticVersion.fromPacked packed   -- MoonScript
-SemanticVersion.fromPacked(packed)  -- Lua
-</code></pre>
+<h4 id="frompacked">fromPacked <a name="SemanticVersion.fromPacked"></a><a class="headerlink" href="#frompacked" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="9:2"><input checked="checked" id="__tabbed_9_1" name="__tabbed_9" type="radio" /><input id="__tabbed_9_2" name="__tabbed_9" type="radio" /><div class="tabbed-labels"><label for="__tabbed_9_1">MoonScript</label><label for="__tabbed_9_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="nc">SemanticVersion</span><span class="o">.</span><span class="n">fromPacked</span> <span class="n">packed</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="nv">SemanticVersion</span><span class="p">.</span><span class="nf">fromPacked</span><span class="p">(</span><span class="nv">packed</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Builds a version from the internal packed encoding (as returned by toPacked). Raises on a value
 outside [0, 0xFFFFFF]. Call as a plain static (<code>SemanticVersion.fromPacked packed</code>).</p>
 <table>
@@ -2989,10 +3118,19 @@ outside [0, 0xFFFFFF]. Call as a plain static (<code>SemanticVersion.fromPacked 
 <ul>
 <li><code>version</code> <a href="#SemanticVersion">SemanticVersion</a> — The version the packed integer encodes.</li>
 </ul>
-<h4 id="parse">parse <a name="SemanticVersion.parse"></a></h4>
-<pre><code class="language-lua">SemanticVersion.parse str   -- MoonScript
-SemanticVersion.parse(str)  -- Lua
-</code></pre>
+<h4 id="parse">parse <a name="SemanticVersion.parse"></a><a class="headerlink" href="#parse" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="10:2"><input checked="checked" id="__tabbed_10_1" name="__tabbed_10" type="radio" /><input id="__tabbed_10_2" name="__tabbed_10" type="radio" /><div class="tabbed-labels"><label for="__tabbed_10_1">MoonScript</label><label for="__tabbed_10_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="nc">SemanticVersion</span><span class="o">.</span><span class="n">parse</span> <span class="n">str</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="nv">SemanticVersion</span><span class="p">.</span><span class="nf">parse</span><span class="p">(</span><span class="nv">str</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Parses a version string into an instance without raising, for untrusted input (the constructor raises
 instead). Call as a plain static (<code>SemanticVersion.parse str</code>).</p>
 <table>
@@ -3016,10 +3154,19 @@ instead). Call as a plain static (<code>SemanticVersion.parse str</code>).</p>
 <li><code>version</code> <a href="#SemanticVersion">SemanticVersion</a>? — The parsed version, or nil on error.</li>
 <li><code>err</code> <code>string</code>? — Error message if parsing failed.</li>
 </ul>
-<h4 id="check">check <a name="SemanticVersion.check"></a></h4>
-<pre><code class="language-lua">SemanticVersion\check a, b, precision   -- MoonScript
-SemanticVersion:check(a, b, precision)  -- Lua
-</code></pre>
+<h4 id="check">check <a name="SemanticVersion.check"></a><a class="headerlink" href="#check" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="11:2"><input checked="checked" id="__tabbed_11_1" name="__tabbed_11" type="radio" /><input id="__tabbed_11_2" name="__tabbed_11" type="radio" /><div class="tabbed-labels"><label for="__tabbed_11_1">MoonScript</label><label for="__tabbed_11_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="nc">SemanticVersion</span><span class="o">\</span><span class="n">check</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">precision</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="nv">SemanticVersion</span><span class="p">:</span><span class="nf">check</span><span class="p">(</span><span class="nv">a</span><span class="p">,</span><span class="w"> </span><span class="nv">b</span><span class="p">,</span><span class="w"> </span><span class="nv">precision</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Checks whether version <code>a</code> is greater than or equal to version <code>b</code>, up to the given precision.
 When <code>precision</code> is "range", <code>b</code> is instead an npm-style version range string and the result is
 whether <code>a</code> satisfies that range (see satisfiesRange).</p>
@@ -3054,10 +3201,19 @@ whether <code>a</code> satisfies that range (see satisfiesRange).</p>
 <li><code>result</code> <code>boolean</code>? — True if a satisfies b, or nil on error.</li>
 <li><code>masked</code> <code>number</code>|<code>string</code> — The masked value of b on success (absent for ranges), or the error message on failure.</li>
 </ul>
-<h4 id="parserange">parseRange <a name="SemanticVersion.parseRange"></a></h4>
-<pre><code class="language-lua">SemanticVersion\parseRange range   -- MoonScript
-SemanticVersion:parseRange(range)  -- Lua
-</code></pre>
+<h4 id="parserange">parseRange <a name="SemanticVersion.parseRange"></a><a class="headerlink" href="#parserange" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="12:2"><input checked="checked" id="__tabbed_12_1" name="__tabbed_12" type="radio" /><input id="__tabbed_12_2" name="__tabbed_12" type="radio" /><div class="tabbed-labels"><label for="__tabbed_12_1">MoonScript</label><label for="__tabbed_12_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="nc">SemanticVersion</span><span class="o">\</span><span class="n">parseRange</span> <span class="n">range</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="nv">SemanticVersion</span><span class="p">:</span><span class="nf">parseRange</span><span class="p">(</span><span class="nv">range</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Parses an npm-style version range into its set of half-open integer intervals <code>[min,max)</code>
 (<code>min</code>inclusive, <code>max</code> exclusive). Supports the following range syntax:
  * comparators: <code>&gt;=1.2.7</code>, <code>&lt;=1.2.7</code>, <code>&gt;1.2.7</code>, <code>&lt;1.2.7</code>, <code>=1.2.7</code>
@@ -3090,10 +3246,19 @@ Pre-release/build labels are not supported at this time.</p>
 <li><code>intervals</code> <a href="#SemverInterval">SemverInterval</a>[]? — The range's intervals, or nil on a malformed range.</li>
 <li><code>err</code> <code>string</code>? — Error message on failure.</li>
 </ul>
-<h4 id="satisfiesrange">satisfiesRange <a name="SemanticVersion.satisfiesRange"></a></h4>
-<pre><code class="language-lua">SemanticVersion\satisfiesRange version, range   -- MoonScript
-SemanticVersion:satisfiesRange(version, range)  -- Lua
-</code></pre>
+<h4 id="satisfiesrange">satisfiesRange <a name="SemanticVersion.satisfiesRange"></a><a class="headerlink" href="#satisfiesrange" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="13:2"><input checked="checked" id="__tabbed_13_1" name="__tabbed_13" type="radio" /><input id="__tabbed_13_2" name="__tabbed_13" type="radio" /><div class="tabbed-labels"><label for="__tabbed_13_1">MoonScript</label><label for="__tabbed_13_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="nc">SemanticVersion</span><span class="o">\</span><span class="n">satisfiesRange</span> <span class="n">version</span><span class="p">,</span> <span class="n">range</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="nv">SemanticVersion</span><span class="p">:</span><span class="nf">satisfiesRange</span><span class="p">(</span><span class="nv">version</span><span class="p">,</span><span class="w"> </span><span class="nv">range</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Reports whether a version satisfies an npm-style semver range.</p>
 <table>
 <thead>
@@ -3121,10 +3286,19 @@ SemanticVersion:satisfiesRange(version, range)  -- Lua
 <li><code>satisfies</code> <code>boolean</code>? — True/false, or nil on error (a malformed version or range).</li>
 <li><code>err</code> <code>string</code>? — Error message on failure.</li>
 </ul>
-<h4 id="rangesintersect">rangesIntersect <a name="SemanticVersion.rangesIntersect"></a></h4>
-<pre><code class="language-lua">SemanticVersion\rangesIntersect rangeA, rangeB   -- MoonScript
-SemanticVersion:rangesIntersect(rangeA, rangeB)  -- Lua
-</code></pre>
+<h4 id="rangesintersect">rangesIntersect <a name="SemanticVersion.rangesIntersect"></a><a class="headerlink" href="#rangesintersect" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="14:2"><input checked="checked" id="__tabbed_14_1" name="__tabbed_14" type="radio" /><input id="__tabbed_14_2" name="__tabbed_14" type="radio" /><div class="tabbed-labels"><label for="__tabbed_14_1">MoonScript</label><label for="__tabbed_14_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="nc">SemanticVersion</span><span class="o">\</span><span class="n">rangesIntersect</span> <span class="n">rangeA</span><span class="p">,</span> <span class="n">rangeB</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="nv">SemanticVersion</span><span class="p">:</span><span class="nf">rangesIntersect</span><span class="p">(</span><span class="nv">rangeA</span><span class="p">,</span><span class="w"> </span><span class="nv">rangeB</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Reports whether two npm-style version ranges overlap for at least one version.</p>
 <table>
 <thead>
@@ -3152,10 +3326,19 @@ SemanticVersion:rangesIntersect(rangeA, rangeB)  -- Lua
 <li><code>intersect</code> <code>boolean</code>? — True/false, or nil on error (a malformed range).</li>
 <li><code>err</code> <code>string</code>? — Error message on failure.</li>
 </ul>
-<h4 id="getrangemaxversion">getRangeMaxVersion <a name="SemanticVersion.getRangeMaxVersion"></a></h4>
-<pre><code class="language-lua">SemanticVersion\getRangeMaxVersion range   -- MoonScript
-SemanticVersion:getRangeMaxVersion(range)  -- Lua
-</code></pre>
+<h4 id="getrangemaxversion">getRangeMaxVersion <a name="SemanticVersion.getRangeMaxVersion"></a><a class="headerlink" href="#getrangemaxversion" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="15:2"><input checked="checked" id="__tabbed_15_1" name="__tabbed_15" type="radio" /><input id="__tabbed_15_2" name="__tabbed_15" type="radio" /><div class="tabbed-labels"><label for="__tabbed_15_1">MoonScript</label><label for="__tabbed_15_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="nc">SemanticVersion</span><span class="o">\</span><span class="n">getRangeMaxVersion</span> <span class="n">range</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="nv">SemanticVersion</span><span class="p">:</span><span class="nf">getRangeMaxVersion</span><span class="p">(</span><span class="nv">range</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Returns the highest version that satisfies an npm-style range.</p>
 <table>
 <thead>
@@ -3178,10 +3361,19 @@ SemanticVersion:getRangeMaxVersion(range)  -- Lua
 <li><code>version</code> <code>number</code>? — The greatest satisfying version, or nil on an unsatisfiable range or a malformed one.</li>
 <li><code>err</code> <code>string</code>? — Error message on a malformed range.</li>
 </ul>
-<h4 id="ishigher">isHigher <a name="SemanticVersion.isHigher"></a></h4>
-<pre><code class="language-lua">SemanticVersion.isHigher version, reference   -- MoonScript
-SemanticVersion.isHigher(version, reference)  -- Lua
-</code></pre>
+<h4 id="ishigher">isHigher <a name="SemanticVersion.isHigher"></a><a class="headerlink" href="#ishigher" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="16:2"><input checked="checked" id="__tabbed_16_1" name="__tabbed_16" type="radio" /><input id="__tabbed_16_2" name="__tabbed_16" type="radio" /><div class="tabbed-labels"><label for="__tabbed_16_1">MoonScript</label><label for="__tabbed_16_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="nc">SemanticVersion</span><span class="o">.</span><span class="n">isHigher</span> <span class="n">version</span><span class="p">,</span> <span class="n">reference</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="nv">SemanticVersion</span><span class="p">.</span><span class="nf">isHigher</span><span class="p">(</span><span class="nv">version</span><span class="p">,</span><span class="w"> </span><span class="nv">reference</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Reports whether <code>version</code> is strictly higher than <code>reference</code>. Raises on invalid input.
 Call as a plain static (<code>SemanticVersion.isHigher a, b</code>), e.g. as a table.sort comparator.</p>
 <table>
@@ -3209,10 +3401,19 @@ Call as a plain static (<code>SemanticVersion.isHigher a, b</code>), e.g. as a t
 <ul>
 <li><code>boolean</code></li>
 </ul>
-<h4 id="islower">isLower <a name="SemanticVersion.isLower"></a></h4>
-<pre><code class="language-lua">SemanticVersion.isLower version, reference   -- MoonScript
-SemanticVersion.isLower(version, reference)  -- Lua
-</code></pre>
+<h4 id="islower">isLower <a name="SemanticVersion.isLower"></a><a class="headerlink" href="#islower" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="17:2"><input checked="checked" id="__tabbed_17_1" name="__tabbed_17" type="radio" /><input id="__tabbed_17_2" name="__tabbed_17" type="radio" /><div class="tabbed-labels"><label for="__tabbed_17_1">MoonScript</label><label for="__tabbed_17_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="nc">SemanticVersion</span><span class="o">.</span><span class="n">isLower</span> <span class="n">version</span><span class="p">,</span> <span class="n">reference</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="nv">SemanticVersion</span><span class="p">.</span><span class="nf">isLower</span><span class="p">(</span><span class="nv">version</span><span class="p">,</span><span class="w"> </span><span class="nv">reference</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Reports whether <code>version</code> is strictly lower than <code>reference</code>. Raises on invalid input.
 Call as a plain static (<code>SemanticVersion.isLower a, b</code>), e.g. as a table.sort comparator.</p>
 <table>
@@ -3240,7 +3441,7 @@ Call as a plain static (<code>SemanticVersion.isLower a, b</code>), e.g. as a ta
 <ul>
 <li><code>boolean</code></li>
 </ul>
-<h3 id="fields">Fields</h3>
+<h3 id="fields">Fields<a class="headerlink" href="#fields" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -3267,8 +3468,8 @@ Call as a plain static (<code>SemanticVersion.isLower a, b</code>), e.g. as a ta
 </tr>
 </tbody>
 </table>
-<h2 id="types">Types</h2>
-<h3 id="semverprecision">SemverPrecision <a name="SemverPrecision"></a></h3>
+<h2 id="types">Types<a class="headerlink" href="#types" title="Permanent link">&para;</a></h2>
+<h3 id="semverprecision">SemverPrecision <a name="SemverPrecision"></a><a class="headerlink" href="#semverprecision" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -3295,7 +3496,7 @@ Call as a plain static (<code>SemanticVersion.isLower a, b</code>), e.g. as a ta
 </tr>
 </tbody>
 </table>
-<h3 id="comparisonoperator">ComparisonOperator <a name="ComparisonOperator"></a></h3>
+<h3 id="comparisonoperator">ComparisonOperator <a name="ComparisonOperator"></a><a class="headerlink" href="#comparisonoperator" title="Permanent link">&para;</a></h3>
 <p>A version comparison operator (the value of a ComparisonOperator enum member).</p>
 <table>
 <thead>
@@ -3327,7 +3528,7 @@ Call as a plain static (<code>SemanticVersion.isLower a, b</code>), e.g. as a ta
 </tr>
 </tbody>
 </table>
-<h3 id="partialversion">PartialVersion <a name="PartialVersion"></a></h3>
+<h3 id="partialversion">PartialVersion <a name="PartialVersion"></a><a class="headerlink" href="#partialversion" title="Permanent link">&para;</a></h3>
 <p>A semantic version parsed into its specified components; an absent or wildcard (<code>x</code>/<code>*</code>) component is nil.</p>
 <table>
 <thead>
@@ -3355,7 +3556,7 @@ Call as a plain static (<code>SemanticVersion.isLower a, b</code>), e.g. as a ta
 </tr>
 </tbody>
 </table>
-<h3 id="semvercomparator">SemverComparator <a name="SemverComparator"></a></h3>
+<h3 id="semvercomparator">SemverComparator <a name="SemverComparator"></a><a class="headerlink" href="#semvercomparator" title="Permanent link">&para;</a></h3>
 <p>A single version comparator: an operator and the encoded version it compares against.</p>
 <table>
 <thead>
@@ -3378,7 +3579,7 @@ Call as a plain static (<code>SemanticVersion.isLower a, b</code>), e.g. as a ta
 </tr>
 </tbody>
 </table>
-<h3 id="semverinterval">SemverInterval <a name="SemverInterval"></a></h3>
+<h3 id="semverinterval">SemverInterval <a name="SemverInterval"></a><a class="headerlink" href="#semverinterval" title="Permanent link">&para;</a></h3>
 <p>A half-open version interval [min, max): min inclusive, max exclusive (both encoded versions).</p>
 <table>
 <thead>
@@ -3418,8 +3619,16 @@ Call as a plain static (<code>SemanticVersion.isLower a, b</code>), e.g. as a ta
             </div>
           
           
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
 <script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
         </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
         
       </main>
       
@@ -3450,7 +3659,7 @@ Call as a plain static (<code>SemanticVersion.isLower a, b</code>), e.g. as a ta
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.code.copy", "content.tabs.link", "navigation.instant", "navigation.top", "search.suggest", "search.highlight", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>

@@ -25,11 +25,14 @@
     
     
       
-        <title>l0.MoonCats.annotations - DependencyControl</title>
+        <title>annotations - DependencyControl</title>
       
     
     
       <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -57,7 +60,14 @@
   </head>
   
   
-    <body dir="ltr">
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -106,12 +116,48 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              l0.MoonCats.annotations
+              annotations
             
           </span>
         </div>
       </div>
     </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
     
     
       <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
@@ -142,6 +188,8 @@
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
         </button>
       </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
       
     </form>
     <div class="md-search__output">
@@ -466,7 +514,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl
+    Overview
   
 
     
@@ -494,7 +542,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Accessors
+    Accessors
   
 
     
@@ -522,7 +570,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ConfigHandler
+    ConfigHandler
   
 
     
@@ -550,7 +598,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ConfigView
+    ConfigView
   
 
     
@@ -578,7 +626,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Constants
+    Constants
   
 
     
@@ -606,7 +654,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Downloader
+    Downloader
   
 
     
@@ -634,7 +682,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Enum
+    Enum
   
 
     
@@ -662,7 +710,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.EventEmitter
+    EventEmitter
   
 
     
@@ -690,7 +738,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedInventory
+    FeedInventory
   
 
     
@@ -718,7 +766,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedLoader
+    FeedLoader
   
 
     
@@ -746,7 +794,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedManager
+    FeedManager
   
 
     
@@ -774,7 +822,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedTrust
+    FeedTrust
   
 
     
@@ -802,7 +850,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FileCache
+    FileCache
   
 
     
@@ -830,7 +878,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FileLock
+    FileLock
   
 
     
@@ -858,7 +906,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Finalizer
+    Finalizer
   
 
     
@@ -886,7 +934,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.GitRepository
+    GitRepository
   
 
     
@@ -914,7 +962,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Host
+    Host
   
 
     
@@ -942,7 +990,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.JsonSchema
+    JsonSchema
   
 
     
@@ -970,7 +1018,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Lock
+    Lock
   
 
     
@@ -998,7 +1046,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Logger
+    Logger
   
 
     
@@ -1026,7 +1074,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ModuleLoader
+    ModuleLoader
   
 
     
@@ -1054,7 +1102,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ModuleProvider
+    ModuleProvider
   
 
     
@@ -1082,7 +1130,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.NamedSemaphore
+    NamedSemaphore
   
 
     
@@ -1110,7 +1158,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.PackageRecord
+    PackageRecord
   
 
     
@@ -1138,7 +1186,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ScriptTargetFilter
+    ScriptTargetFilter
   
 
     
@@ -1166,7 +1214,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ScriptUpdateRecord
+    ScriptUpdateRecord
   
 
     
@@ -1194,7 +1242,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.SemanticVersion
+    SemanticVersion
   
 
     
@@ -1222,7 +1270,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Stub
+    Stub
   
 
     
@@ -1250,7 +1298,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Timer
+    Timer
   
 
     
@@ -1278,7 +1326,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UnitTestSuite
+    UnitTestSuite
   
 
     
@@ -1306,7 +1354,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UpdateFeed
+    UpdateFeed
   
 
     
@@ -1334,7 +1382,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UpdateTask
+    UpdateTask
   
 
     
@@ -1362,7 +1410,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Updater
+    Updater
   
 
     
@@ -1390,7 +1438,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ZipArchiver
+    ZipArchiver
   
 
     
@@ -1418,7 +1466,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.config-schema
+    config-schema
   
 
     
@@ -1446,7 +1494,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.domain
+    domain
   
 
     
@@ -1474,7 +1522,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.environment
+    environment
   
 
     
@@ -1502,7 +1550,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.file-ops
+    file-ops
   
 
     
@@ -1530,7 +1578,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.hash
+    hash
   
 
     
@@ -1558,7 +1606,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.ffi-posix
+    helpers.ffi-posix
   
 
     
@@ -1586,7 +1634,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.ffi-windows
+    helpers.ffi-windows
   
 
     
@@ -1614,7 +1662,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.open-url
+    helpers.open-url
   
 
     
@@ -1642,7 +1690,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.resolve-host
+    helpers.resolve-host
   
 
     
@@ -1670,7 +1718,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.release-notes
+    release-notes
   
 
     
@@ -1698,7 +1746,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.shims.BadMutex
+    shims.BadMutex
   
 
     
@@ -1726,7 +1774,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.shims.DownloadManager
+    shims.DownloadManager
   
 
     
@@ -1754,7 +1802,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.shims.PreciseTimer
+    shims.PreciseTimer
   
 
     
@@ -1782,7 +1830,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.utils
+    utils
   
 
     
@@ -1867,7 +1915,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats
+    Overview
   
 
     
@@ -1895,7 +1943,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Diagnostics
+    Diagnostics
   
 
     
@@ -1923,7 +1971,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.DocRenderer
+    DocRenderer
   
 
     
@@ -1951,7 +1999,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Emitter
+    Emitter
   
 
     
@@ -1979,7 +2027,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Parser
+    Parser
   
 
     
@@ -2016,7 +2064,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.annotations
+    annotations
   
 
     
@@ -2034,7 +2082,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.annotations
+    annotations
   
 
     
@@ -2380,7 +2428,7 @@
   <span class="md-ellipsis">
     
   
-    l0.dkjson
+    Overview
   
 
     
@@ -2698,16 +2746,34 @@
   
 
 
-<h1 id="l0mooncatsannotations">l0.MoonCats.annotations</h1>
-<pre><code class="language-lua">annotations = require &quot;l0.MoonCats.annotations&quot;        -- MoonScript
-local annotations = require(&quot;l0.MoonCats.annotations&quot;)  -- Lua
-</code></pre>
+<h1 id="l0mooncatsannotations">l0.MoonCats.annotations<a class="headerlink" href="#l0mooncatsannotations" title="Permanent link">&para;</a></h1>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">MoonScript</label><label for="__tabbed_1_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">annotations</span> <span class="o">=</span> <span class="nb">require</span> <span class="s2">&quot;</span><span class="s">l0.MoonCats.annotations</span><span class="s2">&quot;</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">annotations</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">require</span><span class="p">(</span><span class="s2">&quot;l0.MoonCats.annotations&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>A LuaCATS @param tag's parsed contract.</p>
-<h2 id="functions">Functions</h2>
-<h4 id="extracttypetext">extractTypeText <a name="annotations.extractTypeText"></a></h4>
-<pre><code class="language-lua">annotations.extractTypeText text   -- MoonScript
-annotations.extractTypeText(text)  -- Lua
-</code></pre>
+<h2 id="functions">Functions<a class="headerlink" href="#functions" title="Permanent link">&para;</a></h2>
+<h4 id="extracttypetext">extractTypeText <a name="annotations.extractTypeText"></a><a class="headerlink" href="#extracttypetext" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">MoonScript</label><label for="__tabbed_2_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">annotations</span><span class="o">.</span><span class="n">extractTypeText</span> <span class="n">text</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nv">annotations</span><span class="p">.</span><span class="nf">extractTypeText</span><span class="p">(</span><span class="nv">text</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Extracts the leading type expression from a tag line remainder, balancing brackets so
 function types, inline tables, and generics survive; a token ending in ":" or "," pulls
 in the next token (fun return lists).</p>
@@ -2732,10 +2798,19 @@ in the next token (fun return lists).</p>
 <li><code>typeText</code> <code>string</code> — The type expression, or "any" when none could be read.</li>
 <li><code>restText</code> <code>string</code> — The remainder following the type expression, whitespace-trimmed.</li>
 </ul>
-<h4 id="parseparamtag">parseParamTag <a name="annotations.parseParamTag"></a></h4>
-<pre><code class="language-lua">annotations.parseParamTag line   -- MoonScript
-annotations.parseParamTag(line)  -- Lua
-</code></pre>
+<h4 id="parseparamtag">parseParamTag <a name="annotations.parseParamTag"></a><a class="headerlink" href="#parseparamtag" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">MoonScript</label><label for="__tabbed_3_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">annotations</span><span class="o">.</span><span class="n">parseParamTag</span> <span class="n">line</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nv">annotations</span><span class="p">.</span><span class="nf">parseParamTag</span><span class="p">(</span><span class="nv">line</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Parses a ---@param tag line into its contract.</p>
 <table>
 <thead>
@@ -2757,10 +2832,19 @@ annotations.parseParamTag(line)  -- Lua
 <ul>
 <li><code>tag</code> <a href="#MoonCatsParamTag">MoonCatsParamTag</a>? — Nil when the line is not a @param tag.</li>
 </ul>
-<h4 id="parsereturntag">parseReturnTag <a name="annotations.parseReturnTag"></a></h4>
-<pre><code class="language-lua">annotations.parseReturnTag line   -- MoonScript
-annotations.parseReturnTag(line)  -- Lua
-</code></pre>
+<h4 id="parsereturntag">parseReturnTag <a name="annotations.parseReturnTag"></a><a class="headerlink" href="#parsereturntag" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">MoonScript</label><label for="__tabbed_4_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">annotations</span><span class="o">.</span><span class="n">parseReturnTag</span> <span class="n">line</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nv">annotations</span><span class="p">.</span><span class="nf">parseReturnTag</span><span class="p">(</span><span class="nv">line</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Parses a ---@return tag line into its contract. The first word after the type is taken
 as the return's name, matching how the language server reads the tag.</p>
 <table>
@@ -2783,10 +2867,19 @@ as the return's name, matching how the language server reads the tag.</p>
 <ul>
 <li><code>tag</code> <a href="#MoonCatsReturnTag">MoonCatsReturnTag</a>? — Nil when the line is not a @return tag.</li>
 </ul>
-<h4 id="parsefieldtag">parseFieldTag <a name="annotations.parseFieldTag"></a></h4>
-<pre><code class="language-lua">annotations.parseFieldTag line   -- MoonScript
-annotations.parseFieldTag(line)  -- Lua
-</code></pre>
+<h4 id="parsefieldtag">parseFieldTag <a name="annotations.parseFieldTag"></a><a class="headerlink" href="#parsefieldtag" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">MoonScript</label><label for="__tabbed_5_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">annotations</span><span class="o">.</span><span class="n">parseFieldTag</span> <span class="n">line</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nv">annotations</span><span class="p">.</span><span class="nf">parseFieldTag</span><span class="p">(</span><span class="nv">line</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Parses a ---@field tag line into its contract, honoring a leading visibility keyword.</p>
 <table>
 <thead>
@@ -2808,10 +2901,19 @@ annotations.parseFieldTag(line)  -- Lua
 <ul>
 <li><code>tag</code> <a href="#MoonCatsFieldTag">MoonCatsFieldTag</a>? — Nil when the line is not a @field tag.</li>
 </ul>
-<h4 id="parsealiasvariants">parseAliasVariants <a name="annotations.parseAliasVariants"></a></h4>
-<pre><code class="language-lua">annotations.parseAliasVariants blockLines   -- MoonScript
-annotations.parseAliasVariants(blockLines)  -- Lua
-</code></pre>
+<h4 id="parsealiasvariants">parseAliasVariants <a name="annotations.parseAliasVariants"></a><a class="headerlink" href="#parsealiasvariants" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">MoonScript</label><label for="__tabbed_6_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">annotations</span><span class="o">.</span><span class="n">parseAliasVariants</span> <span class="n">blockLines</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nv">annotations</span><span class="p">.</span><span class="nf">parseAliasVariants</span><span class="p">(</span><span class="nv">blockLines</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Parses an @alias declaration's ---| variant lines.</p>
 <table>
 <thead>
@@ -2833,10 +2935,19 @@ annotations.parseAliasVariants(blockLines)  -- Lua
 <ul>
 <li><code>variants</code> <a href="#MoonCatsAliasVariant">MoonCatsAliasVariant</a>[] — In declaration order.</li>
 </ul>
-<h4 id="collectblocktags">collectBlockTags <a name="annotations.collectBlockTags"></a></h4>
-<pre><code class="language-lua">annotations.collectBlockTags blockLines   -- MoonScript
-annotations.collectBlockTags(blockLines)  -- Lua
-</code></pre>
+<h4 id="collectblocktags">collectBlockTags <a name="annotations.collectBlockTags"></a><a class="headerlink" href="#collectblocktags" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">MoonScript</label><label for="__tabbed_7_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="n">annotations</span><span class="o">.</span><span class="n">collectBlockTags</span> <span class="n">blockLines</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="nv">annotations</span><span class="p">.</span><span class="nf">collectBlockTags</span><span class="p">(</span><span class="nv">blockLines</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Collects the @param and @return tags of an annotation block.</p>
 <table>
 <thead>
@@ -2859,10 +2970,19 @@ annotations.collectBlockTags(blockLines)  -- Lua
 <li><code>params</code> <a href="#MoonCatsParamTag">MoonCatsParamTag</a>[] — In tag order.</li>
 <li><code>returns</code> <a href="#MoonCatsReturnTag">MoonCatsReturnTag</a>[] — In tag order.</li>
 </ul>
-<h4 id="blockdocumentsfunction">blockDocumentsFunction <a name="annotations.blockDocumentsFunction"></a></h4>
-<pre><code class="language-lua">annotations.blockDocumentsFunction blockLines   -- MoonScript
-annotations.blockDocumentsFunction(blockLines)  -- Lua
-</code></pre>
+<h4 id="blockdocumentsfunction">blockDocumentsFunction <a name="annotations.blockDocumentsFunction"></a><a class="headerlink" href="#blockdocumentsfunction" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="8:2"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><div class="tabbed-labels"><label for="__tabbed_8_1">MoonScript</label><label for="__tabbed_8_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="n">annotations</span><span class="o">.</span><span class="n">blockDocumentsFunction</span> <span class="n">blockLines</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="nv">annotations</span><span class="p">.</span><span class="nf">blockDocumentsFunction</span><span class="p">(</span><span class="nv">blockLines</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Reports whether an annotation block documents a function (has @param or @return tags).</p>
 <table>
 <thead>
@@ -2884,10 +3004,19 @@ annotations.blockDocumentsFunction(blockLines)  -- Lua
 <ul>
 <li><code>documentsFunction</code> <code>boolean</code></li>
 </ul>
-<h4 id="blockcontainsprivatetag">blockContainsPrivateTag <a name="annotations.blockContainsPrivateTag"></a></h4>
-<pre><code class="language-lua">annotations.blockContainsPrivateTag blockLines   -- MoonScript
-annotations.blockContainsPrivateTag(blockLines)  -- Lua
-</code></pre>
+<h4 id="blockcontainsprivatetag">blockContainsPrivateTag <a name="annotations.blockContainsPrivateTag"></a><a class="headerlink" href="#blockcontainsprivatetag" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="9:2"><input checked="checked" id="__tabbed_9_1" name="__tabbed_9" type="radio" /><input id="__tabbed_9_2" name="__tabbed_9" type="radio" /><div class="tabbed-labels"><label for="__tabbed_9_1">MoonScript</label><label for="__tabbed_9_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="n">annotations</span><span class="o">.</span><span class="n">blockContainsPrivateTag</span> <span class="n">blockLines</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="nv">annotations</span><span class="p">.</span><span class="nf">blockContainsPrivateTag</span><span class="p">(</span><span class="nv">blockLines</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Reports whether a block already carries an @private tag.</p>
 <table>
 <thead>
@@ -2909,10 +3038,19 @@ annotations.blockContainsPrivateTag(blockLines)  -- Lua
 <ul>
 <li><code>tagged</code> <code>boolean</code></li>
 </ul>
-<h4 id="proselines">proseLines <a name="annotations.proseLines"></a></h4>
-<pre><code class="language-lua">annotations.proseLines blockLines   -- MoonScript
-annotations.proseLines(blockLines)  -- Lua
-</code></pre>
+<h4 id="proselines">proseLines <a name="annotations.proseLines"></a><a class="headerlink" href="#proselines" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="10:2"><input checked="checked" id="__tabbed_10_1" name="__tabbed_10" type="radio" /><input id="__tabbed_10_2" name="__tabbed_10" type="radio" /><div class="tabbed-labels"><label for="__tabbed_10_1">MoonScript</label><label for="__tabbed_10_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="n">annotations</span><span class="o">.</span><span class="n">proseLines</span> <span class="n">blockLines</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="nv">annotations</span><span class="p">.</span><span class="nf">proseLines</span><span class="p">(</span><span class="nv">blockLines</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Collects a block's prose lines (untagged, non-variant), stripped of the comment lead but
 otherwise verbatim: indentation and blank separator lines survive, so markdown constructs
 like indented code examples keep working. Boundary blank lines are trimmed.</p>
@@ -2936,10 +3074,19 @@ like indented code examples keep working. Boundary blank lines are trimmed.</p>
 <ul>
 <li><code>lines</code> <code>string</code>[] — In block order; empty when the block has no prose.</li>
 </ul>
-<h4 id="flattenblockprose">flattenBlockProse <a name="annotations.flattenBlockProse"></a></h4>
-<pre><code class="language-lua">annotations.flattenBlockProse blockLines   -- MoonScript
-annotations.flattenBlockProse(blockLines)  -- Lua
-</code></pre>
+<h4 id="flattenblockprose">flattenBlockProse <a name="annotations.flattenBlockProse"></a><a class="headerlink" href="#flattenblockprose" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="11:2"><input checked="checked" id="__tabbed_11_1" name="__tabbed_11" type="radio" /><input id="__tabbed_11_2" name="__tabbed_11" type="radio" /><div class="tabbed-labels"><label for="__tabbed_11_1">MoonScript</label><label for="__tabbed_11_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="n">annotations</span><span class="o">.</span><span class="n">flattenBlockProse</span> <span class="n">blockLines</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="nv">annotations</span><span class="p">.</span><span class="nf">flattenBlockProse</span><span class="p">(</span><span class="nv">blockLines</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Joins a block's prose lines into a single-line description for a @field tag.</p>
 <table>
 <thead>
@@ -2961,10 +3108,19 @@ annotations.flattenBlockProse(blockLines)  -- Lua
 <ul>
 <li><code>prose</code> <code>string</code> — Empty when the block has no prose.</li>
 </ul>
-<h4 id="blockowntype">blockOwnType <a name="annotations.blockOwnType"></a></h4>
-<pre><code class="language-lua">annotations.blockOwnType blockLines   -- MoonScript
-annotations.blockOwnType(blockLines)  -- Lua
-</code></pre>
+<h4 id="blockowntype">blockOwnType <a name="annotations.blockOwnType"></a><a class="headerlink" href="#blockowntype" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="12:2"><input checked="checked" id="__tabbed_12_1" name="__tabbed_12" type="radio" /><input id="__tabbed_12_2" name="__tabbed_12" type="radio" /><div class="tabbed-labels"><label for="__tabbed_12_1">MoonScript</label><label for="__tabbed_12_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="n">annotations</span><span class="o">.</span><span class="n">blockOwnType</span> <span class="n">blockLines</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="nv">annotations</span><span class="p">.</span><span class="nf">blockOwnType</span><span class="p">(</span><span class="nv">blockLines</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Extracts the type expression of a block's own @type tag.</p>
 <table>
 <thead>
@@ -2986,10 +3142,19 @@ annotations.blockOwnType(blockLines)  -- Lua
 <ul>
 <li><code>typeText</code> <code>string</code>? — Nil when the block carries no @type tag.</li>
 </ul>
-<h4 id="blocktagtext">blockTagText <a name="annotations.blockTagText"></a></h4>
-<pre><code class="language-lua">annotations.blockTagText blockLines, tag   -- MoonScript
-annotations.blockTagText(blockLines, tag)  -- Lua
-</code></pre>
+<h4 id="blocktagtext">blockTagText <a name="annotations.blockTagText"></a><a class="headerlink" href="#blocktagtext" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="13:2"><input checked="checked" id="__tabbed_13_1" name="__tabbed_13" type="radio" /><input id="__tabbed_13_2" name="__tabbed_13" type="radio" /><div class="tabbed-labels"><label for="__tabbed_13_1">MoonScript</label><label for="__tabbed_13_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="n">annotations</span><span class="o">.</span><span class="n">blockTagText</span> <span class="n">blockLines</span><span class="p">,</span> <span class="n">tag</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="nv">annotations</span><span class="p">.</span><span class="nf">blockTagText</span><span class="p">(</span><span class="nv">blockLines</span><span class="p">,</span><span class="w"> </span><span class="nv">tag</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Extracts the text of a block's first occurrence of the given tag.</p>
 <table>
 <thead>
@@ -3016,10 +3181,19 @@ annotations.blockTagText(blockLines, tag)  -- Lua
 <ul>
 <li><code>text</code> <code>string</code>? — The tag's trailing text, empty for a bare tag, or nil when the tag is absent.</li>
 </ul>
-<h4 id="guardfuntype">guardFunType <a name="annotations.guardFunType"></a></h4>
-<pre><code class="language-lua">annotations.guardFunType typeText   -- MoonScript
-annotations.guardFunType(typeText)  -- Lua
-</code></pre>
+<h4 id="guardfuntype">guardFunType <a name="annotations.guardFunType"></a><a class="headerlink" href="#guardfuntype" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="14:2"><input checked="checked" id="__tabbed_14_1" name="__tabbed_14" type="radio" /><input id="__tabbed_14_2" name="__tabbed_14" type="radio" /><div class="tabbed-labels"><label for="__tabbed_14_1">MoonScript</label><label for="__tabbed_14_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="n">annotations</span><span class="o">.</span><span class="n">guardFunType</span> <span class="n">typeText</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="nv">annotations</span><span class="p">.</span><span class="nf">guardFunType</span><span class="p">(</span><span class="nv">typeText</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Parenthesizes a type expression containing a fun type, whose return list would otherwise
 swallow the comma before the next parameter or return in an assembled signature.</p>
 <table>
@@ -3042,10 +3216,19 @@ swallow the comma before the next parameter or return in an assembled signature.
 <ul>
 <li><code>safeText</code> <code>string</code></li>
 </ul>
-<h4 id="inferliteraltype">inferLiteralType <a name="annotations.inferLiteralType"></a></h4>
-<pre><code class="language-lua">annotations.inferLiteralType token, literalKind   -- MoonScript
-annotations.inferLiteralType(token, literalKind)  -- Lua
-</code></pre>
+<h4 id="inferliteraltype">inferLiteralType <a name="annotations.inferLiteralType"></a><a class="headerlink" href="#inferliteraltype" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="15:2"><input checked="checked" id="__tabbed_15_1" name="__tabbed_15" type="radio" /><input id="__tabbed_15_2" name="__tabbed_15" type="radio" /><div class="tabbed-labels"><label for="__tabbed_15_1">MoonScript</label><label for="__tabbed_15_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="n">annotations</span><span class="o">.</span><span class="n">inferLiteralType</span> <span class="n">token</span><span class="p">,</span> <span class="n">literalKind</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="nv">annotations</span><span class="p">.</span><span class="nf">inferLiteralType</span><span class="p">(</span><span class="nv">token</span><span class="p">,</span><span class="w"> </span><span class="nv">literalKind</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Infers a LuaCATS type for a literal token.</p>
 <table>
 <thead>
@@ -3072,10 +3255,19 @@ annotations.inferLiteralType(token, literalKind)  -- Lua
 <ul>
 <li><code>typeText</code> <code>string</code></li>
 </ul>
-<h4 id="inferexpressiontype">inferExpressionType <a name="annotations.inferExpressionType"></a></h4>
-<pre><code class="language-lua">annotations.inferExpressionType node   -- MoonScript
-annotations.inferExpressionType(node)  -- Lua
-</code></pre>
+<h4 id="inferexpressiontype">inferExpressionType <a name="annotations.inferExpressionType"></a><a class="headerlink" href="#inferexpressiontype" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="16:2"><input checked="checked" id="__tabbed_16_1" name="__tabbed_16" type="radio" /><input id="__tabbed_16_2" name="__tabbed_16" type="radio" /><div class="tabbed-labels"><label for="__tabbed_16_1">MoonScript</label><label for="__tabbed_16_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="n">annotations</span><span class="o">.</span><span class="n">inferExpressionType</span> <span class="n">node</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="nv">annotations</span><span class="p">.</span><span class="nf">inferExpressionType</span><span class="p">(</span><span class="nv">node</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Guesses a numeric or string result type for an operator expression from its leaf nodes.</p>
 <table>
 <thead>
@@ -3097,8 +3289,8 @@ annotations.inferExpressionType(node)  -- Lua
 <ul>
 <li><code>typeText</code> <code>string</code> — "number" or "string" from the leaf nodes, or "any" when neither appears.</li>
 </ul>
-<h2 id="types">Types</h2>
-<h3 id="mooncatsparamtag">MoonCatsParamTag <a name="MoonCatsParamTag"></a></h3>
+<h2 id="types">Types<a class="headerlink" href="#types" title="Permanent link">&para;</a></h2>
+<h3 id="mooncatsparamtag">MoonCatsParamTag <a name="MoonCatsParamTag"></a><a class="headerlink" href="#mooncatsparamtag" title="Permanent link">&para;</a></h3>
 <p>A LuaCATS @param tag's parsed contract.</p>
 <table>
 <thead>
@@ -3126,7 +3318,7 @@ annotations.inferExpressionType(node)  -- Lua
 </tr>
 </tbody>
 </table>
-<h3 id="mooncatsreturntag">MoonCatsReturnTag <a name="MoonCatsReturnTag"></a></h3>
+<h3 id="mooncatsreturntag">MoonCatsReturnTag <a name="MoonCatsReturnTag"></a><a class="headerlink" href="#mooncatsreturntag" title="Permanent link">&para;</a></h3>
 <p>A LuaCATS @return tag's parsed contract.</p>
 <table>
 <thead>
@@ -3154,7 +3346,7 @@ annotations.inferExpressionType(node)  -- Lua
 </tr>
 </tbody>
 </table>
-<h3 id="mooncatsfieldtag">MoonCatsFieldTag <a name="MoonCatsFieldTag"></a></h3>
+<h3 id="mooncatsfieldtag">MoonCatsFieldTag <a name="MoonCatsFieldTag"></a><a class="headerlink" href="#mooncatsfieldtag" title="Permanent link">&para;</a></h3>
 <p>A LuaCATS @field tag's parsed contract.</p>
 <table>
 <thead>
@@ -3192,7 +3384,7 @@ annotations.inferExpressionType(node)  -- Lua
 </tr>
 </tbody>
 </table>
-<h3 id="mooncatsaliasvariant">MoonCatsAliasVariant <a name="MoonCatsAliasVariant"></a></h3>
+<h3 id="mooncatsaliasvariant">MoonCatsAliasVariant <a name="MoonCatsAliasVariant"></a><a class="headerlink" href="#mooncatsaliasvariant" title="Permanent link">&para;</a></h3>
 <p>One variant line of an @alias declaration.</p>
 <table>
 <thead>
@@ -3237,8 +3429,16 @@ annotations.inferExpressionType(node)  -- Lua
             </div>
           
           
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
 <script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
         </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
         
       </main>
       
@@ -3269,7 +3469,7 @@ annotations.inferExpressionType(node)  -- Lua
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.code.copy", "content.tabs.link", "navigation.instant", "navigation.top", "search.suggest", "search.highlight", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>

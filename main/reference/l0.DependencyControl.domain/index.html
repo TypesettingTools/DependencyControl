@@ -25,11 +25,14 @@
     
     
       
-        <title>l0.DependencyControl.domain - DependencyControl</title>
+        <title>domain - DependencyControl</title>
       
     
     
       <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -57,7 +60,14 @@
   </head>
   
   
-    <body dir="ltr">
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -106,12 +116,48 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              l0.DependencyControl.domain
+              domain
             
           </span>
         </div>
       </div>
     </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
     
     
       <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
@@ -142,6 +188,8 @@
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
         </button>
       </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
       
     </form>
     <div class="md-search__output">
@@ -468,7 +516,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl
+    Overview
   
 
     
@@ -496,7 +544,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Accessors
+    Accessors
   
 
     
@@ -524,7 +572,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ConfigHandler
+    ConfigHandler
   
 
     
@@ -552,7 +600,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ConfigView
+    ConfigView
   
 
     
@@ -580,7 +628,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Constants
+    Constants
   
 
     
@@ -608,7 +656,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Downloader
+    Downloader
   
 
     
@@ -636,7 +684,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Enum
+    Enum
   
 
     
@@ -664,7 +712,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.EventEmitter
+    EventEmitter
   
 
     
@@ -692,7 +740,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedInventory
+    FeedInventory
   
 
     
@@ -720,7 +768,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedLoader
+    FeedLoader
   
 
     
@@ -748,7 +796,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedManager
+    FeedManager
   
 
     
@@ -776,7 +824,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedTrust
+    FeedTrust
   
 
     
@@ -804,7 +852,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FileCache
+    FileCache
   
 
     
@@ -832,7 +880,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FileLock
+    FileLock
   
 
     
@@ -860,7 +908,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Finalizer
+    Finalizer
   
 
     
@@ -888,7 +936,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.GitRepository
+    GitRepository
   
 
     
@@ -916,7 +964,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Host
+    Host
   
 
     
@@ -944,7 +992,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.JsonSchema
+    JsonSchema
   
 
     
@@ -972,7 +1020,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Lock
+    Lock
   
 
     
@@ -1000,7 +1048,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Logger
+    Logger
   
 
     
@@ -1028,7 +1076,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ModuleLoader
+    ModuleLoader
   
 
     
@@ -1056,7 +1104,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ModuleProvider
+    ModuleProvider
   
 
     
@@ -1084,7 +1132,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.NamedSemaphore
+    NamedSemaphore
   
 
     
@@ -1112,7 +1160,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.PackageRecord
+    PackageRecord
   
 
     
@@ -1140,7 +1188,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ScriptTargetFilter
+    ScriptTargetFilter
   
 
     
@@ -1168,7 +1216,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ScriptUpdateRecord
+    ScriptUpdateRecord
   
 
     
@@ -1196,7 +1244,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.SemanticVersion
+    SemanticVersion
   
 
     
@@ -1224,7 +1272,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Stub
+    Stub
   
 
     
@@ -1252,7 +1300,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Timer
+    Timer
   
 
     
@@ -1280,7 +1328,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UnitTestSuite
+    UnitTestSuite
   
 
     
@@ -1308,7 +1356,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UpdateFeed
+    UpdateFeed
   
 
     
@@ -1336,7 +1384,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UpdateTask
+    UpdateTask
   
 
     
@@ -1364,7 +1412,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Updater
+    Updater
   
 
     
@@ -1392,7 +1440,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ZipArchiver
+    ZipArchiver
   
 
     
@@ -1420,7 +1468,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.config-schema
+    config-schema
   
 
     
@@ -1457,7 +1505,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.domain
+    domain
   
 
     
@@ -1475,7 +1523,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.domain
+    domain
   
 
     
@@ -1562,16 +1610,27 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#types" class="md-nav__link">
+  <a href="#enums" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Types
+        Enums
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Types">
+    <nav class="md-nav" aria-label="Enums">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fetchuntrustedfeeds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FetchUntrustedFeeds
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#recordtype" class="md-nav__link">
@@ -1606,28 +1665,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#fetchuntrustedfeeds" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        FetchUntrustedFeeds
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#domain" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Domain
-      
-    </span>
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -1656,7 +1693,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.environment
+    environment
   
 
     
@@ -1684,7 +1721,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.file-ops
+    file-ops
   
 
     
@@ -1712,7 +1749,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.hash
+    hash
   
 
     
@@ -1740,7 +1777,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.ffi-posix
+    helpers.ffi-posix
   
 
     
@@ -1768,7 +1805,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.ffi-windows
+    helpers.ffi-windows
   
 
     
@@ -1796,7 +1833,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.open-url
+    helpers.open-url
   
 
     
@@ -1824,7 +1861,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.resolve-host
+    helpers.resolve-host
   
 
     
@@ -1852,7 +1889,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.release-notes
+    release-notes
   
 
     
@@ -1880,7 +1917,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.shims.BadMutex
+    shims.BadMutex
   
 
     
@@ -1908,7 +1945,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.shims.DownloadManager
+    shims.DownloadManager
   
 
     
@@ -1936,7 +1973,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.shims.PreciseTimer
+    shims.PreciseTimer
   
 
     
@@ -1964,7 +2001,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.utils
+    utils
   
 
     
@@ -2047,7 +2084,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats
+    Overview
   
 
     
@@ -2075,7 +2112,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Diagnostics
+    Diagnostics
   
 
     
@@ -2103,7 +2140,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.DocRenderer
+    DocRenderer
   
 
     
@@ -2131,7 +2168,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Emitter
+    Emitter
   
 
     
@@ -2159,7 +2196,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Parser
+    Parser
   
 
     
@@ -2187,7 +2224,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.annotations
+    annotations
   
 
     
@@ -2270,7 +2307,7 @@
   <span class="md-ellipsis">
     
   
-    l0.dkjson
+    Overview
   
 
     
@@ -2387,16 +2424,27 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#types" class="md-nav__link">
+  <a href="#enums" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Types
+        Enums
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Types">
+    <nav class="md-nav" aria-label="Enums">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fetchuntrustedfeeds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FetchUntrustedFeeds
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#recordtype" class="md-nav__link">
@@ -2431,28 +2479,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#fetchuntrustedfeeds" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        FetchUntrustedFeeds
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#domain" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Domain
-      
-    </span>
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -2478,15 +2504,34 @@
   
 
 
-<h1 id="l0dependencycontroldomain">l0.DependencyControl.domain</h1>
-<pre><code class="language-lua">domain = require &quot;l0.DependencyControl.domain&quot;        -- MoonScript
-local domain = require(&quot;l0.DependencyControl.domain&quot;)  -- Lua
-</code></pre>
-<h2 id="functions">Functions</h2>
-<h4 id="validatenamespace">validateNamespace <a name="Domain.validateNamespace"></a></h4>
-<pre><code class="language-lua">Domain.validateNamespace namespace   -- MoonScript
-Domain.validateNamespace(namespace)  -- Lua
-</code></pre>
+<h1 id="l0dependencycontroldomain">l0.DependencyControl.domain<a class="headerlink" href="#l0dependencycontroldomain" title="Permanent link">&para;</a></h1>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">MoonScript</label><label for="__tabbed_1_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">domain</span> <span class="o">=</span> <span class="nb">require</span> <span class="s2">&quot;</span><span class="s">l0.DependencyControl.domain</span><span class="s2">&quot;</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">domain</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">require</span><span class="p">(</span><span class="s2">&quot;l0.DependencyControl.domain&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p><a name="Domain"></a></p>
+<h2 id="functions">Functions<a class="headerlink" href="#functions" title="Permanent link">&para;</a></h2>
+<h4 id="validatenamespace">validateNamespace <a name="Domain.validateNamespace"></a><a class="headerlink" href="#validatenamespace" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">MoonScript</label><label for="__tabbed_2_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nc">Domain</span><span class="o">.</span><span class="n">validateNamespace</span> <span class="n">namespace</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nv">Domain</span><span class="p">.</span><span class="nf">validateNamespace</span><span class="p">(</span><span class="nv">namespace</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Validates a DependencyControl namespace string.</p>
 <table>
 <thead>
@@ -2509,10 +2554,19 @@ Domain.validateNamespace(namespace)  -- Lua
 <li><code>valid</code> <code>boolean</code>? — True when the namespace is well-formed.</li>
 <li><code>err</code> <code>string</code>? — Validation error message when invalid.</li>
 </ul>
-<h4 id="getautomationdir">getAutomationDir <a name="Domain.getAutomationDir"></a></h4>
-<pre><code class="language-lua">Domain.getAutomationDir scriptType, rootDir   -- MoonScript
-Domain.getAutomationDir(scriptType, rootDir)  -- Lua
-</code></pre>
+<h4 id="getautomationdir">getAutomationDir <a name="Domain.getAutomationDir"></a><a class="headerlink" href="#getautomationdir" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">MoonScript</label><label for="__tabbed_3_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nc">Domain</span><span class="o">.</span><span class="n">getAutomationDir</span> <span class="n">scriptType</span><span class="p">,</span> <span class="n">rootDir</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nv">Domain</span><span class="p">.</span><span class="nf">getAutomationDir</span><span class="p">(</span><span class="nv">scriptType</span><span class="p">,</span><span class="w"> </span><span class="nv">rootDir</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Returns the Aegisub directory that scripts of the given type are installed to.</p>
 <table>
 <thead>
@@ -2539,10 +2593,19 @@ Domain.getAutomationDir(scriptType, rootDir)  -- Lua
 <ul>
 <li><code>dir</code> <code>string</code>? — Absolute directory path, or nil for an unrecognized script type.</li>
 </ul>
-<h4 id="gettestdir">getTestDir <a name="Domain.getTestDir"></a></h4>
-<pre><code class="language-lua">Domain.getTestDir scriptType, rootDir   -- MoonScript
-Domain.getTestDir(scriptType, rootDir)  -- Lua
-</code></pre>
+<h4 id="gettestdir">getTestDir <a name="Domain.getTestDir"></a><a class="headerlink" href="#gettestdir" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">MoonScript</label><label for="__tabbed_4_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nc">Domain</span><span class="o">.</span><span class="n">getTestDir</span> <span class="n">scriptType</span><span class="p">,</span> <span class="n">rootDir</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nv">Domain</span><span class="p">.</span><span class="nf">getTestDir</span><span class="p">(</span><span class="nv">scriptType</span><span class="p">,</span><span class="w"> </span><span class="nv">rootDir</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Returns the DepUnit test directory for scripts of the given type.</p>
 <table>
 <thead>
@@ -2569,7 +2632,7 @@ Domain.getTestDir(scriptType, rootDir)  -- Lua
 <ul>
 <li><code>dir</code> <code>string</code>? — Absolute directory path, or nil for an unrecognized script type.</li>
 </ul>
-<h2 id="fields">Fields</h2>
+<h2 id="fields">Fields<a class="headerlink" href="#fields" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
@@ -2580,116 +2643,110 @@ Domain.getTestDir(scriptType, rootDir)  -- Lua
 </thead>
 <tbody>
 <tr>
-<td>RecordType</td>
-<td><code>any</code></td>
-<td></td>
-</tr>
-<tr>
-<td>ScriptType</td>
-<td><code>any</code></td>
-<td></td>
-</tr>
-<tr>
-<td>ScriptTypeSection</td>
-<td><code>any</code></td>
-<td></td>
-</tr>
-<tr>
-<td>FetchUntrustedFeeds</td>
-<td><code>any</code></td>
-<td></td>
-</tr>
-<tr>
 <td>terms</td>
 <td><code>table</code></td>
 <td></td>
 </tr>
 </tbody>
 </table>
-<h2 id="types">Types</h2>
-<h3 id="recordtype">RecordType <a name="RecordType"></a></h3>
+<h2 id="enums">Enums<a class="headerlink" href="#enums" title="Permanent link">&para;</a></h2>
+<p><a name="FetchUntrustedFeeds"></a></p>
+<h4 id="fetchuntrustedfeeds">FetchUntrustedFeeds <a name="Domain.FetchUntrustedFeeds"></a><a class="headerlink" href="#fetchuntrustedfeeds" title="Permanent link">&para;</a></h4>
 <table>
 <thead>
 <tr>
+<th>member</th>
 <th>value</th>
 <th>description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
+<td>Always</td>
+<td><code>"always"</code></td>
+<td>fetch untrusted feeds without asking (the default)</td>
+</tr>
+<tr>
+<td>Never</td>
+<td><code>"never"</code></td>
+<td>never fetch untrusted feeds</td>
+</tr>
+<tr>
+<td>Prompt</td>
+<td><code>"prompt"</code></td>
+<td>ask before fetching an untrusted feed; falls back to Never where no prompter is available (e.g. headless)</td>
+</tr>
+</tbody>
+</table>
+<p><a name="RecordType"></a></p>
+<h4 id="recordtype">RecordType <a name="Domain.RecordType"></a><a class="headerlink" href="#recordtype" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>member</th>
+<th>value</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Managed</td>
 <td><code>"managed"</code></td>
-<td>Managed: a script/module DependencyControl installs and keeps up to date</td>
+<td>a script/module DependencyControl installs and keeps up to date</td>
 </tr>
 <tr>
+<td>Unmanaged</td>
 <td><code>"unmanaged"</code></td>
-<td>Unmanaged: a record describing a module DependencyControl tracks but does not update</td>
+<td>a record describing a module DependencyControl tracks but does not update</td>
 </tr>
 </tbody>
 </table>
-<h3 id="scripttype">ScriptType <a name="ScriptType"></a></h3>
+<p><a name="ScriptType"></a></p>
+<h4 id="scripttype">ScriptType <a name="Domain.ScriptType"></a><a class="headerlink" href="#scripttype" title="Permanent link">&para;</a></h4>
 <table>
 <thead>
 <tr>
+<th>member</th>
 <th>value</th>
 <th>description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
+<td>Automation</td>
 <td><code>"automation"</code></td>
-<td>Automation: an automation script (macro / applied filter)</td>
+<td>an automation script (macro / applied filter)</td>
 </tr>
 <tr>
+<td>Module</td>
 <td><code>"module"</code></td>
-<td>Module: a require()-able module</td>
+<td>a require()-able module</td>
 </tr>
 </tbody>
 </table>
-<h3 id="scripttypesection">ScriptTypeSection <a name="ScriptTypeSection"></a></h3>
+<p><a name="ScriptTypeSection"></a></p>
+<h4 id="scripttypesection">ScriptTypeSection <a name="Domain.ScriptTypeSection"></a><a class="headerlink" href="#scripttypesection" title="Permanent link">&para;</a></h4>
 <table>
 <thead>
 <tr>
+<th>member</th>
 <th>value</th>
 <th>description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
+<td>ScriptType.Automation</td>
 <td><code>"macros"</code></td>
 <td>Automation scripts are stored in the "macros" section</td>
 </tr>
 <tr>
+<td>ScriptType.Module</td>
 <td><code>"modules"</code></td>
 <td>Modules are stored in the "modules" section</td>
 </tr>
 </tbody>
 </table>
-<h3 id="fetchuntrustedfeeds">FetchUntrustedFeeds <a name="FetchUntrustedFeeds"></a></h3>
-<table>
-<thead>
-<tr>
-<th>value</th>
-<th>description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>"always"</code></td>
-<td>Always: fetch untrusted feeds without asking (the default)</td>
-</tr>
-<tr>
-<td><code>"never"</code></td>
-<td>Never: never fetch untrusted feeds</td>
-</tr>
-<tr>
-<td><code>"prompt"</code></td>
-<td>Prompt: ask before fetching an untrusted feed; falls back to Never where no prompter is available (e.g. headless)</td>
-</tr>
-</tbody>
-</table>
-<h3 id="domain">Domain <a name="Domain"></a></h3>
-<p>Shared vocabulary of DependencyControl's problem domain: the kinds of scripts and records it
-manages, the human-readable terms for them, namespace rules, and install/test locations.</p>
 
 
 
@@ -2707,8 +2764,16 @@ manages, the human-readable terms for them, namespace rules, and install/test lo
             </div>
           
           
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
 <script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
         </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
         
       </main>
       
@@ -2739,7 +2804,7 @@ manages, the human-readable terms for them, namespace rules, and install/test lo
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.code.copy", "content.tabs.link", "navigation.instant", "navigation.top", "search.suggest", "search.highlight", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>

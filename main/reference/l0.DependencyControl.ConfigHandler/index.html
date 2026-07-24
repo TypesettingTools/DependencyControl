@@ -25,11 +25,14 @@
     
     
       
-        <title>l0.DependencyControl.ConfigHandler - DependencyControl</title>
+        <title>ConfigHandler - DependencyControl</title>
       
     
     
       <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -57,7 +60,14 @@
   </head>
   
   
-    <body dir="ltr">
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -106,12 +116,48 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              l0.DependencyControl.ConfigHandler
+              ConfigHandler
             
           </span>
         </div>
       </div>
     </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
     
     
       <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
@@ -142,6 +188,8 @@
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
         </button>
       </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
       
     </form>
     <div class="md-search__output">
@@ -468,7 +516,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl
+    Overview
   
 
     
@@ -496,7 +544,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Accessors
+    Accessors
   
 
     
@@ -533,7 +581,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ConfigHandler
+    ConfigHandler
   
 
     
@@ -551,7 +599,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ConfigHandler
+    ConfigHandler
   
 
     
@@ -749,7 +797,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ConfigView
+    ConfigView
   
 
     
@@ -777,7 +825,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Constants
+    Constants
   
 
     
@@ -805,7 +853,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Downloader
+    Downloader
   
 
     
@@ -833,7 +881,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Enum
+    Enum
   
 
     
@@ -861,7 +909,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.EventEmitter
+    EventEmitter
   
 
     
@@ -889,7 +937,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedInventory
+    FeedInventory
   
 
     
@@ -917,7 +965,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedLoader
+    FeedLoader
   
 
     
@@ -945,7 +993,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedManager
+    FeedManager
   
 
     
@@ -973,7 +1021,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedTrust
+    FeedTrust
   
 
     
@@ -1001,7 +1049,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FileCache
+    FileCache
   
 
     
@@ -1029,7 +1077,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FileLock
+    FileLock
   
 
     
@@ -1057,7 +1105,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Finalizer
+    Finalizer
   
 
     
@@ -1085,7 +1133,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.GitRepository
+    GitRepository
   
 
     
@@ -1113,7 +1161,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Host
+    Host
   
 
     
@@ -1141,7 +1189,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.JsonSchema
+    JsonSchema
   
 
     
@@ -1169,7 +1217,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Lock
+    Lock
   
 
     
@@ -1197,7 +1245,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Logger
+    Logger
   
 
     
@@ -1225,7 +1273,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ModuleLoader
+    ModuleLoader
   
 
     
@@ -1253,7 +1301,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ModuleProvider
+    ModuleProvider
   
 
     
@@ -1281,7 +1329,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.NamedSemaphore
+    NamedSemaphore
   
 
     
@@ -1309,7 +1357,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.PackageRecord
+    PackageRecord
   
 
     
@@ -1337,7 +1385,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ScriptTargetFilter
+    ScriptTargetFilter
   
 
     
@@ -1365,7 +1413,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ScriptUpdateRecord
+    ScriptUpdateRecord
   
 
     
@@ -1393,7 +1441,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.SemanticVersion
+    SemanticVersion
   
 
     
@@ -1421,7 +1469,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Stub
+    Stub
   
 
     
@@ -1449,7 +1497,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Timer
+    Timer
   
 
     
@@ -1477,7 +1525,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UnitTestSuite
+    UnitTestSuite
   
 
     
@@ -1505,7 +1553,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UpdateFeed
+    UpdateFeed
   
 
     
@@ -1533,7 +1581,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UpdateTask
+    UpdateTask
   
 
     
@@ -1561,7 +1609,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Updater
+    Updater
   
 
     
@@ -1589,7 +1637,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ZipArchiver
+    ZipArchiver
   
 
     
@@ -1617,7 +1665,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.config-schema
+    config-schema
   
 
     
@@ -1645,7 +1693,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.domain
+    domain
   
 
     
@@ -1673,7 +1721,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.environment
+    environment
   
 
     
@@ -1701,7 +1749,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.file-ops
+    file-ops
   
 
     
@@ -1729,7 +1777,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.hash
+    hash
   
 
     
@@ -1757,7 +1805,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.ffi-posix
+    helpers.ffi-posix
   
 
     
@@ -1785,7 +1833,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.ffi-windows
+    helpers.ffi-windows
   
 
     
@@ -1813,7 +1861,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.open-url
+    helpers.open-url
   
 
     
@@ -1841,7 +1889,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.resolve-host
+    helpers.resolve-host
   
 
     
@@ -1869,7 +1917,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.release-notes
+    release-notes
   
 
     
@@ -1897,7 +1945,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.shims.BadMutex
+    shims.BadMutex
   
 
     
@@ -1925,7 +1973,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.shims.DownloadManager
+    shims.DownloadManager
   
 
     
@@ -1953,7 +2001,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.shims.PreciseTimer
+    shims.PreciseTimer
   
 
     
@@ -1981,7 +2029,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.utils
+    utils
   
 
     
@@ -2064,7 +2112,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats
+    Overview
   
 
     
@@ -2092,7 +2140,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Diagnostics
+    Diagnostics
   
 
     
@@ -2120,7 +2168,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.DocRenderer
+    DocRenderer
   
 
     
@@ -2148,7 +2196,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Emitter
+    Emitter
   
 
     
@@ -2176,7 +2224,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Parser
+    Parser
   
 
     
@@ -2204,7 +2252,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.annotations
+    annotations
   
 
     
@@ -2287,7 +2335,7 @@
   <span class="md-ellipsis">
     
   
-    l0.dkjson
+    Overview
   
 
     
@@ -2512,18 +2560,36 @@
   
 
 
-<h1 id="l0dependencycontrolconfighandler">l0.DependencyControl.ConfigHandler</h1>
-<pre><code class="language-lua">ConfigHandler = require &quot;l0.DependencyControl.ConfigHandler&quot;        -- MoonScript
-local ConfigHandler = require(&quot;l0.DependencyControl.ConfigHandler&quot;)  -- Lua
-</code></pre>
-<h2 id="confighandler">ConfigHandler <a name="ConfigHandler"></a></h2>
+<h1 id="l0dependencycontrolconfighandler">l0.DependencyControl.ConfigHandler<a class="headerlink" href="#l0dependencycontrolconfighandler" title="Permanent link">&para;</a></h1>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">MoonScript</label><label for="__tabbed_1_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nc">ConfigHandler</span> <span class="o">=</span> <span class="nb">require</span> <span class="s2">&quot;</span><span class="s">l0.DependencyControl.ConfigHandler</span><span class="s2">&quot;</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">ConfigHandler</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">require</span><span class="p">(</span><span class="s2">&quot;l0.DependencyControl.ConfigHandler&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<h2 id="confighandler">ConfigHandler <a name="ConfigHandler"></a><a class="headerlink" href="#confighandler" title="Permanent link">&para;</a></h2>
 <p>JSON-backed configuration manager with cooperative cross-script locking.
 Manages one JSON file per instance. Use ConfigView (via getView or ConfigView.get)
 to access specific hives (nested sections) of the config.</p>
-<h3 id="constructor">Constructor <a name="ConfigHandler.new"></a></h3>
-<pre><code class="language-lua">configHandler = ConfigHandler filePath, logger, schemaOpts         -- MoonScript
-local configHandler = ConfigHandler(filePath, logger, schemaOpts)  -- Lua
-</code></pre>
+<h3 id="constructor">Constructor <a name="ConfigHandler.new"></a><a class="headerlink" href="#constructor" title="Permanent link">&para;</a></h3>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">MoonScript</label><label for="__tabbed_2_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">configHandler</span> <span class="o">=</span> <span class="nc">ConfigHandler</span> <span class="n">filePath</span><span class="p">,</span> <span class="n">logger</span><span class="p">,</span> <span class="n">schemaOpts</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">configHandler</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">ConfigHandler</span><span class="p">(</span><span class="nv">filePath</span><span class="p">,</span><span class="w"> </span><span class="nv">logger</span><span class="p">,</span><span class="w"> </span><span class="nv">schemaOpts</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Creates a ConfigHandler for the given file. Does not load from disk.</p>
 <table>
 <thead>
@@ -2551,11 +2617,20 @@ local configHandler = ConfigHandler(filePath, logger, schemaOpts)  -- Lua
 </tr>
 </tbody>
 </table>
-<h3 id="instance-methods">Instance methods</h3>
-<h4 id="gethive">getHive <a name="ConfigHandler.getHive"></a></h4>
-<pre><code class="language-lua">configHandler\getHive path   -- MoonScript
-configHandler:getHive(path)  -- Lua
-</code></pre>
+<h3 id="instance-methods">Instance methods<a class="headerlink" href="#instance-methods" title="Permanent link">&para;</a></h3>
+<h4 id="gethive">getHive <a name="ConfigHandler.getHive"></a><a class="headerlink" href="#gethive" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">MoonScript</label><label for="__tabbed_3_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">configHandler</span><span class="o">\</span><span class="n">getHive</span> <span class="n">path</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nv">configHandler</span><span class="p">:</span><span class="nf">getHive</span><span class="p">(</span><span class="nv">path</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Returns the config table at the given hive path, creating it if missing.</p>
 <table>
 <thead>
@@ -2578,10 +2653,19 @@ configHandler:getHive(path)  -- Lua
 <li><code>hive</code> <code>table</code>?</li>
 <li><code>err</code> <code>string</code>?</li>
 </ul>
-<h4 id="load">load <a name="ConfigHandler.load"></a></h4>
-<pre><code class="language-lua">configHandler\load views, waitLockTime   -- MoonScript
-configHandler:load(views, waitLockTime)  -- Lua
-</code></pre>
+<h4 id="load">load <a name="ConfigHandler.load"></a><a class="headerlink" href="#load" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">MoonScript</label><label for="__tabbed_4_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">configHandler</span><span class="o">\</span><span class="nb">load</span> <span class="n">views</span><span class="p">,</span> <span class="n">waitLockTime</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nv">configHandler</span><span class="p">:</span><span class="nf">load</span><span class="p">(</span><span class="nv">views</span><span class="p">,</span><span class="w"> </span><span class="nv">waitLockTime</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Reads the config file and refreshes the in-memory config and all (or specified) views.</p>
 <table>
 <thead>
@@ -2609,10 +2693,19 @@ configHandler:load(views, waitLockTime)  -- Lua
 <li><code>success</code> <code>boolean</code>?</li>
 <li><code>err</code> <code>string</code>?</li>
 </ul>
-<h4 id="save">save <a name="ConfigHandler.save"></a></h4>
-<pre><code class="language-lua">configHandler\save views, waitLockTime   -- MoonScript
-configHandler:save(views, waitLockTime)  -- Lua
-</code></pre>
+<h4 id="save">save <a name="ConfigHandler.save"></a><a class="headerlink" href="#save" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">MoonScript</label><label for="__tabbed_5_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">configHandler</span><span class="o">\</span><span class="n">save</span> <span class="n">views</span><span class="p">,</span> <span class="n">waitLockTime</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nv">configHandler</span><span class="p">:</span><span class="nf">save</span><span class="p">(</span><span class="nv">views</span><span class="p">,</span><span class="w"> </span><span class="nv">waitLockTime</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Writes the config file, merging only the specified views (or the full config if nil).</p>
 <table>
 <thead>
@@ -2640,10 +2733,19 @@ configHandler:save(views, waitLockTime)  -- Lua
 <li><code>success</code> <code>boolean</code>?</li>
 <li><code>err</code> <code>string</code>?</li>
 </ul>
-<h4 id="purgehive">purgeHive <a name="ConfigHandler.purgeHive"></a></h4>
-<pre><code class="language-lua">configHandler\purgeHive hive   -- MoonScript
-configHandler:purgeHive(hive)  -- Lua
-</code></pre>
+<h4 id="purgehive">purgeHive <a name="ConfigHandler.purgeHive"></a><a class="headerlink" href="#purgehive" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">MoonScript</label><label for="__tabbed_6_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">configHandler</span><span class="o">\</span><span class="n">purgeHive</span> <span class="n">hive</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nv">configHandler</span><span class="p">:</span><span class="nf">purgeHive</span><span class="p">(</span><span class="nv">hive</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Removes a view's hive from the in-memory config and returns the fresh (empty) hive.</p>
 <table>
 <thead>
@@ -2666,11 +2768,20 @@ configHandler:purgeHive(hive)  -- Lua
 <li><code>hive</code> <code>table</code>?</li>
 <li><code>err</code> <code>string</code>?</li>
 </ul>
-<h3 id="class-methods">Class methods</h3>
-<h4 id="get">get <a name="ConfigHandler.get"></a></h4>
-<pre><code class="language-lua">ConfigHandler\get filePath, logger, noLoad, schemaOpts   -- MoonScript
-ConfigHandler:get(filePath, logger, noLoad, schemaOpts)  -- Lua
-</code></pre>
+<h3 id="class-methods">Class methods<a class="headerlink" href="#class-methods" title="Permanent link">&para;</a></h3>
+<h4 id="get">get <a name="ConfigHandler.get"></a><a class="headerlink" href="#get" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">MoonScript</label><label for="__tabbed_7_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="nc">ConfigHandler</span><span class="o">\</span><span class="n">get</span> <span class="n">filePath</span><span class="p">,</span> <span class="n">logger</span><span class="p">,</span> <span class="n">noLoad</span><span class="p">,</span> <span class="n">schemaOpts</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="nv">ConfigHandler</span><span class="p">:</span><span class="nf">get</span><span class="p">(</span><span class="nv">filePath</span><span class="p">,</span><span class="w"> </span><span class="nv">logger</span><span class="p">,</span><span class="w"> </span><span class="nv">noLoad</span><span class="p">,</span><span class="w"> </span><span class="nv">schemaOpts</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Returns an existing handler for filePath, or creates and optionally loads one.</p>
 <table>
 <thead>
@@ -2708,10 +2819,19 @@ ConfigHandler:get(filePath, logger, noLoad, schemaOpts)  -- Lua
 <li><code>handler</code> <a href="#ConfigHandler">ConfigHandler</a>?</li>
 <li><code>err</code> <code>string</code>?</li>
 </ul>
-<h4 id="getview">getView <a name="ConfigHandler.getView"></a></h4>
-<pre><code class="language-lua">ConfigHandler\getView filePath, hivePath, defaults, logger   -- MoonScript
-ConfigHandler:getView(filePath, hivePath, defaults, logger)  -- Lua
-</code></pre>
+<h4 id="getview">getView <a name="ConfigHandler.getView"></a><a class="headerlink" href="#getview" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="8:2"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><div class="tabbed-labels"><label for="__tabbed_8_1">MoonScript</label><label for="__tabbed_8_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="nc">ConfigHandler</span><span class="o">\</span><span class="n">getView</span> <span class="n">filePath</span><span class="p">,</span> <span class="n">hivePath</span><span class="p">,</span> <span class="n">defaults</span><span class="p">,</span> <span class="n">logger</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="nv">ConfigHandler</span><span class="p">:</span><span class="nf">getView</span><span class="p">(</span><span class="nv">filePath</span><span class="p">,</span><span class="w"> </span><span class="nv">hivePath</span><span class="p">,</span><span class="w"> </span><span class="nv">defaults</span><span class="p">,</span><span class="w"> </span><span class="nv">logger</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Returns a ConfigView for the given file and hive path, creating a handler if needed.</p>
 <table>
 <thead>
@@ -2749,10 +2869,19 @@ ConfigHandler:getView(filePath, hivePath, defaults, logger)  -- Lua
 <li><code>view</code> <a href="../l0.DependencyControl.ConfigView/#ConfigView">ConfigView</a>?</li>
 <li><code>err</code> <code>string</code>?</li>
 </ul>
-<h4 id="getserializablecopy">getSerializableCopy <a name="ConfigHandler.getSerializableCopy"></a></h4>
-<pre><code class="language-lua">ConfigHandler\getSerializableCopy val   -- MoonScript
-ConfigHandler:getSerializableCopy(val)  -- Lua
-</code></pre>
+<h4 id="getserializablecopy">getSerializableCopy <a name="ConfigHandler.getSerializableCopy"></a><a class="headerlink" href="#getserializablecopy" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="9:2"><input checked="checked" id="__tabbed_9_1" name="__tabbed_9" type="radio" /><input id="__tabbed_9_2" name="__tabbed_9" type="radio" /><div class="tabbed-labels"><label for="__tabbed_9_1">MoonScript</label><label for="__tabbed_9_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="nc">ConfigHandler</span><span class="o">\</span><span class="n">getSerializableCopy</span> <span class="n">val</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="nv">ConfigHandler</span><span class="p">:</span><span class="nf">getSerializableCopy</span><span class="p">(</span><span class="nv">val</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Deep-copies a value while skipping private keys prefixed with "_".</p>
 <table>
 <thead>
@@ -2774,7 +2903,7 @@ ConfigHandler:getSerializableCopy(val)  -- Lua
 <ul>
 <li><code>copy</code> <code>any</code></li>
 </ul>
-<h3 id="fields">Fields</h3>
+<h3 id="fields">Fields<a class="headerlink" href="#fields" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -2786,7 +2915,7 @@ ConfigHandler:getSerializableCopy(val)  -- Lua
 <tbody>
 <tr>
 <td>handlers</td>
-<td><code>any</code></td>
+<td><code>table</code></td>
 <td></td>
 </tr>
 </tbody>
@@ -2808,8 +2937,16 @@ ConfigHandler:getSerializableCopy(val)  -- Lua
             </div>
           
           
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
 <script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
         </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
         
       </main>
       
@@ -2840,7 +2977,7 @@ ConfigHandler:getSerializableCopy(val)  -- Lua
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.code.copy", "content.tabs.link", "navigation.instant", "navigation.top", "search.suggest", "search.highlight", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>

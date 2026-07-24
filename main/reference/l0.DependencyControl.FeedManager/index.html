@@ -25,11 +25,14 @@
     
     
       
-        <title>l0.DependencyControl.FeedManager - DependencyControl</title>
+        <title>FeedManager - DependencyControl</title>
       
     
     
       <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -57,7 +60,14 @@
   </head>
   
   
-    <body dir="ltr">
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -106,12 +116,48 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              l0.DependencyControl.FeedManager
+              FeedManager
             
           </span>
         </div>
       </div>
     </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
     
     
       <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
@@ -142,6 +188,8 @@
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
         </button>
       </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
       
     </form>
     <div class="md-search__output">
@@ -468,7 +516,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl
+    Overview
   
 
     
@@ -496,7 +544,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Accessors
+    Accessors
   
 
     
@@ -524,7 +572,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ConfigHandler
+    ConfigHandler
   
 
     
@@ -552,7 +600,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ConfigView
+    ConfigView
   
 
     
@@ -580,7 +628,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Constants
+    Constants
   
 
     
@@ -608,7 +656,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Downloader
+    Downloader
   
 
     
@@ -636,7 +684,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Enum
+    Enum
   
 
     
@@ -664,7 +712,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.EventEmitter
+    EventEmitter
   
 
     
@@ -692,7 +740,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedInventory
+    FeedInventory
   
 
     
@@ -720,7 +768,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedLoader
+    FeedLoader
   
 
     
@@ -757,7 +805,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedManager
+    FeedManager
   
 
     
@@ -775,7 +823,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedManager
+    FeedManager
   
 
     
@@ -947,17 +995,6 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#feedaction_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        FeedAction
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#feedmanagerrow" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -996,7 +1033,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedTrust
+    FeedTrust
   
 
     
@@ -1024,7 +1061,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FileCache
+    FileCache
   
 
     
@@ -1052,7 +1089,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FileLock
+    FileLock
   
 
     
@@ -1080,7 +1117,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Finalizer
+    Finalizer
   
 
     
@@ -1108,7 +1145,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.GitRepository
+    GitRepository
   
 
     
@@ -1136,7 +1173,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Host
+    Host
   
 
     
@@ -1164,7 +1201,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.JsonSchema
+    JsonSchema
   
 
     
@@ -1192,7 +1229,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Lock
+    Lock
   
 
     
@@ -1220,7 +1257,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Logger
+    Logger
   
 
     
@@ -1248,7 +1285,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ModuleLoader
+    ModuleLoader
   
 
     
@@ -1276,7 +1313,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ModuleProvider
+    ModuleProvider
   
 
     
@@ -1304,7 +1341,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.NamedSemaphore
+    NamedSemaphore
   
 
     
@@ -1332,7 +1369,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.PackageRecord
+    PackageRecord
   
 
     
@@ -1360,7 +1397,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ScriptTargetFilter
+    ScriptTargetFilter
   
 
     
@@ -1388,7 +1425,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ScriptUpdateRecord
+    ScriptUpdateRecord
   
 
     
@@ -1416,7 +1453,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.SemanticVersion
+    SemanticVersion
   
 
     
@@ -1444,7 +1481,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Stub
+    Stub
   
 
     
@@ -1472,7 +1509,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Timer
+    Timer
   
 
     
@@ -1500,7 +1537,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UnitTestSuite
+    UnitTestSuite
   
 
     
@@ -1528,7 +1565,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UpdateFeed
+    UpdateFeed
   
 
     
@@ -1556,7 +1593,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UpdateTask
+    UpdateTask
   
 
     
@@ -1584,7 +1621,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Updater
+    Updater
   
 
     
@@ -1612,7 +1649,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ZipArchiver
+    ZipArchiver
   
 
     
@@ -1640,7 +1677,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.config-schema
+    config-schema
   
 
     
@@ -1668,7 +1705,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.domain
+    domain
   
 
     
@@ -1696,7 +1733,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.environment
+    environment
   
 
     
@@ -1724,7 +1761,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.file-ops
+    file-ops
   
 
     
@@ -1752,7 +1789,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.hash
+    hash
   
 
     
@@ -1780,7 +1817,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.ffi-posix
+    helpers.ffi-posix
   
 
     
@@ -1808,7 +1845,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.ffi-windows
+    helpers.ffi-windows
   
 
     
@@ -1836,7 +1873,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.open-url
+    helpers.open-url
   
 
     
@@ -1864,7 +1901,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.resolve-host
+    helpers.resolve-host
   
 
     
@@ -1892,7 +1929,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.release-notes
+    release-notes
   
 
     
@@ -1920,7 +1957,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.shims.BadMutex
+    shims.BadMutex
   
 
     
@@ -1948,7 +1985,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.shims.DownloadManager
+    shims.DownloadManager
   
 
     
@@ -1976,7 +2013,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.shims.PreciseTimer
+    shims.PreciseTimer
   
 
     
@@ -2004,7 +2041,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.utils
+    utils
   
 
     
@@ -2087,7 +2124,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats
+    Overview
   
 
     
@@ -2115,7 +2152,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Diagnostics
+    Diagnostics
   
 
     
@@ -2143,7 +2180,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.DocRenderer
+    DocRenderer
   
 
     
@@ -2171,7 +2208,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Emitter
+    Emitter
   
 
     
@@ -2199,7 +2236,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Parser
+    Parser
   
 
     
@@ -2227,7 +2264,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.annotations
+    annotations
   
 
     
@@ -2310,7 +2347,7 @@
   <span class="md-ellipsis">
     
   
-    l0.dkjson
+    Overview
   
 
     
@@ -2512,17 +2549,6 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#feedaction_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        FeedAction
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#feedmanagerrow" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2558,17 +2584,35 @@
   
 
 
-<h1 id="l0dependencycontrolfeedmanager">l0.DependencyControl.FeedManager</h1>
-<pre><code class="language-lua">FeedManager = require &quot;l0.DependencyControl.FeedManager&quot;        -- MoonScript
-local FeedManager = require(&quot;l0.DependencyControl.FeedManager&quot;)  -- Lua
-</code></pre>
-<h2 id="feedmanager">FeedManager <a name="FeedManager"></a></h2>
+<h1 id="l0dependencycontrolfeedmanager">l0.DependencyControl.FeedManager<a class="headerlink" href="#l0dependencycontrolfeedmanager" title="Permanent link">&para;</a></h1>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">MoonScript</label><label for="__tabbed_1_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nc">FeedManager</span> <span class="o">=</span> <span class="nb">require</span> <span class="s2">&quot;</span><span class="s">l0.DependencyControl.FeedManager</span><span class="s2">&quot;</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">FeedManager</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">require</span><span class="p">(</span><span class="s2">&quot;l0.DependencyControl.FeedManager&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<h2 id="feedmanager">FeedManager <a name="FeedManager"></a><a class="headerlink" href="#feedmanager" title="Permanent link">&para;</a></h2>
 <p>Turns reachable-feed data into what the Manage Feeds UI shows and offers: the actions available for a feed
 and its DepCtrl Browser link. Trust reads/writes go through <code>FeedTrust</code>.</p>
-<h3 id="constructor">Constructor <a name="FeedManager.new"></a></h3>
-<pre><code class="language-lua">feedManager = FeedManager feedTrust         -- MoonScript
-local feedManager = FeedManager(feedTrust)  -- Lua
-</code></pre>
+<h3 id="constructor">Constructor <a name="FeedManager.new"></a><a class="headerlink" href="#constructor" title="Permanent link">&para;</a></h3>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">MoonScript</label><label for="__tabbed_2_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">feedManager</span> <span class="o">=</span> <span class="nc">FeedManager</span> <span class="n">feedTrust</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">feedManager</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">FeedManager</span><span class="p">(</span><span class="nv">feedTrust</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <table>
 <thead>
 <tr>
@@ -2585,11 +2629,20 @@ local feedManager = FeedManager(feedTrust)  -- Lua
 </tr>
 </tbody>
 </table>
-<h3 id="instance-methods">Instance methods</h3>
-<h4 id="applyaction">applyAction <a name="FeedManager.applyAction"></a></h4>
-<pre><code class="language-lua">feedManager\applyAction action, entry, opts   -- MoonScript
-feedManager:applyAction(action, entry, opts)  -- Lua
-</code></pre>
+<h3 id="instance-methods">Instance methods<a class="headerlink" href="#instance-methods" title="Permanent link">&para;</a></h3>
+<h4 id="applyaction">applyAction <a name="FeedManager.applyAction"></a><a class="headerlink" href="#applyaction" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">MoonScript</label><label for="__tabbed_3_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">feedManager</span><span class="o">\</span><span class="n">applyAction</span> <span class="n">action</span><span class="p">,</span> <span class="n">entry</span><span class="p">,</span> <span class="n">opts</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nv">feedManager</span><span class="p">:</span><span class="nf">applyAction</span><span class="p">(</span><span class="nv">action</span><span class="p">,</span><span class="w"> </span><span class="nv">entry</span><span class="p">,</span><span class="w"> </span><span class="nv">opts</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Applies a trust action to a feed, delegating to <code>FeedTrust</code>. Re-checks that the action is one the feed
 actually offers, so a guarded action (e.g. blocking the bootstrap feed) is refused even if asked for.
 Open Browser and any action the feed doesn't offer mutate nothing.</p>
@@ -2623,11 +2676,20 @@ Open Browser and any action the feed doesn't offer mutate nothing.</p>
 <ul>
 <li><code>applied</code> <code>boolean</code> — Whether trust state was changed.</li>
 </ul>
-<h3 id="class-methods">Class methods</h3>
-<h4 id="getbrowserurl">getBrowserUrl <a name="FeedManager.getBrowserUrl"></a></h4>
-<pre><code class="language-lua">FeedManager.getBrowserUrl feedUrl   -- MoonScript
-FeedManager.getBrowserUrl(feedUrl)  -- Lua
-</code></pre>
+<h3 id="class-methods">Class methods<a class="headerlink" href="#class-methods" title="Permanent link">&para;</a></h3>
+<h4 id="getbrowserurl">getBrowserUrl <a name="FeedManager.getBrowserUrl"></a><a class="headerlink" href="#getbrowserurl" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">MoonScript</label><label for="__tabbed_4_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nc">FeedManager</span><span class="o">.</span><span class="n">getBrowserUrl</span> <span class="n">feedUrl</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nv">FeedManager</span><span class="p">.</span><span class="nf">getBrowserUrl</span><span class="p">(</span><span class="nv">feedUrl</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>The DepCtrl Browser deep-link for a feed. Best-effort: it resolves only for feeds in the browser's crawl
 graph (official/known feeds).</p>
 <table>
@@ -2650,10 +2712,19 @@ graph (official/known feeds).</p>
 <ul>
 <li><code>url</code> <code>string</code> — The Browser page URL.</li>
 </ul>
-<h4 id="getavailableactions">getAvailableActions <a name="FeedManager.getAvailableActions"></a></h4>
-<pre><code class="language-lua">FeedManager.getAvailableActions entry   -- MoonScript
-FeedManager.getAvailableActions(entry)  -- Lua
-</code></pre>
+<h4 id="getavailableactions">getAvailableActions <a name="FeedManager.getAvailableActions"></a><a class="headerlink" href="#getavailableactions" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">MoonScript</label><label for="__tabbed_5_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nc">FeedManager</span><span class="o">.</span><span class="n">getAvailableActions</span> <span class="n">entry</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nv">FeedManager</span><span class="p">.</span><span class="nf">getAvailableActions</span><span class="p">(</span><span class="nv">entry</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>The actions the Manage Feeds UI offers for a feed, from its trust state and provenance.</p>
 <table>
 <thead>
@@ -2675,10 +2746,19 @@ FeedManager.getAvailableActions(entry)  -- Lua
 <ul>
 <li><code>actions</code> <a href="#FeedAction">FeedAction</a>[] — In a stable order, state-changing actions first and Open Browser last.</li>
 </ul>
-<h4 id="buildrows">buildRows <a name="FeedManager.buildRows"></a></h4>
-<pre><code class="language-lua">FeedManager.buildRows entries   -- MoonScript
-FeedManager.buildRows(entries)  -- Lua
-</code></pre>
+<h4 id="buildrows">buildRows <a name="FeedManager.buildRows"></a><a class="headerlink" href="#buildrows" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">MoonScript</label><label for="__tabbed_6_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nc">FeedManager</span><span class="o">.</span><span class="n">buildRows</span> <span class="n">entries</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nv">FeedManager</span><span class="p">.</span><span class="nf">buildRows</span><span class="p">(</span><span class="nv">entries</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Turns feed entries into dialog rows — each feed with its offered actions, Browser link, and <code>removable</code>
 flag. Sorted by URL.</p>
 <table>
@@ -2701,8 +2781,9 @@ flag. Sorted by URL.</p>
 <ul>
 <li><code>rows</code> <a href="#FeedManagerRow">FeedManagerRow</a>[] — The URL-sorted display rows.</li>
 </ul>
-<h3 id="enums">Enums</h3>
-<h4 id="feedaction">FeedAction <a name="FeedManager.FeedAction"></a></h4>
+<h3 id="enums">Enums<a class="headerlink" href="#enums" title="Permanent link">&para;</a></h3>
+<p><a name="FeedAction"></a></p>
+<h4 id="feedaction">FeedAction <a name="FeedManager.FeedAction"></a><a class="headerlink" href="#feedaction" title="Permanent link">&para;</a></h4>
 <table>
 <thead>
 <tr>
@@ -2739,40 +2820,8 @@ flag. Sorted by URL.</p>
 </tr>
 </tbody>
 </table>
-<h2 id="types">Types</h2>
-<h3 id="feedaction_1">FeedAction <a name="FeedAction"></a></h3>
-<p>An action the Manage Feeds UI can offer for a feed.</p>
-<table>
-<thead>
-<tr>
-<th>value</th>
-<th>description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>"trust"</code></td>
-<td>Trust: add the feed to the user's <code>trustedFeeds</code></td>
-</tr>
-<tr>
-<td><code>"block"</code></td>
-<td>Block: add a block entry for the feed</td>
-</tr>
-<tr>
-<td><code>"unblock"</code></td>
-<td>Unblock: remove the user's exact block on the feed</td>
-</tr>
-<tr>
-<td><code>"remove"</code></td>
-<td>Remove: drop the user's <code>extraFeeds</code>/<code>trustedFeeds</code> contribution</td>
-</tr>
-<tr>
-<td><code>"open-browser"</code></td>
-<td>OpenBrowser: open the feed in the DepCtrl Browser</td>
-</tr>
-</tbody>
-</table>
-<h3 id="feedmanagerrow">FeedManagerRow <a name="FeedManagerRow"></a></h3>
+<h2 id="types">Types<a class="headerlink" href="#types" title="Permanent link">&para;</a></h2>
+<h3 id="feedmanagerrow">FeedManagerRow <a name="FeedManagerRow"></a><a class="headerlink" href="#feedmanagerrow" title="Permanent link">&para;</a></h3>
 <p>A Manage Feeds list row: a feed's inventory fields plus what the UI needs to render and act on it.</p>
 <table>
 <thead>
@@ -2867,8 +2916,16 @@ flag. Sorted by URL.</p>
             </div>
           
           
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
 <script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
         </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
         
       </main>
       
@@ -2899,7 +2956,7 @@ flag. Sorted by URL.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.code.copy", "content.tabs.link", "navigation.instant", "navigation.top", "search.suggest", "search.highlight", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>

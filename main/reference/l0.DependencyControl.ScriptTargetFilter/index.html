@@ -25,11 +25,14 @@
     
     
       
-        <title>l0.DependencyControl.ScriptTargetFilter - DependencyControl</title>
+        <title>ScriptTargetFilter - DependencyControl</title>
       
     
     
       <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -57,7 +60,14 @@
   </head>
   
   
-    <body dir="ltr">
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -106,12 +116,48 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              l0.DependencyControl.ScriptTargetFilter
+              ScriptTargetFilter
             
           </span>
         </div>
       </div>
     </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
     
     
       <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
@@ -142,6 +188,8 @@
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
         </button>
       </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
       
     </form>
     <div class="md-search__output">
@@ -468,7 +516,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl
+    Overview
   
 
     
@@ -496,7 +544,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Accessors
+    Accessors
   
 
     
@@ -524,7 +572,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ConfigHandler
+    ConfigHandler
   
 
     
@@ -552,7 +600,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ConfigView
+    ConfigView
   
 
     
@@ -580,7 +628,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Constants
+    Constants
   
 
     
@@ -608,7 +656,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Downloader
+    Downloader
   
 
     
@@ -636,7 +684,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Enum
+    Enum
   
 
     
@@ -664,7 +712,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.EventEmitter
+    EventEmitter
   
 
     
@@ -692,7 +740,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedInventory
+    FeedInventory
   
 
     
@@ -720,7 +768,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedLoader
+    FeedLoader
   
 
     
@@ -748,7 +796,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedManager
+    FeedManager
   
 
     
@@ -776,7 +824,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedTrust
+    FeedTrust
   
 
     
@@ -804,7 +852,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FileCache
+    FileCache
   
 
     
@@ -832,7 +880,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FileLock
+    FileLock
   
 
     
@@ -860,7 +908,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Finalizer
+    Finalizer
   
 
     
@@ -888,7 +936,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.GitRepository
+    GitRepository
   
 
     
@@ -916,7 +964,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Host
+    Host
   
 
     
@@ -944,7 +992,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.JsonSchema
+    JsonSchema
   
 
     
@@ -972,7 +1020,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Lock
+    Lock
   
 
     
@@ -1000,7 +1048,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Logger
+    Logger
   
 
     
@@ -1028,7 +1076,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ModuleLoader
+    ModuleLoader
   
 
     
@@ -1056,7 +1104,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ModuleProvider
+    ModuleProvider
   
 
     
@@ -1084,7 +1132,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.NamedSemaphore
+    NamedSemaphore
   
 
     
@@ -1112,7 +1160,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.PackageRecord
+    PackageRecord
   
 
     
@@ -1149,7 +1197,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ScriptTargetFilter
+    ScriptTargetFilter
   
 
     
@@ -1167,7 +1215,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ScriptTargetFilter
+    ScriptTargetFilter
   
 
     
@@ -1315,7 +1363,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ScriptUpdateRecord
+    ScriptUpdateRecord
   
 
     
@@ -1343,7 +1391,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.SemanticVersion
+    SemanticVersion
   
 
     
@@ -1371,7 +1419,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Stub
+    Stub
   
 
     
@@ -1399,7 +1447,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Timer
+    Timer
   
 
     
@@ -1427,7 +1475,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UnitTestSuite
+    UnitTestSuite
   
 
     
@@ -1455,7 +1503,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UpdateFeed
+    UpdateFeed
   
 
     
@@ -1483,7 +1531,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UpdateTask
+    UpdateTask
   
 
     
@@ -1511,7 +1559,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Updater
+    Updater
   
 
     
@@ -1539,7 +1587,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ZipArchiver
+    ZipArchiver
   
 
     
@@ -1567,7 +1615,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.config-schema
+    config-schema
   
 
     
@@ -1595,7 +1643,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.domain
+    domain
   
 
     
@@ -1623,7 +1671,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.environment
+    environment
   
 
     
@@ -1651,7 +1699,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.file-ops
+    file-ops
   
 
     
@@ -1679,7 +1727,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.hash
+    hash
   
 
     
@@ -1707,7 +1755,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.ffi-posix
+    helpers.ffi-posix
   
 
     
@@ -1735,7 +1783,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.ffi-windows
+    helpers.ffi-windows
   
 
     
@@ -1763,7 +1811,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.open-url
+    helpers.open-url
   
 
     
@@ -1791,7 +1839,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.resolve-host
+    helpers.resolve-host
   
 
     
@@ -1819,7 +1867,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.release-notes
+    release-notes
   
 
     
@@ -1847,7 +1895,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.shims.BadMutex
+    shims.BadMutex
   
 
     
@@ -1875,7 +1923,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.shims.DownloadManager
+    shims.DownloadManager
   
 
     
@@ -1903,7 +1951,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.shims.PreciseTimer
+    shims.PreciseTimer
   
 
     
@@ -1931,7 +1979,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.utils
+    utils
   
 
     
@@ -2014,7 +2062,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats
+    Overview
   
 
     
@@ -2042,7 +2090,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Diagnostics
+    Diagnostics
   
 
     
@@ -2070,7 +2118,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.DocRenderer
+    DocRenderer
   
 
     
@@ -2098,7 +2146,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Emitter
+    Emitter
   
 
     
@@ -2126,7 +2174,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Parser
+    Parser
   
 
     
@@ -2154,7 +2202,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.annotations
+    annotations
   
 
     
@@ -2237,7 +2285,7 @@
   <span class="md-ellipsis">
     
   
-    l0.dkjson
+    Overview
   
 
     
@@ -2412,24 +2460,42 @@
   
 
 
-<h1 id="l0dependencycontrolscripttargetfilter">l0.DependencyControl.ScriptTargetFilter</h1>
-<pre><code class="language-lua">ScriptTargetFilter = require &quot;l0.DependencyControl.ScriptTargetFilter&quot;        -- MoonScript
-local ScriptTargetFilter = require(&quot;l0.DependencyControl.ScriptTargetFilter&quot;)  -- Lua
-</code></pre>
-<h2 id="scripttargetfilter">ScriptTargetFilter <a name="ScriptTargetFilter"></a></h2>
+<h1 id="l0dependencycontrolscripttargetfilter">l0.DependencyControl.ScriptTargetFilter<a class="headerlink" href="#l0dependencycontrolscripttargetfilter" title="Permanent link">&para;</a></h1>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">MoonScript</label><label for="__tabbed_1_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nc">ScriptTargetFilter</span> <span class="o">=</span> <span class="nb">require</span> <span class="s2">&quot;</span><span class="s">l0.DependencyControl.ScriptTargetFilter</span><span class="s2">&quot;</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">ScriptTargetFilter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">require</span><span class="p">(</span><span class="s2">&quot;l0.DependencyControl.ScriptTargetFilter&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<h2 id="scripttargetfilter">ScriptTargetFilter <a name="ScriptTargetFilter"></a><a class="headerlink" href="#scripttargetfilter" title="Permanent link">&para;</a></h2>
 <p>Selects which packages a feed operation should process, by script type and namespace.
 Construct it from a spec table, or empty and build it up fluently — every builder method
 returns self so calls can be chained. Because modules and automation scripts aren't required
 to have unique namespaces, rules are keyed by script type first.</p>
-<pre><code class="language-moonscript">ScriptTargetFilter!\include(domain.ScriptType.Module, &quot;l0.DependencyControl&quot;)
-ScriptTargetFilter!\includeAll domain.ScriptType.Module   -- every module
-ScriptTargetFilter!\includeAll!                            -- everything
-ScriptTargetFilter {[domain.ScriptType.Module]: {include: {&quot;l0.DependencyControl&quot;}}}
-</code></pre>
-<h3 id="constructor">Constructor <a name="ScriptTargetFilter.new"></a></h3>
-<pre><code class="language-lua">scriptTargetFilter = ScriptTargetFilter spec         -- MoonScript
-local scriptTargetFilter = ScriptTargetFilter(spec)  -- Lua
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nc">ScriptTargetFilter</span><span class="o">!\</span><span class="n">include</span><span class="kt">(</span><span class="n">domain</span><span class="o">.</span><span class="nc">ScriptType</span><span class="o">.</span><span class="nc">Module</span><span class="p">,</span> <span class="s2">&quot;</span><span class="s">l0.DependencyControl</span><span class="s2">&quot;</span><span class="kt">)</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nc">ScriptTargetFilter</span><span class="o">!\</span><span class="n">includeAll</span> <span class="n">domain</span><span class="o">.</span><span class="nc">ScriptType</span><span class="o">.</span><span class="nc">Module</span>   <span class="c1">-- every module</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="nc">ScriptTargetFilter</span><span class="o">!\</span><span class="n">includeAll</span><span class="o">!</span>                            <span class="c1">-- everything</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="nc">ScriptTargetFilter</span> <span class="kt">{[</span><span class="n">domain</span><span class="o">.</span><span class="nc">ScriptType</span><span class="o">.</span><span class="nc">Module</span><span class="kt">]</span><span class="o">:</span> <span class="kt">{</span><span class="nv">include:</span> <span class="kt">{</span><span class="s2">&quot;</span><span class="s">l0.DependencyControl</span><span class="s2">&quot;</span><span class="kt">}}}</span>
+</code></pre></div>
+<h3 id="constructor">Constructor <a name="ScriptTargetFilter.new"></a><a class="headerlink" href="#constructor" title="Permanent link">&para;</a></h3>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">MoonScript</label><label for="__tabbed_2_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">scriptTargetFilter</span> <span class="o">=</span> <span class="nc">ScriptTargetFilter</span> <span class="n">spec</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">scriptTargetFilter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">ScriptTargetFilter</span><span class="p">(</span><span class="nv">spec</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <table>
 <thead>
 <tr>
@@ -2446,11 +2512,20 @@ local scriptTargetFilter = ScriptTargetFilter(spec)  -- Lua
 </tr>
 </tbody>
 </table>
-<h3 id="instance-methods">Instance methods</h3>
-<h4 id="include">include <a name="ScriptTargetFilter.include"></a></h4>
-<pre><code class="language-lua">scriptTargetFilter\include scriptType, namespace   -- MoonScript
-scriptTargetFilter:include(scriptType, namespace)  -- Lua
-</code></pre>
+<h3 id="instance-methods">Instance methods<a class="headerlink" href="#instance-methods" title="Permanent link">&para;</a></h3>
+<h4 id="include">include <a name="ScriptTargetFilter.include"></a><a class="headerlink" href="#include" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">MoonScript</label><label for="__tabbed_3_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">scriptTargetFilter</span><span class="o">\</span><span class="n">include</span> <span class="n">scriptType</span><span class="p">,</span> <span class="n">namespace</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nv">scriptTargetFilter</span><span class="p">:</span><span class="nf">include</span><span class="p">(</span><span class="nv">scriptType</span><span class="p">,</span><span class="w"> </span><span class="nv">namespace</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Includes a single namespace of the given script type.</p>
 <table>
 <thead>
@@ -2477,10 +2552,19 @@ scriptTargetFilter:include(scriptType, namespace)  -- Lua
 <ul>
 <li><code>self</code> <a href="#ScriptTargetFilter">ScriptTargetFilter</a></li>
 </ul>
-<h4 id="includeall">includeAll <a name="ScriptTargetFilter.includeAll"></a></h4>
-<pre><code class="language-lua">scriptTargetFilter\includeAll scriptType   -- MoonScript
-scriptTargetFilter:includeAll(scriptType)  -- Lua
-</code></pre>
+<h4 id="includeall">includeAll <a name="ScriptTargetFilter.includeAll"></a><a class="headerlink" href="#includeall" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">MoonScript</label><label for="__tabbed_4_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">scriptTargetFilter</span><span class="o">\</span><span class="n">includeAll</span> <span class="n">scriptType</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nv">scriptTargetFilter</span><span class="p">:</span><span class="nf">includeAll</span><span class="p">(</span><span class="nv">scriptType</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Includes every namespace of the given script type, or — when called without an
 argument — every namespace of every script type.</p>
 <table>
@@ -2503,10 +2587,19 @@ argument — every namespace of every script type.</p>
 <ul>
 <li><code>self</code> <a href="#ScriptTargetFilter">ScriptTargetFilter</a></li>
 </ul>
-<h4 id="exclude">exclude <a name="ScriptTargetFilter.exclude"></a></h4>
-<pre><code class="language-lua">scriptTargetFilter\exclude scriptType, namespace   -- MoonScript
-scriptTargetFilter:exclude(scriptType, namespace)  -- Lua
-</code></pre>
+<h4 id="exclude">exclude <a name="ScriptTargetFilter.exclude"></a><a class="headerlink" href="#exclude" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">MoonScript</label><label for="__tabbed_5_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">scriptTargetFilter</span><span class="o">\</span><span class="n">exclude</span> <span class="n">scriptType</span><span class="p">,</span> <span class="n">namespace</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nv">scriptTargetFilter</span><span class="p">:</span><span class="nf">exclude</span><span class="p">(</span><span class="nv">scriptType</span><span class="p">,</span><span class="w"> </span><span class="nv">namespace</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Excludes a single namespace of the given script type (takes precedence over includes).</p>
 <table>
 <thead>
@@ -2533,10 +2626,19 @@ scriptTargetFilter:exclude(scriptType, namespace)  -- Lua
 <ul>
 <li><code>self</code> <a href="#ScriptTargetFilter">ScriptTargetFilter</a></li>
 </ul>
-<h4 id="matches">matches <a name="ScriptTargetFilter.matches"></a></h4>
-<pre><code class="language-lua">scriptTargetFilter\matches scriptType, namespace   -- MoonScript
-scriptTargetFilter:matches(scriptType, namespace)  -- Lua
-</code></pre>
+<h4 id="matches">matches <a name="ScriptTargetFilter.matches"></a><a class="headerlink" href="#matches" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">MoonScript</label><label for="__tabbed_6_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="n">scriptTargetFilter</span><span class="o">\</span><span class="n">matches</span> <span class="n">scriptType</span><span class="p">,</span> <span class="n">namespace</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="nv">scriptTargetFilter</span><span class="p">:</span><span class="nf">matches</span><span class="p">(</span><span class="nv">scriptType</span><span class="p">,</span><span class="w"> </span><span class="nv">namespace</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Tests whether a script of the given type and namespace should be processed.</p>
 <table>
 <thead>
@@ -2563,7 +2665,7 @@ scriptTargetFilter:matches(scriptType, namespace)  -- Lua
 <ul>
 <li><code>boolean</code></li>
 </ul>
-<h3 id="fields">Fields</h3>
+<h3 id="fields">Fields<a class="headerlink" href="#fields" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -2580,7 +2682,7 @@ scriptTargetFilter:matches(scriptType, namespace)  -- Lua
 </tr>
 <tr>
 <td>scriptTypeList</td>
-<td><code>any</code></td>
+<td><a href="../l0.DependencyControl.domain/#ScriptType">ScriptType</a>[]</td>
 <td></td>
 </tr>
 </tbody>
@@ -2602,8 +2704,16 @@ scriptTargetFilter:matches(scriptType, namespace)  -- Lua
             </div>
           
           
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
 <script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
         </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
         
       </main>
       
@@ -2634,7 +2744,7 @@ scriptTargetFilter:matches(scriptType, namespace)  -- Lua
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.code.copy", "content.tabs.link", "navigation.instant", "navigation.top", "search.suggest", "search.highlight", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>

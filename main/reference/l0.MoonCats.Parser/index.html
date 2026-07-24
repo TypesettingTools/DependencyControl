@@ -25,11 +25,14 @@
     
     
       
-        <title>l0.MoonCats.Parser - DependencyControl</title>
+        <title>Parser - DependencyControl</title>
       
     
     
       <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -57,7 +60,14 @@
   </head>
   
   
-    <body dir="ltr">
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -106,12 +116,48 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              l0.MoonCats.Parser
+              Parser
             
           </span>
         </div>
       </div>
     </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
     
     
       <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
@@ -142,6 +188,8 @@
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
         </button>
       </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
       
     </form>
     <div class="md-search__output">
@@ -466,7 +514,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl
+    Overview
   
 
     
@@ -494,7 +542,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Accessors
+    Accessors
   
 
     
@@ -522,7 +570,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ConfigHandler
+    ConfigHandler
   
 
     
@@ -550,7 +598,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ConfigView
+    ConfigView
   
 
     
@@ -578,7 +626,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Constants
+    Constants
   
 
     
@@ -606,7 +654,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Downloader
+    Downloader
   
 
     
@@ -634,7 +682,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Enum
+    Enum
   
 
     
@@ -662,7 +710,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.EventEmitter
+    EventEmitter
   
 
     
@@ -690,7 +738,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedInventory
+    FeedInventory
   
 
     
@@ -718,7 +766,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedLoader
+    FeedLoader
   
 
     
@@ -746,7 +794,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedManager
+    FeedManager
   
 
     
@@ -774,7 +822,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedTrust
+    FeedTrust
   
 
     
@@ -802,7 +850,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FileCache
+    FileCache
   
 
     
@@ -830,7 +878,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FileLock
+    FileLock
   
 
     
@@ -858,7 +906,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Finalizer
+    Finalizer
   
 
     
@@ -886,7 +934,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.GitRepository
+    GitRepository
   
 
     
@@ -914,7 +962,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Host
+    Host
   
 
     
@@ -942,7 +990,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.JsonSchema
+    JsonSchema
   
 
     
@@ -970,7 +1018,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Lock
+    Lock
   
 
     
@@ -998,7 +1046,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Logger
+    Logger
   
 
     
@@ -1026,7 +1074,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ModuleLoader
+    ModuleLoader
   
 
     
@@ -1054,7 +1102,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ModuleProvider
+    ModuleProvider
   
 
     
@@ -1082,7 +1130,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.NamedSemaphore
+    NamedSemaphore
   
 
     
@@ -1110,7 +1158,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.PackageRecord
+    PackageRecord
   
 
     
@@ -1138,7 +1186,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ScriptTargetFilter
+    ScriptTargetFilter
   
 
     
@@ -1166,7 +1214,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ScriptUpdateRecord
+    ScriptUpdateRecord
   
 
     
@@ -1194,7 +1242,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.SemanticVersion
+    SemanticVersion
   
 
     
@@ -1222,7 +1270,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Stub
+    Stub
   
 
     
@@ -1250,7 +1298,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Timer
+    Timer
   
 
     
@@ -1278,7 +1326,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UnitTestSuite
+    UnitTestSuite
   
 
     
@@ -1306,7 +1354,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UpdateFeed
+    UpdateFeed
   
 
     
@@ -1334,7 +1382,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UpdateTask
+    UpdateTask
   
 
     
@@ -1362,7 +1410,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Updater
+    Updater
   
 
     
@@ -1390,7 +1438,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ZipArchiver
+    ZipArchiver
   
 
     
@@ -1418,7 +1466,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.config-schema
+    config-schema
   
 
     
@@ -1446,7 +1494,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.domain
+    domain
   
 
     
@@ -1474,7 +1522,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.environment
+    environment
   
 
     
@@ -1502,7 +1550,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.file-ops
+    file-ops
   
 
     
@@ -1530,7 +1578,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.hash
+    hash
   
 
     
@@ -1558,7 +1606,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.ffi-posix
+    helpers.ffi-posix
   
 
     
@@ -1586,7 +1634,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.ffi-windows
+    helpers.ffi-windows
   
 
     
@@ -1614,7 +1662,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.open-url
+    helpers.open-url
   
 
     
@@ -1642,7 +1690,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.resolve-host
+    helpers.resolve-host
   
 
     
@@ -1670,7 +1718,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.release-notes
+    release-notes
   
 
     
@@ -1698,7 +1746,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.shims.BadMutex
+    shims.BadMutex
   
 
     
@@ -1726,7 +1774,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.shims.DownloadManager
+    shims.DownloadManager
   
 
     
@@ -1754,7 +1802,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.shims.PreciseTimer
+    shims.PreciseTimer
   
 
     
@@ -1782,7 +1830,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.utils
+    utils
   
 
     
@@ -1867,7 +1915,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats
+    Overview
   
 
     
@@ -1895,7 +1943,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Diagnostics
+    Diagnostics
   
 
     
@@ -1923,7 +1971,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.DocRenderer
+    DocRenderer
   
 
     
@@ -1951,7 +1999,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Emitter
+    Emitter
   
 
     
@@ -1988,7 +2036,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Parser
+    Parser
   
 
     
@@ -2006,7 +2054,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Parser
+    Parser
   
 
     
@@ -2159,61 +2207,6 @@
   
     <nav class="md-nav" aria-label="Types">
       <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#mooncatsmemberkind_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        MoonCatsMemberKind
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#mooncatsexportkind_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        MoonCatsExportKind
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#mooncatssymbolkind_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        MoonCatsSymbolKind
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#mooncatssegmentkind_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        MoonCatsSegmentKind
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#mooncatsvaluekind_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        MoonCatsValueKind
-      
-    </span>
-  </a>
-  
-</li>
         
           <li class="md-nav__item">
   <a href="#mooncatsannotationblock" class="md-nav__link">
@@ -2375,7 +2368,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.annotations
+    annotations
   
 
     
@@ -2458,7 +2451,7 @@
   <span class="md-ellipsis">
     
   
-    l0.dkjson
+    Overview
   
 
     
@@ -2643,61 +2636,6 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#mooncatsmemberkind_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        MoonCatsMemberKind
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#mooncatsexportkind_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        MoonCatsExportKind
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#mooncatssymbolkind_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        MoonCatsSymbolKind
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#mooncatssegmentkind_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        MoonCatsSegmentKind
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#mooncatsvaluekind_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        MoonCatsValueKind
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#mooncatsannotationblock" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2854,17 +2792,35 @@
   
 
 
-<h1 id="l0mooncatsparser">l0.MoonCats.Parser</h1>
-<pre><code class="language-lua">MoonCatsParser = require &quot;l0.MoonCats.Parser&quot;        -- MoonScript
-local MoonCatsParser = require(&quot;l0.MoonCats.Parser&quot;)  -- Lua
-</code></pre>
-<h2 id="mooncatsparser">MoonCatsParser <a name="MoonCatsParser"></a></h2>
+<h1 id="l0mooncatsparser">l0.MoonCats.Parser<a class="headerlink" href="#l0mooncatsparser" title="Permanent link">&para;</a></h1>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">MoonScript</label><label for="__tabbed_1_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nc">MoonCatsParser</span> <span class="o">=</span> <span class="nb">require</span> <span class="s2">&quot;</span><span class="s">l0.MoonCats.Parser</span><span class="s2">&quot;</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">MoonCatsParser</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">require</span><span class="p">(</span><span class="s2">&quot;l0.MoonCats.Parser&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<h2 id="mooncatsparser">MoonCatsParser <a name="MoonCatsParser"></a><a class="headerlink" href="#mooncatsparser" title="Permanent link">&para;</a></h2>
 <p>Parses annotated MoonScript sources into the intermediate representation consumed by the definition emitter.</p>
-<h3 id="instance-methods">Instance methods</h3>
-<h4 id="parse">parse <a name="MoonCatsParser.parse"></a></h4>
-<pre><code class="language-lua">moonCatsParser\parse source, requireId, diagnostics   -- MoonScript
-moonCatsParser:parse(source, requireId, diagnostics)  -- Lua
-</code></pre>
+<h3 id="instance-methods">Instance methods<a class="headerlink" href="#instance-methods" title="Permanent link">&para;</a></h3>
+<h4 id="parse">parse <a name="MoonCatsParser.parse"></a><a class="headerlink" href="#parse" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">MoonScript</label><label for="__tabbed_2_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">moonCatsParser</span><span class="o">\</span><span class="n">parse</span> <span class="n">source</span><span class="p">,</span> <span class="n">requireId</span><span class="p">,</span> <span class="n">diagnostics</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nv">moonCatsParser</span><span class="p">:</span><span class="nf">parse</span><span class="p">(</span><span class="nv">source</span><span class="p">,</span><span class="w"> </span><span class="nv">requireId</span><span class="p">,</span><span class="w"> </span><span class="nv">diagnostics</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Parses one MoonScript module into its definition-extraction IR.</p>
 <table>
 <thead>
@@ -2897,8 +2853,9 @@ moonCatsParser:parse(source, requireId, diagnostics)  -- Lua
 <li><code>ir</code> <a href="#MoonCatsModuleIR">MoonCatsModuleIR</a>? — The parsed module IR, or nil when the source fails to parse.</li>
 <li><code>err</code> <code>string</code>? — Parse error message when parsing failed.</li>
 </ul>
-<h3 id="enums">Enums</h3>
-<h4 id="mooncatsmemberkind">MoonCatsMemberKind <a name="MoonCatsParser.MoonCatsMemberKind"></a></h4>
+<h3 id="enums">Enums<a class="headerlink" href="#enums" title="Permanent link">&para;</a></h3>
+<p><a name="MoonCatsMemberKind"></a></p>
+<h4 id="mooncatsmemberkind">MoonCatsMemberKind <a name="MoonCatsParser.MoonCatsMemberKind"></a><a class="headerlink" href="#mooncatsmemberkind" title="Permanent link">&para;</a></h4>
 <table>
 <thead>
 <tr>
@@ -2955,7 +2912,8 @@ moonCatsParser:parse(source, requireId, diagnostics)  -- Lua
 </tr>
 </tbody>
 </table>
-<h4 id="mooncatsexportkind">MoonCatsExportKind <a name="MoonCatsParser.MoonCatsExportKind"></a></h4>
+<p><a name="MoonCatsExportKind"></a></p>
+<h4 id="mooncatsexportkind">MoonCatsExportKind <a name="MoonCatsParser.MoonCatsExportKind"></a><a class="headerlink" href="#mooncatsexportkind" title="Permanent link">&para;</a></h4>
 <table>
 <thead>
 <tr>
@@ -2987,7 +2945,8 @@ moonCatsParser:parse(source, requireId, diagnostics)  -- Lua
 </tr>
 </tbody>
 </table>
-<h4 id="mooncatssymbolkind">MoonCatsSymbolKind <a name="MoonCatsParser.MoonCatsSymbolKind"></a></h4>
+<p><a name="MoonCatsSymbolKind"></a></p>
+<h4 id="mooncatssymbolkind">MoonCatsSymbolKind <a name="MoonCatsParser.MoonCatsSymbolKind"></a><a class="headerlink" href="#mooncatssymbolkind" title="Permanent link">&para;</a></h4>
 <table>
 <thead>
 <tr>
@@ -3044,7 +3003,8 @@ moonCatsParser:parse(source, requireId, diagnostics)  -- Lua
 </tr>
 </tbody>
 </table>
-<h4 id="mooncatssegmentkind">MoonCatsSegmentKind <a name="MoonCatsParser.MoonCatsSegmentKind"></a></h4>
+<p><a name="MoonCatsSegmentKind"></a></p>
+<h4 id="mooncatssegmentkind">MoonCatsSegmentKind <a name="MoonCatsParser.MoonCatsSegmentKind"></a><a class="headerlink" href="#mooncatssegmentkind" title="Permanent link">&para;</a></h4>
 <table>
 <thead>
 <tr>
@@ -3071,7 +3031,8 @@ moonCatsParser:parse(source, requireId, diagnostics)  -- Lua
 </tr>
 </tbody>
 </table>
-<h4 id="mooncatsvaluekind">MoonCatsValueKind <a name="MoonCatsParser.MoonCatsValueKind"></a></h4>
+<p><a name="MoonCatsValueKind"></a></p>
+<h4 id="mooncatsvaluekind">MoonCatsValueKind <a name="MoonCatsParser.MoonCatsValueKind"></a><a class="headerlink" href="#mooncatsvaluekind" title="Permanent link">&para;</a></h4>
 <table>
 <thead>
 <tr>
@@ -3118,191 +3079,8 @@ moonCatsParser:parse(source, requireId, diagnostics)  -- Lua
 </tr>
 </tbody>
 </table>
-<h2 id="types">Types</h2>
-<h3 id="mooncatsmemberkind_1">MoonCatsMemberKind <a name="MoonCatsMemberKind"></a></h3>
-<table>
-<thead>
-<tr>
-<th>value</th>
-<th>description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>"constructor"</code></td>
-<td>Constructor: the class's <code>new</code></td>
-</tr>
-<tr>
-<td><code>"method"</code></td>
-<td>Method: a fat-arrow instance method</td>
-</tr>
-<tr>
-<td><code>"staticMethodFat"</code></td>
-<td>StaticMethodFat: a class-level function called with the class as self</td>
-</tr>
-<tr>
-<td><code>"staticMethodThin"</code></td>
-<td>StaticMethodThin: a class-level plain function</td>
-</tr>
-<tr>
-<td><code>"staticData"</code></td>
-<td>StaticData: a class-level data field</td>
-</tr>
-<tr>
-<td><code>"instanceDefault"</code></td>
-<td>InstanceDefault: an instance-level default value declared in the class body</td>
-</tr>
-<tr>
-<td><code>"accessorProperty"</code></td>
-<td>AccessorProperty: a computed property declared via Accessors.property</td>
-</tr>
-<tr>
-<td><code>"enumExport"</code></td>
-<td>EnumExport: a class-level field holding a DependencyControl Enum</td>
-</tr>
-<tr>
-<td><code>"metamethod"</code></td>
-<td>Metamethod: a Lua metamethod</td>
-</tr>
-</tbody>
-</table>
-<h3 id="mooncatsexportkind_1">MoonCatsExportKind <a name="MoonCatsExportKind"></a></h3>
-<table>
-<thead>
-<tr>
-<th>value</th>
-<th>description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>"class"</code></td>
-<td>Class: the module returns a class</td>
-</tr>
-<tr>
-<td><code>"table"</code></td>
-<td>Table: the module returns a plain table</td>
-</tr>
-<tr>
-<td><code>"function"</code></td>
-<td>Function: the module returns a bare function</td>
-</tr>
-<tr>
-<td><code>"unknown"</code></td>
-<td>Unknown: the module's export could not be determined</td>
-</tr>
-</tbody>
-</table>
-<h3 id="mooncatssymbolkind_1">MoonCatsSymbolKind <a name="MoonCatsSymbolKind"></a></h3>
-<table>
-<thead>
-<tr>
-<th>value</th>
-<th>description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>"require"</code></td>
-<td>Require: a local bound to require "..."</td>
-</tr>
-<tr>
-<td><code>"import"</code></td>
-<td>Import: a name destructured or imported from a required module</td>
-</tr>
-<tr>
-<td><code>"class"</code></td>
-<td>Class: a local bound to a class statement</td>
-</tr>
-<tr>
-<td><code>"enum"</code></td>
-<td>Enum: a local bound to a DependencyControl Enum definition</td>
-</tr>
-<tr>
-<td><code>"function"</code></td>
-<td>Function: a local bound to a function literal</td>
-</tr>
-<tr>
-<td><code>"table"</code></td>
-<td>Table: a local bound to a table literal</td>
-</tr>
-<tr>
-<td><code>"literal"</code></td>
-<td>Literal: a local bound to a scalar literal</td>
-</tr>
-<tr>
-<td><code>"reference"</code></td>
-<td>Reference: a local aliasing another local</td>
-</tr>
-<tr>
-<td><code>"other"</code></td>
-<td>Other: any binding the parser does not model</td>
-</tr>
-</tbody>
-</table>
-<h3 id="mooncatssegmentkind_1">MoonCatsSegmentKind <a name="MoonCatsSegmentKind"></a></h3>
-<table>
-<thead>
-<tr>
-<th>value</th>
-<th>description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>"alias"</code></td>
-<td>Alias: an @alias declaration with its variant lines</td>
-</tr>
-<tr>
-<td><code>"class"</code></td>
-<td>Class: an annotation-only @class declaration with its @field lines</td>
-</tr>
-<tr>
-<td><code>"rest"</code></td>
-<td>Rest: the member contract part of a block (params, returns, prose)</td>
-</tr>
-</tbody>
-</table>
-<h3 id="mooncatsvaluekind_1">MoonCatsValueKind <a name="MoonCatsValueKind"></a></h3>
-<table>
-<thead>
-<tr>
-<th>value</th>
-<th>description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>"literal"</code></td>
-<td>Literal: a scalar literal with a reconstructible source token</td>
-</tr>
-<tr>
-<td><code>"reference"</code></td>
-<td>Reference: a bare identifier</td>
-</tr>
-<tr>
-<td><code>"call"</code></td>
-<td>Call: a call chain (constructor or function invocation)</td>
-</tr>
-<tr>
-<td><code>"table"</code></td>
-<td>Table: a table literal</td>
-</tr>
-<tr>
-<td><code>"function"</code></td>
-<td>Function: a function literal</td>
-</tr>
-<tr>
-<td><code>"expression"</code></td>
-<td>Expression: an operator expression</td>
-</tr>
-<tr>
-<td><code>"other"</code></td>
-<td>Other: anything else</td>
-</tr>
-</tbody>
-</table>
-<h3 id="mooncatsannotationblock">MoonCatsAnnotationBlock <a name="MoonCatsAnnotationBlock"></a></h3>
+<h2 id="types">Types<a class="headerlink" href="#types" title="Permanent link">&para;</a></h2>
+<h3 id="mooncatsannotationblock">MoonCatsAnnotationBlock <a name="MoonCatsAnnotationBlock"></a><a class="headerlink" href="#mooncatsannotationblock" title="Permanent link">&para;</a></h3>
 <p>A run of contiguous doc-comment lines.</p>
 <table>
 <thead>
@@ -3330,7 +3108,7 @@ moonCatsParser:parse(source, requireId, diagnostics)  -- Lua
 </tr>
 </tbody>
 </table>
-<h3 id="mooncatssegment">MoonCatsSegment <a name="MoonCatsSegment"></a></h3>
+<h3 id="mooncatssegment">MoonCatsSegment <a name="MoonCatsSegment"></a><a class="headerlink" href="#mooncatssegment" title="Permanent link">&para;</a></h3>
 <p>A slice of an annotation block — a standalone alias/class declaration or the member contract.</p>
 <table>
 <thead>
@@ -3363,7 +3141,7 @@ moonCatsParser:parse(source, requireId, diagnostics)  -- Lua
 </tr>
 </tbody>
 </table>
-<h3 id="mooncatsparam">MoonCatsParam <a name="MoonCatsParam"></a></h3>
+<h3 id="mooncatsparam">MoonCatsParam <a name="MoonCatsParam"></a><a class="headerlink" href="#mooncatsparam" title="Permanent link">&para;</a></h3>
 <p>One parameter of a function signature.</p>
 <table>
 <thead>
@@ -3391,7 +3169,7 @@ moonCatsParser:parse(source, requireId, diagnostics)  -- Lua
 </tr>
 </tbody>
 </table>
-<h3 id="mooncatsvalueinfo">MoonCatsValueInfo <a name="MoonCatsValueInfo"></a></h3>
+<h3 id="mooncatsvalueinfo">MoonCatsValueInfo <a name="MoonCatsValueInfo"></a><a class="headerlink" href="#mooncatsvalueinfo" title="Permanent link">&para;</a></h3>
 <p>Classification of a member's or field's value expression.</p>
 <table>
 <thead>
@@ -3444,7 +3222,7 @@ moonCatsParser:parse(source, requireId, diagnostics)  -- Lua
 </tr>
 </tbody>
 </table>
-<h3 id="mooncatsmemberir">MoonCatsMemberIR <a name="MoonCatsMemberIR"></a></h3>
+<h3 id="mooncatsmemberir">MoonCatsMemberIR <a name="MoonCatsMemberIR"></a><a class="headerlink" href="#mooncatsmemberir" title="Permanent link">&para;</a></h3>
 <p>A class-body member.</p>
 <table>
 <thead>
@@ -3507,7 +3285,7 @@ moonCatsParser:parse(source, requireId, diagnostics)  -- Lua
 </tr>
 </tbody>
 </table>
-<h3 id="mooncatsenumir">MoonCatsEnumIR <a name="MoonCatsEnumIR"></a></h3>
+<h3 id="mooncatsenumir">MoonCatsEnumIR <a name="MoonCatsEnumIR"></a><a class="headerlink" href="#mooncatsenumir" title="Permanent link">&para;</a></h3>
 <p>A DependencyControl Enum definition found in the module.</p>
 <table>
 <thead>
@@ -3530,8 +3308,8 @@ moonCatsParser:parse(source, requireId, diagnostics)  -- Lua
 </tr>
 <tr>
 <td>members</td>
-<td><code>{key: string, literal: string}[]</code></td>
-<td>Literal-valued members in definition order.</td>
+<td><code>{key: string, literal: string, display?: string}[]</code></td>
+<td>Literal-valued members in definition order; display holds a computed key's source <code>Enum.Member</code> expression.</td>
 </tr>
 <tr>
 <td>computedKeyCount</td>
@@ -3545,7 +3323,7 @@ moonCatsParser:parse(source, requireId, diagnostics)  -- Lua
 </tr>
 </tbody>
 </table>
-<h3 id="mooncatsclassir">MoonCatsClassIR <a name="MoonCatsClassIR"></a></h3>
+<h3 id="mooncatsclassir">MoonCatsClassIR <a name="MoonCatsClassIR"></a><a class="headerlink" href="#mooncatsclassir" title="Permanent link">&para;</a></h3>
 <p>A real class found in the module.</p>
 <table>
 <thead>
@@ -3603,7 +3381,7 @@ moonCatsParser:parse(source, requireId, diagnostics)  -- Lua
 </tr>
 </tbody>
 </table>
-<h3 id="mooncatsaugmentationir">MoonCatsAugmentationIR <a name="MoonCatsAugmentationIR"></a></h3>
+<h3 id="mooncatsaugmentationir">MoonCatsAugmentationIR <a name="MoonCatsAugmentationIR"></a><a class="headerlink" href="#mooncatsaugmentationir" title="Permanent link">&para;</a></h3>
 <p>A module-level dotted assignment augmenting a class or module table.</p>
 <table>
 <thead>
@@ -3656,7 +3434,7 @@ moonCatsParser:parse(source, requireId, diagnostics)  -- Lua
 </tr>
 </tbody>
 </table>
-<h3 id="mooncatsfieldir">MoonCatsFieldIR <a name="MoonCatsFieldIR"></a></h3>
+<h3 id="mooncatsfieldir">MoonCatsFieldIR <a name="MoonCatsFieldIR"></a><a class="headerlink" href="#mooncatsfieldir" title="Permanent link">&para;</a></h3>
 <p>A field of a table-module export.</p>
 <table>
 <thead>
@@ -3688,6 +3466,11 @@ moonCatsParser:parse(source, requireId, diagnostics)  -- Lua
 <td></td>
 </tr>
 <tr>
+<td>enum?</td>
+<td><a href="#MoonCatsEnumIR">MoonCatsEnumIR</a></td>
+<td>Set when the field holds an Enum, mirroring a class-static enum export.</td>
+</tr>
+<tr>
 <td>params?</td>
 <td><a href="#MoonCatsParam">MoonCatsParam</a>[]</td>
 <td>Signature when the value is a function literal.</td>
@@ -3704,7 +3487,7 @@ moonCatsParser:parse(source, requireId, diagnostics)  -- Lua
 </tr>
 </tbody>
 </table>
-<h3 id="mooncatsexportir">MoonCatsExportIR <a name="MoonCatsExportIR"></a></h3>
+<h3 id="mooncatsexportir">MoonCatsExportIR <a name="MoonCatsExportIR"></a><a class="headerlink" href="#mooncatsexportir" title="Permanent link">&para;</a></h3>
 <p>What a module returns to requirers.</p>
 <table>
 <thead>
@@ -3752,7 +3535,7 @@ moonCatsParser:parse(source, requireId, diagnostics)  -- Lua
 </tr>
 </tbody>
 </table>
-<h3 id="mooncatssymbol">MoonCatsSymbol <a name="MoonCatsSymbol"></a></h3>
+<h3 id="mooncatssymbol">MoonCatsSymbol <a name="MoonCatsSymbol"></a><a class="headerlink" href="#mooncatssymbol" title="Permanent link">&para;</a></h3>
 <p>A resolved module-scope or class-scope name binding.</p>
 <table>
 <thead>
@@ -3825,7 +3608,7 @@ moonCatsParser:parse(source, requireId, diagnostics)  -- Lua
 </tr>
 </tbody>
 </table>
-<h3 id="mooncatsmoduleir">MoonCatsModuleIR <a name="MoonCatsModuleIR"></a></h3>
+<h3 id="mooncatsmoduleir">MoonCatsModuleIR <a name="MoonCatsModuleIR"></a><a class="headerlink" href="#mooncatsmoduleir" title="Permanent link">&para;</a></h3>
 <p>Everything the emitter needs to know about one parsed module.</p>
 <table>
 <thead>
@@ -3910,8 +3693,16 @@ moonCatsParser:parse(source, requireId, diagnostics)  -- Lua
             </div>
           
           
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
 <script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
         </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
         
       </main>
       
@@ -3942,7 +3733,7 @@ moonCatsParser:parse(source, requireId, diagnostics)  -- Lua
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.code.copy", "content.tabs.link", "navigation.instant", "navigation.top", "search.suggest", "search.highlight", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>

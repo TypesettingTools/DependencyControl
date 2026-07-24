@@ -25,11 +25,14 @@
     
     
       
-        <title>l0.DependencyControl.Stub - DependencyControl</title>
+        <title>Stub - DependencyControl</title>
       
     
     
       <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -57,7 +60,14 @@
   </head>
   
   
-    <body dir="ltr">
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -106,12 +116,48 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              l0.DependencyControl.Stub
+              Stub
             
           </span>
         </div>
       </div>
     </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
     
     
       <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
@@ -142,6 +188,8 @@
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
         </button>
       </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
       
     </form>
     <div class="md-search__output">
@@ -468,7 +516,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl
+    Overview
   
 
     
@@ -496,7 +544,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Accessors
+    Accessors
   
 
     
@@ -524,7 +572,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ConfigHandler
+    ConfigHandler
   
 
     
@@ -552,7 +600,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ConfigView
+    ConfigView
   
 
     
@@ -580,7 +628,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Constants
+    Constants
   
 
     
@@ -608,7 +656,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Downloader
+    Downloader
   
 
     
@@ -636,7 +684,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Enum
+    Enum
   
 
     
@@ -664,7 +712,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.EventEmitter
+    EventEmitter
   
 
     
@@ -692,7 +740,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedInventory
+    FeedInventory
   
 
     
@@ -720,7 +768,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedLoader
+    FeedLoader
   
 
     
@@ -748,7 +796,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedManager
+    FeedManager
   
 
     
@@ -776,7 +824,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedTrust
+    FeedTrust
   
 
     
@@ -804,7 +852,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FileCache
+    FileCache
   
 
     
@@ -832,7 +880,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FileLock
+    FileLock
   
 
     
@@ -860,7 +908,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Finalizer
+    Finalizer
   
 
     
@@ -888,7 +936,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.GitRepository
+    GitRepository
   
 
     
@@ -916,7 +964,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Host
+    Host
   
 
     
@@ -944,7 +992,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.JsonSchema
+    JsonSchema
   
 
     
@@ -972,7 +1020,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Lock
+    Lock
   
 
     
@@ -1000,7 +1048,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Logger
+    Logger
   
 
     
@@ -1028,7 +1076,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ModuleLoader
+    ModuleLoader
   
 
     
@@ -1056,7 +1104,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ModuleProvider
+    ModuleProvider
   
 
     
@@ -1084,7 +1132,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.NamedSemaphore
+    NamedSemaphore
   
 
     
@@ -1112,7 +1160,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.PackageRecord
+    PackageRecord
   
 
     
@@ -1140,7 +1188,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ScriptTargetFilter
+    ScriptTargetFilter
   
 
     
@@ -1168,7 +1216,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ScriptUpdateRecord
+    ScriptUpdateRecord
   
 
     
@@ -1196,7 +1244,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.SemanticVersion
+    SemanticVersion
   
 
     
@@ -1233,7 +1281,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Stub
+    Stub
   
 
     
@@ -1251,7 +1299,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Stub
+    Stub
   
 
     
@@ -1493,7 +1541,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Timer
+    Timer
   
 
     
@@ -1521,7 +1569,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UnitTestSuite
+    UnitTestSuite
   
 
     
@@ -1549,7 +1597,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UpdateFeed
+    UpdateFeed
   
 
     
@@ -1577,7 +1625,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UpdateTask
+    UpdateTask
   
 
     
@@ -1605,7 +1653,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Updater
+    Updater
   
 
     
@@ -1633,7 +1681,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ZipArchiver
+    ZipArchiver
   
 
     
@@ -1661,7 +1709,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.config-schema
+    config-schema
   
 
     
@@ -1689,7 +1737,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.domain
+    domain
   
 
     
@@ -1717,7 +1765,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.environment
+    environment
   
 
     
@@ -1745,7 +1793,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.file-ops
+    file-ops
   
 
     
@@ -1773,7 +1821,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.hash
+    hash
   
 
     
@@ -1801,7 +1849,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.ffi-posix
+    helpers.ffi-posix
   
 
     
@@ -1829,7 +1877,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.ffi-windows
+    helpers.ffi-windows
   
 
     
@@ -1857,7 +1905,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.open-url
+    helpers.open-url
   
 
     
@@ -1885,7 +1933,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.resolve-host
+    helpers.resolve-host
   
 
     
@@ -1913,7 +1961,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.release-notes
+    release-notes
   
 
     
@@ -1941,7 +1989,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.shims.BadMutex
+    shims.BadMutex
   
 
     
@@ -1969,7 +2017,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.shims.DownloadManager
+    shims.DownloadManager
   
 
     
@@ -1997,7 +2045,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.shims.PreciseTimer
+    shims.PreciseTimer
   
 
     
@@ -2025,7 +2073,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.utils
+    utils
   
 
     
@@ -2108,7 +2156,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats
+    Overview
   
 
     
@@ -2136,7 +2184,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Diagnostics
+    Diagnostics
   
 
     
@@ -2164,7 +2212,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.DocRenderer
+    DocRenderer
   
 
     
@@ -2192,7 +2240,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Emitter
+    Emitter
   
 
     
@@ -2220,7 +2268,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Parser
+    Parser
   
 
     
@@ -2248,7 +2296,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.annotations
+    annotations
   
 
     
@@ -2331,7 +2379,7 @@
   <span class="md-ellipsis">
     
   
-    l0.dkjson
+    Overview
   
 
     
@@ -2600,17 +2648,35 @@
   
 
 
-<h1 id="l0dependencycontrolstub">l0.DependencyControl.Stub</h1>
-<pre><code class="language-lua">Stub = require &quot;l0.DependencyControl.Stub&quot;        -- MoonScript
-local Stub = require(&quot;l0.DependencyControl.Stub&quot;)  -- Lua
-</code></pre>
-<h2 id="stub">Stub <a name="Stub"></a></h2>
+<h1 id="l0dependencycontrolstub">l0.DependencyControl.Stub<a class="headerlink" href="#l0dependencycontrolstub" title="Permanent link">&para;</a></h1>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">MoonScript</label><label for="__tabbed_1_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nc">Stub</span> <span class="o">=</span> <span class="nb">require</span> <span class="s2">&quot;</span><span class="s">l0.DependencyControl.Stub</span><span class="s2">&quot;</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">Stub</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">require</span><span class="p">(</span><span class="s2">&quot;l0.DependencyControl.Stub&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<h2 id="stub">Stub <a name="Stub"></a><a class="headerlink" href="#stub" title="Permanent link">&para;</a></h2>
 <p>A callable stub that records invocations and supports fluent configuration and assertions.
 Can be used standalone or via UnitTest:stub for automatic lifecycle management.</p>
-<h3 id="constructor">Constructor <a name="Stub.new"></a></h3>
-<pre><code class="language-lua">stub = Stub table, key, logger, unitTest         -- MoonScript
-local stub = Stub(table, key, logger, unitTest)  -- Lua
-</code></pre>
+<h3 id="constructor">Constructor <a name="Stub.new"></a><a class="headerlink" href="#constructor" title="Permanent link">&para;</a></h3>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">MoonScript</label><label for="__tabbed_2_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">stub</span> <span class="o">=</span> <span class="nc">Stub</span> <span class="n">table</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">logger</span><span class="p">,</span> <span class="n">unitTest</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">stub</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">Stub</span><span class="p">(</span><span class="nv">table</span><span class="p">,</span><span class="w"> </span><span class="nv">key</span><span class="p">,</span><span class="w"> </span><span class="nv">logger</span><span class="p">,</span><span class="w"> </span><span class="nv">unitTest</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Creates a stub, optionally replacing a key in a table.</p>
 <table>
 <thead>
@@ -2643,11 +2709,20 @@ local stub = Stub(table, key, logger, unitTest)  -- Lua
 </tr>
 </tbody>
 </table>
-<h3 id="instance-methods">Instance methods</h3>
-<h4 id="calls">calls <a name="Stub.calls"></a></h4>
-<pre><code class="language-lua">stub\calls impl   -- MoonScript
-stub:calls(impl)  -- Lua
-</code></pre>
+<h3 id="instance-methods">Instance methods<a class="headerlink" href="#instance-methods" title="Permanent link">&para;</a></h3>
+<h4 id="calls">calls <a name="Stub.calls"></a><a class="headerlink" href="#calls" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">MoonScript</label><label for="__tabbed_3_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">stub</span><span class="o">\</span><span class="n">calls</span> <span class="n">impl</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nv">stub</span><span class="p">:</span><span class="nf">calls</span><span class="p">(</span><span class="nv">impl</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Sets the function to invoke when the stub is called.</p>
 <table>
 <thead>
@@ -2669,10 +2744,19 @@ stub:calls(impl)  -- Lua
 <ul>
 <li><code>self</code> <a href="#Stub">Stub</a></li>
 </ul>
-<h4 id="returns">returns <a name="Stub.returns"></a></h4>
-<pre><code class="language-lua">stub\returns ...   -- MoonScript
-stub:returns(...)  -- Lua
-</code></pre>
+<h4 id="returns">returns <a name="Stub.returns"></a><a class="headerlink" href="#returns" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">MoonScript</label><label for="__tabbed_4_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">stub</span><span class="o">\</span><span class="n">returns</span> <span class="o">...</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nv">stub</span><span class="p">:</span><span class="nf">returns</span><span class="p">(...)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Sets the stub to return fixed values on every call.</p>
 <table>
 <thead>
@@ -2694,25 +2778,61 @@ stub:returns(...)  -- Lua
 <ul>
 <li><code>self</code> <a href="#Stub">Stub</a></li>
 </ul>
-<h4 id="restore">restore <a name="Stub.restore"></a></h4>
-<pre><code class="language-lua">stub\restore!   -- MoonScript
-stub:restore()  -- Lua
-</code></pre>
+<h4 id="restore">restore <a name="Stub.restore"></a><a class="headerlink" href="#restore" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">MoonScript</label><label for="__tabbed_5_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">stub</span><span class="o">\</span><span class="n">restore</span><span class="o">!</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nv">stub</span><span class="p">:</span><span class="nf">restore</span><span class="p">()</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Restores the original value that was replaced by this stub.</p>
-<h4 id="assertcalled">assertCalled <a name="Stub.assertCalled"></a></h4>
-<pre><code class="language-lua">stub\assertCalled!   -- MoonScript
-stub:assertCalled()  -- Lua
-</code></pre>
+<h4 id="assertcalled">assertCalled <a name="Stub.assertCalled"></a><a class="headerlink" href="#assertcalled" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">MoonScript</label><label for="__tabbed_6_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">stub</span><span class="o">\</span><span class="n">assertCalled</span><span class="o">!</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nv">stub</span><span class="p">:</span><span class="nf">assertCalled</span><span class="p">()</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Asserts the stub was called at least once.</p>
-<h4 id="assertnotcalled">assertNotCalled <a name="Stub.assertNotCalled"></a></h4>
-<pre><code class="language-lua">stub\assertNotCalled!   -- MoonScript
-stub:assertNotCalled()  -- Lua
-</code></pre>
+<h4 id="assertnotcalled">assertNotCalled <a name="Stub.assertNotCalled"></a><a class="headerlink" href="#assertnotcalled" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">MoonScript</label><label for="__tabbed_7_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="n">stub</span><span class="o">\</span><span class="n">assertNotCalled</span><span class="o">!</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="nv">stub</span><span class="p">:</span><span class="nf">assertNotCalled</span><span class="p">()</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Asserts the stub was never called.</p>
-<h4 id="assertcalledtimes">assertCalledTimes <a name="Stub.assertCalledTimes"></a></h4>
-<pre><code class="language-lua">stub\assertCalledTimes n   -- MoonScript
-stub:assertCalledTimes(n)  -- Lua
-</code></pre>
+<h4 id="assertcalledtimes">assertCalledTimes <a name="Stub.assertCalledTimes"></a><a class="headerlink" href="#assertcalledtimes" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="8:2"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><div class="tabbed-labels"><label for="__tabbed_8_1">MoonScript</label><label for="__tabbed_8_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="n">stub</span><span class="o">\</span><span class="n">assertCalledTimes</span> <span class="n">n</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="nv">stub</span><span class="p">:</span><span class="nf">assertCalledTimes</span><span class="p">(</span><span class="nv">n</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Asserts the stub was called exactly the given number of times.</p>
 <table>
 <thead>
@@ -2730,15 +2850,33 @@ stub:assertCalledTimes(n)  -- Lua
 </tr>
 </tbody>
 </table>
-<h4 id="assertcalledonce">assertCalledOnce <a name="Stub.assertCalledOnce"></a></h4>
-<pre><code class="language-lua">stub\assertCalledOnce!   -- MoonScript
-stub:assertCalledOnce()  -- Lua
-</code></pre>
+<h4 id="assertcalledonce">assertCalledOnce <a name="Stub.assertCalledOnce"></a><a class="headerlink" href="#assertcalledonce" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="9:2"><input checked="checked" id="__tabbed_9_1" name="__tabbed_9" type="radio" /><input id="__tabbed_9_2" name="__tabbed_9" type="radio" /><div class="tabbed-labels"><label for="__tabbed_9_1">MoonScript</label><label for="__tabbed_9_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="n">stub</span><span class="o">\</span><span class="n">assertCalledOnce</span><span class="o">!</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="nv">stub</span><span class="p">:</span><span class="nf">assertCalledOnce</span><span class="p">()</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Asserts the stub was called exactly once.</p>
-<h4 id="assertcalledoncewith">assertCalledOnceWith <a name="Stub.assertCalledOnceWith"></a></h4>
-<pre><code class="language-lua">stub\assertCalledOnceWith ...   -- MoonScript
-stub:assertCalledOnceWith(...)  -- Lua
-</code></pre>
+<h4 id="assertcalledoncewith">assertCalledOnceWith <a name="Stub.assertCalledOnceWith"></a><a class="headerlink" href="#assertcalledoncewith" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="10:2"><input checked="checked" id="__tabbed_10_1" name="__tabbed_10" type="radio" /><input id="__tabbed_10_2" name="__tabbed_10" type="radio" /><div class="tabbed-labels"><label for="__tabbed_10_1">MoonScript</label><label for="__tabbed_10_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="n">stub</span><span class="o">\</span><span class="n">assertCalledOnceWith</span> <span class="o">...</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="nv">stub</span><span class="p">:</span><span class="nf">assertCalledOnceWith</span><span class="p">(...)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Asserts the stub was called exactly once and with the given arguments.</p>
 <table>
 <thead>
@@ -2756,10 +2894,19 @@ stub:assertCalledOnceWith(...)  -- Lua
 </tr>
 </tbody>
 </table>
-<h4 id="assertcalledwith">assertCalledWith <a name="Stub.assertCalledWith"></a></h4>
-<pre><code class="language-lua">stub\assertCalledWith ...   -- MoonScript
-stub:assertCalledWith(...)  -- Lua
-</code></pre>
+<h4 id="assertcalledwith">assertCalledWith <a name="Stub.assertCalledWith"></a><a class="headerlink" href="#assertcalledwith" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="11:2"><input checked="checked" id="__tabbed_11_1" name="__tabbed_11" type="radio" /><input id="__tabbed_11_2" name="__tabbed_11" type="radio" /><div class="tabbed-labels"><label for="__tabbed_11_1">MoonScript</label><label for="__tabbed_11_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="n">stub</span><span class="o">\</span><span class="n">assertCalledWith</span> <span class="o">...</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="nv">stub</span><span class="p">:</span><span class="nf">assertCalledWith</span><span class="p">(...)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Asserts at least one recorded call was made with the given arguments.</p>
 <table>
 <thead>
@@ -2777,10 +2924,19 @@ stub:assertCalledWith(...)  -- Lua
 </tr>
 </tbody>
 </table>
-<h4 id="assertlastcalledwith">assertLastCalledWith <a name="Stub.assertLastCalledWith"></a></h4>
-<pre><code class="language-lua">stub\assertLastCalledWith ...   -- MoonScript
-stub:assertLastCalledWith(...)  -- Lua
-</code></pre>
+<h4 id="assertlastcalledwith">assertLastCalledWith <a name="Stub.assertLastCalledWith"></a><a class="headerlink" href="#assertlastcalledwith" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="12:2"><input checked="checked" id="__tabbed_12_1" name="__tabbed_12" type="radio" /><input id="__tabbed_12_2" name="__tabbed_12" type="radio" /><div class="tabbed-labels"><label for="__tabbed_12_1">MoonScript</label><label for="__tabbed_12_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="n">stub</span><span class="o">\</span><span class="n">assertLastCalledWith</span> <span class="o">...</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="nv">stub</span><span class="p">:</span><span class="nf">assertLastCalledWith</span><span class="p">(...)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Asserts the most recent call was made with the given arguments.</p>
 <table>
 <thead>
@@ -2798,10 +2954,19 @@ stub:assertLastCalledWith(...)  -- Lua
 </tr>
 </tbody>
 </table>
-<h4 id="assertnthcalledwith">assertNthCalledWith <a name="Stub.assertNthCalledWith"></a></h4>
-<pre><code class="language-lua">stub\assertNthCalledWith n, ...   -- MoonScript
-stub:assertNthCalledWith(n, ...)  -- Lua
-</code></pre>
+<h4 id="assertnthcalledwith">assertNthCalledWith <a name="Stub.assertNthCalledWith"></a><a class="headerlink" href="#assertnthcalledwith" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="13:2"><input checked="checked" id="__tabbed_13_1" name="__tabbed_13" type="radio" /><input id="__tabbed_13_2" name="__tabbed_13" type="radio" /><div class="tabbed-labels"><label for="__tabbed_13_1">MoonScript</label><label for="__tabbed_13_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="n">stub</span><span class="o">\</span><span class="n">assertNthCalledWith</span> <span class="n">n</span><span class="p">,</span> <span class="o">...</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="nv">stub</span><span class="p">:</span><span class="nf">assertNthCalledWith</span><span class="p">(</span><span class="nv">n</span><span class="p">,</span><span class="w"> </span><span class="p">...)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Asserts the nth recorded call was made with the given arguments.</p>
 <table>
 <thead>
@@ -2824,11 +2989,20 @@ stub:assertNthCalledWith(n, ...)  -- Lua
 </tr>
 </tbody>
 </table>
-<h3 id="class-methods">Class methods</h3>
-<h4 id="spy">spy <a name="Stub.spy"></a></h4>
-<pre><code class="language-lua">Stub\spy table, key, logger, unitTest   -- MoonScript
-Stub:spy(table, key, logger, unitTest)  -- Lua
-</code></pre>
+<h3 id="class-methods">Class methods<a class="headerlink" href="#class-methods" title="Permanent link">&para;</a></h3>
+<h4 id="spy">spy <a name="Stub.spy"></a><a class="headerlink" href="#spy" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="14:2"><input checked="checked" id="__tabbed_14_1" name="__tabbed_14" type="radio" /><input id="__tabbed_14_2" name="__tabbed_14" type="radio" /><div class="tabbed-labels"><label for="__tabbed_14_1">MoonScript</label><label for="__tabbed_14_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="nc">Stub</span><span class="o">\</span><span class="n">spy</span> <span class="n">table</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">logger</span><span class="p">,</span> <span class="n">unitTest</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="nv">Stub</span><span class="p">:</span><span class="nf">spy</span><span class="p">(</span><span class="nv">table</span><span class="p">,</span><span class="w"> </span><span class="nv">key</span><span class="p">,</span><span class="w"> </span><span class="nv">logger</span><span class="p">,</span><span class="w"> </span><span class="nv">unitTest</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Creates a spy on a method, recording calls while still invoking the original method.</p>
 <table>
 <thead>
@@ -2882,8 +3056,16 @@ Stub:spy(table, key, logger, unitTest)  -- Lua
             </div>
           
           
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
 <script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
         </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
         
       </main>
       
@@ -2914,7 +3096,7 @@ Stub:spy(table, key, logger, unitTest)  -- Lua
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.code.copy", "content.tabs.link", "navigation.instant", "navigation.top", "search.suggest", "search.highlight", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>

@@ -25,11 +25,14 @@
     
     
       
-        <title>l0.DependencyControl.FileCache - DependencyControl</title>
+        <title>FileCache - DependencyControl</title>
       
     
     
       <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -57,7 +60,14 @@
   </head>
   
   
-    <body dir="ltr">
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -106,12 +116,48 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              l0.DependencyControl.FileCache
+              FileCache
             
           </span>
         </div>
       </div>
     </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
     
     
       <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
@@ -142,6 +188,8 @@
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
         </button>
       </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
       
     </form>
     <div class="md-search__output">
@@ -468,7 +516,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl
+    Overview
   
 
     
@@ -496,7 +544,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Accessors
+    Accessors
   
 
     
@@ -524,7 +572,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ConfigHandler
+    ConfigHandler
   
 
     
@@ -552,7 +600,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ConfigView
+    ConfigView
   
 
     
@@ -580,7 +628,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Constants
+    Constants
   
 
     
@@ -608,7 +656,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Downloader
+    Downloader
   
 
     
@@ -636,7 +684,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Enum
+    Enum
   
 
     
@@ -664,7 +712,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.EventEmitter
+    EventEmitter
   
 
     
@@ -692,7 +740,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedInventory
+    FeedInventory
   
 
     
@@ -720,7 +768,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedLoader
+    FeedLoader
   
 
     
@@ -748,7 +796,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedManager
+    FeedManager
   
 
     
@@ -776,7 +824,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedTrust
+    FeedTrust
   
 
     
@@ -813,7 +861,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FileCache
+    FileCache
   
 
     
@@ -831,7 +879,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FileCache
+    FileCache
   
 
     
@@ -1057,7 +1105,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FileLock
+    FileLock
   
 
     
@@ -1085,7 +1133,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Finalizer
+    Finalizer
   
 
     
@@ -1113,7 +1161,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.GitRepository
+    GitRepository
   
 
     
@@ -1141,7 +1189,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Host
+    Host
   
 
     
@@ -1169,7 +1217,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.JsonSchema
+    JsonSchema
   
 
     
@@ -1197,7 +1245,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Lock
+    Lock
   
 
     
@@ -1225,7 +1273,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Logger
+    Logger
   
 
     
@@ -1253,7 +1301,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ModuleLoader
+    ModuleLoader
   
 
     
@@ -1281,7 +1329,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ModuleProvider
+    ModuleProvider
   
 
     
@@ -1309,7 +1357,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.NamedSemaphore
+    NamedSemaphore
   
 
     
@@ -1337,7 +1385,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.PackageRecord
+    PackageRecord
   
 
     
@@ -1365,7 +1413,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ScriptTargetFilter
+    ScriptTargetFilter
   
 
     
@@ -1393,7 +1441,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ScriptUpdateRecord
+    ScriptUpdateRecord
   
 
     
@@ -1421,7 +1469,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.SemanticVersion
+    SemanticVersion
   
 
     
@@ -1449,7 +1497,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Stub
+    Stub
   
 
     
@@ -1477,7 +1525,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Timer
+    Timer
   
 
     
@@ -1505,7 +1553,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UnitTestSuite
+    UnitTestSuite
   
 
     
@@ -1533,7 +1581,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UpdateFeed
+    UpdateFeed
   
 
     
@@ -1561,7 +1609,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UpdateTask
+    UpdateTask
   
 
     
@@ -1589,7 +1637,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Updater
+    Updater
   
 
     
@@ -1617,7 +1665,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ZipArchiver
+    ZipArchiver
   
 
     
@@ -1645,7 +1693,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.config-schema
+    config-schema
   
 
     
@@ -1673,7 +1721,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.domain
+    domain
   
 
     
@@ -1701,7 +1749,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.environment
+    environment
   
 
     
@@ -1729,7 +1777,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.file-ops
+    file-ops
   
 
     
@@ -1757,7 +1805,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.hash
+    hash
   
 
     
@@ -1785,7 +1833,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.ffi-posix
+    helpers.ffi-posix
   
 
     
@@ -1813,7 +1861,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.ffi-windows
+    helpers.ffi-windows
   
 
     
@@ -1841,7 +1889,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.open-url
+    helpers.open-url
   
 
     
@@ -1869,7 +1917,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.resolve-host
+    helpers.resolve-host
   
 
     
@@ -1897,7 +1945,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.release-notes
+    release-notes
   
 
     
@@ -1925,7 +1973,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.shims.BadMutex
+    shims.BadMutex
   
 
     
@@ -1953,7 +2001,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.shims.DownloadManager
+    shims.DownloadManager
   
 
     
@@ -1981,7 +2029,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.shims.PreciseTimer
+    shims.PreciseTimer
   
 
     
@@ -2009,7 +2057,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.utils
+    utils
   
 
     
@@ -2092,7 +2140,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats
+    Overview
   
 
     
@@ -2120,7 +2168,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Diagnostics
+    Diagnostics
   
 
     
@@ -2148,7 +2196,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.DocRenderer
+    DocRenderer
   
 
     
@@ -2176,7 +2224,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Emitter
+    Emitter
   
 
     
@@ -2204,7 +2252,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Parser
+    Parser
   
 
     
@@ -2232,7 +2280,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.annotations
+    annotations
   
 
     
@@ -2315,7 +2363,7 @@
   <span class="md-ellipsis">
     
   
-    l0.dkjson
+    Overview
   
 
     
@@ -2568,11 +2616,20 @@
   
 
 
-<h1 id="l0dependencycontrolfilecache">l0.DependencyControl.FileCache</h1>
-<pre><code class="language-lua">FileCache = require &quot;l0.DependencyControl.FileCache&quot;        -- MoonScript
-local FileCache = require(&quot;l0.DependencyControl.FileCache&quot;)  -- Lua
-</code></pre>
-<h2 id="filecache">FileCache <a name="FileCache"></a></h2>
+<h1 id="l0dependencycontrolfilecache">l0.DependencyControl.FileCache<a class="headerlink" href="#l0dependencycontrolfilecache" title="Permanent link">&para;</a></h1>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">MoonScript</label><label for="__tabbed_1_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nc">FileCache</span> <span class="o">=</span> <span class="nb">require</span> <span class="s2">&quot;</span><span class="s">l0.DependencyControl.FileCache</span><span class="s2">&quot;</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">FileCache</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">require</span><span class="p">(</span><span class="s2">&quot;l0.DependencyControl.FileCache&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<h2 id="filecache">FileCache <a name="FileCache"></a><a class="headerlink" href="#filecache" title="Permanent link">&para;</a></h2>
 <p>A persistent, key-addressed cache of JSON blobs on disk. Each <code>put</code> is stored as a human-readable,
 timestamped snapshot file (which doubles as a history), indexed by a deterministic per-key meta file that
 names the latest snapshot and records when it was cached. An instance lives under
@@ -2581,10 +2638,19 @@ base without colliding. Prefer the <code>get</code> factory over the constructor
 With a <code>deserialize</code> codec, <code>get</code> adds an in-memory L1 layer over the on-disk L2: it returns the
 parsed snapshot and memoizes it, keyed to the snapshot's cache time so a newer <code>put</code> (here or in another
 process) transparently supersedes the memo.</p>
-<h3 id="constructor">Constructor <a name="FileCache.new"></a></h3>
-<pre><code class="language-lua">fileCache = FileCache basePath, namespace, name, opts         -- MoonScript
-local fileCache = FileCache(basePath, namespace, name, opts)  -- Lua
-</code></pre>
+<h3 id="constructor">Constructor <a name="FileCache.new"></a><a class="headerlink" href="#constructor" title="Permanent link">&para;</a></h3>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">MoonScript</label><label for="__tabbed_2_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">fileCache</span> <span class="o">=</span> <span class="nc">FileCache</span> <span class="n">basePath</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">opts</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">fileCache</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">FileCache</span><span class="p">(</span><span class="nv">basePath</span><span class="p">,</span><span class="w"> </span><span class="nv">namespace</span><span class="p">,</span><span class="w"> </span><span class="nv">name</span><span class="p">,</span><span class="w"> </span><span class="nv">opts</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <table>
 <thead>
 <tr>
@@ -2616,11 +2682,20 @@ local fileCache = FileCache(basePath, namespace, name, opts)  -- Lua
 </tr>
 </tbody>
 </table>
-<h3 id="instance-methods">Instance methods</h3>
-<h4 id="getmeta">getMeta <a name="FileCache.getMeta"></a></h4>
-<pre><code class="language-lua">fileCache\getMeta key   -- MoonScript
-fileCache:getMeta(key)  -- Lua
-</code></pre>
+<h3 id="instance-methods">Instance methods<a class="headerlink" href="#instance-methods" title="Permanent link">&para;</a></h3>
+<h4 id="getmeta">getMeta <a name="FileCache.getMeta"></a><a class="headerlink" href="#getmeta" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">MoonScript</label><label for="__tabbed_3_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">fileCache</span><span class="o">\</span><span class="n">getMeta</span> <span class="n">key</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nv">fileCache</span><span class="p">:</span><span class="nf">getMeta</span><span class="p">(</span><span class="nv">key</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Reads the cache index entry for a key.</p>
 <table>
 <thead>
@@ -2642,10 +2717,19 @@ fileCache:getMeta(key)  -- Lua
 <ul>
 <li><code>meta</code> <a href="#FileCacheMeta">FileCacheMeta</a>? — nil when the key isn't cached.</li>
 </ul>
-<h4 id="isfresh">isFresh <a name="FileCache.isFresh"></a></h4>
-<pre><code class="language-lua">fileCache\isFresh meta   -- MoonScript
-fileCache:isFresh(meta)  -- Lua
-</code></pre>
+<h4 id="isfresh">isFresh <a name="FileCache.isFresh"></a><a class="headerlink" href="#isfresh" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">MoonScript</label><label for="__tabbed_4_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">fileCache</span><span class="o">\</span><span class="n">isFresh</span> <span class="n">meta</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nv">fileCache</span><span class="p">:</span><span class="nf">isFresh</span><span class="p">(</span><span class="nv">meta</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Whether a cache entry is still fresh, i.e. its expiry (fixed when it was written) hasn't passed
 and it hasn't been invalidated by expireAll. The expiry is intrinsic to the entry, so freshness is the
 same regardless of which instance asks or what its current <code>maxAge</code> is.</p>
@@ -2669,10 +2753,19 @@ same regardless of which instance asks or what its current <code>maxAge</code> i
 <ul>
 <li><code>fresh</code> <code>boolean</code></li>
 </ul>
-<h4 id="getfile">getFile <a name="FileCache.getFile"></a></h4>
-<pre><code class="language-lua">fileCache\getFile key   -- MoonScript
-fileCache:getFile(key)  -- Lua
-</code></pre>
+<h4 id="getfile">getFile <a name="FileCache.getFile"></a><a class="headerlink" href="#getfile" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">MoonScript</label><label for="__tabbed_5_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">fileCache</span><span class="o">\</span><span class="n">getFile</span> <span class="n">key</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nv">fileCache</span><span class="p">:</span><span class="nf">getFile</span><span class="p">(</span><span class="nv">key</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Resolves the latest cached snapshot for a key. The snapshot may be stale; callers use isFresh on the
 returned meta to decide whether to serve it directly or only as an offline fallback.</p>
 <table>
@@ -2696,10 +2789,19 @@ returned meta to decide whether to serve it directly or only as an offline fallb
 <li><code>path</code> <code>string</code>? — The snapshot file's path, or nil when the key isn't cached (or its file is gone).</li>
 <li><code>meta</code> <a href="#FileCacheMeta">FileCacheMeta</a>? — The cache index entry (returned even when the snapshot file is missing).</li>
 </ul>
-<h4 id="expireall">expireAll <a name="FileCache.expireAll"></a></h4>
-<pre><code class="language-lua">fileCache\expireAll before, purge   -- MoonScript
-fileCache:expireAll(before, purge)  -- Lua
-</code></pre>
+<h4 id="expireall">expireAll <a name="FileCache.expireAll"></a><a class="headerlink" href="#expireall" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">MoonScript</label><label for="__tabbed_6_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">fileCache</span><span class="o">\</span><span class="n">expireAll</span> <span class="n">before</span><span class="p">,</span> <span class="n">purge</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nv">fileCache</span><span class="p">:</span><span class="nf">expireAll</span><span class="p">(</span><span class="nv">before</span><span class="p">,</span><span class="w"> </span><span class="nv">purge</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Marks every entry cached before the cut-off as stale, so the next get/isFresh reports it not fresh. The
 snapshot is kept as an offline fallback, and a later put makes the entry fresh again. When purging, the
 affected entries are instead dropped from the L1 memo and their on-disk snapshots and index deleted, to
@@ -2725,10 +2827,19 @@ reclaim space or hard-reset.</p>
 </tr>
 </tbody>
 </table>
-<h4 id="put">put <a name="FileCache.put"></a></h4>
-<pre><code class="language-lua">fileCache\put key, content, label, expiresAfter   -- MoonScript
-fileCache:put(key, content, label, expiresAfter)  -- Lua
-</code></pre>
+<h4 id="put">put <a name="FileCache.put"></a><a class="headerlink" href="#put" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">MoonScript</label><label for="__tabbed_7_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="n">fileCache</span><span class="o">\</span><span class="n">put</span> <span class="n">key</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">expiresAfter</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="nv">fileCache</span><span class="p">:</span><span class="nf">put</span><span class="p">(</span><span class="nv">key</span><span class="p">,</span><span class="w"> </span><span class="nv">content</span><span class="p">,</span><span class="w"> </span><span class="nv">label</span><span class="p">,</span><span class="w"> </span><span class="nv">expiresAfter</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Stores a blob under a readable, timestamped snapshot and repoints the index at it, then trims old
 snapshots. The snapshot name is <code>&lt;slug&gt;-&lt;label&gt;-&lt;utcTimestamp&gt;-&lt;rand&gt;.json</code> (slug first so a key's
 snapshots sort together).</p>
@@ -2768,11 +2879,20 @@ snapshots sort together).</p>
 <li><code>meta</code> <a href="#FileCacheMeta">FileCacheMeta</a>? — The written index entry, or nil on a filesystem error or a lock timeout.</li>
 <li><code>err</code> <code>string</code>?</li>
 </ul>
-<h3 id="class-methods">Class methods</h3>
-<h4 id="get">get <a name="FileCache.get"></a></h4>
-<pre><code class="language-lua">FileCache.get basePath, namespace, name, opts   -- MoonScript
-FileCache.get(basePath, namespace, name, opts)  -- Lua
-</code></pre>
+<h3 id="class-methods">Class methods<a class="headerlink" href="#class-methods" title="Permanent link">&para;</a></h3>
+<h4 id="get">get <a name="FileCache.get"></a><a class="headerlink" href="#get" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="8:2"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><div class="tabbed-labels"><label for="__tabbed_8_1">MoonScript</label><label for="__tabbed_8_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="nc">FileCache</span><span class="o">.</span><span class="n">get</span> <span class="n">basePath</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">opts</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="nv">FileCache</span><span class="p">.</span><span class="nf">get</span><span class="p">(</span><span class="nv">basePath</span><span class="p">,</span><span class="w"> </span><span class="nv">namespace</span><span class="p">,</span><span class="w"> </span><span class="nv">name</span><span class="p">,</span><span class="w"> </span><span class="nv">opts</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Returns the shared cache for a base/namespace/name, reusing the existing instance for that resolved
 directory rather than constructing a duplicate. Options apply only when the instance is first created.</p>
 <table>
@@ -2810,7 +2930,7 @@ directory rather than constructing a duplicate. Options apply only when the inst
 <ul>
 <li><a href="#FileCache">FileCache</a></li>
 </ul>
-<h3 id="fields">Fields</h3>
+<h3 id="fields">Fields<a class="headerlink" href="#fields" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -2832,8 +2952,8 @@ directory rather than constructing a duplicate. Options apply only when the inst
 </tr>
 </tbody>
 </table>
-<h2 id="types">Types</h2>
-<h3 id="filecachemeta">FileCacheMeta <a name="FileCacheMeta"></a></h3>
+<h2 id="types">Types<a class="headerlink" href="#types" title="Permanent link">&para;</a></h2>
+<h3 id="filecachemeta">FileCacheMeta <a name="FileCacheMeta"></a><a class="headerlink" href="#filecachemeta" title="Permanent link">&para;</a></h3>
 <p>The per-key index entry FileCache persists next to each snapshot; returned by getMeta/getFile/get/put.</p>
 <table>
 <thead>
@@ -2866,7 +2986,7 @@ directory rather than constructing a duplicate. Options apply only when the inst
 </tr>
 </tbody>
 </table>
-<h3 id="filecacheoptions">FileCacheOptions <a name="FileCacheOptions"></a></h3>
+<h3 id="filecacheoptions">FileCacheOptions <a name="FileCacheOptions"></a><a class="headerlink" href="#filecacheoptions" title="Permanent link">&para;</a></h3>
 <p>Construction options for FileCache.</p>
 <table>
 <thead>
@@ -2921,8 +3041,16 @@ directory rather than constructing a duplicate. Options apply only when the inst
             </div>
           
           
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
 <script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
         </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
         
       </main>
       
@@ -2953,7 +3081,7 @@ directory rather than constructing a duplicate. Options apply only when the inst
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.code.copy", "content.tabs.link", "navigation.instant", "navigation.top", "search.suggest", "search.highlight", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>

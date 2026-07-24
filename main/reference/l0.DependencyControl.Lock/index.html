@@ -25,11 +25,14 @@
     
     
       
-        <title>l0.DependencyControl.Lock - DependencyControl</title>
+        <title>Lock - DependencyControl</title>
       
     
     
       <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -57,7 +60,14 @@
   </head>
   
   
-    <body dir="ltr">
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -106,12 +116,48 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              l0.DependencyControl.Lock
+              Lock
             
           </span>
         </div>
       </div>
     </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
     
     
       <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
@@ -142,6 +188,8 @@
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
         </button>
       </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
       
     </form>
     <div class="md-search__output">
@@ -468,7 +516,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl
+    Overview
   
 
     
@@ -496,7 +544,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Accessors
+    Accessors
   
 
     
@@ -524,7 +572,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ConfigHandler
+    ConfigHandler
   
 
     
@@ -552,7 +600,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ConfigView
+    ConfigView
   
 
     
@@ -580,7 +628,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Constants
+    Constants
   
 
     
@@ -608,7 +656,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Downloader
+    Downloader
   
 
     
@@ -636,7 +684,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Enum
+    Enum
   
 
     
@@ -664,7 +712,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.EventEmitter
+    EventEmitter
   
 
     
@@ -692,7 +740,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedInventory
+    FeedInventory
   
 
     
@@ -720,7 +768,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedLoader
+    FeedLoader
   
 
     
@@ -748,7 +796,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedManager
+    FeedManager
   
 
     
@@ -776,7 +824,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedTrust
+    FeedTrust
   
 
     
@@ -804,7 +852,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FileCache
+    FileCache
   
 
     
@@ -832,7 +880,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FileLock
+    FileLock
   
 
     
@@ -860,7 +908,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Finalizer
+    Finalizer
   
 
     
@@ -888,7 +936,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.GitRepository
+    GitRepository
   
 
     
@@ -916,7 +964,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Host
+    Host
   
 
     
@@ -944,7 +992,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.JsonSchema
+    JsonSchema
   
 
     
@@ -981,7 +1029,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Lock
+    Lock
   
 
     
@@ -999,7 +1047,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Lock
+    Lock
   
 
     
@@ -1236,28 +1284,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#lockstate_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        LockState
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#lockscope_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        LockScope
-      
-    </span>
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -1286,7 +1312,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Logger
+    Logger
   
 
     
@@ -1314,7 +1340,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ModuleLoader
+    ModuleLoader
   
 
     
@@ -1342,7 +1368,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ModuleProvider
+    ModuleProvider
   
 
     
@@ -1370,7 +1396,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.NamedSemaphore
+    NamedSemaphore
   
 
     
@@ -1398,7 +1424,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.PackageRecord
+    PackageRecord
   
 
     
@@ -1426,7 +1452,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ScriptTargetFilter
+    ScriptTargetFilter
   
 
     
@@ -1454,7 +1480,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ScriptUpdateRecord
+    ScriptUpdateRecord
   
 
     
@@ -1482,7 +1508,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.SemanticVersion
+    SemanticVersion
   
 
     
@@ -1510,7 +1536,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Stub
+    Stub
   
 
     
@@ -1538,7 +1564,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Timer
+    Timer
   
 
     
@@ -1566,7 +1592,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UnitTestSuite
+    UnitTestSuite
   
 
     
@@ -1594,7 +1620,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UpdateFeed
+    UpdateFeed
   
 
     
@@ -1622,7 +1648,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UpdateTask
+    UpdateTask
   
 
     
@@ -1650,7 +1676,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Updater
+    Updater
   
 
     
@@ -1678,7 +1704,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ZipArchiver
+    ZipArchiver
   
 
     
@@ -1706,7 +1732,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.config-schema
+    config-schema
   
 
     
@@ -1734,7 +1760,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.domain
+    domain
   
 
     
@@ -1762,7 +1788,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.environment
+    environment
   
 
     
@@ -1790,7 +1816,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.file-ops
+    file-ops
   
 
     
@@ -1818,7 +1844,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.hash
+    hash
   
 
     
@@ -1846,7 +1872,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.ffi-posix
+    helpers.ffi-posix
   
 
     
@@ -1874,7 +1900,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.ffi-windows
+    helpers.ffi-windows
   
 
     
@@ -1902,7 +1928,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.open-url
+    helpers.open-url
   
 
     
@@ -1930,7 +1956,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.resolve-host
+    helpers.resolve-host
   
 
     
@@ -1958,7 +1984,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.release-notes
+    release-notes
   
 
     
@@ -1986,7 +2012,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.shims.BadMutex
+    shims.BadMutex
   
 
     
@@ -2014,7 +2040,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.shims.DownloadManager
+    shims.DownloadManager
   
 
     
@@ -2042,7 +2068,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.shims.PreciseTimer
+    shims.PreciseTimer
   
 
     
@@ -2070,7 +2096,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.utils
+    utils
   
 
     
@@ -2153,7 +2179,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats
+    Overview
   
 
     
@@ -2181,7 +2207,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Diagnostics
+    Diagnostics
   
 
     
@@ -2209,7 +2235,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.DocRenderer
+    DocRenderer
   
 
     
@@ -2237,7 +2263,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Emitter
+    Emitter
   
 
     
@@ -2265,7 +2291,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Parser
+    Parser
   
 
     
@@ -2293,7 +2319,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.annotations
+    annotations
   
 
     
@@ -2376,7 +2402,7 @@
   <span class="md-ellipsis">
     
   
-    l0.dkjson
+    Overview
   
 
     
@@ -2643,28 +2669,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#lockstate_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        LockState
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#lockscope_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        LockScope
-      
-    </span>
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -2690,11 +2694,20 @@
   
 
 
-<h1 id="l0dependencycontrollock">l0.DependencyControl.Lock</h1>
-<pre><code class="language-lua">Lock = require &quot;l0.DependencyControl.Lock&quot;        -- MoonScript
-local Lock = require(&quot;l0.DependencyControl.Lock&quot;)  -- Lua
-</code></pre>
-<h2 id="lock">Lock <a name="Lock"></a></h2>
+<h1 id="l0dependencycontrollock">l0.DependencyControl.Lock<a class="headerlink" href="#l0dependencycontrollock" title="Permanent link">&para;</a></h1>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">MoonScript</label><label for="__tabbed_1_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nc">Lock</span> <span class="o">=</span> <span class="nb">require</span> <span class="s2">&quot;</span><span class="s">l0.DependencyControl.Lock</span><span class="s2">&quot;</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">Lock</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">require</span><span class="p">(</span><span class="s2">&quot;l0.DependencyControl.Lock&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<h2 id="lock">Lock <a name="Lock"></a><a class="headerlink" href="#lock" title="Permanent link">&para;</a></h2>
 <p>Cooperative, named lock with per-resource granularity. Each distinct
 (scope, namespace, resource) maps to its own OS lock, so unrelated resources lock
 independently. A lock is mutually exclusive across every Lock instance -- and, for
@@ -2709,10 +2722,19 @@ Global scope, across every process -- that targets the same tuple.</p>
 <p>While held, the holder's identity and lease are recorded in a per-resource side file for
 diagnostics. Long operations should call renew! periodically to extend the recorded lease
 so waiters don't mistake a busy holder for a crashed one.</p>
-<h3 id="constructor">Constructor <a name="Lock.new"></a></h3>
-<pre><code class="language-lua">lock = Lock args         -- MoonScript
-local lock = Lock(args)  -- Lua
-</code></pre>
+<h3 id="constructor">Constructor <a name="Lock.new"></a><a class="headerlink" href="#constructor" title="Permanent link">&para;</a></h3>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">MoonScript</label><label for="__tabbed_2_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">lock</span> <span class="o">=</span> <span class="nc">Lock</span> <span class="n">args</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">lock</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">Lock</span><span class="p">(</span><span class="nv">args</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Creates a lock for the given resource.</p>
 <table>
 <thead>
@@ -2730,11 +2752,20 @@ local lock = Lock(args)  -- Lua
 </tr>
 </tbody>
 </table>
-<h3 id="instance-methods">Instance methods</h3>
-<h4 id="getactiveholder">getActiveHolder <a name="Lock.getActiveHolder"></a></h4>
-<pre><code class="language-lua">lock\getActiveHolder!   -- MoonScript
-lock:getActiveHolder()  -- Lua
-</code></pre>
+<h3 id="instance-methods">Instance methods<a class="headerlink" href="#instance-methods" title="Permanent link">&para;</a></h3>
+<h4 id="getactiveholder">getActiveHolder <a name="Lock.getActiveHolder"></a><a class="headerlink" href="#getactiveholder" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">MoonScript</label><label for="__tabbed_3_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">lock</span><span class="o">\</span><span class="n">getActiveHolder</span><span class="o">!</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nv">lock</span><span class="p">:</span><span class="nf">getActiveHolder</span><span class="p">()</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Returns the holder currently believed to hold this lock, or nil if it appears free.
 Reads the side file lock-free, so the result is advisory: a holder whose lease has
 lapsed (likely crashed) is reported as free, and a brand-new holder may not be visible
@@ -2743,10 +2774,19 @@ yet. Reports this instance too when it holds the lock. Requires holder recording
 <ul>
 <li><code>record</code> <code>table</code>? — The holder record (holderName, pid, namespace, resource, ...).</li>
 </ul>
-<h4 id="lock_1">lock <a name="Lock.lock"></a></h4>
-<pre><code class="language-lua">lock\lock timeout, lockWaitInterval   -- MoonScript
-lock:lock(timeout, lockWaitInterval)  -- Lua
-</code></pre>
+<h4 id="lock_1">lock <a name="Lock.lock"></a><a class="headerlink" href="#lock_1" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">MoonScript</label><label for="__tabbed_4_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">lock</span><span class="o">\</span><span class="n">lock</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">lockWaitInterval</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nv">lock</span><span class="p">:</span><span class="nf">lock</span><span class="p">(</span><span class="nv">timeout</span><span class="p">,</span><span class="w"> </span><span class="nv">lockWaitInterval</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Attempts to acquire the lock, waiting up to timeout milliseconds.</p>
 <table>
 <thead>
@@ -2774,30 +2814,57 @@ lock:lock(timeout, lockWaitInterval)  -- Lua
 <li><code>state</code> <a href="#LockState">LockState</a> — Held on success, Unavailable on timeout.</li>
 <li><code>timePassed</code> <code>number</code> — Milliseconds spent waiting.</li>
 </ul>
-<h4 id="trylock">tryLock <a name="Lock.tryLock"></a></h4>
-<pre><code class="language-lua">lock\tryLock!   -- MoonScript
-lock:tryLock()  -- Lua
-</code></pre>
+<h4 id="trylock">tryLock <a name="Lock.tryLock"></a><a class="headerlink" href="#trylock" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">MoonScript</label><label for="__tabbed_5_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">lock</span><span class="o">\</span><span class="n">tryLock</span><span class="o">!</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nv">lock</span><span class="p">:</span><span class="nf">tryLock</span><span class="p">()</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Attempts to acquire the lock without waiting.</p>
 <p><strong>Returns:</strong></p>
 <ul>
 <li><code>state</code> <a href="#LockState">LockState</a> — Held if the lock was acquired, Unavailable if it's held elsewhere.</li>
 <li><code>timePassed</code> <code>number</code> — Milliseconds spent waiting (always 0).</li>
 </ul>
-<h4 id="release">release <a name="Lock.release"></a></h4>
-<pre><code class="language-lua">lock\release!   -- MoonScript
-lock:release()  -- Lua
-</code></pre>
+<h4 id="release">release <a name="Lock.release"></a><a class="headerlink" href="#release" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">MoonScript</label><label for="__tabbed_6_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">lock</span><span class="o">\</span><span class="n">release</span><span class="o">!</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nv">lock</span><span class="p">:</span><span class="nf">release</span><span class="p">()</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Releases the lock held by this instance.</p>
 <p><strong>Returns:</strong></p>
 <ul>
 <li><code>released</code> <code>boolean</code>? — True on success, nil if the lock wasn't held by this instance.</li>
 <li><code>statusOrErr</code> <a href="#LockState">LockState</a>|<code>string</code> — Available on success, or an error message when the lock wasn't held.</li>
 </ul>
-<h4 id="renew">renew <a name="Lock.renew"></a></h4>
-<pre><code class="language-lua">lock\renew expiryThreshold   -- MoonScript
-lock:renew(expiryThreshold)  -- Lua
-</code></pre>
+<h4 id="renew">renew <a name="Lock.renew"></a><a class="headerlink" href="#renew" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">MoonScript</label><label for="__tabbed_7_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="n">lock</span><span class="o">\</span><span class="n">renew</span> <span class="n">expiryThreshold</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="nv">lock</span><span class="p">:</span><span class="nf">renew</span><span class="p">(</span><span class="nv">expiryThreshold</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Refreshes the held lock's lease when it is close to expiring, re-stamping its recorded
 expiry to @expiresAfter from now. This only affects the metadata on this Lock instance
 and the side file, so waiters don't mistake a busy holder for a crashed one. The underlying
@@ -2824,11 +2891,20 @@ is only updated when the remaining lease is approaching expiry.</p>
 <li><code>renewed</code> <code>boolean</code>? — True if refreshed, false if still fresh, nil if the lock isn't held.</li>
 <li><code>err</code> <code>string</code>? — Set (with nil renewed) only when the lock isn't held.</li>
 </ul>
-<h3 id="class-methods">Class methods</h3>
-<h4 id="guard">guard <a name="Lock.guard"></a></h4>
-<pre><code class="language-lua">Lock\guard args, body   -- MoonScript
-Lock:guard(args, body)  -- Lua
-</code></pre>
+<h3 id="class-methods">Class methods<a class="headerlink" href="#class-methods" title="Permanent link">&para;</a></h3>
+<h4 id="guard">guard <a name="Lock.guard"></a><a class="headerlink" href="#guard" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="8:2"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><div class="tabbed-labels"><label for="__tabbed_8_1">MoonScript</label><label for="__tabbed_8_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="nc">Lock</span><span class="o">\</span><span class="n">guard</span> <span class="n">args</span><span class="p">,</span> <span class="n">body</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="nv">Lock</span><span class="p">:</span><span class="nf">guard</span><span class="p">(</span><span class="nv">args</span><span class="p">,</span><span class="w"> </span><span class="nv">body</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Acquires a lock for the given args and runs the provided body function.
 Releases the lock when the body completes or throws. The held Lock is passed to the body
 so it can call renew on it if needed.</p>
@@ -2857,7 +2933,7 @@ so it can call renew on it if needed.</p>
 <ul>
 <li><code>...</code> <code>any</code> — The body's return values on success, or nil + err if the lock couldn't be acquired.</li>
 </ul>
-<h3 id="fields">Fields</h3>
+<h3 id="fields">Fields<a class="headerlink" href="#fields" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -2874,8 +2950,9 @@ so it can call renew on it if needed.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="enums">Enums</h3>
-<h4 id="lockstate">LockState <a name="Lock.LockState"></a></h4>
+<h3 id="enums">Enums<a class="headerlink" href="#enums" title="Permanent link">&para;</a></h3>
+<p><a name="LockState"></a></p>
+<h4 id="lockstate">LockState <a name="Lock.LockState"></a><a class="headerlink" href="#lockstate" title="Permanent link">&para;</a></h4>
 <table>
 <thead>
 <tr>
@@ -2907,7 +2984,8 @@ so it can call renew on it if needed.</p>
 </tr>
 </tbody>
 </table>
-<h4 id="lockscope">LockScope <a name="Lock.LockScope"></a></h4>
+<p><a name="LockScope"></a></p>
+<h4 id="lockscope">LockScope <a name="Lock.LockScope"></a><a class="headerlink" href="#lockscope" title="Permanent link">&para;</a></h4>
 <table>
 <thead>
 <tr>
@@ -2929,8 +3007,8 @@ so it can call renew on it if needed.</p>
 </tr>
 </tbody>
 </table>
-<h2 id="types">Types</h2>
-<h3 id="lockargs">LockArgs <a name="LockArgs"></a></h3>
+<h2 id="types">Types<a class="headerlink" href="#types" title="Permanent link">&para;</a></h2>
+<h3 id="lockargs">LockArgs <a name="LockArgs"></a><a class="headerlink" href="#lockargs" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -2982,7 +3060,7 @@ so it can call renew on it if needed.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="guardargs">GuardArgs <a name="GuardArgs"></a></h3>
+<h3 id="guardargs">GuardArgs <a name="GuardArgs"></a><a class="headerlink" href="#guardargs" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -3004,52 +3082,6 @@ so it can call renew on it if needed.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="lockstate_1">LockState <a name="LockState"></a></h3>
-<table>
-<thead>
-<tr>
-<th>value</th>
-<th>description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>-1</code></td>
-<td>Unknown: the state can't be determined without trying to acquire (e.g. a foreign holder)</td>
-</tr>
-<tr>
-<td><code>0</code></td>
-<td>Unavailable: the lock is held elsewhere and couldn't be acquired</td>
-</tr>
-<tr>
-<td><code>1</code></td>
-<td>Available: the lock is free to acquire</td>
-</tr>
-<tr>
-<td><code>2</code></td>
-<td>Held: this instance holds the lock</td>
-</tr>
-</tbody>
-</table>
-<h3 id="lockscope_1">LockScope <a name="LockScope"></a></h3>
-<table>
-<thead>
-<tr>
-<th>value</th>
-<th>description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>"process"</code></td>
-<td>Process: only Lua states within this process contend</td>
-</tr>
-<tr>
-<td><code>"global"</code></td>
-<td>Global: every process in the session contends via an advisory file lock</td>
-</tr>
-</tbody>
-</table>
 
 
 
@@ -3067,8 +3099,16 @@ so it can call renew on it if needed.</p>
             </div>
           
           
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
 <script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
         </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
         
       </main>
       
@@ -3099,7 +3139,7 @@ so it can call renew on it if needed.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.code.copy", "content.tabs.link", "navigation.instant", "navigation.top", "search.suggest", "search.highlight", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>

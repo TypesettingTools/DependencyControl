@@ -25,11 +25,14 @@
     
     
       
-        <title>l0.DependencyControl.UpdateTask - DependencyControl</title>
+        <title>UpdateTask - DependencyControl</title>
       
     
     
       <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -57,7 +60,14 @@
   </head>
   
   
-    <body dir="ltr">
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -106,12 +116,48 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              l0.DependencyControl.UpdateTask
+              UpdateTask
             
           </span>
         </div>
       </div>
     </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
     
     
       <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
@@ -142,6 +188,8 @@
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
         </button>
       </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
       
     </form>
     <div class="md-search__output">
@@ -468,7 +516,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl
+    Overview
   
 
     
@@ -496,7 +544,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Accessors
+    Accessors
   
 
     
@@ -524,7 +572,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ConfigHandler
+    ConfigHandler
   
 
     
@@ -552,7 +600,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ConfigView
+    ConfigView
   
 
     
@@ -580,7 +628,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Constants
+    Constants
   
 
     
@@ -608,7 +656,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Downloader
+    Downloader
   
 
     
@@ -636,7 +684,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Enum
+    Enum
   
 
     
@@ -664,7 +712,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.EventEmitter
+    EventEmitter
   
 
     
@@ -692,7 +740,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedInventory
+    FeedInventory
   
 
     
@@ -720,7 +768,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedLoader
+    FeedLoader
   
 
     
@@ -748,7 +796,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedManager
+    FeedManager
   
 
     
@@ -776,7 +824,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedTrust
+    FeedTrust
   
 
     
@@ -804,7 +852,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FileCache
+    FileCache
   
 
     
@@ -832,7 +880,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FileLock
+    FileLock
   
 
     
@@ -860,7 +908,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Finalizer
+    Finalizer
   
 
     
@@ -888,7 +936,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.GitRepository
+    GitRepository
   
 
     
@@ -916,7 +964,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Host
+    Host
   
 
     
@@ -944,7 +992,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.JsonSchema
+    JsonSchema
   
 
     
@@ -972,7 +1020,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Lock
+    Lock
   
 
     
@@ -1000,7 +1048,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Logger
+    Logger
   
 
     
@@ -1028,7 +1076,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ModuleLoader
+    ModuleLoader
   
 
     
@@ -1056,7 +1104,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ModuleProvider
+    ModuleProvider
   
 
     
@@ -1084,7 +1132,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.NamedSemaphore
+    NamedSemaphore
   
 
     
@@ -1112,7 +1160,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.PackageRecord
+    PackageRecord
   
 
     
@@ -1140,7 +1188,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ScriptTargetFilter
+    ScriptTargetFilter
   
 
     
@@ -1168,7 +1216,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ScriptUpdateRecord
+    ScriptUpdateRecord
   
 
     
@@ -1196,7 +1244,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.SemanticVersion
+    SemanticVersion
   
 
     
@@ -1224,7 +1272,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Stub
+    Stub
   
 
     
@@ -1252,7 +1300,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Timer
+    Timer
   
 
     
@@ -1280,7 +1328,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UnitTestSuite
+    UnitTestSuite
   
 
     
@@ -1308,7 +1356,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UpdateFeed
+    UpdateFeed
   
 
     
@@ -1345,7 +1393,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UpdateTask
+    UpdateTask
   
 
     
@@ -1363,7 +1411,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UpdateTask
+    UpdateTask
   
 
     
@@ -1645,76 +1693,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#updatereason_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        UpdateReason
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#updatecontextceiling_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        UpdateContextCeiling
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#feedtrustdecision_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        FeedTrustDecision
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#sourcechoicestickiness_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        SourceChoiceStickiness
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#sourcefeedkind_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        SourceFeedKind
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#sourcechoicerecord" class="md-nav__link">
     <span class="md-ellipsis">
       
         SourceChoiceRecord
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#updatestatus_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        UpdateStatus
       
     </span>
   </a>
@@ -1749,7 +1731,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Updater
+    Updater
   
 
     
@@ -1777,7 +1759,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ZipArchiver
+    ZipArchiver
   
 
     
@@ -1805,7 +1787,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.config-schema
+    config-schema
   
 
     
@@ -1833,7 +1815,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.domain
+    domain
   
 
     
@@ -1861,7 +1843,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.environment
+    environment
   
 
     
@@ -1889,7 +1871,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.file-ops
+    file-ops
   
 
     
@@ -1917,7 +1899,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.hash
+    hash
   
 
     
@@ -1945,7 +1927,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.ffi-posix
+    helpers.ffi-posix
   
 
     
@@ -1973,7 +1955,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.ffi-windows
+    helpers.ffi-windows
   
 
     
@@ -2001,7 +1983,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.open-url
+    helpers.open-url
   
 
     
@@ -2029,7 +2011,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.resolve-host
+    helpers.resolve-host
   
 
     
@@ -2057,7 +2039,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.release-notes
+    release-notes
   
 
     
@@ -2085,7 +2067,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.shims.BadMutex
+    shims.BadMutex
   
 
     
@@ -2113,7 +2095,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.shims.DownloadManager
+    shims.DownloadManager
   
 
     
@@ -2141,7 +2123,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.shims.PreciseTimer
+    shims.PreciseTimer
   
 
     
@@ -2169,7 +2151,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.utils
+    utils
   
 
     
@@ -2252,7 +2234,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats
+    Overview
   
 
     
@@ -2280,7 +2262,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Diagnostics
+    Diagnostics
   
 
     
@@ -2308,7 +2290,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.DocRenderer
+    DocRenderer
   
 
     
@@ -2336,7 +2318,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Emitter
+    Emitter
   
 
     
@@ -2364,7 +2346,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Parser
+    Parser
   
 
     
@@ -2392,7 +2374,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.annotations
+    annotations
   
 
     
@@ -2475,7 +2457,7 @@
   <span class="md-ellipsis">
     
   
-    l0.dkjson
+    Overview
   
 
     
@@ -2787,76 +2769,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#updatereason_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        UpdateReason
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#updatecontextceiling_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        UpdateContextCeiling
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#feedtrustdecision_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        FeedTrustDecision
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#sourcechoicestickiness_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        SourceChoiceStickiness
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#sourcefeedkind_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        SourceFeedKind
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#sourcechoicerecord" class="md-nav__link">
     <span class="md-ellipsis">
       
         SourceChoiceRecord
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#updatestatus_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        UpdateStatus
       
     </span>
   </a>
@@ -2888,16 +2804,34 @@
   
 
 
-<h1 id="l0dependencycontrolupdatetask">l0.DependencyControl.UpdateTask</h1>
-<pre><code class="language-lua">UpdateTask = require &quot;l0.DependencyControl.UpdateTask&quot;        -- MoonScript
-local UpdateTask = require(&quot;l0.DependencyControl.UpdateTask&quot;)  -- Lua
-</code></pre>
-<h2 id="updatetask">UpdateTask <a name="UpdateTask"></a></h2>
+<h1 id="l0dependencycontrolupdatetask">l0.DependencyControl.UpdateTask<a class="headerlink" href="#l0dependencycontrolupdatetask" title="Permanent link">&para;</a></h1>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">MoonScript</label><label for="__tabbed_1_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nc">UpdateTask</span> <span class="o">=</span> <span class="nb">require</span> <span class="s2">&quot;</span><span class="s">l0.DependencyControl.UpdateTask</span><span class="s2">&quot;</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">UpdateTask</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">require</span><span class="p">(</span><span class="s2">&quot;l0.DependencyControl.UpdateTask&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<h2 id="updatetask">UpdateTask <a name="UpdateTask"></a><a class="headerlink" href="#updatetask" title="Permanent link">&para;</a></h2>
 <p>Mutable execution state for one install/update operation.</p>
-<h3 id="constructor">Constructor <a name="UpdateTask.new"></a></h3>
-<pre><code class="language-lua">updateTask = UpdateTask record, targetVersionNumber, addFeeds, optional, channel, reason, updater         -- MoonScript
-local updateTask = UpdateTask(record, targetVersionNumber, addFeeds, optional, channel, reason, updater)  -- Lua
-</code></pre>
+<h3 id="constructor">Constructor <a name="UpdateTask.new"></a><a class="headerlink" href="#constructor" title="Permanent link">&para;</a></h3>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">MoonScript</label><label for="__tabbed_2_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">updateTask</span> <span class="o">=</span> <span class="nc">UpdateTask</span> <span class="n">record</span><span class="p">,</span> <span class="n">targetVersionNumber</span><span class="p">,</span> <span class="n">addFeeds</span><span class="p">,</span> <span class="n">optional</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">reason</span><span class="p">,</span> <span class="n">updater</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">updateTask</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">UpdateTask</span><span class="p">(</span><span class="nv">record</span><span class="p">,</span><span class="w"> </span><span class="nv">targetVersionNumber</span><span class="p">,</span><span class="w"> </span><span class="nv">addFeeds</span><span class="p">,</span><span class="w"> </span><span class="nv">optional</span><span class="p">,</span><span class="w"> </span><span class="nv">channel</span><span class="p">,</span><span class="w"> </span><span class="nv">reason</span><span class="p">,</span><span class="w"> </span><span class="nv">updater</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Creates an update task for one record.</p>
 <table>
 <thead>
@@ -2945,11 +2879,20 @@ local updateTask = UpdateTask(record, targetVersionNumber, addFeeds, optional, c
 </tr>
 </tbody>
 </table>
-<h3 id="instance-methods">Instance methods</h3>
-<h4 id="run">run <a name="UpdateTask.run"></a></h4>
-<pre><code class="language-lua">updateTask\run waitLock   -- MoonScript
-updateTask:run(waitLock)  -- Lua
-</code></pre>
+<h3 id="instance-methods">Instance methods<a class="headerlink" href="#instance-methods" title="Permanent link">&para;</a></h3>
+<h4 id="run">run <a name="UpdateTask.run"></a><a class="headerlink" href="#run" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">MoonScript</label><label for="__tabbed_3_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">updateTask</span><span class="o">\</span><span class="n">run</span> <span class="n">waitLock</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nv">updateTask</span><span class="p">:</span><span class="nf">run</span><span class="p">(</span><span class="nv">waitLock</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Runs the full update/install flow for this task.
 Acquires the global updater lock but does not release it — the caller (a PackageRecord.requireModules /
 macro-hook / Toolbox entry point) must call <code>updater\releaseLock</code> once its whole operation is done,
@@ -2975,18 +2918,36 @@ or the lock is held until its lease lapses (orphanTimeout), blocking other scrip
 <li><code>statusCode</code> <a href="#UpdateStatus">UpdateStatus</a></li>
 <li><code>detail</code> <code>any</code></li>
 </ul>
-<h4 id="refreshrecord">refreshRecord <a name="UpdateTask.refreshRecord"></a></h4>
-<pre><code class="language-lua">updateTask\refreshRecord!   -- MoonScript
-updateTask:refreshRecord()  -- Lua
-</code></pre>
+<h4 id="refreshrecord">refreshRecord <a name="UpdateTask.refreshRecord"></a><a class="headerlink" href="#refreshrecord" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">MoonScript</label><label for="__tabbed_4_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">updateTask</span><span class="o">\</span><span class="n">refreshRecord</span><span class="o">!</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nv">updateTask</span><span class="p">:</span><span class="nf">refreshRecord</span><span class="p">()</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Reloads this task's record from its config file to pick up an install/update another updater performed
 concurrently: on a version bump (or a virtual record becoming real) it reloads the module and marks the
 task updated. Called after waiting on the updater lock, so a task doesn't redo work already done.</p>
-<h3 id="class-methods">Class methods</h3>
-<h4 id="iswithincontextceiling">isWithinContextCeiling <a name="UpdateTask.isWithinContextCeiling"></a></h4>
-<pre><code class="language-lua">UpdateTask.isWithinContextCeiling reason, ceiling   -- MoonScript
-UpdateTask.isWithinContextCeiling(reason, ceiling)  -- Lua
-</code></pre>
+<h3 id="class-methods">Class methods<a class="headerlink" href="#class-methods" title="Permanent link">&para;</a></h3>
+<h4 id="iswithincontextceiling">isWithinContextCeiling <a name="UpdateTask.isWithinContextCeiling"></a><a class="headerlink" href="#iswithincontextceiling" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">MoonScript</label><label for="__tabbed_5_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nc">UpdateTask</span><span class="o">.</span><span class="n">isWithinContextCeiling</span> <span class="n">reason</span><span class="p">,</span> <span class="n">ceiling</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nv">UpdateTask</span><span class="p">.</span><span class="nf">isWithinContextCeiling</span><span class="p">(</span><span class="nv">reason</span><span class="p">,</span><span class="w"> </span><span class="nv">ceiling</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Reports whether an update context is allowed under a ceiling on the context ladder.</p>
 <table>
 <thead>
@@ -3013,10 +2974,19 @@ UpdateTask.isWithinContextCeiling(reason, ceiling)  -- Lua
 <ul>
 <li><code>within</code> <code>boolean</code> — True when the context sits at or below the ceiling; false when the ceiling is <code>off</code>, unset, or unrecognized.</li>
 </ul>
-<h4 id="getupdatererrormsg">getUpdaterErrorMsg <a name="UpdateTask.getUpdaterErrorMsg"></a></h4>
-<pre><code class="language-lua">UpdateTask.getUpdaterErrorMsg code, name, scriptType, isInstall, detailMsg   -- MoonScript
-UpdateTask.getUpdaterErrorMsg(code, name, scriptType, isInstall, detailMsg)  -- Lua
-</code></pre>
+<h4 id="getupdatererrormsg">getUpdaterErrorMsg <a name="UpdateTask.getUpdaterErrorMsg"></a><a class="headerlink" href="#getupdatererrormsg" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">MoonScript</label><label for="__tabbed_6_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nc">UpdateTask</span><span class="o">.</span><span class="n">getUpdaterErrorMsg</span> <span class="n">code</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">scriptType</span><span class="p">,</span> <span class="n">isInstall</span><span class="p">,</span> <span class="n">detailMsg</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nv">UpdateTask</span><span class="p">.</span><span class="nf">getUpdaterErrorMsg</span><span class="p">(</span><span class="nv">code</span><span class="p">,</span><span class="w"> </span><span class="nv">name</span><span class="p">,</span><span class="w"> </span><span class="nv">scriptType</span><span class="p">,</span><span class="w"> </span><span class="nv">isInstall</span><span class="p">,</span><span class="w"> </span><span class="nv">detailMsg</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Converts updater status/error codes into user-facing error messages.</p>
 <table>
 <thead>
@@ -3058,10 +3028,19 @@ UpdateTask.getUpdaterErrorMsg(code, name, scriptType, isInstall, detailMsg)  -- 
 <ul>
 <li><code>message</code> <code>string</code> — The user-facing error text for the status code.</li>
 </ul>
-<h4 id="resolvesourceurl">resolveSourceUrl <a name="UpdateTask.resolveSourceUrl"></a></h4>
-<pre><code class="language-lua">UpdateTask.resolveSourceUrl source, selfFeed, userFeed, modulesSection   -- MoonScript
-UpdateTask.resolveSourceUrl(source, selfFeed, userFeed, modulesSection)  -- Lua
-</code></pre>
+<h4 id="resolvesourceurl">resolveSourceUrl <a name="UpdateTask.resolveSourceUrl"></a><a class="headerlink" href="#resolvesourceurl" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">MoonScript</label><label for="__tabbed_7_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="nc">UpdateTask</span><span class="o">.</span><span class="n">resolveSourceUrl</span> <span class="n">source</span><span class="p">,</span> <span class="n">selfFeed</span><span class="p">,</span> <span class="n">userFeed</span><span class="p">,</span> <span class="n">modulesSection</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="nv">UpdateTask</span><span class="p">.</span><span class="nf">resolveSourceUrl</span><span class="p">(</span><span class="nv">source</span><span class="p">,</span><span class="w"> </span><span class="nv">selfFeed</span><span class="p">,</span><span class="w"> </span><span class="nv">userFeed</span><span class="p">,</span><span class="w"> </span><span class="nv">modulesSection</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Resolves the feed URL a persisted source record maps to, given the owning package's feed fields.</p>
 <table>
 <thead>
@@ -3098,7 +3077,7 @@ UpdateTask.resolveSourceUrl(source, selfFeed, userFeed, modulesSection)  -- Lua
 <ul>
 <li><code>url</code> <code>string</code>? — The resolved feed URL, or nil if it can't be determined.</li>
 </ul>
-<h3 id="fields">Fields</h3>
+<h3 id="fields">Fields<a class="headerlink" href="#fields" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -3120,8 +3099,9 @@ UpdateTask.resolveSourceUrl(source, selfFeed, userFeed, modulesSection)  -- Lua
 </tr>
 </tbody>
 </table>
-<h3 id="enums">Enums</h3>
-<h4 id="updatestatus">UpdateStatus <a name="UpdateTask.UpdateStatus"></a></h4>
+<h3 id="enums">Enums<a class="headerlink" href="#enums" title="Permanent link">&para;</a></h3>
+<p><a name="UpdateStatus"></a></p>
+<h4 id="updatestatus">UpdateStatus <a name="UpdateTask.UpdateStatus"></a><a class="headerlink" href="#updatestatus" title="Permanent link">&para;</a></h4>
 <table>
 <thead>
 <tr>
@@ -3273,7 +3253,8 @@ UpdateTask.resolveSourceUrl(source, selfFeed, userFeed, modulesSection)  -- Lua
 </tr>
 </tbody>
 </table>
-<h4 id="updatecontextceiling">UpdateContextCeiling <a name="UpdateTask.UpdateContextCeiling"></a></h4>
+<p><a name="UpdateContextCeiling"></a></p>
+<h4 id="updatecontextceiling">UpdateContextCeiling <a name="UpdateTask.UpdateContextCeiling"></a><a class="headerlink" href="#updatecontextceiling" title="Permanent link">&para;</a></h4>
 <table>
 <thead>
 <tr>
@@ -3288,9 +3269,25 @@ UpdateTask.resolveSourceUrl(source, selfFeed, userFeed, modulesSection)  -- Lua
 <td><code>"off"</code></td>
 <td>no context at all</td>
 </tr>
+<tr>
+<td>UserRequested</td>
+<td><code>"user-requested"</code></td>
+<td>only actions the user starts themselves (e.g. via the Toolbox)</td>
+</tr>
+<tr>
+<td>DependencyResolution</td>
+<td><code>"dependency-resolution"</code></td>
+<td>also installing/updating a module as a dependency</td>
+</tr>
+<tr>
+<td>AutoUpdate</td>
+<td><code>"auto-update"</code></td>
+<td>also background scheduled update checks</td>
+</tr>
 </tbody>
 </table>
-<h4 id="updatereason">UpdateReason <a name="UpdateTask.UpdateReason"></a></h4>
+<p><a name="UpdateReason"></a></p>
+<h4 id="updatereason">UpdateReason <a name="UpdateTask.UpdateReason"></a><a class="headerlink" href="#updatereason" title="Permanent link">&para;</a></h4>
 <table>
 <thead>
 <tr>
@@ -3317,7 +3314,8 @@ UpdateTask.resolveSourceUrl(source, selfFeed, userFeed, modulesSection)  -- Lua
 </tr>
 </tbody>
 </table>
-<h4 id="sourcechoicestickiness">SourceChoiceStickiness <a name="UpdateTask.SourceChoiceStickiness"></a></h4>
+<p><a name="SourceChoiceStickiness"></a></p>
+<h4 id="sourcechoicestickiness">SourceChoiceStickiness <a name="UpdateTask.SourceChoiceStickiness"></a><a class="headerlink" href="#sourcechoicestickiness" title="Permanent link">&para;</a></h4>
 <table>
 <thead>
 <tr>
@@ -3354,7 +3352,8 @@ UpdateTask.resolveSourceUrl(source, selfFeed, userFeed, modulesSection)  -- Lua
 </tr>
 </tbody>
 </table>
-<h4 id="sourcefeedkind">SourceFeedKind <a name="UpdateTask.SourceFeedKind"></a></h4>
+<p><a name="SourceFeedKind"></a></p>
+<h4 id="sourcefeedkind">SourceFeedKind <a name="UpdateTask.SourceFeedKind"></a><a class="headerlink" href="#sourcefeedkind" title="Permanent link">&para;</a></h4>
 <table>
 <thead>
 <tr>
@@ -3386,7 +3385,8 @@ UpdateTask.resolveSourceUrl(source, selfFeed, userFeed, modulesSection)  -- Lua
 </tr>
 </tbody>
 </table>
-<h4 id="feedtrustdecision">FeedTrustDecision <a name="UpdateTask.FeedTrustDecision"></a></h4>
+<p><a name="FeedTrustDecision"></a></p>
+<h4 id="feedtrustdecision">FeedTrustDecision <a name="UpdateTask.FeedTrustDecision"></a><a class="headerlink" href="#feedtrustdecision" title="Permanent link">&para;</a></h4>
 <table>
 <thead>
 <tr>
@@ -3413,8 +3413,8 @@ UpdateTask.resolveSourceUrl(source, selfFeed, userFeed, modulesSection)  -- Lua
 </tr>
 </tbody>
 </table>
-<h2 id="types">Types</h2>
-<h3 id="updatertrustband">UpdaterTrustBand <a name="UpdaterTrustBand"></a></h3>
+<h2 id="types">Types<a class="headerlink" href="#types" title="Permanent link">&para;</a></h2>
+<h3 id="updatertrustband">UpdaterTrustBand <a name="UpdaterTrustBand"></a><a class="headerlink" href="#updatertrustband" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -3445,7 +3445,7 @@ UpdateTask.resolveSourceUrl(source, selfFeed, userFeed, modulesSection)  -- Lua
 </tr>
 </tbody>
 </table>
-<h3 id="candidatepackagesource">CandidatePackageSource <a name="CandidatePackageSource"></a></h3>
+<h3 id="candidatepackagesource">CandidatePackageSource <a name="CandidatePackageSource"></a><a class="headerlink" href="#candidatepackagesource" title="Permanent link">&para;</a></h3>
 <p>A potential package source pooled during resolution to collect a feed's update record, where it came from
 and its trust status.</p>
 <table>
@@ -3484,7 +3484,7 @@ and its trust status.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="updaterresolution">UpdaterResolution <a name="UpdaterResolution"></a></h3>
+<h3 id="updaterresolution">UpdaterResolution <a name="UpdaterResolution"></a><a class="headerlink" href="#updaterresolution" title="Permanent link">&para;</a></h3>
 <p>The outcome of resolving a package source: either a source to install or a status to return.</p>
 <table>
 <thead>
@@ -3527,141 +3527,7 @@ and its trust status.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="updatereason_1">UpdateReason <a name="UpdateReason"></a></h3>
-<table>
-<thead>
-<tr>
-<th>value</th>
-<th>description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>"user-requested"</code></td>
-<td>UserRequested: an explicit user/UI request (e.g. the Toolbox)</td>
-</tr>
-<tr>
-<td><code>"dependency-resolution"</code></td>
-<td>DependencyResolution: installing/updating a module as a dependency of another</td>
-</tr>
-<tr>
-<td><code>"auto-update"</code></td>
-<td>AutoUpdate: a background scheduled update check</td>
-</tr>
-</tbody>
-</table>
-<h3 id="updatecontextceiling_1">UpdateContextCeiling <a name="UpdateContextCeiling"></a></h3>
-<p>A ceiling on the update-context ladder: names the most autonomous context for which a gated behavior —
-running at all (<code>updates.mode</code>) or prompting the user (the prompt thresholds) — still applies.
-Every value includes all less autonomous contexts; <code>off</code> includes none.</p>
-<table>
-<thead>
-<tr>
-<th>value</th>
-<th>description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>"off"</code></td>
-<td>Off: no context at all</td>
-</tr>
-<tr>
-<td><code>"user-requested"</code></td>
-<td>UserRequested: only actions the user starts themselves (e.g. via the Toolbox)</td>
-</tr>
-<tr>
-<td><code>"dependency-resolution"</code></td>
-<td>DependencyResolution: also installing/updating a module as a dependency</td>
-</tr>
-<tr>
-<td><code>"auto-update"</code></td>
-<td>AutoUpdate: also background scheduled update checks</td>
-</tr>
-</tbody>
-</table>
-<h3 id="feedtrustdecision_1">FeedTrustDecision <a name="FeedTrustDecision"></a></h3>
-<table>
-<thead>
-<tr>
-<th>value</th>
-<th>description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>"once"</code></td>
-<td>Once: use the untrusted feed for this install only</td>
-</tr>
-<tr>
-<td><code>"always"</code></td>
-<td>Always: add the feed to the user's trusted feeds</td>
-</tr>
-<tr>
-<td><code>"never"</code></td>
-<td>Never: add the feed to the user's blocked feeds</td>
-</tr>
-</tbody>
-</table>
-<h3 id="sourcechoicestickiness_1">SourceChoiceStickiness <a name="SourceChoiceStickiness"></a></h3>
-<table>
-<thead>
-<tr>
-<th>value</th>
-<th>description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>"unset"</code></td>
-<td>Unset: no preference recorded yet; resolve normally and prompt only if interactive</td>
-</tr>
-<tr>
-<td><code>"once"</code></td>
-<td>Once: prompt again whenever a choice remains, preselecting the remembered pick</td>
-</tr>
-<tr>
-<td><code>"retain"</code></td>
-<td>Retain: reuse the remembered pick whenever it's still eligible, without prompting</td>
-</tr>
-<tr>
-<td><code>"pinned"</code></td>
-<td>Pinned: always reuse the remembered pick; if it's gone, abort (required) or skip (optional)</td>
-</tr>
-<tr>
-<td><code>"auto"</code></td>
-<td>Auto: never prompt; always resolve via the ranking, refreshing the remembered pick for information</td>
-</tr>
-</tbody>
-</table>
-<h3 id="sourcefeedkind_1">SourceFeedKind <a name="SourceFeedKind"></a></h3>
-<table>
-<thead>
-<tr>
-<th>value</th>
-<th>description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>"self-declared"</code></td>
-<td>SelfDeclared: the feed declared in the record</td>
-</tr>
-<tr>
-<td><code>"user-feed"</code></td>
-<td>UserFeed: the per-package user override feed</td>
-</tr>
-<tr>
-<td><code>"provider"</code></td>
-<td>Provider: another module that provides the required one (URL taken from the provider's own source)</td>
-</tr>
-<tr>
-<td><code>"other"</code></td>
-<td>Other: a third-party trusted/extra feed; stores a literal feedUrl</td>
-</tr>
-</tbody>
-</table>
-<h3 id="sourcechoicerecord">SourceChoiceRecord <a name="SourceChoiceRecord"></a></h3>
+<h3 id="sourcechoicerecord">SourceChoiceRecord <a name="SourceChoiceRecord"></a><a class="headerlink" href="#sourcechoicerecord" title="Permanent link">&para;</a></h3>
 <p>A package's remembered source, persisted per-package as <code>currentSource</code>.</p>
 <table>
 <thead>
@@ -3699,129 +3565,6 @@ Every value includes all less autonomous contexts; <code>off</code> includes non
 </tr>
 </tbody>
 </table>
-<h3 id="updatestatus_1">UpdateStatus <a name="UpdateStatus"></a></h3>
-<table>
-<thead>
-<tr>
-<th>value</th>
-<th>description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>0</code></td>
-<td>UpToDate: the installed version already satisfies the target</td>
-</tr>
-<tr>
-<td><code>1</code></td>
-<td>Installed: the install or update succeeded</td>
-</tr>
-<tr>
-<td><code>2</code></td>
-<td>AlreadyUpdated: another in-flight update already brought the package to the target version</td>
-</tr>
-<tr>
-<td><code>3</code></td>
-<td>SkippedOptional: an optional dependency couldn't be satisfied and was skipped</td>
-</tr>
-<tr>
-<td><code>-1</code></td>
-<td>UpdaterDisabled: the updater is disabled in the config</td>
-</tr>
-<tr>
-<td><code>-2</code></td>
-<td>InvalidNamespace: the record's namespace doesn't conform to the rules</td>
-</tr>
-<tr>
-<td><code>-3</code></td>
-<td>Unmanaged: the record is virtual or unmanaged, so it isn't updated</td>
-</tr>
-<tr>
-<td><code>-5</code></td>
-<td>AnotherUpdateRunning: another script or process holds the updater lock</td>
-</tr>
-<tr>
-<td><code>-6</code></td>
-<td>NoSuitablePackage: no feed offered a package satisfying the requirement</td>
-</tr>
-<tr>
-<td><code>-7</code></td>
-<td>NoInternet: no internet connection is available</td>
-</tr>
-<tr>
-<td><code>-8</code></td>
-<td>InvalidVersion: the requested version string couldn't be parsed</td>
-</tr>
-<tr>
-<td><code>-9</code></td>
-<td>ProtectedInstall: the entry point is in Aegisub's ?data automation directory</td>
-</tr>
-<tr>
-<td><code>-10</code></td>
-<td>TaskAlreadyRunning: this update task is already running</td>
-</tr>
-<tr>
-<td><code>-15</code></td>
-<td>RequirementsUnmet: the package's own required modules couldn't be satisfied</td>
-</tr>
-<tr>
-<td><code>-16</code></td>
-<td>UntrustedFeed: the only suitable package is in an untrusted feed</td>
-</tr>
-<tr>
-<td><code>-17</code></td>
-<td>PinnedUnavailable: the pinned package source is no longer available</td>
-</tr>
-<tr>
-<td><code>-18</code></td>
-<td>UserAborted: the user aborted the update</td>
-</tr>
-<tr>
-<td><code>-19</code></td>
-<td>BlockedFeed: the only suitable package is in a feed the user blocked</td>
-</tr>
-<tr>
-<td><code>-30</code></td>
-<td>TempDirFailed: the temporary download directory couldn't be created</td>
-</tr>
-<tr>
-<td><code>-33</code></td>
-<td>PathTraversal: a feed file tried to deploy outside its namespaced path</td>
-</tr>
-<tr>
-<td><code>-35</code></td>
-<td>BadHash: a feed file carried a missing or malformed SHA-1 hash</td>
-</tr>
-<tr>
-<td><code>-50</code></td>
-<td>MoveFailed: some downloaded files couldn't be moved into place</td>
-</tr>
-<tr>
-<td><code>-55</code></td>
-<td>ModuleNotFound: the install succeeded but the module loader couldn't find the module</td>
-</tr>
-<tr>
-<td><code>-56</code></td>
-<td>ModuleLoadFailed: the install succeeded but the module raised while loading</td>
-</tr>
-<tr>
-<td><code>-57</code></td>
-<td>MissingVersionRecord: the installed module exposes no version record</td>
-</tr>
-<tr>
-<td><code>-58</code></td>
-<td>RecordCreateFailed: creating an unmanaged record for the installed module failed</td>
-</tr>
-<tr>
-<td><code>-140</code></td>
-<td>DownloadAddFailed: a file download couldn't be queued</td>
-</tr>
-<tr>
-<td><code>-245</code></td>
-<td>DownloadFailed: one or more file downloads failed</td>
-</tr>
-</tbody>
-</table>
 
 
 
@@ -3839,8 +3582,16 @@ Every value includes all less autonomous contexts; <code>off</code> includes non
             </div>
           
           
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
 <script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
         </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
         
       </main>
       
@@ -3871,7 +3622,7 @@ Every value includes all less autonomous contexts; <code>off</code> includes non
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.code.copy", "content.tabs.link", "navigation.instant", "navigation.top", "search.suggest", "search.highlight", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>

@@ -25,11 +25,14 @@
     
     
       
-        <title>l0.DependencyControl.file-ops - DependencyControl</title>
+        <title>file-ops - DependencyControl</title>
       
     
     
       <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -57,7 +60,14 @@
   </head>
   
   
-    <body dir="ltr">
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -106,12 +116,48 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              l0.DependencyControl.file-ops
+              file-ops
             
           </span>
         </div>
       </div>
     </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
     
     
       <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
@@ -142,6 +188,8 @@
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
         </button>
       </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
       
     </form>
     <div class="md-search__output">
@@ -468,7 +516,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl
+    Overview
   
 
     
@@ -496,7 +544,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Accessors
+    Accessors
   
 
     
@@ -524,7 +572,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ConfigHandler
+    ConfigHandler
   
 
     
@@ -552,7 +600,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ConfigView
+    ConfigView
   
 
     
@@ -580,7 +628,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Constants
+    Constants
   
 
     
@@ -608,7 +656,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Downloader
+    Downloader
   
 
     
@@ -636,7 +684,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Enum
+    Enum
   
 
     
@@ -664,7 +712,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.EventEmitter
+    EventEmitter
   
 
     
@@ -692,7 +740,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedInventory
+    FeedInventory
   
 
     
@@ -720,7 +768,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedLoader
+    FeedLoader
   
 
     
@@ -748,7 +796,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedManager
+    FeedManager
   
 
     
@@ -776,7 +824,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedTrust
+    FeedTrust
   
 
     
@@ -804,7 +852,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FileCache
+    FileCache
   
 
     
@@ -832,7 +880,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FileLock
+    FileLock
   
 
     
@@ -860,7 +908,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Finalizer
+    Finalizer
   
 
     
@@ -888,7 +936,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.GitRepository
+    GitRepository
   
 
     
@@ -916,7 +964,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Host
+    Host
   
 
     
@@ -944,7 +992,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.JsonSchema
+    JsonSchema
   
 
     
@@ -972,7 +1020,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Lock
+    Lock
   
 
     
@@ -1000,7 +1048,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Logger
+    Logger
   
 
     
@@ -1028,7 +1076,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ModuleLoader
+    ModuleLoader
   
 
     
@@ -1056,7 +1104,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ModuleProvider
+    ModuleProvider
   
 
     
@@ -1084,7 +1132,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.NamedSemaphore
+    NamedSemaphore
   
 
     
@@ -1112,7 +1160,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.PackageRecord
+    PackageRecord
   
 
     
@@ -1140,7 +1188,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ScriptTargetFilter
+    ScriptTargetFilter
   
 
     
@@ -1168,7 +1216,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ScriptUpdateRecord
+    ScriptUpdateRecord
   
 
     
@@ -1196,7 +1244,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.SemanticVersion
+    SemanticVersion
   
 
     
@@ -1224,7 +1272,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Stub
+    Stub
   
 
     
@@ -1252,7 +1300,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Timer
+    Timer
   
 
     
@@ -1280,7 +1328,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UnitTestSuite
+    UnitTestSuite
   
 
     
@@ -1308,7 +1356,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UpdateFeed
+    UpdateFeed
   
 
     
@@ -1336,7 +1384,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UpdateTask
+    UpdateTask
   
 
     
@@ -1364,7 +1412,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Updater
+    Updater
   
 
     
@@ -1392,7 +1440,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ZipArchiver
+    ZipArchiver
   
 
     
@@ -1420,7 +1468,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.config-schema
+    config-schema
   
 
     
@@ -1448,7 +1496,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.domain
+    domain
   
 
     
@@ -1476,7 +1524,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.environment
+    environment
   
 
     
@@ -1513,7 +1561,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.file-ops
+    file-ops
   
 
     
@@ -1531,7 +1579,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.file-ops
+    file-ops
   
 
     
@@ -1838,17 +1886,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#fileops" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        FileOps
-      
-    </span>
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -1877,7 +1914,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.hash
+    hash
   
 
     
@@ -1905,7 +1942,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.ffi-posix
+    helpers.ffi-posix
   
 
     
@@ -1933,7 +1970,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.ffi-windows
+    helpers.ffi-windows
   
 
     
@@ -1961,7 +1998,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.open-url
+    helpers.open-url
   
 
     
@@ -1989,7 +2026,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.resolve-host
+    helpers.resolve-host
   
 
     
@@ -2017,7 +2054,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.release-notes
+    release-notes
   
 
     
@@ -2045,7 +2082,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.shims.BadMutex
+    shims.BadMutex
   
 
     
@@ -2073,7 +2110,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.shims.DownloadManager
+    shims.DownloadManager
   
 
     
@@ -2101,7 +2138,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.shims.PreciseTimer
+    shims.PreciseTimer
   
 
     
@@ -2129,7 +2166,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.utils
+    utils
   
 
     
@@ -2212,7 +2249,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats
+    Overview
   
 
     
@@ -2240,7 +2277,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Diagnostics
+    Diagnostics
   
 
     
@@ -2268,7 +2305,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.DocRenderer
+    DocRenderer
   
 
     
@@ -2296,7 +2333,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Emitter
+    Emitter
   
 
     
@@ -2324,7 +2361,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Parser
+    Parser
   
 
     
@@ -2352,7 +2389,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.annotations
+    annotations
   
 
     
@@ -2435,7 +2472,7 @@
   <span class="md-ellipsis">
     
   
-    l0.dkjson
+    Overview
   
 
     
@@ -2772,17 +2809,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#fileops" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        FileOps
-      
-    </span>
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -2808,34 +2834,71 @@
   
 
 
-<h1 id="l0dependencycontrolfile-ops">l0.DependencyControl.file-ops</h1>
-<pre><code class="language-lua">file_ops = require &quot;l0.DependencyControl.file-ops&quot;        -- MoonScript
-local file_ops = require(&quot;l0.DependencyControl.file-ops&quot;)  -- Lua
-</code></pre>
-<h2 id="functions">Functions</h2>
-<h4 id="createtempdir">createTempDir <a name="FileOps.createTempDir"></a></h4>
-<pre><code class="language-lua">FileOps.createTempDir!   -- MoonScript
-FileOps.createTempDir()  -- Lua
-</code></pre>
+<h1 id="l0dependencycontrolfile-ops">l0.DependencyControl.file-ops<a class="headerlink" href="#l0dependencycontrolfile-ops" title="Permanent link">&para;</a></h1>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">MoonScript</label><label for="__tabbed_1_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">file_ops</span> <span class="o">=</span> <span class="nb">require</span> <span class="s2">&quot;</span><span class="s">l0.DependencyControl.file-ops</span><span class="s2">&quot;</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">file_ops</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">require</span><span class="p">(</span><span class="s2">&quot;l0.DependencyControl.file-ops&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p><a name="FileOps"></a></p>
+<h2 id="functions">Functions<a class="headerlink" href="#functions" title="Permanent link">&para;</a></h2>
+<h4 id="createtempdir">createTempDir <a name="FileOps.createTempDir"></a><a class="headerlink" href="#createtempdir" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">MoonScript</label><label for="__tabbed_2_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nc">FileOps</span><span class="o">.</span><span class="n">createTempDir</span><span class="o">!</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nv">FileOps</span><span class="p">.</span><span class="nf">createTempDir</span><span class="p">()</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Creates a unique temporary directory and returns its path.</p>
 <p><strong>Returns:</strong></p>
 <ul>
 <li><code>tempDirPath</code> <code>string</code>? — Absolute path to the created temporary directory, or nil if it couldn't be created.</li>
 <li><code>err</code> <code>string</code>? — Error message if the directory couldn't be created.</li>
 </ul>
-<h4 id="gettempdir">getTempDir <a name="FileOps.getTempDir"></a></h4>
-<pre><code class="language-lua">FileOps.getTempDir!   -- MoonScript
-FileOps.getTempDir()  -- Lua
-</code></pre>
+<h4 id="gettempdir">getTempDir <a name="FileOps.getTempDir"></a><a class="headerlink" href="#gettempdir" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">MoonScript</label><label for="__tabbed_3_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nc">FileOps</span><span class="o">.</span><span class="n">getTempDir</span><span class="o">!</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nv">FileOps</span><span class="p">.</span><span class="nf">getTempDir</span><span class="p">()</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Generates a unique temporary directory path that does not exist yet.</p>
 <p><strong>Returns:</strong></p>
 <ul>
 <li><code>tempDirPath</code> <code>string</code> — Absolute path to a unique, not-yet-existing temporary directory.</li>
 </ul>
-<h4 id="remove">remove <a name="FileOps.remove"></a></h4>
-<pre><code class="language-lua">FileOps.remove paths, recurse, reSchedule   -- MoonScript
-FileOps.remove(paths, recurse, reSchedule)  -- Lua
-</code></pre>
+<h4 id="remove">remove <a name="FileOps.remove"></a><a class="headerlink" href="#remove" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">MoonScript</label><label for="__tabbed_4_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nc">FileOps</span><span class="o">.</span><span class="n">remove</span> <span class="n">paths</span><span class="p">,</span> <span class="n">recurse</span><span class="p">,</span> <span class="n">reSchedule</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nv">FileOps</span><span class="p">.</span><span class="nf">remove</span><span class="p">(</span><span class="nv">paths</span><span class="p">,</span><span class="w"> </span><span class="nv">recurse</span><span class="p">,</span><span class="w"> </span><span class="nv">reSchedule</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Removes one or more files/directories and optionally reschedules failed removals.</p>
 <table>
 <thead>
@@ -2869,10 +2932,19 @@ FileOps.remove(paths, recurse, reSchedule)  -- Lua
 <li><code>details</code> <code>table</code> — Per-path result tables keyed by path.</li>
 <li><code>firstErr</code> <code>string</code>? — The first error encountered.</li>
 </ul>
-<h4 id="runscheduledremoval">runScheduledRemoval <a name="FileOps.runScheduledRemoval"></a></h4>
-<pre><code class="language-lua">FileOps.runScheduledRemoval configDir   -- MoonScript
-FileOps.runScheduledRemoval(configDir)  -- Lua
-</code></pre>
+<h4 id="runscheduledremoval">runScheduledRemoval <a name="FileOps.runScheduledRemoval"></a><a class="headerlink" href="#runscheduledremoval" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">MoonScript</label><label for="__tabbed_5_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nc">FileOps</span><span class="o">.</span><span class="n">runScheduledRemoval</span> <span class="n">configDir</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nv">FileOps</span><span class="p">.</span><span class="nf">runScheduledRemoval</span><span class="p">(</span><span class="nv">configDir</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Replays removals previously scheduled by remove().</p>
 <table>
 <thead>
@@ -2895,10 +2967,19 @@ FileOps.runScheduledRemoval(configDir)  -- Lua
 <li><code>success</code> <code>boolean</code>?</li>
 <li><code>err</code> <code>string</code>?</li>
 </ul>
-<h4 id="copy">copy <a name="FileOps.copy"></a></h4>
-<pre><code class="language-lua">FileOps.copy source, target, clobber   -- MoonScript
-FileOps.copy(source, target, clobber)  -- Lua
-</code></pre>
+<h4 id="copy">copy <a name="FileOps.copy"></a><a class="headerlink" href="#copy" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">MoonScript</label><label for="__tabbed_6_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nc">FileOps</span><span class="o">.</span><span class="n">copy</span> <span class="n">source</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">clobber</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nv">FileOps</span><span class="p">.</span><span class="nf">copy</span><span class="p">(</span><span class="nv">source</span><span class="p">,</span><span class="w"> </span><span class="nv">target</span><span class="p">,</span><span class="w"> </span><span class="nv">clobber</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Copies a file to a target path.</p>
 <table>
 <thead>
@@ -2931,10 +3012,19 @@ FileOps.copy(source, target, clobber)  -- Lua
 <li><code>success</code> <code>boolean</code></li>
 <li><code>err</code> <code>string</code>?</li>
 </ul>
-<h4 id="listdir">listDir <a name="FileOps.listDir"></a></h4>
-<pre><code class="language-lua">FileOps.listDir dirPath   -- MoonScript
-FileOps.listDir(dirPath)  -- Lua
-</code></pre>
+<h4 id="listdir">listDir <a name="FileOps.listDir"></a><a class="headerlink" href="#listdir" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">MoonScript</label><label for="__tabbed_7_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="nc">FileOps</span><span class="o">.</span><span class="n">listDir</span> <span class="n">dirPath</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="nv">FileOps</span><span class="p">.</span><span class="nf">listDir</span><span class="p">(</span><span class="nv">dirPath</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Lists the names of a directory's entries, excluding <code>.</code> and <code>..</code>.</p>
 <table>
 <thead>
@@ -2957,10 +3047,19 @@ FileOps.listDir(dirPath)  -- Lua
 <li><code>entries</code> <code>string</code>[]? — The entry names, or nil when the path isn't a directory.</li>
 <li><code>err</code> <code>string</code>?</li>
 </ul>
-<h4 id="listfilesrecursive">listFilesRecursive <a name="FileOps.listFilesRecursive"></a></h4>
-<pre><code class="language-lua">FileOps.listFilesRecursive dirPath   -- MoonScript
-FileOps.listFilesRecursive(dirPath)  -- Lua
-</code></pre>
+<h4 id="listfilesrecursive">listFilesRecursive <a name="FileOps.listFilesRecursive"></a><a class="headerlink" href="#listfilesrecursive" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="8:2"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><div class="tabbed-labels"><label for="__tabbed_8_1">MoonScript</label><label for="__tabbed_8_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="nc">FileOps</span><span class="o">.</span><span class="n">listFilesRecursive</span> <span class="n">dirPath</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="nv">FileOps</span><span class="p">.</span><span class="nf">listFilesRecursive</span><span class="p">(</span><span class="nv">dirPath</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Recursively collects all files below a directory.</p>
 <table>
 <thead>
@@ -2983,10 +3082,19 @@ FileOps.listFilesRecursive(dirPath)  -- Lua
 <li><code>files</code> <code>string</code>[]? — Full paths of every file below the directory (joined onto the given path), or nil when it can't be listed.</li>
 <li><code>err</code> <code>string</code>?</li>
 </ul>
-<h4 id="joinpath">joinPath <a name="FileOps.joinPath"></a></h4>
-<pre><code class="language-lua">FileOps.joinPath ...   -- MoonScript
-FileOps.joinPath(...)  -- Lua
-</code></pre>
+<h4 id="joinpath">joinPath <a name="FileOps.joinPath"></a><a class="headerlink" href="#joinpath" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="9:2"><input checked="checked" id="__tabbed_9_1" name="__tabbed_9" type="radio" /><input id="__tabbed_9_2" name="__tabbed_9" type="radio" /><div class="tabbed-labels"><label for="__tabbed_9_1">MoonScript</label><label for="__tabbed_9_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="nc">FileOps</span><span class="o">.</span><span class="n">joinPath</span> <span class="o">...</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="nv">FileOps</span><span class="p">.</span><span class="nf">joinPath</span><span class="p">(...)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Joins and resolves multiple path segments into a single path string.</p>
 <table>
 <thead>
@@ -3009,10 +3117,19 @@ FileOps.joinPath(...)  -- Lua
 <li><code>joinedPath</code> <code>string</code>? — The path segments joined by OS-specific separators, or nil on error.</li>
 <li><code>err</code> <code>string</code>?</li>
 </ul>
-<h4 id="pathsegments">pathSegments <a name="FileOps.pathSegments"></a></h4>
-<pre><code class="language-lua">FileOps.pathSegments path   -- MoonScript
-FileOps.pathSegments(path)  -- Lua
-</code></pre>
+<h4 id="pathsegments">pathSegments <a name="FileOps.pathSegments"></a><a class="headerlink" href="#pathsegments" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="10:2"><input checked="checked" id="__tabbed_10_1" name="__tabbed_10" type="radio" /><input id="__tabbed_10_2" name="__tabbed_10" type="radio" /><div class="tabbed-labels"><label for="__tabbed_10_1">MoonScript</label><label for="__tabbed_10_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="nc">FileOps</span><span class="o">.</span><span class="n">pathSegments</span> <span class="n">path</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="nv">FileOps</span><span class="p">.</span><span class="nf">pathSegments</span><span class="p">(</span><span class="nv">path</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Returns an iterator over the non-empty components of a path, split on any separator.</p>
 <table>
 <thead>
@@ -3034,10 +3151,19 @@ FileOps.pathSegments(path)  -- Lua
 <ul>
 <li><code>iterator</code> <code>fun(): string?</code></li>
 </ul>
-<h4 id="move">move <a name="FileOps.move"></a></h4>
-<pre><code class="language-lua">FileOps.move source, target, overwrite   -- MoonScript
-FileOps.move(source, target, overwrite)  -- Lua
-</code></pre>
+<h4 id="move">move <a name="FileOps.move"></a><a class="headerlink" href="#move" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="11:2"><input checked="checked" id="__tabbed_11_1" name="__tabbed_11" type="radio" /><input id="__tabbed_11_2" name="__tabbed_11" type="radio" /><div class="tabbed-labels"><label for="__tabbed_11_1">MoonScript</label><label for="__tabbed_11_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="nc">FileOps</span><span class="o">.</span><span class="n">move</span> <span class="n">source</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">overwrite</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="nv">FileOps</span><span class="p">.</span><span class="nf">move</span><span class="p">(</span><span class="nv">source</span><span class="p">,</span><span class="w"> </span><span class="nv">target</span><span class="p">,</span><span class="w"> </span><span class="nv">overwrite</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Moves a file to a target path, optionally replacing existing targets.</p>
 <table>
 <thead>
@@ -3070,10 +3196,19 @@ FileOps.move(source, target, overwrite)  -- Lua
 <li><code>success</code> <code>boolean</code></li>
 <li><code>err</code> <code>string</code>?</li>
 </ul>
-<h4 id="readfile">readFile <a name="FileOps.readFile"></a></h4>
-<pre><code class="language-lua">FileOps.readFile path   -- MoonScript
-FileOps.readFile(path)  -- Lua
-</code></pre>
+<h4 id="readfile">readFile <a name="FileOps.readFile"></a><a class="headerlink" href="#readfile" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="12:2"><input checked="checked" id="__tabbed_12_1" name="__tabbed_12" type="radio" /><input id="__tabbed_12_2" name="__tabbed_12" type="radio" /><div class="tabbed-labels"><label for="__tabbed_12_1">MoonScript</label><label for="__tabbed_12_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="nc">FileOps</span><span class="o">.</span><span class="n">readFile</span> <span class="n">path</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="nv">FileOps</span><span class="p">.</span><span class="nf">readFile</span><span class="p">(</span><span class="nv">path</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Reads and returns the full contents of a file.</p>
 <table>
 <thead>
@@ -3096,10 +3231,19 @@ FileOps.readFile(path)  -- Lua
 <li><code>data</code> <code>string</code>? — The contents of the file, or nil if an error occurred.</li>
 <li><code>err</code> <code>string</code>? — An error message if an error occurred.</li>
 </ul>
-<h4 id="writefile">writeFile <a name="FileOps.writeFile"></a></h4>
-<pre><code class="language-lua">FileOps.writeFile path, data, clobber   -- MoonScript
-FileOps.writeFile(path, data, clobber)  -- Lua
-</code></pre>
+<h4 id="writefile">writeFile <a name="FileOps.writeFile"></a><a class="headerlink" href="#writefile" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="13:2"><input checked="checked" id="__tabbed_13_1" name="__tabbed_13" type="radio" /><input id="__tabbed_13_2" name="__tabbed_13" type="radio" /><div class="tabbed-labels"><label for="__tabbed_13_1">MoonScript</label><label for="__tabbed_13_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="nc">FileOps</span><span class="o">.</span><span class="n">writeFile</span> <span class="n">path</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">clobber</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="nv">FileOps</span><span class="p">.</span><span class="nf">writeFile</span><span class="p">(</span><span class="nv">path</span><span class="p">,</span><span class="w"> </span><span class="nv">data</span><span class="p">,</span><span class="w"> </span><span class="nv">clobber</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Writes data to a file, creating the file if it doesn't exist and optionally overwriting existing files.</p>
 <table>
 <thead>
@@ -3132,10 +3276,19 @@ FileOps.writeFile(path, data, clobber)  -- Lua
 <li><code>success</code> <code>boolean</code> — True if the file was written successfully.</li>
 <li><code>err</code> <code>string</code>?</li>
 </ul>
-<h4 id="gethash">getHash <a name="FileOps.getHash"></a></h4>
-<pre><code class="language-lua">FileOps.getHash fileName, hashType   -- MoonScript
-FileOps.getHash(fileName, hashType)  -- Lua
-</code></pre>
+<h4 id="gethash">getHash <a name="FileOps.getHash"></a><a class="headerlink" href="#gethash" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="14:2"><input checked="checked" id="__tabbed_14_1" name="__tabbed_14" type="radio" /><input id="__tabbed_14_2" name="__tabbed_14" type="radio" /><div class="tabbed-labels"><label for="__tabbed_14_1">MoonScript</label><label for="__tabbed_14_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="nc">FileOps</span><span class="o">.</span><span class="n">getHash</span> <span class="n">fileName</span><span class="p">,</span> <span class="n">hashType</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="nv">FileOps</span><span class="p">.</span><span class="nf">getHash</span><span class="p">(</span><span class="nv">fileName</span><span class="p">,</span><span class="w"> </span><span class="nv">hashType</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Reads a file and computes the hash of its contents.</p>
 <table>
 <thead>
@@ -3163,10 +3316,19 @@ FileOps.getHash(fileName, hashType)  -- Lua
 <li><code>hexDigest</code> <code>string</code>? — The lowercase hex digest, or nil if an error occurred.</li>
 <li><code>err</code> <code>string</code>? — An error message if an error occurred.</li>
 </ul>
-<h4 id="verifyhash">verifyHash <a name="FileOps.verifyHash"></a></h4>
-<pre><code class="language-lua">FileOps.verifyHash fileName, hash, hashType   -- MoonScript
-FileOps.verifyHash(fileName, hash, hashType)  -- Lua
-</code></pre>
+<h4 id="verifyhash">verifyHash <a name="FileOps.verifyHash"></a><a class="headerlink" href="#verifyhash" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="15:2"><input checked="checked" id="__tabbed_15_1" name="__tabbed_15" type="radio" /><input id="__tabbed_15_2" name="__tabbed_15" type="radio" /><div class="tabbed-labels"><label for="__tabbed_15_1">MoonScript</label><label for="__tabbed_15_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="nc">FileOps</span><span class="o">.</span><span class="n">verifyHash</span> <span class="n">fileName</span><span class="p">,</span> <span class="n">hash</span><span class="p">,</span> <span class="n">hashType</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="nv">FileOps</span><span class="p">.</span><span class="nf">verifyHash</span><span class="p">(</span><span class="nv">fileName</span><span class="p">,</span><span class="w"> </span><span class="nv">hash</span><span class="p">,</span><span class="w"> </span><span class="nv">hashType</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Reads a file and verifies its contents match an expected hash.</p>
 <table>
 <thead>
@@ -3199,10 +3361,19 @@ FileOps.verifyHash(fileName, hash, hashType)  -- Lua
 <li><code>match</code> <code>boolean</code>? — True on match, false on mismatch, or nil on error.</li>
 <li><code>err</code> <code>string</code>? — The mismatch detail or error message.</li>
 </ul>
-<h4 id="rmdir">rmdir <a name="FileOps.rmdir"></a></h4>
-<pre><code class="language-lua">FileOps.rmdir path, recurse   -- MoonScript
-FileOps.rmdir(path, recurse)  -- Lua
-</code></pre>
+<h4 id="rmdir">rmdir <a name="FileOps.rmdir"></a><a class="headerlink" href="#rmdir" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="16:2"><input checked="checked" id="__tabbed_16_1" name="__tabbed_16" type="radio" /><input id="__tabbed_16_2" name="__tabbed_16" type="radio" /><div class="tabbed-labels"><label for="__tabbed_16_1">MoonScript</label><label for="__tabbed_16_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="nc">FileOps</span><span class="o">.</span><span class="n">rmdir</span> <span class="n">path</span><span class="p">,</span> <span class="n">recurse</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="nv">FileOps</span><span class="p">.</span><span class="nf">rmdir</span><span class="p">(</span><span class="nv">path</span><span class="p">,</span><span class="w"> </span><span class="nv">recurse</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Removes a directory, by default together with everything it contains.</p>
 <table>
 <thead>
@@ -3230,10 +3401,19 @@ FileOps.rmdir(path, recurse)  -- Lua
 <li><code>success</code> <code>boolean</code>? — True on success, or nil on error.</li>
 <li><code>err</code> <code>string</code>? — An error message when the path is empty, doesn't exist, isn't a directory, or something couldn't be removed.</li>
 </ul>
-<h4 id="mkdir">mkdir <a name="FileOps.mkdir"></a></h4>
-<pre><code class="language-lua">FileOps.mkdir path, isFile, recurse   -- MoonScript
-FileOps.mkdir(path, isFile, recurse)  -- Lua
-</code></pre>
+<h4 id="mkdir">mkdir <a name="FileOps.mkdir"></a><a class="headerlink" href="#mkdir" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="17:2"><input checked="checked" id="__tabbed_17_1" name="__tabbed_17" type="radio" /><input id="__tabbed_17_2" name="__tabbed_17" type="radio" /><div class="tabbed-labels"><label for="__tabbed_17_1">MoonScript</label><label for="__tabbed_17_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="nc">FileOps</span><span class="o">.</span><span class="n">mkdir</span> <span class="n">path</span><span class="p">,</span> <span class="n">isFile</span><span class="p">,</span> <span class="n">recurse</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="nv">FileOps</span><span class="p">.</span><span class="nf">mkdir</span><span class="p">(</span><span class="nv">path</span><span class="p">,</span><span class="w"> </span><span class="nv">isFile</span><span class="p">,</span><span class="w"> </span><span class="nv">recurse</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Creates a directory.</p>
 <table>
 <thead>
@@ -3266,10 +3446,19 @@ FileOps.mkdir(path, isFile, recurse)  -- Lua
 <li><code>created</code> <code>boolean</code>? — True if created, false if it already existed, nil if an error occurred.</li>
 <li><code>dirPathOrError</code> <code>string</code> — The existing/created directory path, or an error message.</li>
 </ul>
-<h4 id="getattributes">getAttributes <a name="FileOps.getAttributes"></a></h4>
-<pre><code class="language-lua">FileOps.getAttributes path, key   -- MoonScript
-FileOps.getAttributes(path, key)  -- Lua
-</code></pre>
+<h4 id="getattributes">getAttributes <a name="FileOps.getAttributes"></a><a class="headerlink" href="#getattributes" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="18:2"><input checked="checked" id="__tabbed_18_1" name="__tabbed_18" type="radio" /><input id="__tabbed_18_2" name="__tabbed_18" type="radio" /><div class="tabbed-labels"><label for="__tabbed_18_1">MoonScript</label><label for="__tabbed_18_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="nc">FileOps</span><span class="o">.</span><span class="n">getAttributes</span> <span class="n">path</span><span class="p">,</span> <span class="n">key</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="nv">FileOps</span><span class="p">.</span><span class="nf">getAttributes</span><span class="p">(</span><span class="nv">path</span><span class="p">,</span><span class="w"> </span><span class="nv">key</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Retrieves file or directory attributes along with the parsed components of its path.</p>
 <table>
 <thead>
@@ -3297,13 +3486,22 @@ FileOps.getAttributes(path, key)  -- Lua
 <li><code>info</code> <a href="#FileOpsAttributesInfo">FileOpsAttributesInfo</a>? — The attributes and path components, or nil on a hard error (an invalid path or an lfs failure). A path that simply doesn't exist is not an error: <code>info.attr</code> is then false.</li>
 <li><code>err</code> <code>string</code>? — An error message, present only when info is nil.</li>
 </ul>
-<h4 id="attributes">attributes <a name="FileOps.attributes"></a></h4>
+<h4 id="attributes">attributes <a name="FileOps.attributes"></a><a class="headerlink" href="#attributes" title="Permanent link">&para;</a></h4>
 <blockquote>
 <p><strong>Deprecated</strong> — Use <code>getAttributes</code>, which returns a single info table plus an error message.</p>
 </blockquote>
-<pre><code class="language-lua">FileOps.attributes path, key   -- MoonScript
-FileOps.attributes(path, key)  -- Lua
-</code></pre>
+<div class="tabbed-set tabbed-alternate" data-tabs="19:2"><input checked="checked" id="__tabbed_19_1" name="__tabbed_19" type="radio" /><input id="__tabbed_19_2" name="__tabbed_19" type="radio" /><div class="tabbed-labels"><label for="__tabbed_19_1">MoonScript</label><label for="__tabbed_19_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a><span class="nc">FileOps</span><span class="o">.</span><span class="n">attributes</span> <span class="n">path</span><span class="p">,</span> <span class="n">key</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a><span class="nv">FileOps</span><span class="p">.</span><span class="nf">attributes</span><span class="p">(</span><span class="nv">path</span><span class="p">,</span><span class="w"> </span><span class="nv">key</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Retrieves file or directory attributes.</p>
 <table>
 <thead>
@@ -3334,10 +3532,19 @@ FileOps.attributes(path, key)  -- Lua
 <li><code>dir</code> <code>string</code>? — The directory component of the path.</li>
 <li><code>file</code> <code>string</code>? — The file name component of the path.</li>
 </ul>
-<h4 id="exists">exists <a name="FileOps.exists"></a></h4>
-<pre><code class="language-lua">FileOps.exists path, expectedMode   -- MoonScript
-FileOps.exists(path, expectedMode)  -- Lua
-</code></pre>
+<h4 id="exists">exists <a name="FileOps.exists"></a><a class="headerlink" href="#exists" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="20:2"><input checked="checked" id="__tabbed_20_1" name="__tabbed_20" type="radio" /><input id="__tabbed_20_2" name="__tabbed_20" type="radio" /><div class="tabbed-labels"><label for="__tabbed_20_1">MoonScript</label><label for="__tabbed_20_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a><span class="nc">FileOps</span><span class="o">.</span><span class="n">exists</span> <span class="n">path</span><span class="p">,</span> <span class="n">expectedMode</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-39-1" name="__codelineno-39-1" href="#__codelineno-39-1"></a><span class="nv">FileOps</span><span class="p">.</span><span class="nf">exists</span><span class="p">(</span><span class="nv">path</span><span class="p">,</span><span class="w"> </span><span class="nv">expectedMode</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Checks whether a file or directory exists and optionally verifies its type.</p>
 <table>
 <thead>
@@ -3365,10 +3572,19 @@ FileOps.exists(path, expectedMode)  -- Lua
 <li><code>exists</code> <code>boolean</code>? — True if it exists and matches the expected type, false if not, nil on error.</li>
 <li><code>err</code> <code>string</code>? — An error message if the file doesn't exist or is of the wrong type.</li>
 </ul>
-<h4 id="validatefullpath">validateFullPath <a name="FileOps.validateFullPath"></a></h4>
-<pre><code class="language-lua">FileOps.validateFullPath path, checkFileExt, basePath   -- MoonScript
-FileOps.validateFullPath(path, checkFileExt, basePath)  -- Lua
-</code></pre>
+<h4 id="validatefullpath">validateFullPath <a name="FileOps.validateFullPath"></a><a class="headerlink" href="#validatefullpath" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="21:2"><input checked="checked" id="__tabbed_21_1" name="__tabbed_21" type="radio" /><input id="__tabbed_21_2" name="__tabbed_21" type="radio" /><div class="tabbed-labels"><label for="__tabbed_21_1">MoonScript</label><label for="__tabbed_21_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-40-1" name="__codelineno-40-1" href="#__codelineno-40-1"></a><span class="nc">FileOps</span><span class="o">.</span><span class="n">validateFullPath</span> <span class="n">path</span><span class="p">,</span> <span class="n">checkFileExt</span><span class="p">,</span> <span class="n">basePath</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-41-1" name="__codelineno-41-1" href="#__codelineno-41-1"></a><span class="nv">FileOps</span><span class="p">.</span><span class="nf">validateFullPath</span><span class="p">(</span><span class="nv">path</span><span class="p">,</span><span class="w"> </span><span class="nv">checkFileExt</span><span class="p">,</span><span class="w"> </span><span class="nv">basePath</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Validates and normalizes an absolute filesystem path.</p>
 <table>
 <thead>
@@ -3403,10 +3619,19 @@ FileOps.validateFullPath(path, checkFileExt, basePath)  -- Lua
 <li><code>dir</code> <code>string</code>? — The directory component (success only).</li>
 <li><code>file</code> <code>string</code>? — The file name component (success only).</li>
 </ul>
-<h4 id="getnamespacedpath">getNamespacedPath <a name="FileOps.getNamespacedPath"></a></h4>
-<pre><code class="language-lua">FileOps.getNamespacedPath basePath, namespace, ext, nested   -- MoonScript
-FileOps.getNamespacedPath(basePath, namespace, ext, nested)  -- Lua
-</code></pre>
+<h4 id="getnamespacedpath">getNamespacedPath <a name="FileOps.getNamespacedPath"></a><a class="headerlink" href="#getnamespacedpath" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="22:2"><input checked="checked" id="__tabbed_22_1" name="__tabbed_22" type="radio" /><input id="__tabbed_22_2" name="__tabbed_22" type="radio" /><div class="tabbed-labels"><label for="__tabbed_22_1">MoonScript</label><label for="__tabbed_22_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-42-1" name="__codelineno-42-1" href="#__codelineno-42-1"></a><span class="nc">FileOps</span><span class="o">.</span><span class="n">getNamespacedPath</span> <span class="n">basePath</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">ext</span><span class="p">,</span> <span class="n">nested</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-43-1" name="__codelineno-43-1" href="#__codelineno-43-1"></a><span class="nv">FileOps</span><span class="p">.</span><span class="nf">getNamespacedPath</span><span class="p">(</span><span class="nv">basePath</span><span class="p">,</span><span class="w"> </span><span class="nv">namespace</span><span class="p">,</span><span class="w"> </span><span class="nv">ext</span><span class="p">,</span><span class="w"> </span><span class="nv">nested</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>Converts a base path and namespace into a namespaced filesystem path.
 Dots in the namespace are converted to path separators when nested is true.</p>
 <table>
@@ -3445,7 +3670,7 @@ Dots in the namespace are converted to path separators when nested is true.</p>
 <li><code>path</code> <code>string</code>?</li>
 <li><code>err</code> <code>string</code>?</li>
 </ul>
-<h2 id="fields">Fields</h2>
+<h2 id="fields">Fields<a class="headerlink" href="#fields" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
@@ -3467,7 +3692,7 @@ Dots in the namespace are converted to path separators when nested is true.</p>
 </tr>
 <tr>
 <td>pathMaxLength</td>
-<td><code>any</code></td>
+<td><code>integer</code></td>
 <td></td>
 </tr>
 <tr>
@@ -3487,8 +3712,8 @@ Dots in the namespace are converted to path separators when nested is true.</p>
 </tr>
 </tbody>
 </table>
-<h2 id="types">Types</h2>
-<h3 id="fileopsattributesinfo">FileOpsAttributesInfo <a name="FileOpsAttributesInfo"></a></h3>
+<h2 id="types">Types<a class="headerlink" href="#types" title="Permanent link">&para;</a></h2>
+<h3 id="fileopsattributesinfo">FileOpsAttributesInfo <a name="FileOpsAttributesInfo"></a><a class="headerlink" href="#fileopsattributesinfo" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -3525,8 +3750,6 @@ Dots in the namespace are converted to path separators when nested is true.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="fileops">FileOps <a name="FileOps"></a></h3>
-<p>Filesystem utility helpers used by DependencyControl.</p>
 
 
 
@@ -3544,8 +3767,16 @@ Dots in the namespace are converted to path separators when nested is true.</p>
             </div>
           
           
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
 <script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
         </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
         
       </main>
       
@@ -3576,7 +3807,7 @@ Dots in the namespace are converted to path separators when nested is true.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.code.copy", "content.tabs.link", "navigation.instant", "navigation.top", "search.suggest", "search.highlight", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>

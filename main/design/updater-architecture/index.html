@@ -31,6 +31,9 @@
     
       <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
       
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
       
 
 
@@ -57,7 +60,14 @@
   </head>
   
   
-    <body dir="ltr">
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -113,6 +123,42 @@
       </div>
     </div>
     
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
     
       <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
     
@@ -142,6 +188,8 @@
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
         </button>
       </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
       
     </form>
     <div class="md-search__output">
@@ -751,7 +799,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl
+    Overview
   
 
     
@@ -779,7 +827,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Accessors
+    Accessors
   
 
     
@@ -807,7 +855,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ConfigHandler
+    ConfigHandler
   
 
     
@@ -835,7 +883,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ConfigView
+    ConfigView
   
 
     
@@ -863,7 +911,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Constants
+    Constants
   
 
     
@@ -891,7 +939,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Downloader
+    Downloader
   
 
     
@@ -919,7 +967,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Enum
+    Enum
   
 
     
@@ -947,7 +995,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.EventEmitter
+    EventEmitter
   
 
     
@@ -975,7 +1023,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedInventory
+    FeedInventory
   
 
     
@@ -1003,7 +1051,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedLoader
+    FeedLoader
   
 
     
@@ -1031,7 +1079,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedManager
+    FeedManager
   
 
     
@@ -1059,7 +1107,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FeedTrust
+    FeedTrust
   
 
     
@@ -1087,7 +1135,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FileCache
+    FileCache
   
 
     
@@ -1115,7 +1163,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.FileLock
+    FileLock
   
 
     
@@ -1143,7 +1191,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Finalizer
+    Finalizer
   
 
     
@@ -1171,7 +1219,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.GitRepository
+    GitRepository
   
 
     
@@ -1199,7 +1247,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Host
+    Host
   
 
     
@@ -1227,7 +1275,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.JsonSchema
+    JsonSchema
   
 
     
@@ -1255,7 +1303,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Lock
+    Lock
   
 
     
@@ -1283,7 +1331,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Logger
+    Logger
   
 
     
@@ -1311,7 +1359,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ModuleLoader
+    ModuleLoader
   
 
     
@@ -1339,7 +1387,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ModuleProvider
+    ModuleProvider
   
 
     
@@ -1367,7 +1415,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.NamedSemaphore
+    NamedSemaphore
   
 
     
@@ -1395,7 +1443,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.PackageRecord
+    PackageRecord
   
 
     
@@ -1423,7 +1471,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ScriptTargetFilter
+    ScriptTargetFilter
   
 
     
@@ -1451,7 +1499,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ScriptUpdateRecord
+    ScriptUpdateRecord
   
 
     
@@ -1479,7 +1527,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.SemanticVersion
+    SemanticVersion
   
 
     
@@ -1507,7 +1555,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Stub
+    Stub
   
 
     
@@ -1535,7 +1583,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Timer
+    Timer
   
 
     
@@ -1563,7 +1611,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UnitTestSuite
+    UnitTestSuite
   
 
     
@@ -1591,7 +1639,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UpdateFeed
+    UpdateFeed
   
 
     
@@ -1619,7 +1667,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.UpdateTask
+    UpdateTask
   
 
     
@@ -1647,7 +1695,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.Updater
+    Updater
   
 
     
@@ -1675,7 +1723,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.ZipArchiver
+    ZipArchiver
   
 
     
@@ -1703,7 +1751,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.config-schema
+    config-schema
   
 
     
@@ -1731,7 +1779,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.domain
+    domain
   
 
     
@@ -1759,7 +1807,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.environment
+    environment
   
 
     
@@ -1787,7 +1835,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.file-ops
+    file-ops
   
 
     
@@ -1815,7 +1863,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.hash
+    hash
   
 
     
@@ -1843,7 +1891,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.ffi-posix
+    helpers.ffi-posix
   
 
     
@@ -1871,7 +1919,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.ffi-windows
+    helpers.ffi-windows
   
 
     
@@ -1899,7 +1947,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.open-url
+    helpers.open-url
   
 
     
@@ -1927,7 +1975,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.helpers.resolve-host
+    helpers.resolve-host
   
 
     
@@ -1955,7 +2003,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.release-notes
+    release-notes
   
 
     
@@ -1983,7 +2031,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.shims.BadMutex
+    shims.BadMutex
   
 
     
@@ -2011,7 +2059,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.shims.DownloadManager
+    shims.DownloadManager
   
 
     
@@ -2039,7 +2087,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.shims.PreciseTimer
+    shims.PreciseTimer
   
 
     
@@ -2067,7 +2115,7 @@
   <span class="md-ellipsis">
     
   
-    l0.DependencyControl.utils
+    utils
   
 
     
@@ -2150,7 +2198,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats
+    Overview
   
 
     
@@ -2178,7 +2226,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Diagnostics
+    Diagnostics
   
 
     
@@ -2206,7 +2254,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.DocRenderer
+    DocRenderer
   
 
     
@@ -2234,7 +2282,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Emitter
+    Emitter
   
 
     
@@ -2262,7 +2310,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.Parser
+    Parser
   
 
     
@@ -2290,7 +2338,7 @@
   <span class="md-ellipsis">
     
   
-    l0.MoonCats.annotations
+    annotations
   
 
     
@@ -2373,7 +2421,7 @@
   <span class="md-ellipsis">
     
   
-    l0.dkjson
+    Overview
   
 
     
@@ -2686,11 +2734,11 @@
   
 
 
-<h1 id="dependencycontrol-updater-design-architecture">DependencyControl Updater — Design &amp; Architecture</h1>
+<h1 id="dependencycontrol-updater-design-architecture">DependencyControl Updater — Design &amp; Architecture<a class="headerlink" href="#dependencycontrol-updater-design-architecture" title="Permanent link">&para;</a></h1>
 <p>This document describes how DependencyControl installs and updates scripts and modules: the components involved, how an update is triggered, and the full decision flow of a single update task. It targets contributors working on the updater, not end users (see the README for user-facing behavior).</p>
-<h2 id="scope">Scope</h2>
+<h2 id="scope">Scope<a class="headerlink" href="#scope" title="Permanent link">&para;</a></h2>
 <p>The "updater" is the subsystem that, given a version record, finds a trustworthy source that satisfies a required version, downloads it, deploys its files, and reloads the affected module. It also resolves a script's required modules (installing missing or outdated ones) and runs periodic background update checks.</p>
-<h2 id="component-map">Component map</h2>
+<h2 id="component-map">Component map<a class="headerlink" href="#component-map" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
@@ -2749,11 +2797,11 @@
 </tr>
 </tbody>
 </table>
-<pre><code class="language-mermaid">flowchart LR
+<pre class="mermaid"><code>flowchart LR
     subgraph Triggers
-      Macro[&quot;Macro run hook&lt;br/&gt;(Record.registerMacro)&quot;]
-      Reqs[&quot;Record.requireModules&lt;br/&gt;(at load time)&quot;]
-      Toolbox[&quot;Toolbox&lt;br/&gt;(scheduled &amp; manual)&quot;]
+      Macro["Macro run hook&lt;br/&gt;(Record.registerMacro)"]
+      Reqs["Record.requireModules&lt;br/&gt;(at load time)"]
+      Toolbox["Toolbox&lt;br/&gt;(scheduled &amp; manual)"]
     end
     subgraph Orchestration
       Updater
@@ -2765,9 +2813,9 @@
       UpdateFeed
       ModuleLoader
       Lock
-      SemVer[&quot;SemanticVersioning&quot;]
+      SemVer["SemanticVersioning"]
       Record
-      Config[&quot;ConfigView&quot;]
+      Config["ConfigView"]
     end
 
     Reqs --&gt; ModuleLoader
@@ -2781,19 +2829,18 @@
     UpdateTask --&gt; SemVer
     UpdateTask --&gt; Record
     UpdateTask --&gt; Config
-    Updater --&gt; Lock
-</code></pre>
-<h2 id="entry-points">Entry points</h2>
+    Updater --&gt; Lock</code></pre>
+<h2 id="entry-points">Entry points<a class="headerlink" href="#entry-points" title="Permanent link">&para;</a></h2>
 <p>Every update originates from one of three places, each carrying a different <code>UpdateReason</code> that later gates whether the user may be prompted (see <a href="#reasons-the-context-ladder-and-prompt-thresholds">Reasons and prompt thresholds</a>).</p>
 <ul>
 <li><strong>Dependency resolution</strong> — when a record is constructed, <code>Record.requireModules</code> calls <code>ModuleLoader.loadModules</code>, which loads each requirement (private copy, then global). A requirement that is missing or fails its version constraint is forwarded to <code>Updater.require</code>, defaulting to reason <code>DependencyResolution</code>. This path is <strong>blocking</strong>: it waits on the updater lock because the caller needs the module now.</li>
 <li><strong>Macro run hook</strong> — <code>Record.registerMacro</code> wraps the macro callback so that running the macro first calls <code>Updater.scheduleUpdate</code> for the script, then releases the lock, then runs the macro. This is a <strong>non-blocking</strong> background check (reason <code>AutoUpdate</code>).</li>
 <li><strong>Toolbox</strong> — the DependencyControl Toolbox runs centralized scheduled checks for every installed record at startup (reason <code>AutoUpdate</code>) and performs explicit user-initiated installs/updates (reason <code>UserRequested</code>).</li>
 </ul>
-<h2 id="core-concepts">Core concepts</h2>
-<h3 id="records-feeds-candidates">Records, feeds, candidates</h3>
+<h2 id="core-concepts">Core concepts<a class="headerlink" href="#core-concepts" title="Permanent link">&para;</a></h2>
+<h3 id="records-feeds-candidates">Records, feeds, candidates<a class="headerlink" href="#records-feeds-candidates" title="Permanent link">&para;</a></h3>
 <p>A <strong>record</strong> describes one package (a macro or a module). A <strong>feed</strong> is a JSON registry that lists packages and, per release, the files and <code>provides</code> aliases. During resolution, every package a feed can supply for the requirement becomes a <strong>candidate</strong> (<code>CandidatePackageSource</code>: <code>{updateRecord, feedUrl, isDirect, trustBand, providesVersion?}</code>). A candidate is <strong>direct</strong> (<code>isDirect</code>) when the feed offers the package by its own name, or <strong>indirect</strong> when it comes from a <strong>provider</strong> — a different module that declares it <code>provides</code> the required name (e.g. <code>dkjson</code> provides <code>json</code>).</p>
-<h3 id="trust-bands">Trust bands</h3>
+<h3 id="trust-bands">Trust bands<a class="headerlink" href="#trust-bands" title="Permanent link">&para;</a></h3>
 <p>Candidates are ranked by <strong>trust band first, version second</strong>, so a feed can't win merely by advertising a higher version. Lower band = preferred.</p>
 <table>
 <thead>
@@ -2832,14 +2879,14 @@
 </tbody>
 </table>
 <p>Trust sets come from <code>getTrustedFeeds</code>/<code>getBlockedFeeds</code>: trusted = DepCtrl's official feeds (<code>getOfficialTrustedFeeds</code>, cached) ∪ user <code>extraFeeds</code> ∪ <code>trustedFeeds</code>; blocked = official block list (<code>getOfficialBlockedFeeds</code>) ∪ user <code>blockedFeeds</code>. <code>extraFeeds</code> and <code>trustedFeeds</code> both grant trust, but only <code>extraFeeds</code> are discovery roots and tier-2 search candidates: <code>trustedFeeds</code> are trust-only — they raise a feed's trust when it's reached another way, but are never themselves searched (tier 2) or crawled. <code>isUserTrusted</code> reports membership in either user list, distinct from <code>getOfficialTrustedFeeds</code>. Each block entry is a <code>{url, matchMode, reason?}</code> object matched case-insensitively as a URL prefix or an exact URL; <code>getBlockedFeeds</code> normalizes them to <code>BlockedFeedEntry</code>. A blocked feed is dropped before banding and overrides everything, including <code>userFeed</code>.</p>
-<h3 id="reasons-the-context-ladder-and-prompt-thresholds">Reasons, the context ladder, and prompt thresholds</h3>
+<h3 id="reasons-the-context-ladder-and-prompt-thresholds">Reasons, the context ladder, and prompt thresholds<a class="headerlink" href="#reasons-the-context-ladder-and-prompt-thresholds" title="Permanent link">&para;</a></h3>
 <p>The <code>UpdateReason</code> values double as the rungs of the update-context ladder, ordered by autonomy: <code>user-requested</code> &lt; <code>dependency-resolution</code> &lt; <code>auto-update</code>. Settings that gate behavior by context hold an <code>UpdateContextCeiling</code> — one of those rungs, or <code>off</code> (below all of them) — meaning "up to and including this context". The shared predicate is <code>UpdateTask.isWithinContextCeiling(reason, ceiling)</code>, a rank comparison on the ladder.</p>
 <p>Two behaviors are gated this way: whether an update context may <strong>run at all</strong> (<code>updates.mode</code>, default <code>auto-update</code> = everything; checked by <code>Updater.__isEnabledFor</code> in <code>addTask</code>/<code>scheduleUpdate</code>) and whether a task may <strong>prompt</strong> (<code>shouldPrompt(threshold)</code> tests the task's reason against the relevant threshold).</p>
 <p>The two prompt kinds have <strong>separate</strong> thresholds: <code>feedTrustPromptThreshold</code> (default <code>auto-update</code> — decides update success, so it may prompt in every context) and <code>packageChoicePromptThreshold</code> (default <code>user-requested</code> — a minor preference, so only for user-initiated actions). <code>off</code> disables a prompt kind entirely.</p>
 <p>The trust prompt (<code>promptTrustFeed</code>) returns a <code>FeedTrustDecision</code>: <code>once</code> proceeds for this install only, <code>always</code> records the feed via <code>addTrustedFeed</code>, <code>never</code> records it via <code>addBlockedFeed</code> (then fails <code>-19</code>); a cancelled prompt is <code>nil</code> (fails <code>-16</code>). The source chooser (<code>promptSelectPackageSource</code>) likewise returns the picked candidate plus the <code>SourceChoiceStickiness</code> to persist.</p>
-<h3 id="source-stickiness">Source stickiness</h3>
+<h3 id="source-stickiness">Source stickiness<a class="headerlink" href="#source-stickiness" title="Permanent link">&para;</a></h3>
 <p>After a source satisfies a package, the choice is remembered per-package in <code>currentSource</code> (<code>{feedSource, feedUrl?, channel, provider?, stickiness}</code>) so the chooser isn't re-shown needlessly. <code>feedSource</code> (<code>SourceFeedKind</code>: <code>self-declared</code>/<code>user-feed</code>/<code>provider</code>/<code>other</code>) records <em>where</em> the source came from; the URL is derived at resolution for every kind but <code>other</code>, so a remembered choice follows feed migration. <code>stickiness</code> (<code>SourceChoiceStickiness</code>) records <em>how sticky</em> the choice is — see the <a href="#source-stickiness-state">state diagram</a>.</p>
-<h3 id="status-codes">Status codes</h3>
+<h3 id="status-codes">Status codes<a class="headerlink" href="#status-codes" title="Permanent link">&para;</a></h3>
 <p>The run/require result is a <code>(code, detail)</code> pair. <strong>Sign is the convention:</strong> <code>&gt;= 0</code> means success or a benign skip; <code>&lt; 0</code> is an error whose message comes from <code>getUpdaterErrorMsg</code>.</p>
 <table>
 <thead>
@@ -2920,96 +2967,93 @@
 </tbody>
 </table>
 <p>(<code>new()</code> may also return <code>-1</code> updater disabled / <code>-2</code> invalid namespace; <code>scheduleUpdate</code> has its own pre-check returns: <code>-1</code> disabled, <code>-3</code> virtual/unmanaged, <code>0</code> interval not elapsed, <code>-9</code> protected path.)</p>
-<h2 id="the-update-process">The update process</h2>
+<h2 id="the-update-process">The update process<a class="headerlink" href="#the-update-process" title="Permanent link">&para;</a></h2>
 <p><code>UpdateTask.run(waitLock)</code> is the heart of the system. The top-level flow runs guard checks, resolves a source, gates trust, persists the choice, and dispatches the install.</p>
-<pre><code class="language-mermaid">flowchart TD
-    Start([&quot;UpdateTask.run(waitLock)&quot;]) --&gt; Running{another run&lt;br/&gt;in progress?}
-    Running -- yes --&gt; E10[&quot;return -10&quot;]
+<pre class="mermaid"><code>flowchart TD
+    Start(["UpdateTask.run(waitLock)"]) --&gt; Running{another run&lt;br/&gt;in progress?}
+    Running -- yes --&gt; E10["return -10"]
     Running -- no --&gt; Protected{entry point&lt;br/&gt;in ?data dir?}
-    Protected -- yes --&gt; E9[&quot;return -9&quot;]
+    Protected -- yes --&gt; E9["return -9"]
     Protected -- no --&gt; AlreadyUpd{already updated&lt;br/&gt;&amp; meets target?}
-    AlreadyUpd -- yes --&gt; R2[&quot;return 2&quot;]
+    AlreadyUpd -- yes --&gt; R2["return 2"]
     AlreadyUpd -- no --&gt; Net{internet&lt;br/&gt;connected?}
-    Net -- no --&gt; E7[&quot;return -7&quot;]
+    Net -- no --&gt; E7["return -7"]
     Net -- yes --&gt; Lock{acquire&lt;br/&gt;updater lock}
-    Lock -- &quot;fail&quot; --&gt; E5[&quot;return -5 (holder)&quot;]
-    Lock -- &quot;ok (refresh tasks if we waited)&quot; --&gt; Resolve[[&quot;Resolve source&lt;br/&gt;(see Resolution flow)&quot;]]
+    Lock -- "fail" --&gt; E5["return -5 (holder)"]
+    Lock -- "ok (refresh tasks if we waited)" --&gt; Resolve[["Resolve source&lt;br/&gt;(see Resolution flow)"]]
 
     Resolve --&gt; Outcome{resolution&lt;br/&gt;outcome}
-    Outcome -- &quot;pinned gone / aborted&quot; --&gt; RErr[&quot;return -17 / -18&lt;br/&gt;(optional: 3)&quot;]
-    Outcome -- &quot;none, but installed up-to-date&quot; --&gt; R0[&quot;return 0&quot;]
-    Outcome -- &quot;none at all&quot; --&gt; NoPkg{optional?}
-    NoPkg -- yes --&gt; R3a[&quot;return 3&quot;]
-    NoPkg -- no --&gt; E6[&quot;return -6&quot;]
-    Outcome -- &quot;candidate selected&quot; --&gt; Trust{band &gt;=&lt;br/&gt;UntrustedDirect?}
+    Outcome -- "pinned gone / aborted" --&gt; RErr["return -17 / -18&lt;br/&gt;(optional: 3)"]
+    Outcome -- "none, but installed up-to-date" --&gt; R0["return 0"]
+    Outcome -- "none at all" --&gt; NoPkg{optional?}
+    NoPkg -- yes --&gt; R3a["return 3"]
+    NoPkg -- no --&gt; E6["return -6"]
+    Outcome -- "candidate selected" --&gt; Trust{band &gt;=&lt;br/&gt;UntrustedDirect?}
 
-    Trust -- yes --&gt; TrustPrompt[&quot;promptTrustFeed&lt;br/&gt;(if reason meets feedTrustPromptThreshold)&quot;]
+    Trust -- yes --&gt; TrustPrompt["promptTrustFeed&lt;br/&gt;(if reason meets feedTrustPromptThreshold)"]
     TrustPrompt --&gt; TrustOK{trusted&lt;br/&gt;once/always?}
-    TrustOK -- &quot;no (cancel: -16 / never: block feed, -19)&quot; --&gt; TrustFail[&quot;return -16 / -19&lt;br/&gt;(optional: 3)&quot;]
-    TrustOK -- &quot;yes (always -&gt; trust feed)&quot; --&gt; Persist
-    Trust -- no --&gt; Persist[&quot;persistSource(selected, stickiness)&quot;]
+    TrustOK -- "no (cancel: -16 / never: block feed, -19)" --&gt; TrustFail["return -16 / -19&lt;br/&gt;(optional: 3)"]
+    TrustOK -- "yes (always -&gt; trust feed)" --&gt; Persist
+    Trust -- no --&gt; Persist["persistSource(selected, stickiness)"]
 
     Persist --&gt; UpToDate{installed already&lt;br/&gt;satisfies version?}
-    UpToDate -- yes --&gt; R0b[&quot;return 0&quot;]
+    UpToDate -- yes --&gt; R0b["return 0"]
     UpToDate -- no --&gt; Direct{direct&lt;br/&gt;candidate?}
-    Direct -- yes --&gt; Perform[[&quot;performUpdate&lt;br/&gt;(download, deploy, reload)&quot;]]
-    Direct -- no --&gt; InstallProv[[&quot;installProvider&lt;br/&gt;(require the provider)&quot;]]
-    Perform --&gt; Done([&quot;return (code, detail)&quot;])
-    InstallProv --&gt; Done
-</code></pre>
-<h3 id="resolution-flow">Resolution flow</h3>
+    Direct -- yes --&gt; Perform[["performUpdate&lt;br/&gt;(download, deploy, reload)"]]
+    Direct -- no --&gt; InstallProv[["installProvider&lt;br/&gt;(require the provider)"]]
+    Perform --&gt; Done(["return (code, detail)"])
+    InstallProv --&gt; Done</code></pre>
+<h3 id="resolution-flow">Resolution flow<a class="headerlink" href="#resolution-flow" title="Permanent link">&para;</a></h3>
 <p>Resolution turns the feed landscape into a single chosen candidate. It first honors a sticky choice (pinned/retain), otherwise runs a lazy, trust-ordered cascade, then optionally lets the user pick.</p>
-<pre><code class="language-mermaid">flowchart TD
-    R([&quot;Resolve&quot;]) --&gt; Read[&quot;read currentSource:&lt;br/&gt;remembered, stickiness, stickyProvider&quot;]
+<pre class="mermaid"><code>flowchart TD
+    R(["Resolve"]) --&gt; Read["read currentSource:&lt;br/&gt;remembered, stickiness, stickyProvider"]
     Read --&gt; Sticky{stickiness ==&lt;br/&gt;pinned or retain?}
 
-    Sticky -- yes --&gt; LoadRem[&quot;gather remembered feed early&lt;br/&gt;(constrained to userFeed if set)&lt;br/&gt;matchRememberedCandidate&quot;]
+    Sticky -- yes --&gt; LoadRem["gather remembered feed early&lt;br/&gt;(constrained to userFeed if set)&lt;br/&gt;matchRememberedCandidate"]
     LoadRem --&gt; Reuse{remembered candidate&lt;br/&gt;still eligible?}
-    Reuse -- yes --&gt; UseReuse[&quot;selected = remembered&lt;br/&gt;(skip chooser)&quot;]
-    Reuse -- &quot;no, pinned&quot; --&gt; PinMiss[&quot;pinned gone&lt;br/&gt;-&gt; -17 (optional: 3)&quot;]
-    Reuse -- &quot;no, retain&quot; --&gt; Cascade
+    Reuse -- yes --&gt; UseReuse["selected = remembered&lt;br/&gt;(skip chooser)"]
+    Reuse -- "no, pinned" --&gt; PinMiss["pinned gone&lt;br/&gt;-&gt; -17 (optional: 3)"]
+    Reuse -- "no, retain" --&gt; Cascade
 
-    Sticky -- no --&gt; Cascade[&quot;Lazy feed cascade&lt;br/&gt;(see Cascade)&quot;]
+    Sticky -- no --&gt; Cascade["Lazy feed cascade&lt;br/&gt;(see Cascade)"]
     Cascade --&gt; Have{candidate&lt;br/&gt;selected?}
-    Have -- no --&gt; NoneOut[&quot;none -&gt; run() handles&lt;br/&gt;up-to-date / no-package&quot;]
+    Have -- no --&gt; NoneOut["none -&gt; run() handles&lt;br/&gt;up-to-date / no-package"]
     Have -- yes --&gt; SkipPrompt{reuse, or&lt;br/&gt;stickiness == auto?}
-    SkipPrompt -- yes --&gt; Out([&quot;selected&quot;])
+    SkipPrompt -- yes --&gt; Out(["selected"])
     SkipPrompt -- no --&gt; ChoiceLogic
 
     ChoiceLogic{stickiness} --&gt;|retain miss| RetMiss{interactive?&lt;br/&gt;(packageChoicePromptThreshold)}
-    RetMiss -- yes --&gt; RePrompt[&quot;promptSelectPackageSource&lt;br/&gt;(flagged: choice unavailable)&quot;]
-    RetMiss -- no --&gt; Downgrade[&quot;stickiness = once&lt;br/&gt;keep algorithm pick&quot;]
+    RetMiss -- yes --&gt; RePrompt["promptSelectPackageSource&lt;br/&gt;(flagged: choice unavailable)"]
+    RetMiss -- no --&gt; Downgrade["stickiness = once&lt;br/&gt;keep algorithm pick"]
     ChoiceLogic --&gt;|once / unset| RealChoice{&gt;1 source &amp;&lt;br/&gt;interactive?}
-    RealChoice -- yes --&gt; Prompt[&quot;promptSelectPackageSource&lt;br/&gt;(preselect remembered/winner)&quot;]
+    RealChoice -- yes --&gt; Prompt["promptSelectPackageSource&lt;br/&gt;(preselect remembered/winner)"]
     RealChoice -- no --&gt; Out
     RePrompt --&gt; AbortQ
     Prompt --&gt; AbortQ{aborted?}
-    AbortQ -- yes --&gt; AbortOut[&quot;-&gt; -18 (optional: 3)&quot;]
+    AbortQ -- yes --&gt; AbortOut["-&gt; -18 (optional: 3)"]
     AbortQ -- no --&gt; Out
     Downgrade --&gt; Out
-    UseReuse --&gt; Out
-</code></pre>
+    UseReuse --&gt; Out</code></pre>
 <p><code>packageChoiceOfferAllSources</code> (global, default false) widens the chooser: when false it only fires on an exact band+version tie (<code>tied</code>); when true it offers every eligible source (<code>eligible</code>, sorted best-first), including lower-ranked and untrusted ones (flagged). Picking an untrusted source still passes through <code>promptTrustFeed</code> in <code>run</code>.</p>
-<h3 id="cascade-and-ranking">Cascade and ranking</h3>
+<h3 id="cascade-and-ranking">Cascade and ranking<a class="headerlink" href="#cascade-and-ranking" title="Permanent link">&para;</a></h3>
 <p>Feeds are fetched lazily, closest-first, and <code>selectCandidate</code> is re-run after each tier so a satisfying, sufficiently-trusted source short-circuits the rest.</p>
-<pre><code class="language-mermaid">flowchart TD
-    C([&quot;Cascade&quot;]) --&gt; UF{userFeed set?}
-    UF -- yes --&gt; UFOnly[&quot;gather {userFeed} (exclusive, trusted unless blocked)&quot;]
-    UFOnly --&gt; Sel0[&quot;selectCandidate&quot;]
-    Sel0 --&gt; CEnd([&quot;candidate or nil&quot;])
+<pre class="mermaid"><code>flowchart TD
+    C(["Cascade"]) --&gt; UF{userFeed set?}
+    UF -- yes --&gt; UFOnly["gather {userFeed} (exclusive, trusted unless blocked)"]
+    UFOnly --&gt; Sel0["selectCandidate"]
+    Sel0 --&gt; CEnd(["candidate or nil"])
 
-    UF -- no --&gt; T1[&quot;tier 1: declared feed&quot;]
-    T1 --&gt; Sel1[&quot;selectCandidate&quot;]
+    UF -- no --&gt; T1["tier 1: declared feed"]
+    T1 --&gt; Sel1["selectCandidate"]
     Sel1 --&gt; Q1{DeclaredDirect&lt;br/&gt;winner?}
     Q1 -- yes --&gt; CEnd
-    Q1 -- no --&gt; T2[&quot;tier 2: extraFeeds,&lt;br/&gt;trusted addFeeds, official registry*&quot;]
-    T2 --&gt; Sel2[&quot;selectCandidate&quot;]
+    Q1 -- no --&gt; T2["tier 2: extraFeeds,&lt;br/&gt;trusted addFeeds, official registry*"]
+    T2 --&gt; Sel2["selectCandidate"]
     Sel2 --&gt; Q2{band &lt;=&lt;br/&gt;TrustedProvider?}
     Q2 -- yes --&gt; CEnd
-    Q2 -- no --&gt; T3[&quot;tier 3: untrusted addFeeds&quot;]
-    T3 --&gt; Sel3[&quot;selectCandidate&quot;]
-    Sel3 --&gt; CEnd
-</code></pre>
+    Q2 -- no --&gt; T3["tier 3: untrusted addFeeds"]
+    T3 --&gt; Sel3["selectCandidate"]
+    Sel3 --&gt; CEnd</code></pre>
 <p>* The official registry crawl is skipped for <strong>optional</strong> dependencies (a nice-to-have shouldn't trigger a registry-wide fetch).</p>
 <p>For each gathered candidate, <code>getCandidateRankVersion</code> decides eligibility and the ranking version:</p>
 <ul>
@@ -3018,9 +3062,9 @@
 <li>Either way, the candidate must support the current platform and list files to install.</li>
 </ul>
 <p><code>selectCandidate</code> then sorts eligible candidates by band → ranking version (desc) → declared-feed tie-break → namespace, returning the winner, the tied top set, and the full eligible list. A <strong>remembered provider</strong> (<code>currentSource.provider.namespace</code>) found on a trusted feed is boosted to <code>DeclaredDirect</code> during gathering, so a version bump updates it in place instead of switching providers.</p>
-<h2 id="dependency-resolution-and-recursion">Dependency resolution and recursion</h2>
+<h2 id="dependency-resolution-and-recursion">Dependency resolution and recursion<a class="headerlink" href="#dependency-resolution-and-recursion" title="Permanent link">&para;</a></h2>
 <p>Installing a package can require installing <em>its</em> dependencies, so <code>performUpdate</code> re-enters the loader, which can re-enter the updater. Dummy refs registered before requirements are loaded let circular dependencies resolve without infinite recursion.</p>
-<pre><code class="language-mermaid">sequenceDiagram
+<pre class="mermaid"><code>sequenceDiagram
     participant ML as ModuleLoader.loadModules
     participant U as Updater
     participant T as UpdateTask
@@ -3046,19 +3090,18 @@
     PU-&gt;&gt;PU: move files, reload module, refresh record, changelog
     PU--&gt;&gt;T: (1, version)
     T--&gt;&gt;U: (code, detail)
-    U--&gt;&gt;ML: ref / (nil, code, detail)
-</code></pre>
-<h2 id="concurrency-and-locking">Concurrency and locking</h2>
+    U--&gt;&gt;ML: ref / (nil, code, detail)</code></pre>
+<h2 id="concurrency-and-locking">Concurrency and locking<a class="headerlink" href="#concurrency-and-locking" title="Permanent link">&para;</a></h2>
 <p>A single global, cross-process lock (<code>UPDATER_LOCK_NAMESPACE/run</code>, <code>Lock.Scope.Global</code>) serializes all updates so two scripts or processes don't deploy at once. <code>run</code> acquires it after the cheap guard checks; <code>performUpdate</code> and the download loop <code>renewLock</code> to keep the lease alive during long downloads; the macro hook and <code>requireModules</code> release it when done. The lease is backed by an OS advisory file lock that the system frees if the holder crashes, so a crash can't permanently wedge updates. If a task had to <strong>wait</strong> for the lock, another updater may have finished the same work in the meantime, so on acquisition each queued module task runs <code>refreshRecord</code> to pick up that result instead of re-installing. <code>Updater.isRunning()</code> reports the current holder without taking the lock.</p>
-<h2 id="source-stickiness-state">Source stickiness state</h2>
+<h2 id="source-stickiness-state">Source stickiness state<a class="headerlink" href="#source-stickiness-state" title="Permanent link">&para;</a></h2>
 <p><code>currentSource.stickiness</code> starts <code>unset</code> and is set by the source chooser; thereafter it governs whether the chooser reappears.</p>
-<pre><code class="language-mermaid">stateDiagram-v2
+<pre class="mermaid"><code>stateDiagram-v2
     [*] --&gt; unset
 
-    unset --&gt; once: chooser → &quot;Just This Once&quot;
-    unset --&gt; retain: chooser → &quot;Remember&quot;
-    unset --&gt; pinned: chooser → &quot;Pin/Lock&quot;
-    unset --&gt; auto: chooser → &quot;Auto-Pick&quot;
+    unset --&gt; once: chooser → "Just This Once"
+    unset --&gt; retain: chooser → "Remember"
+    unset --&gt; pinned: chooser → "Pin/Lock"
+    unset --&gt; auto: chooser → "Auto-Pick"
 
     once --&gt; once: prompt again (choice remains)
     once --&gt; retain: re-chosen
@@ -3070,8 +3113,7 @@
     retain --&gt; retain: pick gone, interactive → re-chosen
 
     pinned --&gt; pinned: reuse when eligible; abort/skip when gone (never re-prompts)
-    auto --&gt; auto: never prompts; always takes the ranked pick
-</code></pre>
+    auto --&gt; auto: never prompts; always takes the ranked pick</code></pre>
 <ul>
 <li><strong><code>unset</code></strong> — no preference; resolve normally and prompt only if interactive.</li>
 <li><strong><code>once</code></strong> — always prompt when a choice remains, preselecting the remembered pick.</li>
@@ -3079,18 +3121,18 @@
 <li><strong><code>pinned</code></strong> — always reuse the pick; if it's gone, abort a required dependency (<code>-17</code>) or skip an optional one, and never re-prompt.</li>
 <li><strong><code>auto</code></strong> — never prompt; always take the ranked pick, refreshing the remembered pick for information.</li>
 </ul>
-<h2 id="feed-discovery-provenance-and-trust-management">Feed discovery, provenance, and trust management</h2>
+<h2 id="feed-discovery-provenance-and-trust-management">Feed discovery, provenance, and trust management<a class="headerlink" href="#feed-discovery-provenance-and-trust-management" title="Permanent link">&para;</a></h2>
 <p>Beyond resolving a single record, DependencyControl maintains a picture of which feeds exist, where each came from, and whether it's trusted — surfaced through the Toolbox's Manage Feeds macro and shared with the install browser. <code>FeedTrust</code> owns the trust model (<code>updater.feedTrust</code>), <code>FeedInventory</code> gathers and crawls the feed graph, and <code>FeedLoader</code> is the shared feed-access layer beneath both: loading a feed is trust-free, so it sits below <code>FeedTrust</code>/<code>FeedInventory</code> and avoids a cycle.</p>
-<h3 id="provenance">Provenance</h3>
+<h3 id="provenance">Provenance<a class="headerlink" href="#provenance" title="Permanent link">&para;</a></h3>
 <p>A feed URL's <strong>provenance is a set</strong> — one feed can arrive through several sources at once, and its <em>removability</em> derives from which of those are user-controlled. The sources are DepCtrl's own feed (official), feeds in its <code>knownFeeds</code> (official-trusted), <code>extraFeeds</code> (user; discovery roots and trusted), <code>trustedFeeds</code> (user; trust-only), feeds declared by installed packages (<code>config.c.macros</code>/<code>modules[ns].feed</code>), feeds advertised in installed packages' <code>requiredModules[].feed</code> (<code>FeedInventory</code>'s <code>DependencyAdvertised</code> provenance), and the block list. Removing a feed drops one <em>user-controlled</em> contribution; when it's still reachable via another source, that is surfaced rather than implying the feed is gone.</p>
-<h3 id="trust-management">Trust management</h3>
+<h3 id="trust-management">Trust management<a class="headerlink" href="#trust-management" title="Permanent link">&para;</a></h3>
 <p><code>FeedTrust</code>'s mutators (<code>addTrustedFeed</code>/<code>untrust</code>, <code>block</code>/<code>unblock</code>, <code>addExtraFeed</code>/<code>removeExtraFeed</code>) dedup on every add path and invalidate the cached merged sets. The five resolver bands collapse, for a user, to three states: <strong>trusted</strong> (in <code>official ∪ extraFeeds ∪ trustedFeeds</code>), <strong>blocked</strong> (matched by the merged block list; overrides trust), and <strong>untrusted</strong> (the absence of trust — there is no stored "untrusted" list). Two rules constrain management:</p>
 <ul>
 <li><strong>An official or package-advertised feed can't be untrusted</strong> — untrust only touches the user lists, so the only way to stop trusting such a feed is to <strong>block</strong> it.</li>
 <li><strong>The bootstrap feed (<code>DEPCTRL_FEED_URL</code>) can never be blocked</strong> — that would collapse the trust bootstrap (every feed becomes untrusted), so any block matching it is refused.</li>
 </ul>
 <p>Before an action would cut off a package's update source — blocking or removing a feed an installed package's <code>currentSource</code> resolves to (re-derived per <code>SourceFeedKind</code>, not string-matched) — the user is warned. Block entries use the <code>{url, matchMode, reason?}</code> object form (see <a href="#trust-bands">Trust bands</a>); <code>getBlockingEntry(url)</code> returns the matching entry so the reason can be shown, and because merged blocks are prefix-based only an <em>exact</em> block is individually removable.</p>
-<h3 id="discovery-and-its-security-model">Discovery and its security model</h3>
+<h3 id="discovery-and-its-security-model">Discovery and its security model<a class="headerlink" href="#discovery-and-its-security-model" title="Permanent link">&para;</a></h3>
 <p><code>FeedInventory</code> is <strong>config-first</strong>: both <code>gather</code> (offline, config feeds only) and <code>crawl</code> (transitive) always include the user's feeds, so a dead <code>extraFeed</code> or block entry stays manageable even when unreachable (<code>crawl</code> records a per-feed <code>fetched</code> flag for an "unreachable" marker). <code>crawl</code> walks the feed graph breadth-first from the config-derived roots, following each feed's <code>knownFeeds</code>.</p>
 <p>Discovery <strong>may recurse into untrusted feeds' <code>knownFeeds</code>, on by default</strong> (<code>feeds.fetchUntrustedFeeds = always</code>; <code>never</code>/<code>prompt</code> for the cautious). The risk it manages is <strong>SSRF-shaped, not classic SSRF</strong>: an attacker controlling a feed's <code>knownFeeds</code> chooses URLs the client then fetches, but the requester is the user's own workstation (no privileged vantage), the fetch is blind (the body is parsed as a feed and discarded), and it's GET-only. Enumeration grants no install capability either — a feed reached this way is still untrusted, and installing from it still needs an explicit trust decision. The residual is fetch fan-out plus low-value blind GETs. Two mitigations, both at the layer that also protects the resolver, make the default acceptable:</p>
 <ul>
@@ -3098,7 +3140,7 @@
 <li><strong>Bounded crawl.</strong> Trusted feeds are explored freely (a finite, non-adversarial set); only <em>untrusted</em> expansion is budgeted, and each root gets its own subtree budget so one malicious subtree can't starve others, with a per-feed cap on untrusted children and a secondary depth cap (<code>feeds.crawlLimits</code>: per-root / per-feed / depth). Beyond-bounds feeds are recorded as "advertised, not fetched", and <code>crawl</code> returns <code>(feeds, stats)</code> whose <code>stats.truncations</code> reports each limit hit (which limit, its value, the offending feed and its route, a bounded sample of dropped URLs) so incomplete coverage is visible. The install browser discovers through this same crawl (<code>crawlWithPrompt</code>), retiring the former ungated, unbounded <code>getKnownFeeds</code> recursion.</li>
 </ul>
 <p><strong>Backend gaps (open).</strong> Private-host blocking is robust on libcurl — validate the resolved IP per connection and redirect hop (<code>CURLOPT_PREREQFUNCTION</code>/<code>CURLINFO_PRIMARY_IP</code>) — but best-effort on WinINet, which re-resolves DNS internally with no connect-IP pin, leaving a residual DNS-rebinding (TOCTOU) gap only a raw-socket client would close. Neither backend yet caps response size (<code>maxFeedSize</code>) or fetch time (<code>feedFetchTimeout</code>). These are the remaining discovery-hardening items (tracked in PLAN.md).</p>
-<h2 id="notes-for-maintainers">Notes for maintainers</h2>
+<h2 id="notes-for-maintainers">Notes for maintainers<a class="headerlink" href="#notes-for-maintainers" title="Permanent link">&para;</a></h2>
 <ul>
 <li>The whole resolution path runs only after DependencyControl itself is loaded; a raw <code>require "json"</code> before DepCtrl loads won't resolve through this mechanism (accepted boundary).</li>
 <li><code>getOfficialTrustedFeeds</code>/<code>getOfficialBlockedFeeds</code> (backed by the cached <code>loadOfficialFeedTrust</code> loader) are best-effort: if DepCtrl's own feed can't be loaded, only the DepCtrl feed URL is trusted, so third-party feeds are distrusted until it's reachable. A persistent cross-session trust cache would harden this.</li>
@@ -3120,8 +3162,16 @@
             </div>
           
           
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
 <script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
         </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
         
       </main>
       
@@ -3152,7 +3202,7 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.code.copy", "content.tabs.link", "navigation.instant", "navigation.top", "search.suggest", "search.highlight", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
