@@ -55,8 +55,8 @@
       "url": "@{baseUrl}#@{namespace}",
       "channels": {
         "main": {
-          "version": "0.9.0",
-          "released": "2026-08-20",
+          "version": "0.10.0",
+          "released": null,
           "default": true,
           "files": [
             {
@@ -113,6 +113,9 @@
         "0.9.0": [
           "feat: A new Package Source Configuration macro lets you choose where a package's next update comes from — the source kind, channel, how firmly the choice is kept, and either a known feed, a custom feed URL, or a providing module.",
           "fix: The Install, Uninstall and Update pickers now show each package's update channel beside its version, which was missing from the lists in most circumstances."
+        ],
+        "0.10.0": [
+          "change: The Global Configuration dialog now notes that the log directory's `?state` token falls back to `?user` on an Aegisub build without it."
         ]
       }
     }
@@ -125,8 +128,8 @@
       "url": "@{baseUrl}#@{namespace}",
       "channels": {
         "main": {
-          "version": "0.9.0",
-          "released": "2026-08-20",
+          "version": "0.10.0",
+          "released": null,
           "default": true,
           "files": [
             {
@@ -803,6 +806,10 @@
           "fix: A package's settings are no longer reverted by a second DependencyControl instance writing the same config file (e.g. during a DependencyControl update, in another automation script context, or from another Aegisub process). Each save now writes only the fields it changed since it last read the file.",
           "fix: A regression introduced in v0.7.0 was fixed that prevented the new version number of updated packages from being written into the DependencyControl config file when nothing else in its DependencyControl record changed.",
           "fix: Changes to settings that affect feed fetching (private host blocking, feed size and timeout limits) now take effect immediately instead of requiring an automation scripts reload."
+        ],
+        "0.10.0": [
+          "change: Log files and on-disk caches now follow the XDG Base Directory specification, moving to `?state/log` and `?local/cache`. An Aegisub build that lacks the newer `?state` path token keeps writing logs to `?user/log`, so a path setting naming `?state` works on every version.",
+          "feat: Added `DependencyControl.PathOps` for resolving Aegisub path tokens with a fallback for tokens the running Aegisub build doesn't know."
         ]
       }
     },

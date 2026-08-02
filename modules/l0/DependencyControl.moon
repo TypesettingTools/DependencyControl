@@ -63,6 +63,7 @@ Host = require "l0.DependencyControl.Host"
 Lock = require "l0.DependencyControl.Lock"
 Logger = require "l0.DependencyControl.Logger"
 PackageRecord = require "l0.DependencyControl.PackageRecord"
+pathOps = require "l0.DependencyControl.path-ops"
 Accessors = require "l0.DependencyControl.Accessors"
 Stub = require "l0.DependencyControl.Stub"
 Timer = require "l0.DependencyControl.Timer"
@@ -94,6 +95,7 @@ class DependencyControl extends PackageRecord
   @Lock = Lock
   @Logger = Logger
   @PackageRecord = PackageRecord
+  @PathOps = pathOps
   @Stub = Stub
   @Timer = Timer
   @UpdateFeed = UpdateFeed

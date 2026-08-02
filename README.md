@@ -117,11 +117,13 @@ Settings in the top-level `config` object affect all scripts and DependencyContr
 - _int_ **maxAge [604800 (1 week)]:** Delete log files whose last-modified date is older than this many seconds.
 - _int_ **maxSize [10000000 (10 MB)]:** Cumulative byte-size limit across all log files.
 
-**`paths` — base directories** (each accepts Aegisub path tokens such as `?user` and `?data`)
+**`paths` — base directories** (each accepts Aegisub path tokens such as `?user`, `?local`, `?state` and `?data`)
 
 - _str_ **config ["?user/config"]:** Directory for DependencyControl's config files; also the directory offered to automation scripts for their own config (they may or may not use it).
-- _str_ **log ["?user/log"]:** Directory for DependencyControl's log files.
-- _str_ **cache ["?user/cache"]:** Base directory for on-disk caches. Each cache lives under a `<namespace>/<name>` subdirectory (e.g. the feed cache at `<cache>/l0.DependencyControl/feeds`).
+- _str_ **log ["?state/log"]:** Directory for DependencyControl's log files.
+- _str_ **cache ["?local/cache"]:** Base directory for on-disk caches. Each cache lives under a `<namespace>/<name>` subdirectory (e.g. the feed cache at `<cache>/l0.DependencyControl/feeds`).
+
+These defaults follow the [XDG Base Directory specification](https://specifications.freedesktop.org/basedir-spec/latest/) on Aegisub builds that implement it: settings land in the config directory, disposable caches in the cache directory, and logs in the state directory. `?state` is newer than `?user`, `?local` and `?data`, so DependencyControl resolves it to `?user` on an Aegisub build that doesn't know it — a path setting naming `?state` works on every version.
 
 #### 2. Per-script Configuration
 

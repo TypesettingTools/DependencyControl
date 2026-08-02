@@ -707,7 +707,7 @@ configFields = {
   {section: "paths", key: "config", type: "string", default: sections.paths.config,
     label: "Config directory", hint: "Where DependencyControl keeps its config files. Aegisub path tokens like ?user are allowed."}
   {section: "paths", key: "log", type: "string", default: sections.paths.log,
-    label: "Log directory", hint: "Where DependencyControl writes its log files."}
+    label: "Log directory", hint: "Where DependencyControl writes its log files. ?state falls back to ?user on an Aegisub that doesn't have it."}
   {section: "paths", key: "cache", type: "string", default: sections.paths.cache,
     label: "Cache directory", hint: "Base directory for on-disk caches such as the feed cache."}
 }

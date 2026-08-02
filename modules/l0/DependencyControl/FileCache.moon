@@ -3,6 +3,7 @@ fileOps = require "l0.DependencyControl.file-ops"
 Logger = require "l0.DependencyControl.Logger"
 constants = require "l0.DependencyControl.Constants"
 Lock = require "l0.DependencyControl.Lock"
+pathOps = require "l0.DependencyControl.path-ops"
 dkjson = require "l0.dkjson"
 
 defaultLogger = Logger fileBaseName: "#{constants.DEPCTRL_SHORT_NAME}.FileCache"
@@ -25,7 +26,7 @@ snapshotStamp = (fileName) -> fileName\match "(%d+T%d+Z)" or ""
 
 -- An instance's on-disk directory: the configured base, namespaced and named. The single place the layout
 -- is defined, shared by the constructor and the `get` factory's registry key.
-resolveDir = (basePath, namespace, name) -> "#{aegisub.decode_path basePath}/#{namespace}/#{name}"
+resolveDir = (basePath, namespace, name) -> "#{pathOps.decode basePath}/#{namespace}/#{name}"
 
 ---The per-key index entry FileCache persists next to each snapshot; returned by getMeta/getFile/get/put.
 ---@class FileCacheMeta
@@ -61,7 +62,7 @@ class FileCache
 
   ---Returns the shared cache for a base/namespace/name, reusing the existing instance for that resolved
   ---directory rather than constructing a duplicate. Options apply only when the instance is first created.
-  ---@param basePath string The cache root (the `paths.cache` setting, e.g. "?user/cache"); path-decoded.
+  ---@param basePath string The cache root (the `paths.cache` setting, e.g. "?local/cache"); path-decoded.
   ---@param namespace string The owning script namespace (`constants.DEPCTRL_NAMESPACE` for DepCtrl's own caches).
   ---@param name string A short name for this cache's purpose (e.g. "feeds").
   ---@param opts? FileCacheOptions See new.
@@ -74,7 +75,7 @@ class FileCache
       FileCache.__instances[dir] = cache
     return cache
 
-  ---@param basePath string The cache root (the `paths.cache` setting, e.g. "?user/cache"); path-decoded here.
+  ---@param basePath string The cache root (the `paths.cache` setting, e.g. "?local/cache"); path-decoded here.
   ---@param namespace string The owning script namespace (`constants.DEPCTRL_NAMESPACE` for DepCtrl's own caches).
   ---@param name string A short subdirectory naming this cache's purpose (e.g. "feeds").
   ---@param opts? FileCacheOptions Defaults for entry lifetime, retention, logging, clock, and the L1 codec.
