@@ -4,6 +4,7 @@
 (basePath, DepCtrl) ->
   FeedLoader = require "l0.DependencyControl.FeedLoader"
   fileOps = require "l0.DependencyControl.file-ops"
+  pathOps = require "l0.DependencyControl.path-ops"
   constants = require "l0.DependencyControl.Constants"
 
   url = "https://example.com/feed.json"
@@ -11,7 +12,7 @@
   -- a FeedLoader over a temp cache base; opts override the config's feed settings
   make = (opts = {}) ->
     config = {c: {
-      paths: {cache: fileOps.joinPath basePath, "feedLoader"}
+      paths: {cache: pathOps.joinPath basePath, "feedLoader"}
       feeds: {cacheMaxAge: opts.cacheMaxAge or 4242, maxFeedSize: opts.maxFeedSize, feedFetchTimeout: opts.feedFetchTimeout}
       updates: {blockPrivateHosts: opts.blockPrivateHosts}
     }}

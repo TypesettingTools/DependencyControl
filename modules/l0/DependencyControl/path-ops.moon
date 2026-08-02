@@ -17,7 +17,7 @@ msgs = {
   joinPath: {
     invalidSegment: "Invalid path segment type: expected a string or pure array table, got '%s'."
   }
-  validateFullPath: {
+  resolveFullPath: {
     badType: "Argument #%s (%s) had the wrong type. Expected 'string', got '%s'."
     tooLong: "The specified path exceeded the maximum length limit (%d > %d)."
     tooLongRegistryDisabled: "The specified path exceeded the Windows MAX_PATH limit (%d > %d characters) and long path support is disabled on this system.\nEnable it by setting the registry value 'HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\FileSystem\\LongPathsEnabled' (DWORD) to 1 and restarting, e.g. by running this in an elevated PowerShell:\n  Set-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\FileSystem' -Name 'LongPathsEnabled' -Value 1 -Type DWord"
@@ -166,7 +166,7 @@ PathOps = {
     -- detect root from the first string before splitting consumes separators
     firstStr = type(args[1]) == "table" and args[1][1] or args[1]
     return nil, msgs.joinPath.invalidSegment\format type firstStr if type(firstStr) ~= "string"
-    absolutePathRoot = type(firstStr) == "string" and PathOps.__getPathRoot firstStr
+    absolutePathRoot = type(firstStr) == "string" and PathOps._getPathRoot firstStr
 
     invalidPathSegmentType = nil
     flatPathSegments = utils.flatten args, 3, (value, typ) ->
@@ -175,7 +175,7 @@ PathOps = {
         return {}, true -- error is raised below via invalidPathSegmentType; contribute nothing here
 
       firstSegment, moreSegments = nil, nil
-      for segment in PathOps.pathSegments value
+      for segment in PathOps.iterateSegments value
         if firstSegment
           moreSegments or= {firstSegment}
           table.insert moreSegments, segment
@@ -202,14 +202,14 @@ PathOps = {
 
   ---Returns an iterator over the non-empty components of a path, split on any separator.
   ---@param path string
-  ---@return fun(): string? iterator
-  pathSegments: (path) -> path\gmatch "[^/\\]+"
+  ---@return fun(): string? iterator Yields each component in order, nothing for a path holding none.
+  iterateSegments: (path) -> path\gmatch "[^/\\]+"
 
-  ---Extracts the root anchor of an absolute path.
-  ---@private
+  ---Extracts the root anchor of an absolute path. Shared with FileOps, which splits it back off the
+  ---directory for the pre-0.9 shape its own callers still expect; not general public API.
   ---@param absolutePath string The absolute path to inspect.
   ---@return string? root On Windows the drive prefix with its separator (e.g. "C:\"), on POSIX the leading slash plus first segment (e.g. "/usr"), or nil when the path has no such root.
-  __getPathRoot: (absolutePath) ->
+  _getPathRoot: (absolutePath) ->
     return absolutePath\match "^[A-Za-z]:[/\\]" if ffi.os == "Windows"
     return absolutePath\match "^/[^/\\]+"
 
@@ -217,22 +217,22 @@ PathOps = {
   ---@param path string|string[] Either a path or an array of path segments.
   ---@param checkFileExt? boolean Require the path to have a file extension.
   ---@param basePath? string|string[] Base path to resolve relative paths against; relative paths are rejected without it.
-  ---@return string|false|nil normalizedPath The normalized path, or false/nil on error.
-  ---@return string? deviceOrErr The device/root component on success, or an error message on failure.
-  ---@return string? dir The directory component (success only).
-  ---@return string? file The file name component (success only).
-  validateFullPath: (path, checkFileExt, basePath) ->
+  ---@return string|false|nil normalizedPath The normalized path, false when it isn't absolute, nil on error.
+  ---@return string? err Set only on failure.
+  ---@return string? dir The absolute directory holding the path's leaf (success only).
+  ---@return string? file The leaf's file name, nil when the path names a directory (success only).
+  resolveFullPath: (path, checkFileExt, basePath) ->
     if "table" == type path
       path, errMsg = PathOps.joinPath path
       return nil, errMsg if not path
     elseif "string" != type path
-      return nil, msgs.validateFullPath.badType\format 1, "path", type(path)
+      return nil, msgs.resolveFullPath.badType\format 1, "path", type(path)
 
     if "table" == type basePath
       basePath, errMsg = PathOps.joinPath basePath
       return nil, errMsg if not basePath
     elseif basePath and "string" != type basePath
-      return nil, msgs.validateFullPath.badType\format 3, "basePath", type(basePath)
+      return nil, msgs.resolveFullPath.badType\format 3, "basePath", type(basePath)
 
     -- expand aegisub path specifiers
     path = PathOps.decode path
@@ -246,42 +246,43 @@ PathOps = {
       if PathOps.longPathsDisabled
         -- distinguish a system-wide opt-out from an app that isn't long-path-aware
         if PathOps.windowsRegistryLongPathsEnabled
-          return nil, msgs.validateFullPath.tooLongProcessUnaware\format #path, PathOps.pathMaxLength, PathOps.pathMaxLength
-        return nil, msgs.validateFullPath.tooLongRegistryDisabled\format #path, PathOps.pathMaxLength
-      return nil, msgs.validateFullPath.tooLong\format #path, PathOps.pathMaxLength
+          return nil, msgs.resolveFullPath.tooLongProcessUnaware\format #path, PathOps.pathMaxLength, PathOps.pathMaxLength
+        return nil, msgs.resolveFullPath.tooLongRegistryDisabled\format #path, PathOps.pathMaxLength
+      return nil, msgs.resolveFullPath.tooLong\format #path, PathOps.pathMaxLength
     -- check for invalid characters
     invChar = path\match PathOps.pathMatch.invalidChars, ffi.os == "Windows" and 3 or nil
     if invChar
-      return nil, msgs.validateFullPath.invalidChars\format invChar
+      return nil, msgs.resolveFullPath.invalidChars\format invChar
     -- check if path is absolute
-    dev = PathOps.__getPathRoot path
-    unless dev
+    root = PathOps._getPathRoot path
+    unless root
       -- make relative paths absolute if base path is provided
       if basePath
         path, errMsg = PathOps.joinPath basePath, path
         return nil, errMsg if not path
-        dev = PathOps.__getPathRoot path
-      else return false, msgs.validateFullPath.notFullPath
-    -- parse path structure
-    rest = path\sub #dev + 1
+        root = PathOps._getPathRoot path
+      else return false, msgs.resolveFullPath.notFullPath
+    -- parse path structure; the root is split off so the segment checks below skip it
+    rest = path\sub #root + 1
     dir, file = rest\match "^(.*)[/\\]([^/\\]*)$"
     unless dir
-      return false, msgs.validateFullPath.notFullPath
-    for segment in PathOps.pathSegments rest
+      return false, msgs.resolveFullPath.notFullPath
+    for segment in PathOps.iterateSegments rest
       if #segment > PathOps.pathMaxSegmentLength
-        return nil, msgs.validateFullPath.segmentTooLong\format #segment, PathOps.pathMaxSegmentLength, segment
+        return nil, msgs.resolveFullPath.segmentTooLong\format #segment, PathOps.pathMaxSegmentLength, segment
       if ffi.os == "Windows"
         segmentWithoutExt = segment\match("^[^%.]+") or segment
         if windowsReservedNameSet[segmentWithoutExt\upper!]
-          return nil, msgs.validateFullPath.reservedNames\format segmentWithoutExt
+          return nil, msgs.resolveFullPath.reservedNames\format segmentWithoutExt
       unless segment\match "[^%.%s]$"
-        return nil, msgs.validateFullPath.notFullPath
+        return nil, msgs.resolveFullPath.notFullPath
     file = file != "" and file or nil
     if checkFileExt and not (file and file\match ".+%.+")
-      return false, msgs.validateFullPath.missingExt
+      return false, msgs.resolveFullPath.missingExt
 
-    path = table.concat {dev, dir, file and PathOps.pathSep, file}
-    return path, dev, dir, file
+    dir = root .. dir
+    path = table.concat {dir, file and PathOps.pathSep, file}
+    return path, nil, dir, file
 }
 
 return PathOps

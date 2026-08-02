@@ -3,6 +3,7 @@ ffi = require "ffi"
 Logger = require "l0.DependencyControl.Logger"
 constants = require "l0.DependencyControl.Constants"
 fileOps = require "l0.DependencyControl.file-ops"
+pathOps = require "l0.DependencyControl.path-ops"
 json = require "l0.dkjson"
 
 defaultLogger = Logger fileBaseName: "#{constants.DEPCTRL_SHORT_NAME}.ZipArchiver"
@@ -61,7 +62,7 @@ msgs = {
 ---@class ZipArchiver
 class ZipArchiver
   isWindows = ffi.os == "Windows"
-  pathSep = fileOps.pathSep
+  pathSep = pathOps.pathSep
 
 
   ---Creates an archiver that will write a zip to `outputPath`.

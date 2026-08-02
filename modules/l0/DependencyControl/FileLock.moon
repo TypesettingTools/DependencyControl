@@ -1,5 +1,6 @@
 ffi = require "ffi"
 fileOps = require "l0.DependencyControl.file-ops"
+pathOps = require "l0.DependencyControl.path-ops"
 Finalizer = require "l0.DependencyControl.Finalizer"
 
 local openImpl, tryLockImpl, unlockImpl, closeImpl, isAvailable
@@ -91,7 +92,7 @@ class FileLock
   new: (path) =>
     @isOpen = false
     assert isAvailable, msgs.noImplementation
-    normalizedPath, errMsg = fileOps.validateFullPath path, true
+    normalizedPath, errMsg = pathOps.resolveFullPath path, true
     assert normalizedPath, errMsg
 
     handle = openImpl normalizedPath

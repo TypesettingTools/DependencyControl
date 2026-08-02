@@ -332,6 +332,7 @@ if args.command == "test" then
 
   local DepCtrl = setupDepCtrl("tests")
   local FileOps = require "l0.DependencyControl.file-ops"
+  local PathOps = require "l0.DependencyControl.path-ops"
 
   local feedPath = resolveAbsPath(args.feed)
   local feed = loadFeed(feedPath)
@@ -385,7 +386,7 @@ if args.command == "test" then
         end
       end
 
-      local reportPath = FileOps.joinPath(reportDir, ns .. ".json")
+      local reportPath = PathOps.joinPath(reportDir, ns .. ".json")
       local wrote, writeErr = record.tests:writeResults(reportPath)
       io.stderr:write(wrote and ("Wrote CTRF report to " .. reportPath .. "\n")
         or ("Warning: couldn't write CTRF report for " .. ns .. ": " .. tostring(writeErr) .. "\n"))
@@ -413,10 +414,11 @@ elseif args.command == "bundle" then
   setupDepCtrl("bundle")
 
   local FileOps = require "l0.DependencyControl.file-ops"
+  local PathOps = require "l0.DependencyControl.path-ops"
   local ZipArchiver = require "l0.DependencyControl.ZipArchiver"
   local GitRepository = require "l0.DependencyControl.GitRepository"
 
-  local canonicalOut, outErr = FileOps.validateFullPath({ outputDir }, false, lfs.currentdir())
+  local canonicalOut, outErr = PathOps.resolveFullPath({ outputDir }, false, lfs.currentdir())
   if not canonicalOut then
     io.stderr:write("Error resolving output directory '" .. outputDir .. "': " .. tostring(outErr) .. "\n")
     os.exit(1)
@@ -564,6 +566,7 @@ elseif args.command == "serve-updates" then
 
   local UpdateFeed = require "l0.DependencyControl.UpdateFeed"
   local FileOps = require "l0.DependencyControl.file-ops"
+  local PathOps = require "l0.DependencyControl.path-ops"
   local json = require "l0.dkjson"
   local socket = require "socket"
   local copas = require "copas"
@@ -574,7 +577,7 @@ elseif args.command == "serve-updates" then
   -- feed an older client can read.
   local sourceFeed = UpdateFeed(nil, false, feedPath)
   registerFeedSearcher(sourceFeed)
-  local refreshedPath = FileOps.joinPath(assert(FileOps.createTempDir()), "refreshed.json")
+  local refreshedPath = PathOps.joinPath(assert(FileOps.createTempDir()), "refreshed.json")
   local refreshed, refreshErr = sourceFeed:updateFeed({ outPath = refreshedPath })
   if not refreshed then
     io.stderr:write("serve-updates: couldn't refresh the feed: " .. tostring(refreshErr) .. "\n")
@@ -586,7 +589,7 @@ elseif args.command == "serve-updates" then
   local feedToServe = refreshed.changed > 0 and refreshedPath or feedPath
   local serveChannels = args.serve_channel or {}
   if #serveChannels > 0 then
-    local mergedPath = FileOps.joinPath(dirname(refreshedPath), "merged.json")
+    local mergedPath = PathOps.joinPath(dirname(refreshedPath), "merged.json")
     local merged, mergeErr = UpdateFeed(nil, false, feedToServe):mergeChannels(UpdateFeed(nil, false, feedToServe), {
       from = args.from_channel,
       to = serveChannels,
@@ -861,6 +864,7 @@ elseif args.command == "generate-types" then
   setupDepCtrl("generate-types")
 
   local FileOps = require "l0.DependencyControl.file-ops"
+  local Domain = require "l0.DependencyControl.domain"
 
   local feed = loadFeed(feedPath)
   local filter = buildFilter(args)
@@ -882,7 +886,7 @@ elseif args.command == "generate-types" then
   local written, writeErrors = 0, 0
   if not args.check then
     for _, def in ipairs(result.definitions) do
-      local outPath = FileOps.getNamespacedPath(outDir, def.requireId, ".d.lua")
+      local outPath = Domain.getNamespacedPath(outDir, def.requireId, ".d.lua")
       FileOps.mkdir(outPath, true, true)
       local ok, writeErr = FileOps.writeFile(outPath, def.text, true)
       if ok then

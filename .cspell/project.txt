@@ -91,6 +91,7 @@ myaamori
 NTFS
 nullary
 parentheticals
+PATHOPS
 pcre
 pegasus
 petzku

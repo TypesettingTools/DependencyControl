@@ -6,6 +6,7 @@
   Lock = require "l0.DependencyControl.Lock"
 
   FILEOPS_MODULE_NAME = "l0.DependencyControl.file-ops"
+  PATHOPS_MODULE_NAME = "l0.DependencyControl.path-ops"
   -- ConfigHandler reads and writes config through the vendored dkjson (for its Prettier indent on write).
   DKJSON_MODULE_NAME = "l0.dkjson"
 
@@ -46,7 +47,7 @@
       ut\assertEquals type(handler.config), "table"
 
     new_withPath: (ut) ->
-      validateStub = (ut\stub FILEOPS_MODULE_NAME, "validateFullPath")\calls (path) -> path, nil
+      validateStub = (ut\stub PATHOPS_MODULE_NAME, "resolveFullPath")\calls (path) -> path, nil
       handler = ConfigHandler "/config/test.json"
       ut\assertEquals handler.filePath, "/config/test.json"
       ut\assertNotNil handler.lock
@@ -54,14 +55,14 @@
       validateStub\assertCalledWith "/config/test.json", true
 
     new_badPath: (ut) ->
-      (ut\stub FILEOPS_MODULE_NAME, "validateFullPath")\returns nil, "invalid path"
+      (ut\stub PATHOPS_MODULE_NAME, "resolveFullPath")\returns nil, "invalid path"
       ok, err = pcall -> ConfigHandler "/bad/path.json"
       ut\assertFalse ok
 
     -- @get caches by the validated path, so two raw spellings that normalize to one file share a handler
     get_cachesByValidatedPath: (ut) ->
       canon = "#{aegisub.decode_path '?temp'}/dc_m12a_get_cache.json"
-      (ut\stub FILEOPS_MODULE_NAME, "validateFullPath")\calls (p) -> canon, nil
+      (ut\stub PATHOPS_MODULE_NAME, "resolveFullPath")\calls (p) -> canon, nil
       h1 = ConfigHandler\get "raw-spelling-one", nil, true
       h2 = ConfigHandler\get "raw-spelling-two", nil, true -- validates to the same canonical path
       ut\assertNotNil h1
