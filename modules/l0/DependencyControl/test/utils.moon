@@ -1,4 +1,5 @@
--- Utils tests: flattening, list membership, deep copying, deep equality, item equality, and pattern escaping.
+-- Utils tests: flattening, list membership, deep copying, deep equality, item equality, argument
+-- type checking, and pattern escaping.
 -- Called from test.moon as: (controls\requireTest "utils")!
 ->
   utils = require "l0.DependencyControl.utils"
@@ -104,6 +105,31 @@
       ut\assertFalse utils.itemsEqual {1, 1}, {1, 2}
       ut\assertFalse utils.itemsEqual {1, 1, 2}, {1, 2, 2}
 
+    -- checkArgType reports the failure without raising it, so the caller decides whether to log it,
+    -- raise it, or return it as an error
+
+    checkArgType_passesMatchingType: (ut) ->
+      ok, err = utils.checkArgType {}, 1, "table"
+      ut\assertTrue ok
+      ut\assertNil err
+
+    checkArgType_namesArgumentByPositionOrName: (ut) ->
+      _, err = utils.checkArgType 5, 2, "string"
+      ut\assertEquals err, "Argument #2 should be a string, is a number (5)."
+      _, err = utils.checkArgType 5, "count", "string"
+      ut\assertContains err, "Argument 'count' should be a string"
+
+    -- nil gets its own wording, since "is a nil (nil)" would read as a value that happens to be nil
+    checkArgType_nilHasItsOwnMessage: (ut) ->
+      _, err = utils.checkArgType nil, 1, "table"
+      ut\assertEquals err, "Argument #1 should be a table, is nil."
+
+    assertArgType_returnsValueOrRaises: (ut) ->
+      tbl = {}
+      ut\assertIs utils.assertArgType(tbl, 1, "table"), tbl
+      ut\assertErrorMsgMatches utils.assertArgType, {5, 1, "table"}, "Argument #1 should be a table"
+      ut\assertErrorMsgMatches utils.assertArgType, {nil, "tbl", "table"}, "Argument 'tbl' should be a table, is nil"
+
     escapePattern_matchesLiterally: (ut) ->
       s = "a-mo.Line[1] (v2)+?*^$%"
       escaped = utils.escapePattern s
@@ -140,6 +166,8 @@
       "listIncludes_found", "listIncludes_notFoundAndEmpty",
       "deepCopy_nestedTablesDetached", "deepCopy_cyclicRefsPreserved", "deepCopy_sharedTableCopiedOnce",
       "equals_cyclicRefs", "itemsEqual_duplicateScalars",
+      "checkArgType_passesMatchingType", "checkArgType_namesArgumentByPositionOrName",
+      "checkArgType_nilHasItsOwnMessage", "assertArgType_returnsValueOrRaises",
       "escapePattern_matchesLiterally", "escapePattern_plainStringUnchanged",
       "seedRandom_divergesAcrossSimultaneousStates"
     }

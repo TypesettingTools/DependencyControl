@@ -45,7 +45,6 @@ class UnitTest
       inRange: "Expected value to be in range [%d .. %d], actual value %d was %s %d."
       almostEquals: "Expected value to be almost equal %d ± %d, actual value was %d."
       notAlmostEquals: "Expected numerical value to not be close to %d ± %d, actual value was %d."
-      checkArgTypes: "Expected argument #%d (%s) to be of type %s, got a %s."
       zero: "Expected 0, actual value was a %s."
       notZero: "Got a 0 when a number other than 0 was expected."
       compare: "Expected value to be a number %s %d, actual value was %d."
@@ -274,16 +273,14 @@ class UnitTest
   assertTable: (val) => @assertType val, "table"
 
   ---Helper method to type-check arguments as a prerequisite to other asserts.
+  ---A bad argument is a defect in the test rather than a failed assertion, so it goes to the logger
+  ---as an error instead of being recorded as an assertion failure.
   ---@private
-  ---@param args table<string, [any, string]> Argument {value, expectedType} pairs keyed by argument name.
+  ---@param args table<string, [any, string]> Argument {value, expectedType} pairs keyed by argument name. An expected type of "_any" accepts anything.
   checkArgTypes: (args) =>
-    i = 1
     for name, types in pairs args
-      declared, actual = types[2], type types[1]
-      continue if declared == "_any"
-      @logger\assert declared == actual, @@msgs.assert.checkArgTypes, i, name,
-        declared, @format "type", types[1]
-      i += 1
+      continue if types[2] == "_any"
+      @logger\assert utils.checkArgType types[1], name, types[2]
 
 
   -- boolean asserts

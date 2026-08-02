@@ -65,6 +65,7 @@ return UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
     JsonSchema: (controls\requireTest "JsonSchema") basePath
     FfiPosix: (controls\requireTest "ffi-posix")!
     OpenUrl: (controls\requireTest "open-url")!
+    AegisubUtil: (controls\requireTest "aegisub-util")!
     DownloaderIntegration: (controls\requireTest "integration.Downloader") basePath, requireHelper
     ZipArchiverIntegration: (controls\requireTest "integration.ZipArchiver") basePath
   }

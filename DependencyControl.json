@@ -232,7 +232,7 @@
             {
               "name": "/ModuleLoader.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "F1ACB8570A361F9006A6E6BA74FFF84D1F058F3A"
+              "sha1": "42DE5BE3BED98011ABE0A0420C2C5FB7201C77AA"
             },
             {
               "name": "/ModuleProvider.moon",
@@ -277,7 +277,7 @@
             {
               "name": "/UnitTestSuite.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "526D4F50834FADBBC70C4A9D93E28FFD1F952B34"
+              "sha1": "5FAC70B77E192C49F43A860DA40093CA136363A8"
             },
             {
               "name": "/UpdateFeed.moon",
@@ -372,7 +372,7 @@
             {
               "name": "/utils.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "FA8307BC15AD2FEC1535F9B862E1D92C2A3A1AB9"
+              "sha1": "EB230776AC0C30F109D517438C442B4198B7DCD5"
             },
             {
               "name": "/path-ops.moon",
@@ -387,7 +387,7 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "B351208EA529FD6A6D58D6A8DE1780B872D3FDE0",
+              "sha1": "E3BA205F34AD81B9FE16BEFFA62F7B70035D44FD",
               "type": "test"
             },
             {
@@ -399,7 +399,7 @@
             {
               "name": "/ConfigHandler.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "C0DCB8FDAE3A53F27E4D7742ADA8660B9ACECF8C",
+              "sha1": "7AB880F6CC27E23359F4D7435B531A2475EFED21",
               "type": "test"
             },
             {
@@ -465,7 +465,7 @@
             {
               "name": "/file-ops.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "A503A1CAA3B0FAFA2D62BB4ABA651A3BF7C6F048",
+              "sha1": "E55239907A6DA99D165971F7F8A84C6CA6B892CD",
               "type": "test"
             },
             {
@@ -483,13 +483,13 @@
             {
               "name": "/JsonSchema.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "2B3998285534B6C9EAC9B36BAA8CEF5E0ABF7E08",
+              "sha1": "CE694FFB5B64EDC32AD41FD566FA3FC9B7EC2524",
               "type": "test"
             },
             {
               "name": "/Lock.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "525628C362F564035CB0C866761FDC6CE7B52404",
+              "sha1": "26B3D5CA9E6D91C6F4D9411F093C26B3AE58FA96",
               "type": "test"
             },
             {
@@ -501,7 +501,7 @@
             {
               "name": "/ModuleLoader.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "8FE0E4ED90D3ED719F7DE80877591EF2F30014AA",
+              "sha1": "9615E3A053EEB1A7D57A17FDDF06F5AB422D5533",
               "type": "test"
             },
             {
@@ -525,7 +525,7 @@
             {
               "name": "/PackageRecord.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "C6BBD7319C511C0A8C13F6F4440A14DD277D772E",
+              "sha1": "28D5979649DD53E8C27483DBF52B7E7025A98A1E",
               "type": "test"
             },
             {
@@ -555,13 +555,13 @@
             {
               "name": "/UnitTestSuite.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "CCDC45CAF499A14773BF59D5E80C7AA963A89BFF",
+              "sha1": "C49C6AD7C3F5CB8114551EC199E130AF80B8F4F9",
               "type": "test"
             },
             {
               "name": "/UpdateFeed.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "3C72B65917FC447B97ACA1C76596AE0F12C32F5B",
+              "sha1": "B124C1A78FA7827C08773E90C68AE08460E0D6E0",
               "type": "test"
             },
             {
@@ -579,7 +579,7 @@
             {
               "name": "/ZipArchiver.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "2D0AC676445C6E5E894B377981B4849DBC2EA9BF",
+              "sha1": "030E95EDD8C2D5919EFC978B497EA092EEFE0B13",
               "type": "test"
             },
             {
@@ -651,7 +651,7 @@
             {
               "name": "/utils.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "5107E471C45705B7F6ABD6A1EA5F16DFDEBBAA46",
+              "sha1": "5F493D7D75125FC827A767C9B061D5888F457387",
               "type": "test"
             },
             {
@@ -670,6 +670,12 @@
               "name": "/legacy-cleanup.moon",
               "url": "@{fileBaseUrl}",
               "sha1": "E178DE5AB6215648A1EC74D6BF85DD876D9FF50E",
+              "type": "test"
+            },
+            {
+              "name": "/aegisub-util.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "3913E95678384E62099EBC926ECCC27A5E397D5D",
               "type": "test"
             }
           ],
@@ -811,7 +817,9 @@
           "fix: A required module that can't be installed or updated once again reports why. The error path that turns an updater status into a readable reason was itself throwing, so every such failure surfaced as an unrelated \"attempt to call field 'getUpdaterErrorMsg'\" error instead of naming the module and the cause.",
           "fix(Utils): `deepCopy()` no longer recurses forever on a table that references itself. Circular references are reproduced as cycles in the copy, and a table reached through several keys is copied once.",
           "fix(CLI): `generate-types` and `generate-docs` skip files a feed marks deleted instead of reporting each one as an unreadable source",
-          "fix(CLI): a deleted file's entry can no longer shadow the source that replaced it when a test suite resolves its modules from the feed."
+          "fix(CLI): a deleted file's entry can no longer shadow the source that replaced it when a test suite resolves its modules from the feed.",
+          "feat(CLI): A package whose sources require Aegisub's `aegisub.util` module now loads in the headless environment the CLI sets up, so `depctrl.lua test` and the CI workflows can exercise it.",
+          "feat(Utils): Added `checkArgType()` and `assertArgType()` for guarding a function's arguments. `checkArgType` reports a mismatch as a message without raising, leaving the caller to log it, raise it, or return it, while `assertArgType` raises it directly. Either identifies the argument by position or by name."
         ]
       }
     },

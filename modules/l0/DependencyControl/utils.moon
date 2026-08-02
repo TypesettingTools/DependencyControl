@@ -5,6 +5,13 @@
 
 local Timer, NamedSemaphore
 
+msgs = {
+  checkArgType: {
+    badType: "Argument %s should be a %s, is a %s (%s)."
+    nilArg: "Argument %s should be a %s, is nil."
+  }
+}
+
 -- Compares two values for deep equality. Tables are compared recursively;
 -- other types use == except that two identical values always compare equal.
 -- Circular references are handled.
@@ -154,6 +161,21 @@ deepCopy = (tbl) ->
 
   return recurse tbl
 
+checkArgType = (value, argument, expected) ->
+  actual = type value
+  return true if actual == expected
+
+  -- an argument is identified either by its position in the call or by its name
+  label = "number" == type(argument) and "##{argument}" or "'#{argument}'"
+  return false, msgs.checkArgType.nilArg\format label, expected if actual == "nil"
+  return false, msgs.checkArgType.badType\format label, expected, actual, tostring value
+
+assertArgType = (value, argument, expected) ->
+  ok, err = checkArgType value, argument, expected
+  -- level 2 blames the call that passed the bad argument, not this check
+  error err, 2 unless ok
+  return value
+
 mergeSearchPath = (pathStr, add, remove) ->
   removed = remove and {p, true for p in *remove} or {}
   seen, ordered = {}, {}
@@ -269,6 +291,23 @@ Utils = {
   ---@return table flattened A flattened array table containing the flattened values.
   ---@return number flattenedCount The number of elements in the flattened array.
   flatten: flatten
+
+  ---Reports whether a value has the expected Lua type, with the failure message when it doesn't, so
+  ---the caller decides whether to log it, raise it, or return it.
+  ---@param value any The value to type-check.
+  ---@param argument number|string The argument's position in the call, or its name.
+  ---@param expected string The Lua type name the value must have.
+  ---@return boolean ok True when the type matches; false when it doesn't.
+  ---@return string? err The failure message, naming the argument and both types; absent when ok.
+  checkArgType: checkArgType
+
+  ---Asserts that a value has the expected Lua type, raising a message naming the argument when it
+  ---doesn't. Use where no logger is in scope; with one, pass `checkArgType` to `logger\assert` instead.
+  ---@param value any The value to type-check.
+  ---@param argument number|string The argument's position in the call, or its name.
+  ---@param expected string The Lua type name the value must have.
+  ---@return any value The value, unchanged, so a guard can wrap the argument it checks.
+  assertArgType: assertArgType
 
   ---Merges new entries into a semicolon-separated Lua search path, appending only the ones not
   ---already present and dropping any listed for removal, with the order of kept entries preserved.
