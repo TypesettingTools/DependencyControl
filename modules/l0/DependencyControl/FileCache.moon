@@ -110,7 +110,7 @@ class FileCache
 
     removed, indexes, snapshots = 0, {}, {}
     for entry in *entries
-      path = fileOps.joinPath dir, entry
+      path = pathOps.joinPath dir, entry
       info = fileOps.getAttributes path, "mode"
       continue unless info
       if info.attr == "directory"
@@ -145,7 +145,7 @@ class FileCache
   ---@private
   ---@param key string The cache key.
   ---@return string path Filesystem path of the key's cache-index (meta) JSON file.
-  __metaPath: (key) => fileOps.joinPath @cacheDir, "#{keySlug key}.meta.json"
+  __metaPath: (key) => pathOps.joinPath @cacheDir, "#{keySlug key}.meta.json"
 
   ---Reads and decodes a cache index (meta) JSON file.
   ---@private
@@ -173,7 +173,7 @@ class FileCache
   ---@param meta FileCacheMeta An index entry carrying a `latestFile`.
   ---@return string? path The snapshot's path, or nil when the file it names is gone.
   __getSnapshotPath: (meta) =>
-    path = fileOps.joinPath @cacheDir, meta.latestFile
+    path = pathOps.joinPath @cacheDir, meta.latestFile
     info = fileOps.getAttributes path, "mode"
     info and info.attr == "file" and path or nil
 
@@ -230,7 +230,7 @@ class FileCache
     expiredSlugs = {}
     for file in *files
       continue unless file\match META_FILE_NAME_PATTERN
-      meta = @__readMeta fileOps.joinPath @cacheDir, file
+      meta = @__readMeta pathOps.joinPath @cacheDir, file
       continue unless meta and meta.cachedAt and meta.cachedAt < before
       expiredSlugs[keySlug meta.key] = true
       @__l1[meta.key] = nil
@@ -238,7 +238,7 @@ class FileCache
     -- every file (snapshot or index) is named with its key's slug prefix, so one pass removes both
     for file in *files
       slug = file\match SLUG_CAPTURE_PATTERN
-      fileOps.remove fileOps.joinPath @cacheDir, file if slug and expiredSlugs[slug]
+      fileOps.remove pathOps.joinPath @cacheDir, file if slug and expiredSlugs[slug]
 
   ---Stores a blob under a readable, timestamped snapshot and repoints the index at it, then trims old
   ---snapshots. The snapshot name is `<slug>-<label>-<utcTimestamp>-<rand>.json` (slug first so a key's
@@ -303,7 +303,7 @@ class FileCache
     protectedFiles, snapshots = {}, {}
     for file in *files
       if file\match META_FILE_NAME_PATTERN
-        meta = @__readMeta fileOps.joinPath @cacheDir, file
+        meta = @__readMeta pathOps.joinPath @cacheDir, file
         protectedFiles[meta.latestFile] = true if meta and meta.latestFile
       elseif file\match SNAPSHOT_FILE_NAME_PATTERN
         snapshots[#snapshots + 1] = file
@@ -312,6 +312,6 @@ class FileCache
     table.sort snapshots, (a, b) -> snapshotStamp(a) > snapshotStamp(b)
     for i = @maxFiles + 1, #snapshots
       continue if protectedFiles[snapshots[i]]
-      fileOps.remove fileOps.joinPath @cacheDir, snapshots[i]
+      fileOps.remove pathOps.joinPath @cacheDir, snapshots[i]
 
 return FileCache

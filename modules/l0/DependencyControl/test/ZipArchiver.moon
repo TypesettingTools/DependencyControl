@@ -6,11 +6,12 @@
 (basePath) ->
   lfs = require "lfs"
   fileOps = require "l0.DependencyControl.file-ops"
+  pathOps = require "l0.DependencyControl.path-ops"
   ZipArchiver = require "l0.DependencyControl.ZipArchiver"
 
   FILEOPS_MODULE_NAME = "l0.DependencyControl.file-ops"
   JSON_MODULE_NAME = "l0.dkjson"
-  pathSep = fileOps.pathSep
+  pathSep = pathOps.pathSep
 
   -- Fake io handle supporting the `h\write(data)\close!` chain the writers use.
   makeHandle = -> {write: ((self, data) -> self), close: ((self) -> nil)}

@@ -8,6 +8,7 @@ utils = require "l0.DependencyControl.utils"
 Hash = require "l0.DependencyControl.hash"
 Enum = require "l0.DependencyControl.Enum"
 fileOps = require "l0.DependencyControl.file-ops"
+pathOps = require "l0.DependencyControl.path-ops"
 Downloader = require "l0.DependencyControl.Downloader"
 ModuleProvider = require "l0.DependencyControl.ModuleProvider"
 SemanticVersion = require "l0.DependencyControl.SemanticVersion"
@@ -69,7 +70,7 @@ attachLocalFilePath = (file, feedDirPath, localPath, isFullPath) ->
     return unless localPath
     name = rawget self, "name"
     return unless isFullPath or name
-    path = fileOps.validateFullPath isFullPath and localPath or "#{localPath}#{name}", false, feedDirPath
+    path = pathOps.resolveFullPath isFullPath and localPath or "#{localPath}#{name}", false, feedDirPath
     return path
 
 -- Deep-copies a decoded feed table while dropping any field whose value is the dkjson.null
@@ -304,7 +305,7 @@ class UpdateFeed
   @getFileDeployPath = (namespace, scriptType, fileName, fileType = "script", rootDir) =>
     subDir = scriptType == ScriptType.Module and (namespace\gsub "%.", "/") or namespace
     baseDir = fileType == "test" and domain.getTestDir(scriptType, rootDir) or domain.getAutomationDir scriptType, rootDir
-    return fileOps.validateFullPath "#{subDir}#{fileName}", false, baseDir
+    return pathOps.resolveFullPath "#{subDir}#{fileName}", false, baseDir
 
   fileBaseName = "#{constants.DEPCTRL_NAMESPACE}_"
   fileMatchTemplate = "#{constants.DEPCTRL_NAMESPACE}_%x%x%x%x.*%.json"
@@ -373,7 +374,7 @@ class UpdateFeed
       feedsHaveBeenTrimmed or= Logger(fileMatchTemplate: fileMatchTemplate, logDir: @config.downloadPath, maxFiles: 20)\trimFiles!
       -- land the temp file inside downloadPath (joinPath adds the separator) so trimFiles can bound it
       rand = "%04X"\format math.random 0, 16^4 - 1
-      @fileName or= fileOps.joinPath @config.downloadPath, "#{fileBaseName}#{rand}.json"
+      @fileName or= pathOps.joinPath @config.downloadPath, "#{fileBaseName}#{rand}.json"
       @downloader = Downloader nil, {blockPrivateHosts: @config.blockPrivateHosts, maxFileSize: @config.maxFeedSize, timeout: @config.feedFetchTimeout}
     @fileName = fileName if fileName
 
@@ -1338,7 +1339,7 @@ class UpdateFeed
         if not prefix or prefix\find("@{", 1, true) or suffix\find("@{", 1, true)
           @logger\warn msgs.findUnlistedFiles.notInvertible, pkg.namespace, resolvedChannel, template
           continue
-        absPrefix, prefixErr = fileOps.validateFullPath prefix, false, @feedDir
+        absPrefix, prefixErr = pathOps.resolveFullPath prefix, false, @feedDir
         unless absPrefix
           @logger\warn msgs.findUnlistedFiles.badScanPath, pkg.namespace, resolvedChannel, prefix, tostring prefixErr
           continue

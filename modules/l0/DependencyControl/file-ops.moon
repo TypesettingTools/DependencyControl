@@ -107,7 +107,7 @@ createConfig = (noLoad, configDir) ->
 mkdirRecursive = (dir) ->
   -- preserve a leading separator so POSIX absolute paths keep their root
   accumulator, first = dir\match("^[/\\]") and pathOps.pathSep or "", true
-  for segment in pathOps.pathSegments dir
+  for segment in pathOps.iterateSegments dir
     accumulator = first and accumulator .. segment or "#{accumulator}#{pathOps.pathSep}#{segment}"
     first = false
     continue if accumulator\match "^%a:$" -- skip bare drive letters like "C:"
@@ -121,9 +121,8 @@ mkdirRecursive = (dir) ->
 ---@class FileOpsAttributesInfo
 ---@field attr table|string|number|false The requested attribute(s), or false when the entry doesn't exist.
 ---@field path string The validated full path.
----@field dev string The device component of the path.
----@field dir string The directory component of the path.
----@field file string The file name component of the path.
+---@field dir string The absolute directory holding the path's leaf.
+---@field file string The leaf's file name, nil when the path names a directory.
 
 ---Filesystem utility helpers used by DependencyControl.
 ---@class FileOps
@@ -168,20 +167,26 @@ FileOps = {
   ---@return string? err
   joinPath: pathOps.joinPath
 
-  ---@deprecated Use `PathOps.pathSegments`.
+  ---@deprecated Use `PathOps.iterateSegments`.
   ---@param path string
   ---@return fun(): string? iterator Yields the path's non-empty components in order.
-  pathSegments: pathOps.pathSegments
+  pathSegments: pathOps.iterateSegments
 
-  ---@deprecated Use `PathOps.validateFullPath`.
+  ---Validates and normalizes an absolute filesystem path, in the shape DepCtrl < 0.9 returned: the
+  ---root split off into its own value, leaving `dir` relative to it.
+  ---@deprecated Use `PathOps.resolveFullPath`, whose `dir` is absolute and whose second return is only ever an error.
   ---@param path string|string[] Either a path or an array of path segments.
   ---@param checkFileExt? boolean Require the path to have a file extension.
   ---@param basePath? string|string[] Base path to resolve relative paths against; relative paths are rejected without it.
   ---@return string|false|nil normalizedPath The normalized path, or false/nil on error.
   ---@return string? deviceOrErr The device/root component on success, or an error message on failure.
-  ---@return string? dir The directory component (success only).
+  ---@return string? dir The directory component, relative to the root (success only).
   ---@return string? file The file name component (success only).
-  validateFullPath: pathOps.validateFullPath
+  validateFullPath: (path, checkFileExt, basePath) ->
+    fullPath, err, dir, file = pathOps.resolveFullPath path, checkFileExt, basePath
+    return fullPath, err unless fullPath
+    root = pathOps._getPathRoot dir
+    return fullPath, root, dir\sub(#root + 1), file
 
   ---@deprecated Use `Domain.getNamespacedPath`.
   ---@param basePath string|string[] Base path (or segments) the namespaced path is created under.
@@ -513,8 +518,8 @@ FileOps = {
   mkdir: (path, isFile, recurse) ->
     info, err = FileOps.getAttributes path, "mode"
     return nil, err unless info
-    {attr: mode, path: fullPath, :dev, :dir, :file} = info
-    dir = isFile and table.concat({dev, dir or file}) or fullPath
+    {attr: mode, path: fullPath, :dir} = info
+    dir = isFile and dir or fullPath
 
     if not mode
       return mkdirRecursive dir if recurse
@@ -537,18 +542,18 @@ FileOps = {
   ---@return FileOpsAttributesInfo? info The attributes and path components, or nil on a hard error (an invalid path or an lfs failure). A path that simply doesn't exist is not an error: `info.attr` is then false.
   ---@return string? err An error message, present only when info is nil.
   getAttributes: (path, key) ->
-    fullPath, dev, dir, file = pathOps.validateFullPath path, false, lfs.currentdir!
+    fullPath, pathErr, dir, file = pathOps.resolveFullPath path, false, lfs.currentdir!
     unless fullPath
-      return nil, msgs.attributes.badPath\format dev
+      return nil, msgs.attributes.badPath\format pathErr
 
     attr, err, errCode = lfs.attributes fullPath, key
     if attr
-      return {:attr, path: fullPath, :dev, :dir, :file}
+      return {:attr, path: fullPath, :dir, :file}
     -- Aegisub's lfs implementation signals a non-existent file/dir with a bare nil,
     -- while the stock library (https://lunarmodules.github.io/luafilesystem/; v1.7.0+)
     -- returns an error code alongside an error message
     elseif err == nil or errCode == ENOENT or errCode == ERROR_PATH_NOT_FOUND or errCode == ENOTDIR
-      return {attr: false, path: fullPath, :dev, :dir, :file}
+      return {attr: false, path: fullPath, :dir, :file}
     else
       return nil, msgs.attributes.genericError\format err
 
@@ -564,7 +569,9 @@ FileOps = {
   attributes: (path, key) ->
     info, err = FileOps.getAttributes path, key
     return nil, err unless info
-    return info.attr, info.path, info.dev, info.dir, info.file
+    -- the pre-0.7 shape kept the root in its own return, so split it back off the directory
+    root = pathOps._getPathRoot info.dir
+    return info.attr, info.path, root, info.dir\sub(#root + 1), info.file
 
   ---Checks whether a file or directory exists and optionally verifies its type.
   ---@param path string|string[] Either a path or an array of path segments.

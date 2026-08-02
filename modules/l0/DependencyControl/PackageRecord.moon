@@ -529,10 +529,10 @@ class PackageRecord
     subPath = isModule and @namespace\gsub("%.", "/") or @namespace
     paths = {}
     for ext in *{".moon", ".lua"}
-      if path = fileOps.validateFullPath "#{subPath}#{ext}", false, baseDir
+      if path = pathOps.resolveFullPath "#{subPath}#{ext}", false, baseDir
         paths[#paths+1] = path
       if isModule
-        if path = fileOps.validateFullPath "#{subPath}/init#{ext}", false, baseDir
+        if path = pathOps.resolveFullPath "#{subPath}/init#{ext}", false, baseDir
           paths[#paths+1] = path
     return paths
 

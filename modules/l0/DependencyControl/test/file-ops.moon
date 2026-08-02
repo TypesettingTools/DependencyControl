@@ -39,11 +39,22 @@
       ut\assertString err
 
     -- the deprecated attributes() shim still exposes the legacy five-value contract
+    -- the pre-0.7 shim keeps its five returns, with the root split off a directory that is now
+    -- absolute everywhere else; the two still rejoin into the directory the path sits in
     attributes_deprecatedShim: (ut) ->
       (ut\stub lfs, "attributes")\calls (path, key) -> "file"
-      mode, fullPath = fileOps.attributes {basePath, "file.txt"}, "mode"
+      mode, fullPath, device, dir, file = fileOps.attributes {basePath, "file.txt"}, "mode"
       ut\assertEquals mode, "file"
       ut\assertString fullPath
+      ut\assertEquals device .. dir, basePath
+      ut\assertEquals file, "file.txt"
+
+    -- validateFullPath keeps the same split for callers written against DepCtrl < 0.9
+    validateFullPath_keepsLegacyRootSplit: (ut) ->
+      path, device, dir, file = fileOps.validateFullPath {basePath, "file.txt"}
+      ut\assertEquals path, fileOps.joinPath basePath, "file.txt"
+      ut\assertEquals device .. dir, basePath
+      ut\assertEquals file, "file.txt"
 
     -- mkdir: stubs lfs.attributes + lfs.mkdir
 
@@ -296,6 +307,7 @@
 
     _order: {
       "getAttributes_file", "getAttributes_notFound", "getAttributes_error", "attributes_deprecatedShim",
+      "validateFullPath_keepsLegacyRootSplit",
       "mkdir_new", "mkdir_exists",
       "mkdir_acceptsSilentLfsSuccess", "mkdir_silentLfsFailure", "rmdir_acceptsSilentLfsSuccess",
       "readFile_success", "readFile_isDirectory",
