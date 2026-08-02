@@ -5,12 +5,13 @@
 (basePath) ->
   FileCache = require "l0.DependencyControl.FileCache"
   fileOps = require "l0.DependencyControl.file-ops"
+  pathOps = require "l0.DependencyControl.path-ops"
 
   -- a fresh cache in its own base subdir with a controllable clock; returns (cache, clock)
   makeCache = (name, opts = {}) ->
     clock = {t: opts.t or 1000}
     opts.now = -> clock.t
-    FileCache(fileOps.joinPath(basePath, "filecache", name), "testNamespace", "test", opts), clock
+    FileCache(pathOps.joinPath(basePath, "filecache", name), "testNamespace", "test", opts), clock
 
   readFile = fileOps.readFile
 
@@ -32,7 +33,7 @@
 
     -- the default (real) clock path works end to end — put/get use os.time/os.date, not an injected stub
     put_worksWithDefaultClock: (ut) ->
-      cache = FileCache fileOps.joinPath(basePath, "filecache", "defaultClock"), "testNamespace", "test"
+      cache = FileCache pathOps.joinPath(basePath, "filecache", "defaultClock"), "testNamespace", "test"
       meta = cache\put "u://real", '{"name":"Real"}', "Real"
       ut\assertNotNil meta
       ut\assertEquals readFile(cache\getFile "u://real"), '{"name":"Real"}'
@@ -80,7 +81,7 @@
 
     -- .get reuses one instance per resolved directory, and constructs distinct ones for a different name
     get_sharesInstancePerDir: (ut) ->
-      base = fileOps.joinPath basePath, "filecache", "shared"
+      base = pathOps.joinPath basePath, "filecache", "shared"
       a1 = FileCache.get base, "ns", "one"
       a2 = FileCache.get base, "ns", "one"
       b = FileCache.get base, "ns", "two"
@@ -114,10 +115,22 @@
       third = cache\put "u://f", '{"v":3}', "f"
 
       -- the oldest, unprotected snapshot is gone; the newest (the index's target) survives
-      ut\assertFalsy fileOps.getAttributes(fileOps.joinPath(cache.cacheDir, first.latestFile), "mode").attr
-      ut\assertEquals "file", fileOps.getAttributes(fileOps.joinPath(cache.cacheDir, third.latestFile), "mode").attr
+      ut\assertFalsy fileOps.getAttributes(pathOps.joinPath(cache.cacheDir, first.latestFile), "mode").attr
+      ut\assertEquals "file", fileOps.getAttributes(pathOps.joinPath(cache.cacheDir, third.latestFile), "mode").attr
       path = cache\getFile "u://f"
       ut\assertEquals readFile(path), '{"v":3}'
+
+    -- trimming counts only files this cache named, so a stray .json in the directory is neither
+    -- counted against the cap nor deleted once the cap is passed
+    trim_ignoresForeignFiles: (ut) ->
+      cache, clock = makeCache "trim-foreign", {maxFiles: 1, t: 1000}
+      foreign = pathOps.joinPath cache.cacheDir, "notes.json"
+      cache\put "u://f", '{"v":1}', "f"
+      fileOps.writeFile foreign, "keep me", true
+      clock.t = 1001
+      cache\put "u://f", '{"v":2}', "f"
+
+      ut\assertEquals readFile(foreign), "keep me"
 
     -- get materializes the snapshot through the codec and memoizes it: a second get returns the same object
     get_materializesAndMemoizes: (ut) ->
@@ -131,7 +144,7 @@
 
     -- a memo is keyed to its snapshot's cache time, so another writer's newer put supersedes it: get re-reads L2
     get_memoSupersededByNewerSnapshot: (ut) ->
-      dir = fileOps.joinPath basePath, "filecache", "get-super"
+      dir = pathOps.joinPath basePath, "filecache", "get-super"
       codec = (content) -> {:content}
       a = FileCache dir, "ns", "s", {deserialize: codec, now: -> 1000}
       a\put "u://f", '{"v":1}', "f"
@@ -175,14 +188,67 @@
       cache\get "u://f" -- prime the L1 memo
       cache\expireAll 2000, true -- purge everything cached before 2000
       ut\assertNil (cache\get "u://f") -- memo dropped and L2 gone → full miss
-      ut\assertFalsy fileOps.getAttributes(fileOps.joinPath(cache.cacheDir, meta.latestFile), "mode").attr
+      ut\assertFalsy fileOps.getAttributes(pathOps.joinPath(cache.cacheDir, meta.latestFile), "mode").attr
+
+    -- removeArtifactsIn: recognizes what put wrote, recursing through the <namespace>/<name> layout
+
+    removeArtifactsIn_removesWhatPutWrote: (ut) ->
+      root = pathOps.joinPath basePath, "filecache", "artifactsOurs"
+      cache = FileCache root, "testNamespace", "test"
+      meta = cache\put "u://f", '{"v":1}', "someFeed"
+
+      ut\assertEquals FileCache._removeArtifactsIn(root), 2 -- the snapshot and its index
+      ut\assertFalsy fileOps.getAttributes(pathOps.joinPath(cache.cacheDir, meta.latestFile), "mode").attr
+      -- the emptied <namespace>/<name> directories go with them, the root it was given stays
+      ut\assertFalsy fileOps.getAttributes(cache.cacheDir, "mode").attr
+      ut\assertTruthy fileOps.getAttributes(root, "mode").attr
+
+    -- a directory with no index isn't one this cache wrote, whatever its file names look like
+    removeArtifactsIn_keepsDirWithoutIndex: (ut) ->
+      dir = pathOps.joinPath basePath, "filecache", "artifactsNoIndex", "someone.else", "data"
+      fileOps.mkdir dir, false, true
+      lookalike = pathOps.joinPath dir, "0a1b2c3-report-20260801T101010Z-ABCD.json"
+      fileOps.writeFile lookalike, "{}", true
+
+      ut\assertEquals FileCache._removeArtifactsIn(pathOps.joinPath basePath, "filecache", "artifactsNoIndex"), 0
+      ut\assertTruthy fileOps.getAttributes(lookalike, "mode").attr
+
+    -- an index-named file that doesn't decode as one proves nothing, and its directory stays intact
+    removeArtifactsIn_keepsDirWithUndecodableIndex: (ut) ->
+      root = pathOps.joinPath basePath, "filecache", "artifactsBadIndex"
+      dir = pathOps.joinPath root, "someone.else", "data"
+      fileOps.mkdir dir, false, true
+      index = pathOps.joinPath dir, "0a1b2c3.meta.json"
+      fileOps.writeFile index, "not json at all", true
+
+      ut\assertEquals FileCache._removeArtifactsIn(root), 0
+      ut\assertTruthy fileOps.getAttributes(index, "mode").attr
+
+    -- files this cache didn't name survive alongside the ones it did, and keep their directory alive
+    removeArtifactsIn_keepsForeignFiles: (ut) ->
+      root = pathOps.joinPath basePath, "filecache", "artifactsForeign"
+      cache = FileCache root, "testNamespace", "test"
+      cache\put "u://f", '{"v":1}', "someFeed"
+      foreign = pathOps.joinPath cache.cacheDir, "notes.txt"
+      fileOps.writeFile foreign, "keep me", true
+
+      ut\assertEquals FileCache._removeArtifactsIn(root), 2
+      ut\assertTruthy fileOps.getAttributes(foreign, "mode").attr
+      ut\assertTruthy fileOps.getAttributes(cache.cacheDir, "mode").attr
+
+    removeArtifactsIn_missingDirectory: (ut) ->
+      ut\assertEquals FileCache._removeArtifactsIn(pathOps.joinPath basePath, "filecache", "neverWritten"), 0
 
     _order: {
       "put_roundTrip", "put_worksWithDefaultClock", "getFile_uncached", "isFresh_window", "put_updatesLatest"
       "getFile_staleStillResolves", "put_sanitizesLabel"
-      "get_sharesInstancePerDir", "put_expiryFixedAtWriteTime", "put_perResourceExpiry", "trim_keepsLatestOverCap"
+      "get_sharesInstancePerDir", "put_expiryFixedAtWriteTime", "put_perResourceExpiry"
+      "trim_keepsLatestOverCap", "trim_ignoresForeignFiles"
       "get_materializesAndMemoizes", "get_memoSupersededByNewerSnapshot"
       "get_staleReturnsValueWithFreshFalse", "get_missReturnsNil"
       "expireAll_marksOlderStaleKeepingSnapshot", "expireAll_purgeDeletesEntries"
+      "removeArtifactsIn_removesWhatPutWrote", "removeArtifactsIn_keepsDirWithoutIndex"
+      "removeArtifactsIn_keepsDirWithUndecodableIndex", "removeArtifactsIn_keepsForeignFiles"
+      "removeArtifactsIn_missingDirectory"
     }
   }

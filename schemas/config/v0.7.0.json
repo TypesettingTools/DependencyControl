@@ -168,7 +168,7 @@
           }
         },
         "paths": {
-          "description": "Base directories for DependencyControl's files. Each supports Aegisub path tokens such as `?user` and `?data`.",
+          "description": "Base directories for DependencyControl's files. Each supports Aegisub path tokens such as `?user`, `?local` and `?state`. An Aegisub build that doesn't know `?state` gets `?user` instead.",
           "type": "object",
           "additionalProperties": false,
           "properties": {
@@ -180,12 +180,12 @@
             "log": {
               "description": "Directory holding DependencyControl's log files.",
               "type": "string",
-              "default": "?user/log"
+              "default": "?state/log"
             },
             "cache": {
               "description": "Base directory for DependencyControl's on-disk caches. Each cache lives in a `<namespace>/<name>` subdirectory beneath it (e.g. the feed cache at `<cache>/l0.DependencyControl/feeds`).",
               "type": "string",
-              "default": "?user/cache"
+              "default": "?local/cache"
             }
           }
         }

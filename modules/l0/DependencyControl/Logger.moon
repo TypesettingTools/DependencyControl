@@ -1,4 +1,5 @@
 lfs = require "lfs"
+pathOps = require "l0.DependencyControl.path-ops"
 utils = require "l0.DependencyControl.utils"
 
 ---Structured logger that writes to Aegisub's log window and optional log files.
@@ -9,7 +10,7 @@ class Logger
   maxToFileLevel: 5
   fileBaseName: script_namespace or "UNKNOWN"
   fileSubName: ""
-  logDir: "?user/log"
+  logDir: "?state/log"
   fileTemplate: "%s/%s-%04x_%s_%s.log"
   fileMatchTemplate: "%d%d%d%d%-%d%d%-%d%d%-%d%d%-%d%d%-%d%d%-%x%x%x%x_@{fileBaseName}_?.*%.log$"
   prefix: ""
@@ -42,7 +43,7 @@ class Logger
     @lastHadLineFeed = true
     escaped = @fileBaseName\gsub("([%%%(%)%[%]%.%*%-%+%?%$%^])","%%%1")
     @fileMatch = @fileMatchTemplate\gsub "@{fileBaseName}", escaped
-    @fileName = @fileTemplate\format aegisub.decode_path(@logDir), os.date("%Y-%m-%d-%H-%M-%S"),
+    @fileName = @fileTemplate\format pathOps.decode(@logDir), os.date("%Y-%m-%d-%H-%M-%S"),
       math.random(0, 16^4-1), @fileBaseName, @fileSubName
 
   ---Writes a log message with explicit rendering options.
@@ -68,7 +69,8 @@ class Logger
     show = aegisub.log and @toWindow
     if @toFile and level <= @maxToFileLevel
       unless @handle
-        lfs.mkdir aegisub.decode_path @logDir -- best-effort: create the log dir (parent ?user exists)
+        -- one level only, so this relies on the log dir's parent already existing
+        lfs.mkdir pathOps.decode @logDir
         @handle = io.open @fileName, "a"
         unless @handle
           -- missing dir / permissions / disk full: disable file logging rather than crash on every
@@ -269,7 +271,7 @@ class Logger
   trimFiles: (doWipe, maxAge = @maxAge, maxSize = @maxSize, maxFiles = @maxFiles) =>
     files, totalSize, deletedSize, now, f = {}, 0, 0, os.time!, 0
 
-    dir = aegisub.decode_path @logDir
+    dir = pathOps.decode @logDir
     -- nothing to trim if the log directory hasn't been created yet
     return 0, 0, 0, 0 unless lfs.attributes dir, "mode"
 

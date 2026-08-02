@@ -2,6 +2,7 @@ json = require "json"
 Logger = require "l0.DependencyControl.Logger"
 constants = require "l0.DependencyControl.Constants"
 fileOps = require "l0.DependencyControl.file-ops"
+pathOps = require "l0.DependencyControl.path-ops"
 SemanticVersion = require "l0.DependencyControl.SemanticVersion"
 
 JSON_SCHEMA_ID_KEYWORD = "$schema"
@@ -107,7 +108,7 @@ class JsonSchema
     for fileName in *schemaDirContents
       version = fileName\match fileNamePattern
       if version
-        schemaPathsByVersion[version] = fileOps.joinPath schemaDir, fileName
+        schemaPathsByVersion[version] = pathOps.joinPath schemaDir, fileName
         foundAny = true
     unless foundAny
       return nil, msgs.getSchemasInDirectory.errors.noSchemasFound\format schemaDir, fileNamePattern

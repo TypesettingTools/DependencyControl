@@ -23,8 +23,8 @@ sections = {
   }
   paths: {
     config: "?user/config"
-    log: "?user/log"
-    cache: "?user/cache"
+    log: "?state/log"
+    cache: "?local/cache"
   }
 }
 

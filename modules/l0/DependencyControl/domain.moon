@@ -1,8 +1,13 @@
 Enum = require "l0.DependencyControl.Enum"
+pathOps = require "l0.DependencyControl.path-ops"
 
 msgs = {
   validateNamespace: {
     badNamespace: "Namespace '%s' failed validation. Namespace rules: must contain 1+ single dots, but not start or end with a dot; all other characters must be in [A-Za-z0-9-_]."
+  }
+  getNamespacedPath: {
+    badBasePath: "Provided base path '%s' is not a valid full path (%s)."
+    badPath: "Could not generate a valid full path from base path '%s' and namespaced sub-path '%s': %s."
   }
 }
 
@@ -45,6 +50,9 @@ FetchUntrustedFeeds = Enum "FetchUntrustedFeeds", {
   Never: "never"
   Prompt: "prompt"
 }
+
+-- forward-declared so the members below close over the local rather than a global of the same name
+local Domain
 
 ---Shared vocabulary of DependencyControl's problem domain: the kinds of scripts and records it
 ---manages, the human-readable terms for them, namespace rules, and install/test locations.
@@ -105,6 +113,27 @@ Domain = {
       when ScriptType.Automation then aegisub.decode_path("#{rootDir}/automation/tests/DepUnit/macros")
       when ScriptType.Module then aegisub.decode_path("#{rootDir}/automation/tests/DepUnit/modules")
       else nil
+
+  ---Converts a base path and namespace into a namespaced filesystem path.
+  ---Dots in the namespace are converted to path separators when nested is true.
+  ---@param basePath string|string[] Base path (or segments) the namespaced path is created under.
+  ---@param namespace string
+  ---@param ext string File extension (including the dot).
+  ---@param nested? boolean Convert namespace dots to path separators (default true).
+  ---@return string? path
+  ---@return string? err
+  getNamespacedPath: (basePath, namespace, ext, nested = true) ->
+    res, msg = Domain.validateNamespace namespace
+    return nil, msg unless res
+
+    fullBasePath, msg = pathOps.resolveFullPath basePath
+    return nil, msgs.getNamespacedPath.badBasePath\format basePath, msg unless fullBasePath
+
+    namespacePath = "#{nested and namespace\gsub("%.", pathOps.pathSep) or namespace}#{ext}"
+    normalizedFullPath, msg = pathOps.resolveFullPath namespacePath, false, fullBasePath
+    return nil, msgs.getNamespacedPath.badPath\format fullBasePath, namespacePath, msg unless normalizedFullPath
+
+    return normalizedFullPath
 }
 
 return Domain

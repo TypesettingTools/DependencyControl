@@ -1,9 +1,8 @@
-ffi = require "ffi"
 lfs = require "lfs"
 constants = require "l0.DependencyControl.Constants"
 Logger = require "l0.DependencyControl.Logger"
 domain = require "l0.DependencyControl.domain"
-utils = require "l0.DependencyControl.utils"
+pathOps = require "l0.DependencyControl.path-ops"
 Hash = require "l0.DependencyControl.hash"
 
 ENOENT = 2 -- POSIX error code for "No such file or directory"
@@ -11,62 +10,6 @@ ENOTDIR = 20 -- POSIX error code for "Not a directory"
 ERROR_PATH_NOT_FOUND = 3 -- Windows error code for "The system cannot find the path specified"
 
 local ConfigView, FileOps
-
--- Filesystem path length limits.
-WINDOWS_MAX_PATH = 260 -- Windows with long path support disabled
-WINDOWS_LONG_PATH_MAX = 32767 -- Windows with long path support enabled
-MAX_PATH_COMPONENT = 255 -- per-segment limit on NTFS and common POSIX filesystems
-POSIX_PATH_MAX = 4096 -- typical full-path limit on modern POSIX systems
-
----Reports whether the current process can use paths beyond the legacy MAX_PATH limit.
----@return boolean enabled True when this process may use long paths.
-detectProcessLongPathsEnabled = ->
-  -- ntdll!RtlAreLongPathsEnabled gives the effective per-process answer, folding in both the
-  -- system registry policy and the process's manifest opt-in. A process whose executable manifest
-  -- lacks the `longPathAware` setting stays capped at MAX_PATH even when the registry enables long
-  -- paths. The symbol arrived in Windows 10 1607, when long paths were introduced. On older systems
-  -- it is absent and long paths are unsupported, so they read as disabled.
-  okLib, ntdll = pcall ffi.load, "ntdll"
-  return false unless okLib
-  pcall ffi.cdef, "unsigned char RtlAreLongPathsEnabled(void);"
-  ok, enabled = pcall -> ntdll.RtlAreLongPathsEnabled! != 0
-  return ok and enabled
-
----Reads the system-wide LongPathsEnabled policy from the Windows registry (HKLM\…\Control\FileSystem).
----@return boolean enabled True when the value is present and set to 1; false when it is missing, zero, or unreadable.
-detectRegistryLongPathsEnabled = ->
-  -- This reflects the system policy only, not the per-process manifest. It exists just to tailor
-  -- the diagnostic when a path is rejected — telling "long paths are off system-wide" apart from
-  -- "they're on, but this application isn't long-path-aware".
-  okLib, advapi = pcall ffi.load, "advapi32"
-  return false unless okLib
-  pcall ffi.cdef, [[
-    long RegOpenKeyExA(uintptr_t hKey, const char* subKey, unsigned long options, unsigned long samDesired, uintptr_t* result);
-    long RegQueryValueExA(uintptr_t hKey, const char* valueName, unsigned long* reserved, unsigned long* type, unsigned char* data, unsigned long* dataSize);
-    long RegCloseKey(uintptr_t hKey);
-  ]]
-  -- HKEY_LOCAL_MACHINE is (HKEY)(LONG)0x80000002; the int32->uintptr cast reproduces
-  -- the sign-extended pointer value the API expects on both 32- and 64-bit builds.
-  HKEY_LOCAL_MACHINE = ffi.cast "uintptr_t", ffi.cast "int32_t", 0x80000002
-  KEY_READ, ERROR_CODE_SUCCESS = 0x20019, 0
-  hKey = ffi.new "uintptr_t[1]"
-  return false unless ERROR_CODE_SUCCESS == advapi.RegOpenKeyExA HKEY_LOCAL_MACHINE,
-    "SYSTEM\\CurrentControlSet\\Control\\FileSystem", 0, KEY_READ, hKey
-  value = ffi.new "unsigned long[1]"
-  size = ffi.new "unsigned long[1]", ffi.sizeof "unsigned long"
-  status = advapi.RegQueryValueExA hKey[0], "LongPathsEnabled", nil, nil,
-    ffi.cast("unsigned char*", value), size
-  advapi.RegCloseKey hKey[0]
-  return status == ERROR_CODE_SUCCESS and value[0] == 1
-
-windowsProcessLongPathsEnabled, windowsRegistryLongPathsEnabled = false, false
-if ffi.os == "Windows"
-  ok, res = pcall detectProcessLongPathsEnabled
-  windowsProcessLongPathsEnabled = ok and res
-  -- only needed to explain *why* long paths are unavailable
-  unless windowsProcessLongPathsEnabled
-    ok, res = pcall detectRegistryLongPathsEnabled
-    windowsRegistryLongPathsEnabled = ok and res
 
 defaultLogger = Logger!
 
@@ -103,9 +46,6 @@ msgs = {
   listDir: {
     notADirectory: "Can only list directories but supplied path '%s' points to a %s."
   },
-  joinPath: {
-    invalidSegment: "Invalid path segment type: expected a string or pure array table, got '%s'."
-  }
   move: {
     inUseTryingRename: "Target file '%s' already exists and appears to be in use. Trying to rename and delete existing file..."
     renamedDeletionFailed: "The existing file was successfully renamed to '%s', but couldn't be deleted (%s).\n%s"
@@ -143,35 +83,7 @@ msgs = {
   runScheduledRemoval: {
     noConfigReschedule: "Couldn't load the FileOps config file (%s) - rescheduled deletions will not be performed!"
   }
-  getNamespacedPath: {
-    badBasePath: "Provided base path '%s' is not a valid full path (%s)."
-    badPath: "Could not generate a valid full path from base path '%s' and namespaced sub-path '%s': %s."
-  }
-  validateFullPath: {
-    badType: "Argument #%s (%s) had the wrong type. Expected 'string', got '%s'."
-    tooLong: "The specified path exceeded the maximum length limit (%d > %d)."
-    tooLongRegistryDisabled: "The specified path exceeded the Windows MAX_PATH limit (%d > %d characters) and long path support is disabled on this system.\nEnable it by setting the registry value 'HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\FileSystem\\LongPathsEnabled' (DWORD) to 1 and restarting, e.g. by running this in an elevated PowerShell:\n  Set-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\FileSystem' -Name 'LongPathsEnabled' -Value 1 -Type DWord"
-    tooLongProcessUnaware: "The specified path exceeded the Windows MAX_PATH limit (%d > %d characters). Long path support is enabled system-wide, but the host application is not long-path-aware (its executable manifest lacks the 'longPathAware' setting), so paths remain capped at %d characters in this process."
-    segmentTooLong: "A path component exceeded the maximum length limit (%d > %d): '%s'."
-    invalidChars: "The specified path contains one or more invalid characters: '%s'."
-    reservedNames: "The specified path contains reserved path or file names: '%s'."
-    parentPath: "Accessing parent directories is not allowed."
-    notFullPath: "The specified path is not a valid full path."
-    missingExt: "The specified path is missing a file extension."
-  }
 }
-
-windowsReservedNameSet = {n, true for n in *{
-  "CON", "PRN", "AUX", "NUL",
-  "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
-  "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"
-}}
-
--- effective full-path limit; on Windows this depends on whether *this process*
--- can use long paths (see detectProcessLongPathsEnabled)
-pathMaxLength = if ffi.os == "Windows"
-  windowsProcessLongPathsEnabled and WINDOWS_LONG_PATH_MAX or WINDOWS_MAX_PATH
-else POSIX_PATH_MAX
 
 ---Lazily creates and caches the FileOps deletion-tracking config on the module table.
 ---@param noLoad? boolean Don't read the file from disk when the handler is created.
@@ -194,9 +106,9 @@ createConfig = (noLoad, configDir) ->
 ---@return string dirPathOrError The directory path on success, or an error message.
 mkdirRecursive = (dir) ->
   -- preserve a leading separator so POSIX absolute paths keep their root
-  accumulator, first = dir\match("^[/\\]") and FileOps.pathSep or "", true
-  for segment in FileOps.pathSegments dir
-    accumulator = first and accumulator .. segment or "#{accumulator}#{FileOps.pathSep}#{segment}"
+  accumulator, first = dir\match("^[/\\]") and pathOps.pathSep or "", true
+  for segment in pathOps.pathSegments dir
+    accumulator = first and accumulator .. segment or "#{accumulator}#{pathOps.pathSep}#{segment}"
     first = false
     continue if accumulator\match "^%a:$" -- skip bare drive letters like "C:"
     unless lfs.attributes accumulator, "mode"
@@ -209,42 +121,90 @@ mkdirRecursive = (dir) ->
 ---@class FileOpsAttributesInfo
 ---@field attr table|string|number|false The requested attribute(s), or false when the entry doesn't exist.
 ---@field path string The validated full path.
----@field dev string The device component of the path.
----@field dir string The directory component of the path.
----@field file string The file name component of the path.
+---@field dir string The absolute directory holding the path's leaf.
+---@field file string The leaf's file name, nil when the path names a directory.
 
 ---Filesystem utility helpers used by DependencyControl.
 ---@class FileOps
 FileOps = {
-  pathSep: ffi.os == "Windows" and "\\" or "/"
-  pathMatch: {
-    sep: ffi.os == "Windows" and "\\" or "/"
-    sepAll: ffi.os == "Windows" and "[\\/]" or "/"
-    invalidChars: '[<>:"|%?%*%z%c;]'
-  }
+  ---Path separator for the host platform. Deprecated re-export.
+  ---@deprecated Use `PathOps.pathSep`.
+  ---@type string
+  pathSep: pathOps.pathSep
+
+  ---Path patterns for the host platform. Deprecated re-export.
+  ---@deprecated Use `PathOps.pathMatch`.
+  ---@type PathMatchPatterns
+  pathMatch: pathOps.pathMatch
+
+  ---Effective full-path length limit for this process. Deprecated re-export.
+  ---@deprecated Use `PathOps.pathMaxLength`.
   ---@type integer
-  pathMaxLength: pathMaxLength
-  pathMaxSegmentLength: MAX_PATH_COMPONENT
-  -- true when running on Windows but capped at the legacy MAX_PATH limit because this process
-  -- can't use long paths. Drives the descriptive error below, and is always false off Windows.
-  longPathsDisabled: ffi.os == "Windows" and not windowsProcessLongPathsEnabled
-  -- when capped, whether the system registry policy enables long paths -- lets the error
-  -- tell a system-wide opt-out apart from an app that isn't long-path-aware
-  windowsRegistryLongPathsEnabled: windowsRegistryLongPathsEnabled
+  pathMaxLength: pathOps.pathMaxLength
+
+  ---Per-component path length limit. Deprecated re-export.
+  ---@deprecated Use `PathOps.pathMaxSegmentLength`.
+  ---@type integer
+  pathMaxSegmentLength: pathOps.pathMaxSegmentLength
+
+  ---Whether this process is capped at the legacy Windows MAX_PATH limit. Deprecated re-export.
+  ---@deprecated Use `PathOps.longPathsDisabled`.
+  ---@type boolean
+  longPathsDisabled: pathOps.longPathsDisabled
+
+  ---Whether the Windows registry policy enables long paths. Deprecated re-export.
+  ---@deprecated Use `PathOps.windowsRegistryLongPathsEnabled`.
+  ---@type boolean
+  windowsRegistryLongPathsEnabled: pathOps.windowsRegistryLongPathsEnabled
+
+  ---@deprecated Use `PathOps.getTempDir`.
+  ---@return string tempDirPath Absolute path to a unique, not-yet-existing temporary directory.
+  getTempDir: pathOps.getTempDir
+
+  ---@deprecated Use `PathOps.joinPath`.
+  ---@param ... string|string[] One or more path segments, or arrays of path segments.
+  ---@return string? joinedPath The path segments joined by OS-specific separators, or nil on error.
+  ---@return string? err
+  joinPath: pathOps.joinPath
+
+  ---@deprecated Use `PathOps.pathSegments`.
+  ---@param path string
+  ---@return fun(): string? iterator Yields the path's non-empty components in order.
+  pathSegments: pathOps.pathSegments
+
+  ---Validates and normalizes an absolute filesystem path, in the shape DepCtrl < 0.9 returned: the
+  ---root split off into its own value, leaving `dir` relative to it.
+  ---@deprecated Use `PathOps.resolveFullPath`, whose `dir` is absolute and whose second return is only ever an error.
+  ---@param path string|string[] Either a path or an array of path segments.
+  ---@param checkFileExt? boolean Require the path to have a file extension.
+  ---@param basePath? string|string[] Base path to resolve relative paths against; relative paths are rejected without it.
+  ---@return string|false|nil normalizedPath The normalized path, or false/nil on error.
+  ---@return string? deviceOrErr The device/root component on success, or an error message on failure.
+  ---@return string? dir The directory component, relative to the root (success only).
+  ---@return string? file The file name component (success only).
+  validateFullPath: (path, checkFileExt, basePath) ->
+    fullPath, err, dir, file = pathOps.resolveFullPath path, checkFileExt, basePath
+    return fullPath, err unless fullPath
+    root = pathOps._getPathRoot dir
+    return fullPath, root, dir\sub(#root + 1), file
+
+  ---@deprecated Use `Domain.getNamespacedPath`.
+  ---@param basePath string|string[] Base path (or segments) the namespaced path is created under.
+  ---@param namespace string
+  ---@param ext string File extension (including the dot).
+  ---@param nested? boolean Convert namespace dots to path separators (default true).
+  ---@return string? path The namespaced path, or nil when the namespace or base path is invalid.
+  ---@return string? err
+  getNamespacedPath: domain.getNamespacedPath
 
   ---Creates a unique temporary directory and returns its path.
   ---@return string? tempDirPath Absolute path to the created temporary directory, or nil if it couldn't be created.
   ---@return string? err Error message if the directory couldn't be created.
   createTempDir: () ->
-    tempDir = FileOps.getTempDir()
+    tempDir = pathOps.getTempDir!
     res, dir = FileOps.mkdir tempDir
     return tempDir if res
     return nil, msgs.createTempDir.failedCreate\format dir
-
-  ---Generates a unique temporary directory path that does not exist yet.
-  ---@return string tempDirPath Absolute path to a unique, not-yet-existing temporary directory.
-  getTempDir: () ->
-    return aegisub.decode_path "?temp/#{constants.DEPCTRL_NAMESPACE}_#{'%04X'\format math.random 0, 16^4-1}"
 
   ---Removes one or more files/directories and optionally reschedules failed removals.
   ---@param paths string|(string|string[])[] Path, or list of paths (each a string or an array of path segments).
@@ -389,7 +349,7 @@ FileOps = {
     return nil, err unless entries
     files = {}
     for entry in *entries
-      fullPath = FileOps.joinPath dirPath, entry
+      fullPath = pathOps.joinPath dirPath, entry
       info = FileOps.getAttributes fullPath, "mode"
       mode = info and info.attr
       if mode == "directory"
@@ -398,54 +358,6 @@ FileOps = {
       elseif mode == "file"
         files[#files + 1] = fullPath
     return files
-
-  ---Joins and resolves multiple path segments into a single path string.
-  ---@param ... string|string[] One or more path segments, or arrays of path segments.
-  ---@return string? joinedPath The path segments joined by OS-specific separators, or nil on error.
-  ---@return string? err
-  joinPath: (...) ->
-    args = {...}
-    -- detect root from the first string before splitting consumes separators
-    firstStr = type(args[1]) == "table" and args[1][1] or args[1]
-    return nil, msgs.joinPath.invalidSegment\format type firstStr if type(firstStr) ~= "string"
-    absolutePathRoot = type(firstStr) == "string" and FileOps.__getPathRoot firstStr
-
-    invalidPathSegmentType = nil
-    flatPathSegments = utils.flatten args, 3, (value, typ) ->
-      if typ != "string"
-        invalidPathSegmentType = typ
-        return {}, true -- error is raised below via invalidPathSegmentType; contribute nothing here
-
-      firstSegment, moreSegments = nil, nil
-      for segment in FileOps.pathSegments value
-        if firstSegment
-          moreSegments or= {firstSegment}
-          table.insert moreSegments, segment
-        else firstSegment = segment
-      -- an empty or separator-only segment has no components: return {} so it adds nothing, rather
-      -- than a nil that would leave a hole and stop the ipairs walk over the flattened segments
-      return {}, true unless firstSegment
-      return moreSegments or firstSegment, moreSegments
-    return nil, msgs.joinPath.invalidSegment\format invalidPathSegmentType if invalidPathSegmentType
-
-    -- filter extraneous '.', resolve '..', and clamp path traversal at root
-    segments = {}
-    for i, segment in ipairs flatPathSegments
-      switch segment
-        when "." then segments[#segments + 1] = segment if i == 1 and not absolutePathRoot
-        when ".."
-          if #segments > (absolutePathRoot and 1 or 0) and segments[#segments] != ".."
-            segments[#segments] = nil
-          elseif not absolutePathRoot
-            segments[#segments + 1] = segment
-        else segments[#segments + 1] = segment
-    -- re-add root separator for absolute paths on POSIX systems removed by splitting
-    return "#{absolutePathRoot and ffi.os != "Windows" and FileOps.pathSep or ""}#{table.concat segments, FileOps.pathSep}"
-
-  ---Returns an iterator over the non-empty components of a path, split on any separator.
-  ---@param path string
-  ---@return fun(): string? iterator
-  pathSegments: (path) -> path\gmatch "[^/\\]+"
 
   ---Moves a file to a target path, optionally replacing existing targets.
   ---@param source string
@@ -581,7 +493,7 @@ FileOps = {
 
     if recurse
       -- recursively remove contained files and directories
-      toRemove = [FileOps.joinPath(path, file) for file in *FileOps.listDir path]
+      toRemove = [pathOps.joinPath(path, file) for file in *FileOps.listDir path]
       res, details = FileOps.remove toRemove, true
       unless res
         fileList = table.concat ["#{path}: #{res[2]}" for path, res in pairs details when not res[1]], "\n"
@@ -606,8 +518,8 @@ FileOps = {
   mkdir: (path, isFile, recurse) ->
     info, err = FileOps.getAttributes path, "mode"
     return nil, err unless info
-    {attr: mode, path: fullPath, :dev, :dir, :file} = info
-    dir = isFile and table.concat({dev, dir or file}) or fullPath
+    {attr: mode, path: fullPath, :dir} = info
+    dir = isFile and dir or fullPath
 
     if not mode
       return mkdirRecursive dir if recurse
@@ -630,18 +542,18 @@ FileOps = {
   ---@return FileOpsAttributesInfo? info The attributes and path components, or nil on a hard error (an invalid path or an lfs failure). A path that simply doesn't exist is not an error: `info.attr` is then false.
   ---@return string? err An error message, present only when info is nil.
   getAttributes: (path, key) ->
-    fullPath, dev, dir, file = FileOps.validateFullPath path, false, lfs.currentdir!
+    fullPath, pathErr, dir, file = pathOps.resolveFullPath path, false, lfs.currentdir!
     unless fullPath
-      return nil, msgs.attributes.badPath\format dev
+      return nil, msgs.attributes.badPath\format pathErr
 
     attr, err, errCode = lfs.attributes fullPath, key
     if attr
-      return {:attr, path: fullPath, :dev, :dir, :file}
+      return {:attr, path: fullPath, :dir, :file}
     -- Aegisub's lfs implementation signals a non-existent file/dir with a bare nil,
     -- while the stock library (https://lunarmodules.github.io/luafilesystem/; v1.7.0+)
     -- returns an error code alongside an error message
     elseif err == nil or errCode == ENOENT or errCode == ERROR_PATH_NOT_FOUND or errCode == ENOTDIR
-      return {attr: false, path: fullPath, :dev, :dir, :file}
+      return {attr: false, path: fullPath, :dir, :file}
     else
       return nil, msgs.attributes.genericError\format err
 
@@ -657,7 +569,9 @@ FileOps = {
   attributes: (path, key) ->
     info, err = FileOps.getAttributes path, key
     return nil, err unless info
-    return info.attr, info.path, info.dev, info.dir, info.file
+    -- the pre-0.7 shape kept the root in its own return, so split it back off the directory
+    root = pathOps._getPathRoot info.dir
+    return info.attr, info.path, root, info.dir\sub(#root + 1), info.file
 
   ---Checks whether a file or directory exists and optionally verifies its type.
   ---@param path string|string[] Either a path or an array of path segments.
@@ -671,104 +585,6 @@ FileOps = {
     return true if not expectedMode or info.attr == expectedMode
     return false, msgs.exists.wrongType\format info.path, expectedMode, info.attr
 
-  ---Extracts the root anchor of an absolute path.
-  ---@private
-  ---@param absolutePath string The absolute path to inspect.
-  ---@return string? root On Windows the drive prefix with its separator (e.g. "C:\"), on POSIX the leading slash plus first segment (e.g. "/usr"), or nil when the path has no such root.
-  __getPathRoot: (absolutePath) ->
-    return absolutePath\match "^[A-Za-z]:[/\\]" if ffi.os == "Windows"
-    return absolutePath\match "^/[^/\\]+"
-
-  ---Validates and normalizes an absolute filesystem path.
-  ---@param path string|string[] Either a path or an array of path segments.
-  ---@param checkFileExt? boolean Require the path to have a file extension.
-  ---@param basePath? string|string[] Base path to resolve relative paths against; relative paths are rejected without it.
-  ---@return string|false|nil normalizedPath The normalized path, or false/nil on error.
-  ---@return string? deviceOrErr The device/root component on success, or an error message on failure.
-  ---@return string? dir The directory component (success only).
-  ---@return string? file The file name component (success only).
-  validateFullPath: (path, checkFileExt, basePath) ->
-    if "table" == type path
-      path, errMsg = FileOps.joinPath path
-      return nil, errMsg if not path
-    elseif "string" != type path
-      return nil, msgs.validateFullPath.badType\format 1, "path", type(path)
-
-    if "table" == type basePath
-      basePath, errMsg = FileOps.joinPath basePath
-      return nil, errMsg if not basePath
-    elseif basePath and "string" != type basePath
-      return nil, msgs.validateFullPath.badType\format 3, "basePath", type(basePath)
-
-    -- expand aegisub path specifiers
-    path = aegisub.decode_path path
-    -- expand home directory on linux
-    homeDir = os.getenv "HOME"
-    path = path\gsub "^~", "#{homeDir}/" if homeDir
-    -- use single native path separators
-    path = path\gsub "[\\/]+", FileOps.pathSep
-    -- check length
-    if #path > FileOps.pathMaxLength
-      if FileOps.longPathsDisabled
-        -- distinguish a system-wide opt-out from an app that isn't long-path-aware
-        if FileOps.windowsRegistryLongPathsEnabled
-          return nil, msgs.validateFullPath.tooLongProcessUnaware\format #path, FileOps.pathMaxLength, FileOps.pathMaxLength
-        return nil, msgs.validateFullPath.tooLongRegistryDisabled\format #path, FileOps.pathMaxLength
-      return nil, msgs.validateFullPath.tooLong\format #path, FileOps.pathMaxLength
-    -- check for invalid characters
-    invChar = path\match FileOps.pathMatch.invalidChars, ffi.os == "Windows" and 3 or nil
-    if invChar
-      return nil, msgs.validateFullPath.invalidChars\format invChar
-    -- check if path is absolute
-    dev = FileOps.__getPathRoot path
-    unless dev
-      -- make relative paths absolute if base path is provided
-      if basePath
-        path, errMsg = FileOps.joinPath basePath, path
-        return nil, errMsg if not path
-        dev = FileOps.__getPathRoot path
-      else return false, msgs.validateFullPath.notFullPath
-    -- parse path structure
-    rest = path\sub #dev + 1
-    dir, file = rest\match "^(.*)[/\\]([^/\\]*)$"
-    unless dir
-      return false, msgs.validateFullPath.notFullPath
-    for segment in FileOps.pathSegments rest
-      if #segment > FileOps.pathMaxSegmentLength
-        return nil, msgs.validateFullPath.segmentTooLong\format #segment, FileOps.pathMaxSegmentLength, segment
-      if ffi.os == "Windows"
-        segmentWithoutExt = segment\match("^[^%.]+") or segment
-        if windowsReservedNameSet[segmentWithoutExt\upper!]
-          return nil, msgs.validateFullPath.reservedNames\format segmentWithoutExt
-      unless segment\match "[^%.%s]$"
-        return nil, msgs.validateFullPath.notFullPath
-    file = file != "" and file or nil
-    if checkFileExt and not (file and file\match ".+%.+")
-      return false, msgs.validateFullPath.missingExt
-
-    path = table.concat {dev, dir, file and FileOps.pathSep, file}
-    return path, dev, dir, file
-
-  ---Converts a base path and namespace into a namespaced filesystem path.
-  ---Dots in the namespace are converted to path separators when nested is true.
-  ---@param basePath string|string[] Base path (or segments) the namespaced path is created under.
-  ---@param namespace string
-  ---@param ext string File extension (including the dot).
-  ---@param nested? boolean Convert namespace dots to path separators (default true).
-  ---@return string? path
-  ---@return string? err
-  getNamespacedPath: (basePath, namespace, ext, nested = true) ->
-    res, msg = domain.validateNamespace namespace
-    return nil, msg unless res
-
-    fullBasePath, msg = FileOps.validateFullPath basePath
-    return nil, msgs.getNamespacedPath.badBasePath\format basePath, msg unless fullBasePath
-
-    namespacePath = "#{nested and namespace\gsub("%.", FileOps.pathSep) or namespace}#{ext}"
-    normalizedFullPath, msg = FileOps.validateFullPath namespacePath, false, fullBasePath
-    return nil, msgs.getNamespacedPath.badPath\format fullBasePath, namespacePath, msg unless normalizedFullPath
-
-    return normalizedFullPath
 }
 
 return FileOps

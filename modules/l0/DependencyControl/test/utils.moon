@@ -82,13 +82,13 @@
 
     -- Aegisub loads each automation script concurrently, each into its own Lua state, and those states
     -- seed their rng at the same instant while sharing one pid, so the clock and pid don't tell them
-    -- apart. Hold both fixed and give each the identity of a state at a neighbouring address; the seeds
+    -- apart. Hold both fixed and give each the identity of a state at a neighboring address; the seeds
     -- and their first draws must still come out distinct, or per-script log file names and temp paths
     -- would collide.
     seedRandom_divergesAcrossSimultaneousStates: (ut) ->
       ut\assertNumber utils.seedRandom!
       seeds, heads = {}, {}
-      base = 0x1a2b00000000 -- a plausible Lua state address; neighbours differ by an allocation offset
+      base = 0x1a2b00000000 -- a plausible Lua state address; neighbors differ by an allocation offset
       for i = 0, 199
         seed = utils.__deriveSeed base + i * 0x10, 1234.5, 4242 -- frozen clock and pid
         ut\assertNil seeds[seed]

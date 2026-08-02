@@ -3,12 +3,19 @@ fileOps = require "l0.DependencyControl.file-ops"
 Logger = require "l0.DependencyControl.Logger"
 constants = require "l0.DependencyControl.Constants"
 Lock = require "l0.DependencyControl.Lock"
+pathOps = require "l0.DependencyControl.path-ops"
 dkjson = require "l0.dkjson"
 
 defaultLogger = Logger fileBaseName: "#{constants.DEPCTRL_SHORT_NAME}.FileCache"
 
-LOCK_NAMESPACE = "l0.DependencyControl.FileCache" -- Global-lock namespace for serializing cache writes
+LOCK_NAMESPACE = "#{constants.DEPCTRL_NAMESPACE}.FileCache" -- Global-lock namespace for serializing cache writes
 LOCK_TIMEOUT = 5000 -- ms to wait for the write lock before skipping the write
+
+SLUG_LENGTH = 7 -- hex digits of a key's digest kept as the slug every one of its files is named with
+SLUG_PATTERN = "%x"\rep SLUG_LENGTH
+META_FILE_NAME_PATTERN = "^#{SLUG_PATTERN}%.meta%.json$"
+SNAPSHOT_FILE_NAME_PATTERN = "^#{SLUG_PATTERN}%-.*%-%d+T%d+Z%-%x%x%x%x%.json$"
+SLUG_CAPTURE_PATTERN = "^(#{SLUG_PATTERN})"
 
 -- Replaces filesystem-hostile characters so a cache entry's label is safe in a file name, and clamps its
 -- length. Falls back to "entry" for an empty or missing label.
@@ -16,16 +23,33 @@ sanitizeLabel = (label) ->
   safe = tostring(label or "entry")\gsub "[^%w%._-]", "_"
   #safe > 0 and safe\sub(1, 64) or "entry"
 
--- The 7-hex-char SHA-1 slug of a cache key. Deterministic per key (sensitive to its exact bytes), matching
--- the DepCtrl Browser's feed-URL slug convention.
-keySlug = (key) -> Hash.getDigest(Hash.HashType.Sha1, key)\sub 1, 7
+-- The slug of a cache key. Deterministic per key (sensitive to its exact bytes), matching the DepCtrl
+-- Browser's feed-URL slug convention.
+keySlug = (key) -> Hash.getDigest(Hash.HashType.Sha1, key)\sub 1, SLUG_LENGTH
 
 -- The embedded UTC timestamp of a snapshot file name, for chronological ordering ("" when absent).
 snapshotStamp = (fileName) -> fileName\match "(%d+T%d+Z)" or ""
 
+---Reads and decodes a cache index (meta) JSON file.
+---@param path string
+---@return FileCacheMeta? meta Nil when the file is absent or doesn't decode to a table.
+readMeta = (path) ->
+  content = fileOps.readFile path
+  return nil unless content
+  -- a torn read from a concurrent write fails to decode and is treated as a cache miss
+  ok, meta = pcall dkjson.decode, content
+  ok and type(meta) == "table" and meta or nil
+
+---Reports whether a decoded value carries every field this cache writes into an index.
+---@param meta any A decoded index file's contents.
+---@return boolean isIndex False for any other value, a table among them.
+isIndex = (meta) ->
+  return false unless type(meta) == "table"
+  meta.key != nil and meta.latestFile != nil and meta.cachedAt != nil and meta.expiresAt != nil
+
 -- An instance's on-disk directory: the configured base, namespaced and named. The single place the layout
 -- is defined, shared by the constructor and the `get` factory's registry key.
-resolveDir = (basePath, namespace, name) -> "#{aegisub.decode_path basePath}/#{namespace}/#{name}"
+resolveDir = (basePath, namespace, name) -> "#{pathOps.decode basePath}/#{namespace}/#{name}"
 
 ---The per-key index entry FileCache persists next to each snapshot; returned by getMeta/getFile/get/put.
 ---@class FileCacheMeta
@@ -36,8 +60,8 @@ resolveDir = (basePath, namespace, name) -> "#{aegisub.decode_path basePath}/#{n
 
 ---Construction options for FileCache.
 ---@class FileCacheOptions
----@field maxAge? integer Default entry lifetime in seconds, used when a put doesn't set its own (default 3600).
----@field maxFiles? integer Snapshot files retained per cache before the oldest are trimmed (default 50).
+---@field maxAge? integer Default entry lifetime in seconds, used when a put doesn't set its own; defaults to the class's `defaultMaxAge`.
+---@field maxFiles? integer Snapshot files retained per cache before the oldest are trimmed; defaults to the class's `defaultMaxFiles`.
 ---@field logger? Logger Logger for cache operations.
 ---@field now? fun(): integer Clock override returning Unix time; defaults to os.time (injected in tests).
 ---@field deserialize? fun(content: string): any Codec turning stored content into the value get returns and memoizes; its presence enables the in-memory L1 layer.
@@ -61,7 +85,7 @@ class FileCache
 
   ---Returns the shared cache for a base/namespace/name, reusing the existing instance for that resolved
   ---directory rather than constructing a duplicate. Options apply only when the instance is first created.
-  ---@param basePath string The cache root (the `paths.cache` setting, e.g. "?user/cache"); path-decoded.
+  ---@param basePath string The cache root (the `paths.cache` setting, e.g. "?local/cache"); path-decoded.
   ---@param namespace string The owning script namespace (`constants.DEPCTRL_NAMESPACE` for DepCtrl's own caches).
   ---@param name string A short name for this cache's purpose (e.g. "feeds").
   ---@param opts? FileCacheOptions See new.
@@ -74,7 +98,37 @@ class FileCache
       FileCache.__instances[dir] = cache
     return cache
 
-  ---@param basePath string The cache root (the `paths.cache` setting, e.g. "?user/cache"); path-decoded here.
+  ---Deletes the files this cache wrote below a directory, dropping subdirectories it empties and
+  ---leaving the directory it was given.
+  ---A directory qualifies only while it holds an index that decodes, and only its indexes and
+  ---snapshots are taken; every other file stays, along with the directory holding it.
+  ---@param dir string Absolute path of a cache root, or of a single cache's own directory.
+  ---@return integer removed Files deleted; 0 when the directory is absent or holds nothing of ours.
+  @_removeArtifactsIn = (dir) ->
+    entries = fileOps.listDir dir
+    return 0 unless entries
+
+    removed, indexes, snapshots = 0, {}, {}
+    for entry in *entries
+      path = pathOps.joinPath dir, entry
+      info = fileOps.getAttributes path, "mode"
+      continue unless info
+      if info.attr == "directory"
+        removed += FileCache._removeArtifactsIn path
+        fileOps.rmdir path, false
+      elseif entry\match(META_FILE_NAME_PATTERN) and isIndex readMeta path
+        indexes[#indexes + 1] = path
+      elseif entry\match SNAPSHOT_FILE_NAME_PATTERN
+        snapshots[#snapshots + 1] = path
+
+    -- no decodable index, so nothing here is provably ours however much it looks the part
+    return removed if #indexes == 0
+
+    removed += 1 for path in *indexes when fileOps.remove path
+    removed += 1 for path in *snapshots when fileOps.remove path
+    return removed
+
+  ---@param basePath string The cache root (the `paths.cache` setting, e.g. "?local/cache"); path-decoded here.
   ---@param namespace string The owning script namespace (`constants.DEPCTRL_NAMESPACE` for DepCtrl's own caches).
   ---@param name string A short subdirectory naming this cache's purpose (e.g. "feeds").
   ---@param opts? FileCacheOptions Defaults for entry lifetime, retention, logging, clock, and the L1 codec.
@@ -91,18 +145,13 @@ class FileCache
   ---@private
   ---@param key string The cache key.
   ---@return string path Filesystem path of the key's cache-index (meta) JSON file.
-  __metaPath: (key) => fileOps.joinPath @cacheDir, "#{keySlug key}.meta.json"
+  __metaPath: (key) => pathOps.joinPath @cacheDir, "#{keySlug key}.meta.json"
 
   ---Reads and decodes a cache index (meta) JSON file.
   ---@private
   ---@param path string
   ---@return FileCacheMeta? meta
-  __readMeta: (path) =>
-    content = fileOps.readFile path
-    return nil unless content
-    -- a torn read from a concurrent write fails to decode and is treated as a cache miss
-    ok, meta = pcall dkjson.decode, content
-    ok and type(meta) == "table" and meta or nil
+  __readMeta: (path) => readMeta path
 
   ---Reads the cache index entry for a key.
   ---@param key string
@@ -119,6 +168,15 @@ class FileCache
     return false if @__staleBefore and meta.cachedAt and meta.cachedAt < @__staleBefore
     @.now! < meta.expiresAt
 
+  ---Resolves the snapshot an index entry points at, confirming the file is still there.
+  ---@private
+  ---@param meta FileCacheMeta An index entry carrying a `latestFile`.
+  ---@return string? path The snapshot's path, or nil when the file it names is gone.
+  __getSnapshotPath: (meta) =>
+    path = pathOps.joinPath @cacheDir, meta.latestFile
+    info = fileOps.getAttributes path, "mode"
+    info and info.attr == "file" and path or nil
+
   ---Resolves the latest cached snapshot for a key. The snapshot may be stale; callers use isFresh on the
   ---returned meta to decide whether to serve it directly or only as an offline fallback.
   ---@param key string
@@ -127,9 +185,8 @@ class FileCache
   getFile: (key) =>
     meta = @getMeta key
     return nil unless meta and meta.latestFile
-    path = fileOps.joinPath @cacheDir, meta.latestFile
-    info = fileOps.getAttributes path, "mode"
-    return nil, meta unless info and info.attr == "file"
+    path = @__getSnapshotPath meta
+    return nil, meta unless path
     return path, meta
 
   ---Returns the deserialized latest snapshot for a key, served from the in-memory L1 memo when it still
@@ -148,9 +205,8 @@ class FileCache
     return memo.value, meta, fresh if memo and memo.cachedAt == meta.cachedAt
     return nil, meta, fresh unless @__deserialize and meta.latestFile
 
-    path = fileOps.joinPath @cacheDir, meta.latestFile
-    info = fileOps.getAttributes path, "mode"
-    content = info and info.attr == "file" and fileOps.readFile path
+    path = @__getSnapshotPath meta
+    content = path and fileOps.readFile path
     return nil, meta, fresh unless content
 
     value = @.__deserialize content
@@ -173,16 +229,16 @@ class FileCache
     -- collect the key slugs whose index predates the cut-off, dropping their memos as we go
     expiredSlugs = {}
     for file in *files
-      continue unless file\match "%.meta%.json$"
-      meta = @__readMeta fileOps.joinPath @cacheDir, file
+      continue unless file\match META_FILE_NAME_PATTERN
+      meta = @__readMeta pathOps.joinPath @cacheDir, file
       continue unless meta and meta.cachedAt and meta.cachedAt < before
       expiredSlugs[keySlug meta.key] = true
       @__l1[meta.key] = nil
 
-    -- every file (snapshot or index) is named with its key's 7-hex slug prefix, so one pass removes both
+    -- every file (snapshot or index) is named with its key's slug prefix, so one pass removes both
     for file in *files
-      slug = file\match "^(%x%x%x%x%x%x%x)"
-      fileOps.remove fileOps.joinPath @cacheDir, file if slug and expiredSlugs[slug]
+      slug = file\match SLUG_CAPTURE_PATTERN
+      fileOps.remove pathOps.joinPath @cacheDir, file if slug and expiredSlugs[slug]
 
   ---Stores a blob under a readable, timestamped snapshot and repoints the index at it, then trims old
   ---snapshots. The snapshot name is `<slug>-<label>-<utcTimestamp>-<rand>.json` (slug first so a key's
@@ -201,7 +257,7 @@ class FileCache
       namespace: LOCK_NAMESPACE
       resource: @cacheDir
       scope: Lock.Scope.Global
-      holderName: "FileCache"
+      holderName: @@__name
       logger: @logger
       timeout: LOCK_TIMEOUT
     }, -> @__write key, content, label, expiresAfter
@@ -246,16 +302,16 @@ class FileCache
 
     protectedFiles, snapshots = {}, {}
     for file in *files
-      if file\match "%.meta%.json$"
-        meta = @__readMeta fileOps.joinPath @cacheDir, file
+      if file\match META_FILE_NAME_PATTERN
+        meta = @__readMeta pathOps.joinPath @cacheDir, file
         protectedFiles[meta.latestFile] = true if meta and meta.latestFile
-      elseif file\match "%.json$"
+      elseif file\match SNAPSHOT_FILE_NAME_PATTERN
         snapshots[#snapshots + 1] = file
 
     -- newest first, so everything past the cap is the oldest
     table.sort snapshots, (a, b) -> snapshotStamp(a) > snapshotStamp(b)
     for i = @maxFiles + 1, #snapshots
       continue if protectedFiles[snapshots[i]]
-      fileOps.remove fileOps.joinPath @cacheDir, snapshots[i]
+      fileOps.remove pathOps.joinPath @cacheDir, snapshots[i]
 
 return FileCache

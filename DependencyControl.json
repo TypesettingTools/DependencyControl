@@ -55,14 +55,14 @@
       "url": "@{baseUrl}#@{namespace}",
       "channels": {
         "main": {
-          "version": "0.8.1",
-          "released": "2026-07-24",
+          "version": "0.9.0",
+          "released": null,
           "default": true,
           "files": [
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "F7B62EAC79C4FBA001B50C12506231C204CC7E80"
+              "sha1": "E6C82B7325F2191288BE3A25BA9EDA9BE90436E1"
             },
             {
               "name": ".moon",
@@ -109,6 +109,9 @@
         ],
         "0.8.1": [
           "fix: The Install Script macro no longer fails while scanning feeds that set URL templates per section, DependencyControl's own feed among them."
+        ],
+        "0.9.0": [
+          "change: The Global Configuration dialog now notes that the log directory's `?state` token falls back to `?user` on an Aegisub build without it."
         ]
       }
     }
@@ -121,14 +124,14 @@
       "url": "@{baseUrl}#@{namespace}",
       "channels": {
         "main": {
-          "version": "0.8.1",
-          "released": "2026-07-24",
+          "version": "0.9.0",
+          "released": null,
           "default": true,
           "files": [
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "87CDA007933A971BAEFC91A044CF7FC941535D0D"
+              "sha1": "9AA2EBC0ADC9B263C9895962CE0E351D010C80B8"
             },
             {
               "name": "/Constants.moon",
@@ -138,7 +141,7 @@
             {
               "name": "/ConfigHandler.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "6C8ACA7DD2BBA8AD22AB7E488F918297B820EDF9"
+              "sha1": "5849A36B066EFF6FFF9F63B4C9397DB9A82E9FEE"
             },
             {
               "name": "/ConfigView.moon",
@@ -168,7 +171,7 @@
             {
               "name": "/FileCache.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "600F604B26D4C74D7FDC1F5BEA37512A49AF983F"
+              "sha1": "C67FDDD66493F3F197D44B057D56A7B8554F11F2"
             },
             {
               "name": "/FeedInventory.moon",
@@ -188,12 +191,12 @@
             {
               "name": "/FileLock.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "28F79DB790CF4746441B6127A8953708D1A52501"
+              "sha1": "60A9B7FF96E0C7068EC7EE8BB72C27C2B34220EF"
             },
             {
               "name": "/file-ops.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "2FB92DBDC1AA861B7D5A859B165CE71C39E8FBD0"
+              "sha1": "A1835190664A941EFA21A7CF870460B4780F4BAC"
             },
             {
               "name": "/FileOps.moon",
@@ -214,7 +217,7 @@
             {
               "name": "/JsonSchema.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "2707158CB66573CEA10465C21E3AB42708E482F7"
+              "sha1": "0342242069D983F60D572626034199C89FBEE955"
             },
             {
               "name": "/Lock.moon",
@@ -224,7 +227,7 @@
             {
               "name": "/Logger.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "CBFC4B9C5699D3606D7AEE92137DA91DEC1B4EBD"
+              "sha1": "C9C32774B31904ED7B90864B4766802C754EAB3B"
             },
             {
               "name": "/ModuleLoader.moon",
@@ -244,7 +247,7 @@
             {
               "name": "/PackageRecord.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "8BF956EEF2223D75B42FEBAE3BE21E2FC2A1CDA7"
+              "sha1": "F31022977767283B00F08C008A3D85199FC670D4"
             },
             {
               "name": "/ScriptTargetFilter.moon",
@@ -279,12 +282,12 @@
             {
               "name": "/UpdateFeed.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "521AD8915BF09A02167ACDF73CE4C39E928F504A"
+              "sha1": "3002D296BB4670965633E0A4BAF02F80D743E323"
             },
             {
               "name": "/UpdateTask.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "D7296244D4B9DAEAD0463CF6FE699AAF5CDF39A8"
+              "sha1": "72015BAB0918AFFFF5ED6340B13D272414FB66E3"
             },
             {
               "name": "/Updater.moon",
@@ -294,7 +297,7 @@
             {
               "name": "/ZipArchiver.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "CC7A19E78B8B87DB70177A4A47CB10497232DF26"
+              "sha1": "EAD3E888DAA28DA5F4E00A251BB4740CE9CA87B8"
             },
             {
               "name": "/helpers/ffi-posix.moon",
@@ -344,7 +347,7 @@
             {
               "name": "/config-schema.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "CC74ACBE7A7CD8761AD714564F3805AC96F68067"
+              "sha1": "F6FD0E470370511689CA5B01F28D8BC3BCD88F39"
             },
             {
               "name": "/Finalizer.moon",
@@ -359,7 +362,7 @@
             {
               "name": "/domain.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "C5D9BC686DFA4A85A28EE6E2E392B1E012A83909"
+              "sha1": "D28D4A012D7E6B89E1946BEB8BC46DCD7F52D4FA"
             },
             {
               "name": "/environment.moon",
@@ -372,9 +375,19 @@
               "sha1": "FA8307BC15AD2FEC1535F9B862E1D92C2A3A1AB9"
             },
             {
+              "name": "/path-ops.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "BC9E563718EC70284B404D01753F3452549BDCF6"
+            },
+            {
+              "name": "/legacy-cleanup.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "2838C5668DD417F9581B51DA9426857DD89B5F4F"
+            },
+            {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "1FE9D211C256E84F4C0F95BBA10659A1F7B9A0C7",
+              "sha1": "B351208EA529FD6A6D58D6A8DE1780B872D3FDE0",
               "type": "test"
             },
             {
@@ -386,7 +399,7 @@
             {
               "name": "/ConfigHandler.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "D0F735761CAC12540F7841DCF8A80AB6C20ECCE5",
+              "sha1": "C0DCB8FDAE3A53F27E4D7742ADA8660B9ACECF8C",
               "type": "test"
             },
             {
@@ -416,7 +429,7 @@
             {
               "name": "/FileCache.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "633106FDCDD0AB81CFC2BB85725B9A7B0077AF83",
+              "sha1": "C2DB39F83ADB561A5C92CCCBC2D518064551DB76",
               "type": "test"
             },
             {
@@ -452,7 +465,7 @@
             {
               "name": "/file-ops.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "AB2BBDDFEDBB158963CFDFAE196C584E105598CC",
+              "sha1": "A503A1CAA3B0FAFA2D62BB4ABA651A3BF7C6F048",
               "type": "test"
             },
             {
@@ -470,13 +483,13 @@
             {
               "name": "/JsonSchema.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "125E4930956E7DCA578C2F88EDB4B56C14A031C6",
+              "sha1": "2B3998285534B6C9EAC9B36BAA8CEF5E0ABF7E08",
               "type": "test"
             },
             {
               "name": "/Lock.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "26B3D5CA9E6D91C6F4D9411F093C26B3AE58FA96",
+              "sha1": "525628C362F564035CB0C866761FDC6CE7B52404",
               "type": "test"
             },
             {
@@ -512,7 +525,7 @@
             {
               "name": "/PackageRecord.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "9AB3488762804B65BF48CE33C44BA99628DF3F9D",
+              "sha1": "C6BBD7319C511C0A8C13F6F4440A14DD277D772E",
               "type": "test"
             },
             {
@@ -548,13 +561,13 @@
             {
               "name": "/UpdateFeed.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "4A3CE78253A52C70D6C28394BF724F9D0552DB0E",
+              "sha1": "3C72B65917FC447B97ACA1C76596AE0F12C32F5B",
               "type": "test"
             },
             {
               "name": "/UpdateTask.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "5CA6FC899341677F702788F543373C8F3EDCFAA0",
+              "sha1": "C1E70BD3720843D0CC163A30BD30FF8FA1B16728",
               "type": "test"
             },
             {
@@ -566,7 +579,7 @@
             {
               "name": "/ZipArchiver.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "508996E6E08DFDA179327AFD70219344E21BD66E",
+              "sha1": "2D0AC676445C6E5E894B377981B4849DBC2EA9BF",
               "type": "test"
             },
             {
@@ -590,7 +603,7 @@
             {
               "name": "/helpers/MockHttpServerController.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "F4F84B3E954CB41DF6157ECF623B36DA3FF8EEBD",
+              "sha1": "AF0D432D6DD397460B7BC6A22E7C3BD978EC89EC",
               "type": "test"
             },
             {
@@ -602,13 +615,13 @@
             {
               "name": "/FeedLoader.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "D24848390EC92F0FCD088ECFDA62C67D12700F8F",
+              "sha1": "E3179B0B1C3E65C42BC44D643953AFFCE62F1F66",
               "type": "test"
             },
             {
               "name": "/config-schema.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "C65BC75E4ACF11F2CA174255CB6792C3C4FAD7A7",
+              "sha1": "A1C2BE15B2B155BFDD4BC9BC04E14D18F7D3ADC4",
               "type": "test"
             },
             {
@@ -632,19 +645,31 @@
             {
               "name": "/domain.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "2406064A5B8F234ECB69E9C60F5FC1A5E9B7657A",
+              "sha1": "6CEFB94846D96267E745F0F8A06D37147E234E2D",
               "type": "test"
             },
             {
               "name": "/utils.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "F78238492CB05F9F1568C14DE363A83CE1CAB6D8",
+              "sha1": "5107E471C45705B7F6ABD6A1EA5F16DFDEBBAA46",
               "type": "test"
             },
             {
               "name": "/environment.moon",
               "url": "@{fileBaseUrl}",
               "sha1": "1889EFB487A85EF9CD9838312B36CAB97D332119",
+              "type": "test"
+            },
+            {
+              "name": "/path-ops.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "FE13A698E66BB4C1C7BADF6867506945C4DFD30A",
+              "type": "test"
+            },
+            {
+              "name": "/legacy-cleanup.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "E178DE5AB6215648A1EC74D6BF85DD876D9FF50E",
               "type": "test"
             }
           ],
@@ -779,6 +804,10 @@
         ],
         "0.8.1": [
           "fix: Reading the channel list of a package that declares no channels returns an empty list instead of throwing an error."
+        ],
+        "0.9.0": [
+          "change: Log files and on-disk caches now follow the XDG Base Directory specification, moving to `?state/log` and `?local/cache`; an Aegisub build that lacks the newer `?state` path token keeps writing logs to `?user/log`, so a path setting naming `?state` works on every version. Whatever an earlier release left behind in the old locations is cleaned up on startup, and only files DependencyControl can identify as its own are removed, so Aegisub's own logs stay untouched.",
+          "refactor!: Added `DependencyControl.PathOps`, a filesystem-free home for path composition, validation, and Aegisub path-token resolution. `joinPath()`, `pathSegments()`, `getTempDir()` as well as the path constants moved there from `FileOps`, leaving behind re-exports for backwards compatibility. `FileOps.validateFullPath` is superseded by `PathOps.resolveFullPath`, which reports the absolute directory rather than a device plus a fragment relative to it. `FileOps.getAttributes` likewise drops the `dev` field from its info table, and its `dir` is now absolute (technically a breaking change, but the method was only added in v0.7.0, so it's unlikely to be in active use, yet)."
         ]
       }
     },

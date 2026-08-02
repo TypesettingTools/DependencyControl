@@ -63,6 +63,7 @@ Host = require "l0.DependencyControl.Host"
 Lock = require "l0.DependencyControl.Lock"
 Logger = require "l0.DependencyControl.Logger"
 PackageRecord = require "l0.DependencyControl.PackageRecord"
+pathOps = require "l0.DependencyControl.path-ops"
 Accessors = require "l0.DependencyControl.Accessors"
 Stub = require "l0.DependencyControl.Stub"
 Timer = require "l0.DependencyControl.Timer"
@@ -94,6 +95,7 @@ class DependencyControl extends PackageRecord
   @Lock = Lock
   @Logger = Logger
   @PackageRecord = PackageRecord
+  @PathOps = pathOps
   @Stub = Stub
   @Timer = Timer
   @UpdateFeed = UpdateFeed
@@ -108,7 +110,7 @@ Accessors.install DependencyControl
 
 rec = DependencyControl{
   name: "DependencyControl",
-  version: "0.8.1", -- @{l0.DependencyControl:version}
+  version: "0.9.0", -- @{l0.DependencyControl:version}
   description: "Provides script management and auto-updating for Aegisub macros and modules.",
   author: "line0",
   url: "http://github.com/TypesettingTools/DependencyControl",

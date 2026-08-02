@@ -1,6 +1,7 @@
 dkjson = require "l0.dkjson" -- vendored dkjson directly, for its Prettier `indentMode` and `null` sentinel (neither guaranteed via a user-supplied json)
 constants = require "l0.DependencyControl.Constants"
 fileOps = require "l0.DependencyControl.file-ops"
+pathOps = require "l0.DependencyControl.path-ops"
 Logger = require "l0.DependencyControl.Logger"
 Lock = require "l0.DependencyControl.Lock"
 ConfigView = require "l0.DependencyControl.ConfigView"
@@ -86,7 +87,7 @@ class ConfigHandler
   @get = (filePath, logger = defaultLogger, noLoad = false, schemaOpts) =>
     -- normalize first, then look up by the canonical path: the cache is keyed by the validated path,
     -- so comparing against the raw filePath would miss and construct a duplicate handler for one file
-    path, msg = fileOps.validateFullPath filePath, true
+    path, msg = pathOps.resolveFullPath filePath, true
     return nil, msgs.new.badPath\format filePath, msg unless path
 
     return @@handlers[path] if @@handlers[path]
@@ -130,7 +131,7 @@ class ConfigHandler
     @__targetSchemaId = schemaOpts.schemaId
     @__migrate = schemaOpts.migrate
     if filePath
-      path, msg = fileOps.validateFullPath filePath, true
+      path, msg = pathOps.resolveFullPath filePath, true
       @logger\assert path, msgs.new.badPath, filePath, msg
       @filePath = path
       -- config files are shared across concurrent Aegisub instances, so the lock

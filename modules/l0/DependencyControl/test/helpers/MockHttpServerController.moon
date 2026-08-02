@@ -1,6 +1,7 @@
 ffi = require "ffi"
 moonbase = require "moonscript.base"
 fileOps = require "l0.DependencyControl.file-ops"
+pathOps = require "l0.DependencyControl.path-ops"
 Timer = require "l0.DependencyControl.Timer"
 
 MOCK_SERVER_FILE_BASENAME = "mock-http-server"
@@ -14,8 +15,8 @@ interpreter = (arg and arg[-1]) or "luajit"
 canDriveWithSocket = pcall require, "socket"
 
 -- mock-http-server.moon sits next to this file; locate it from our own source path.
-_, device, dir = fileOps.validateFullPath debug.getinfo(1, "S").source\gsub("^@", ""), true
-serverSourcePath = fileOps.joinPath "#{device}#{dir}", "#{MOCK_SERVER_FILE_BASENAME}.moon"
+_, _, dir = pathOps.resolveFullPath debug.getinfo(1, "S").source\gsub("^@", ""), true
+serverSourcePath = pathOps.joinPath dir, "#{MOCK_SERVER_FILE_BASENAME}.moon"
 
 quote = (s) -> "\"#{tostring(s)}\""
 
@@ -36,7 +37,7 @@ class MockHttpServerController
     serverSource = assert fileOps.readFile serverSourcePath
     compiledServerLua = assert moonbase.to_lua serverSource
     tempDir = assert fileOps.createTempDir!
-    path = fileOps.joinPath tempDir, "#{MOCK_SERVER_FILE_BASENAME}.lua"
+    path = pathOps.joinPath tempDir, "#{MOCK_SERVER_FILE_BASENAME}.lua"
     assert fileOps.writeFile path, compiledServerLua
     @compiledServerPath, @compiledServerTempDir = path, tempDir
     return @compiledServerPath
@@ -116,8 +117,8 @@ class MockHttpServerController
   ---@return MockHttpServerController self
   __startViaControlFiles: =>
     controlDir = assert fileOps.createTempDir!
-    readyFile = fileOps.joinPath controlDir, "ready"
-    @quitFile = fileOps.joinPath controlDir, "quit"
+    readyFile = pathOps.joinPath controlDir, "ready"
+    @quitFile = pathOps.joinPath controlDir, "quit"
     @__spawn { "--port", "0", "--ready-file", quote(readyFile), "--quit-file", quote(@quitFile) }
 
     deadline = Timer.getTime! + @timeout * 1000

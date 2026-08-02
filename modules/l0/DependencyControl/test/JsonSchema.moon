@@ -4,6 +4,7 @@
 (basePath) ->
   JsonSchema = require "l0.DependencyControl.JsonSchema"
   FILEOPS_MODULE_NAME = "l0.DependencyControl.file-ops"
+  PATHOPS_MODULE_NAME = "l0.DependencyControl.path-ops"
 
   -- a stand-in for a JsonSchema instance with a scripted validate(data) result
   mockSchema = (valid, err) -> {__class: JsonSchema, validate: (self, data) -> valid, err}
@@ -15,7 +16,7 @@
 
     getSchemasInDirectory_mapsVersionsToPaths: (ut) ->
       (ut\stub FILEOPS_MODULE_NAME, "listDir")\returns {"v0.3.0.json", "v0.4.0.json", "readme.txt"}
-      (ut\stub FILEOPS_MODULE_NAME, "joinPath")\calls (dir, name) -> "#{dir}/#{name}"
+      (ut\stub PATHOPS_MODULE_NAME, "joinPath")\calls (dir, name) -> "#{dir}/#{name}"
       result = JsonSchema\getSchemasInDirectory "/schemas"
       ut\assertTable result
       ut\assertContains result["0.4.0"], "v0.4.0.json"

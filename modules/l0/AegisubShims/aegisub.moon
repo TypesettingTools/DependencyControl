@@ -4,6 +4,7 @@
 -- Configurable via environment variables:
 --   DEPCTRL_USER_DIR  — base for ?user / ?local  (default: %APPDATA%\Aegisub / ~/.aegisub)
 --   DEPCTRL_DATA_DIR  — base for ?data            (default: same as ?user; real Aegisub uses exe dir)
+--   DEPCTRL_STATE_DIR — base for ?state           (default: same as ?user)
 --   DEPCTRL_TEMP_DIR  — base for ?temp            (default: %TEMP% / /tmp)
 
 ffi = require "ffi"
@@ -16,6 +17,7 @@ tempDir = os.getenv("DEPCTRL_TEMP_DIR") or (isWindows and (os.getenv("TEMP")) or
 userDir = os.getenv("DEPCTRL_USER_DIR") or
   (isWindows and "#{os.getenv 'APPDATA'}\\Aegisub" or "#{os.getenv 'HOME'}/.aegisub")
 dataDir = os.getenv("DEPCTRL_DATA_DIR") or userDir
+stateDir = os.getenv("DEPCTRL_STATE_DIR") or userDir
 
 userPathsAddedToPackagePathLua = {}
 userPathsAddedToPackagePathMoon = {}
@@ -31,6 +33,7 @@ pathTokens = {
   "?dictionary": dataDir .. pathSep .. "dictionaries"
   "?local": userDir
   "?script": ""
+  "?state": stateDir
   "?temp": tempDir
   "?user": userDir
   "?video": ""

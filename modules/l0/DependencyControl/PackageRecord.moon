@@ -7,9 +7,11 @@ utils = require "l0.DependencyControl.utils"
 Logger = require "l0.DependencyControl.Logger"
 ConfigView = require "l0.DependencyControl.ConfigView"
 fileOps = require "l0.DependencyControl.file-ops"
+legacyCleanup = require "l0.DependencyControl.legacy-cleanup"
 Updater = require "l0.DependencyControl.Updater"
 ModuleLoader = require "l0.DependencyControl.ModuleLoader"
 ModuleProvider = require "l0.DependencyControl.ModuleProvider"
+pathOps = require "l0.DependencyControl.path-ops"
 SemanticVersion = require "l0.DependencyControl.SemanticVersion"
 Accessors = require "l0.DependencyControl.Accessors"
 UnitTestSuite = require "l0.DependencyControl.UnitTestSuite"
@@ -142,8 +144,9 @@ class PackageRecord
     @updater = Updater script_namespace, @config, @logger
     @configDir = paths.config
 
-    fileOps.mkdir aegisub.decode_path @configDir
+    fileOps.mkdir pathOps.decode @configDir
     @logger\trimFiles!
+    legacyCleanup.run paths, @logger
     fileOps.runScheduledRemoval @configDir
 
 
@@ -328,7 +331,7 @@ class PackageRecord
   ---they stay discoverable to other scripts through the DependencyControl config file.
   ---@return string path
   getConfigFileName: () =>
-    return aegisub.decode_path "#{@@configDir}/#{@configFile}"
+    return pathOps.decode "#{@@configDir}/#{@configFile}"
 
   ---Creates a ConfigView for this record's script-specific config file.
   ---@param defaults? table Default values for the config.
@@ -526,10 +529,10 @@ class PackageRecord
     subPath = isModule and @namespace\gsub("%.", "/") or @namespace
     paths = {}
     for ext in *{".moon", ".lua"}
-      if path = fileOps.validateFullPath "#{subPath}#{ext}", false, baseDir
+      if path = pathOps.resolveFullPath "#{subPath}#{ext}", false, baseDir
         paths[#paths+1] = path
       if isModule
-        if path = fileOps.validateFullPath "#{subPath}/init#{ext}", false, baseDir
+        if path = pathOps.resolveFullPath "#{subPath}/init#{ext}", false, baseDir
           paths[#paths+1] = path
     return paths
 
