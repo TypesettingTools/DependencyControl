@@ -125,7 +125,7 @@ PathOps = {
   windowsRegistryLongPathsEnabled: windowsRegistryLongPathsEnabled
 
   ---Memoized `token -> isSupported` probe results; a test stubbing decode_path clears it directly.
-  ---Requiring UnitTestSuite for hidden test exports here would cycle back into this module via Logger.
+  ---UnitTestSuite loads through Logger, which loads this module, so its test exports are out of reach here.
   ---@private
   __tokenSupport: {}
 
@@ -134,8 +134,7 @@ PathOps = {
   ---@return boolean isSupported False when Aegisub doesn't know the token or leaves it unset.
   isTokenSupported: (token) ->
     supported = PathOps.__tokenSupport[token]
-    unless supported == nil
-      return supported
+    return supported unless supported == nil
     -- a token Aegisub can't resolve comes back verbatim, a resolved one as its directory
     supported = aegisub.decode_path(token) != token
     PathOps.__tokenSupport[token] = supported

@@ -62,7 +62,7 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "C854C26EBE7D1BF3B59D5B5A6291C2C4E55D0338"
+              "sha1": "E6C82B7325F2191288BE3A25BA9EDA9BE90436E1"
             },
             {
               "name": ".moon",
@@ -131,7 +131,7 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "C116B117A6420107E3FD3A2A6B689DEB88AC953B"
+              "sha1": "9AA2EBC0ADC9B263C9895962CE0E351D010C80B8"
             },
             {
               "name": "/Constants.moon",
@@ -171,7 +171,7 @@
             {
               "name": "/FileCache.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "4E954C863FC0A9312966797D285CA8CF22D27C16"
+              "sha1": "E9078D98329F984499A6D68AE79359F962AC9A03"
             },
             {
               "name": "/FeedInventory.moon",
@@ -247,7 +247,7 @@
             {
               "name": "/PackageRecord.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "79D08D8501FAB34794523593444DBAAF160743BA"
+              "sha1": "C77D649499C6E764C6AF07DE661EDA6E8B4C5729"
             },
             {
               "name": "/ScriptTargetFilter.moon",
@@ -377,12 +377,17 @@
             {
               "name": "/path-ops.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "32B0D42A6A549F4CB1B3E2775E79F2565E478A19"
+              "sha1": "26C8E3A430C7F6D5710FE775AA583C1BE855431E"
+            },
+            {
+              "name": "/legacy-cleanup.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "2838C5668DD417F9581B51DA9426857DD89B5F4F"
             },
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "71CC2ABE5FA6CC5B68233CF8CCF89B45229411D5",
+              "sha1": "B351208EA529FD6A6D58D6A8DE1780B872D3FDE0",
               "type": "test"
             },
             {
@@ -424,7 +429,7 @@
             {
               "name": "/FileCache.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "633106FDCDD0AB81CFC2BB85725B9A7B0077AF83",
+              "sha1": "90DF6DEEEFA062535E0F080681E2B31C9A34B60E",
               "type": "test"
             },
             {
@@ -660,6 +665,12 @@
               "url": "@{fileBaseUrl}",
               "sha1": "69E5588A097CFB08CF8FF7A63555CBD6ECFDF6E2",
               "type": "test"
+            },
+            {
+              "name": "/legacy-cleanup.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "DAF3711D24799E032C11D0BF2B7926D518C540C8",
+              "type": "test"
             }
           ],
           "requiredModules": [
@@ -795,7 +806,7 @@
           "fix: Reading the channel list of a package that declares no channels returns an empty list instead of throwing an error."
         ],
         "0.9.0": [
-          "change: Log files and on-disk caches now follow the XDG Base Directory specification, moving to `?state/log` and `?local/cache`. An Aegisub build that lacks the newer `?state` path token keeps writing logs to `?user/log`, so a path setting naming `?state` works on every version.",
+          "change: Log files and on-disk caches now follow the XDG Base Directory specification, moving to `?state/log` and `?local/cache`; an Aegisub build that lacks the newer `?state` path token keeps writing logs to `?user/log`, so a path setting naming `?state` works on every version. Whatever an earlier release left behind in the old locations is cleaned up on startup, and only files DependencyControl can identify as its own are removed, so Aegisub's own logs stay untouched.",
           "feat: Added `DependencyControl.PathOps`, a filesystem-free home for path composition, validation, and Aegisub path-token resolution. `joinPath`, `validateFullPath`, `pathSegments`, `getTempDir` and the path constants moved there from `FileOps`, which still re-exports each under its existing name."
         ]
       }
