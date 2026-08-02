@@ -7,6 +7,7 @@ argparse
 backticked
 BadMutex
 browsable
+CASELESS
 CGNAT
 chdir
 classmod
@@ -29,6 +30,7 @@ DepCtrl
 dkjson
 DLUAJIT
 docusaurus
+DOTALL
 downloaders
 Dunder
 editorconfig
@@ -47,6 +49,7 @@ hashtable
 headlessly
 headtail
 HKLM
+ICASE
 INCDIR
 inlinehilite
 inspectable
@@ -58,10 +61,12 @@ launchable
 ldoc
 leafo
 libaegisub
+libpcre
 linenums
 linkified
 linkify
 lpeg
+lrexlib
 LuaCATS
 luafilesystem
 luajit
@@ -87,8 +92,10 @@ mooncats
 moonpath
 msvc
 msvcbuild
+multibyte
 multiset
 myaamori
+NOSUB
 NTFS
 nullary
 parentheticals
@@ -104,6 +111,7 @@ pymdownx
 refetch
 refetched
 refetches
+regbase
 reindent
 reindenter
 removability
