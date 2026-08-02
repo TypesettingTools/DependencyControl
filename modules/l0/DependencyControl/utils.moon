@@ -140,7 +140,19 @@ flatten = (value, depth = 1, toArrayTable) ->
   recurse value, depth
   return flattened, f
 
-deepCopy = (tbl) -> {k, (type(v) == "table" and deepCopy(v) or v) for k, v in pairs tbl}
+deepCopy = (tbl) ->
+  seen = {}
+  recurse = (value) ->
+    return value if type(value) != "table"
+    return seen[value] if seen[value]
+
+    -- create the copy and register it before recursing into its values, so circular references resolve to the copy
+    copy = {}
+    seen[value] = copy
+    copy[k] = recurse v for k, v in pairs value
+    return copy
+
+  return recurse tbl
 
 mergeSearchPath = (pathStr, add, remove) ->
   removed = remove and {p, true for p in *remove} or {}
@@ -203,9 +215,9 @@ Utils = {
   ---@return table copy The copied table.
   copy: (tbl) -> {k, v for k, v in pairs tbl}
 
-  ---Deep-copies a table recursively (no metatables).
+  ---Deep-copies a table recursively (no metatables). Circular references are preserved as cycles in the copy.
   ---@param tbl table The table to deep-copy.
-  ---@return table copy The deep-copied table.
+  ---@return table copy The deep-copied table. Keys are carried over as-is; only values are copied.
   deepCopy: deepCopy
 
   ---Builds (or extends) a set from an array's values: each value becomes a key mapped to `value`.

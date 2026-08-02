@@ -1,4 +1,4 @@
--- Utils tests: flattening, list membership, deep equality, item equality, and pattern escaping.
+-- Utils tests: flattening, list membership, deep copying, deep equality, item equality, and pattern escaping.
 -- Called from test.moon as: (controls\requireTest "utils")!
 ->
   utils = require "l0.DependencyControl.utils"
@@ -55,6 +55,39 @@
       ut\assertFalse utils.listIncludes {"a", "b"}, "z"
       ut\assertFalse utils.listIncludes {}, "a"
 
+    -- deepCopy
+
+    deepCopy_nestedTablesDetached: (ut) ->
+      keyTbl = {}
+      source = {n: 1, nested: {deep: {"x"}}, [keyTbl]: "keyed"}
+      copy = utils.deepCopy source
+      ut\assertEquals copy, source
+      ut\assertIsNot copy.nested, source.nested
+      ut\assertIsNot copy.nested.deep, source.nested.deep
+      ut\assertEquals copy[keyTbl], "keyed" -- table keys are carried over by identity, not copied
+      source.nested.deep[1] = "mutated"
+      ut\assertEquals copy.nested.deep[1], "x"
+
+    -- a table reaching back into one already being copied resolves to that copy, so the walk terminates
+    -- and the result is a cycle of the same shape rather than a chain of ever-deeper copies
+    deepCopy_cyclicRefsPreserved: (ut) ->
+      source = {name: "root"}
+      source.self = source
+      source.child = {parent: source}
+
+      copy = utils.deepCopy source
+      ut\assertIsNot copy, source
+      ut\assertIs copy.self, copy
+      ut\assertIs copy.child.parent, copy
+      ut\assertEquals copy.name, "root"
+
+    -- one source table reached through two keys stays one table in the copy
+    deepCopy_sharedTableCopiedOnce: (ut) ->
+      shared = {"x"}
+      copy = utils.deepCopy {first: shared, second: shared}
+      ut\assertIsNot copy.first, shared
+      ut\assertIs copy.first, copy.second
+
     -- equals: a cyclic value is treated as matched at that key, not as making the whole tables equal
     equals_cyclicRefs: (ut) ->
       cyc = (x) ->
@@ -105,6 +138,7 @@
       "flatten_depth2Array", "flatten_depth1StopsEarly", "flatten_depth0NoFlatten",
       "flatten_scalar", "flatten_returnsCount", "flatten_toArrayTable",
       "listIncludes_found", "listIncludes_notFoundAndEmpty",
+      "deepCopy_nestedTablesDetached", "deepCopy_cyclicRefsPreserved", "deepCopy_sharedTableCopiedOnce",
       "equals_cyclicRefs", "itemsEqual_duplicateScalars",
       "escapePattern_matchesLiterally", "escapePattern_plainStringUnchanged",
       "seedRandom_divergesAcrossSimultaneousStates"
