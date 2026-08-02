@@ -126,11 +126,11 @@ Domain = {
     res, msg = Domain.validateNamespace namespace
     return nil, msg unless res
 
-    fullBasePath, msg = pathOps.validateFullPath basePath
+    fullBasePath, msg = pathOps.resolveFullPath basePath
     return nil, msgs.getNamespacedPath.badBasePath\format basePath, msg unless fullBasePath
 
     namespacePath = "#{nested and namespace\gsub("%.", pathOps.pathSep) or namespace}#{ext}"
-    normalizedFullPath, msg = pathOps.validateFullPath namespacePath, false, fullBasePath
+    normalizedFullPath, msg = pathOps.resolveFullPath namespacePath, false, fullBasePath
     return nil, msgs.getNamespacedPath.badPath\format fullBasePath, namespacePath, msg unless normalizedFullPath
 
     return normalizedFullPath

@@ -4,6 +4,7 @@
 (basePath, DepCtrl, stubHelpers) ->
   domain = require "l0.DependencyControl.domain"
   fileOps = require "l0.DependencyControl.file-ops"
+  pathOps = require "l0.DependencyControl.path-ops"
   FileCache = require "l0.DependencyControl.FileCache"
   UpdateFeed = require "l0.DependencyControl.UpdateFeed"
   dkjson = require "l0.dkjson"
@@ -17,7 +18,7 @@
     unexpandedData.knownFeeds or= {}
     stubSelf UpdateFeed, {
       _url: "https://example.com/f.json", :unexpandedData, :feedDir,
-      fileName: fileOps.joinPath(feedDir, "feed.json"),
+      fileName: pathOps.joinPath(feedDir, "feed.json"),
       __class: UpdateFeed, logger: DepCtrl.logger
     }
 
@@ -45,9 +46,9 @@
   }]]
 
   writeResolveFeed = (dirName, json = resolveFeedJson) ->
-    root = fileOps.joinPath basePath, dirName
+    root = pathOps.joinPath basePath, dirName
     fileOps.mkdir root, false, true
-    feedPath = fileOps.joinPath root, "feed.json"
+    feedPath = pathOps.joinPath root, "feed.json"
     fileOps.writeFile feedPath, json, true
     feedPath, root
 
@@ -436,13 +437,13 @@
     -- channel doesn't list; a file matching several types goes to the longest-prefix template,
     -- and delete-flagged entries still count as listed
     findUnlistedFiles_discoversUnlistedFiles: (ut) ->
-      root = fileOps.joinPath basePath, "discover1"
-      fileOps.mkdir fileOps.joinPath(root, "modules", "l0", "NS", "test"), false, true
-      fileOps.writeFile fileOps.joinPath(root, "modules", "l0", "NS.moon"), "-- main", true
-      fileOps.writeFile fileOps.joinPath(root, "modules", "l0", "NS", "New.moon"), "-- new", true
-      fileOps.writeFile fileOps.joinPath(root, "modules", "l0", "NS", "Del.moon"), "-- resurrected", true
-      fileOps.writeFile fileOps.joinPath(root, "modules", "l0", "NS", "test.moon"), "-- main test", true
-      fileOps.writeFile fileOps.joinPath(root, "modules", "l0", "NS", "test", "New.moon"), "-- new test", true
+      root = pathOps.joinPath basePath, "discover1"
+      fileOps.mkdir pathOps.joinPath(root, "modules", "l0", "NS", "test"), false, true
+      fileOps.writeFile pathOps.joinPath(root, "modules", "l0", "NS.moon"), "-- main", true
+      fileOps.writeFile pathOps.joinPath(root, "modules", "l0", "NS", "New.moon"), "-- new", true
+      fileOps.writeFile pathOps.joinPath(root, "modules", "l0", "NS", "Del.moon"), "-- resurrected", true
+      fileOps.writeFile pathOps.joinPath(root, "modules", "l0", "NS", "test.moon"), "-- main test", true
+      fileOps.writeFile pathOps.joinPath(root, "modules", "l0", "NS", "test", "New.moon"), "-- new test", true
       feed = makeExpandFeed {
         name: "F"
         fileBaseUrl: "https://x.test/"
@@ -473,9 +474,9 @@
 
     -- a local path template with an unexpanded variable besides @{fileName} can't be inverted
     findUnlistedFiles_skipsUninvertibleTemplates: (ut) ->
-      root = fileOps.joinPath basePath, "discover2"
-      fileOps.mkdir fileOps.joinPath(root, "src"), false, true
-      fileOps.writeFile fileOps.joinPath(root, "src", "Stray.moon"), "-- stray", true
+      root = pathOps.joinPath basePath, "discover2"
+      fileOps.mkdir pathOps.joinPath(root, "src"), false, true
+      fileOps.writeFile pathOps.joinPath(root, "src", "Stray.moon"), "-- stray", true
       feed = makeExpandFeed {
         name: "F"
         localFileBasePaths: {script: "@{localFileBasePath}src/@{undeclared}@{fileName}"}
@@ -489,11 +490,11 @@
 
     -- updateFeed with addFiles appends discovered files to the raw channel, hashed and typed
     updateFeed_addFilesAppendsEntries: (ut) ->
-      root = fileOps.joinPath basePath, "discover3"
-      fileOps.mkdir fileOps.joinPath(root, "modules", "l0", "NS"), false, true
-      fileOps.writeFile fileOps.joinPath(root, "modules", "l0", "NS.moon"), "-- main", true
-      fileOps.writeFile fileOps.joinPath(root, "modules", "l0", "NS", "New.moon"), "-- new", true
-      feedPath = fileOps.joinPath root, "feed.json"
+      root = pathOps.joinPath basePath, "discover3"
+      fileOps.mkdir pathOps.joinPath(root, "modules", "l0", "NS"), false, true
+      fileOps.writeFile pathOps.joinPath(root, "modules", "l0", "NS.moon"), "-- main", true
+      fileOps.writeFile pathOps.joinPath(root, "modules", "l0", "NS", "New.moon"), "-- new", true
+      feedPath = pathOps.joinPath root, "feed.json"
       fileOps.writeFile feedPath, [[{
         "dependencyControlFeedFormatVersion": "0.4.0",
         "name": "T",
@@ -520,11 +521,11 @@
 
     -- updateFeed markReleased stamps the release date on channels still unreleased and keeps existing dates
     updateFeed_markReleasedStampsUnreleased: (ut) ->
-      root = fileOps.joinPath basePath, "markrel"
-      fileOps.mkdir fileOps.joinPath(root, "modules", "l0"), false, true
-      fileOps.writeFile fileOps.joinPath(root, "modules", "l0", "Fresh.moon"), "-- fresh", true
-      fileOps.writeFile fileOps.joinPath(root, "modules", "l0", "Old.moon"), "-- old", true
-      feedPath = fileOps.joinPath root, "feed.json"
+      root = pathOps.joinPath basePath, "markrel"
+      fileOps.mkdir pathOps.joinPath(root, "modules", "l0"), false, true
+      fileOps.writeFile pathOps.joinPath(root, "modules", "l0", "Fresh.moon"), "-- fresh", true
+      fileOps.writeFile pathOps.joinPath(root, "modules", "l0", "Old.moon"), "-- old", true
+      feedPath = pathOps.joinPath root, "feed.json"
       fileOps.writeFile feedPath, [[{
         "dependencyControlFeedFormatVersion": "0.4.0",
         "name": "T",
@@ -549,10 +550,10 @@
     -- mergeChannels copies the source channel into the destination channel(s), preserves channels not
     -- named, stamps the release date, sets the default flag, tracks top-level metadata, and adds packages
     mergeChannels_copiesPreservingOthers: (ut) ->
-      root = fileOps.joinPath basePath, "merge1"
+      root = pathOps.joinPath basePath, "merge1"
       fileOps.mkdir root, false, true
-      srcPath = fileOps.joinPath root, "src.json"
-      dstPath = fileOps.joinPath root, "dst.json"
+      srcPath = pathOps.joinPath root, "src.json"
+      dstPath = pathOps.joinPath root, "dst.json"
       fileOps.writeFile srcPath, [[{
         "dependencyControlFeedFormatVersion": "0.4.0", "name": "NewName", "baseUrl": "b",
         "modules": {
@@ -589,9 +590,9 @@
     -- bumpVersions off a released version starts a new cycle: it rewrites the marked source literal,
     -- bumps the channel version, clears the release date, and refreshes the file hash
     bumpVersions_startsCycleFromReleased: (ut) ->
-      root = fileOps.joinPath basePath, "bump1"
-      fileOps.mkdir fileOps.joinPath(root, "modules", "l0"), false, true
-      srcFile = fileOps.joinPath root, "modules", "l0", "Pkg.moon"
+      root = pathOps.joinPath basePath, "bump1"
+      fileOps.mkdir pathOps.joinPath(root, "modules", "l0"), false, true
+      srcFile = pathOps.joinPath root, "modules", "l0", "Pkg.moon"
       fileOps.writeFile srcFile, [[version = "0.7.0"  -- @{l0.Pkg:version}]], true
       hash = fileOps.getHash srcFile
       feedJson = [[{
@@ -600,7 +601,7 @@
         "localFileBasePaths": {"script": "@{localFileBasePath}modules/@{namespacePath}@{fileName}"},
         "modules": {"l0.Pkg": {"name": "Pkg", "author": "x", "channels": {"main": {"version": "0.7.0", "released": "2024-01-01", "default": true, "files": [{"name": ".moon", "url": "@{fileBaseUrl}", "sha1": "HASH"}]}}}}
       }]]
-      feedPath = fileOps.joinPath root, "feed.json"
+      feedPath = pathOps.joinPath root, "feed.json"
       fileOps.writeFile feedPath, (feedJson\gsub "HASH", hash\upper!), true
       feed = UpdateFeed nil, false, feedPath
       feed\loadFile feedPath, UpdateFeed.ExpansionMode.Local
@@ -644,7 +645,7 @@
       feed = {
         data: {
           modules: {"test.NS": {channels: {release: {version: "1.0.0",
-            files: {{name: "NS.moon", localFilePath: fileOps.joinPath(basePath, "NS.moon")}}}}}},
+            files: {{name: "NS.moon", localFilePath: pathOps.joinPath(basePath, "NS.moon")}}}}}},
           macros: {}
         },
         feedDir: basePath,
@@ -790,7 +791,7 @@
 
     -- a fresh on-disk snapshot is served straight from the cache, never touching the network
     ensureLoaded_readsFreshDiskCache: (ut) ->
-      cacheDir = fileOps.joinPath basePath, "uf-cache-fresh"
+      cacheDir = pathOps.joinPath basePath, "uf-cache-fresh"
       url = "https://example.com/fresh.json"
       cache = FileCache cacheDir, "test", "feeds", {deserialize: UpdateFeed.deserialize}
       cache\put url, '{"name":"FreshCache"}', "FreshCache" -- default lifetime → fresh right after writing
@@ -805,7 +806,7 @@
 
     -- when the fetch fails and only a stale snapshot exists, ensureLoaded serves it and flags staleness
     ensureLoaded_fallsBackToStaleCacheOffline: (ut) ->
-      cacheDir = fileOps.joinPath basePath, "uf-cache-stale"
+      cacheDir = pathOps.joinPath basePath, "uf-cache-stale"
       url = "https://example.com/stale.json"
       cache = FileCache cacheDir, "test", "feeds", {deserialize: UpdateFeed.deserialize}
       cache\put url, '{"name":"StaleCache"}', "StaleCache", 0 -- expiresAfter 0 → immediately stale
@@ -952,7 +953,7 @@
     resolve_writesResolvedFeedToOutFile: (ut) ->
       feedPath, root = writeResolveFeed "resolve6"
       feed = UpdateFeed nil, false, feedPath
-      outPath = fileOps.joinPath root, "out.json"
+      outPath = pathOps.joinPath root, "out.json"
       result, err = feed\resolve {outPath: outPath, feedSchemaVersion: "0.3.0"}
       ut\assertNil err
       ut\assertEquals result, outPath

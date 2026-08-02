@@ -5,6 +5,7 @@
 -- Called from test.moon as: (require "…test.path-ops") basePath, isWindows
 (basePath, isWindows) ->
   pathOps = require "l0.DependencyControl.path-ops"
+  fileOps = require "l0.DependencyControl.file-ops"
   pathSep = isWindows and "\\" or "/"
 
   -- Runs fn with the path-length detection results overridden, restoring them afterwards (even if fn
@@ -69,46 +70,46 @@
       ut\assertNil result
       ut\assertString err
 
-    -- __getPathRoot
+    -- _getPathRoot
 
     getPathRoot_windowsPath: (ut) ->
       return unless isWindows
-      result = pathOps.__getPathRoot "C:\\Users\\foo"
+      result = pathOps._getPathRoot "C:\\Users\\foo"
       ut\assertEquals result, "C:\\"
 
     getPathRoot_posixPath: (ut) ->
       return if isWindows
-      result = pathOps.__getPathRoot "/usr/local"
+      result = pathOps._getPathRoot "/usr/local"
       ut\assertEquals result, "/usr"
 
     getPathRoot_relative: (ut) ->
-      result = pathOps.__getPathRoot "relative/path"
+      result = pathOps._getPathRoot "relative/path"
       ut\assertNil result
 
-    -- validateFullPath: pure computation, no stubs needed
+    -- resolveFullPath: pure computation, no stubs needed
 
-    validateFullPath_nonString: (ut) ->
-      result, err = pathOps.validateFullPath 42
+    resolveFullPath_nonString: (ut) ->
+      result, err = pathOps.resolveFullPath 42
       ut\assertNil result
       ut\assertString err
 
-    validateFullPath_parentDir: (ut) ->
+    resolveFullPath_parentDir: (ut) ->
       -- ".." is resolved rather than rejected
-      result = pathOps.validateFullPath {basePath, "..", "escape.txt"}
+      result = pathOps.resolveFullPath {basePath, "..", "escape.txt"}
       ut\assertString result -- resolves to parent dir + escape.txt
 
-    validateFullPath_tooLong: (ut) ->
+    resolveFullPath_tooLong: (ut) ->
       -- exceed the full-path limit on every platform/config (well past the ~32k
       -- long-path-enabled Windows limit) while keeping each component within bounds
       segments = [string.rep "a", 200 for _ = 1, 200]
-      result = pathOps.validateFullPath {basePath, segments}
+      result = pathOps.resolveFullPath {basePath, segments}
       ut\assertNil result
 
-    validateFullPath_segmentTooLong: (ut) ->
+    resolveFullPath_segmentTooLong: (ut) ->
       -- a single component over the per-segment limit is rejected even when the overall
       -- path fits the length limit (raise the length cap so the segment check is reached)
       result, err = withPathLimits 32767, false, false, ->
-        pathOps.validateFullPath {basePath, "#{string.rep 'a', 300}.txt"}
+        pathOps.resolveFullPath {basePath, "#{string.rep 'a', 300}.txt"}
       ut\assertNil result
       ut\assertContains err, "path component"
 
@@ -124,75 +125,83 @@
         ut\assertFalse pathOps.longPathsDisabled
 
     -- "path too long" diagnostic selection (field-driven via withPathLimits, runs on any OS)
-    validateFullPath_tooLong_generic: (ut) ->
+    resolveFullPath_tooLong_generic: (ut) ->
       -- non-Windows / long paths available: plain limit message, no Windows-specific guidance
       result, err = withPathLimits 260, false, false, ->
-        pathOps.validateFullPath {basePath, [string.rep "a", 200 for _ = 1, 3]}
+        pathOps.resolveFullPath {basePath, [string.rep "a", 200 for _ = 1, 3]}
       ut\assertNil result
       ut\assertContains err, "maximum length limit"
 
-    validateFullPath_tooLong_registryDisabled: (ut) ->
+    resolveFullPath_tooLong_registryDisabled: (ut) ->
       -- Windows, long paths off system-wide: error explains how to enable the registry key
       result, err = withPathLimits 260, true, false, ->
-        pathOps.validateFullPath {basePath, [string.rep "a", 200 for _ = 1, 3]}
+        pathOps.resolveFullPath {basePath, [string.rep "a", 200 for _ = 1, 3]}
       ut\assertNil result
       ut\assertContains err, "LongPathsEnabled"
 
-    validateFullPath_tooLong_processUnaware: (ut) ->
+    resolveFullPath_tooLong_processUnaware: (ut) ->
       -- Windows, registry on but app not long-path-aware: error explains the manifest cap
       result, err = withPathLimits 260, true, true, ->
-        pathOps.validateFullPath {basePath, [string.rep "a", 200 for _ = 1, 3]}
+        pathOps.resolveFullPath {basePath, [string.rep "a", 200 for _ = 1, 3]}
       ut\assertNil result
       ut\assertContains err, "long-path-aware"
 
-    validateFullPath_invalidChars: (ut) ->
+    resolveFullPath_invalidChars: (ut) ->
       return unless isWindows
-      result = pathOps.validateFullPath {basePath, "with<invalid>.txt"}
+      result = pathOps.resolveFullPath {basePath, "with<invalid>.txt"}
       ut\assertNil result
 
-    validateFullPath_reservedNames: (ut) ->
+    resolveFullPath_reservedNames: (ut) ->
       return unless isWindows
-      result = pathOps.validateFullPath {basePath, "CON", "file.txt"}
+      result = pathOps.resolveFullPath {basePath, "CON", "file.txt"}
       ut\assertNil result
 
-    validateFullPath_reservedNameWithExt: (ut) ->
+    resolveFullPath_reservedNameWithExt: (ut) ->
       return unless isWindows
-      result = pathOps.validateFullPath {basePath, "NUL.txt"}
+      result = pathOps.resolveFullPath {basePath, "NUL.txt"}
       ut\assertNil result
 
-    validateFullPath_trailingDotSegment: (ut) ->
-      result = pathOps.validateFullPath {basePath, "trailingDot.", "file.txt"}
+    resolveFullPath_trailingDotSegment: (ut) ->
+      result = pathOps.resolveFullPath {basePath, "trailingDot.", "file.txt"}
       ut\assertNil result
 
-    validateFullPath_valid: (ut) ->
-      path, dev, dir, file = pathOps.validateFullPath {basePath, "file.txt"}
-      ut\assertString path
-      ut\assertString dev
+    -- dir is the absolute directory, usable without stitching anything onto it, and err stays nil
+    resolveFullPath_valid: (ut) ->
+      path, err, dir, file = pathOps.resolveFullPath {basePath, "file.txt"}
+      ut\assertEquals path, pathOps.joinPath basePath, "file.txt"
+      ut\assertNil err
+      ut\assertEquals dir, basePath
       ut\assertEquals file, "file.txt"
 
-    validateFullPath_noExt_rejected: (ut) ->
-      result = pathOps.validateFullPath {basePath, "no-ext"}, true
+    -- a path nested below the base still reports the whole directory, not a fragment of it
+    resolveFullPath_dirIsAbsoluteWhenNested: (ut) ->
+      _, _, dir, file = pathOps.resolveFullPath {basePath, "sub", "deeper", "file.txt"}
+      ut\assertEquals dir, pathOps.joinPath basePath, "sub", "deeper"
+      ut\assertEquals file, "file.txt"
+
+    resolveFullPath_noExt_rejected: (ut) ->
+      result = pathOps.resolveFullPath {basePath, "no-ext"}, true
       ut\assertFalse result
 
-    validateFullPath_withExt_accepted: (ut) ->
-      result = pathOps.validateFullPath {basePath, "file.txt"}, true
+    resolveFullPath_withExt_accepted: (ut) ->
+      result = pathOps.resolveFullPath {basePath, "file.txt"}, true
       ut\assertString result
 
-    validateFullPath_homeDirExpansion: (ut) ->
+    resolveFullPath_homeDirExpansion: (ut) ->
       return if isWindows
       home = os.getenv "HOME"
       return unless home
-      result = pathOps.validateFullPath {"~", "subdir", "file.txt"}
+      result = pathOps.resolveFullPath {"~", "subdir", "file.txt"}
       ut\assertString result
       ut\assertContains result, home
 
-    validateFullPath_reservedNameNonWindows: (ut) ->
+    resolveFullPath_reservedNameNonWindows: (ut) ->
       return if isWindows
-      result = pathOps.validateFullPath {basePath, "NUL", "file.txt"}
+      result = pathOps.resolveFullPath {basePath, "NUL", "file.txt"}
       ut\assertString result
 
-    validateFullPath_withBasePath: (ut) ->
-      result = pathOps.validateFullPath "file.txt", false, basePath
+    resolveFullPath_withBasePath: (ut) ->
+      result = pathOps.resolveFullPath "file.txt", false, basePath
       ut\assertString result
       ut\assertContains result, "file.txt"
 
@@ -243,15 +252,16 @@
       "joinPath_segmentsArray", "joinPath_segmentsVarargs", "joinPath_segmentsMixed"
       "joinPath_skipsEmptySegments", "joinPath_resolvesDotDot", "joinPath_invalidSegment"
       "getPathRoot_windowsPath", "getPathRoot_posixPath", "getPathRoot_relative"
-      "validateFullPath_nonString", "validateFullPath_parentDir", "validateFullPath_tooLong"
-      "validateFullPath_segmentTooLong", "pathLimits_detected"
-      "validateFullPath_tooLong_generic", "validateFullPath_tooLong_registryDisabled"
-      "validateFullPath_tooLong_processUnaware"
-      "validateFullPath_invalidChars", "validateFullPath_reservedNames"
-      "validateFullPath_reservedNameWithExt", "validateFullPath_trailingDotSegment"
-      "validateFullPath_valid", "validateFullPath_noExt_rejected", "validateFullPath_withExt_accepted"
-      "validateFullPath_homeDirExpansion", "validateFullPath_reservedNameNonWindows"
-      "validateFullPath_withBasePath"
+      "resolveFullPath_nonString", "resolveFullPath_parentDir", "resolveFullPath_tooLong"
+      "resolveFullPath_segmentTooLong", "pathLimits_detected"
+      "resolveFullPath_tooLong_generic", "resolveFullPath_tooLong_registryDisabled"
+      "resolveFullPath_tooLong_processUnaware"
+      "resolveFullPath_invalidChars", "resolveFullPath_reservedNames"
+      "resolveFullPath_reservedNameWithExt", "resolveFullPath_trailingDotSegment"
+      "resolveFullPath_valid", "resolveFullPath_dirIsAbsoluteWhenNested"
+      "resolveFullPath_noExt_rejected", "resolveFullPath_withExt_accepted"
+      "resolveFullPath_homeDirExpansion", "resolveFullPath_reservedNameNonWindows"
+      "resolveFullPath_withBasePath"
       "isTokenSupported_trueWhenTokenResolves", "isTokenSupported_falseWhenTokenComesBackVerbatim"
       "isTokenSupported_probesOncePerToken"
       "decode_resolvesSupportedToken", "decode_substitutesFallbackForUnsupportedToken"

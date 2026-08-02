@@ -3,6 +3,7 @@ Downloader = require "l0.DependencyControl.Downloader"
 UpdateFeed = require "l0.DependencyControl.UpdateFeed"
 FeedTrust = require "l0.DependencyControl.FeedTrust"
 fileOps = require "l0.DependencyControl.file-ops"
+pathOps = require "l0.DependencyControl.path-ops"
 domain = require "l0.DependencyControl.domain"
 environment = require "l0.DependencyControl.environment"
 Enum = require "l0.DependencyControl.Enum"
@@ -924,7 +925,7 @@ class UpdateTask
     -- download updated scripts to temp directory
     -- check hashes before download, only update changed files
 
-    tmpDir = fileOps.getTempDir!
+    tmpDir = pathOps.getTempDir!
     res, dir = fileOps.mkdir tmpDir
 
     return finish UpdateStatus.TempDirFailed, "#{tmpDir} (#{dir})" if res == nil
