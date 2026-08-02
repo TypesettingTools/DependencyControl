@@ -17,12 +17,38 @@ sanitizeLabel = (label) ->
   safe = tostring(label or "entry")\gsub "[^%w%._-]", "_"
   #safe > 0 and safe\sub(1, 64) or "entry"
 
--- The 7-hex-char SHA-1 slug of a cache key. Deterministic per key (sensitive to its exact bytes), matching
--- the DepCtrl Browser's feed-URL slug convention.
-keySlug = (key) -> Hash.getDigest(Hash.HashType.Sha1, key)\sub 1, 7
+SLUG_LENGTH = 7 -- hex digits of a key's digest kept as the slug every one of its files is named with
+SLUG_PATTERN = "%x"\rep SLUG_LENGTH
+
+-- The slug of a cache key. Deterministic per key (sensitive to its exact bytes), matching the DepCtrl
+-- Browser's feed-URL slug convention.
+keySlug = (key) -> Hash.getDigest(Hash.HashType.Sha1, key)\sub 1, SLUG_LENGTH
 
 -- The embedded UTC timestamp of a snapshot file name, for chronological ordering ("" when absent).
 snapshotStamp = (fileName) -> fileName\match "(%d+T%d+Z)" or ""
+
+-- The file names this cache writes, as the patterns that recognize them again. __metaPath and __write
+-- compose those names, so these have to stay in step with them.
+META_FILE_NAME_PATTERN = "^#{SLUG_PATTERN}%.meta%.json$"
+SNAPSHOT_FILE_NAME_PATTERN = "^#{SLUG_PATTERN}%-.*%-%d+T%d+Z%-%x%x%x%x%.json$"
+SLUG_CAPTURE_PATTERN = "^(#{SLUG_PATTERN})"
+
+---Reads and decodes a cache index (meta) JSON file.
+---@param path string
+---@return FileCacheMeta? meta Nil when the file is absent or doesn't decode to a table.
+readMeta = (path) ->
+  content = fileOps.readFile path
+  return nil unless content
+  -- a torn read from a concurrent write fails to decode and is treated as a cache miss
+  ok, meta = pcall dkjson.decode, content
+  ok and type(meta) == "table" and meta or nil
+
+---Reports whether a decoded value carries every field this cache writes into an index.
+---@param meta any A decoded index file's contents.
+---@return boolean isIndex False for any other value, a table among them.
+isIndex = (meta) ->
+  return false unless type(meta) == "table"
+  meta.key != nil and meta.latestFile != nil and meta.cachedAt != nil and meta.expiresAt != nil
 
 -- An instance's on-disk directory: the configured base, namespaced and named. The single place the layout
 -- is defined, shared by the constructor and the `get` factory's registry key.
@@ -75,6 +101,36 @@ class FileCache
       FileCache.__instances[dir] = cache
     return cache
 
+  ---Deletes the files this cache wrote below a directory, dropping subdirectories it empties and
+  ---leaving the directory it was given.
+  ---A directory qualifies only while it holds an index that decodes, and only its indexes and
+  ---snapshots are taken; every other file stays, along with the directory holding it.
+  ---@param dir string Absolute path of a cache root, or of a single cache's own directory.
+  ---@return integer removed Files deleted; 0 when the directory is absent or holds nothing of ours.
+  @_removeArtifactsIn = (dir) ->
+    entries = fileOps.listDir dir
+    return 0 unless entries
+
+    removed, indexes, snapshots = 0, {}, {}
+    for entry in *entries
+      path = fileOps.joinPath dir, entry
+      info = fileOps.getAttributes path, "mode"
+      continue unless info
+      if info.attr == "directory"
+        removed += FileCache._removeArtifactsIn path
+        fileOps.rmdir path, false
+      elseif entry\match(META_FILE_NAME_PATTERN) and isIndex readMeta path
+        indexes[#indexes + 1] = path
+      elseif entry\match SNAPSHOT_FILE_NAME_PATTERN
+        snapshots[#snapshots + 1] = path
+
+    -- no decodable index, so nothing here is provably ours however much it looks the part
+    return removed if #indexes == 0
+
+    removed += 1 for path in *indexes when fileOps.remove path
+    removed += 1 for path in *snapshots when fileOps.remove path
+    return removed
+
   ---@param basePath string The cache root (the `paths.cache` setting, e.g. "?local/cache"); path-decoded here.
   ---@param namespace string The owning script namespace (`constants.DEPCTRL_NAMESPACE` for DepCtrl's own caches).
   ---@param name string A short subdirectory naming this cache's purpose (e.g. "feeds").
@@ -98,12 +154,7 @@ class FileCache
   ---@private
   ---@param path string
   ---@return FileCacheMeta? meta
-  __readMeta: (path) =>
-    content = fileOps.readFile path
-    return nil unless content
-    -- a torn read from a concurrent write fails to decode and is treated as a cache miss
-    ok, meta = pcall dkjson.decode, content
-    ok and type(meta) == "table" and meta or nil
+  __readMeta: (path) => readMeta path
 
   ---Reads the cache index entry for a key.
   ---@param key string
@@ -174,15 +225,15 @@ class FileCache
     -- collect the key slugs whose index predates the cut-off, dropping their memos as we go
     expiredSlugs = {}
     for file in *files
-      continue unless file\match "%.meta%.json$"
+      continue unless file\match META_FILE_NAME_PATTERN
       meta = @__readMeta fileOps.joinPath @cacheDir, file
       continue unless meta and meta.cachedAt and meta.cachedAt < before
       expiredSlugs[keySlug meta.key] = true
       @__l1[meta.key] = nil
 
-    -- every file (snapshot or index) is named with its key's 7-hex slug prefix, so one pass removes both
+    -- every file (snapshot or index) is named with its key's slug prefix, so one pass removes both
     for file in *files
-      slug = file\match "^(%x%x%x%x%x%x%x)"
+      slug = file\match SLUG_CAPTURE_PATTERN
       fileOps.remove fileOps.joinPath @cacheDir, file if slug and expiredSlugs[slug]
 
   ---Stores a blob under a readable, timestamped snapshot and repoints the index at it, then trims old
@@ -247,10 +298,10 @@ class FileCache
 
     protectedFiles, snapshots = {}, {}
     for file in *files
-      if file\match "%.meta%.json$"
+      if file\match META_FILE_NAME_PATTERN
         meta = @__readMeta fileOps.joinPath @cacheDir, file
         protectedFiles[meta.latestFile] = true if meta and meta.latestFile
-      elseif file\match "%.json$"
+      elseif file\match SNAPSHOT_FILE_NAME_PATTERN
         snapshots[#snapshots + 1] = file
 
     -- newest first, so everything past the cap is the oldest

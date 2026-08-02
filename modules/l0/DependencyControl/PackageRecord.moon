@@ -7,6 +7,7 @@ utils = require "l0.DependencyControl.utils"
 Logger = require "l0.DependencyControl.Logger"
 ConfigView = require "l0.DependencyControl.ConfigView"
 fileOps = require "l0.DependencyControl.file-ops"
+legacyCleanup = require "l0.DependencyControl.legacy-cleanup"
 Updater = require "l0.DependencyControl.Updater"
 ModuleLoader = require "l0.DependencyControl.ModuleLoader"
 ModuleProvider = require "l0.DependencyControl.ModuleProvider"
@@ -145,6 +146,7 @@ class PackageRecord
 
     fileOps.mkdir pathOps.decode @configDir
     @logger\trimFiles!
+    legacyCleanup.run paths, @logger
     fileOps.runScheduledRemoval @configDir
 
 

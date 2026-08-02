@@ -33,6 +33,7 @@ return UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
     Utils: (controls\requireTest "utils")!
     FileOps: (controls\requireTest "file-ops") basePath
     PathOps: (controls\requireTest "path-ops") basePath, isWindows
+    LegacyCleanup: (controls\requireTest "legacy-cleanup") basePath, stubHelpers
     Logger: (controls\requireTest "Logger")!
     UnitTestSuite: (controls\requireTest "UnitTestSuite")!
     Enum: (controls\requireTest "Enum")!
