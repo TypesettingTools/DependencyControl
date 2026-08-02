@@ -145,11 +145,13 @@
       ut\assertEquals probe.captured.args[1], "equal"
       ut\assertEquals probe.captured.args[2], UnitTest.msgs.assert.itemsEqualNumericKeys
 
+    -- the failure names the offending argument and the type it wanted, so a test author can see which
+    -- of an assert's arguments was wrong rather than only that one was
     assertItemsEqual_typeChecksExpectedArg: (ut) ->
       probe = makeProbe!
       ok = pcall UnitTest.assertItemsEqual, probe, {1}, "not a table"
       ut\assertFalse ok
-      ut\assertEquals probe.captured.msg, UnitTest.msgs.assert.checkArgTypes
+      ut\assertContains probe.captured.msg, "Argument 'expected' should be a table"
 
     assertItemsAre_comparesByReference: (ut) ->
       shared = {}
