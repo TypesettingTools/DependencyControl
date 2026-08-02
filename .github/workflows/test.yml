@@ -82,30 +82,49 @@ jobs:
       # (VCINSTALLDIR set above), the system gcc/clang on Linux/macOS.
       - uses: luarocks/gh-actions-luarocks@v7
 
-      # Pegasus's lzlib dependency links against zlib, which isn't on the Windows runner. Cache the
-      # vcpkg build; zlib 1.3.x is stable, so a fixed key is safe. Path matches VCPKG_INSTALLATION_ROOT.
-      - name: Cache zlib
+      # PCRE2 backs the headless aegisub.re stand-in. It isn't on the Linux or macOS runners either,
+      # and lrexlib-pcre2 finds it through pkg-config / the brew prefix once installed.
+      - name: Install PCRE2
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libpcre2-dev
+
+      - name: Install PCRE2
+        if: runner.os == 'macOS'
+        run: |
+          brew install pcre2
+          prefix="$(brew --prefix pcre2)"
+          luarocks --lua-version=5.1 config variables.PCRE2_INCDIR "$prefix/include"
+          luarocks --lua-version=5.1 config variables.PCRE2_LIBDIR "$prefix/lib"
+
+      # Two C rocks need libraries the Windows runner doesn't ship: lzlib (pulled in by Pegasus) links
+      # zlib, and lrexlib-pcre2 links PCRE2. Cache the vcpkg tree holding both; the key carries the
+      # library list so adding one rebuilds it. Path matches VCPKG_INSTALLATION_ROOT.
+      - name: Cache native libraries
         if: runner.os == 'Windows'
-        id: cache-zlib
+        id: cache-native
         uses: actions/cache@v6
         with:
           path: C:\vcpkg\installed\x64-windows
-          key: zlib-x64-windows-1
+          key: native-x64-windows-zlib-pcre2-1
 
-      - name: Set up zlib for lzlib
+      - name: Set up zlib and PCRE2
         if: runner.os == 'Windows'
         shell: pwsh
         env:
-          CACHE_HIT: ${{ steps.cache-zlib.outputs.cache-hit }}
+          CACHE_HIT: ${{ steps.cache-native.outputs.cache-hit }}
         run: |
-          $z = "$env:VCPKG_INSTALLATION_ROOT\installed\x64-windows"
+          $root = "$env:VCPKG_INSTALLATION_ROOT\installed\x64-windows"
           if ($env:CACHE_HIT -ne 'true') {
-            & "$env:VCPKG_INSTALLATION_ROOT\vcpkg.exe" install zlib:x64-windows
+            & "$env:VCPKG_INSTALLATION_ROOT\vcpkg.exe" install zlib:x64-windows pcre2:x64-windows
             # zlib 1.3.x's import lib is z.lib, but lzlib looks for zlib.lib.
-            Copy-Item "$z\lib\z.lib" "$z\lib\zlib.lib"
+            Copy-Item "$root\lib\z.lib" "$root\lib\zlib.lib"
           }
-          luarocks --lua-version=5.1 config variables.ZLIB_INCDIR "$z\include"
-          luarocks --lua-version=5.1 config variables.ZLIB_LIBDIR "$z\lib"
+          luarocks --lua-version=5.1 config variables.ZLIB_INCDIR "$root\include"
+          luarocks --lua-version=5.1 config variables.ZLIB_LIBDIR "$root\lib"
+          luarocks --lua-version=5.1 config variables.PCRE2_INCDIR "$root\include"
+          luarocks --lua-version=5.1 config variables.PCRE2_LIBDIR "$root\lib"
+          # rex_pcre2.dll resolves pcre2-8.dll when it loads, so the runtime has to be on PATH
+          Add-Content -Path $env:GITHUB_PATH -Value "$root\bin"
 
       # moonscript loader
       - run: luarocks --lua-version=5.1 install moonscript
@@ -120,6 +139,8 @@ jobs:
       # json schema validation
       - run: luarocks --lua-version=5.1 install lua-schema
       - run: luarocks --lua-version=5.1 install lpeg
+      # regex engine behind the headless aegisub.re stand-in
+      - run: luarocks --lua-version=5.1 install lrexlib-pcre2
 
       - name: Run tests
         timeout-minutes: 5
