@@ -62,7 +62,7 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "E6C82B7325F2191288BE3A25BA9EDA9BE90436E1"
+              "sha1": "C854C26EBE7D1BF3B59D5B5A6291C2C4E55D0338"
             },
             {
               "name": ".moon",
@@ -131,7 +131,7 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "9AA2EBC0ADC9B263C9895962CE0E351D010C80B8"
+              "sha1": "C116B117A6420107E3FD3A2A6B689DEB88AC953B"
             },
             {
               "name": "/Constants.moon",
@@ -171,7 +171,7 @@
             {
               "name": "/FileCache.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "600F604B26D4C74D7FDC1F5BEA37512A49AF983F"
+              "sha1": "4E954C863FC0A9312966797D285CA8CF22D27C16"
             },
             {
               "name": "/FeedInventory.moon",
@@ -196,7 +196,7 @@
             {
               "name": "/file-ops.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "2FB92DBDC1AA861B7D5A859B165CE71C39E8FBD0"
+              "sha1": "C325CC4B19EE226CAB1D7D06B8229B514DD014E6"
             },
             {
               "name": "/FileOps.moon",
@@ -227,7 +227,7 @@
             {
               "name": "/Logger.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "CBFC4B9C5699D3606D7AEE92137DA91DEC1B4EBD"
+              "sha1": "C9C32774B31904ED7B90864B4766802C754EAB3B"
             },
             {
               "name": "/ModuleLoader.moon",
@@ -247,7 +247,7 @@
             {
               "name": "/PackageRecord.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "8BF956EEF2223D75B42FEBAE3BE21E2FC2A1CDA7"
+              "sha1": "79D08D8501FAB34794523593444DBAAF160743BA"
             },
             {
               "name": "/ScriptTargetFilter.moon",
@@ -347,7 +347,7 @@
             {
               "name": "/config-schema.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "CC74ACBE7A7CD8761AD714564F3805AC96F68067"
+              "sha1": "F6FD0E470370511689CA5B01F28D8BC3BCD88F39"
             },
             {
               "name": "/Finalizer.moon",
@@ -362,7 +362,7 @@
             {
               "name": "/domain.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "C5D9BC686DFA4A85A28EE6E2E392B1E012A83909"
+              "sha1": "12BED2BD17AA6364130D30CF0BD20630E9A44597"
             },
             {
               "name": "/environment.moon",
@@ -375,9 +375,14 @@
               "sha1": "FA8307BC15AD2FEC1535F9B862E1D92C2A3A1AB9"
             },
             {
+              "name": "/path-ops.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "32B0D42A6A549F4CB1B3E2775E79F2565E478A19"
+            },
+            {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "1FE9D211C256E84F4C0F95BBA10659A1F7B9A0C7",
+              "sha1": "71CC2ABE5FA6CC5B68233CF8CCF89B45229411D5",
               "type": "test"
             },
             {
@@ -455,7 +460,7 @@
             {
               "name": "/file-ops.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "AB2BBDDFEDBB158963CFDFAE196C584E105598CC",
+              "sha1": "588E50609A52399576D74B8090131B071CBA6823",
               "type": "test"
             },
             {
@@ -611,7 +616,7 @@
             {
               "name": "/config-schema.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "C65BC75E4ACF11F2CA174255CB6792C3C4FAD7A7",
+              "sha1": "A1C2BE15B2B155BFDD4BC9BC04E14D18F7D3ADC4",
               "type": "test"
             },
             {
@@ -635,7 +640,7 @@
             {
               "name": "/domain.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "2406064A5B8F234ECB69E9C60F5FC1A5E9B7657A",
+              "sha1": "6CEFB94846D96267E745F0F8A06D37147E234E2D",
               "type": "test"
             },
             {
@@ -648,6 +653,12 @@
               "name": "/environment.moon",
               "url": "@{fileBaseUrl}",
               "sha1": "1889EFB487A85EF9CD9838312B36CAB97D332119",
+              "type": "test"
+            },
+            {
+              "name": "/path-ops.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "69E5588A097CFB08CF8FF7A63555CBD6ECFDF6E2",
               "type": "test"
             }
           ],
@@ -785,7 +796,7 @@
         ],
         "0.9.0": [
           "change: Log files and on-disk caches now follow the XDG Base Directory specification, moving to `?state/log` and `?local/cache`. An Aegisub build that lacks the newer `?state` path token keeps writing logs to `?user/log`, so a path setting naming `?state` works on every version.",
-          "feat: Added `DependencyControl.PathOps` for resolving Aegisub path tokens with a fallback for tokens the running Aegisub build doesn't know."
+          "feat: Added `DependencyControl.PathOps`, a filesystem-free home for path composition, validation, and Aegisub path-token resolution. `joinPath`, `validateFullPath`, `pathSegments`, `getTempDir` and the path constants moved there from `FileOps`, which still re-exports each under its existing name."
         ]
       }
     },
