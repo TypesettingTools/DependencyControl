@@ -259,7 +259,7 @@ local function registerFeedSearcher(feed)
   local sourceById = {}
   for file, _, pkg in feed:walkFiles() do
     local src = file.localFilePath
-    if src then
+    if src and not file.delete then
       local base = file.type == "test" and (pkg.namespace .. ".test") or pkg.namespace
       local id = base .. leafSuffix(file.name)
       sourceById[id] = sourceById[id] or src -- first channel wins; sources are channel-agnostic
@@ -281,8 +281,8 @@ local function registerFeedSearcher(feed)
 end
 
 -- Collects the selected module packages' non-test .moon sources from a feed, keyed by require
--- id, for annotation extraction. Vendored .lua files have no annotations and are skipped; a
--- warning is printed for any unreadable source.
+-- id, for annotation extraction. Vendored .lua files have no annotations and are skipped, as are
+-- files the feed marks deleted; a warning is printed for any unreadable source.
 local function collectModuleSources(feed, filter)
   local domain = require "l0.DependencyControl.domain"
   local FileOps = require "l0.DependencyControl.file-ops"
@@ -299,7 +299,7 @@ local function collectModuleSources(feed, filter)
   local sources, seen = {}, {}
   for file, _, pkg in feed:walkFiles() do
     local src = file.localFilePath
-    if selected[pkg.namespace] and src and file.type ~= "test" and file.name:match("%.moon$") then
+    if selected[pkg.namespace] and src and not file.delete and file.type ~= "test" and file.name:match("%.moon$") then
       local requireId = pkg.namespace .. leafSuffix(file.name)
       if not seen[requireId] then
         seen[requireId] = true
