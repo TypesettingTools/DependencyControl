@@ -1,7 +1,9 @@
--- Domain tests: namespace validation, shared terms, and install/test directory resolution.
--- Called from test.moon as: (controls\requireTest "domain")!
-->
+-- Domain tests: namespace validation, shared terms, install/test directory resolution, and the
+-- namespace-to-path mapping.
+-- Called from test.moon as: (controls\requireTest "domain") basePath
+(basePath) ->
   domain = require "l0.DependencyControl.domain"
+  pathOps = require "l0.DependencyControl.path-ops"
 
   {
     _description: "Tests for the DependencyControl domain vocabulary: namespace validation, terms, and install locations."
@@ -88,6 +90,30 @@
       ut\assertContains result, "myRoot"
       ut\assertContains result, "DepUnit"
 
+    -- getNamespacedPath: pure computation, no stubs needed
+
+    getNamespacedPath_nested: (ut) ->
+      path, err = domain.getNamespacedPath basePath, "l0.DependencyControl.Test", ".lua"
+      ut\assertNil err
+      ut\assertString path
+      ut\assertContains path, pathOps.joinPath "l0", "DependencyControl", "Test.lua"
+
+    getNamespacedPath_flat: (ut) ->
+      path, err = domain.getNamespacedPath basePath, "l0.DependencyControl", ".lua", false
+      ut\assertNil err
+      ut\assertString path
+      ut\assertContains path, "l0.DependencyControl.lua"
+
+    getNamespacedPath_badNamespace: (ut) ->
+      path, err = domain.getNamespacedPath basePath, "not-a-namespace", ".lua"
+      ut\assertNil path
+      ut\assertString err
+
+    getNamespacedPath_badBasePath: (ut) ->
+      path, err = domain.getNamespacedPath {"relative", "path"}, "l0.DependencyControl", ".lua"
+      ut\assertNil path
+      ut\assertString err
+
     _order: {
       "capitalizeTerms",
       "validateNamespace_valid", "validateNamespace_multiPart",
@@ -96,6 +122,8 @@
       "validateNamespace_consecutiveDots",
       "getAutomationDir_automation", "getAutomationDir_module",
       "getAutomationDir_customRoot", "getAutomationDir_unknown",
-      "getTestDir_automation", "getTestDir_module", "getTestDir_customRoot"
+      "getTestDir_automation", "getTestDir_module", "getTestDir_customRoot",
+      "getNamespacedPath_nested", "getNamespacedPath_flat",
+      "getNamespacedPath_badNamespace", "getNamespacedPath_badBasePath"
     }
   }

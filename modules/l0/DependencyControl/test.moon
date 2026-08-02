@@ -28,11 +28,11 @@ return UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
     Hash: (controls\requireTest "hash")!
     ModuleProvider: (controls\requireTest "ModuleProvider") basePath, DepCtrl
     Downloader: (controls\requireTest "Downloader") basePath
-    Domain: (controls\requireTest "domain")!
+    Domain: (controls\requireTest "domain") basePath
     Environment: (controls\requireTest "environment")!
     Utils: (controls\requireTest "utils")!
-    FileOps: (controls\requireTest "file-ops") basePath, isWindows
-    PathOps: (controls\requireTest "path-ops")!
+    FileOps: (controls\requireTest "file-ops") basePath
+    PathOps: (controls\requireTest "path-ops") basePath, isWindows
     Logger: (controls\requireTest "Logger")!
     UnitTestSuite: (controls\requireTest "UnitTestSuite")!
     Enum: (controls\requireTest "Enum")!
