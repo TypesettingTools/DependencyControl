@@ -20,6 +20,16 @@ Scope: this file is about the code. Contributor and agent *workflow* (verifying 
 - **MS2.** `or=` is a statement, not an expression: a method whose whole body is `@field or= value` returns `nil`. You **MUST** add an explicit `return @field` after a lazy-init `or=` when the caller expects a value.
 - **MS3.** `@@field arg` / `@field arg` compile to *colon* calls (`self.__class:field(arg)` / `self:field(arg)`), passing an implicit first argument. When the field holds a constructor or plain function you want to call plainly, you **MUST** write `@@.field arg` / `@.field arg` (or bind it to a local first).
 - **MS4.** A constructor's return value is discarded — `Cls(...)` always yields the instance, so a `return nil, err` inside `new` is dead code. Validation a caller can trip **MUST** happen before or around construction (in the factory), not inside `new`.
+- **MS5.** A loop or conditional whose body is one statement **SHOULD** be written as a single line with postfix modifiers (MS1), as long as it fits the line and stays readable. `when` filters a postfix loop, so a guarded accumulation collapses to one line without an inner `if`. Keep the block form when the line would have to wrap, when the body does more than one thing, or when a long condition buries the statement it guards.
+
+  ```moon
+  -- GOOD — the whole loop, filter included, reads as one statement:
+  removed += 1 for path in *indexes when fileOps.remove path
+
+  -- BAD — a block wrapped around a single guarded statement that fits on one line:
+  for path in *indexes
+    removed += 1 if fileOps.remove path
+  ```
 
 ## FFI — LuaJIT C bindings
 
