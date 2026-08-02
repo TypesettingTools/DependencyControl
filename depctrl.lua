@@ -195,13 +195,13 @@ local aegisub = shims.aegisub -- pulled into local scope; global is set by the s
 local function setupDepCtrl(taskName)
   local tempBase = shims.getPathToken("temp")
   local workspace = tempBase .. pathSep .. ("depctrl-" .. taskName .. "-%x"):format(os.time() % 0x100000)
-  for _, token in ipairs({ "user", "local", "data", "temp" }) do
+  for _, token in ipairs({ "user", "local", "data", "state", "temp" }) do
     shims.setPathToken(token, workspace .. pathSep .. token)
   end
 
   local FileOps = require "l0.DependencyControl.file-ops"
   FileOps.mkdir("?temp", false, true)
-  FileOps.mkdir("?user/log", false, true)
+  FileOps.mkdir("?state/log", false, true)
 
   -- Disable the self-updater so loading DepCtrl does not trigger a network
   -- fetch of its own feed (slow, flaky, pointless outside Aegisub).

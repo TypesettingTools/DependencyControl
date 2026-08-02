@@ -55,14 +55,14 @@
       "url": "@{baseUrl}#@{namespace}",
       "channels": {
         "main": {
-          "version": "0.8.1",
-          "released": "2026-07-24",
+          "version": "0.9.0",
+          "released": null,
           "default": true,
           "files": [
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "F7B62EAC79C4FBA001B50C12506231C204CC7E80"
+              "sha1": "E6C82B7325F2191288BE3A25BA9EDA9BE90436E1"
             },
             {
               "name": ".moon",
@@ -109,6 +109,9 @@
         ],
         "0.8.1": [
           "fix: The Install Script macro no longer fails while scanning feeds that set URL templates per section, DependencyControl's own feed among them."
+        ],
+        "0.9.0": [
+          "change: The Global Configuration dialog now notes that the log directory's `?state` token falls back to `?user` on an Aegisub build without it."
         ]
       }
     }
@@ -121,14 +124,14 @@
       "url": "@{baseUrl}#@{namespace}",
       "channels": {
         "main": {
-          "version": "0.8.1",
-          "released": "2026-07-24",
+          "version": "0.9.0",
+          "released": null,
           "default": true,
           "files": [
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "87CDA007933A971BAEFC91A044CF7FC941535D0D"
+              "sha1": "9AA2EBC0ADC9B263C9895962CE0E351D010C80B8"
             },
             {
               "name": "/Constants.moon",
@@ -779,6 +782,10 @@
         ],
         "0.8.1": [
           "fix: Reading the channel list of a package that declares no channels returns an empty list instead of throwing an error."
+        ],
+        "0.9.0": [
+          "change: Log files and on-disk caches now follow the XDG Base Directory specification, moving to `?state/log` and `?local/cache`. An Aegisub build that lacks the newer `?state` path token keeps writing logs to `?user/log`, so a path setting naming `?state` works on every version.",
+          "feat: Added `DependencyControl.PathOps` for resolving Aegisub path tokens with a fallback for tokens the running Aegisub build doesn't know."
         ]
       }
     },

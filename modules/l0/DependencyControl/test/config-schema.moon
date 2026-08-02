@@ -21,11 +21,14 @@
       ut\assertEquals type(schema.CONFIG_SCHEMA_ID_CURRENT), "string"
       ut\assertNotNil schema.sections[name] for name in *{"updates", "feeds", "logging", "paths"}
 
-    -- the logging policy literals (which deliberately differ from Logger's own defaults) and the new cache base
+    -- the logging policy literals (which deliberately differ from Logger's own defaults) and the XDG-aligned
+    -- path bases: settings under the config token, caches under the cache token, logs under the state token
     hasPolicyLiterals: (ut) ->
       ut\assertEquals schema.sections.logging.defaultLevel, 3
       ut\assertTrue schema.sections.logging.toFile
-      ut\assertEquals schema.sections.paths.cache, "?user/cache"
+      ut\assertEquals schema.sections.paths.config, "?user/config"
+      ut\assertEquals schema.sections.paths.cache, "?local/cache"
+      ut\assertEquals schema.sections.paths.log, "?state/log"
 
     -- a flat v0.6.3 config (no root $schema) has every `config` hive key lifted into its section and renamed.
     -- Each mapped key is asserted against its explicitly-expected target, so a mis-pointed migration is caught.

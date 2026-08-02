@@ -32,6 +32,7 @@ return UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
     Environment: (controls\requireTest "environment")!
     Utils: (controls\requireTest "utils")!
     FileOps: (controls\requireTest "file-ops") basePath, isWindows
+    PathOps: (controls\requireTest "path-ops")!
     Logger: (controls\requireTest "Logger")!
     UnitTestSuite: (controls\requireTest "UnitTestSuite")!
     Enum: (controls\requireTest "Enum")!

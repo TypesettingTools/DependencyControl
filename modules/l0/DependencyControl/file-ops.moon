@@ -3,6 +3,7 @@ lfs = require "lfs"
 constants = require "l0.DependencyControl.Constants"
 Logger = require "l0.DependencyControl.Logger"
 domain = require "l0.DependencyControl.domain"
+pathOps = require "l0.DependencyControl.path-ops"
 utils = require "l0.DependencyControl.utils"
 Hash = require "l0.DependencyControl.hash"
 
@@ -701,7 +702,7 @@ FileOps = {
       return nil, msgs.validateFullPath.badType\format 3, "basePath", type(basePath)
 
     -- expand aegisub path specifiers
-    path = aegisub.decode_path path
+    path = pathOps.decode path
     -- expand home directory on linux
     homeDir = os.getenv "HOME"
     path = path\gsub "^~", "#{homeDir}/" if homeDir

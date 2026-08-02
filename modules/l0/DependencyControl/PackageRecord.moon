@@ -10,6 +10,7 @@ fileOps = require "l0.DependencyControl.file-ops"
 Updater = require "l0.DependencyControl.Updater"
 ModuleLoader = require "l0.DependencyControl.ModuleLoader"
 ModuleProvider = require "l0.DependencyControl.ModuleProvider"
+pathOps = require "l0.DependencyControl.path-ops"
 SemanticVersion = require "l0.DependencyControl.SemanticVersion"
 Accessors = require "l0.DependencyControl.Accessors"
 UnitTestSuite = require "l0.DependencyControl.UnitTestSuite"
@@ -142,7 +143,7 @@ class PackageRecord
     @updater = Updater script_namespace, @config, @logger
     @configDir = paths.config
 
-    fileOps.mkdir aegisub.decode_path @configDir
+    fileOps.mkdir pathOps.decode @configDir
     @logger\trimFiles!
     fileOps.runScheduledRemoval @configDir
 
@@ -328,7 +329,7 @@ class PackageRecord
   ---they stay discoverable to other scripts through the DependencyControl config file.
   ---@return string path
   getConfigFileName: () =>
-    return aegisub.decode_path "#{@@configDir}/#{@configFile}"
+    return pathOps.decode "#{@@configDir}/#{@configFile}"
 
   ---Creates a ConfigView for this record's script-specific config file.
   ---@param defaults? table Default values for the config.
