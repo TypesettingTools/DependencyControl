@@ -8,8 +8,14 @@ dkjson = require "l0.dkjson"
 
 defaultLogger = Logger fileBaseName: "#{constants.DEPCTRL_SHORT_NAME}.FileCache"
 
-LOCK_NAMESPACE = "l0.DependencyControl.FileCache" -- Global-lock namespace for serializing cache writes
+LOCK_NAMESPACE = "#{constants.DEPCTRL_NAMESPACE}.FileCache" -- Global-lock namespace for serializing cache writes
 LOCK_TIMEOUT = 5000 -- ms to wait for the write lock before skipping the write
+
+SLUG_LENGTH = 7 -- hex digits of a key's digest kept as the slug every one of its files is named with
+SLUG_PATTERN = "%x"\rep SLUG_LENGTH
+META_FILE_NAME_PATTERN = "^#{SLUG_PATTERN}%.meta%.json$"
+SNAPSHOT_FILE_NAME_PATTERN = "^#{SLUG_PATTERN}%-.*%-%d+T%d+Z%-%x%x%x%x%.json$"
+SLUG_CAPTURE_PATTERN = "^(#{SLUG_PATTERN})"
 
 -- Replaces filesystem-hostile characters so a cache entry's label is safe in a file name, and clamps its
 -- length. Falls back to "entry" for an empty or missing label.
@@ -17,21 +23,12 @@ sanitizeLabel = (label) ->
   safe = tostring(label or "entry")\gsub "[^%w%._-]", "_"
   #safe > 0 and safe\sub(1, 64) or "entry"
 
-SLUG_LENGTH = 7 -- hex digits of a key's digest kept as the slug every one of its files is named with
-SLUG_PATTERN = "%x"\rep SLUG_LENGTH
-
 -- The slug of a cache key. Deterministic per key (sensitive to its exact bytes), matching the DepCtrl
 -- Browser's feed-URL slug convention.
 keySlug = (key) -> Hash.getDigest(Hash.HashType.Sha1, key)\sub 1, SLUG_LENGTH
 
 -- The embedded UTC timestamp of a snapshot file name, for chronological ordering ("" when absent).
 snapshotStamp = (fileName) -> fileName\match "(%d+T%d+Z)" or ""
-
--- The file names this cache writes, as the patterns that recognize them again. __metaPath and __write
--- compose those names, so these have to stay in step with them.
-META_FILE_NAME_PATTERN = "^#{SLUG_PATTERN}%.meta%.json$"
-SNAPSHOT_FILE_NAME_PATTERN = "^#{SLUG_PATTERN}%-.*%-%d+T%d+Z%-%x%x%x%x%.json$"
-SLUG_CAPTURE_PATTERN = "^(#{SLUG_PATTERN})"
 
 ---Reads and decodes a cache index (meta) JSON file.
 ---@param path string
@@ -63,8 +60,8 @@ resolveDir = (basePath, namespace, name) -> "#{pathOps.decode basePath}/#{namesp
 
 ---Construction options for FileCache.
 ---@class FileCacheOptions
----@field maxAge? integer Default entry lifetime in seconds, used when a put doesn't set its own (default 3600).
----@field maxFiles? integer Snapshot files retained per cache before the oldest are trimmed (default 50).
+---@field maxAge? integer Default entry lifetime in seconds, used when a put doesn't set its own; defaults to the class's `defaultMaxAge`.
+---@field maxFiles? integer Snapshot files retained per cache before the oldest are trimmed; defaults to the class's `defaultMaxFiles`.
 ---@field logger? Logger Logger for cache operations.
 ---@field now? fun(): integer Clock override returning Unix time; defaults to os.time (injected in tests).
 ---@field deserialize? fun(content: string): any Codec turning stored content into the value get returns and memoizes; its presence enables the in-memory L1 layer.
@@ -171,6 +168,15 @@ class FileCache
     return false if @__staleBefore and meta.cachedAt and meta.cachedAt < @__staleBefore
     @.now! < meta.expiresAt
 
+  ---Resolves the snapshot an index entry points at, confirming the file is still there.
+  ---@private
+  ---@param meta FileCacheMeta An index entry carrying a `latestFile`.
+  ---@return string? path The snapshot's path, or nil when the file it names is gone.
+  __getSnapshotPath: (meta) =>
+    path = fileOps.joinPath @cacheDir, meta.latestFile
+    info = fileOps.getAttributes path, "mode"
+    info and info.attr == "file" and path or nil
+
   ---Resolves the latest cached snapshot for a key. The snapshot may be stale; callers use isFresh on the
   ---returned meta to decide whether to serve it directly or only as an offline fallback.
   ---@param key string
@@ -179,9 +185,8 @@ class FileCache
   getFile: (key) =>
     meta = @getMeta key
     return nil unless meta and meta.latestFile
-    path = fileOps.joinPath @cacheDir, meta.latestFile
-    info = fileOps.getAttributes path, "mode"
-    return nil, meta unless info and info.attr == "file"
+    path = @__getSnapshotPath meta
+    return nil, meta unless path
     return path, meta
 
   ---Returns the deserialized latest snapshot for a key, served from the in-memory L1 memo when it still
@@ -200,9 +205,8 @@ class FileCache
     return memo.value, meta, fresh if memo and memo.cachedAt == meta.cachedAt
     return nil, meta, fresh unless @__deserialize and meta.latestFile
 
-    path = fileOps.joinPath @cacheDir, meta.latestFile
-    info = fileOps.getAttributes path, "mode"
-    content = info and info.attr == "file" and fileOps.readFile path
+    path = @__getSnapshotPath meta
+    content = path and fileOps.readFile path
     return nil, meta, fresh unless content
 
     value = @.__deserialize content
@@ -253,7 +257,7 @@ class FileCache
       namespace: LOCK_NAMESPACE
       resource: @cacheDir
       scope: Lock.Scope.Global
-      holderName: "FileCache"
+      holderName: @@__name
       logger: @logger
       timeout: LOCK_TIMEOUT
     }, -> @__write key, content, label, expiresAfter
