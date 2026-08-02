@@ -130,6 +130,7 @@ class ModuleLoader
   ---@return boolean success
   ---@return string err Combined error message (empty on success).
   @loadModules = (modules, addFeeds = {@feed}, skip = @moduleName and {[@moduleName]: true} or {}) =>
+    UpdateTask or= require "l0.DependencyControl.UpdateTask"
     for mdl in *modules
       continue if skip[mdl.moduleName]
       with mdl
@@ -147,9 +148,8 @@ class ModuleLoader
           if ._ref
             ._updated, ._missing = true, false
           else
-            UpdateTask or= require "l0.DependencyControl.UpdateTask"
             unless code == UpdateTask.UpdateStatus.SkippedOptional
-              ._reason = @@updater.__class.getUpdaterErrorMsg code, .name or .moduleName, domain.ScriptType.Module, true, extErr
+              ._reason = UpdateTask.getUpdaterErrorMsg code, .name or .moduleName, domain.ScriptType.Module, true, extErr
             -- nuke dummy reference for circular dependencies
             LOADED_MODULES[.moduleName] = nil
 
@@ -171,7 +171,7 @@ class ModuleLoader
               ._ref = ref
             elseif not .optional
               ._outdated = true
-              ._reason = @@updater.__class.getUpdaterErrorMsg code, .name or .moduleName, domain.ScriptType.Module, false, extErr
+              ._reason = UpdateTask.getUpdaterErrorMsg code, .name or .moduleName, domain.ScriptType.Module, false, extErr
 
     missing, outdated, moduleError = {}, {}, {}
     for mdl in *modules
