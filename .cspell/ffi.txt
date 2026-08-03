@@ -16,6 +16,8 @@ EEXIST
 ENAMETOOLONG
 ENOENT
 ENOTDIR
+errno
+errnum
 errornum
 FAILONERROR
 fclose
@@ -32,6 +34,7 @@ HASHVAL
 HINSTANCE
 icuuc
 inet_pton
+libc
 libcrypto
 libicu
 libicucore

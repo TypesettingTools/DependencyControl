@@ -131,7 +131,7 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "9AA2EBC0ADC9B263C9895962CE0E351D010C80B8"
+              "sha1": "1C7687AA1D465926F01C1147D5FE54466AE17DDC"
             },
             {
               "name": "/Constants.moon",
@@ -156,7 +156,7 @@
             {
               "name": "/Downloader.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "153B19D16BD2CB2CCFB33C52470598F1BF2CCA7B"
+              "sha1": "38E5575B1EE0BB04A7FE9D9ABD7B0414CE89E164"
             },
             {
               "name": "/Enum.moon",
@@ -191,7 +191,7 @@
             {
               "name": "/FileLock.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "60A9B7FF96E0C7068EC7EE8BB72C27C2B34220EF"
+              "sha1": "9B33071C2F8FC45D1086966BA37F56A9CCECE07E"
             },
             {
               "name": "/file-ops.moon",
@@ -222,7 +222,7 @@
             {
               "name": "/Lock.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "CD9D4B1022CB943ACC004D692D58B3996A770B34"
+              "sha1": "829E462862D2018A4026E3361797D5E1A4785B0F"
             },
             {
               "name": "/Logger.moon",
@@ -242,7 +242,7 @@
             {
               "name": "/NamedSemaphore.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "E86D0C92DAC01797DA4A043814CDE252244657D3"
+              "sha1": "5A3F9EB8DD618B2E3E933FF32A52036EB9FCAE64"
             },
             {
               "name": "/PackageRecord.moon",
@@ -302,12 +302,12 @@
             {
               "name": "/helpers/ffi-posix.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "43C4F016D231AB2EA08B00D12BB4629BACCBA02F"
+              "sha1": "EA8D0D94EAB209B79AA298C7289BEC5F276BD718"
             },
             {
               "name": "/helpers/ffi-windows.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "C7A8C868F2F5A49A8A50754492C934DE12086AD8"
+              "sha1": "F062D926548EA988B7F88E9C9818BF866042BCD4"
             },
             {
               "name": "/helpers/open-url.moon",
@@ -387,7 +387,7 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "348528900889D86ED93622A8CAAA49DB9C950BE0",
+              "sha1": "202B719335AF262ECA7D40D4B2DB428FA4BA3730",
               "type": "test"
             },
             {
@@ -459,7 +459,7 @@
             {
               "name": "/FileLock.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "BDDBF39514737134726E90D5DDA6AD2798A861E6",
+              "sha1": "28546D7C3B8095DC5FAEF2C3198117E7D1C5EFF9",
               "type": "test"
             },
             {
@@ -489,7 +489,7 @@
             {
               "name": "/Lock.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "26B3D5CA9E6D91C6F4D9411F093C26B3AE58FA96",
+              "sha1": "D88B22B42B3908DB99361A3531CB9D392FD83984",
               "type": "test"
             },
             {
@@ -701,6 +701,18 @@
               "url": "@{fileBaseUrl}",
               "sha1": "FC13BAF6929CCDF25394CC8F536B50EEE988A5BC",
               "type": "test"
+            },
+            {
+              "name": "/aegisub-unicode-monkeypatch.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "A4AADE46811F54C5EEC45E0B143CCE4D9D2E7C76",
+              "type": "test"
+            },
+            {
+              "name": "/ffi-windows.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "12DB2A46902375C863E5566219613F9E5D8B3EBB",
+              "type": "test"
             }
           ],
           "requiredModules": [
@@ -847,7 +859,9 @@
           "feat(CLI): A package whose sources require Aegisub's `aegisub.re` module now loads headlessly too, backed by PCRE2 through the `lrexlib-pcre2` rock. Aegisub matches with Boost.Regex over ICU, and both are Perl syntax over Unicode code points reporting byte offsets, so ordinary patterns behave the same; a corpus captured from a real Aegisub run pins that in the test suite. The engine loads on first use, so the rock is only needed once a pattern is actually compiled. The `NEWLINE_ALT` flag has no PCRE2 equivalent and raises rather than quietly matching something else, while `COLLATE` and `NO_EMPTY_SUBEXPRESSIONS` are accepted and ignored, neither being able to change what a pattern matches.",
           "feat(CLI): A package whose sources require Aegisub's `aegisub.unicode` module now loads headlessly too. The four inspection functions are UTF-8 arithmetic and always work; the three case conversions call the system ICU through the FFI, the same library Aegisub itself uses, so they follow the host locale and apply full, context-sensitive mappings. ICU loads on first conversion, leaving the inspection functions usable on a machine without it.",
           "feat(CLI): A package whose sources require Aegisub's `aegisub.clipboard` module now loads headlessly too, under both that require id and the short `clipboard` one, which publishes the global as Aegisub's own does. The contents are held in the running process rather than on the system clipboard, so a test run works without a display server and leaves whatever you had copied untouched; a value another application put on the real clipboard is correspondingly invisible to it. A harness that wants the real clipboard, or wants to observe what a script copies, can install its own backend through `AegisubShims.setClipboardBackend`.",
-          "feat(CLI): Aegisub's `include()` is available headlessly for the include files that only publish a module under a global — `clipboard.lua`, `re.lua`, `unicode.lua`, `utils.lua`, `utils-auto4.lua` and `lfs.lua` — each setting the same global and returning the same value as Aegisub's copy does. It reads no files, so any other name, `karaskel.lua` among them, raises and names what is available. The same files are reachable by require under the name without its extension, as they are in Aegisub."
+          "feat(CLI): Aegisub's `include()` is available headlessly for the include files that only publish a module under a global — `clipboard.lua`, `re.lua`, `unicode.lua`, `utils.lua`, `utils-auto4.lua` and `lfs.lua` — each setting the same global and returning the same value as Aegisub's copy does. It reads no files, so any other name, `karaskel.lua` among them, raises and names what is available. The same files are reachable by require under the name without its extension, as they are in Aegisub.",
+          "feat: Added `DependencyControl.FfiWindows` and `DependencyControl.FfiPosix` for scripts that call the OS directly through the FFI: wide-string conversion and error descriptions for the Win32 API, and open(2) constants and wrappers for POSIX.",
+          "fix(CLI): On Windows, `io.open`, `os.rename`, `os.remove` and `os.execute` now take UTF-8 paths headlessly, as they already did inside Aegisub, which applies the same patch to every script it runs. Without it Lua hands the path to the ANSI C runtime, which reads it in the process code page, so any path containing a non-ASCII byte named a different file or none at all — an accented Windows account name was enough. It applies whatever the process code page is, so it also holds up under a locale emulator, where the reported code page and the one the C runtime actually converts in disagree. Directory listing and file attributes still go through the luafilesystem rock and remain affected."
         ]
       }
     },

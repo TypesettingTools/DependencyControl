@@ -182,7 +182,7 @@ package.path = ("%s/?.lua;%s/?/init.lua;"):format(depCtrlModulesDir, depCtrlModu
 package.moonpath = ("%s/?.moon;%s/?/init.moon;"):format(depCtrlModulesDir, depCtrlModulesDir) .. (package.moonpath or "")
 
 if isWindows then
-  require("l0.DependencyControl.helpers.ffi-windows").setConsoleOutputUTF8()
+  require("l0.DependencyControl.helpers.ffi-windows").setConsoleOutputUtf8()
 end
 
 -- ── Aegisub shims ─────────────────────────────────────────────────────────────

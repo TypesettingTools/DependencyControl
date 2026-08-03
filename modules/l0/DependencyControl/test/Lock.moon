@@ -3,6 +3,8 @@
 () ->
   Lock = require "l0.DependencyControl.Lock"
   Logger = require "l0.DependencyControl.Logger"
+  FileLock = require "l0.DependencyControl.FileLock"
+  NamedSemaphore = require "l0.DependencyControl.NamedSemaphore"
   UnitTestSuite = require "l0.DependencyControl.UnitTestSuite"
   {:defaultLogger} = UnitTestSuite\getTestExports Lock
 
@@ -42,6 +44,22 @@
 
   {
     _description: "Tests for the Lock cooperative mutex class."
+
+    -- both primitives publish isAvailable as a precondition, and a build that fails it still has to
+    -- produce something Lock can carry through to its unavailable path
+    createPrimitive_unavailableBackingYieldsAClosedPrimitive: (ut) ->
+      for {backing, scope} in *{{FileLock, Lock.Scope.Global}, {NamedSemaphore, Lock.Scope.Process}}
+        -- restored before asserting, so a failure can't leave the class flipped for later tests
+        wasAvailable = backing.isAvailable
+        backing.isAvailable = false
+        primitive = Lock\__createPrimitive scope, "token", aegisub.decode_path "?temp/depctrl_unavailable_probe.lock"
+        backing.isAvailable = wasAvailable
+
+        ut\assertNotNil primitive, "#{scope} scope produced no primitive"
+        ut\assertFalse primitive.isOpen
+        ut\assertString primitive.openError
+        ut\assertFalse primitive\tryLock!
+        ut\assertFalse primitive\unlock!
 
     -- LockState enum: verifies Enum was called with "LockState" and the correct value mapping
 
@@ -414,6 +432,7 @@
     _order: {
       "lockState_values", "lockState_name",
       "defaultLogger_fileBaseName",
+      "createPrimitive_unavailableBackingYieldsAClosedPrimitive",
       "new_defaults", "new_customLogger",
       "state_initial", "state_held",
       "scope_values", "scope_defaultsToProcess", "scope_globalOption",

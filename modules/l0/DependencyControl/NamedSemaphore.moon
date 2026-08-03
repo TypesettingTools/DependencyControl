@@ -119,7 +119,10 @@ class NamedSemaphore
   ---Use false for cross-process usage to prevent an exiting process from removing a name others still hold.
   ---No effect on Windows, where names are cleaned up automatically when the last handle closes.
   new: (token, unlinkOnClose = false) =>
-    assert isAvailable, msgs.noImplementation
+    unless @@isAvailable
+      @isOpen = false
+      @openError = msgs.noImplementation
+      return
 
     @name = formatName token
     @handle = openImpl @name

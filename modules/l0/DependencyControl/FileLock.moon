@@ -7,7 +7,17 @@ local openImpl, tryLockImpl, unlockImpl, closeImpl, isAvailable
 
 msgs = {
   noImplementation: "No file lock implementation is available on this platform/build configuration."
+  openImpl: {
+    failed: "Could not open lock file '%s': %s"
+  }
 }
+
+---The opened lock file, in whatever form the platform's lock calls take. Each platform sets only its
+---own fields.
+---@class FileLockHandle
+---@field handle ffi.cdata* Windows: the CreateFileW file handle.
+---@field overlapped ffi.cdata* Windows: the OVERLAPPED the lock and unlock calls share.
+---@field fd integer POSIX: the open file descriptor.
 
 if ffi.os == "Windows"
   ffiWin = require "l0.DependencyControl.helpers.ffi-windows"
@@ -22,7 +32,7 @@ if ffi.os == "Windows"
   pcall ffi.cdef, "typedef struct { uintptr_t Internal; uintptr_t InternalHigh; unsigned long Offset; unsigned long OffsetHigh; void* hEvent; } DepCtrlOverlapped;"
 
   kernel32, toWide = ffiWin.kernel32, ffiWin.toWide
-  isAvailable = ffiWin.haveKernel32
+  isAvailable = ffiWin.isAvailable
 
   -- CreateFileW
   GENERIC_READ = 0x80000000
@@ -37,15 +47,30 @@ if ffi.os == "Windows"
   FILE_ATTRIBUTE_NORMAL = 0x80 -- a file without any special attributes
   INVALID_HANDLE = ffi.cast "void*", -1
 
+  ERROR_INVALID_NAME = 123 -- the name, directory name or volume label syntax is incorrect
+  ERROR_BAD_PATHNAME = 161 -- the path itself is invalid
+  isMalformedPath = {[ERROR_INVALID_NAME]: true, [ERROR_BAD_PATHNAME]: true}
+
   -- LockFileEx
   LOCKFILE_FAIL_IMMEDIATELY = 1 -- fail instead of waiting when the range is locked
   LOCKFILE_EXCLUSIVE_LOCK = 2 -- request an exclusive lock instead of a shared one
   LOCK_EXCLUSIVE_NONBLOCKING = bit.bor(LOCKFILE_EXCLUSIVE_LOCK, LOCKFILE_FAIL_IMMEDIATELY)
 
+  ---Opens the lock file, creating it if absent.
+  ---@param path string Full path to the lock file.
+  ---@return FileLockHandle? handle Nil when the file could not be opened.
+  ---@return string? err Why it could not be opened, naming the path and what the OS reported.
+  ---@return boolean? isBadArgument True when the path itself is at fault, which no retry can change.
   openImpl = (path) ->
-    handle = kernel32.CreateFileW toWide(path), GENERIC_READ_WRITE, FILE_SHARE_READ_WRITE,
+    widePath, convertErr = toWide path
+    return nil, convertErr, true unless widePath
+
+    handle = kernel32.CreateFileW widePath, GENERIC_READ_WRITE, FILE_SHARE_READ_WRITE,
       nil, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nil
-    return nil if handle == INVALID_HANDLE
+    if handle == INVALID_HANDLE
+      described, code = ffiWin.describeLastError!
+      return nil, msgs.openImpl.failed\format(path, described), isMalformedPath[code]
+
     return {handle: handle, overlapped: ffi.new "DepCtrlOverlapped"}
   tryLockImpl = (h) -> 0 != kernel32.LockFileEx h.handle, LOCK_EXCLUSIVE_NONBLOCKING, 0, 1, 0, h.overlapped
   unlockImpl = (h) -> kernel32.UnlockFileEx h.handle, 0, 1, 0, h.overlapped
@@ -58,8 +83,9 @@ else
   -- one process). open/close are provided by ffi-posix.
   pcall ffi.cdef, [[
     int flock(int fd, int operation);
+    char *strerror(int errnum);
   ]]
-  isAvailable = true
+  isAvailable = ffiPosix.isAvailable
 
   -- flock
   LOCK_SH = 1 -- request a shared lock
@@ -69,9 +95,14 @@ else
 
   LOCK_EXCLUSIVE_NONBLOCKING = bit.bor(LOCK_EX, LOCK_NB)
 
+  ---Opens the lock file, creating it if absent.
+  ---@param path string Full path to the lock file.
+  ---@return FileLockHandle? handle Nil when the file could not be opened.
+  ---@return string? err Why it could not be opened, naming the path and what the OS reported.
+  ---@return boolean? isBadArgument Never set, since a POSIX path is a byte string this can't reject.
   openImpl = (path) ->
     fd = ffiPosix.open path, bit.bor(ffiPosix.FileAccessMode.ReadWrite, ffiPosix.FileCreationFlags.Create), ffiPosix.getFileMode 'rw', 'r', 'r'
-    return nil if fd < 0
+    return nil, msgs.openImpl.failed\format(path, ffi.string ffi.C.strerror ffi.errno!) if fd < 0
     return {fd: fd}
   tryLockImpl = (h) -> 0 == ffi.C.flock h.fd, LOCK_EXCLUSIVE_NONBLOCKING
   unlockImpl = (h) -> ffi.C.flock h.fd, LOCK_UN
@@ -82,6 +113,8 @@ else
 ---Automatically released when the instance is garbage collected or when the process exits.
 ---However, unlike a semaphore, it cannot be forcibly taken from a process that is alive but hung.
 ---@class FileLock
+---@field isOpen boolean Whether the handle to the lock file was opened and the instance can lock.
+---@field openError string? Why the lock file could not be opened, absent once it was.
 class FileLock
   -- whether the OS file-lock FFI is available on this platform/build
   ---@type boolean
@@ -91,12 +124,18 @@ class FileLock
   ---@param path string Full path to the lock file.
   new: (path) =>
     @isOpen = false
-    assert isAvailable, msgs.noImplementation
+    unless @@isAvailable
+      @openError = msgs.noImplementation
+      return
+
     normalizedPath, errMsg = pathOps.resolveFullPath path, true
     assert normalizedPath, errMsg
 
-    handle = openImpl normalizedPath
-    return unless handle
+    handle, openErr, isBadArgument = openImpl normalizedPath
+    assert not isBadArgument, openErr
+    unless handle
+      @openError = openErr
+      return
     @_handle = handle
     @path = normalizedPath
     @isOpen = true

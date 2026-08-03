@@ -50,7 +50,8 @@ msgs = {
     alreadyHeld: "'%s' (%s) is already holding the lock on resource '%s.%s'."
     attained: "'%s' (%s) attained the lock on resource '%s.%s'."
     timeout: "Gave up trying to attain a lock on resource '%s.%s' for holder '%s' (%s) after timeout was reached."
-    unavailable: "OS lock unavailable for resource '%s.%s'; '%s' (%s) is proceeding with a process-local lock only (no cross-process exclusion)."
+    reasonUnknown: "no reason reported"
+    unavailable: "OS lock unavailable for resource '%s.%s' (%s); '%s' (%s) is proceeding with a process-local lock only (no cross-process exclusion)."
   }
   release: {
     failed: "Could not release lock on resource '%s.%s' for '%s' (%s): %s"
@@ -108,7 +109,8 @@ class Lock
   Scope = @Scope
 
   ---Builds the OS lock primitive backing a lock: a named semaphore for Process scope, an
-  ---advisory file lock for Global scope.
+  ---advisory file lock for Global scope. Either reports itself closed on a build lacking its OS
+  ---backing, so the caller's unavailable path handles that as it does any other closed primitive.
   ---@param scope LockScope
   ---@param token string OS-safe semaphore name token (Process scope).
   ---@param lockFile string Full path to the lock file (Global scope).
@@ -119,12 +121,10 @@ class Lock
     scopeIsValid, errMsg = Scope\validate scope, "scope"
     return nil, errMsg unless scopeIsValid
 
-    if scope == Scope.Global
-      FileLock lockFile
-    else
-      -- Process-scoped names embed our pid, so unlink them on close: a future process
-      -- that reuses this pid must not inherit a stuck name.
-      NamedSemaphore token, true
+    return FileLock lockFile if scope == Scope.Global
+
+    -- Process-scoped names embed our pid, so unlink them on close to avoid a reused PID inheriting a stale semaphore.
+    return NamedSemaphore token, true
 
   -- Derives the OS-safe semaphore name token, holder-file path and Global lock-file path
   -- for a tuple.
@@ -255,7 +255,7 @@ class Lock
     -- degrade to a process-local grant so DepCtrl keeps functioning, and warn once.
     unless @_primitive.isOpen
       unless @_state.held
-        @logger\warn msgs.lock.unavailable, @namespace, @resource, @holderName, @instanceId
+        @logger\warn msgs.lock.unavailable, @namespace, @resource, @_primitive.openError or msgs.lock.reasonUnknown, @holderName, @instanceId
         @_state.held = true
         @acquiredAt = os.time!
         @__writeHolder!
