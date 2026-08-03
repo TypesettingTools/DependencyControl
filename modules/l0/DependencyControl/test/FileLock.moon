@@ -13,6 +13,19 @@
     -- the lock FFI isn't available on every platform/build; skip rather than fail there
     _condition: -> FileLock.isAvailable, "no file-lock FFI on this platform/build"
 
+    -- a path that is not valid UTF-8 was composed wrong, which the constructor raises on
+    new_invalidUtf8PathRaises: (ut) ->
+      ut\skip "only the Windows backend converts the path" unless "Windows" == require("ffi").os
+      badPath = aegisub.decode_path "?temp/\255bad.lock"
+      ut\assertErrorMsgMatches (-> FileLock badPath), {}, "invalid character sequence"
+
+    -- anything the machine did leaves a closed lock carrying the reason, for a caller to report
+    new_pathThatCannotBeOpenedLeavesTheLockClosedWithAReason: (ut) ->
+      lock = FileLock aegisub.decode_path "?temp/depctrl_absent_dir_xyz/x.lock"
+      ut\assertFalse lock.isOpen
+      ut\assertString lock.openError
+      ut\assertFalse lock\tryLock!
+
     -- a fresh lock opens, acquires, and releases
     acquiresAndReleases: (ut) ->
       lock = FileLock tmpPath!

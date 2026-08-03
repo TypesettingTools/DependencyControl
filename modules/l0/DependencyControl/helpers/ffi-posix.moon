@@ -16,27 +16,54 @@ pcall ffi.cdef, [[
   int close(int fd);
 ]]
 
+---@type boolean
+isAvailable = ffi.os != "Windows" and pcall(-> ffi.C.open)
+
+---The access mode an open(2) call takes in the low two bits of its flags. Same on Linux and macOS.
+---@class PosixFileAccessMode
+---@field Read integer O_RDONLY, opening for reading only.
+---@field Write integer O_WRONLY, opening for writing only.
+---@field ReadWrite integer O_RDWR, opening for both.
+
+---Flags OR'd into an open(2) call alongside its access mode. The numeric values differ by OS.
+---@class PosixFileCreationFlags
+---@field Create integer O_CREAT, creating the file if it doesn't exist.
+---@field Exclusive integer O_EXCL, failing alongside Create if the file already exists.
+---@field Truncate integer O_TRUNC, truncating the file to zero length.
+---@field NoControllingTerminal integer O_NOCTTY, keeping an opened terminal from becoming the process's controlling terminal.
+---@field Directory integer O_DIRECTORY, failing if the path isn't a directory.
+---@field NoFollow integer O_NOFOLLOW, failing if the final component is a symlink.
+---@field CloseOnExec integer O_CLOEXEC, setting close-on-exec so child processes don't inherit the descriptor.
+---@field TmpFile integer O_TMPFILE, creating an unnamed temporary file. Zero on macOS, which has no equivalent, so a caller wanting one there needs another mechanism.
+
+---POSIX open(2) flags, modes and thin call wrappers, for code reaching libc through the FFI. Loads on
+---every platform and reports `isAvailable` false where the calls don't resolve, so a caller can branch
+---once rather than guarding each call.
+---@class FfiPosix
+---@field isAvailable boolean Whether this platform is likely POSIX. Gate any use of `open`/`close` on it.
+---@field FileAccessMode PosixFileAccessMode
+---@field FileCreationFlags PosixFileCreationFlags
 return {
-  -- low two bits of the open(2) flags: the access mode (same on Linux and macOS)
+  ---@type boolean
+  isAvailable: isAvailable
+
+  ---@type PosixFileAccessMode
   FileAccessMode: {
-    Read: 0 -- O_RDONLY (read-only)
-    Write: 1 -- O_WRONLY (write-only)
-    ReadWrite: 2 -- O_RDWR   (read-write)
+    Read: 0
+    Write: 1
+    ReadWrite: 2
   }
 
+  ---@type PosixFileCreationFlags
   FileCreationFlags: {
-    Create: isOSX and 0x200 or 0x40 -- O_CREAT: create the file if it doesn't exist
-    Exclusive: isOSX and 0x800 or 0x80 -- O_EXCL: with Create, fail if the file already exists
-    Truncate: isOSX and 0x400 or 0x200 -- O_TRUNC: truncate the file to zero length
-    -- O_NOCTTY: don't let an opened terminal become the process's controlling terminal
+    Create: isOSX and 0x200 or 0x40
+    Exclusive: isOSX and 0x800 or 0x80
+    Truncate: isOSX and 0x400 or 0x200
     NoControllingTerminal: isOSX and 0x20000 or 0x100
-    Directory: isOSX and 0x100000 or 0x10000 -- O_DIRECTORY: fail if the path isn't a directory
-    NoFollow: isOSX and 0x100 or 0x20000 -- O_NOFOLLOW: fail if the final component is a symlink
-    -- O_CLOEXEC: set the close-on-exec flag so child processes don't inherit the fd
+    Directory: isOSX and 0x100000 or 0x10000
+    NoFollow: isOSX and 0x100 or 0x20000
     CloseOnExec: isOSX and 0x1000000 or 0x80000
-    -- O_TMPFILE: create an unnamed temporary file (the Linux value already includes
-    -- O_DIRECTORY, as the kernel requires). Not available on macOS, where it is 0 (a
-    -- no-op) -- callers needing a temp file there must fall back to another mechanism.
+    -- the Linux value already includes O_DIRECTORY, as the kernel requires
     TmpFile: isOSX and 0 or 0x410000
   }
 
@@ -56,7 +83,7 @@ return {
     return mode
 
   ---Opens a file, creating it when the flags include Create (O_CREAT), and returns the raw descriptor.
-  ---@param path string
+  ---@param path string Path to open, as a byte string the platform accepts.
   ---@param flags integer open(2) flags, e.g. FileAccessMode.ReadWrite | FileCreationFlags.Create.
   ---@param mode integer Permission bits for a newly created file (from getFileMode).
   ---@return integer fd The open descriptor, or a negative value on failure.

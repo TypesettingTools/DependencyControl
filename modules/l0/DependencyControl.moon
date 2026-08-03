@@ -56,6 +56,8 @@ FeedInventory = require "l0.DependencyControl.FeedInventory"
 FeedLoader = require "l0.DependencyControl.FeedLoader"
 FeedManager = require "l0.DependencyControl.FeedManager"
 FeedTrust = require "l0.DependencyControl.FeedTrust"
+ffiPosix = require "l0.DependencyControl.helpers.ffi-posix"
+ffiWindows = require "l0.DependencyControl.helpers.ffi-windows"
 fileOps = require "l0.DependencyControl.file-ops"
 Finalizer = require "l0.DependencyControl.Finalizer"
 GitRepository = require "l0.DependencyControl.GitRepository"
@@ -89,6 +91,9 @@ class DependencyControl extends PackageRecord
   @FeedLoader = FeedLoader
   @FeedManager = FeedManager
   @FeedTrust = FeedTrust
+  -- both load on every platform; their calls only work on the one they wrap
+  @FfiPosix = ffiPosix
+  @FfiWindows = ffiWindows
   @FileOps = fileOps
   @GitRepository = GitRepository
   @Host = Host

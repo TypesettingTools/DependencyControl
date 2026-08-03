@@ -23,7 +23,7 @@ msgs = {
   noBackend: "No download backend available."
   httpStatus: "Server returned HTTP status %d."
   readFailed: "Connection error while reading response."
-  openUrlFailed: "Could not open URL '%s'."
+  openUrlFailed: "Could not open URL '%s': %s"
   curlInit: "Failed to initialize curl."
   stalled: "Download stalled: no data received for %d seconds."
   privateHostBlocked: "Refusing to download from a private, loopback, or link-local address as an SSRF safeguard (a feed or package could otherwise point DependencyControl at an internal host): %s. To allow this for local development/testing, set updates.blockPrivateHosts = false in the DependencyControl config."
@@ -375,7 +375,7 @@ else
     int InternetGetConnectedState(unsigned long* flags, unsigned long reserved);
   ]]
 
-  haveKernel32 = ffiWin.haveKernel32
+  haveKernel32 = ffiWin.isAvailable
   haveWinInet, winInet = pcall ffi.load, "winInet"
 
   toWide = ffiWin.toWide
@@ -445,9 +445,12 @@ else
               host = Host.fromUrl url
               return fail msgs.privateHostBlocked\format url if host and host\resolvesToPrivate!
 
-            request = winInet.InternetOpenUrlW session, toWide(url), nil, 0,
+            wideUrl, convertErr = toWide url
+            return fail msgs.openUrlFailed\format url, convertErr unless wideUrl
+
+            request = winInet.InternetOpenUrlW session, wideUrl, nil, 0,
               bit.bor(INTERNET_FLAG_RELOAD, INTERNET_FLAG_NO_CACHE_WRITE, INTERNET_FLAG_NO_AUTO_REDIRECT), 0
-            return fail msgs.openUrlFailed\format url if request == nil
+            return fail msgs.openUrlFailed\format url, ffiWin.describeLastError "wininet.dll" if request == nil
 
             status = queryNumber request, HTTP_QUERY_STATUS_CODE
             if status and status >= 300 and status < 400
