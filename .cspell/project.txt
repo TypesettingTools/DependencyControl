@@ -9,6 +9,7 @@ BadMutex
 browsable
 CASELESS
 CGNAT
+charwidth
 chdir
 classmod
 coffeeflux
@@ -30,6 +31,7 @@ DepCtrl
 dkjson
 DLUAJIT
 docusaurus
+dotless
 DOTALL
 downloaders
 Dunder
@@ -106,6 +108,7 @@ petzku
 phoscity
 pkgs
 PreciseTimer
+preflighted
 prereq
 pymdownx
 refetch
@@ -143,6 +146,7 @@ unmockable
 unparented
 unparseable
 unsets
+unsuffixed
 unvalidated
 Unvirtualized
 userinfo

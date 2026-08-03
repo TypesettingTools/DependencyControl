@@ -1,3 +1,4 @@
+# cspell:ignore luarocks
 name: Tests
 
 on:
