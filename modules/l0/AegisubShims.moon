@@ -13,6 +13,11 @@ package.preload["aegisub.re"] = -> re
 package.preload["aegisub.unicode"] = -> unicode
 package.preload["aegisub.clipboard"] = -> clipboard
 
+-- Aegisub runs this for every Lua state it creates on Windows, so the CLI has to as well or its paths
+-- reach the C runtime in a different encoding than they do in Aegisub. It reports what it did rather
+-- than raising, since every platform but Windows needs nothing.
+unicodePatch = require "l0.AegisubShims.unicode-monkeypatch"
+
 -- Register the globals unconditionally exposed by Aegisub
 _G.aegisub = aegisub
 _G.include = includeShim.include
@@ -38,4 +43,5 @@ return {
   getPathToken: aegisub.__depCtrl.getPathToken
   setClipboardBackend: clipboard.__depCtrl.setBackend
   getClipboardBackend: clipboard.__depCtrl.getBackend
+  :unicodePatch
 }
