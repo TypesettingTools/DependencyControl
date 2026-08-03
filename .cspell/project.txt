@@ -40,10 +40,13 @@ editorconfig
 effectful
 emittable
 emmylua
+extlead
 FileOps
 finalizer
 finalizers
 fndef
+fontname
+fontsize
 foreseeably
 getsockname
 ghuc

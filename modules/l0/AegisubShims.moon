@@ -22,6 +22,11 @@ unicodePatch = require "l0.AegisubShims.unicode-monkeypatch"
 _G.aegisub = aegisub
 _G.include = includeShim.include
 
+-- Windows can measure text the same way Aegisub does, so text_extents works there out of the box;
+-- elsewhere it keeps raising until a caller installs a backend of its own.
+textExtentsGdi = require "l0.AegisubShims.text-extents-gdi"
+aegisub.__depCtrl.setTextExtentsBackend textExtentsGdi.measure if textExtentsGdi.isAvailable
+
 -- Aegisub's include files are also reachable by requiring their bare identifiers
 -- and publish their module as a global once they are loaded in whichever way.
 for fileName, entry in pairs includeShim.includeFiles
@@ -43,5 +48,7 @@ return {
   getPathToken: aegisub.__depCtrl.getPathToken
   setClipboardBackend: clipboard.__depCtrl.setBackend
   getClipboardBackend: clipboard.__depCtrl.getBackend
+  setTextExtentsBackend: aegisub.__depCtrl.setTextExtentsBackend
+  getTextExtentsBackend: aegisub.__depCtrl.getTextExtentsBackend
   :unicodePatch
 }
