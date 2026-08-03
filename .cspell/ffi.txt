@@ -74,6 +74,10 @@ USERAGENT
 usleep
 VERIFYCONTEXT
 wchar
+wfreopen
+wremove
+wrename
+wsystem
 WinINet
 winsock
 WRITEDATA
