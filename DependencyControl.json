@@ -387,7 +387,7 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "D84C60083DC9BD6AA0ABF0D30DF2E9FF6036B91E",
+              "sha1": "348528900889D86ED93622A8CAAA49DB9C950BE0",
               "type": "test"
             },
             {
@@ -689,6 +689,18 @@
               "url": "@{fileBaseUrl}",
               "sha1": "0164A808D593A9ABB535FAD62399BFC45AB51467",
               "type": "test"
+            },
+            {
+              "name": "/aegisub-clipboard.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "FA45DDD574D24695B959D2C9FB59767C65C4DC45",
+              "type": "test"
+            },
+            {
+              "name": "/aegisub-include.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "FC13BAF6929CCDF25394CC8F536B50EEE988A5BC",
+              "type": "test"
             }
           ],
           "requiredModules": [
@@ -833,7 +845,9 @@
           "feat(CLI): A package whose sources require Aegisub's `aegisub.util` module now loads in the headless environment the CLI sets up, so `depctrl.lua test` and the CI workflows can exercise it.",
           "feat(Utils): Added `checkArgType()` and `assertArgType()` for guarding a function's arguments. `checkArgType` reports a mismatch as a message without raising, leaving the caller to log it, raise it, or return it, while `assertArgType` raises it directly. Either identifies the argument by position or by name.",
           "feat(CLI): A package whose sources require Aegisub's `aegisub.re` module now loads headlessly too, backed by PCRE2 through the `lrexlib-pcre2` rock. Aegisub matches with Boost.Regex over ICU, and both are Perl syntax over Unicode code points reporting byte offsets, so ordinary patterns behave the same; a corpus captured from a real Aegisub run pins that in the test suite. The engine loads on first use, so the rock is only needed once a pattern is actually compiled. The `NEWLINE_ALT` flag has no PCRE2 equivalent and raises rather than quietly matching something else, while `COLLATE` and `NO_EMPTY_SUBEXPRESSIONS` are accepted and ignored, neither being able to change what a pattern matches.",
-          "feat(CLI): A package whose sources require Aegisub's `aegisub.unicode` module now loads headlessly too. The four inspection functions are UTF-8 arithmetic and always work; the three case conversions call the system ICU through the FFI, the same library Aegisub itself uses, so they follow the host locale and apply full, context-sensitive mappings. ICU loads on first conversion, leaving the inspection functions usable on a machine without it."
+          "feat(CLI): A package whose sources require Aegisub's `aegisub.unicode` module now loads headlessly too. The four inspection functions are UTF-8 arithmetic and always work; the three case conversions call the system ICU through the FFI, the same library Aegisub itself uses, so they follow the host locale and apply full, context-sensitive mappings. ICU loads on first conversion, leaving the inspection functions usable on a machine without it.",
+          "feat(CLI): A package whose sources require Aegisub's `aegisub.clipboard` module now loads headlessly too, under both that require id and the short `clipboard` one, which publishes the global as Aegisub's own does. The contents are held in the running process rather than on the system clipboard, so a test run works without a display server and leaves whatever you had copied untouched; a value another application put on the real clipboard is correspondingly invisible to it. A harness that wants the real clipboard, or wants to observe what a script copies, can install its own backend through `AegisubShims.setClipboardBackend`.",
+          "feat(CLI): Aegisub's `include()` is available headlessly for the include files that only publish a module under a global — `clipboard.lua`, `re.lua`, `unicode.lua`, `utils.lua`, `utils-auto4.lua` and `lfs.lua` — each setting the same global and returning the same value as Aegisub's copy does. It reads no files, so any other name, `karaskel.lua` among them, raises and names what is available. The same files are reachable by require under the name without its extension, as they are in Aegisub."
         ]
       }
     },

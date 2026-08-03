@@ -158,11 +158,6 @@ aegisub = {
     open: -> nil
     save: -> nil
   }
-
-  clipboard: {
-    get: -> ""
-    set: -> true
-  }
 }
 
 -- Shim-only configuration hooks, namespaced so they can't collide with the real
@@ -171,7 +166,5 @@ aegisub.__depCtrl = {
   :setPathToken
   :getPathToken
 }
-
-_G.aegisub = aegisub
 
 return aegisub
