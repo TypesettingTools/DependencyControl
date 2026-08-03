@@ -12,6 +12,7 @@ CGNAT
 charwidth
 chdir
 classmod
+cleantags
 coffeeflux
 copas
 CTRF
@@ -57,6 +58,7 @@ inlinehilite
 inspectable
 intedit
 jsontype
+karaskel
 keyorder
 Kolf
 launchable
@@ -88,6 +90,7 @@ mimetypes
 mkdocs
 mockability
 mojibake
+monkeypatch
 moonbase
 moonc
 mooncats
