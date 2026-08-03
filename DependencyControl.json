@@ -387,7 +387,7 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "DA3BE2D68209B7AB833E5575730A291F65B1BF54",
+              "sha1": "D84C60083DC9BD6AA0ABF0D30DF2E9FF6036B91E",
               "type": "test"
             },
             {
@@ -675,13 +675,19 @@
             {
               "name": "/aegisub-util.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "3913E95678384E62099EBC926ECCC27A5E397D5D",
+              "sha1": "A54B41414023FE50E22311122E270466F3FDD404",
               "type": "test"
             },
             {
               "name": "/aegisub-re.moon",
               "url": "@{fileBaseUrl}",
               "sha1": "5A4FD95CD57F9FEB1B5077B1AD018250095E37A4",
+              "type": "test"
+            },
+            {
+              "name": "/aegisub-unicode.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "0164A808D593A9ABB535FAD62399BFC45AB51467",
               "type": "test"
             }
           ],
@@ -826,7 +832,8 @@
           "fix(CLI): a deleted file's entry can no longer shadow the source that replaced it when a test suite resolves its modules from the feed.",
           "feat(CLI): A package whose sources require Aegisub's `aegisub.util` module now loads in the headless environment the CLI sets up, so `depctrl.lua test` and the CI workflows can exercise it.",
           "feat(Utils): Added `checkArgType()` and `assertArgType()` for guarding a function's arguments. `checkArgType` reports a mismatch as a message without raising, leaving the caller to log it, raise it, or return it, while `assertArgType` raises it directly. Either identifies the argument by position or by name.",
-          "feat(CLI): A package whose sources require Aegisub's `aegisub.re` module now loads headlessly too, backed by PCRE2 through the `lrexlib-pcre2` rock. Aegisub matches with Boost.Regex over ICU, and both are Perl syntax over Unicode code points reporting byte offsets, so ordinary patterns behave the same; a corpus captured from a real Aegisub run pins that in the test suite. The engine loads on first use, so the rock is only needed once a pattern is actually compiled. The `NEWLINE_ALT` flag has no PCRE2 equivalent and raises rather than quietly matching something else, while `COLLATE` and `NO_EMPTY_SUBEXPRESSIONS` are accepted and ignored, neither being able to change what a pattern matches."
+          "feat(CLI): A package whose sources require Aegisub's `aegisub.re` module now loads headlessly too, backed by PCRE2 through the `lrexlib-pcre2` rock. Aegisub matches with Boost.Regex over ICU, and both are Perl syntax over Unicode code points reporting byte offsets, so ordinary patterns behave the same; a corpus captured from a real Aegisub run pins that in the test suite. The engine loads on first use, so the rock is only needed once a pattern is actually compiled. The `NEWLINE_ALT` flag has no PCRE2 equivalent and raises rather than quietly matching something else, while `COLLATE` and `NO_EMPTY_SUBEXPRESSIONS` are accepted and ignored, neither being able to change what a pattern matches.",
+          "feat(CLI): A package whose sources require Aegisub's `aegisub.unicode` module now loads headlessly too. The four inspection functions are UTF-8 arithmetic and always work; the three case conversions call the system ICU through the FFI, the same library Aegisub itself uses, so they follow the host locale and apply full, context-sensitive mappings. ICU loads on first conversion, leaving the inspection functions usable on a machine without it."
         ]
       }
     },

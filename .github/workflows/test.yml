@@ -1,3 +1,4 @@
+# cspell:ignore luarocks
 name: Tests
 
 on:
@@ -77,10 +78,6 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: Add-Content -Path $env:GITHUB_PATH -Value "$env:GITHUB_WORKSPACE\.lua\bin"
-
-      # Installs LuaRocks and builds the C rocks with the active toolchain — MSVC on Windows
-      # (VCINSTALLDIR set above), the system gcc/clang on Linux/macOS.
-      - uses: luarocks/gh-actions-luarocks@v7
 
       # PCRE2 backs the headless aegisub.re stand-in. It isn't on the Linux or macOS runners either,
       # and lrexlib-pcre2 finds it through pkg-config / the brew prefix once installed.

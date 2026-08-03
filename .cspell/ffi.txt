@@ -30,8 +30,12 @@ getpid
 gettime
 HASHVAL
 HINSTANCE
+icuuc
 inet_pton
 libcrypto
+libicu
+libicucore
+libicuuc
 MAXFILESIZE
 MAXREDIRS
 nfds
@@ -56,6 +60,8 @@ setopt
 SHOWNORMAL
 sockaddr
 socktype
+soname
+sonames
 strerror
 syscall
 timespec
