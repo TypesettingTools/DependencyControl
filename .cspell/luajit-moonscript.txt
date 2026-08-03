@@ -1,3 +1,4 @@
+arshift
 bnot
 bxor
 currentline

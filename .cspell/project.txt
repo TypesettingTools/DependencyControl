@@ -4,9 +4,12 @@ Aegisub
 Archiver
 argname
 argparse
+assfile
 backticked
 BadMutex
+borderstyle
 browsable
+Calibri
 CASELESS
 CGNAT
 charwidth
@@ -15,6 +18,7 @@ classmod
 cleantags
 coffeeflux
 copas
+CoreText
 CTRF
 Ctrled
 currentdir
@@ -27,6 +31,7 @@ dedupe
 deduped
 dedupes
 dedups
+dejavu
 delegators
 DepCtrl
 dkjson
@@ -40,14 +45,20 @@ editorconfig
 effectful
 emittable
 emmylua
+extlead
 FileOps
 finalizer
 finalizers
 fndef
+fontconfig
+fontname
+fontsize
 foreseeably
+freetype
 getsockname
 ghuc
 githooks
+HarfBuzz
 hashtable
 headlessly
 headtail
@@ -65,6 +76,7 @@ launchable
 ldoc
 leafo
 libaegisub
+libass
 libpcre
 linenums
 linkified
@@ -103,6 +115,8 @@ myaamori
 NOSUB
 NTFS
 nullary
+pango
+pangocairo
 parentheticals
 PATHOPS
 pcre
@@ -155,6 +169,7 @@ Unvirtualized
 userinfo
 VCINSTALLDIR
 versionless
+WINDIR
 worklist
 worktree
 XCFLAGS

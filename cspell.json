@@ -15,6 +15,13 @@
       "addWords": false
     },
     {
+      "name": "fonts",
+      "description": "Typography and font-format vocabulary: OpenType/TrueType table tags, font-file jargon, and typographic concepts, whichever library exposes them. Reusable across font-handling projects.",
+      "path": "./.cspell/fonts.txt",
+      "scope": "workspace",
+      "addWords": false
+    },
+    {
       "name": "project",
       "description": "Everything specific to this repo and the DepCtrl ecosystem: own identifiers, rock/tool proper nouns, and prose jargon. Quick-added words land here.",
       "path": "./.cspell/project.txt",
@@ -22,7 +29,7 @@
       "addWords": true
     }
   ],
-  "dictionaries": ["lua", "luajit-moonscript", "ffi", "project"],
+  "dictionaries": ["lua", "luajit-moonscript", "ffi", "fonts", "project"],
   "ignorePaths": [".cspell/**", "**/vendor/**"],
   "overrides": [
     {

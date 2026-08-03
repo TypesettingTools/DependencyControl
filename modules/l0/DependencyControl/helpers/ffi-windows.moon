@@ -39,6 +39,7 @@ moduleHandles = {}
 CP_UTF8 = 65001 -- code page identifier for UTF-8, passed to the *CP() conversion APIs
 MB_ERR_INVALID_CHARS = 8 -- fail on a malformed sequence instead of substituting U+FFFD for it
 MESSAGE_BUFFER_LENGTH = 512 -- comfortably above the longest system error text
+WCHAR_SIZE = ffi.sizeof "wchar_t" -- 2 on Windows, where a wchar_t is one UTF-16 code unit
 
 isAvailable, kernel32 = kernel32Binding.isAvailable, kernel32Binding.functions
 
@@ -48,10 +49,18 @@ isAvailable, kernel32 = kernel32Binding.isAvailable, kernel32Binding.functions
 ---@class FfiWindows
 ---@field kernel32 table<string, ffi.cdata*> The bound kernel32 calls keyed by their Win32 names, with unknown keys resolving through the library so a caller's own declarations work too. Nil where it couldn't be loaded.
 ---@field isAvailable boolean Whether kernel32 loaded; gate any use of `kernel32` on it.
+---@field CP_UTF8 integer Code page identifier for UTF-8, which the *CP() conversion APIs take.
+---@field WCHAR_SIZE integer Bytes one wchar_t occupies, for sizing and walking a wide buffer.
 local Windows
 Windows = {
   ---@type table<string, ffi.cdata*>
   kernel32: isAvailable and kernel32 or nil
+
+  ---@type integer
+  CP_UTF8: CP_UTF8
+
+  ---@type integer
+  WCHAR_SIZE: WCHAR_SIZE
 
   ---Whether the Win32 API is available on this platform, as indicated by presence of kernel32.dll.
   ---@type boolean
@@ -76,6 +85,13 @@ Windows = {
     return nil, msgs.toWide.invalidUtf8\format s if written == 0
 
     return buffer
+
+  ---Counts the UTF-16 code units a buffer from `toWide` holds, its terminator excluded.
+  ---Not the same as a character count, as the surrogate pairs for astral characters
+  -- like emoji occupy two code units.
+  ---@param wide ffi.cdata* A wchar_t[] from toWide.
+  ---@return integer length
+  getWideLength: (wide) -> ffi.sizeof(wide) / WCHAR_SIZE - 1
 
   ---Converts a wide-char (UTF-16) buffer returned by a *W Win32 API back to a UTF-8 string.
   ---@param buffer ffi.cdata* The wchar_t[] to read.

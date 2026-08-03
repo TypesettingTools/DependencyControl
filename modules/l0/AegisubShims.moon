@@ -7,6 +7,7 @@ _G.include = includeShim.include
 ass = require "l0.AegisubShims.ass"
 clipboard = require "l0.AegisubShims.clipboard"
 re = require "l0.AegisubShims.re"
+sfnt = require "l0.AegisubShims.helpers.sfnt"
 unicode = require "l0.AegisubShims.unicode"
 util = require "l0.AegisubShims.util"
 
@@ -22,6 +23,18 @@ package.preload["aegisub.clipboard"] = -> clipboard
 -- reach the C runtime in a different encoding than they do in Aegisub. It reports what it did rather
 -- than raising, since every platform but Windows needs nothing.
 unicodePatch = require "l0.AegisubShims.unicode-monkeypatch"
+
+textExtents = require "l0.AegisubShims.text-extents"
+textExtentsGdi = require "l0.AegisubShims.text-extents-backends.gdi"
+textExtentsCoreText = require "l0.AegisubShims.text-extents-backends.coretext"
+textExtentsFreeType = require "l0.AegisubShims.text-extents-backends.freetype"
+textExtentsPango = require "l0.AegisubShims.text-extents-backends.pango"
+
+-- The default backend measures by the Windows contract: GDI natively on Windows, CoreText natively
+-- on macOS, FreeType with fontconfig everywhere else. Where none is reachable, text_extents keeps
+-- raising until a caller installs a backend of its own.
+defaultTextExtentsBackend = textExtents.selectBackend!
+aegisub.__depCtrl.setTextExtentsBackend defaultTextExtentsBackend if defaultTextExtentsBackend
 
 -- Aegisub's include files are also reachable by requiring their bare identifiers
 -- and publish their module as a global once they are loaded in whichever way.
@@ -46,5 +59,17 @@ return {
   getPathToken: aegisub.__depCtrl.getPathToken
   setClipboardBackend: clipboard.__depCtrl.setBackend
   getClipboardBackend: clipboard.__depCtrl.getBackend
+  setTextExtentsBackend: aegisub.__depCtrl.setTextExtentsBackend
+  getTextExtentsBackend: aegisub.__depCtrl.getTextExtentsBackend
+  selectTextExtentsBackend: textExtents.selectBackend
+  TextExtentsMetricMode: textExtents.MetricMode
+  -- The measurement backends themselves, for building a configured one to install through the hook.
+  TextExtents: textExtents
+  TextExtentsGdi: textExtentsGdi
+  TextExtentsCoreText: textExtentsCoreText
+  TextExtentsFreeType: textExtentsFreeType
+  TextExtentsPango: textExtentsPango
+  -- Font-table parsing, for a script reading a face's own metrics rather than measuring text with it.
+  Sfnt: sfnt
   :unicodePatch
 }

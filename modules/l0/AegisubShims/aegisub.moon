@@ -8,7 +8,20 @@
 --   DEPCTRL_TEMP_DIR  — base for ?temp            (default: %TEMP% / /tmp)
 
 ffi = require "ffi"
+ass = require "l0.AegisubShims.ass"
 utils = require "l0.DependencyControl.utils"
+
+msgs = {
+  text_extents: {
+    noBackend: "aegisub.text_extents needs font metrics, which nothing here can measure until a backend is installed through AegisubShims.setTextExtentsBackend."
+  }
+}
+
+---Measures a run of text set in a style, returning what `aegisub.text_extents` returns.
+---@alias AegisubTextExtentsBackend fun(style: AegisubStyle, text: string): number, number, number, number
+
+-- declared ahead of the table below, whose text_extents closes over it
+local textExtentsBackend
 
 isWindows = ffi.os == "Windows"
 pathSep = isWindows and "\\" or "/"
@@ -130,8 +143,18 @@ aegisub = {
   set_undo_point: -> nil
   set_status_text: -> nil
 
-  -- text_extents needs font rendering; error loudly rather than returning garbage.
-  text_extents: -> error "aegisub.text_extents is not available in headless mode", 2
+  ---Measures a run of text set in a style.
+  ---@param style AegisubStyle The style to set the text in.
+  ---@param text string The text to measure.
+  ---@return number width
+  ---@return number height
+  ---@return number descent
+  ---@return number extlead
+  text_extents: (style, text) ->
+    error msgs.text_extents.noBackend, 2 unless textExtentsBackend
+    valid, styleErr = ass.validateStyle style
+    error styleErr, 2 unless valid
+    return textExtentsBackend style, text
 
   gettext: (s) -> s
 
@@ -165,6 +188,20 @@ aegisub = {
 aegisub.__depCtrl = {
   :setPathToken
   :getPathToken
+
+  ---Installs the source of font metrics `aegisub.text_extents` measures with.
+  ---@param replacement? AegisubTextExtentsBackend Backend to install, nil leaving text_extents raising.
+  ---@return AegisubTextExtentsBackend? previous The backend installed until now, to restore later.
+  setTextExtentsBackend: (replacement) ->
+    utils.assertArgType replacement, 1, "function" if replacement != nil
+
+    previous = textExtentsBackend
+    textExtentsBackend = replacement
+    return previous
+
+  ---Returns the source of font metrics currently in place.
+  ---@return AegisubTextExtentsBackend? backend Nil while none is installed, which leaves text_extents raising.
+  getTextExtentsBackend: -> textExtentsBackend
 }
 
 return aegisub
