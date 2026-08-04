@@ -260,7 +260,7 @@ local function registerFeedSearcher(feed)
   end
 
   local sourceById = {}
-  for file, _, pkg in feed:walkFiles() do
+  for file, _, pkg in feed:iterateFiles() do
     local src = file.localFilePath
     if src and not file.delete then
       local base = file.type == "test" and (pkg.namespace .. ".test") or pkg.namespace
@@ -291,7 +291,7 @@ local function collectModuleSources(feed, filter)
   local FileOps = require "l0.DependencyControl.file-ops"
 
   local selected = {}
-  for pkg, scriptType in feed:walkPackages(filter) do
+  for pkg, scriptType in feed:iteratePackages(filter) do
     if scriptType == domain.ScriptType.Module then selected[pkg.namespace] = true end
   end
 
@@ -300,7 +300,7 @@ local function collectModuleSources(feed, filter)
   end
 
   local sources, seen = {}, {}
-  for file, _, pkg in feed:walkFiles() do
+  for file, _, pkg in feed:iterateFiles() do
     local src = file.localFilePath
     if selected[pkg.namespace] and src and not file.delete and file.type ~= "test" and file.name:match("%.moon$") then
       local requireId = pkg.namespace .. leafSuffix(file.name)
@@ -338,7 +338,7 @@ if args.command == "test" then
   local feed = loadFeed(feedPath)
 
   local selected = {}
-  for pkg, scriptType in feed:walkPackages(buildFilter(args)) do
+  for pkg, scriptType in feed:iteratePackages(buildFilter(args)) do
     selected[#selected + 1] = { namespace = pkg.namespace, scriptType = scriptType }
   end
   table.sort(selected, function(a, b) return a.namespace < b.namespace end)
@@ -635,7 +635,7 @@ elseif args.command == "serve-updates" then
   -- memory. A file dropped on refresh (missing source) simply isn't mapped.
   local manifest = { ["/DependencyControl.json"] = { body = json.encode(resolved, { indent = true }), mime = "application/json" } }
   local served = 0
-  for file in feed:walkFiles() do
+  for file in feed:iterateFiles() do
     if not (file.delete or not file.localFilePath) then
       manifest[file.url:sub(#base + 1)] = { path = file.localFilePath }
       served = served + 1
@@ -953,7 +953,7 @@ elseif args.command == "generate-docs" then
   -- Feed package info groups the index page: name/version/description per namespace,
   -- plus the require ids of the modules each package owns.
   local packages = {}
-  for pkg, scriptType in feed:walkPackages(filter) do
+  for pkg, scriptType in feed:iteratePackages(filter) do
     if scriptType == domain.ScriptType.Module and selected[pkg.namespace] then
       packages[pkg.namespace] = {
         name = pkg.name,
