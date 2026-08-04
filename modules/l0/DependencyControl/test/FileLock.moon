@@ -17,7 +17,7 @@
     new_invalidUtf8PathRaises: (ut) ->
       ut\skip "only the Windows backend converts the path" unless "Windows" == require("ffi").os
       badPath = aegisub.decode_path "?temp/\255bad.lock"
-      ut\assertErrorMsgMatches (-> FileLock badPath), {}, "invalid character sequence"
+      ut\assertErrorMsgMatches (-> FileLock badPath), {}, "not valid UTF%-8"
 
     -- anything the machine did leaves a closed lock carrying the reason, for a caller to report
     new_pathThatCannotBeOpenedLeavesTheLockClosedWithAReason: (ut) ->

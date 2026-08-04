@@ -26,6 +26,19 @@
   -- available check that the real Unicode algorithms are running rather than a byte-wise shortcut:
   -- lower-casing picks the word-final ς (U+03C2) from context, while case folding normalizes to the
   -- ordinary σ (U+03C3) so the two spellings compare equal.
+  -- Ill-formed bytes, named by what makes them ill-formed. Each still has a defined answer here,
+  -- because the four inspection functions read the lead byte and never validate.
+  OVERLONG_SLASH = "\192\175" -- "/" padded into two bytes
+  OVERLONG_NUL = "\224\128\128"
+  ENCODED_SURROGATE = "\237\160\189" -- a lead surrogate, which UTF-8 may not carry
+  BAD_CONTINUATION = "\228\40\184" -- a three-byte lead whose second byte is an ASCII "("
+  BEYOND_LAST_CODE_POINT = "\245\143\191\191"
+  TRUNCATED_THREE_BYTE = "\228\184" -- a three-byte lead with only one byte behind it
+  BYTE_STRAY_CONTINUATION = "\128"
+  BYTE_OVERLONG_LEAD = "\192" -- opens a two-byte sequence that could only ever be overlong
+  BYTE_BEYOND_RANGE_LEAD = "\245"
+  BYTE_NEVER_LEGAL = "\255" -- no well-formed sequence begins with it
+
   GREEK_UPPER = "ΟΔΟΣ"
   GREEK_LOWER_FINAL_SIGMA = "οδος"
   GREEK_FOLDED_PLAIN_SIGMA = "οδοσ"
@@ -90,6 +103,43 @@
 
     codepoint_readsOnlyTheFirstCharacter: (ut) ->
       ut\assertEquals unicode.codepoint("日本語"), 0x65E5
+
+    -- Malformed input is not hypothetical here: Aegisub's own charwidth carries a FIXME saying
+    -- karaskel reaches it with bytes like these, and the module answers rather than refusing. The
+    -- expectations below are what its arithmetic produces, so a stand-in that walks or accumulates
+    -- differently is caught rather than quietly diverging.
+    charwidth_takesMalformedLeadBytesAtFaceValue: (ut) ->
+      ut\assertEquals unicode.charwidth(BYTE_STRAY_CONTINUATION), 2
+      ut\assertEquals unicode.charwidth(BYTE_OVERLONG_LEAD), 2
+      ut\assertEquals unicode.charwidth(BYTE_BEYOND_RANGE_LEAD), 4
+      ut\assertEquals unicode.charwidth(BYTE_NEVER_LEGAL), 4
+
+    len_walksMalformedTextByLeadByteAlone: (ut) ->
+      ut\assertEquals unicode.len(OVERLONG_SLASH), 1
+      ut\assertEquals unicode.len(TRUNCATED_THREE_BYTE), 1
+      ut\assertEquals unicode.len(BYTE_STRAY_CONTINUATION), 1
+      ut\assertEquals unicode.len("ok#{OVERLONG_SLASH}"), 3
+
+    -- a lead byte claiming more bytes than remain yields the short tail rather than overrunning
+    chars_yieldsWhatAMalformedSequenceSpans: (ut) ->
+      collected = [char for char in unicode.chars "a#{TRUNCATED_THREE_BYTE}b"]
+      ut\assertItemsEqual collected, {"a", TRUNCATED_THREE_BYTE .. "b"}
+
+    -- these carry every byte their lead byte claims, so the arithmetic runs to completion
+    codepoint_accumulatesMalformedSequences: (ut) ->
+      ut\assertEquals unicode.codepoint(OVERLONG_SLASH), 47
+      ut\assertEquals unicode.codepoint(OVERLONG_NUL), 0
+      ut\assertEquals unicode.codepoint(ENCODED_SURROGATE), 55357
+      ut\assertEquals unicode.codepoint(BAD_CONTINUATION), 10808
+      ut\assertEquals unicode.codepoint(BEYOND_LAST_CODE_POINT), 1376255
+
+    -- The one place the stand-in departs from Aegisub deliberately. Aegisub reads past the end of a
+    -- truncated sequence and dies on the nil byte; the stand-in treats the absent bytes as empty
+    -- payload and still answers, so callers of a library function get a value rather than a crash.
+    codepoint_standInAnswersWhereAegisubOverruns: (ut) ->
+      ut\skip "l0.AegisubShims isn't loaded" unless isStandIn
+      ut\assertEquals unicode.codepoint(TRUNCATED_THREE_BYTE), 19968
+      ut\assertEquals unicode.codepoint(BYTE_STRAY_CONTINUATION), -4096
 
     to_upper_case_expandsToFullMapping: (ut) ->
       skipWithoutIcu ut

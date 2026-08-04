@@ -30,6 +30,7 @@ return UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
     Downloader: (controls\requireTest "Downloader") basePath
     Domain: (controls\requireTest "domain") basePath
     Environment: (controls\requireTest "environment")!
+    Unicode: (controls\requireTest "unicode")!
     Utils: (controls\requireTest "utils")!
     FileOps: (controls\requireTest "file-ops") basePath
     PathOps: (controls\requireTest "path-ops") basePath, isWindows
