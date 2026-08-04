@@ -62,12 +62,12 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "E6C82B7325F2191288BE3A25BA9EDA9BE90436E1"
+              "sha1": "E5E78104FBB33BC427A281E0C8E440FEDF6F30E7"
             },
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "9329D7020A486DE3F5202963522327AB709FF815",
+              "sha1": "E53F7A36AEF6B92B17245DA7EDC7C5D167F9F5A7",
               "type": "test"
             }
           ],
@@ -131,7 +131,7 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "1C7687AA1D465926F01C1147D5FE54466AE17DDC"
+              "sha1": "4883161360B0765DB7EA9189D9EE64092125F321"
             },
             {
               "name": "/Constants.moon",
@@ -161,7 +161,7 @@
             {
               "name": "/Enum.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "DD441AAF08C883F550061F8D8845D36969A2D629"
+              "sha1": "C7490113D62CEEF2F6DF26989C8A1599479482A8"
             },
             {
               "name": "/EventEmitter.moon",
@@ -191,12 +191,12 @@
             {
               "name": "/FileLock.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "9B33071C2F8FC45D1086966BA37F56A9CCECE07E"
+              "sha1": "93F985FD8A0D0213D21AAFA865DF2C47986C7AC5"
             },
             {
               "name": "/file-ops.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "A1835190664A941EFA21A7CF870460B4780F4BAC"
+              "sha1": "99CB5A662D39A56FC6864767EC3380F376A75662"
             },
             {
               "name": "/FileOps.moon",
@@ -242,7 +242,7 @@
             {
               "name": "/NamedSemaphore.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "5A3F9EB8DD618B2E3E933FF32A52036EB9FCAE64"
+              "sha1": "74D99C370F06B39DAF8338BAF4883F3ECB08C188"
             },
             {
               "name": "/PackageRecord.moon",
@@ -282,7 +282,7 @@
             {
               "name": "/UpdateFeed.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "3002D296BB4670965633E0A4BAF02F80D743E323"
+              "sha1": "78927D72AB2ADDEF1735DBF44277D93C64040D10"
             },
             {
               "name": "/UpdateTask.moon",
@@ -300,14 +300,24 @@
               "sha1": "EAD3E888DAA28DA5F4E00A251BB4740CE9CA87B8"
             },
             {
+              "name": "/helpers/ffi-binding.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "5F3C2B306F9A94C9415335A350A25B6AE1D68962"
+            },
+            {
+              "name": "/unicode.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "E9AE38B2DFD691D5CDD3581CC706D644DDBF4B47"
+            },
+            {
               "name": "/helpers/ffi-posix.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "EA8D0D94EAB209B79AA298C7289BEC5F276BD718"
+              "sha1": "B3606A2B2876AB0C938F2F77180931DB4CC1736A"
             },
             {
               "name": "/helpers/ffi-windows.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "F062D926548EA988B7F88E9C9818BF866042BCD4"
+              "sha1": "4F15CBBE3D0B3FF3B6B5EA0C298C2C5121ED5A1E"
             },
             {
               "name": "/helpers/open-url.moon",
@@ -377,7 +387,7 @@
             {
               "name": "/path-ops.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "BC9E563718EC70284B404D01753F3452549BDCF6"
+              "sha1": "36580AAFF4726E47DC42FC33DF0DB649180785E9"
             },
             {
               "name": "/legacy-cleanup.moon",
@@ -387,7 +397,7 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "202B719335AF262ECA7D40D4B2DB428FA4BA3730",
+              "sha1": "37B9ECCF07030ED269756ABA37AB997C564D3955",
               "type": "test"
             },
             {
@@ -459,7 +469,7 @@
             {
               "name": "/FileLock.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "28546D7C3B8095DC5FAEF2C3198117E7D1C5EFF9",
+              "sha1": "76BA4BB718ABCEBBCA659DDC81736338F4B44CD5",
               "type": "test"
             },
             {
@@ -561,7 +571,7 @@
             {
               "name": "/UpdateFeed.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "B124C1A78FA7827C08773E90C68AE08460E0D6E0",
+              "sha1": "9D212C4113AD1C5B308A7981FB0169D7F302CC70",
               "type": "test"
             },
             {
@@ -687,7 +697,7 @@
             {
               "name": "/aegisub-unicode.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "0164A808D593A9ABB535FAD62399BFC45AB51467",
+              "sha1": "74C4AF1E740DD69AD9EFB75E6E0C53980F2D6AF5",
               "type": "test"
             },
             {
@@ -709,9 +719,45 @@
               "type": "test"
             },
             {
+              "name": "/ffi-binding.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "0A7D3E732D14E30101235C3DF86C16ACBC10506F",
+              "type": "test"
+            },
+            {
+              "name": "/unicode.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "935AF437E433D5527839B69607061EC52E12090C",
+              "type": "test"
+            },
+            {
               "name": "/ffi-windows.moon",
               "url": "@{fileBaseUrl}",
               "sha1": "12DB2A46902375C863E5566219613F9E5D8B3EBB",
+              "type": "test"
+            },
+            {
+              "name": "/aegisub-global.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "C86C37A884E579C7F681E92B4E6A3958638542D9",
+              "type": "test"
+            },
+            {
+              "name": "/aegisub-text-extents-gdi.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "BD6259F9E394E78FC00DAC76338D41612F03E269",
+              "type": "test"
+            },
+            {
+              "name": "/aegisub-text-extents-coretext.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "35A2193B8287206C8D749748DF9E0E5F11B69177",
+              "type": "test"
+            },
+            {
+              "name": "/aegisub-text-extents-freetype.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "74F8A68AE474DB2C2B90FD2CE36D964C5A98C623",
               "type": "test"
             }
           ],
@@ -849,17 +895,24 @@
         ],
         "0.9.0": [
           "change: Log files and on-disk caches now follow the XDG Base Directory specification, moving to `?state/log` and `?local/cache`; an Aegisub build that lacks the newer `?state` path token keeps writing logs to `?user/log`, so a path setting naming `?state` works on every version. Whatever an earlier release left behind in the old locations is cleaned up on startup, and only files DependencyControl can identify as its own are removed, so Aegisub's own logs stay untouched.",
-          "refactor!: Added `DependencyControl.PathOps`, a filesystem-free home for path composition, validation, and Aegisub path-token resolution. `joinPath()`, `pathSegments()`, `getTempDir()` as well as the path constants moved there from `FileOps`, leaving behind re-exports for backwards compatibility. `FileOps.validateFullPath` is superseded by `PathOps.resolveFullPath`, which reports the absolute directory rather than a device plus a fragment relative to it. `FileOps.getAttributes` likewise drops the `dev` field from its info table, and its `dir` is now absolute (technically a breaking change, but the method was only added in v0.7.0, so it's unlikely to be in active use, yet).",
+          "refactor!: Added `DependencyControl.PathOps`, a filesystem-free home for path composition, validation, and Aegisub path-token resolution. `joinPath()`, `pathSegments()` (now named `iterateSegments()`), `getTempDir()` as well as the path constants moved there from `FileOps`, leaving behind re-exports for backwards compatibility. `FileOps.validateFullPath` is superseded by `PathOps.resolveFullPath`, which reports the absolute directory rather than a device plus a fragment relative to it. `FileOps.getAttributes` likewise drops the `dev` field from its info table, and its `dir` is now absolute (technically a breaking change, but the method was only added in v0.7.0, so it's unlikely to be in active use, yet).",
           "fix: A required module that can't be installed or updated once again reports why. The error path that turns an updater status into a readable reason was itself throwing, so every such failure surfaced as an unrelated \"attempt to call field 'getUpdaterErrorMsg'\" error instead of naming the module and the cause.",
           "fix(Utils): `deepCopy()` no longer recurses forever on a table that references itself. Circular references are reproduced as cycles in the copy, and a table reached through several keys is copied once.",
           "fix(CLI): `generate-types` and `generate-docs` skip files a feed marks deleted instead of reporting each one as an unreadable source",
           "fix(CLI): a deleted file's entry can no longer shadow the source that replaced it when a test suite resolves its modules from the feed.",
           "feat(CLI): A package whose sources require Aegisub's `aegisub.util` module now loads in the headless environment the CLI sets up, so `depctrl.lua test` and the CI workflows can exercise it.",
           "feat(Utils): Added `checkArgType()` and `assertArgType()` for guarding a function's arguments. `checkArgType` reports a mismatch as a message without raising, leaving the caller to log it, raise it, or return it, while `assertArgType` raises it directly. Either identifies the argument by position or by name.",
+          "change: `UpdateFeed.walkPackages()` and `walkFiles()` are now named `iteratePackages()` and `iterateFiles()`. The old names keep working as deprecated aliases, with no change in behavior.",
+          "feat: Added `DependencyControl.Unicode` for UTF-8 inspection, decoding and encoding, along with the UTF-16 conversion the platform text APIs take. Decoding validates by default and names the byte a malformed sequence starts at, so text on its way to a font or a system call is checked before it gets there. Code standing in for Aegisub's own unicode module can ask for `DecodeMode.AegisubCompatibility` instead, which takes each character's width from its lead byte and answers for malformed input exactly as Aegisub does. The encoders take no mode and refuse anything that is not a code point, so what they produce is always well-formed UTF-8.",
           "feat(CLI): A package whose sources require Aegisub's `aegisub.re` module now loads headlessly too, backed by PCRE2 through the `lrexlib-pcre2` rock. Aegisub matches with Boost.Regex over ICU, and both are Perl syntax over Unicode code points reporting byte offsets, so ordinary patterns behave the same; a corpus captured from a real Aegisub run pins that in the test suite. The engine loads on first use, so the rock is only needed once a pattern is actually compiled. The `NEWLINE_ALT` flag has no PCRE2 equivalent and raises rather than quietly matching something else, while `COLLATE` and `NO_EMPTY_SUBEXPRESSIONS` are accepted and ignored, neither being able to change what a pattern matches.",
           "feat(CLI): A package whose sources require Aegisub's `aegisub.unicode` module now loads headlessly too. The four inspection functions are UTF-8 arithmetic and always work; the three case conversions call the system ICU through the FFI, the same library Aegisub itself uses, so they follow the host locale and apply full, context-sensitive mappings. ICU loads on first conversion, leaving the inspection functions usable on a machine without it.",
           "feat(CLI): A package whose sources require Aegisub's `aegisub.clipboard` module now loads headlessly too, under both that require id and the short `clipboard` one, which publishes the global as Aegisub's own does. The contents are held in the running process rather than on the system clipboard, so a test run works without a display server and leaves whatever you had copied untouched; a value another application put on the real clipboard is correspondingly invisible to it. A harness that wants the real clipboard, or wants to observe what a script copies, can install its own backend through `AegisubShims.setClipboardBackend`.",
           "feat(CLI): Aegisub's `include()` is available headlessly for the include files that only publish a module under a global — `clipboard.lua`, `re.lua`, `unicode.lua`, `utils.lua`, `utils-auto4.lua` and `lfs.lua` — each setting the same global and returning the same value as Aegisub's copy does. It reads no files, so any other name, `karaskel.lua` among them, raises and names what is available. The same files are reachable by require under the name without its extension, as they are in Aegisub.",
+          "change(UpdateFeed): `walkPackages()` and `walkFiles()` have been renamed to `iteratePackages()` and `iterateFiles()`. The old names keep working as deprecated aliases, with no change in behavior.",
+          "feat(CLI): `aegisub.text_extents` now measures text headlessly on Windows, through the same GDI calls Aegisub itself uses, so a script that lays out text gets the coordinates it would get in the editor.",
+          "feat(CLI): `aegisub.text_extents` now measures headlessly on macOS too, natively through CoreText with no libraries to install. It derives from the same OS/2 Windows metrics as the GDI and FreeType backends, so a script measures the same numbers on every platform.",
+          "fix(CLI): The Win32 FFI bindings behind the headless shims and FfiWindows now declare their functions and structs under prefixed names aliased to the real symbols, so a script that declares the same Win32 API itself — Yutils, for one — loads and runs alongside them. Previously whichever side loaded second lost its declarations to the shared C namespace and failed at runtime.",
+          "feat(CLI): `aegisub.text_extents` now measures text headlessly off Windows too, through FreeType with fonts resolved by fontconfig, so a layout script runs on Linux and in CI. It reports the numbers the same font yields on Windows rather than the ones Aegisub itself reports there: Aegisub's own two implementations disagree by more than the font, and the Windows one is the correct one. A backend reproducing Aegisub's POSIX behavior is available for comparison through `AegisubShims.TextExtentsFreeType.createBackend`, along with a kerning switch. Where neither FreeType nor GDI is reachable, `text_extents` still raises rather than inventing numbers a layout script would silently trust.",
           "feat: Added `DependencyControl.FfiWindows` and `DependencyControl.FfiPosix` for scripts that call the OS directly through the FFI: wide-string conversion and error descriptions for the Win32 API, and open(2) constants and wrappers for POSIX.",
           "fix(CLI): On Windows, `io.open`, `os.rename`, `os.remove` and `os.execute` now take UTF-8 paths headlessly, as they already did inside Aegisub, which applies the same patch to every script it runs. Without it Lua hands the path to the ANSI C runtime, which reads it in the process code page, so any path containing a non-ASCII byte named a different file or none at all — an accented Windows account name was enough. It applies whatever the process code page is, so it also holds up under a locale emulator, where the reported code page and the one the C runtime actually converts in disagree. Directory listing and file attributes still go through the luafilesystem rock and remain affected."
         ]

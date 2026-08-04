@@ -614,9 +614,9 @@
       ut\assertEquals main.released, dkjson.null -- release date cleared (new build pending)
       ut\assertNotNil (fileOps.readFile srcFile)\match '"0%.8%.0"' -- marked source literal rewritten
 
-    -- walkFiles
+    -- iterateFiles
 
-    walkFiles_yieldsProxies: (ut) ->
+    iterateFiles_yieldsProxies: (ut) ->
       feed = {
         data: {
           modules: {"test.NS": {channels: {release: {version: "1.0.0",
@@ -626,10 +626,10 @@
         feedDir: basePath,
         __class: UpdateFeed
       }
-      -- walkFiles lazily loads via ensureLoaded; stub it away since data is supplied directly
+      -- iterateFiles lazily loads via ensureLoaded; stub it away since data is supplied directly
       ensureLoadedStub = (ut\stub feed, "ensureLoaded")\calls (self) -> self.data
       results = {}
-      for file, channel, pkg, section, scriptType in UpdateFeed.walkFiles(feed)
+      for file, channel, pkg, section, scriptType in UpdateFeed.iterateFiles(feed)
         results[#results + 1] = {:file, :channel, :pkg, :section, :scriptType}
       ut\assertEquals #results, 1
       ut\assertEquals results[1].pkg.namespace, "test.NS"
@@ -639,9 +639,9 @@
       ut\assertEquals results[1].scriptType, domain.ScriptType.Module
       ensureLoadedStub\assertCalledOnce!
 
-    -- walkFiles yields files untouched; the localFilePath accessor is attached by `expand` in local mode,
+    -- iterateFiles yields files untouched; the localFilePath accessor is attached by `expand` in local mode,
     -- so here it's supplied directly on the file record.
-    walkFiles_passesThroughLocalFilePath: (ut) ->
+    iterateFiles_passesThroughLocalFilePath: (ut) ->
       feed = {
         data: {
           modules: {"test.NS": {channels: {release: {version: "1.0.0",
@@ -652,7 +652,7 @@
         __class: UpdateFeed
       }
       (ut\stub feed, "ensureLoaded")\calls (self) -> self.data
-      for file in UpdateFeed.walkFiles(feed)
+      for file in UpdateFeed.iterateFiles(feed)
         ut\assertString file.localFilePath
         ut\assertContains file.localFilePath, "NS.moon"
         break
@@ -673,7 +673,7 @@
       }
       fakeChan = setmetatable {}, {__index: (_, k) -> k == "name" and "release" or nil}
       fakePkg = setmetatable {}, {__index: (_, k) -> k == "namespace" and "test.NS" or nil}
-      (ut\stub feed, "walkFiles")\calls (self, scriptTypes) ->
+      (ut\stub feed, "iterateFiles")\calls (self, scriptTypes) ->
         coroutine.wrap ->
           coroutine.yield fakeFile, fakeChan, fakePkg, "modules", domain.ScriptType.Module
       (ut\stub FILEOPS_MODULE_NAME, "exists")\returns true
@@ -699,7 +699,7 @@
       }
       fakeChan = setmetatable {}, {__index: (_, k) -> k == "name" and "release" or nil}
       fakePkg = setmetatable {}, {__index: (_, k) -> k == "namespace" and "test.NS" or nil}
-      (ut\stub feed, "walkFiles")\calls (self, scriptTypes) ->
+      (ut\stub feed, "iterateFiles")\calls (self, scriptTypes) ->
         coroutine.wrap ->
           coroutine.yield fakeFile, fakeChan, fakePkg, "modules", domain.ScriptType.Module
       (ut\stub FILEOPS_MODULE_NAME, "exists")\returns true
@@ -721,7 +721,7 @@
       }
       fakeChan = setmetatable {}, {__index: (_, k) -> k == "name" and "release" or nil}
       fakePkg = setmetatable {}, {__index: (_, k) -> k == "namespace" and "test.NS" or nil}
-      (ut\stub feed, "walkFiles")\calls (self, scriptTypes) ->
+      (ut\stub feed, "iterateFiles")\calls (self, scriptTypes) ->
         coroutine.wrap ->
           coroutine.yield fakeFile, fakeChan, fakePkg, "modules", domain.ScriptType.Module
       fileCount, errCount = UpdateFeed.deployFiles feed, basePath
@@ -741,7 +741,7 @@
       }
       fakeChan = setmetatable {}, {__index: (_, k) -> k == "name" and "release" or nil}
       fakePkg = setmetatable {}, {__index: (_, k) -> k == "namespace" and "test.NS" or nil}
-      (ut\stub feed, "walkFiles")\calls (self, scriptTypes) ->
+      (ut\stub feed, "iterateFiles")\calls (self, scriptTypes) ->
         coroutine.wrap ->
           coroutine.yield fakeFile, fakeChan, fakePkg, "modules", domain.ScriptType.Module
       (ut\stub UpdateFeed, "getFileDeployPath")\returns dstPath
@@ -766,7 +766,7 @@
       }
       fakeChan = setmetatable {}, {__index: (_, k) -> k == "name" and "release" or nil}
       fakePkg = setmetatable {}, {__index: (_, k) -> k == "namespace" and "test.NS" or nil}
-      (ut\stub feed, "walkFiles")\calls (self, scriptTypes) ->
+      (ut\stub feed, "iterateFiles")\calls (self, scriptTypes) ->
         coroutine.wrap ->
           coroutine.yield fakeFile, fakeChan, fakePkg, "modules", domain.ScriptType.Module
       (ut\stub UpdateFeed, "getFileDeployPath")\returns "#{basePath}/dst/Old.moon"
@@ -964,7 +964,7 @@
 
     -- a section carries the format's section-scoped template keys alongside its packages, so a walk
     -- must yield only the latter
-    walkPackages_skipsSectionTemplateKeys: (ut) ->
+    iteratePackages_skipsSectionTemplateKeys: (ut) ->
       feed = stubSelf UpdateFeed, {__class: UpdateFeed, data: {
         macros: {
           fileBaseUrls: {script: "https://x.test/@{fileName}"}
@@ -975,11 +975,11 @@
           "l0.Module": {channels: {main: {default: true, version: "2.0.0", files: {}}}}
         }
       }}
-      seen = [pkg.namespace for pkg in feed\walkPackages!]
+      seen = [pkg.namespace for pkg in feed\iteratePackages!]
       ut\assertItemsEqual seen, {"l0.Macro", "l0.Module"}
 
     _order: {
-      "walkPackages_skipsSectionTemplateKeys",
+      "iteratePackages_skipsSectionTemplateKeys",
       "knownFeeds_noData", "knownFeeds_withData",
       "getScript_invalidType", "getScript_missing", "getScript_found",
       "getMacro_usesAutomationType", "getModule_usesModuleType",
@@ -997,7 +997,7 @@
       "findUnlistedFiles_discoversUnlistedFiles", "findUnlistedFiles_skipsUninvertibleTemplates",
       "updateFeed_addFilesAppendsEntries", "updateFeed_markReleasedStampsUnreleased",
       "mergeChannels_copiesPreservingOthers", "bumpVersions_startsCycleFromReleased",
-      "walkFiles_yieldsProxies", "walkFiles_passesThroughLocalFilePath",
+      "iterateFiles_yieldsProxies", "iterateFiles_passesThroughLocalFilePath",
       "deployFiles_copiesToDist", "deployFiles_skipExistingNoClobber",
       "deployFiles_countsMissingSource", "deployFiles_removesDeleted", "deployFiles_deleteMissingIsNoOp",
       "ensureLoaded_localWithoutFileName_errors", "ensureLoaded_reusesMatchingExpansion",

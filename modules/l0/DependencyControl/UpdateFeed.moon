@@ -32,7 +32,7 @@ sectionKeys = {section, true for section in pairs scriptTypeBySection}
 -- (pkgProxy, scriptType, section). pkgProxy exposes the package's `namespace` alongside its
 -- raw fields. Rolling-template keys a feed sets on a section container (e.g.
 -- fileBaseUrls/localFileBasePaths) are skipped: real packages are tables carrying `channels`.
-walkPackages = (feed, filter) ->
+iteratePackages = (feed, filter) ->
   coroutine.wrap ->
     for scriptType in *filter.scriptTypes
       section = domain.ScriptTypeSection[scriptType]
@@ -861,7 +861,7 @@ class UpdateFeed
   ---@return { changed: integer, errored: integer, packages: table[] }|nil stats Per-run statistics, or nil on a fatal load/write error.
   ---@return string? err
   updateFeed: (opts = {}) =>
-    -- Loads lazily in Local mode; a prior walkFiles/walkPackages (e.g. from registering a
+    -- Loads lazily in Local mode; a prior iterateFiles/iteratePackages (e.g. from registering a
     -- module searcher) may already have loaded the feed, in which case this is a no-op.
     loaded, err = @ensureLoaded @@ExpansionMode.Local
     return nil, err unless loaded
@@ -878,7 +878,7 @@ class UpdateFeed
 
     filter = opts.filter or ScriptTargetFilter!\includeAll!
     stats = changed: 0, errored: 0, packages: {}
-    for pkg, scriptType in @walkPackages filter
+    for pkg, scriptType in @iteratePackages filter
       -- isolate per-package processing so one package's failure doesn't abort the whole run
       ok, result = pcall @__updatePackage, @, scriptType, pkg.namespace, opts.channel
       result = {namespace: pkg.namespace, :scriptType, changed: false, errors: {tostring result}} unless ok
@@ -914,7 +914,7 @@ class UpdateFeed
     if opts.markReleased
       releaseDate = type(opts.markReleased) == "string" and opts.markReleased or os.date "!%Y-%m-%d"
       resultsByPackage = {result.scriptType .. "\0" .. result.namespace, result for result in *stats.packages}
-      for pkg, scriptType in @walkPackages filter
+      for pkg, scriptType in @iteratePackages filter
         rawPkg = @rawFeedData[domain.ScriptTypeSection[scriptType]]
         rawPkg = rawPkg and rawPkg[pkg.namespace]
         continue unless rawPkg and rawPkg.channels
@@ -1046,7 +1046,7 @@ class UpdateFeed
     return nil, msgs.bumpVersions.noChannel unless channel
 
     stale = {}
-    for file, _, pkg in @walkFiles!
+    for file, _, pkg in @iterateFiles!
       src = file.localFilePath
       continue unless src and file.sha1 and not file.delete
       hash = fileOps.getHash src
@@ -1260,7 +1260,7 @@ class UpdateFeed
   deployFiles: (distDir, filter, clobber = false) =>
     fileCount, errCount = 0, 0
 
-    for file, channel, pkg, _, scriptType in @walkFiles filter
+    for file, channel, pkg, _, scriptType in @iterateFiles filter
       if file.delete
         dstPath, errMsg = @@getFileDeployPath pkg.namespace, scriptType, file.name, file.type or "script", distDir
         unless dstPath
@@ -1322,7 +1322,7 @@ class UpdateFeed
     return nil, err unless loaded
 
     unlisted = {}
-    for pkg, scriptType, section in walkPackages @, filter
+    for pkg, scriptType, section in iteratePackages @, filter
       resolvedChannel, chanErr = @@__resolveChannel pkg.channels, channelName
       unless resolvedChannel
         @logger\warn msgs.findUnlistedFiles.channelError, pkg.namespace, chanErr
@@ -1387,11 +1387,16 @@ class UpdateFeed
   ---  pkg        – the package object; the package key is accessible via `.namespace`
   ---  scriptType – the script type (ScriptType.Module / .Automation)
   ---  section    – the section name (e.g. "macros" or "modules")
-  ---@param filter? ScriptTargetFilter Restricts which packages are walked (default: all).
+  ---@param filter? ScriptTargetFilter Restricts which packages are iterated (default: all).
   ---@return function iterator
-  walkPackages: (filter = ScriptTargetFilter!\includeAll!) =>
+  iteratePackages: (filter = ScriptTargetFilter!\includeAll!) =>
     @ensureLoaded!
-    walkPackages @, filter
+    iteratePackages @, filter
+
+  ---@deprecated Use `iteratePackages`, instead.
+  ---@param filter? ScriptTargetFilter Restricts which packages are iterated (default: all).
+  ---@return function iterator
+  walkPackages: (filter) => @iteratePackages filter
 
   ---Returns a coroutine-based iterator over every file entry of the packages passing the filter.
   ---The feed must have been loaded before calling this method.
@@ -1401,12 +1406,12 @@ class UpdateFeed
   ---  pkg     – the package object; the package key is accessible via `.namespace`
   ---  section – the section name (e.g. "macros" or "modules")
   ---  scriptType – the script type (ScriptType.Module / .Automation)
-  ---@param filter? ScriptTargetFilter Restricts which packages are walked (default: all).
+  ---@param filter? ScriptTargetFilter Restricts which packages are iterated (default: all).
   ---@return function iterator
-  walkFiles: (filter = ScriptTargetFilter!\includeAll!) =>
+  iterateFiles: (filter = ScriptTargetFilter!\includeAll!) =>
     @ensureLoaded @@ExpansionMode.Local
     coroutine.wrap ->
-      for pkg, scriptType, section in walkPackages @, filter
+      for pkg, scriptType, section in iteratePackages @, filter
         for channelName, channel in pairs pkg.channels or {}
           chanProxy = setmetatable {}, __index: (_, k) -> k == "name" and channelName or channel[k]
 
@@ -1414,6 +1419,11 @@ class UpdateFeed
           -- expansion), so they can be yielded directly without a wrapping proxy.
           for file in *channel.files or {}
             coroutine.yield file, chanProxy, pkg, section, scriptType
+
+  ---@deprecated Use `iterateFiles`, instead.
+  ---@param filter? ScriptTargetFilter Restricts which packages are iterated (default: all).
+  ---@return function iterator
+  walkFiles: (filter) => @iterateFiles filter
 
 Accessors.install UpdateFeed
 return UpdateFeed

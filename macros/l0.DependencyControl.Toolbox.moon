@@ -193,7 +193,7 @@ install = ->
 
 
   addAvailableToInstall = (macros, modules, feed) ->
-    for pkg, scriptType, section in feed\walkPackages!
+    for pkg, scriptType, section in feed\iteratePackages!
       namespace = pkg.namespace
       scriptData, err = feed\getScript namespace, scriptType, nil, false
       if err
