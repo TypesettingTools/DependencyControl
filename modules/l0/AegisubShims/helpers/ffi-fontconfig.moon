@@ -2,6 +2,7 @@
 -- from fontconfig's fontconfig.h.
 
 ffi = require "ffi"
+Enum = require "l0.DependencyControl.Enum"
 ffiBinding = require "l0.DependencyControl.helpers.ffi-binding"
 
 -- fontconfig's own FcChar8 is an unsigned char, declared here as a plain char so a Lua string converts
@@ -94,16 +95,65 @@ IntegerOut = ffi.typeof "int[1]"
 ---| "outline" # Outline: whether the face is described by outlines rather than bitmaps
 
 ---Fontconfig's pattern-matching calls, which resolve a family name to a font file.
+Property = Enum "FontconfigProperty", {
+  Family: "family"
+  Style: "style"
+  Slant: "slant"
+  Weight: "weight"
+  Size: "size"
+  PixelSize: "pixelsize"
+  File: "file"
+  Index: "index"
+  FullName: "fullname"
+  Scalable: "scalable"
+  Outline: "outline"
+}
+
+Weight = Enum "FontconfigWeight", {
+  Thin: 0
+  ExtraLight: 40
+  Light: 50
+  DemiLight: 55
+  Book: 75
+  Regular: 80
+  Medium: 100
+  DemiBold: 180
+  Bold: 200
+  ExtraBold: 205
+  Black: 210
+  ExtraBlack: 215
+}
+
+Slant = Enum "FontconfigSlant", {
+  Roman: 0
+  Italic: 100
+  Oblique: 110
+}
+
+MatchKind = Enum "FontconfigMatchKind", {
+  Pattern: 0
+  Font: 1
+  Scan: 2
+}
+
+Result = Enum "FontconfigResult", {
+  Match: 0
+  NoMatch: 1
+  TypeMismatch: 2
+  NoId: 3
+  OutOfMemory: 4
+}
+
 ---@class FfiFontconfig
 ---@field isAvailable boolean Whether fontconfig loaded and initialized; gate any use of the rest on it.
 ---@field fontconfig ffi.namespace* The loaded fontconfig library, or nil where it couldn't be loaded.
 ---@field StringOut ffi.ctype* Constructor for the one-element array FcPatternGetString writes into.
 ---@field IntegerOut ffi.ctype* Constructor for the one-element array the integer getters write into.
----@field Property table<string, FontconfigProperty> Pattern property names, keyed by name.
----@field Weight table<string, FontconfigWeight> Weights, keyed by name.
----@field Slant table<string, FontconfigSlant> Slants, keyed by name.
----@field MatchKind table<string, FontconfigMatchKind> Substitution stages, keyed by name.
----@field Result table<string, FontconfigResult> Value-lookup outcomes, keyed by name.
+---@field Property Enum The pattern property names, as a FontconfigProperty enum.
+---@field Weight Enum The weights, as a FontconfigWeight enum.
+---@field Slant Enum The slants, as a FontconfigSlant enum.
+---@field MatchKind Enum The substitution stages, as a FontconfigMatchKind enum.
+---@field Result Enum The value-lookup outcomes, as a FontconfigResult enum.
 return {
   ---@type boolean
   isAvailable: isAvailable
@@ -117,52 +167,9 @@ return {
   ---@type ffi.ctype*
   IntegerOut: IntegerOut
 
-  Property: {
-    Family: "family"
-    Style: "style"
-    Slant: "slant"
-    Weight: "weight"
-    Size: "size"
-    PixelSize: "pixelsize"
-    File: "file"
-    Index: "index"
-    FullName: "fullname"
-    Scalable: "scalable"
-    Outline: "outline"
-  }
-
-  Weight: {
-    Thin: 0
-    ExtraLight: 40
-    Light: 50
-    DemiLight: 55
-    Book: 75
-    Regular: 80
-    Medium: 100
-    DemiBold: 180
-    Bold: 200
-    ExtraBold: 205
-    Black: 210
-    ExtraBlack: 215
-  }
-
-  Slant: {
-    Roman: 0
-    Italic: 100
-    Oblique: 110
-  }
-
-  MatchKind: {
-    Pattern: 0
-    Font: 1
-    Scan: 2
-  }
-
-  Result: {
-    Match: 0
-    NoMatch: 1
-    TypeMismatch: 2
-    NoId: 3
-    OutOfMemory: 4
-  }
+  Property: Property
+  Weight: Weight
+  Slant: Slant
+  MatchKind: MatchKind
+  Result: Result
 }

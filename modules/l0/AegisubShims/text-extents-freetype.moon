@@ -1,9 +1,14 @@
 -- Measures text through FreeType, resolving font names with fontconfig.
 -- Installed as the `aegisub.text_extents` backend by l0.AegisubShims where GDI is not reachable.
 --
--- Aegisub's own two implementations do not agree, so which one to reproduce is a choice rather than a
--- detail; see TextExtentsMetricMode. The default reproduces the Windows numbers, which the GDI backend
+-- Aegisub's own implementations do not agree, so which one to reproduce is a choice the caller makes
+-- through TextExtentsMetricMode. The default reproduces the Windows numbers, which the GDI backend
 -- also produces and which libass renders by, so a script measures the same on either platform.
+--
+-- Aegisub takes one code path for every platform other than Windows, but that path measures through
+-- wxWidgets, which delegates to Pango under wxGTK and to CoreText under wxOSX. Only the wxGTK
+-- behavior is reproduced here, and only it has been measured; what Aegisub reports on macOS is
+-- unknown, and the CoreText backend in this package targets the Windows contract rather than it.
 
 ffi = require "ffi"
 
@@ -21,7 +26,7 @@ msgs = {
   }
   acquireFace: {
     openFailed: "FreeType could not open '%s' for the font '%s': %s"
-    noTables: "The font '%s' carries no usable OS/2 and hhea tables, so its metrics cannot be read."
+    noTables: "The font '%s' has no usable OS/2 and hhea tables, so its metrics cannot be read."
   }
   measure: {
     unavailable: "Measuring text needs FreeType and fontconfig, which could not both be loaded."
@@ -51,13 +56,13 @@ advanceOut, kerningOut = AdvanceOut!, KerningOut!
 -- open faces and their design metrics, keyed by what was asked for rather than by what matched
 measuredFaces = {}
 
----Which of Aegisub's two disagreeing metric contracts to measure by.
+---Which of Aegisub's disagreeing metric contracts to measure by.
 ---@alias TextExtentsMetricMode
 ---| 1 # AegisubWindows: the OS/2 Windows cell, derived as GDI derives TEXTMETRIC, which is also what libass renders by
----| 2 # AegisubPosix: what Aegisub reports on platforms other than Windows, where wxWidgets exposes only the typographic metrics
+---| 2 # AegisubLinux: what Aegisub reports on Linux, where wxGTK exposes only the typographic metrics through Pango
 MetricMode = Enum "TextExtentsMetricMode", {
   AegisubWindows: 1
-  AegisubPosix: 2
+  AegisubLinux: 2
 }
 
 ---How a backend built by `createBackend` should measure.
@@ -111,11 +116,11 @@ matchFont = (family, weight, slant) ->
 ---@field unitsPerEm integer Design units per em, which every design value below is expressed in.
 ---@field cellHeight integer Height of the cell Windows lays the face out in, in design units.
 ---@field winDescent integer Depth of that cell below the baseline, in design units.
----@field lineGap integer Leading the face asks for beyond that cell, in design units.
----@field hasKerning boolean Whether the face carries a kern table, the only kerning FreeType reads.
+---@field lineGap integer Leading the face asks for beyond that cell, in design units; zero for a face with PostScript outlines, which GDI reads no gap off.
+---@field hasKerning boolean Whether the face has a kern table, the only kerning FreeType reads.
 
 ---Opens the font a style asks for, reading the design metrics off it once.
----@param style table An Aegisub style table.
+---@param style AegisubStyle The style to set the text in.
 ---@return MeasuredFace? measured Nil when no font could be resolved or opened.
 ---@return string? err Why the font could not be measured with.
 acquireFace = (style) ->
@@ -144,10 +149,18 @@ acquireFace = (style) ->
   cellHeight = tonumber(os2.usWinAscent) + tonumber(os2.usWinDescent)
   return nil, msgs.acquireFace.noTables\format family unless cellHeight > 0
 
-  -- The Windows cell already reserves more room than the typographic ascent and descent do, so only
-  -- the part of the face's line gap reaching beyond that cell is still leading.
+  -- The OS/2 Windows cell metrics may add room beyond the typographic ascent and descent, which is
+  -- already included in the cell height, so only the part of the face's line gap exceeding it is
+  -- still external leading.
+  -- Arial's cell matches its typographic span and its whole gap survives, while Calibri's is taller
+  -- by exactly its line gap and none of it does.
+  --
+  -- GDI reads no line gap at all off a face with PostScript outlines, reporting zero external leading
+  -- however much gap the hhea table asks for. Left in, a CJK face declaring a full em of gap would
+  -- measure a whole extra line of leading that GDI never reports.
   typographicHeight = tonumber(hhea.Ascender) - tonumber(hhea.Descender)
-  lineGap = math.max 0, tonumber(hhea.Line_Gap) - (cellHeight - typographicHeight)
+  lineGap = if ffiFreeType.isCffOutlined face then 0
+  else math.max 0, tonumber(hhea.Line_Gap) - (cellHeight - typographicHeight)
 
   measured = {
     :face
@@ -171,21 +184,40 @@ acquireFace = (style) ->
 ---@field kerningOf fun(leftGlyph: integer, rightGlyph: integer): number Kerning between two glyphs, zero where the face has none.
 
 ---Readies a face to be measured against its OS/2 Windows cell, deriving the metrics as GDI does.
+---
+---Measured against GDI over a 36-face test corpus at four sizes, all four values are exact on 82.5%
+---of the 1912 cases where the face has glyphs for the whole text, with a mean width error of 0.046%.
+---The height is never off by more than a 64th of a device pixel and the external leading is exact;
+---the remaining width misses are GDI grid-fitting each glyph. A face setting fsSelection
+---USE_TYPO_METRICS changes nothing here: GDI ignores the bit, and this derivation reads the same
+---usWin and hhea values GDI reads.
+---
+---Where the face lacks a glyph for a character the mean width error is 31.5% over 413 cases. GDI
+---substitutes another face for that character and reports its advance, while this backend resolves
+---one face per style and measures .notdef. That figure depends on what is installed and says nothing
+---about the derivation.
+---
+---Kerning reads only the legacy `kern` table, so a face kerning through GPOS alone measures without
+---any. The style's `encoding` is ignored, which is where the descent and the leading still differ.
 ---@param measured MeasuredFace The face to measure with.
 ---@param fontSize integer Requested cell height, already multiplied by MEASUREMENT_SCALE.
 ---@return PreparedMetrics prepared Values already at the requested size, so `scaling` is one.
 prepareWindowsCellMetrics = (measured, fontSize) ->
-  {:face, :family, :unitsPerEm, :cellHeight} = measured
+  {:face, :family, :unitsPerEm, :cellHeight, :winDescent, :lineGap} = measured
 
-  -- The em the face is realized at, so its cell comes out at the requested height — what a positive
-  -- LOGFONTW.lfHeight asks GDI for. Advances and leading scale by that realized em, while the descent
-  -- scales by the requested height directly, which is what pins ascent plus descent to it exactly.
+  -- GDI rasterizes at integer ppem values, so we have to calculate advances and leading based on the
+  -- realized/rounded em rather than the requested one to match what GDI reports.
+  -- The cell metrics never reach the rasterizer: at a positive `LOGFONTW.lfHeight = fontSize`, GDI
+  -- scales both `tmAscent` and `tmDescent` straight off that requested height in the ratio the design
+  -- metrics hold, and reports `tmHeight` as their sum. Rounding the two separately is why that sum is
+  -- only usually fontSize, landing a 64th of a pixel either side of it at a couple of sizes per face.
   emPixels = tonumber freetype.FT_MulDiv fontSize, unitsPerEm, cellHeight
   toDeviceUnits = (designUnits) -> tonumber freetype.FT_MulDiv designUnits, emPixels, unitsPerEm
 
+  kerningMode = KerningMode.Unscaled -- read once to avoid metamethod overhead on hot path
   return {
-    descent: tonumber freetype.FT_MulDiv measured.winDescent, fontSize, cellHeight
-    extlead: toDeviceUnits measured.lineGap
+    descent: tonumber freetype.FT_MulDiv winDescent, fontSize, cellHeight
+    extlead: toDeviceUnits lineGap
     scaling: 1
     -- GDI measures a zero-length run as having no height at all
     reportsHeightForEmptyRun: false
@@ -197,17 +229,42 @@ prepareWindowsCellMetrics = (measured, fontSize) ->
       return toDeviceUnits tonumber advanceOut[0]
 
     kerningOf: (leftGlyph, rightGlyph) ->
-      code = freetype.FT_Get_Kerning face, leftGlyph, rightGlyph, KerningMode.Unscaled, kerningOut
+      code = freetype.FT_Get_Kerning face, leftGlyph, rightGlyph, kerningMode, kerningOut
       return code == 0 and toDeviceUnits(tonumber kerningOut.x) or 0
   }
 
----Readies a face to be measured as Aegisub does off Windows, where the results are normalized so the
+---Readies a face to be measured as Aegisub does on Linux, where the results are normalized so the
 ---typographic line height comes out at the nominal font size.
+---
+---Measured against a running Aegisub 3.4.2 on Ubuntu over a 36-face test corpus at four sizes, the
+---mean width error is 0.621% on the 1757 cases where the face has glyphs for the whole text. Height
+---and external leading are exact on every case.
+---Where the face lacks a glyph the mean width error is 39.8% over 413 cases, Pango substituting
+---another face per character where this backend measures .notdef.
+---A face setting fsSelection USE_TYPO_METRICS takes its span from the OS/2 sTypo values instead of
+---the hhea ones, in Pango and FreeType alike, so this mode follows Aegisub there too — to 0.3% on
+---the corpus face where that redirect moves every metric by 1.68x.
+---
+---Measured against GDI over the same corpus, the mean width error is 15.8% on the cases where the
+---face has glyphs for the whole text, and the descent is off by 10.8%.
+---The deviation is largely driven by ignoring the Windows cell dimensions (`usWinAscent` and `usWinDescent`
+---in the OS/2 table) yielding values off by the ratio between the Windows cell height and the
+---typographic span — the hhea one, or the OS/2 sTypo one for a face setting fsSelection
+---USE_TYPO_METRICS, which FreeType honors and GDI ignores. As usually the Windows cell is taller or
+---equal to the typographic span, results usually skew larger than GDI's (between 0.98x and 2.195x in
+---the corpus) because any padding the Windows cell would have added doesn't have to fit into the
+---total line height, which is fixed to the nominal font size.
+---The ratio accounts for 90.0% of the cases, and when removed, the mean error reduces to 0.785%.
+---The external leading differs by 19.4% for a different reason. It is reported as zero here whatever
+---line gap the face declares, so the ratio has no bearing on it.
+---
+---Kerning reads only the legacy `kern` table, so a face kerning through GPOS alone measures without
+---any, and the style's `encoding` is ignored, as the wx branch ignores it.
 ---@param measured MeasuredFace The face to measure with.
 ---@param fontSize integer Requested cell height, already multiplied by MEASUREMENT_SCALE.
 ---@return PreparedMetrics? prepared Values at the realized size, which `scaling` normalizes.
 ---@return string? err Why the face could not be realized at that size.
-prepareAegisubPosixMetrics = (measured, fontSize) ->
+prepareAegisubLinuxMetrics = (measured, fontSize) ->
   {:face, :family} = measured
 
   code = freetype.FT_Set_Pixel_Sizes face, 0, fontSize
@@ -218,10 +275,11 @@ prepareAegisubPosixMetrics = (measured, fontSize) ->
   ascent = tonumber(metrics.ascender) / UNITS_PER_PIXEL_26_6
   descent = -tonumber(metrics.descender) / UNITS_PER_PIXEL_26_6
   lineHeight = ascent + descent
+  kerningMode = KerningMode.Default
 
   return {
     :descent
-    -- wxWidgets reports no external leading at all off Windows
+    -- wxGTK reports no external leading at all
     extlead: 0
     scaling: lineHeight > 0 and fontSize / lineHeight or 1
     -- and reports the line height for an empty string, where GDI reports zero
@@ -234,20 +292,20 @@ prepareAegisubPosixMetrics = (measured, fontSize) ->
       return tonumber(advanceOut[0]) / UNITS_PER_PIXEL_16_16
 
     kerningOf: (leftGlyph, rightGlyph) ->
-      code = freetype.FT_Get_Kerning face, leftGlyph, rightGlyph, KerningMode.Default, kerningOut
+      code = freetype.FT_Get_Kerning face, leftGlyph, rightGlyph, kerningMode, kerningOut
       return code == 0 and tonumber(kerningOut.x) / UNITS_PER_PIXEL_26_6 or 0
   }
 
 prepareByMode = {
   [MetricMode.AegisubWindows]: prepareWindowsCellMetrics
-  [MetricMode.AegisubPosix]: prepareAegisubPosixMetrics
+  [MetricMode.AegisubLinux]: prepareAegisubLinuxMetrics
 }
 
 -- GDI measures the characters one by one and never consults the kern table, while wxWidgets shapes
 -- the run through the platform's text engine and does.
 defaultsByMode = {
   [MetricMode.AegisubWindows]: {kerning: false}
-  [MetricMode.AegisubPosix]: {kerning: true}
+  [MetricMode.AegisubLinux]: {kerning: true}
 }
 
 ---Builds a text-extents backend measuring by a chosen contract.
@@ -265,7 +323,7 @@ createBackend = (options) ->
   applyKerning = defaultsByMode[metricMode].kerning
   applyKerning = options.kerning if options.kerning != nil
 
-  ---@param style table An Aegisub style table.
+  ---@param style AegisubStyle The style to set the text in.
   ---@param text string The text to measure.
   ---@return number width Advance the run takes, trailing spaces included, after the style's scale_x.
   ---@return number height Line height of the realized face, not the glyphs' bounds, after scale_y.
@@ -329,11 +387,8 @@ createBackend = (options) ->
 return {
   ---@type boolean
   isAvailable: isAvailable
-
   ---@type AegisubTextExtentsBackend
   measure: createBackend!
-
   createBackend: createBackend
-
   MetricMode: MetricMode
 }

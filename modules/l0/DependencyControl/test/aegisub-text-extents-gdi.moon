@@ -10,10 +10,7 @@
 
   -- a face every Windows install carries, so the numbers below come from a real font
   baseStyle = (overrides) ->
-    style = {
-      fontname: "Arial", fontsize: 40, bold: false, italic: false, underline: false
-      strikeout: false, encoding: 1, spacing: 0, scale_x: 100, scale_y: 100
-    }
+    style = shims.Ass.createStyle {fontname: "Arial", fontsize: 40}
     style[key] = value for key, value in pairs overrides or {}
     return style
 

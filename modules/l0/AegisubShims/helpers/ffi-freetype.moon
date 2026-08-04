@@ -2,6 +2,7 @@
 -- FreeType's freetype.h and tttables.h.
 
 ffi = require "ffi"
+Enum = require "l0.DependencyControl.Enum"
 ffiBinding = require "l0.DependencyControl.helpers.ffi-binding"
 
 msgs = {
@@ -20,8 +21,8 @@ freetypeBinding = ffiBinding.bind {
   structs: {"FtGeneric", "FtBBox", "FtVector", "FtSizeMetrics", "FtSizeRec", "FtFaceRec",
     "TtHoriHeader", "TtOs2"}
   functions: {"FT_Init_FreeType", "FT_New_Face", "FT_Done_Face", "FT_Set_Pixel_Sizes",
-    "FT_Get_Char_Index", "FT_Get_Advance", "FT_Get_Kerning", "FT_Get_Sfnt_Table", "FT_MulDiv",
-    "FT_Error_String"}
+    "FT_Get_Char_Index", "FT_Get_Advance", "FT_Get_Kerning", "FT_Get_Sfnt_Table",
+    "FT_Load_Sfnt_Table", "FT_MulDiv", "FT_Error_String"}
   declarations: [[
     typedef struct { void* data; void* finalizer; } FtGeneric;
     typedef struct { long xMin; long yMin; long xMax; long yMax; } FtBBox;
@@ -93,6 +94,8 @@ freetypeBinding = ffiBinding.bind {
     int FT_Get_Kerning(FtFaceRec* face, unsigned int leftGlyph, unsigned int rightGlyph,
       unsigned int kerningMode, FtVector* kerning);
     void* FT_Get_Sfnt_Table(FtFaceRec* face, int tag);
+    int FT_Load_Sfnt_Table(FtFaceRec* face, unsigned long tag, long offset, unsigned char* buffer,
+      unsigned long* length);
     long FT_MulDiv(long a, long b, long c);
     const char* FT_Error_String(int errorCode);
   ]]
@@ -114,6 +117,12 @@ isAvailable = library != nil
 -- absent unless FreeType was built with FT_CONFIG_OPTION_ERROR_STRINGS, and it reports an unknown
 -- code as a null pointer even then
 hasErrorStrings = isAvailable and pcall -> freetype.FT_Error_String
+
+hasSfntTableLoader = isAvailable and pcall -> freetype.FT_Load_Sfnt_Table
+
+-- 'CFF ', the table an OpenType face with PostScript outlines describes its glyphs in
+CFF_TABLE_TAG = 0x43464620
+TableLengthOut = ffi.typeof "unsigned long[1]"
 
 FaceOut = ffi.typeof "#{freetypeBinding.prefixedNames.FtFaceRec}*[1]"
 AdvanceOut = ffi.typeof "long[1]"
@@ -182,6 +191,22 @@ Os2Pointer = ffi.typeof "#{freetypeBinding.prefixedNames.TtOs2}*"
 ---| 131072 # Sbix: carries an Apple `sbix` color bitmap table
 ---| 262144 # SbixOverlay: its `sbix` bitmaps are drawn over the outline rather than instead of it
 
+SfntTag = Enum "FreeTypeSfntTag", {
+  Head: 0
+  Maxp: 1
+  Os2: 2
+  Hhea: 3
+  Vhea: 4
+  Post: 5
+  Pclt: 6
+}
+
+KerningMode = Enum "FreeTypeKerningMode", {
+  Default: 0
+  Unfitted: 1
+  Unscaled: 2
+}
+
 ---FreeType's face, glyph-metric and SFNT-table calls.
 ---@class FfiFreeType
 ---@field isAvailable boolean Whether FreeType loaded and initialized; gate any use of the rest on it.
@@ -192,11 +217,12 @@ Os2Pointer = ffi.typeof "#{freetypeBinding.prefixedNames.TtOs2}*"
 ---@field KerningOut ffi.ctype* Constructor for the vector FT_Get_Kerning writes into.
 ---@field HoriHeaderPointer ffi.ctype* Cast for the hhea table FT_Get_Sfnt_Table returns.
 ---@field Os2Pointer ffi.ctype* Cast for the OS/2 table FT_Get_Sfnt_Table returns.
----@field SfntTag table<string, FreeTypeSfntTag> SFNT table selectors, keyed by name.
+---@field SfntTag Enum The SFNT table selectors, as a FreeTypeSfntTag enum.
 ---@field LoadFlag table<string, FreeTypeLoadFlag> Glyph-loading flags, keyed by name.
----@field KerningMode table<string, FreeTypeKerningMode> Kerning units, keyed by name.
+---@field KerningMode Enum The kerning units, as a FreeTypeKerningMode enum.
 ---@field FaceFlag table<string, FreeTypeFaceFlag> Face capability bits, keyed by name.
 ---@field NO_OS2_TABLE_VERSION integer The version an OS/2 table reports when the face carries none.
+---@field isCffOutlined fun(face: ffi.cdata*): boolean Whether a face carries PostScript outlines.
 local FreeType
 FreeType = {
   ---@type boolean
@@ -227,6 +253,16 @@ FreeType = {
   ---@type integer
   NO_OS2_TABLE_VERSION: 0xFFFF
 
+  ---Whether a face describes its glyphs as PostScript outlines rather than in the TrueType format.
+  ---@param face ffi.cdata* An opened face.
+  ---@return boolean isCffOutlined True when the face carries a `CFF ` table; false for a TrueType
+  ---face, for a non-SFNT one, and where FreeType is too old to offer the table loader.
+  isCffOutlined: (face) ->
+    return false unless hasSfntTableLoader
+    length = TableLengthOut!
+    loaded, code = pcall freetype.FT_Load_Sfnt_Table, face, CFF_TABLE_TAG, 0, nil, length
+    return loaded and code == 0
+
   ---Returns FreeType's own wording for an error code, or the bare code where it has none.
   ---@param code integer The code a FreeType call returned.
   ---@return string described The wording plus the numeric code, or the code alone.
@@ -235,15 +271,8 @@ FreeType = {
     return msgs.describeError.codeOnly\format code unless described != nil and described != false
     return msgs.describeError.described\format ffi.string(described), code
 
-  SfntTag: {
-    Head: 0
-    Maxp: 1
-    Os2: 2
-    Hhea: 3
-    Vhea: 4
-    Post: 5
-    Pclt: 6
-  }
+  SfntTag: SfntTag
+  KerningMode: KerningMode
 
   LoadFlag: {
     Default: 0
@@ -266,12 +295,6 @@ FreeType = {
     ComputeMetrics: 0x200000
     BitmapMetricsOnly: 0x400000
     NoSvg: 0x1000000
-  }
-
-  KerningMode: {
-    Default: 0
-    Unfitted: 1
-    Unscaled: 2
   }
 
   FaceFlag: {

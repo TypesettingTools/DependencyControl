@@ -5,7 +5,7 @@
 ->
   haveShims, shims = pcall require, "l0.AegisubShims"
 
-  STYLE_SAMPLE = {fontname: "Arial", fontsize: 40, bold: false, spacing: 0, scale_x: 100, scale_y: 100}
+  STYLE_SAMPLE = haveShims and shims.Ass.createStyle {fontname: "Arial", fontsize: 40}
 
   {
     _description: "The faux aegisub global's own contracts, chiefly its text-extents backend hook."
@@ -35,6 +35,31 @@
       ut\assertEquals {width, height, descent, extlead}, {12, 34, 5, 6}
       ut\assertIs seen.style, STYLE_SAMPLE
       ut\assertEquals seen.text, "measure me"
+
+    -- Aegisub takes these through get_bool_field, which raises on a non-boolean, so a numeric weight
+    -- never reaches its measurement. Zero is truthy in Lua, so silently accepting one here would
+    -- measure a style that asked for no weight at all as bold.
+    textExtents_rejectsANonBooleanWhereAegisubWouldRaise: (ut) ->
+      shims.setTextExtentsBackend -> 1, 1, 1, 1
+      for field in *{"bold", "italic", "underline", "strikeout"}
+        for value in *{0, 700, "yes"}
+          _, err = pcall aegisub.text_extents, shims.Ass.createStyle({[field]: value}), "measure me"
+          ut\assertMatches err, "Invalid or missing field '#{field}'"
+          ut\assertMatches err, "expected boolean"
+
+    -- Aegisub converts the whole style before measuring, so it refuses one missing a field its own
+    -- measurement never reads. A partial style passing here would fail the moment it ran in Aegisub.
+    textExtents_rejectsAStyleAegisubWouldRefuse: (ut) ->
+      shims.setTextExtentsBackend -> 7, 7, 7, 7
+      _, noClass = pcall aegisub.text_extents, {fontname: "Arial", fontsize: 40}, "measure me"
+      ut\assertMatches noClass, "Not a style entry"
+
+      partial = shims.Ass.createStyle!
+      partial.margin_r = nil
+      _, missing = pcall aegisub.text_extents, partial, "measure me"
+      ut\assertMatches missing, "Invalid or missing field 'margin_r'"
+      -- the type the field actually wants, which Aegisub's own message gets wrong for a number
+      ut\assertMatches missing, "expected number"
 
     setTextExtentsBackend_returnsThePreviousOne: (ut) ->
       first = -> 1, 1, 1, 1

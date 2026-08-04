@@ -11,15 +11,12 @@
 
   -- a family every fontconfig install resolves to something for, installed or not
   baseStyle = (overrides) ->
-    style = {
-      fontname: "sans-serif", fontsize: 40, bold: false, italic: false, underline: false
-      strikeout: false, encoding: 1, spacing: 0, scale_x: 100, scale_y: 100
-    }
+    style = shims.Ass.createStyle {fontname: "sans-serif", fontsize: 40}
     style[key] = value for key, value in pairs overrides or {}
     return style
 
-  local measurePosix
-  measurePosix = freetype.createBackend {metricMode: freetype.MetricMode.AegisubPosix} if haveFreeType and freetype.isAvailable
+  local measureLinux
+  measureLinux = freetype.createBackend {metricMode: freetype.MetricMode.AegisubLinux} if haveFreeType and freetype.isAvailable
 
   {
     _description: "The FreeType text-extents backend, against the invariants both metric modes hold to."
@@ -31,17 +28,17 @@
       ut\assertZero width
       ut\assertZero height
 
-    -- Aegisub reports the line height for an empty run off Windows and zero on it, so the mode that
-    -- stands in for the POSIX build has to keep the height its measurement never took
-    measure_posixModeKeepsTheHeightOfAnEmptyString: (ut) ->
-      width, height = measurePosix baseStyle(fontsize: 37), ""
+    -- Aegisub on Linux reports the line height for an empty run where Windows reports zero, so the
+    -- mode that stands in for it has to keep the height its measurement never took
+    measure_linuxModeKeepsTheHeightOfAnEmptyString: (ut) ->
+      width, height = measureLinux baseStyle(fontsize: 37), ""
       ut\assertZero width
       ut\assertAlmostEquals height, 37
 
     -- with spacing set, Aegisub measures character by character and an empty run never reaches a
-    -- measurement at all, so even the POSIX mode reports nothing — descent and leading included
-    measure_posixModeDropsEveryMetricOfAnEmptyStringWithSpacing: (ut) ->
-      width, height, descent, extlead = measurePosix baseStyle(fontsize: 37, spacing: 1), ""
+    -- measurement at all, so even the Linux mode reports nothing — descent and leading included
+    measure_linuxModeDropsEveryMetricOfAnEmptyStringWithSpacing: (ut) ->
+      width, height, descent, extlead = measureLinux baseStyle(fontsize: 37, spacing: 1), ""
       ut\assertZero width
       ut\assertZero height
       ut\assertZero descent
@@ -56,9 +53,9 @@
     -- both modes normalize onto the requested cell, which is what the style asked for
     measure_heightIsTheNominalFontSize: (ut) ->
       _, height = freetype.measure baseStyle(fontsize: 37), "Hello"
-      _, posixHeight = measurePosix baseStyle(fontsize: 37), "Hello"
+      _, linuxHeight = measureLinux baseStyle(fontsize: 37), "Hello"
       ut\assertAlmostEquals height, 37
-      ut\assertAlmostEquals posixHeight, 37
+      ut\assertAlmostEquals linuxHeight, 37
 
     measure_widthGrowsWithText: (ut) ->
       short = freetype.measure baseStyle!, "i"

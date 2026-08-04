@@ -28,7 +28,7 @@ MEASUREMENT_SCALE = 64
 MAX_FACE_NAME_LENGTH = ffiGdi.FACE_NAME_CAPACITY - 1
 
 ---Fills a LOGFONTW from an Aegisub style table.
----@param style table An Aegisub style table.
+---@param style AegisubStyle The style to set the text in.
 ---@param fontSize number The style's font size, already multiplied by MEASUREMENT_SCALE.
 ---@return ffi.cdata*? logFont A LOGFONTW struct for the style's face, nil where its name would not convert.
 ---@return string? err Why the face name could not be converted to UTF-16.
@@ -73,7 +73,7 @@ measureSpaced = (deviceContext, wide, unitCount, spacing) ->
   return width, height
 
 ---Measures a run of text set in a style, as `aegisub.text_extents` reports it.
----@param style table An Aegisub style table.
+---@param style AegisubStyle The style to set the text in.
 ---@param text string The text to measure.
 ---@return number width Advance the run takes, trailing spaces included, after the style's scale_x.
 ---@return number height Line height of the realized face, not the glyphs' bounds, after scale_y.

@@ -4,6 +4,7 @@ includeShim = require "l0.AegisubShims.include"
 _G.aegisub = aegisub
 _G.include = includeShim.include
 
+ass = require "l0.AegisubShims.ass"
 clipboard = require "l0.AegisubShims.clipboard"
 re = require "l0.AegisubShims.re"
 unicode = require "l0.AegisubShims.unicode"
@@ -48,6 +49,8 @@ return {
   :re
   :unicode
   :util
+  -- the shapes Aegisub's data model carries, rather than a module a script requires by name
+  Ass: ass
   -- Re-expose the shim's configuration hooks for callers.
   setPathToken: aegisub.__depCtrl.setPathToken
   getPathToken: aegisub.__depCtrl.getPathToken
