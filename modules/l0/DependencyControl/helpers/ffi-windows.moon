@@ -19,7 +19,7 @@ kernel32Binding = ffiBinding.bind {
 msgs = {
   toWide: {
     noKernel32: "Wide-character conversion needs kernel32, which could not be loaded."
-    invalidUtf8: "%s: invalid character sequence."
+    invalidUtf8: "Could not convert '%s' to UTF-16 because it is not valid UTF-8."
   }
   describeLastError: {
     described: "%s (error %d)"

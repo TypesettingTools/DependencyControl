@@ -11,7 +11,13 @@
 
 ffi = require "ffi"
 ffiBinding = require "l0.DependencyControl.helpers.ffi-binding"
+unicode = require "l0.DependencyControl.unicode"
 utils = require "l0.DependencyControl.utils"
+
+-- Aegisub's own functions take each character's width from its lead byte and decode whatever follows,
+-- so the stand-in does too, and answers as Aegisub does for the malformed input karaskel is known to
+-- hand it. A caller wanting those bytes reported instead switches this to Strict.
+decodeMode = unicode.DecodeMode.AegisubCompatibility
 
 msgs = {
   requireIcu: {
@@ -25,9 +31,6 @@ msgs = {
 -- Bounds for the versioned soname probe. ICU sees major releases about twice a year and stood at 78 in early 2026.
 ICU_VERSION_NEWEST = 120 -- plenty of headroom for the next 20 years if the release cadence continues
 ICU_VERSION_OLDEST = 60 -- shipped in 2017 and predates every distribution release still supported
-
--- Character to substitute for invalid UTF-8 sequences when converting to UTF-16 and back.
-UNICODE_REPLACEMENT_CHAR = 0xFFFD
 
 -- ICU's default fold-case option. The alternative, U_FOLD_CASE_EXCLUDE_SPECIAL_I, folds the Turkic
 -- dotted and dotless i to each other's plain counterparts.
@@ -166,11 +169,11 @@ convert = (str, operation, extra) ->
 
   -- Each ICU call is preflighted with a null destination to learn the length it needs, which reports
   -- a buffer overflow by design, so the status is cleared before the call that does the work.
-  icu.fromUtf8 nil, 0, written, str, #str, UNICODE_REPLACEMENT_CHAR, nil, status
+  icu.fromUtf8 nil, 0, written, str, #str, unicode.REPLACEMENT_CODE_POINT, nil, status
   sourceLength = written[0]
   source = Utf16Buffer sourceLength + 1
   status[0] = 0
-  icu.fromUtf8 source, sourceLength + 1, written, str, #str, UNICODE_REPLACEMENT_CHAR, nil, status
+  icu.fromUtf8 source, sourceLength + 1, written, str, #str, unicode.REPLACEMENT_CODE_POINT, nil, status
   assertIcuOk status
 
   status[0] = 0
@@ -181,11 +184,11 @@ convert = (str, operation, extra) ->
   assertIcuOk status
 
   status[0] = 0
-  icu.toUtf8 nil, 0, written, converted, convertedLength, UNICODE_REPLACEMENT_CHAR, nil, status
+  icu.toUtf8 nil, 0, written, converted, convertedLength, unicode.REPLACEMENT_CODE_POINT, nil, status
   resultLength = written[0]
   result = Utf8Buffer resultLength + 1
   status[0] = 0
-  icu.toUtf8 result, resultLength + 1, written, converted, convertedLength, UNICODE_REPLACEMENT_CHAR, nil, status
+  icu.toUtf8 result, resultLength + 1, written, converted, convertedLength, unicode.REPLACEMENT_CODE_POINT, nil, status
   assertIcuOk status
 
   return ffi.string result, written[0]
@@ -203,56 +206,25 @@ Unicode = {
   ---@param byteOffset? number Byte offset of the character's first byte (default 1).
   ---@return number width Byte width, 1 through 4; 1 for an offset past the end.
   charwidth: (str, byteOffset) ->
-    utils.assertArgType str, 1, "string"
-    byte = str\byte byteOffset or 1
-
-    return 1 unless byte
-    return 1 if byte < 128
-    return 2 if byte < 224
-    return 3 if byte < 240
-    return 4
+    return assert unicode.getCharWidth str, byteOffset, decodeMode
 
   ---Iterates the characters of a string.
   ---@param str string The string to walk.
   ---@return fun(): string?, number? iterator Yields each character with its 1-based character index.
   chars: (str) ->
-    utils.assertArgType str, 1, "string"
-    characterIndex, position = 0, 1
-    ->
-      return if position > #str
-
-      start = position
-      characterIndex += 1
-      position += Unicode.charwidth str, position
-      return str\sub(start, position - 1), characterIndex
+    return assert unicode.iterateChars str, decodeMode
 
   ---Counts the characters in a string, in time proportional to its byte length.
   ---@param str string The string to measure.
   ---@return number length Character count, not byte count.
   len: (str) ->
-    utils.assertArgType str, 1, "string"
-    count = 0
-    count += 1 for _ in Unicode.chars str
-    return count
+    return assert unicode.getLength str, decodeMode
 
   ---Returns the code point of the first character of a string.
-  ---@param str string The string to decode; assumed to be well-formed UTF-8.
+  ---@param str string The string to decode.
   ---@return number codepoint
   codepoint: (str) ->
-    utils.assertArgType str, 1, "string"
-    byte = str\byte 1
-    return byte if byte < 128
-
-    local result, width
-    if byte < 224
-      result, width = byte - 192, 2
-    elseif byte < 240
-      result, width = byte - 224, 3
-    else
-      result, width = byte - 240, 4
-
-    result = result * 64 + str\byte(i) - 128 for i = 2, width
-    return result
+    return assert unicode.getCodePoint str, 1, decodeMode
 
   ---Converts a string to upper case, following the conventions of the default locale.
   ---@param str string The string to convert.
@@ -277,6 +249,26 @@ Unicode = {
     utils.assertArgType str, 1, "string"
     requireIcu!
     return convert str, icu.foldCase, U_FOLD_CASE_DEFAULT
+}
+
+---Shim-only configuration, namespaced so it cannot collide with Aegisub's own module surface.
+---@class AegisubUnicodeControls
+Unicode.__depCtrl = {
+  ---Sets how the four UTF-8 functions treat malformed input. Under `Strict` they raise on bytes
+  ---`AegisubCompatibility` would have walked past, which is what a caller inspecting its own text wants.
+  ---@param mode UnicodeDecodeMode The mode to measure by.
+  ---@return UnicodeDecodeMode previous The mode in force until now, to restore later.
+  setDecodeMode: (mode) ->
+    valid, modeErr = unicode.DecodeMode\validate mode, "mode"
+    assert valid, modeErr
+
+    previous = decodeMode
+    decodeMode = mode
+    return previous
+
+  ---Returns the mode the four UTF-8 functions currently decode by.
+  ---@return UnicodeDecodeMode mode
+  getDecodeMode: -> decodeMode
 }
 
 return Unicode

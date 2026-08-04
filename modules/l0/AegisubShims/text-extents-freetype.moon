@@ -10,12 +10,10 @@ ffi = require "ffi"
 Enum = require "l0.DependencyControl.Enum"
 ffiFontconfig = require "l0.AegisubShims.helpers.ffi-fontconfig"
 ffiFreeType = require "l0.AegisubShims.helpers.ffi-freetype"
+unicode = require "l0.DependencyControl.unicode"
 utils = require "l0.DependencyControl.utils"
 
 msgs = {
-  decodeText: {
-    malformed: "The text to measure is not valid UTF-8: the sequence at byte %d is malformed."
-  }
   matchFont: {
     noPattern: "Could not build a fontconfig pattern to look '%s' up with."
     noMatch: "fontconfig found no font to set '%s' in."
@@ -47,12 +45,6 @@ MEASUREMENT_SCALE = 64
 UNITS_PER_PIXEL_16_16 = 65536
 UNITS_PER_PIXEL_26_6 = 64
 
--- the smallest code point that genuinely needs each byte width, so an overlong sequence encoding a
--- smaller one is rejected rather than silently accepted
-SHORTEST_CODE_POINT_PER_WIDTH = {0, 0x80, 0x800, 0x10000}
-FIRST_SURROGATE, LAST_SURROGATE = 0xD800, 0xDFFF
-LAST_CODE_POINT = 0x10FFFF
-
 -- reused across calls, since a measurement only ever reads them back before the next one writes
 advanceOut, kerningOut = AdvanceOut!, KerningOut!
 
@@ -72,46 +64,6 @@ MetricMode = Enum "TextExtentsMetricMode", {
 ---@class TextExtentsOptions
 ---@field metricMode? TextExtentsMetricMode Which contract to measure by, `AegisubWindows` by default.
 ---@field kerning? boolean Whether to apply the face's kern table to text set solid; defaults to what the mode implies.
-
----Decodes UTF-8 into code points, rejecting a malformed sequence as the Windows conversion does.
----@param text string The text to decode.
----@return integer[]? codePoints One entry per character, empty for an empty string.
----@return string? err Which byte the first malformed sequence starts at.
-decodeText = (text) ->
-  codePoints, position, length = {}, 1, #text
-
-  while position <= length
-    leadByte = text\byte position
-    local width, codePoint
-
-    if leadByte < 0x80
-      width, codePoint = 1, leadByte
-    elseif leadByte >= 0xC2 and leadByte <= 0xDF
-      width, codePoint = 2, leadByte - 0xC0
-    elseif leadByte >= 0xE0 and leadByte <= 0xEF
-      width, codePoint = 3, leadByte - 0xE0
-    elseif leadByte >= 0xF0 and leadByte <= 0xF4
-      width, codePoint = 4, leadByte - 0xF0
-    else
-      return nil, msgs.decodeText.malformed\format position
-
-    return nil, msgs.decodeText.malformed\format position if position + width - 1 > length
-
-    for offset = 1, width - 1
-      continuation = text\byte position + offset
-      unless continuation >= 0x80 and continuation <= 0xBF
-        return nil, msgs.decodeText.malformed\format position
-      codePoint = codePoint * 0x40 + continuation - 0x80
-
-    isOverlong = codePoint < SHORTEST_CODE_POINT_PER_WIDTH[width]
-    isSurrogate = codePoint >= FIRST_SURROGATE and codePoint <= LAST_SURROGATE
-    if isOverlong or isSurrogate or codePoint > LAST_CODE_POINT
-      return nil, msgs.decodeText.malformed\format position
-
-    codePoints[#codePoints + 1] = codePoint
-    position += width
-
-  return codePoints
 
 ---A face fontconfig picked out, as the file holding it.
 ---@class FontFile
@@ -328,7 +280,7 @@ createBackend = (options) ->
 
     spacing = (style.spacing or 0) * MEASUREMENT_SCALE
 
-    codePoints, decodeErr = decodeText text
+    codePoints, decodeErr = unicode.decodeUtf8 text, unicode.DecodeMode.Strict
     error decodeErr, 2 unless codePoints
 
     measured, faceErr = acquireFace style

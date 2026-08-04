@@ -1,6 +1,10 @@
 aegisub = require "l0.AegisubShims.aegisub"
-clipboard = require "l0.AegisubShims.clipboard"
 includeShim = require "l0.AegisubShims.include"
+-- Aegisub unconditionally exposes the aegisub and include globals
+_G.aegisub = aegisub
+_G.include = includeShim.include
+
+clipboard = require "l0.AegisubShims.clipboard"
 re = require "l0.AegisubShims.re"
 unicode = require "l0.AegisubShims.unicode"
 util = require "l0.AegisubShims.util"
@@ -17,10 +21,6 @@ package.preload["aegisub.clipboard"] = -> clipboard
 -- reach the C runtime in a different encoding than they do in Aegisub. It reports what it did rather
 -- than raising, since every platform but Windows needs nothing.
 unicodePatch = require "l0.AegisubShims.unicode-monkeypatch"
-
--- Register the globals unconditionally exposed by Aegisub
-_G.aegisub = aegisub
-_G.include = includeShim.include
 
 -- Windows can measure text the same way Aegisub does, so text_extents works there out of the box.
 -- Elsewhere FreeType stands in, reporting the numbers GDI would for the same face, and where neither

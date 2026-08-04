@@ -58,6 +58,7 @@ FeedManager = require "l0.DependencyControl.FeedManager"
 FeedTrust = require "l0.DependencyControl.FeedTrust"
 ffiPosix = require "l0.DependencyControl.helpers.ffi-posix"
 ffiWindows = require "l0.DependencyControl.helpers.ffi-windows"
+unicode = require "l0.DependencyControl.unicode"
 fileOps = require "l0.DependencyControl.file-ops"
 Finalizer = require "l0.DependencyControl.Finalizer"
 GitRepository = require "l0.DependencyControl.GitRepository"
@@ -107,6 +108,7 @@ class DependencyControl extends PackageRecord
   @UpdateTask = UpdateTask
   @Updater = Updater
   @UnitTestSuite = UnitTestSuite
+  @Unicode = unicode
   @Finalizer = Finalizer
   @SemanticVersion = SemanticVersion
 
