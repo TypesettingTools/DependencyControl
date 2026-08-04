@@ -1,8 +1,3 @@
-Logger = require "l0.DependencyControl.Logger"
-constants = require "l0.DependencyControl.Constants"
-
-defaultLogger = Logger fileBaseName: "#{constants.DEPCTRL_SHORT_NAME}.Enum"
-
 reservedKeys = {
   "describe",
   "elements"
@@ -36,6 +31,26 @@ msgs = {
   }
 }
 
+---Formats a message template against values of any type.
+---@param template string The template to fill.
+---@param ... any Values to interpolate.
+---@return string message
+formatMessage = (template, ...) ->
+  count = select "#", ...
+  return template if count == 0
+  return template\format unpack [tostring select index, ... for index = 1, count]
+
+---Throws unless a contract holds, through the enum's logger where it has one and natively otherwise.
+---@param logger? Logger The enum's logger, absent where none was given.
+---@param condition any Throws unless this holds.
+---@param template string The message template.
+---@param ... any Values to interpolate.
+---@return any condition The condition, where it held.
+check = (logger, condition, template, ...) ->
+  return condition if condition
+  return logger\error template, ... if logger
+  assert false, formatMessage template, ...
+
 ---An immutable enumeration type with value/key reverse lookup.
 ---@class Enum
 class Enum
@@ -49,9 +64,10 @@ class Enum
   ---Creates an enum from a table of key/value pairs or a list of names.
   ---@param name string
   ---@param values table Key/value pairs, or a list of names whose value defaults to their position.
-  ---@param logger? Logger Logger for enum error messages (default: a shared logger).
-  new: (@name, values, @__logger = defaultLogger) =>
-    @__logger\assert type(@name) == "string", msgs.new.missingOrInvalidName, Logger\describeType @name
+  ---@param logger? Logger Logger for enum error messages; without one they are thrown natively.
+  new: (@name, values, @__logger) =>
+    logger = @__logger -- avoid invalid key access error from metamethod if no logger was given
+    check logger, type(@name) == "string", msgs.new.missingOrInvalidName, type @name
     @elements, @__keysByValue, @values, @keys = {}, {}, {}, {}
 
     for k, v in pairs values
@@ -59,9 +75,9 @@ class Enum
       if "number" == type k
         k, v = v, k
 
-      @__logger\assert not @@isReservedKey(k), msgs.new.noReservedKeys, k
-      @__logger\assert @elements[k] == nil, msgs.new.keyAlreadyDefined, k, @name
-      @__logger\assert @__keysByValue[v] == nil, msgs.new.valueAlreadyTaken, k, @name, v, @__keysByValue[v]
+      check logger, not @@isReservedKey(k), msgs.new.noReservedKeys, k
+      check logger, @elements[k] == nil, msgs.new.keyAlreadyDefined, k, @name
+      check logger, @__keysByValue[v] == nil, msgs.new.valueAlreadyTaken, k, @name, v, @__keysByValue[v]
 
       @elements[k], @__keysByValue[v] = v, k
       table.insert @values, v
@@ -80,10 +96,10 @@ class Enum
           when "table" then clsIdx[k]
         return v if v != nil
 
-        @__logger\error msgs.__index.invalidKeyAccess, k, @name
+        check logger, false, msgs.__index.invalidKeyAccess, k, @name
 
       __newindex: (k, v) =>
-        @__logger\error msgs.__newindex.immutableError, k, v, @name
+        check logger, false, msgs.__newindex.immutableError, k, v, @name
     }, clsIdx
 
 
@@ -106,7 +122,7 @@ class Enum
 
     keys = for v in *values
       key = @__keysByValue[v]
-      @__logger\assert key != nil, msgs.describe.valueNotDefined, v, @name
+      check rawget(@, "__logger"), key != nil, msgs.describe.valueNotDefined, v, @name
       pattern key, v
 
     return join and table.concat(keys, join == true and ', ' or join) or keys
