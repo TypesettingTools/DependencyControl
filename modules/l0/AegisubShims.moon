@@ -22,10 +22,15 @@ unicodePatch = require "l0.AegisubShims.unicode-monkeypatch"
 _G.aegisub = aegisub
 _G.include = includeShim.include
 
--- Windows can measure text the same way Aegisub does, so text_extents works there out of the box;
--- elsewhere it keeps raising until a caller installs a backend of its own.
+-- Windows can measure text the same way Aegisub does, so text_extents works there out of the box.
+-- Elsewhere FreeType stands in, reporting the numbers GDI would for the same face, and where neither
+-- is reachable text_extents keeps raising until a caller installs a backend of its own.
 textExtentsGdi = require "l0.AegisubShims.text-extents-gdi"
-aegisub.__depCtrl.setTextExtentsBackend textExtentsGdi.measure if textExtentsGdi.isAvailable
+textExtentsFreeType = require "l0.AegisubShims.text-extents-freetype"
+if textExtentsGdi.isAvailable
+  aegisub.__depCtrl.setTextExtentsBackend textExtentsGdi.measure
+elseif textExtentsFreeType.isAvailable
+  aegisub.__depCtrl.setTextExtentsBackend textExtentsFreeType.measure
 
 -- Aegisub's include files are also reachable by requiring their bare identifiers
 -- and publish their module as a global once they are loaded in whichever way.
@@ -50,5 +55,8 @@ return {
   getClipboardBackend: clipboard.__depCtrl.getBackend
   setTextExtentsBackend: aegisub.__depCtrl.setTextExtentsBackend
   getTextExtentsBackend: aegisub.__depCtrl.getTextExtentsBackend
+  -- The measurement backends themselves, for building a configured one to install through the hook.
+  TextExtentsGdi: textExtentsGdi
+  TextExtentsFreeType: textExtentsFreeType
   :unicodePatch
 }

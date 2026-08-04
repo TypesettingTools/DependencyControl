@@ -74,7 +74,8 @@ return UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
     AegisubInclude: (controls\requireTest "aegisub-include")!
     AegisubUnicodePatch: (controls\requireTest "aegisub-unicode-monkeypatch")!
     AegisubGlobal: (controls\requireTest "aegisub-global")!
-    AegisubTextExtents: (controls\requireTest "aegisub-text-extents")!
+    AegisubTextExtentsGdi: (controls\requireTest "aegisub-text-extents-gdi")!
+    AegisubTextExtentsFreeType: (controls\requireTest "aegisub-text-extents-freetype")!
     DownloaderIntegration: (controls\requireTest "integration.Downloader") basePath, requireHelper
     ZipArchiverIntegration: (controls\requireTest "integration.ZipArchiver") basePath
   }
