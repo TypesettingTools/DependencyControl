@@ -8,6 +8,7 @@
 -- bytes stand for. The replacements below widen the path to UTF-16 and call the wide-character runtime.
 
 ffi = require "ffi"
+ffiBinding = require "l0.DependencyControl.helpers.ffi-binding"
 ffiWindows = require "l0.DependencyControl.helpers.ffi-windows"
 
 msgs = {
@@ -29,17 +30,24 @@ msgs = {
 isUnpatched = ->
   return not pcall string.dump, io.open
 
+local crt
 ---Binds the Win32 and CRT entry points the replacements need.
 ---@return boolean available False when a declaration or symbol lookup failed.
 bindWideRuntime = ->
-  pcall ffi.cdef, [[
-    void *_wfreopen(wchar_t*, wchar_t*, void*);
-    int32_t _wrename(wchar_t*, wchar_t*);
-    int32_t _wremove(wchar_t*);
-    int32_t _wsystem(wchar_t*);
-    char *strerror(int);
-  ]]
-  return pcall -> ffi.C._wfreopen
+  bound, crtBinding = pcall ffiBinding.bind, {
+    namespace: ffi.C
+    functions: {"_wfreopen", "_wrename", "_wremove", "_wsystem", "strerror"}
+    declarations: [[
+      void *_wfreopen(wchar_t*, wchar_t*, void*);
+      int32_t _wrename(wchar_t*, wchar_t*);
+      int32_t _wremove(wchar_t*);
+      int32_t _wsystem(wchar_t*);
+      char *strerror(int);
+    ]]
+  }
+  return false unless bound
+  crt = crtBinding.functions
+  return nil != rawget crt, "_wfreopen"
 
 ---Shapes a C status into the `true` or `nil, msg, errno` triple Lua's file functions return.
 ---@param status number Zero on success, as the CRT reports it.
@@ -49,7 +57,7 @@ fileResult = (status, fileName) ->
   return true if status == 0
 
   errno = ffi.errno!
-  message = ffi.string ffi.C.strerror errno
+  message = ffi.string crt.strerror errno
   return nil, (fileName and "#{fileName}: #{message}" or message), errno
 
 ---Shapes a `_wsystem` status into the triple `os.execute` returns.
@@ -83,7 +91,7 @@ applyPatch = ->
     return nil, modeErr unless wideMode
 
     file = assert origOpen "nul", "rb"
-    if ffi.C._wfreopen(wideName, wideMode, file) == nil
+    if crt._wfreopen(wideName, wideMode, file) == nil
       message, errno = select 2, file\close!
       return nil, "#{fileName}: #{tostring message}", errno
 
@@ -95,18 +103,18 @@ applyPatch = ->
     wideNew, newErr = ffiWindows.toWide newName
     return nil, newErr unless wideNew
 
-    return fileResult ffi.C._wrename(wideOld, wideNew), oldName
+    return fileResult crt._wrename(wideOld, wideNew), oldName
 
   os.remove = (fileName) ->
     wideName, err = ffiWindows.toWide fileName
     return nil, err unless wideName
-    return fileResult ffi.C._wremove(wideName), fileName
+    return fileResult crt._wremove(wideName), fileName
 
   os.execute = (command) ->
     return true unless command
     wideCommand, err = ffiWindows.toWide command
     return nil, err unless wideCommand
-    return execResult ffi.C._wsystem wideCommand
+    return execResult crt._wsystem wideCommand
 
   return {applied: true}
 

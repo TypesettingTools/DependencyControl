@@ -63,6 +63,7 @@ return UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
     ScriptTargetFilter: (controls\requireTest "ScriptTargetFilter")!
     ZipArchiver: (controls\requireTest "ZipArchiver") basePath
     JsonSchema: (controls\requireTest "JsonSchema") basePath
+    FfiBinding: (controls\requireTest "ffi-binding")!
     FfiPosix: (controls\requireTest "ffi-posix")!
     FfiWindows: (controls\requireTest "ffi-windows")!
     OpenUrl: (controls\requireTest "open-url")!

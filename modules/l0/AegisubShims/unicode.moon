@@ -10,6 +10,7 @@
 -- symlink is what loads, so we resort to probing for versioned sonames in a wide range, instead.
 
 ffi = require "ffi"
+ffiBinding = require "l0.DependencyControl.helpers.ffi-binding"
 utils = require "l0.DependencyControl.utils"
 
 msgs = {
@@ -32,11 +33,9 @@ UNICODE_REPLACEMENT_CHAR = 0xFFFD
 -- dotted and dotless i to each other's plain counterparts.
 U_FOLD_CASE_DEFAULT = 0
 
-ffi.cdef [[
-  typedef uint16_t UChar;
-  typedef int32_t UChar32;
-  typedef int32_t UErrorCode;
-]]
+Utf16Buffer = ffi.typeof "uint16_t[?]" -- matches ICU's UChar*
+Utf8Buffer = ffi.typeof "char[?]"
+Int32Out = ffi.typeof "int32_t[1]" -- matches ICU's UErrorCode* and its int32_t* length out-parameters
 
 ---One ICU entry point this module binds, with the necessary information to find and declare it
 -- to the FFI with whatever version suffix the loaded library ends up using.
@@ -49,23 +48,23 @@ ffi.cdef [[
 icuFunctions = {
   -- Converts a UTF-8 string to UTF-16, substituting a replacement character for invalid sequences.
   {field: "fromUtf8", symbol: "u_strFromUTF8WithSub",
-    signature: "int32_t %s(UChar*, int32_t, int32_t*, const char*, int32_t, UChar32, int32_t*, UErrorCode*);"}
+    signature: "int32_t %s(uint16_t*, int32_t, int32_t*, const char*, int32_t, int32_t, int32_t*, int32_t*);"}
   -- Converts a UTF-16 string to UTF-8, substituting a replacement character for invalid sequences.
   {field: "toUtf8", symbol: "u_strToUTF8WithSub",
-    signature: "char* %s(char*, int32_t, int32_t*, const UChar*, int32_t, UChar32, int32_t*, UErrorCode*);"}
+    signature: "char* %s(char*, int32_t, int32_t*, const uint16_t*, int32_t, int32_t, int32_t*, int32_t*);"}
   -- Transforms the characters in a string into lowercase. Results are locale-dependent (host locale in our case since
   -- we are not passing any) and context-dependent (e.g. Greek capital letter Σ lowercased to σ in the middle of a word,
   -- but to ς at the end of a word).
   {field: "toLower", symbol: "u_strToLower",
-    signature: "int32_t %s(UChar*, int32_t, const UChar*, int32_t, const char*, UErrorCode*);"}
+    signature: "int32_t %s(uint16_t*, int32_t, const uint16_t*, int32_t, const char*, int32_t*);"}
     -- Transforms the characters in a string into uppercase. Casing is locale-dependent and context-sensitive.
   {field: "toUpper", symbol: "u_strToUpper",
-    signature: "int32_t %s(UChar*, int32_t, const UChar*, int32_t, const char*, UErrorCode*);"}
+    signature: "int32_t %s(uint16_t*, int32_t, const uint16_t*, int32_t, const char*, int32_t*);"}
   -- Transforms the characters in a string into a representation for case-insensitive comparison and string matching.
   -- Distinct from lowercase conversion in that it also normalizes characters that are not case variants of each other,
   -- such as the German sharp s (ß → ss) and the position-dependent Greek lowercase sigma variants (ς/σ → σ).
   {field: "foldCase", symbol: "u_strFoldCase",
-    signature: "int32_t %s(UChar*, int32_t, const UChar*, int32_t, uint32_t, UErrorCode*);"}
+    signature: "int32_t %s(uint16_t*, int32_t, const uint16_t*, int32_t, uint32_t, int32_t*);"}
 }
 
 -- The handle ffi.load returns owns the loaded library and unloads it when collected, leaving every
@@ -98,9 +97,9 @@ getLibraryCandidates = ->
 ---@return function? bound Nil when the symbol isn't exported under that name.
 bindSymbol = (library, entry, suffix) ->
   name = entry.symbol .. suffix
-  pcall ffi.cdef, entry.signature\format name
+  _, prefixedNames = ffiBinding.declare entry.signature\format(name), nil, {name}
 
-  ok, bound = pcall -> library[name]
+  ok, bound = pcall -> library[prefixedNames[name]]
   return ok and bound or nil
 
 ---Finds the symbol suffix this build of ICU uses, which may be either the version pinned in the file name
@@ -147,7 +146,7 @@ requireIcu = (errorLevel = 2) ->
   error msgs.requireIcu.unavailable, errorLevel + 1
 
 ---Raises when ICU reported a failure. Codes at or below zero are success or a warning.
----@param status table The UErrorCode out-parameter ICU wrote to.
+---@param status ffi.cdata* The int32_t UErrorCode out-parameter ICU wrote to.
 assertIcuOk = (status) ->
   error msgs.convert.failed\format(status[0]), 4 if status[0] > 0
 
@@ -162,21 +161,21 @@ assertIcuOk = (status) ->
 --- selecting the default one, and the fold-case options for a fold.
 ---@return string converted
 convert = (str, operation, extra) ->
-  status = ffi.new "UErrorCode[1]", 0
-  written = ffi.new "int32_t[1]", 0
+  status = Int32Out 0
+  written = Int32Out 0
 
   -- Each ICU call is preflighted with a null destination to learn the length it needs, which reports
   -- a buffer overflow by design, so the status is cleared before the call that does the work.
   icu.fromUtf8 nil, 0, written, str, #str, UNICODE_REPLACEMENT_CHAR, nil, status
   sourceLength = written[0]
-  source = ffi.new "UChar[?]", sourceLength + 1
+  source = Utf16Buffer sourceLength + 1
   status[0] = 0
   icu.fromUtf8 source, sourceLength + 1, written, str, #str, UNICODE_REPLACEMENT_CHAR, nil, status
   assertIcuOk status
 
   status[0] = 0
   convertedLength = operation nil, 0, source, sourceLength, extra, status
-  converted = ffi.new "UChar[?]", convertedLength + 1
+  converted = Utf16Buffer convertedLength + 1
   status[0] = 0
   operation converted, convertedLength + 1, source, sourceLength, extra, status
   assertIcuOk status
@@ -184,7 +183,7 @@ convert = (str, operation, extra) ->
   status[0] = 0
   icu.toUtf8 nil, 0, written, converted, convertedLength, UNICODE_REPLACEMENT_CHAR, nil, status
   resultLength = written[0]
-  result = ffi.new "char[?]", resultLength + 1
+  result = Utf8Buffer resultLength + 1
   status[0] = 0
   icu.toUtf8 result, resultLength + 1, written, converted, convertedLength, UNICODE_REPLACEMENT_CHAR, nil, status
   assertIcuOk status

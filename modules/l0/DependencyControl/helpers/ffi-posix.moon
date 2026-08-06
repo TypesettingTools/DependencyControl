@@ -4,6 +4,7 @@
 -- but are not supported. macOS (Darwin) values are taken from <sys/fcntl.h>.
 
 ffi = require "ffi"
+ffiBinding = require "l0.DependencyControl.helpers.ffi-binding"
 
 isOSX = ffi.os == "OSX"
 
@@ -11,13 +12,20 @@ filePermissionBits = {r: 4, w: 2, x: 1}
 
 -- open(2) is variadic (int open(const char*, int, ...)); the open wrapper below passes the mode as
 -- typed cdata so the Apple-Silicon vararg ABI (stack-passed) receives it intact.
-pcall ffi.cdef, [[
-  int open(const char* path, int flags, ...);
-  int close(int fd);
-]]
+libcBinding = ffiBinding.bind {
+  namespace: ffi.C
+  functions: {"open", "close"}
+  declarations: [[
+    int open(const char* path, int flags, ...);
+    int close(int fd);
+  ]]
+}
+libc = libcBinding.functions
 
+-- rawget, since a symbol that failed to resolve is absent from the table and a plain read would
+-- fall through to a raising namespace lookup
 ---@type boolean
-isAvailable = ffi.os != "Windows" and pcall(-> ffi.C.open)
+isAvailable = ffi.os != "Windows" and nil != rawget libc, "open"
 
 ---The access mode an open(2) call takes in the low two bits of its flags. Same on Linux and macOS.
 ---@class PosixFileAccessMode
@@ -87,10 +95,10 @@ return {
   ---@param flags integer open(2) flags, e.g. FileAccessMode.ReadWrite | FileCreationFlags.Create.
   ---@param mode integer Permission bits for a newly created file (from getFileMode).
   ---@return integer fd The open descriptor, or a negative value on failure.
-  open: (path, flags, mode) -> ffi.C.open path, flags, ffi.new "int", mode
+  open: (path, flags, mode) -> libc.open path, flags, ffi.new "int", mode
 
   ---Closes an open file descriptor.
   ---@param fd integer A descriptor returned by open.
   ---@return integer status Zero on success, or a negative value on failure.
-  close: (fd) -> ffi.C.close fd
+  close: (fd) -> libc.close fd
 }
