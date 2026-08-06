@@ -1,4 +1,5 @@
 ffi = require "ffi"
+ffiBinding = require "l0.DependencyControl.helpers.ffi-binding"
 fileOps = require "l0.DependencyControl.file-ops"
 pathOps = require "l0.DependencyControl.path-ops"
 Finalizer = require "l0.DependencyControl.Finalizer"
@@ -22,16 +23,24 @@ msgs = {
 if ffi.os == "Windows"
   ffiWin = require "l0.DependencyControl.helpers.ffi-windows"
 
-  -- LockFileEx on a one-byte range on Windows
-  pcall ffi.cdef, [[
-    void* CreateFileW(const wchar_t* name, unsigned long access, unsigned long share, void* sec, unsigned long disposition, unsigned long flags, void* template);
-    int LockFileEx(void* hFile, unsigned long flags, unsigned long reserved, unsigned long countLow, unsigned long countHigh, void* overlapped);
-    int UnlockFileEx(void* hFile, unsigned long reserved, unsigned long countLow, unsigned long countHigh, void* overlapped);
-  ]]
-  -- mirrors the fields of OVERLAPPED; zeroed, it locks the byte range at offset 0
-  pcall ffi.cdef, "typedef struct { uintptr_t Internal; uintptr_t InternalHigh; unsigned long Offset; unsigned long OffsetHigh; void* hEvent; } DepCtrlOverlapped;"
+  -- LockFileEx on a one-byte range on Windows. Overlapped mirrors the fields of OVERLAPPED;
+  -- zeroed, it locks the byte range at offset 0.
+  kernel32Binding = ffiBinding.bind {
+    library: "kernel32"
+    structs: {"Overlapped"}
+    functions: {"CreateFileW", "LockFileEx", "UnlockFileEx"}
+    declarations: [[
+      typedef struct { uintptr_t Internal; uintptr_t InternalHigh; unsigned long Offset; unsigned long OffsetHigh; void* hEvent; } Overlapped;
 
-  kernel32, toWide = ffiWin.kernel32, ffiWin.toWide
+      void* CreateFileW(const wchar_t* name, unsigned long access, unsigned long share, void* sec, unsigned long disposition, unsigned long flags, void* template);
+      int LockFileEx(void* hFile, unsigned long flags, unsigned long reserved, unsigned long countLow, unsigned long countHigh, void* overlapped);
+      int UnlockFileEx(void* hFile, unsigned long reserved, unsigned long countLow, unsigned long countHigh, void* overlapped);
+    ]]
+  }
+  kernel32 = kernel32Binding.functions
+  Overlapped = kernel32Binding.types.Overlapped
+
+  toWide = ffiWin.toWide
   isAvailable = ffiWin.isAvailable
 
   -- CreateFileW
@@ -71,20 +80,26 @@ if ffi.os == "Windows"
       described, code = ffiWin.describeLastError!
       return nil, msgs.openImpl.failed\format(path, described), isMalformedPath[code]
 
-    return {handle: handle, overlapped: ffi.new "DepCtrlOverlapped"}
+    return {handle: handle, overlapped: Overlapped!}
   tryLockImpl = (h) -> 0 != kernel32.LockFileEx h.handle, LOCK_EXCLUSIVE_NONBLOCKING, 0, 1, 0, h.overlapped
   unlockImpl = (h) -> kernel32.UnlockFileEx h.handle, 0, 1, 0, h.overlapped
-  closeImpl = (h) -> kernel32.CloseHandle h.handle
+  closeImpl = (h) -> ffiWin.kernel32.CloseHandle h.handle
 
 else
   ffiPosix = require "l0.DependencyControl.helpers.ffi-posix"
 
   -- flock(2) advisory lock (per-open-file-description, so two independent opens contend even within
   -- one process). open/close are provided by ffi-posix.
-  pcall ffi.cdef, [[
-    int flock(int fd, int operation);
-    char *strerror(int errnum);
-  ]]
+  libcBinding = ffiBinding.bind {
+    namespace: ffi.C
+    functions: {"flock", "strerror"}
+    declarations: [[
+      int flock(int fd, int operation);
+      char *strerror(int errnum);
+    ]]
+  }
+  posixC = libcBinding.functions
+
   isAvailable = ffiPosix.isAvailable
 
   -- flock
@@ -102,10 +117,10 @@ else
   ---@return boolean? isBadArgument Never set, since a POSIX path is a byte string this can't reject.
   openImpl = (path) ->
     fd = ffiPosix.open path, bit.bor(ffiPosix.FileAccessMode.ReadWrite, ffiPosix.FileCreationFlags.Create), ffiPosix.getFileMode 'rw', 'r', 'r'
-    return nil, msgs.openImpl.failed\format(path, ffi.string ffi.C.strerror ffi.errno!) if fd < 0
+    return nil, msgs.openImpl.failed\format(path, ffi.string posixC.strerror ffi.errno!) if fd < 0
     return {fd: fd}
-  tryLockImpl = (h) -> 0 == ffi.C.flock h.fd, LOCK_EXCLUSIVE_NONBLOCKING
-  unlockImpl = (h) -> ffi.C.flock h.fd, LOCK_UN
+  tryLockImpl = (h) -> 0 == posixC.flock h.fd, LOCK_EXCLUSIVE_NONBLOCKING
+  unlockImpl = (h) -> posixC.flock h.fd, LOCK_UN
   closeImpl = (h) -> ffiPosix.close h.fd
 
 ---A cross-process advisory lock on a file.

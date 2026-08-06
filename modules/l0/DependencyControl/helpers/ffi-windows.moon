@@ -1,14 +1,20 @@
 ffi = require "ffi"
+ffiBinding = require "l0.DependencyControl.helpers.ffi-binding"
 
-pcall ffi.cdef, [[
-  int CloseHandle(void* hObject);
-  int MultiByteToWideChar(unsigned int cp, unsigned long flags, const char* str, int cbMulti, wchar_t* wide, int cchWide);
-  int WideCharToMultiByte(unsigned int cp, unsigned long flags, const wchar_t* wide, int cchWide, char* str, int cbMulti, const char* defaultChar, int* usedDefault);
-  int SetConsoleOutputCP(unsigned int wCodePageID);
-  unsigned long GetLastError();
-  unsigned long FormatMessageW(unsigned long flags, const void* source, unsigned long messageId, unsigned long langId, wchar_t* buffer, unsigned long size, void* args);
-  void* LoadLibraryW(const wchar_t* name);
-]]
+kernel32Binding = ffiBinding.bind {
+  library: "kernel32"
+  functions: {"CloseHandle", "MultiByteToWideChar", "WideCharToMultiByte", "SetConsoleOutputCP",
+    "GetLastError", "FormatMessageW", "LoadLibraryW"}
+  declarations: [[
+    int CloseHandle(void* hObject);
+    int MultiByteToWideChar(unsigned int cp, unsigned long flags, const char* str, int cbMulti, wchar_t* wide, int cchWide);
+    int WideCharToMultiByte(unsigned int cp, unsigned long flags, const wchar_t* wide, int cchWide, char* str, int cbMulti, const char* defaultChar, int* usedDefault);
+    int SetConsoleOutputCP(unsigned int wCodePageID);
+    unsigned long GetLastError();
+    unsigned long FormatMessageW(unsigned long flags, const void* source, unsigned long messageId, unsigned long langId, wchar_t* buffer, unsigned long size, void* args);
+    void* LoadLibraryW(const wchar_t* name);
+  ]]
+}
 
 msgs = {
   toWide: {
@@ -34,17 +40,17 @@ CP_UTF8 = 65001 -- code page identifier for UTF-8, passed to the *CP() conversio
 MB_ERR_INVALID_CHARS = 8 -- fail on a malformed sequence instead of substituting U+FFFD for it
 MESSAGE_BUFFER_LENGTH = 512 -- comfortably above the longest system error text
 
-isAvailable, kernel32 = pcall ffi.load, "kernel32"
+isAvailable, kernel32 = kernel32Binding.isAvailable, kernel32Binding.functions
 
 ---Thin wrappers over the Win32 calls DependencyControl reaches through the FFI. Loads on every
 ---platform and reports `isAvailable` false where the API doesn't exist, so a caller can branch once
 ---rather than guarding each call.
 ---@class FfiWindows
----@field kernel32 ffi.namespace* The loaded kernel32 library, or nil where it couldn't be loaded.
+---@field kernel32 table<string, ffi.cdata*> The bound kernel32 calls keyed by their Win32 names, with unknown keys resolving through the library so a caller's own declarations work too. Nil where it couldn't be loaded.
 ---@field isAvailable boolean Whether kernel32 loaded; gate any use of `kernel32` on it.
 local Windows
 Windows = {
-  ---@type ffi.namespace*
+  ---@type table<string, ffi.cdata*>
   kernel32: isAvailable and kernel32 or nil
 
   ---Whether the Win32 API is available on this platform, as indicated by presence of kernel32.dll.

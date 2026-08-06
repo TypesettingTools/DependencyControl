@@ -1,4 +1,5 @@
 ffi = require "ffi"
+ffiBinding = require "l0.DependencyControl.helpers.ffi-binding"
 Finalizer = require "l0.DependencyControl.Finalizer"
 local Hash
 
@@ -13,26 +14,33 @@ if ffi.os == "Windows"
   -- On Windows, the kernel object is ref-counted and destroyed once the last handle closes,
   -- so it self-heals after a holder process exits
 
-  ffiWin = require "l0.DependencyControl.helpers.ffi-windows" -- registers the shared CloseHandle cdef
+  ffiWin = require "l0.DependencyControl.helpers.ffi-windows" -- provides the bound CloseHandle
 
-  pcall ffi.cdef, "unsigned int GetCurrentProcessId(void);"
-  pcall ffi.cdef, "void *CreateSemaphoreA(void *attr, long initialCount, long maximumCount, const char *name);"
-  pcall ffi.cdef, "unsigned long WaitForSingleObject(void *hHandle, unsigned long dwMilliseconds);"
-  pcall ffi.cdef, "bool ReleaseSemaphore(void *hSemaphore, long lReleaseCount, long *lpPreviousCount);"
+  kernel32Binding = ffiBinding.bind {
+    library: "kernel32"
+    functions: {"GetCurrentProcessId", "CreateSemaphoreA", "WaitForSingleObject", "ReleaseSemaphore"}
+    declarations: [[
+      unsigned int GetCurrentProcessId(void);
+      void *CreateSemaphoreA(void *attr, long initialCount, long maximumCount, const char *name);
+      unsigned long WaitForSingleObject(void *hHandle, unsigned long dwMilliseconds);
+      bool ReleaseSemaphore(void *hSemaphore, long lReleaseCount, long *lpPreviousCount);
+    ]]
+  }
+  kernel32 = kernel32Binding.functions
 
   WAIT_OBJECT_0 = 0
   INFINITE = 0xFFFFFFFF
 
-  okPid, p = pcall -> tonumber ffi.C.GetCurrentProcessId!
+  okPid, p = pcall -> tonumber kernel32.GetCurrentProcessId!
   pid = okPid and p or 0
   isAvailable = true
 
   formatName = (token) -> token
-  openImpl = (name) -> ffi.C.CreateSemaphoreA nil, 1, 1, name
+  openImpl = (name) -> kernel32.CreateSemaphoreA nil, 1, 1, name
   isOpenImpl = (handle) -> handle != nil
-  tryLockImpl = (handle) -> ffi.C.WaitForSingleObject(handle, 0) == WAIT_OBJECT_0
-  lockImpl = (handle) -> ffi.C.WaitForSingleObject handle, INFINITE
-  unlockImpl = (handle) -> ffi.C.ReleaseSemaphore handle, 1, nil
+  tryLockImpl = (handle) -> kernel32.WaitForSingleObject(handle, 0) == WAIT_OBJECT_0
+  lockImpl = (handle) -> kernel32.WaitForSingleObject handle, INFINITE
+  unlockImpl = (handle) -> kernel32.ReleaseSemaphore handle, 1, nil
   closeImpl = (name, handle, unlink) -> ffiWin.kernel32.CloseHandle handle
 
 else
@@ -48,17 +56,22 @@ else
   BINARY_SEMAPHORE_INITIAL_VALUE = ffi.new "unsigned int", 1
   SEM_FAILED = ffi.cast "void *", -1 -- sem_open's failure sentinel ((void*)-1)
 
-  pcall ffi.cdef, [[
-    int getpid(void);
-    void *sem_open(const char *name, int oflag, ...);
-    int sem_wait(void *sem);
-    int sem_trywait(void *sem);
-    int sem_post(void *sem);
-    int sem_close(void *sem);
-    int sem_unlink(const char *name);
-  ]]
+  posixBinding = ffiBinding.bind {
+    namespace: ffi.C
+    functions: {"getpid", "sem_open", "sem_wait", "sem_trywait", "sem_post", "sem_close", "sem_unlink"}
+    declarations: [[
+      int getpid(void);
+      void *sem_open(const char *name, int oflag, ...);
+      int sem_wait(void *sem);
+      int sem_trywait(void *sem);
+      int sem_post(void *sem);
+      int sem_close(void *sem);
+      int sem_unlink(const char *name);
+    ]]
+  }
+  posix = posixBinding.functions
 
-  okPid, p = pcall -> tonumber ffi.C.getpid!
+  okPid, p = pcall -> tonumber posix.getpid!
   pid = okPid and p or 0
   isAvailable = true
 
@@ -70,7 +83,7 @@ else
   -- kept alive for the module's lifetime (anchored on the class below) or it would be collected — and fire
   -- the unlink — early.
   namesToUnlink = {}
-  unlinkAtExit = Finalizer.create -> pcall(-> ffi.C.sem_unlink name) for name in pairs namesToUnlink
+  unlinkAtExit = Finalizer.create -> pcall(-> posix.sem_unlink name) for name in pairs namesToUnlink
 
   -- Darwin caps the whole name at 31 chars (including the NULL terminator) and fails with ENAMETOOLONG beyond it.
   -- Linux allows 251 (255 - the length of the leading 'sem.'). If the token exceeds the OS-specific limit, we use a
@@ -85,13 +98,13 @@ else
     Hash or= require "l0.DependencyControl.hash"
     return "/#{Hash.getDigest(Hash.HashType.Sha1, token)\sub(1, MAX_POSIX_SEM_NAME - 1)}"
 
-  openImpl = (name) -> ffi.C.sem_open name, ffiPosix.FileCreationFlags.Create, SEMAPHORE_FILE_MODE, BINARY_SEMAPHORE_INITIAL_VALUE
+  openImpl = (name) -> posix.sem_open name, ffiPosix.FileCreationFlags.Create, SEMAPHORE_FILE_MODE, BINARY_SEMAPHORE_INITIAL_VALUE
   isOpenImpl = (handle) -> handle != nil and handle != SEM_FAILED
-  tryLockImpl = (handle) -> ffi.C.sem_trywait(handle) == 0
-  lockImpl = (handle) -> ffi.C.sem_wait handle
-  unlockImpl = (handle) -> ffi.C.sem_post handle
+  tryLockImpl = (handle) -> posix.sem_trywait(handle) == 0
+  lockImpl = (handle) -> posix.sem_wait handle
+  unlockImpl = (handle) -> posix.sem_post handle
   closeImpl = (name, handle, unlink) ->
-    ffi.C.sem_close handle
+    posix.sem_close handle
     namesToUnlink[name] = true if unlink -- unlinked at state teardown, not now (see above)
 
 
