@@ -23,15 +23,17 @@ package.preload["aegisub.clipboard"] = -> clipboard
 -- than raising, since every platform but Windows needs nothing.
 unicodePatch = require "l0.AegisubShims.unicode-monkeypatch"
 
--- Windows can measure text the same way Aegisub does, so text_extents works there out of the box.
--- Elsewhere FreeType stands in, reporting the numbers GDI would for the same face, and where neither
--- is reachable text_extents keeps raising until a caller installs a backend of its own.
-textExtentsGdi = require "l0.AegisubShims.text-extents-gdi"
-textExtentsFreeType = require "l0.AegisubShims.text-extents-freetype"
-if textExtentsGdi.isAvailable
-  aegisub.__depCtrl.setTextExtentsBackend textExtentsGdi.measure
-elseif textExtentsFreeType.isAvailable
-  aegisub.__depCtrl.setTextExtentsBackend textExtentsFreeType.measure
+textExtents = require "l0.AegisubShims.text-extents"
+textExtentsGdi = require "l0.AegisubShims.text-extents-backends.gdi"
+textExtentsCoreText = require "l0.AegisubShims.text-extents-backends.coretext"
+textExtentsFreeType = require "l0.AegisubShims.text-extents-backends.freetype"
+textExtentsPango = require "l0.AegisubShims.text-extents-backends.pango"
+
+-- The default backend measures by the Windows contract: GDI natively on Windows, CoreText natively
+-- on macOS, FreeType with fontconfig everywhere else. Where none is reachable, text_extents keeps
+-- raising until a caller installs a backend of its own.
+defaultTextExtentsBackend = textExtents.selectBackend!
+aegisub.__depCtrl.setTextExtentsBackend defaultTextExtentsBackend if defaultTextExtentsBackend
 
 -- Aegisub's include files are also reachable by requiring their bare identifiers
 -- and publish their module as a global once they are loaded in whichever way.
@@ -58,8 +60,13 @@ return {
   getClipboardBackend: clipboard.__depCtrl.getBackend
   setTextExtentsBackend: aegisub.__depCtrl.setTextExtentsBackend
   getTextExtentsBackend: aegisub.__depCtrl.getTextExtentsBackend
+  selectTextExtentsBackend: textExtents.selectBackend
+  TextExtentsMetricMode: textExtents.MetricMode
   -- The measurement backends themselves, for building a configured one to install through the hook.
+  TextExtents: textExtents
   TextExtentsGdi: textExtentsGdi
+  TextExtentsCoreText: textExtentsCoreText
   TextExtentsFreeType: textExtentsFreeType
+  TextExtentsPango: textExtentsPango
   :unicodePatch
 }

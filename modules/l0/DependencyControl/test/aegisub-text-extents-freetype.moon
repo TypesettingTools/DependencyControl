@@ -6,8 +6,8 @@
 -- Called from test.moon as: (controls\requireTest "aegisub-text-extents-freetype")!
 ->
   haveShims, shims = pcall require, "l0.AegisubShims"
-  haveFreeType, freetype = pcall require, "l0.AegisubShims.text-extents-freetype"
-  haveGdi, gdi = pcall require, "l0.AegisubShims.text-extents-gdi"
+  haveFreeType, freetype = pcall require, "l0.AegisubShims.text-extents-backends.freetype"
+  haveGdi, gdi = pcall require, "l0.AegisubShims.text-extents-backends.gdi"
 
   -- a family every fontconfig install resolves to something for, installed or not
   baseStyle = (overrides) ->
@@ -92,7 +92,7 @@
       atTwo = freetype.measure baseStyle(spacing: 2), "Hello"
       ut\assertAlmostEquals atTwo - atOne, 5
 
-    -- an astral character is one character here, where Aegisub's Windows path charges it twice
+    -- an astral character is one character here, where Aegisub's Windows path counts it twice
     measure_spacingCountsAnAstralCharacterOnce: (ut) ->
       atOne = freetype.measure baseStyle(spacing: 1), "\240\159\152\128"
       atTwo = freetype.measure baseStyle(spacing: 2), "\240\159\152\128"
@@ -133,6 +133,31 @@
 
     createBackend_rejectsUnknownMetricMode: (ut) ->
       ut\assertErrorMsgMatches (-> freetype.createBackend {metricMode: 99}), {}, "Invalid value"
+
+    -- The Linux contract divides its measurement by the line height, which leaves the spacing term
+    -- scaled by the resolution the text was realized at. Doubling that halves what spacing adds.
+    createBackend_resolutionScalesTheLinuxSpacingTerm: (ut) ->
+      atDefault = freetype.createBackend {metricMode: freetype.MetricMode.AegisubLinux}
+      atHighDpi = freetype.createBackend {
+        metricMode: freetype.MetricMode.AegisubLinux, dpi: 192
+      }
+      solid, spaced = baseStyle!, baseStyle spacing: 4
+      addedAtDefault = atDefault(spaced, "Hello") - atDefault(solid, "Hello")
+      addedAtHighDpi = atHighDpi(spaced, "Hello") - atHighDpi(solid, "Hello")
+      ut\assertGreaterThan addedAtDefault, 0
+      ut\assertAlmostEquals addedAtHighDpi / addedAtDefault, 0.5, 0.001
+
+    -- GDI adds spacing to each advance as given, with no measurement to normalize against
+    createBackend_resolutionLeavesTheWindowsContractAlone: (ut) ->
+      atDefault = freetype.createBackend!
+      atHighDpi = freetype.createBackend {dpi: 192}
+      solid, spaced = baseStyle!, baseStyle spacing: 4
+      ut\assertAlmostEquals atHighDpi(spaced, "Hello"), atDefault(spaced, "Hello")
+      -- and it adds exactly what the style asked for, five characters at four units each
+      ut\assertAlmostEquals atDefault(spaced, "Hello") - atDefault(solid, "Hello"), 20
+
+    createBackend_rejectsANonPositiveResolution: (ut) ->
+      ut\assertErrorMsgMatches (-> freetype.createBackend {dpi: -1}), {}, "positive"
 
     createBackend_rejectsNonTableOptions: (ut) ->
       ut\assertError freetype.createBackend, "Face"

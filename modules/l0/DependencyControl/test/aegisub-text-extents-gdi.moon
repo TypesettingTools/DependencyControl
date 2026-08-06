@@ -6,7 +6,7 @@
 ->
   ffi = require "ffi"
   haveShims, shims = pcall require, "l0.AegisubShims"
-  haveGdi, gdi = pcall require, "l0.AegisubShims.text-extents-gdi"
+  haveGdi, gdi = pcall require, "l0.AegisubShims.text-extents-backends.gdi"
 
   -- a face every Windows install carries, so the numbers below come from a real font
   baseStyle = (overrides) ->

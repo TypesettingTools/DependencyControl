@@ -12,9 +12,9 @@
 
 ffi = require "ffi"
 
-Enum = require "l0.DependencyControl.Enum"
 ffiFontconfig = require "l0.AegisubShims.helpers.ffi-fontconfig"
 ffiFreeType = require "l0.AegisubShims.helpers.ffi-freetype"
+textExtents = require "l0.AegisubShims.text-extents"
 unicode = require "l0.DependencyControl.unicode"
 utils = require "l0.DependencyControl.utils"
 
@@ -33,6 +33,9 @@ msgs = {
     noSize: "FreeType would not realize the font '%s' at %d pixels: %s"
     noAdvance: "FreeType would not report the advance of glyph %d in the font '%s': %s"
   }
+  createBackend: {
+    badDpi: "A DPI has to be a positive number, got %s."
+  }
 }
 
 {:freetype, :library, :FaceOut, :AdvanceOut, :KerningOut, :HoriHeaderPointer, :Os2Pointer, :SfntTag,
@@ -41,9 +44,7 @@ msgs = {
 
 isAvailable = ffiFreeType.isAvailable and ffiFontconfig.isAvailable
 
--- Aegisub measures at this multiple of the style's font size and divides the four results back down,
--- which buys six binary digits of resolution the whole-pixel metrics would otherwise round away.
-MEASUREMENT_SCALE = 64
+{:MEASUREMENT_SCALE, :POINTS_PER_INCH, :DEFAULT_DPI, :MetricMode} = textExtents
 
 -- FreeType reports advances as 16.16 fixed-point pixels and its scaled face metrics as 26.6, so each
 -- is divided by the units its format packs into one pixel.
@@ -55,20 +56,6 @@ advanceOut, kerningOut = AdvanceOut!, KerningOut!
 
 -- open faces and their design metrics, keyed by what was asked for rather than by what matched
 measuredFaces = {}
-
----Which of Aegisub's disagreeing metric contracts to measure by.
----@alias TextExtentsMetricMode
----| 1 # AegisubWindows: the OS/2 Windows cell, derived as GDI derives TEXTMETRIC, which is also what libass renders by
----| 2 # AegisubLinux: what Aegisub reports on Linux, where wxGTK exposes only the typographic metrics through Pango
-MetricMode = Enum "TextExtentsMetricMode", {
-  AegisubWindows: 1
-  AegisubLinux: 2
-}
-
----How a backend built by `createBackend` should measure.
----@class TextExtentsOptions
----@field metricMode? TextExtentsMetricMode Which contract to measure by, `AegisubWindows` by default.
----@field kerning? boolean Whether to apply the face's kern table to text set solid; defaults to what the mode implies.
 
 ---A face fontconfig picked out, as the file holding it.
 ---@class FontFile
@@ -237,13 +224,25 @@ prepareWindowsCellMetrics = (measured, fontSize) ->
 ---typographic line height comes out at the nominal font size.
 ---
 ---Measured against a running Aegisub 3.4.2 on Ubuntu over a 36-face test corpus at four sizes, the
----mean width error is 0.621% on the 1757 cases where the face has glyphs for the whole text. Height
+---mean width error is 0.556% on the 1757 cases where the face has glyphs for the whole text. Height
 ---and external leading are exact on every case.
 ---Where the face lacks a glyph the mean width error is 39.8% over 413 cases, Pango substituting
 ---another face per character where this backend measures .notdef.
 ---A face setting fsSelection USE_TYPO_METRICS takes its span from the OS/2 sTypo values instead of
 ---the hhea ones, in Pango and FreeType alike, so this mode follows Aegisub there too — to 0.3% on
 ---the corpus face where that redirect moves every metric by 1.68x.
+---
+---Kerning is the largest residual. This mode reads only the legacy `kern` table, while Pango kerns
+---through GPOS, so a face whose GPOS values the kern table does not duplicate measures differently on
+---any text with kerning pairs: 3.1% mean on two-letter pairs over the 21 corpus faces with GPOS and
+---no kern table, 6.1% on Calibri where the two tables disagree, and nothing on text without pairs or
+---on a face kerning through the kern table alone.
+---
+---A style setting `spacing` is measured to 0.019% over those cases at the default DPI of 96. Aegisub
+---adds the spacing after measuring and then divides by the line height it measured, which leaves the
+---spacing scaled by the DPI the text was realized at while the advances scale with that height and
+---cancel out. This mode scales it the same way. To reproduce Aegisub's measurements on a high-DPI
+---display, configure the backend with that display's DPI.
 ---
 ---Measured against GDI over the same corpus, the mean width error is 15.8% on the cases where the
 ---face has glyphs for the whole text, and the descent is off by 10.8%.
@@ -258,8 +257,7 @@ prepareWindowsCellMetrics = (measured, fontSize) ->
 ---The external leading differs by 19.4% for a different reason. It is reported as zero here whatever
 ---line gap the face declares, so the ratio has no bearing on it.
 ---
----Kerning reads only the legacy `kern` table, so a face kerning through GPOS alone measures without
----any, and the style's `encoding` is ignored, as the wx branch ignores it.
+---The style's `encoding` is ignored, as the wx branch ignores it.
 ---@param measured MeasuredFace The face to measure with.
 ---@param fontSize integer Requested cell height, already multiplied by MEASUREMENT_SCALE.
 ---@return PreparedMetrics? prepared Values at the realized size, which `scaling` normalizes.
@@ -323,6 +321,16 @@ createBackend = (options) ->
   applyKerning = defaultsByMode[metricMode].kerning
   applyKerning = options.kerning if options.kerning != nil
 
+  dpi = options.dpi or DEFAULT_DPI
+  assert "number" == type(dpi) and dpi > 0,
+    msgs.createBackend.badDpi\format tostring options.dpi
+
+  -- The Linux contract measures a run in pixels and divides everything by the line height it
+  -- measured. Advances scale with that height and cancel, but the spacing term is added afterwards
+  -- in units that never went through a font, so it survives the division scaled by the resolution
+  -- the text was realized at. The Windows contract has no such divisor and takes spacing as given.
+  spacingScale = metricMode == MetricMode.AegisubLinux and POINTS_PER_INCH / dpi or 1
+
   ---@param style AegisubStyle The style to set the text in.
   ---@param text string The text to measure.
   ---@return number width Advance the run takes, trailing spaces included, after the style's scale_x.
@@ -336,7 +344,10 @@ createBackend = (options) ->
     fontSize = math.floor (style.fontsize or 0) * MEASUREMENT_SCALE
     return 0, 0, 0, 0 unless fontSize > 0
 
-    spacing = (style.spacing or 0) * MEASUREMENT_SCALE
+    -- the run is measured with spacing already scaled for the contract, but whether a style asked
+    -- for any is read off the style, since a contract could scale it to something immeasurably small
+    hasSpacing = (style.spacing or 0) != 0
+    spacing = (style.spacing or 0) * MEASUREMENT_SCALE * spacingScale
 
     codePoints, decodeErr = unicode.decodeUtf8 text, unicode.DecodeMode.Strict
     error decodeErr, 2 unless codePoints
@@ -349,10 +360,10 @@ createBackend = (options) ->
 
     -- Aegisub's POSIX spacing branch measures character by character, so an empty run never reads the
     -- face at all and every metric stays zero, descent and leading included.
-    return 0, 0, 0, 0 if prepared.reportsHeightForEmptyRun and spacing != 0 and #codePoints == 0
+    return 0, 0, 0, 0 if prepared.reportsHeightForEmptyRun and hasSpacing and #codePoints == 0
 
     -- kerning describes text set solid, so inter-character spacing rules it out however it was asked for
-    kerns = applyKerning and spacing == 0 and measured.hasKerning
+    kerns = applyKerning and not hasSpacing and measured.hasKerning
 
     width, previousGlyph = 0, nil
     for codePoint in *codePoints
@@ -369,7 +380,7 @@ createBackend = (options) ->
     -- An empty run has no height under GDI but keeps the line height under wxWidgets — except that
     -- Aegisub's spacing branch measures character by character, so with spacing set an empty run is
     -- never measured at all and the height stays zero on both.
-    measuresEmptyRun = prepared.reportsHeightForEmptyRun and spacing == 0
+    measuresEmptyRun = prepared.reportsHeightForEmptyRun and not hasSpacing
     height = (#codePoints > 0 or measuresEmptyRun) and fontSize or 0
 
     scaledWidth = horizontalScale * width * prepared.scaling / MEASUREMENT_SCALE

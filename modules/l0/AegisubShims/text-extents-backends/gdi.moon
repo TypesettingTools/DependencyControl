@@ -5,6 +5,7 @@
 ffi = require "ffi"
 ffiGdi = require "l0.AegisubShims.helpers.ffi-gdi"
 ffiWindows = require "l0.DependencyControl.helpers.ffi-windows"
+textExtents = require "l0.AegisubShims.text-extents"
 
 msgs = {
   measure: {
@@ -19,9 +20,8 @@ msgs = {
   :FontQuality, :FontPitch, :FontFamily, :CharSet} = ffiGdi
 
 -- GDI reports extents in whole device units, so the font is realized at this multiple of the style's
--- size and every result divided back down. Being a power of two, it buys six binary digits of
--- resolution the integers would otherwise round away, and costs nothing in the division.
-MEASUREMENT_SCALE = 64
+-- size and every result divided back down. Being a power of two, it costs nothing in the division.
+{:MEASUREMENT_SCALE} = textExtents
 
 -- Aegisub copies at most one unit less than LOGFONTW's face name holds, leaving the terminator, so a
 -- longer name truncates identically here.
