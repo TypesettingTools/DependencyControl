@@ -98,7 +98,7 @@ else
     Hash or= require "l0.DependencyControl.hash"
     return "/#{Hash.getDigest(Hash.HashType.Sha1, token)\sub(1, MAX_POSIX_SEM_NAME - 1)}"
 
-  openImpl = (name) -> posix.sem_open name, ffiPosix.FileCreationFlags.Create, SEMAPHORE_FILE_MODE, BINARY_SEMAPHORE_INITIAL_VALUE
+  openImpl = (name) -> posix.sem_open name, ffiPosix.OpenFlags.Create, SEMAPHORE_FILE_MODE, BINARY_SEMAPHORE_INITIAL_VALUE
   isOpenImpl = (handle) -> handle != nil and handle != SEM_FAILED
   tryLockImpl = (handle) -> posix.sem_trywait(handle) == 0
   lockImpl = (handle) -> posix.sem_wait handle

@@ -51,6 +51,16 @@ check = (logger, condition, template, ...) ->
   return logger\error template, ... if logger
   assert false, formatMessage template, ...
 
+---Everything an enumeration type takes beyond its name and members.
+---@class EnumOptions
+---@field logger? Logger Logger for the type's error messages; without one they are thrown natively.
+
+---Whether a value is a logger rather than an options table, being the one thing that answers to `log`.
+---@param value any
+---@return boolean isLogger
+isLogger = (value) ->
+  return "table" == type(value) and "function" == type value.log
+
 ---An immutable enumeration type with value/key reverse lookup.
 ---@class Enum
 class Enum
@@ -64,8 +74,9 @@ class Enum
   ---Creates an enum from a table of key/value pairs or a list of names.
   ---@param name string
   ---@param values table Key/value pairs, or a list of names whose value defaults to their position.
-  ---@param logger? Logger Logger for enum error messages; without one they are thrown natively.
-  new: (@name, values, @__logger) =>
+  ---@param options? EnumOptions|Logger How the type behaves; a logger may be given on its own instead.
+  new: (@name, values, options) =>
+    @__logger = isLogger(options) and options or options and options.logger
     logger = @__logger -- avoid invalid key access error from metamethod if no logger was given
     check logger, type(@name) == "string", msgs.new.missingOrInvalidName, type @name
     @elements, @__keysByValue, @values, @keys = {}, {}, {}, {}

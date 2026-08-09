@@ -38,6 +38,7 @@ return UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
     Logger: (controls\requireTest "Logger")!
     UnitTestSuite: (controls\requireTest "UnitTestSuite")!
     Enum: (controls\requireTest "Enum")!
+    Flags: (controls\requireTest "Flags")!
     Accessors: (controls\requireTest "Accessors")!
     Finalizer: (controls\requireTest "Finalizer")!
     SemanticVersion: (controls\requireTest "SemanticVersion")!

@@ -116,7 +116,9 @@ else
   ---@return string? err Why it could not be opened, naming the path and what the OS reported.
   ---@return boolean? isBadArgument Never set, since a POSIX path is a byte string this can't reject.
   openImpl = (path) ->
-    fd = ffiPosix.open path, bit.bor(ffiPosix.FileAccessMode.ReadWrite, ffiPosix.FileCreationFlags.Create), ffiPosix.getFileMode 'rw', 'r', 'r'
+    {:OpenFlags} = ffiPosix
+    fd = ffiPosix.open path, OpenFlags\combine(OpenFlags.ReadWrite, OpenFlags.Create),
+      ffiPosix.getFileMode 'rw', 'r', 'r'
     return nil, msgs.openImpl.failed\format(path, ffi.string posixC.strerror ffi.errno!) if fd < 0
     return {fd: fd}
   tryLockImpl = (h) -> 0 == posixC.flock h.fd, LOCK_EXCLUSIVE_NONBLOCKING
