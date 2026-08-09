@@ -131,6 +131,27 @@
       suite\run!
       ut\assertEquals ran, {"bbb", "aaa", "ccc"} -- listed order first, then the unlisted test appended
 
+    -- a field the expected table leaves out is not compared, so a record can be pinned in part
+    assertFieldsEqual_comparesOnlyTheFieldsExpected: (ut) ->
+      probe = makeProbe!
+      ok = pcall UnitTest.assertFieldsEqual, probe, {a: 1, b: 2, c: 3}, {a: 1, c: 3}
+      ut\assertTrue ok
+
+    -- the failure names the field, which assertEquals cannot
+    assertFieldsEqual_failureNamesTheField: (ut) ->
+      probe = makeProbe!
+      ok = pcall UnitTest.assertFieldsEqual, probe, {a: 1, b: 2}, {b: 3}, "hhea"
+      ut\assertFalse ok
+      ut\assertEquals probe.captured.msg, UnitTest.msgs.assert.fieldsEqual
+      ut\assertEquals probe.captured.args[1], "hhea"
+      ut\assertEquals probe.captured.args[2], "b"
+
+    -- a field the table lacks altogether is a mismatch, not a pass
+    assertFieldsEqual_treatsAnAbsentFieldAsAMismatch: (ut) ->
+      probe = makeProbe!
+      ok = pcall UnitTest.assertFieldsEqual, probe, {a: 1}, {missing: 1}
+      ut\assertFalse ok
+
     -- assertItemsEqual/assertItemsAre: regressions for the failure message passing the keys
     -- sub-phrase as the whole template, and the expected arg being type-checked against `actual`
 

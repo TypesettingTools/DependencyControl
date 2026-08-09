@@ -54,6 +54,7 @@ class UnitTest
       notEquals: "Actual value equals expected value when it wasn't supposed to:\n%s actual: %s"
       is: "Expected %s, actual value was %s."
       isNot: "Actual value %s was identical to the expected value when it wasn't supposed to."
+      fieldsEqual: "Field %s.%s didn't match:\n  actual: %s\nexpected: %s"
       itemsEqual: "Actual item values of table weren't %s to the expected values (checked %s):\n Actual: %s\nExpected: %s"
       itemsEqualNumericKeys: "only continuous numerical keys"
       itemsEqualAllKeys: "all keys"
@@ -471,6 +472,22 @@ class UnitTest
       @@msgs.assert.itemsEqual, "equal",
       @@msgs.assert[onlyNumKeys and "itemsEqualNumericKeys" or "itemsEqualAllKeys"],
       @logger\dumpToString(actual), @logger\dumpToString expected
+
+
+  ---Fails the assertion unless a table holds every field another one states, naming the first that
+  ---differs. A key the expected table leaves out is not compared, so this states what a record has to
+  ---hold without pinning the rest of it.
+  ---@param actual table The table to check.
+  ---@param expected table The fields it has to hold, against the values it has to hold them at.
+  ---@param label? string What to call the table in the message, "table" by default.
+  assertFieldsEqual: (actual, expected, label = "table") =>
+    @checkArgTypes { actual: {actual, "table"}, expected: {expected, "table"},
+      label: {label, "string"}
+      }
+
+    for key, value in pairs expected
+      @assert self.equals(actual[key], value), @@msgs.assert.fieldsEqual, label, tostring(key),
+        @logger\dumpToString(actual[key]), @logger\dumpToString value
 
 
   ---Fails the assertion if the items of one table aren't *identical* to the items of another.
