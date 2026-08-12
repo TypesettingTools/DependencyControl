@@ -25,6 +25,9 @@ assert lua52CompatEnabled!,
   [[DependencyControl requires a LuaJIT built with Lua 5.2 compatibility (LUAJIT_ENABLE_LUA52COMPAT), which your Aegisub installation is missing.
 Update to a recent Aegisub build to resolve this issue.]]
 
+-- Enable support for UTF-8 paths in lfs on Windows
+lfsUnicodePatch = require "l0.DependencyControl.lfs-unicode-patch"
+lfsUnicodePatch.install!
 
 -- Install the module-provides searcher and register DepCtrl's bundled fallbacks before
 -- the sub-modules below load.

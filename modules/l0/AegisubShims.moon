@@ -24,6 +24,10 @@ package.preload["aegisub.clipboard"] = -> clipboard
 -- than raising, since every platform but Windows needs nothing.
 unicodePatch = require "l0.AegisubShims.unicode-monkeypatch"
 
+-- Add support for UTF-8 paths in `require()`, as Aegisub does.
+unicodeSearcher = require "l0.AegisubShims.unicode-searcher"
+unicodeSearcher.install!
+
 textExtents = require "l0.AegisubShims.text-extents"
 textExtentsGdi = require "l0.AegisubShims.text-extents-backends.gdi"
 textExtentsCoreText = require "l0.AegisubShims.text-extents-backends.coretext"
@@ -72,4 +76,5 @@ return {
   -- Font-table parsing, for a script reading a face's own metrics rather than measuring text with it.
   Sfnt: sfnt
   :unicodePatch
+  :unicodeSearcher
 }

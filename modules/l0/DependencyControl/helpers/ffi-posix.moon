@@ -6,6 +6,7 @@
 ffi = require "ffi"
 Flags = require "l0.DependencyControl.Flags"
 ffiBinding = require "l0.DependencyControl.helpers.ffi-binding"
+ffiCommon = require "l0.DependencyControl.helpers.ffi-common"
 
 isOSX = ffi.os == "OSX"
 
@@ -53,18 +54,30 @@ OpenFlags = Flags "PosixOpenFlags", {
   TmpFile: not isOSX and 0x410000 or nil
 }
 
+-- The shared codes plus the two the kernels number differently from each other. Linux takes them from
+-- asm-generic/errno.h, macOS from sys/errno.h; the pair swap places between the two, and each is the
+-- other's value on the platform it isn't.
+Errno = ffiCommon.extendErrno {
+  EAGAIN: isOSX and 35 or 11 -- resource temporarily unavailable
+  EDEADLK: isOSX and 11 or 35 -- resource deadlock avoided
+}
+
 ---POSIX open(2) flags, modes and thin call wrappers, for code reaching libc through the FFI. Loads on
 ---every platform and reports `isAvailable` false where the calls don't resolve, so a caller can branch
 ---once rather than guarding each call.
 ---@class FfiPosix
 ---@field isAvailable boolean Whether this platform is likely POSIX. Gate any use of `open`/`close` on it.
 ---@field OpenFlags Flags The access modes and creation bits open(2) takes, as a PosixOpenFlags flag set.
+---@field Errno FfiErrno The error codes by their C names, the shared ones plus this kernel's own.
 return {
   ---@type boolean
   isAvailable: isAvailable
 
   ---@type Flags
   OpenFlags: OpenFlags
+
+  ---@type FfiErrno
+  Errno: Errno
 
   ---Builds the numeric file mode for the given symbolic permissions.
   ---@param user? string Any combination of "r", "w" and "x" for the owner, or "" for none.

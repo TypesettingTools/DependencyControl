@@ -49,6 +49,7 @@ return UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
     ConfigView: (controls\requireTest "ConfigView")!
     ConfigSchema: (controls\requireTest "config-schema")!
     ModuleLoader: (controls\requireTest "ModuleLoader")!
+    LfsUnicodePatch: (controls\requireTest "lfs-unicode-patch") isWindows
     PackageRecord: (controls\requireTest "PackageRecord") basePath, stubHelpers
     UpdateTask: (controls\requireTest "UpdateTask") stubHelpers
     Updater: (controls\requireTest "Updater") stubHelpers
@@ -66,6 +67,7 @@ return UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
     ZipArchiver: (controls\requireTest "ZipArchiver") basePath
     JsonSchema: (controls\requireTest "JsonSchema") basePath
     FfiBinding: (controls\requireTest "ffi-binding")!
+    FfiCommon: (controls\requireTest "ffi-common")!
     FfiPosix: (controls\requireTest "ffi-posix")!
     FfiWindows: (controls\requireTest "ffi-windows")!
     OpenUrl: (controls\requireTest "open-url")!
@@ -75,6 +77,7 @@ return UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
     AegisubClipboard: (controls\requireTest "aegisub-clipboard")!
     AegisubInclude: (controls\requireTest "aegisub-include")!
     AegisubUnicodePatch: (controls\requireTest "aegisub-unicode-monkeypatch")!
+    AegisubUnicodeSearcher: (controls\requireTest "aegisub-unicode-searcher")!
     AegisubGlobal: (controls\requireTest "aegisub-global")!
     AegisubSfnt: (controls\requireTest "aegisub-sfnt")!
     AegisubGdiMetrics: (controls\requireTest "aegisub-gdi-metrics")!

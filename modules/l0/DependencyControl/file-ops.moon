@@ -4,10 +4,8 @@ Logger = require "l0.DependencyControl.Logger"
 domain = require "l0.DependencyControl.domain"
 pathOps = require "l0.DependencyControl.path-ops"
 Hash = require "l0.DependencyControl.hash"
-
-ENOENT = 2 -- POSIX error code for "No such file or directory"
-ENOTDIR = 20 -- POSIX error code for "Not a directory"
-ERROR_PATH_NOT_FOUND = 3 -- Windows error code for "The system cannot find the path specified"
+{:Errno} = require "l0.DependencyControl.helpers.ffi-common"
+{:Win32Error} = require "l0.DependencyControl.helpers.ffi-windows"
 
 local ConfigView, FileOps
 
@@ -552,7 +550,7 @@ FileOps = {
     -- Aegisub's lfs implementation signals a non-existent file/dir with a bare nil,
     -- while the stock library (https://lunarmodules.github.io/luafilesystem/; v1.7.0+)
     -- returns an error code alongside an error message
-    elseif err == nil or errCode == ENOENT or errCode == ERROR_PATH_NOT_FOUND or errCode == ENOTDIR
+    elseif err == nil or errCode == Errno.ENOENT or errCode == Win32Error.PathNotFound or errCode == Errno.ENOTDIR
       return {attr: false, path: fullPath, :dir, :file}
     else
       return nil, msgs.attributes.genericError\format err
