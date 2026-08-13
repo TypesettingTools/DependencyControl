@@ -22,7 +22,7 @@ freetypeBinding = ffiBinding.bind {
     "TtHoriHeader", "TtOs2"}
   functions: {"FT_Init_FreeType", "FT_New_Face", "FT_Done_Face", "FT_Set_Pixel_Sizes",
     "FT_Get_Char_Index", "FT_Get_Advance", "FT_Get_Kerning", "FT_Get_Sfnt_Table",
-    "FT_Load_Sfnt_Table", "FT_MulDiv", "FT_Error_String"}
+    "FT_Load_Sfnt_Table", "FT_MulDiv", "FT_Error_String", "FT_Select_Charmap"}
   declarations: [[
     typedef struct { void* data; void* finalizer; } FtGeneric;
     typedef struct { long xMin; long yMin; long xMax; long yMax; } FtBBox;
@@ -94,6 +94,10 @@ freetypeBinding = ffiBinding.bind {
     int FT_Done_Face(FtFaceRec* face);
     int FT_Set_Pixel_Sizes(FtFaceRec* face, unsigned int width, unsigned int height);
     unsigned int FT_Get_Char_Index(FtFaceRec* face, unsigned long charCode);
+
+    /* what FT_Get_Char_Index then indexes by, which is a code point for a Unicode charmap and a
+       single byte for any of the legacy ones */
+    int FT_Select_Charmap(FtFaceRec* face, int encoding);
     int FT_Get_Advance(FtFaceRec* face, unsigned int glyphIndex, int loadFlags, long* advance);
     int FT_Get_Kerning(FtFaceRec* face, unsigned int leftGlyph, unsigned int rightGlyph,
       unsigned int kerningMode, FtVector* kerning);
@@ -256,6 +260,18 @@ FaceFlag = Flags "FreeTypeFaceFlag", {
   SbixOverlay: 0x40000
 }
 
+---The character encodings a charmap may be selected by, as the four-character codes FreeType names
+---them with. FreeType defines more; these are the two a face's cmap subtables offer here.
+---@alias FreeTypeEncoding
+---| 1970170211 # Unicode: `unic`, indexed by code point, which FT_New_Face selects wherever a face offers it
+---| 1634889070 # AppleRoman: `armn`, indexed by a Mac OS Roman byte, the only subtable a font predating Unicode states
+---| 1937337698 # MsSymbol: `symb`, indexed by a byte offset into the private use area, which a symbol or dingbat face states
+Encoding = Enum "FreeTypeEncoding", {
+  Unicode: 0x756E6963
+  AppleRoman: 0x61726D6E
+  MsSymbol: 0x73796D62
+}
+
 ---FreeType's face, glyph-metric and SFNT-table calls, as the text-extents backend measures with them.
 ---@class FfiFreeType
 ---@field isAvailable boolean Whether FreeType loaded and initialized; gate any use of the rest on it.
@@ -267,6 +283,7 @@ FaceFlag = Flags "FreeTypeFaceFlag", {
 ---@field HoriHeaderPointer ffi.ctype* Cast for the hhea table FT_Get_Sfnt_Table returns.
 ---@field Os2Pointer ffi.ctype* Cast for the OS/2 table FT_Get_Sfnt_Table returns.
 ---@field SfntTag Enum The SFNT table selectors, as a FreeTypeSfntTag enum.
+---@field Encoding Enum The charmap encodings, as a FreeTypeEncoding enum.
 ---@field LoadFlag Flags Glyph-loading bits, as a FreeTypeLoadFlag flag set.
 ---@field KerningMode Enum The kerning units, as a FreeTypeKerningMode enum.
 ---@field FaceFlag Flags Face capability bits, as a FreeTypeFaceFlag flag set.
@@ -297,6 +314,8 @@ FreeType = {
 
   ---@type ffi.ctype*
   Os2Pointer: Os2Pointer
+
+  Encoding: Encoding
 
   ---FreeType fabricates an OS/2 table for a face that has none and marks it with this version.
   ---@type integer

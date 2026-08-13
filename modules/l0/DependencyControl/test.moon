@@ -80,6 +80,7 @@ return UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
     AegisubUnicodeSearcher: (controls\requireTest "aegisub-unicode-searcher")!
     AegisubGlobal: (controls\requireTest "aegisub-global")!
     AegisubSfnt: (controls\requireTest "aegisub-sfnt")!
+    AegisubFontEncoding: (controls\requireTest "aegisub-font-encoding")!
     AegisubGdiMetrics: (controls\requireTest "aegisub-gdi-metrics")!
     AegisubTextExtentsGdi: (controls\requireTest "aegisub-text-extents-gdi")!
     AegisubTextExtentsFreeType: (controls\requireTest "aegisub-text-extents-freetype")!

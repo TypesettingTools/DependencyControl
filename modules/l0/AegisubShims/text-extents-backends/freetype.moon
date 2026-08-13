@@ -1,6 +1,8 @@
+-- cspell:ignore Marlett -- the Windows face the charmap order below is settled by
 ffi = require "ffi"
 ffiFontconfig = require "l0.AegisubShims.helpers.ffi-fontconfig"
 ffiFreeType = require "l0.AegisubShims.helpers.ffi-freetype"
+fontEncoding = require "l0.AegisubShims.helpers.font-encoding"
 gdiMetrics = require "l0.AegisubShims.helpers.gdi-metrics"
 sfnt = require "l0.AegisubShims.helpers.sfnt"
 textExtents = require "l0.AegisubShims.text-extents"
@@ -34,12 +36,12 @@ msgs = {
 }
 
 {:freetype, :library, :FaceOut, :AdvanceOut, :KerningOut, :HoriHeaderPointer, :Os2Pointer, :SfntTag,
-  :LoadFlag, :KerningMode, :FaceFlag} = ffiFreeType
+  :LoadFlag, :KerningMode, :FaceFlag, :Encoding} = ffiFreeType
 {:fontconfig, :StringOut, :IntegerOut, :Property, :Weight, :Slant, :MatchKind, :Result} = ffiFontconfig
 -- Every C symbol this backend names, bound here rather than read off the namespace at each call, so a
 -- name the helper does not declare fails when this module loads instead of when the call is reached.
 {:FT_Done_Face, :FT_Get_Advance, :FT_Get_Char_Index, :FT_Get_Kerning, :FT_Get_Sfnt_Table, :FT_New_Face,
-  :FT_Set_Pixel_Sizes} = freetype
+  :FT_Select_Charmap, :FT_Set_Pixel_Sizes} = freetype
 {:FcConfigSubstitute, :FcDefaultSubstitute, :FcFontMatch, :FcPatternAddInteger, :FcPatternAddString,
   :FcPatternCreate, :FcPatternDestroy, :FcPatternGetInteger, :FcPatternGetString} = fontconfig
 
@@ -54,6 +56,17 @@ UNITS_PER_PIXEL_26_6 = 64
 
 -- reused across calls, since a measurement only ever reads them back before the next one writes
 advanceOut, kerningOut = AdvanceOut!, KerningOut!
+
+-- .notdef, which every font reserves at index zero for a character it cannot draw
+MISSING_GLYPH_INDEX = 0
+
+-- the encoder for each charmap FreeType can select, keyed by the encoding it is selected under
+asCodePoint = fontEncoding.encoderFor fontEncoding.Encoding.Unicode
+
+charmapIndexers = {
+  [Encoding.MsSymbol]: fontEncoding.encoderFor fontEncoding.Encoding.Symbol
+  [Encoding.AppleRoman]: fontEncoding.encoderFor fontEncoding.Encoding.MacRoman
+}
 
 -- matched files by what was asked for, and open faces by the file a request matched to, so two
 -- requests fontconfig answers with the same file share one open face and one set of metrics
@@ -199,6 +212,7 @@ toParsedOs2Table = (os2) ->
 ---@class FreeTypeFace: ResolvedFace
 ---@field face ffi.cdata* The open FT_Face, released when this record is collected.
 ---@field hasKerning boolean Whether the face has a kern table, the only kerning FreeType reads.
+---@field toCharIndex fun(codePoint: integer): integer? Takes a code point to the index its charmap is keyed by, nil where that charmap states none.
 
 ---Opens a matched font file and reads the design metrics off it, once per file and family.
 ---
@@ -223,6 +237,17 @@ resolveFace = (file) ->
   faceFlags = tonumber face.face_flags
   return nil, msgs.resolveFace.notScalable\format family unless 0 != bit.band faceFlags, FaceFlag.Scalable
 
+  -- FT_New_Face selects a Unicode charmap and leaves the face with none where the font states no
+  -- Unicode subtable, which puts every lookup at glyph zero. Symbol comes before Mac Roman because
+  -- GDI reads it where a face states both, and the two disagree: Marlett maps every byte it states to
+  -- a different glyph through each.
+  toCharIndex = asCodePoint
+  if face.charmap == nil
+    for encoding in *{Encoding.MsSymbol, Encoding.AppleRoman}
+      if 0 == FT_Select_Charmap face, encoding
+        toCharIndex = charmapIndexers[encoding]
+        break
+
   os2 = ffi.cast Os2Pointer, FT_Get_Sfnt_Table face, SfntTag.Os2
   hhea = ffi.cast HoriHeaderPointer, FT_Get_Sfnt_Table face, SfntTag.Hhea
   hasOs2 = os2 != nil and os2.version != ffiFreeType.NO_OS2_TABLE_VERSION
@@ -237,6 +262,7 @@ resolveFace = (file) ->
     -- in design units, as FreeType reports it; zero where the font leaves the box unset
     outlineBounds: {yMax: tonumber(face.bbox.yMax), yMin: tonumber face.bbox.yMin}
     unitsPerEm: tonumber face.units_per_EM
+    :toCharIndex
     hasKerning: 0 != bit.band faceFlags, FaceFlag.Kerning
     hasCffOutlines: ffiFreeType.isCffOutlined face
   }
@@ -565,9 +591,14 @@ createBackend = (options) ->
     -- kerning describes text set solid, so inter-character spacing rules it out however it was asked for
     kerns = applyKerning and not hasSpacing and resolved.hasKerning
 
+    -- a character the encoding states no index for reaches .notdef, every index in a charmap already
+    -- naming another character's glyph
+    toCharIndex = resolved.toCharIndex
+
     width, previousGlyph = 0, nil
     for codePoint in *codePoints
-      glyphIndex = FT_Get_Char_Index resolved.face, codePoint
+      charIndex = toCharIndex codePoint
+      glyphIndex = charIndex and FT_Get_Char_Index(resolved.face, charIndex) or MISSING_GLYPH_INDEX
       width += prepared.kerningOf previousGlyph, glyphIndex if kerns and previousGlyph
       advance, advanceErr = prepared.advanceOf glyphIndex
       error advanceErr, 2 unless advance
