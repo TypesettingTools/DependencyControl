@@ -10,10 +10,11 @@ msgs = {
   resolveFace: {
     noName: "The font name '%s' could not be converted to a CFString."
     noFont: "CoreText offered no font at all for '%s'."
-    noTables: "The font '%s' has no usable OS/2 and hhea tables, so its metrics cannot be read."
+    noEmSize: "The font '%s' states no em size, so its design values cannot be scaled."
   }
   measure: {
     unavailable: "Measuring text needs CoreText, which is only reachable on macOS."
+    noCell: "The font '%s' declares no usable OS/2 Windows cell, and the %s fallback offers no span to measure it by."
   }
   measureAegisubMacMetrics: {
     noFont: "CoreText would not realize the font '%s' at the size asked for."
@@ -33,15 +34,15 @@ msgs = {
   :CFStringGetCString} = coreFoundation
 {:CTFontCopyPostScriptName, :CTFontCopyTable, :CTFontCreateWithFontDescriptor,
   :CTFontDescriptorCopyAttribute, :CTFontDescriptorCreateWithAttributes, :CTFontGetAdvancesForGlyphs,
-  :CTFontGetGlyphsForCharacters, :CTFontGetUnitsPerEm, :CTLineCreateWithAttributedString,
-  :CTLineGetTypographicBounds} = coreText
+  :CTFontGetBoundingBox, :CTFontGetGlyphsForCharacters, :CTFontGetUnitsPerEm,
+  :CTLineCreateWithAttributedString, :CTLineGetTypographicBounds} = coreText
 {:kCFTypeDictionaryKeyCallBacks, :kCFTypeDictionaryValueCallBacks} = coreFoundationSymbols
 {:kCTFontAttributeName, :kCTFontFamilyNameAttribute, :kCTFontSizeAttribute, :kCTFontSlantTrait,
   :kCTFontSymbolicTrait, :kCTFontTraitsAttribute, :kCTFontWeightTrait, :kCTFontWidthTrait} = coreTextSymbols
 
 isAvailable = ffiCoreText.isAvailable
 
-{:MEASUREMENT_SCALE, :MetricMode, :WxRounding} = textExtents
+{:MEASUREMENT_SCALE, :MetricMode, :WxRounding, :VerticalMetricFallbackBehavior} = textExtents
 
 -- any instance size works for reading the face's design values, which do not scale with it
 PROBE_FONT_SIZE = 1000
@@ -228,17 +229,18 @@ resolveFace = (style) ->
   hheaBytes = readFontTable probe, TableTag.HoriHeader
   os2 = os2Bytes and sfnt.parseOs2Table os2Bytes
   hhea = hheaBytes and sfnt.parseHheaTable hheaBytes
-  return nil, msgs.resolveFace.noTables\format family unless os2 and hhea and unitsPerEm > 0
+  return nil, msgs.resolveFace.noEmSize\format family unless unitsPerEm > 0
 
-  cellHeight = gdiMetrics.getCellHeight os2
-  return nil, msgs.resolveFace.noTables\format family unless cellHeight > 0
+  -- at em size, the advance of every glyph and the bounding box both come back as design values
+  emFont = resolveFont unitsPerEm
+  return nil, msgs.resolveFace.noFont\format family if emFont == nil
+  bounds = CTFontGetBoundingBox emFont
 
   -- Both tables are kept whole, each contract reading the face's own numbers its own way. The Windows
   -- one deducts the room the cell already adds from the line gap; the macOS one takes it as stated.
   sizedFonts = {}
   measured = {
-    -- at em size, the advance of every glyph comes back as its design value exactly
-    face: resolveFont unitsPerEm
+    face: emFont
 
     ---The same face realized at a measurement size, which laying a run out needs and reading design
     ---values does not. Kept per size, a font being immutable once created.
@@ -249,9 +251,12 @@ resolveFace = (style) ->
       return sizedFonts[size]
     :family
     :unitsPerEm
-    :cellHeight
     :os2
     :hhea
+    outlineBounds: {
+      yMax: math.floor bounds.origin.y + bounds.size.height + 0.5
+      yMin: math.floor bounds.origin.y + 0.5
+    }
     -- read once here: the answer is a property of the face, and the call copies a table out of it
     hasCffOutlines: nil != readFontTable probe, TableTag.Cff
     postScriptName: do
@@ -434,6 +439,11 @@ createBackend = (options) ->
   assert valid, roundingErr
   takeToWhole = takeToWholeBy[wxRounding]
 
+  verticalMetricFallback = options.verticalMetricFallback or VerticalMetricFallbackBehavior.Gdi
+  valid, fallbackErr = VerticalMetricFallbackBehavior\validate verticalMetricFallback,
+    "options.verticalMetricFallback"
+  assert valid, fallbackErr
+
   ---@param style AegisubStyle The style to set the text in.
   ---@param text string The text to measure.
   ---@return number width Advance the run takes, trailing spaces included, after the style's scale_x.
@@ -464,7 +474,13 @@ createBackend = (options) ->
         requestedSize, takeToWhole
       error height, 2 unless width
     else
-      derived = gdiMetrics.deriveTextMetrics measured, fontSize
+      cell = gdiMetrics.deriveCell measured.os2, measured.hhea, measured.outlineBounds,
+        verticalMetricFallback
+      unless cell
+        fallbackName = VerticalMetricFallbackBehavior\describe verticalMetricFallback, (key) -> key
+        error msgs.measure.noCell\format(measured.family, fallbackName), 2
+
+      derived = gdiMetrics.deriveTextMetrics measured, cell, fontSize
       descent, extlead = derived.descent, derived.extlead
       -- Advances scale per glyph by the realized integer em, matching the extent calls GDI answers
       -- with; GDI takes the spacing as given and never kerns.
@@ -472,7 +488,9 @@ createBackend = (options) ->
       spacing = (style.spacing or 0) * MEASUREMENT_SCALE
       count = #codePoints
       width = count > 0 and sumAdvances(measured, scaleAdvance, codePoints) + spacing * count or 0
-      height = count > 0 and fontSize or 0
+      -- GDI reports the ascent and descent summed, which for a fitted cell is the requested height and
+      -- for one realized as an em is whatever the span comes out at.
+      height = count > 0 and derived.ascent + derived.descent or 0
 
     return textExtents.applyStyleScale style, width, height, descent, extlead
 
@@ -489,6 +507,7 @@ createBackend = (options) ->
 ---@field createBackend fun(options?: TextExtentsOptions): AegisubTextExtentsBackend Builds a backend measuring by a chosen contract.
 ---@field MetricMode Enum The metric contracts on offer, as a TextExtentsMetricMode enum.
 ---@field WxRounding Enum How a wx version reaches a whole wxCoord, as a WxTextExtentRounding enum.
+---@field VerticalMetricFallbackBehavior Enum What to measure a face with when its Windows cell is unusable, as a TextExtentsVerticalMetricFallbackBehavior enum.
 CoreTextExtents = {
   ---@type boolean
   isAvailable: isAvailable
@@ -499,6 +518,7 @@ CoreTextExtents = {
   createBackend: createBackend
   MetricMode: MetricMode
   WxRounding: WxRounding
+  VerticalMetricFallbackBehavior: VerticalMetricFallbackBehavior
 }
 
 UnitTestSuite = require "l0.DependencyControl.UnitTestSuite"

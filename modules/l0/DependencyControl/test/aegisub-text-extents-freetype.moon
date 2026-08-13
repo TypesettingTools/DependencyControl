@@ -5,9 +5,29 @@
 -- separately, by running both against the same font files; see text-extents-investigation/README.md.
 -- Called from test.moon as: (controls\requireTest "aegisub-text-extents-freetype")!
 ->
+  UnitTestSuite = require "l0.DependencyControl.UnitTestSuite"
+  gdiMetrics = require "l0.AegisubShims.helpers.gdi-metrics"
   haveShims, shims = pcall require, "l0.AegisubShims"
   haveFreeType, freetype = pcall require, "l0.AegisubShims.text-extents-backends.freetype"
   haveGdi, gdi = pcall require, "l0.AegisubShims.text-extents-backends.gdi"
+
+  {:prepareAegisubWindowsMetrics} = haveFreeType and UnitTestSuite\getTestExports(freetype) or {}
+
+  -- AbileneFLF's design values, whose native GDI reads pin the derivation in aegisub-gdi-metrics: a
+  -- face with no OS/2 table, which GDI lays out in its glyph bounding box
+  faceWithoutOs2 = {
+    family: "TestFace", unitsPerEm: 1000, hasCffOutlines: false
+    hhea: {ascender: 900, descender: -100, lineGap: 0}
+    outlineBounds: {yMax: 901, yMin: -108}
+  }
+  -- and StencilFull's, whose Windows cell measures nothing, so Windows will not load the file
+  faceWithEmptyCell = {
+    family: "TestFace", unitsPerEm: 1000, hasCffOutlines: false
+    os2: {winAscent: 0, winDescent: 0, fsSelection: 0, typoAscender: 747, typoDescender: -200}
+    hhea: {ascender: 747, descender: -262, lineGap: 0}
+    outlineBounds: {yMax: 901, yMin: -108}
+  }
+  settingsWith = (fallback) -> {dpi: 96, verticalMetricFallback: fallback}
 
   -- a family every fontconfig install resolves to something for, installed or not
   baseStyle = (overrides) ->
@@ -158,6 +178,41 @@
 
     createBackend_rejectsANonPositiveResolution: (ut) ->
       ut\assertErrorMsgMatches (-> freetype.createBackend {dpi: -1}), {}, "positive"
+
+    createBackend_rejectsAnUnknownVerticalMetricFallback: (ut) ->
+      ut\assertErrorMsgMatches (-> freetype.createBackend {verticalMetricFallback: 99}), {},
+        "Invalid value"
+
+    -- GDI lays a face with no OS/2 table out in its bounding box, taking the requested height as
+    -- the realized em, so the line height comes out at whatever that box measures
+    prepareAegisubWindowsMetrics_gdiReadsTheOutlinesOfAFaceStatingNoOs2Table: (ut) ->
+      prepared, err = prepareAegisubWindowsMetrics faceWithoutOs2, 2560,
+        settingsWith freetype.VerticalMetricFallbackBehavior.Gdi
+      ut\assertNil err
+      ut\assertEquals prepared.descent, 276
+      ut\assertEquals prepared.height, 2307 + 276
+
+    -- and will not lay out a face whose cell measures nothing, so neither will this
+    prepareAegisubWindowsMetrics_gdiRefusesAFaceStatingAnUnusableCell: (ut) ->
+      prepared, err = prepareAegisubWindowsMetrics faceWithEmptyCell, 2560,
+        settingsWith freetype.VerticalMetricFallbackBehavior.Gdi
+      ut\assertNil prepared
+      ut\assertMatches err, "no usable OS/2 Windows cell"
+
+    -- libass measures that same face by fitting its typographic span to the requested height, which is
+    -- then what the line height comes out at
+    prepareAegisubWindowsMetrics_libassFitsTheTypographicSpan: (ut) ->
+      prepared, err = prepareAegisubWindowsMetrics faceWithEmptyCell, 2560,
+        settingsWith freetype.VerticalMetricFallbackBehavior.Libass
+      ut\assertNil err
+      ut\assertEquals prepared.height, 2560
+      ut\assertEquals prepared.descent, 665
+
+    prepareAegisubWindowsMetrics_refuseTakesOnlyTheWindowsCell: (ut) ->
+      prepared, err = prepareAegisubWindowsMetrics faceWithoutOs2, 2560,
+        settingsWith freetype.VerticalMetricFallbackBehavior.Refuse
+      ut\assertNil prepared
+      ut\assertMatches err, "Refuse fallback"
 
     -- Both contracts measure the same advances and differ only in what they normalize against, so
     -- their widths hold the ratio of the two spans whatever face fontconfig substitutes here.

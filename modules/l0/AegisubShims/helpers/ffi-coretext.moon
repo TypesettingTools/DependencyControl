@@ -36,17 +36,20 @@ coreFoundationBinding = ffiBinding.bind {
 
 coreTextBinding = ffiBinding.bind {
   library: "/System/Library/Frameworks/CoreText.framework/CoreText"
-  structs: {"CgSize", "CgAffineTransform"}
+  structs: {"CgSize", "CgRect", "CgAffineTransform"}
   functions: {"CTFontCreateWithName", "CTFontCopyTable", "CTFontCopyPostScriptName",
     "CTFontDescriptorCreateWithAttributes", "CTFontDescriptorCopyAttribute",
     "CTFontCreateWithFontDescriptor",
-    "CTFontGetUnitsPerEm", "CTFontGetGlyphsForCharacters", "CTFontGetAdvancesForGlyphs",
+    "CTFontGetUnitsPerEm", "CTFontGetBoundingBox", "CTFontGetGlyphsForCharacters",
+    "CTFontGetAdvancesForGlyphs",
     "CTLineCreateWithAttributedString", "CTLineGetTypographicBounds"}
   variables: {"kCTFontAttributeName", "kCTFontFamilyNameAttribute", "kCTFontSizeAttribute",
     "kCTFontTraitsAttribute", "kCTFontSymbolicTrait", "kCTFontWeightTrait", "kCTFontWidthTrait",
     "kCTFontSlantTrait"}
   declarations: [[
     typedef struct { double width; double height; } CgSize;
+
+    typedef struct { struct { double x; double y; } origin; CgSize size; } CgRect;
 
     typedef struct { double a; double b; double c; double d; double tx; double ty; } CgAffineTransform;
 
@@ -63,6 +66,10 @@ coreTextBinding = ffiBinding.bind {
     void* CTFontDescriptorCopyAttribute(void* descriptor, void* attribute);
     void* CTFontCreateWithFontDescriptor(void* descriptor, double size, const CgAffineTransform* matrix);
     unsigned int CTFontGetUnitsPerEm(void* font);
+
+    /* the extent of the face's outlines, in the units the font was created at, which is the span the
+       Windows contract falls back to for a face declaring no OS/2 table */
+    CgRect CTFontGetBoundingBox(void* font);
     unsigned char CTFontGetGlyphsForCharacters(void* font, const uint16_t* characters, uint16_t* glyphs, long count);
     double CTFontGetAdvancesForGlyphs(void* font, uint32_t orientation, const uint16_t* glyphs, CgSize* advances, long count);
 

@@ -15,7 +15,10 @@ msgs = {
   }
   resolveFace: {
     openFailed: "FreeType could not open '%s' for the font '%s': %s"
-    noTables: "The font '%s' has no usable OS/2 and hhea tables, so its metrics cannot be read."
+    notScalable: "The font '%s' has no scalable outlines, so it cannot be set at an arbitrary size."
+  }
+  prepareAegisubWindowsMetrics: {
+    noCell: "The font '%s' declares no usable OS/2 Windows cell, and the %s fallback offers no span to measure it by."
   }
   prepareAegisubMacMetrics: {
     noSpan: "The font '%s' declares no usable line height, so the macOS contract cannot be derived for it."
@@ -42,7 +45,7 @@ msgs = {
 
 isAvailable = ffiFreeType.isAvailable and ffiFontconfig.isAvailable
 
-{:MEASUREMENT_SCALE, :POINTS_PER_INCH, :DEFAULT_DPI, :MetricMode} = textExtents
+{:MEASUREMENT_SCALE, :POINTS_PER_INCH, :DEFAULT_DPI, :MetricMode, :VerticalMetricFallbackBehavior} = textExtents
 
 -- FreeType reports advances as 16.16 fixed-point pixels and its scaled face metrics as 26.6, so each
 -- is divided by the units its format packs into one pixel.
@@ -198,8 +201,10 @@ toParsedOs2Table = (os2) ->
 ---@field hasKerning boolean Whether the face has a kern table, the only kerning FreeType reads.
 
 ---Opens a matched font file and reads the design metrics off it, once per file and family.
+---
+---A face missing either table still resolves, leaving fallback behavior to each contract's derivation.
 ---@param file FontFile The file to resolve, as `matchFont` matched it.
----@return FreeTypeFace? resolved Nil when the file could not be opened or has no usable metrics.
+---@return FreeTypeFace? resolved Nil when the file could not be opened, or holds only bitmaps and so cannot be set at an arbitrary size.
 ---@return string? err Why the font could not be measured with.
 resolveFace = (file) ->
   {:path, :index, :family} = file
@@ -215,31 +220,38 @@ resolveFace = (file) ->
     return nil, msgs.resolveFace.openFailed\format path, family, ffiFreeType.describeError code
   face = ffi.gc faceOut[0], FT_Done_Face
 
+  faceFlags = tonumber face.face_flags
+  return nil, msgs.resolveFace.notScalable\format family unless 0 != bit.band faceFlags, FaceFlag.Scalable
+
   os2 = ffi.cast Os2Pointer, FT_Get_Sfnt_Table face, SfntTag.Os2
   hhea = ffi.cast HoriHeaderPointer, FT_Get_Sfnt_Table face, SfntTag.Hhea
-  if os2 == nil or hhea == nil or os2.version == ffiFreeType.NO_OS2_TABLE_VERSION
-    return nil, msgs.resolveFace.noTables\format family
-
-  parsedOs2 = toParsedOs2Table os2
-  cellHeight = gdiMetrics.getCellHeight parsedOs2
-  return nil, msgs.resolveFace.noTables\format family unless cellHeight > 0
+  hasOs2 = os2 != nil and os2.version != ffiFreeType.NO_OS2_TABLE_VERSION
+  parsedOs2 = hasOs2 and toParsedOs2Table(os2) or nil
+  parsedHhea = hhea != nil and toParsedHheaTable(hhea) or nil
 
   resolved = {
     :face
     :family
-    :cellHeight
     os2: parsedOs2
-    hhea: toParsedHheaTable hhea
+    hhea: parsedHhea
+    -- in design units, as FreeType reports it; zero where the font leaves the box unset
+    outlineBounds: {yMax: tonumber(face.bbox.yMax), yMin: tonumber face.bbox.yMin}
     unitsPerEm: tonumber face.units_per_EM
-    hasKerning: 0 != bit.band tonumber(face.face_flags), FaceFlag.Kerning
+    hasKerning: 0 != bit.band faceFlags, FaceFlag.Kerning
     hasCffOutlines: ffiFreeType.isCffOutlined face
   }
   resolvedFaces[requestKey] = resolved
   return resolved
 
+---The two `TextExtentsOptions` relevant to the freetype metric preparation, validated and with defaults filled in.
+---@class FreeTypeContractOptions
+---@field dpi number Resolution to measure at, which only the Linux contract's spacing term reads.
+---@field verticalMetricFallback TextExtentsVerticalMetricFallbackBehavior What to measure a face with when its OS/2 Windows cell is unusable.
+
 ---A face readied for one measurement, with the vertical metrics and the per-glyph lookups a run needs.
 ---@class PreparedMetrics
----@field descent number Depth below the baseline, in whatever units the advances come back in.
+---@field height number Line height a run of at least one character comes out at, in whatever units the advances come back in.
+---@field descent number Depth below the baseline, in those same units.
 ---@field extlead number Leading beyond the line, in those same units.
 ---@field normalize fun(width: number, height: number, descent: number, extlead: number): number, number, number, number Takes a measured run onto the requested cell height.
 ---@field reportsHeightForEmptyRun boolean Whether an empty string still reports the line height.
@@ -274,26 +286,36 @@ measuredAtRequestedSize = (width, height, descent, extlead) -> width, height, de
 ---about the derivation.
 ---
 ---Kerning reads only the legacy `kern` table, so a face kerning through GPOS alone measures without
----any. The style's `encoding` is ignored, which is where the descent and the leading still differ.
+---any. The style's `encoding` is ignored, which is where the descent and the leading still differ. A
+---control character measures as `.notdef`, where GDI drops some of them by a rule that varies with the
+---face, but it is not allowed as an input by `text_extents`, anyway.
+---
+---A face with no usable Windows cell is one GDI will not measure, so there are no numbers left to
+---agree with, and `verticalMetricFallback` chooses what to measure it by instead.
 ---@param resolved FreeTypeFace The face to measure with.
----@param fontSize integer Requested cell height, already multiplied by MEASUREMENT_SCALE.
----@return PreparedMetrics prepared Values already at the requested size, so nothing is normalized.
-prepareAegisubWindowsMetrics = (resolved, fontSize, dpi) ->
-  {:face, :family} = resolved
+---@param fontSize integer Requested height, already multiplied by MEASUREMENT_SCALE.
+---@param options FreeTypeContractOptions What the backend was configured with.
+---@return PreparedMetrics? prepared Values already at the requested size, so nothing is normalized.
+---@return string? err Why the contract could not be derived for the face.
+prepareAegisubWindowsMetrics = (resolved, fontSize, options) ->
+  {:face, :family, :os2, :hhea, :outlineBounds} = resolved
+  fallback = options.verticalMetricFallback
 
-  -- GDI rasterizes at integer ppem values, so the advances and the leading are calculated off the
-  -- realized/rounded em rather than the requested one to match what GDI reports.
-  -- The cell metrics never reach the rasterizer: at a positive `LOGFONTW.lfHeight = fontSize`, GDI
-  -- scales both `tmAscent` and `tmDescent` straight off that requested height in the ratio the design
-  -- metrics hold, and reports `tmHeight` as their sum. Rounding the two separately is why that sum is
-  -- only usually fontSize, landing a 64th of a pixel either side of it at a couple of sizes per face.
-  derived = gdiMetrics.deriveTextMetrics resolved, fontSize
+  cell = gdiMetrics.deriveCell os2, hhea, outlineBounds, fallback
+  unless cell
+    fallbackName = VerticalMetricFallbackBehavior\describe fallback, (key) -> key
+    return nil, msgs.prepareAegisubWindowsMetrics.noCell\format family, fallbackName
+
+  derived = gdiMetrics.deriveTextMetrics resolved, cell, fontSize
   toDeviceUnits = derived.toDeviceUnits
 
   kerningMode = KerningMode.Unscaled -- read once to avoid metamethod overhead on hot path
   return {
     descent: derived.descent
     extlead: derived.extlead
+    -- GDI reports the ascent and descent summed, which for a fitted cell is the requested height and
+    -- for one realized as an em is whatever the span comes out at.
+    height: derived.ascent + derived.descent
     normalize: measuredAtRequestedSize
     -- GDI measures a zero-length run as having no height at all
     reportsHeightForEmptyRun: false
@@ -313,6 +335,9 @@ prepareAegisubWindowsMetrics = (resolved, fontSize, dpi) ->
 
 ---Readies a face to be measured as Aegisub does on Linux, where the results are normalized so the
 ---typographic line height comes out at the nominal font size.
+---
+---The ascent and descent come off the face realized at the requested size rather than off its tables,
+---so this contract needs neither the OS/2 nor the hhea values and has no fallback to choose.
 ---
 ---Measured against a running Aegisub 3.4.2 on Ubuntu over a 36-face test corpus at four sizes, the
 ---mean width error is 0.556% on the 1757 cases where the face has glyphs for the whole text. Height
@@ -351,9 +376,10 @@ prepareAegisubWindowsMetrics = (resolved, fontSize, dpi) ->
 ---The style's `encoding` is ignored, as the wx branch ignores it.
 ---@param resolved FreeTypeFace The face to measure with.
 ---@param fontSize integer Requested em size, already multiplied by MEASUREMENT_SCALE.
+---@param options FreeTypeContractOptions What the backend was configured with, read for the resolution.
 ---@return PreparedMetrics? prepared Values at the realized size, which `normalize` takes to the requested one.
 ---@return string? err Why the face could not be realized at that size.
-prepareAegisubLinuxMetrics = (resolved, fontSize, dpi) ->
+prepareAegisubLinuxMetrics = (resolved, fontSize, options) ->
   {:face, :family} = resolved
 
   code = FT_Set_Pixel_Sizes face, 0, fontSize
@@ -379,6 +405,7 @@ prepareAegisubLinuxMetrics = (resolved, fontSize, dpi) ->
   return {
     :descent
     :normalize
+    height: fontSize
 
     -- wxGTK reports no external leading at all
     extlead: 0
@@ -387,7 +414,7 @@ prepareAegisubLinuxMetrics = (resolved, fontSize, dpi) ->
     reportsHeightForEmptyRun: true
 
     -- the line-height divisor leaves the spacing scaled by the resolution
-    spacingOf: (spacing) -> spacing * MEASUREMENT_SCALE * POINTS_PER_INCH / dpi
+    spacingOf: (spacing) -> spacing * MEASUREMENT_SCALE * POINTS_PER_INCH / options.dpi
 
     advanceOf: (glyphIndex) ->
       code = FT_Get_Advance face, glyphIndex, LoadFlag.Default, advanceOut
@@ -427,11 +454,12 @@ prepareAegisubLinuxMetrics = (resolved, fontSize, dpi) ->
 ---external leading and this reports a whole extra line. The span ratio has no bearing on either.
 ---@param resolved FreeTypeFace The face to measure with.
 ---@param fontSize integer Requested line span, already multiplied by MEASUREMENT_SCALE.
+---@param options FreeTypeContractOptions What the backend was configured with, none of which this contract reads.
 ---@return PreparedMetrics? prepared Values already at the requested size, so nothing is normalized.
 ---@return string? err Why the contract could not be derived for the face.
-prepareAegisubMacMetrics = (resolved, fontSize, dpi) ->
+prepareAegisubMacMetrics = (resolved, fontSize, options) ->
   {:face, :family, :unitsPerEm, :hhea} = resolved
-  lineHeight = sfnt.getLineHeight hhea
+  lineHeight = hhea and sfnt.getLineHeight(hhea) or 0
   return nil, msgs.prepareAegisubMacMetrics.noSpan\format family unless lineHeight > 0
 
   -- CoreText lays a run out at a fractional em, so nothing here rounds to a whole pixel the way the
@@ -444,6 +472,7 @@ prepareAegisubMacMetrics = (resolved, fontSize, dpi) ->
     descent: -hhea.descender * fontSize / lineHeight
     extlead: hhea.lineGap * fontSize / lineHeight
     normalize: measuredAtRequestedSize
+    height: fontSize
     -- macOS measures a zero-length run as having no height at all, just like GDI does
     reportsHeightForEmptyRun: false
     -- spacing joins the run in the realized em rather than in the requested size, so it scales with it
@@ -493,6 +522,13 @@ createBackend = (options) ->
   assert "number" == type(dpi) and dpi > 0,
     msgs.createBackend.badDpi\format tostring options.dpi
 
+  verticalMetricFallback = options.verticalMetricFallback or VerticalMetricFallbackBehavior.Gdi
+  valid, fallbackErr = VerticalMetricFallbackBehavior\validate verticalMetricFallback,
+    "options.verticalMetricFallback"
+  assert valid, fallbackErr
+
+  contractOptions = {:dpi, :verticalMetricFallback}
+
   ---@param style AegisubStyle The style to set the text in.
   ---@param text string The text to measure.
   ---@return number width Advance the run takes, trailing spaces included, after the style's scale_x.
@@ -517,7 +553,7 @@ createBackend = (options) ->
     resolved, faceErr = resolveFace file
     error faceErr, 2 unless resolved
 
-    prepared, prepareErr = prepare resolved, fontSize, dpi
+    prepared, prepareErr = prepare resolved, fontSize, contractOptions
     error prepareErr, 2 unless prepared
 
     spacing = prepared.spacingOf style.spacing or 0
@@ -541,7 +577,7 @@ createBackend = (options) ->
     -- An empty string produces a line height equal to the nominal font size under wxGTK/Pango,
     -- as opposed to 0 under GDI (except in the above-mentioned spacing case where it is 0 under both).
     measuresEmptyRun = prepared.reportsHeightForEmptyRun and not hasSpacing
-    height = (#codePoints > 0 or measuresEmptyRun) and fontSize or 0
+    height = (#codePoints > 0 or measuresEmptyRun) and prepared.height or 0
 
     return textExtents.applyStyleScale style,
       prepared.normalize width, height, prepared.descent, prepared.extlead
@@ -567,11 +603,16 @@ createBackend = (options) ->
 ---@field measure AegisubTextExtentsBackend Measures by the Windows cell; throws when it cannot.
 ---@field createBackend fun(options?: TextExtentsOptions): AegisubTextExtentsBackend Builds a backend measuring by a chosen contract.
 ---@field MetricMode Enum The metric contracts on offer, as a TextExtentsMetricMode enum.
-return {
+---@field VerticalMetricFallbackBehavior Enum What to measure a face with when its Windows cell is unusable, as a TextExtentsVerticalMetricFallbackBehavior enum.
+FreeTypeExtents = {
   ---@type boolean
   isAvailable: isAvailable
   ---@type AegisubTextExtentsBackend
   measure: createBackend!
   createBackend: createBackend
   MetricMode: MetricMode
+  VerticalMetricFallbackBehavior: VerticalMetricFallbackBehavior
 }
+
+UnitTestSuite = require "l0.DependencyControl.UnitTestSuite"
+return UnitTestSuite\withTestExports FreeTypeExtents, {:prepareAegisubWindowsMetrics}

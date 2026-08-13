@@ -19,6 +19,11 @@
       return ut\skip "CoreText is available here" if coretext.isAvailable
       ut\assertErrorMsgMatches (-> coretext.measure baseStyle!, "Hello"), {}, "needs CoreText"
 
+    -- the options are checked as the backend is built, before anything reaches CoreText
+    createBackend_rejectsAnUnknownVerticalMetricFallback: (ut) ->
+      ut\assertErrorMsgMatches (-> coretext.createBackend {verticalMetricFallback: 99}), {},
+        "Invalid value"
+
     -- the invariants below need the CTFont call layer, so they run only on macOS
 
     measure_emptyStringHasNoExtent: (ut) ->

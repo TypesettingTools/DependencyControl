@@ -45,6 +45,17 @@ WxRounding = Enum "WxTextExtentRounding", {
   Ceil: 2
 }
 
+---How to proceed when a face's OS/2 `winAscent` and `winDescent` make no usable cell.
+---@alias TextExtentsVerticalMetricFallbackBehavior
+---| 1 # Gdi: what GDI itself reports, which is the glyph bounding box for a face with no OS/2 table and nothing at all for one whose cell is unusable
+---| 2 # Libass: the typographic span fitted to the requested size, as libass falls back to when it renders such a face
+---| 3 # Refuse: nothing, the face being reported as unmeasurable whatever else it holds
+VerticalMetricFallbackBehavior = Enum "TextExtentsVerticalMetricFallbackBehavior", {
+  Gdi: 1
+  Libass: 2
+  Refuse: 3
+}
+
 ---A face a backend resolved for a font request, with the design values every metric contract is
 ---derived from. Each backend declares its own type inheriting this one, since the face handle is
 ---whatever its library hands back and it may read more off the face than the shared derivation does.
@@ -52,9 +63,9 @@ WxRounding = Enum "WxTextExtentRounding", {
 ---@field face ffi.cdata* The open face, in whatever form the backend's library hands one back.
 ---@field family string Family that was asked for, which messages name rather than the matched face.
 ---@field unitsPerEm integer Design units per em, which every design value below is expressed in.
----@field os2 ParsedOs2Table The face's OS/2 table, as it declares it.
----@field hhea ParsedHheaTable The face's horizontal header, as it declares it.
----@field cellHeight integer Height of the cell Windows lays the face out in, in design units; derived, being the sum of the OS/2 window ascent and descent.
+---@field os2? ParsedOs2Table The face's OS/2 table, as it declares it; nil where the face has none.
+---@field hhea? ParsedHheaTable The face's horizontal header, as it declares it; nil where the face has none.
+---@field outlineBounds? GdiOutlineBounds The face's glyph bounding box, where the backend's library reports one; the span the Windows contract falls back to for a face with no OS/2 table.
 ---@field hasCffOutlines boolean Whether the face describes its glyphs as PostScript outlines rather than in the TrueType format.
 
 ---How a backend built by a `createBackend` should measure.
@@ -62,6 +73,7 @@ WxRounding = Enum "WxTextExtentRounding", {
 ---@field metricMode? TextExtentsMetricMode Which contract to measure by, `AegisubWindows` by default. Read only by backends offering more than one.
 ---@field kerning? boolean Whether to apply the face's kern table to text set solid; defaults to what the mode implies.
 ---@field dpi? number DPI the `AegisubLinux` contract measures at, 96 by default. Only a style setting `spacing` reads it, and the `AegisubWindows` contract never does.
+---@field verticalMetricFallback? TextExtentsVerticalMetricFallbackBehavior What to measure a face with when its OS/2 Windows cell is unusable, `Gdi` by default. Only the `AegisubWindows` contract reads it.
 ---@field wxRounding? WxTextExtentRounding How the wx version being reproduced takes a text extent to a whole number, `Round` by default. Only the `AegisubMac` contract reads it.
 
 ---Applies a style's `scale_x` and `scale_y` to a measured run and divides the measurement scale back
@@ -141,6 +153,7 @@ selectBackend = (metricMode = MetricMode.AegisubWindows) ->
 ---@class AegisubTextExtents
 ---@field MetricMode Enum The contracts on offer, as a TextExtentsMetricMode enum.
 ---@field WxRounding Enum How a wx version takes a text extent to a whole number, as a WxTextExtentRounding enum.
+---@field VerticalMetricFallbackBehavior Enum What to measure a face with when its Windows cell is unusable, as a TextExtentsVerticalMetricFallbackBehavior enum.
 ---@field selectBackend fun(metricMode?: TextExtentsMetricMode): AegisubTextExtentsBackend?, string Picks the best available backend for a contract.
 ---@field applyStyleScale fun(style: AegisubStyle, width: number, height: number, descent: number, extlead: number): number, number, number, number Applies the style's scales and divides the measurement scale out.
 ---@field MEASUREMENT_SCALE integer What Aegisub multiplies a font size by before measuring.
@@ -149,6 +162,7 @@ selectBackend = (metricMode = MetricMode.AegisubWindows) ->
 return {
   MetricMode: MetricMode
   WxRounding: WxRounding
+  VerticalMetricFallbackBehavior: VerticalMetricFallbackBehavior
   selectBackend: selectBackend
   applyStyleScale: applyStyleScale
 
