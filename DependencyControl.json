@@ -121,6 +121,134 @@
     }
   },
   "modules": {
+    "l0.AssParser": {
+      "name": "AssParser",
+      "description": "Reads, rewrites and writes back Advanced SubStation Alpha files and their override tags, modelling how Aegisub, libass and xy-VSFilter each read them.",
+      "author": "line0",
+      "url": "@{baseUrl}#@{namespace}",
+      "channels": {
+        "main": {
+          "version": "0.10.0",
+          "released": null,
+          "default": true,
+          "files": [
+            {
+              "name": "/LineState.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "0238A5EE8EC7F19182241B9401BAED349499A682"
+            },
+            {
+              "name": "/RunState.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "4483D3B9063C8959B0ED711DB5937049993DCA83"
+            },
+            {
+              "name": "/Scanner.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "513081163F8E75B66032CEF12A1DB8D4AA239A8B"
+            },
+            {
+              "name": "/arguments.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "3DEEBDA19FC69B091B8EF641A6C24910A7D85DA2"
+            },
+            {
+              "name": "/ass-file.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "96055352749477A68F9AD76F51421F3476713EDF"
+            },
+            {
+              "name": "/ass.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "4CD3CB5C9B4FF37A850E433BDDC717F1B2E95332"
+            },
+            {
+              "name": "/diagnostics.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "87DF216FE44452DEE11AA086F4DF127034EFB7E9"
+            },
+            {
+              "name": "/dialects.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "C4CFDCFE345C2D919E9C852A28331FFA2736EA64"
+            },
+            {
+              "name": "/drawing.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "60522603A552EA4C4C6CB9F81A46D22AC043884A"
+            },
+            {
+              "name": "/emit.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "3E7782CBDDF855B49C521B7B85FC1845E692C6FB"
+            },
+            {
+              "name": "/karaoke.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "A0522BA59C2ED0EEAD42B9008A6D7460D6BB257D"
+            },
+            {
+              "name": "/normalize.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "F71C20DAF8E8FC86FC645A722DA164476324D7CA"
+            },
+            {
+              "name": ".moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "01E9F39DAB9297A6326DC93664460B1DE1D9FB5B"
+            },
+            {
+              "name": ".moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "01108E8FBC6136CDC9833D5B5A6B77D349400AC8",
+              "type": "test"
+            },
+            {
+              "name": "/ass-corpus.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "8C2EB20B6366C73E68FB08464A1ABC8567E51A28",
+              "type": "test"
+            },
+            {
+              "name": "/ass-file.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "FACC4A62899E3DFAF2180013CD5E27DE764884EA",
+              "type": "test"
+            },
+            {
+              "name": "/ass.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "C65FDBDD278898368839352F6FC98D5A0387FA43",
+              "type": "test"
+            },
+            {
+              "name": "/diagnostics.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "023229F16A22AC6EC1A257949B398608E7FD08E2",
+              "type": "test"
+            },
+            {
+              "name": "/karaoke.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "74C91F530E16975607B7389A7333EB11BC2927BC",
+              "type": "test"
+            },
+            {
+              "name": "/normalize.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "51E7484D7638620F78E483CF54A813FB63FCA371",
+              "type": "test"
+            },
+            {
+              "name": "/override-tags.moon",
+              "url": "@{fileBaseUrl}",
+              "sha1": "C914C0A940425070E7B9ABBD36C79227710C5A82",
+              "type": "test"
+            }
+          ]
+        }
+      }
+    },
     "l0.DependencyControl": {
       "name": "DependencyControl",
       "description": "Dependency manager and automatic script updater for Aegisub macros and modules.",

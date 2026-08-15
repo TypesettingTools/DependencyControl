@@ -8,7 +8,7 @@
 --   DEPCTRL_TEMP_DIR  — base for ?temp            (default: %TEMP% / /tmp)
 
 ffi = require "ffi"
-ass = require "l0.AegisubShims.ass"
+ass = require "l0.AssParser.ass"
 utils = require "l0.DependencyControl.utils"
 
 msgs = {
@@ -18,7 +18,7 @@ msgs = {
 }
 
 ---Measures a run of text set in a style, returning what `aegisub.text_extents` returns.
----@alias AegisubTextExtentsBackend fun(style: AegisubStyle, text: string): number, number, number, number
+---@alias AegisubTextExtentsBackend fun(style: AegisubStyleLine, text: string): number, number, number, number
 
 -- declared ahead of the table below, whose text_extents closes over it
 local textExtentsBackend
@@ -144,7 +144,7 @@ aegisub = {
   set_status_text: -> nil
 
   ---Measures a run of text set in a style.
-  ---@param style AegisubStyle The style to set the text in.
+  ---@param style AegisubStyleLine The style to set the text in.
   ---@param text string The text to measure.
   ---@return number width
   ---@return number height

@@ -1,4 +1,5 @@
 autohint
+bidi
 charmap
 charmaps
 cmap

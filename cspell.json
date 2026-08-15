@@ -22,6 +22,11 @@
       "addWords": false
     },
     {
+      "name": "ass",
+      "path": "./.cspell/ass.txt",
+      "description": "Advanced SubStation Alpha format vocabulary: override tag names, section and field names, and the jargon of the format itself. Terms come from a specification and from renderers, so they are spelled as those spell them and cannot be renamed. Font and typography words go in `fonts` even when a tag mentions them; this repository's own identifiers go in `project`."
+    },
+    {
       "name": "project",
       "description": "Everything specific to this repo and the DepCtrl ecosystem: own identifiers, rock/tool proper nouns, and prose jargon. Quick-added words land here.",
       "path": "./.cspell/project.txt",
@@ -29,12 +34,16 @@
       "addWords": true
     }
   ],
-  "dictionaries": ["lua", "luajit-moonscript", "ffi", "fonts", "project"],
+  "dictionaries": ["lua", "luajit-moonscript", "ffi", "fonts", "ass", "project"],
   "ignorePaths": [".cspell/**", "**/vendor/**"],
   "overrides": [
     {
       "filename": "**/.github/workflows/*.{yml,yaml}",
       "dictionaries": ["bash"]
+    },
+    {
+      "filename": "**/*.ps1",
+      "dictionaries": ["powershell"]
     }
   ]
 }

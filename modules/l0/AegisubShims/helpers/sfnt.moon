@@ -101,7 +101,7 @@ OS2_LENGTH_VERSION_5 = 100
 ---@field xMaxExtent integer The furthest right any glyph reaches, as left side bearing plus width.
 ---@field caretSlopeRise integer Rise of the caret's slope; 1 with a run of 0 stands a caret upright.
 ---@field caretSlopeRun integer Run of the caret's slope, 0 for an upright caret.
----@field caretOffset integer Shift applied to the caret to centre it on a slanted glyph.
+---@field caretOffset integer Shift applied to the caret to center it on a slanted glyph.
 ---@field metricDataFormat integer Format of the hmtx table, 0 for every version defined so far.
 ---@field numberOfHMetrics integer How many glyphs hmtx states an advance for, the rest sharing the last.
 

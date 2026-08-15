@@ -54,20 +54,6 @@ isAvailable, gdi32 = gdi32Binding.isAvailable, gdi32Binding.functions
 ---| 7 # Isotropic: units the caller sets, with both axes forced to the same scale
 ---| 8 # Anisotropic: units the caller sets, with the axes scaled independently
 
----Stroke thickness a font is requested at. The mapper picks the nearest weight the face actually
----provides, so a value between two of these does not fail.
----@alias GdiFontWeight
----| 0 # DontCare: leaves the weight to the font mapper
----| 100 # Thin: the lightest weight on the scale
----| 200 # ExtraLight: also called "UltraLight"
----| 300 # Light
----| 400 # Normal: the upright weight of a regular face, also called "Regular"
----| 500 # Medium
----| 600 # SemiBold: also called "DemiBold"
----| 700 # Bold: what an ASS style's bold flag asks for
----| 800 # ExtraBold: also called "UltraBold"
----| 900 # Heavy: the darkest weight on the scale, also called "Black"
-
 ---Which font technology the mapper should prefer, and how exactly the realized font has to match the
 ---requested height, width, orientation and pitch. It disambiguates faces sharing one name, a raster and
 ---a TrueType cut of it for instance, so it is orthogonal to the typographic look GdiFontFamily picks
@@ -162,18 +148,6 @@ MapMode = Enum "GdiMapMode", {
   Anisotropic: 8
 }
 
-FontWeight = Enum "GdiFontWeight", {
-  DontCare: 0
-  Thin: 100
-  ExtraLight: 200
-  Light: 300
-  Normal: 400
-  Medium: 500
-  SemiBold: 600
-  Bold: 700
-  ExtraBold: 800
-  Heavy: 900
-}
 
 OutputPrecision = Enum "GdiOutputPrecision", {
   Default: 0
@@ -245,7 +219,6 @@ CharSet = Enum "GdiCharSet", {
 ---@field Size ffi.ctype* Constructor for a zeroed SIZE, which the extent calls fill in.
 ---@field TextMetricW ffi.ctype* Constructor for a zeroed TEXTMETRICW, which GetTextMetricsW fills in.
 ---@field MapMode Enum The map modes, as a GdiMapMode enum.
----@field FontWeight Enum The font weights, as a GdiFontWeight enum.
 ---@field OutputPrecision Enum The output precisions, as a GdiOutputPrecision enum.
 ---@field ClipPrecision table<string, GdiClipPrecision> Clip precisions and their flags, keyed by name.
 ---@field FontQuality Enum The rendering qualities, as a GdiFontQuality enum.
@@ -272,7 +245,6 @@ return {
   TextMetricW: TextMetricW
 
   MapMode: MapMode
-  FontWeight: FontWeight
   OutputPrecision: OutputPrecision
   FontQuality: FontQuality
   FontPitch: FontPitch

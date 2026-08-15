@@ -22,6 +22,9 @@ includeFiles = {
   "utils-auto4.lua": {global: "util", moduleName: "l0.AegisubShims.util", returns: false}
   "utils.lua": {global: "util", moduleName: "l0.AegisubShims.util", returns: false}
   "lfs.lua": {global: "lfs", moduleName: "lfs", returns: true}
+  -- karaskel.lua only includes karaskel-auto4.lua, and neither hands the module back
+  "karaskel.lua": {global: "karaskel", moduleName: "l0.AegisubShims.karaskel", returns: false}
+  "karaskel-auto4.lua": {global: "karaskel", moduleName: "l0.AegisubShims.karaskel", returns: false}
 }
 
 supportedNames = table.concat [name for name in pairs includeFiles], ", "

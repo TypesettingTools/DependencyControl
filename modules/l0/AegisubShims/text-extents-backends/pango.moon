@@ -72,7 +72,7 @@ pixelSizeOut = PixelSizeOut!
 descriptions = {}
 
 ---Returns the cached font description for a style's face request, without a size set.
----@param style AegisubStyle The style asking for the face.
+---@param style AegisubStyleLine The style asking for the face.
 ---@return ffi.cdata*? description Nil when Pango could not allocate one.
 ---@return string? err Why it could not.
 acquireDescription = (style) ->
@@ -127,7 +127,7 @@ createBackend = (options) ->
   assert "number" == type(dpi) and dpi > 0,
     msgs.createBackend.badDpi\format tostring options.dpi
 
-  ---@param style AegisubStyle The style to set the text in.
+  ---@param style AegisubStyleLine The style to set the text in.
   ---@param text string The text to measure.
   ---@return number width Advance the run takes, trailing spaces included, after the style's scale_x.
   ---@return number height The nominal font size for any measured run, after scale_y.

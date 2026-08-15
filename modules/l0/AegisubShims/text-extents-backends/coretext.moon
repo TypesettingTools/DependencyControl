@@ -192,7 +192,7 @@ readCfString = (cfString) ->
 ---@field postScriptName string? Name of the face the request matched, absent when it could not be read.
 
 ---Opens the font a style asks for, reading the design metrics off it once.
----@param style AegisubStyle The style to set the text in.
+---@param style AegisubStyleLine The style to set the text in.
 ---@return CoreTextFace? measured Nil when no font could be resolved or read.
 ---@return string? err Why the font could not be measured with.
 resolveFace = (style) ->
@@ -365,7 +365,7 @@ laidOutRun = (font, text, takeToWhole) ->
 ---moment font fallback mixes faces of different line heights. An empty run never enters that loop at
 ---all, so every metric stays zero.
 ---@param measured CoreTextFace The face to measure with.
----@param style AegisubStyle The style to set the text in.
+---@param style AegisubStyleLine The style to set the text in.
 ---@param text string The text to measure.
 ---@param fontSize number The whole size the face is realized at, already multiplied by MEASUREMENT_SCALE.
 ---@param requestedSize number The size asked for before truncation, which the normalization divides by.
@@ -444,7 +444,7 @@ createBackend = (options) ->
     "options.verticalMetricFallback"
   assert valid, fallbackErr
 
-  ---@param style AegisubStyle The style to set the text in.
+  ---@param style AegisubStyleLine The style to set the text in.
   ---@param text string The text to measure.
   ---@return number width Advance the run takes, trailing spaces included, after the style's scale_x.
   ---@return number height Line height of the realized face, not the glyphs' bounds, after scale_y.

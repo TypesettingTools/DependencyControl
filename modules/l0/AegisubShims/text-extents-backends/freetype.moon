@@ -145,7 +145,7 @@ isRequestedFace = (matched, accepted) ->
 ---@param slant? FontconfigSlant Slant to match, Roman by default.
 ---@return MatchedFace? face The selected face. Nil when fontconfig could not name a file to open.
 ---@return string? err Why nothing usable came back.
----@overload fun(style: AegisubStyle): MatchedFace?, string?
+---@overload fun(style: AegisubStyleLine): MatchedFace?, string?
 matchFont = (family, weight = Weight.Regular, slant = Slant.Roman) ->
   if "table" == type family
     style = family
@@ -712,7 +712,7 @@ createBackend = (options) ->
 
   contractOptions = {:dpi, :verticalMetricFallback, :fontFallback}
 
-  ---@param style AegisubStyle The style to set the text in.
+  ---@param style AegisubStyleLine The style to set the text in.
   ---@param text string The text to measure.
   ---@return number width Advance the run takes, trailing spaces included, after the style's scale_x.
   ---@return number height Line height of the realized face, not the glyphs' bounds, after scale_y.

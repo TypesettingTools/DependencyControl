@@ -30,9 +30,17 @@
       ut\assertNil shims.include "utils.lua"
       ut\assertIs _G.util, require "l0.AegisubShims.util"
 
+    -- karaskel.lua only includes karaskel-auto4.lua, so neither hands the module back
+    include_karaskelPublishesGlobalWithoutReturning: (ut) ->
+      ut\assertNil shims.include "karaskel-auto4.lua"
+      ut\assertIs _G.karaskel, require "l0.AegisubShims.karaskel"
+
+      _G.karaskel = nil
+      ut\assertNil shims.include "karaskel.lua"
+      ut\assertIs _G.karaskel, require "l0.AegisubShims.karaskel"
+
     include_unsupportedFileRaises: (ut) ->
       -- full implementations with no module behind them to route to
-      ut\assertError shims.include, "karaskel.lua"
       ut\assertError shims.include, "cleantags.lua"
       ut\assertError shims.include, "unicode-monkeypatch.lua"
       -- no disk is touched, so a path resolves to nothing whether or not it exists

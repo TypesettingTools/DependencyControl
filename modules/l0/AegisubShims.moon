@@ -4,7 +4,7 @@ includeShim = require "l0.AegisubShims.include"
 _G.aegisub = aegisub
 _G.include = includeShim.include
 
-ass = require "l0.AegisubShims.ass"
+ass = require "l0.AssParser.ass"
 clipboard = require "l0.AegisubShims.clipboard"
 re = require "l0.AegisubShims.re"
 sfnt = require "l0.AegisubShims.helpers.sfnt"

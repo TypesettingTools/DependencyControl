@@ -80,7 +80,7 @@ VerticalMetricFallbackBehavior = Enum "TextExtentsVerticalMetricFallbackBehavior
 
 ---Applies a style's `scale_x` and `scale_y` to a measured run and divides the measurement scale back
 ---out, which is the last step of every backend.
----@param style AegisubStyle The style measured with, read for `scale_x` and `scale_y`.
+---@param style AegisubStyleLine The style measured with, read for `scale_x` and `scale_y`.
 ---@param width number Advance the run takes, still carrying the measurement scale.
 ---@param height number Line height, still carrying the measurement scale.
 ---@param descent number Depth below the baseline, still carrying the measurement scale.
@@ -130,7 +130,7 @@ buildCandidates = ->
 
 ---Picks the best available text-measurement backend for a metric contract.
 ---
----The default contract is AegisubWindows on every platform, deliberately parting from what Aegisub
+---The default contract is AegisubWindows on every platform, deliberately differing from what Aegisub
 ---itself reports off Windows: it is the one Aegisub implementation libass and VSFilter agree with,
 ---so a measurement predicts what the subtitle renderer will draw, and it makes a script measure the
 ---same numbers everywhere. AegisubLinux instead reproduces what a script would measure in Aegisub
