@@ -11,7 +11,8 @@
   haveFreeType, freetype = pcall require, "l0.AegisubShims.text-extents-backends.freetype"
   haveGdi, gdi = pcall require, "l0.AegisubShims.text-extents-backends.gdi"
 
-  {:prepareAegisubWindowsMetrics} = haveFreeType and UnitTestSuite\getTestExports(freetype) or {}
+  testExports = haveFreeType and UnitTestSuite\getTestExports(freetype) or {}
+  {:matchFont, :prepareAegisubWindowsMetrics} = testExports
 
   -- AbileneFLF's design values, whose native GDI reads pin the derivation in aegisub-gdi-metrics: a
   -- face with no OS/2 table, which GDI lays out in its glyph bounding box
@@ -240,6 +241,50 @@
 
     createBackend_rejectsNonTableOptions: (ut) ->
       ut\assertError freetype.createBackend, "Face"
+
+    -- fontconfig returns a file even when nothing matches, so an unknown name still comes back with
+    -- a usable path
+    matchFont_reportsAnUnknownFamilyAsSubstituted: (ut) ->
+      file = matchFont "NoSuchFontExistsHere"
+      ut\assertNotNil file
+      ut\assertTrue file.substituted
+      ut\assertNotNil file.path
+
+    -- the generic families, which every fontconfig install maps to a real font
+    matchFont_treatsAnAliasAsAMatch: (ut) ->
+      for family in *{"sans-serif", "serif", "monospace"}
+        file = matchFont family
+        ut\assertNotNil file
+        ut\assertFalse file.substituted, family
+
+    -- an empty request has no name to match, so the default is not a substitution
+    matchFont_treatsAnEmptyFamilyAsAMatch: (ut) ->
+      file = matchFont ""
+      ut\assertNotNil file
+      ut\assertFalse file.substituted
+
+    -- text the resolved face covers never reaches the fallback, so the option changes nothing there
+    createBackend_fontFallbackLeavesCoveredTextAlone: (ut) ->
+      style = baseStyle!
+      withFallback = freetype.createBackend {metricMode: freetype.MetricMode.AegisubLinux}
+      withoutFallback = freetype.createBackend
+        metricMode: freetype.MetricMode.AegisubLinux, fontFallback: false
+      ut\assertEquals {withFallback style, "Hello"}, {withoutFallback style, "Hello"}
+
+    -- U+0378 is unassigned, so no installed face has a glyph and the walk finds nothing to substitute
+    createBackend_fontFallbackFindsNoFaceForAnUnassignedCodePoint: (ut) ->
+      style = baseStyle!
+      withFallback = freetype.createBackend {metricMode: freetype.MetricMode.AegisubLinux}
+      withoutFallback = freetype.createBackend
+        metricMode: freetype.MetricMode.AegisubLinux, fontFallback: false
+      ut\assertEquals {withFallback style, "\205\184"}, {withoutFallback style, "\205\184"}
+
+    matchFont_matchesANameWhateverItsCase: (ut) ->
+      resolved, shouted = matchFont("sans-serif"), matchFont "SANS-SERIF"
+      ut\assertNotNil resolved
+      ut\assertNotNil shouted
+      ut\assertEquals shouted.path, resolved.path
+      ut\assertFalse shouted.substituted
 
     -- the umbrella installs GDI where it can and falls back to this backend everywhere else
     shims_installTheBackendWhereGdiIsUnavailable: (ut) ->

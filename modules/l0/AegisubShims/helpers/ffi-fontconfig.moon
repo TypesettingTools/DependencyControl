@@ -9,12 +9,17 @@ ffiBinding = require "l0.DependencyControl.helpers.ffi-binding"
 fontconfigBinding = ffiBinding.bind {
   -- a runtime install carries only the versioned soname, so the bare name is the last thing to try
   library: {"libfontconfig.so.1", "libfontconfig.1.dylib", "fontconfig"}
-  structs: {"FcPattern"}
+  structs: {"FcPattern", "FcCharSet", "FcFontSet"}
   functions: {"FcInit", "FcPatternCreate", "FcPatternDestroy", "FcPatternAddString",
     "FcPatternAddInteger", "FcPatternGetString", "FcPatternGetInteger", "FcConfigSubstitute",
-    "FcDefaultSubstitute", "FcFontMatch"}
+    "FcDefaultSubstitute", "FcFontMatch", "FcFontSort", "FcFontSetDestroy", "FcPatternGetCharSet",
+    "FcCharSetHasChar"}
   declarations: [[
     typedef struct FcPattern FcPattern;
+    typedef struct FcCharSet FcCharSet;
+
+    /* the sorted candidate list FcFontSort returns; nfont patterns, sfont slots allocated */
+    typedef struct { int nfont; int sfont; FcPattern** fonts; } FcFontSet;
 
     int FcInit(void);
     FcPattern* FcPatternCreate(void);
@@ -26,6 +31,13 @@ fontconfigBinding = ffiBinding.bind {
     int FcConfigSubstitute(void* config, FcPattern* pattern, int kind);
     void FcDefaultSubstitute(FcPattern* pattern);
     FcPattern* FcFontMatch(void* config, FcPattern* pattern, int* result);
+
+    /* every installed font ordered by closeness to the pattern; with trim set, fonts whose
+       character coverage adds nothing over the ones before them are dropped */
+    FcFontSet* FcFontSort(void* config, FcPattern* pattern, int trim, void* csp, int* result);
+    void FcFontSetDestroy(FcFontSet* set);
+    int FcPatternGetCharSet(const FcPattern* pattern, const char* object, int index, FcCharSet** value);
+    int FcCharSetHasChar(const FcCharSet* charSet, unsigned int codePoint);
   ]]
 }
 
@@ -43,6 +55,7 @@ isAvailable = initialize!
 
 StringOut = ffi.typeof "char*[1]"
 IntegerOut = ffi.typeof "int[1]"
+CharSetOut = ffi.typeof "#{fontconfigBinding.prefixedNames.FcCharSet}*[1]"
 
 ---How heavy a face's strokes are, on fontconfig's own scale rather than the OpenType one.
 ---@alias FontconfigWeight
@@ -92,6 +105,7 @@ IntegerOut = ffi.typeof "int[1]"
 ---| "fullname" # FullName: the face's full human-readable name
 ---| "scalable" # Scalable: whether the face can be rendered at any size
 ---| "outline" # Outline: whether the face is described by outlines rather than bitmaps
+---| "charset" # CharSet: the set of code points the face has glyphs for, which a match reports
 
 Property = Enum "FontconfigProperty", {
   Family: "family"
@@ -105,6 +119,7 @@ Property = Enum "FontconfigProperty", {
   FullName: "fullname"
   Scalable: "scalable"
   Outline: "outline"
+  CharSet: "charset"
 }
 
 Weight = Enum "FontconfigWeight", {
@@ -148,6 +163,7 @@ Result = Enum "FontconfigResult", {
 ---@field fontconfig ffi.namespace* The loaded fontconfig library, or nil where it couldn't be loaded.
 ---@field StringOut ffi.ctype* Constructor for the one-element array FcPatternGetString writes into.
 ---@field IntegerOut ffi.ctype* Constructor for the one-element array the integer getters write into.
+---@field CharSetOut ffi.ctype* Constructor for the one-element array FcPatternGetCharSet writes into.
 ---@field Property Enum The pattern property names, as a FontconfigProperty enum.
 ---@field Weight Enum The weights, as a FontconfigWeight enum.
 ---@field Slant Enum The slants, as a FontconfigSlant enum.
@@ -165,6 +181,9 @@ return {
 
   ---@type ffi.ctype*
   IntegerOut: IntegerOut
+
+  ---@type ffi.ctype*
+  CharSetOut: CharSetOut
 
   Property: Property
   Weight: Weight

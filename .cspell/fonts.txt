@@ -1,11 +1,14 @@
 autohint
 charmap
 charmaps
+cmap
+cmaps
 glyf
 gpos
 hhea
 hmtx
 letterforms
+loca
 maxp
 notdef
 PANOSE
@@ -16,5 +19,8 @@ rasterizes
 sbits
 sbix
 SFNT
+ShiftJIS
 subsetting
+subtable
+subtables
 vhea

@@ -1,5 +1,6 @@
 -- cspell:ignore Marlett -- the Windows face the charmap order below is settled by
 ffi = require "ffi"
+constants = require "l0.DependencyControl.Constants"
 ffiFontconfig = require "l0.AegisubShims.helpers.ffi-fontconfig"
 ffiFreeType = require "l0.AegisubShims.helpers.ffi-freetype"
 fontEncoding = require "l0.AegisubShims.helpers.font-encoding"
@@ -37,13 +38,15 @@ msgs = {
 
 {:freetype, :library, :FaceOut, :AdvanceOut, :KerningOut, :HoriHeaderPointer, :Os2Pointer, :SfntTag,
   :LoadFlag, :KerningMode, :FaceFlag, :Encoding} = ffiFreeType
-{:fontconfig, :StringOut, :IntegerOut, :Property, :Weight, :Slant, :MatchKind, :Result} = ffiFontconfig
+{:fontconfig, :StringOut, :IntegerOut, :CharSetOut, :Property, :Weight, :Slant, :MatchKind,
+  :Result} = ffiFontconfig
 -- Every C symbol this backend names, bound here rather than read off the namespace at each call, so a
 -- name the helper does not declare fails when this module loads instead of when the call is reached.
 {:FT_Done_Face, :FT_Get_Advance, :FT_Get_Char_Index, :FT_Get_Kerning, :FT_Get_Sfnt_Table, :FT_New_Face,
   :FT_Select_Charmap, :FT_Set_Pixel_Sizes} = freetype
-{:FcConfigSubstitute, :FcDefaultSubstitute, :FcFontMatch, :FcPatternAddInteger, :FcPatternAddString,
-  :FcPatternCreate, :FcPatternDestroy, :FcPatternGetInteger, :FcPatternGetString} = fontconfig
+{:FcCharSetHasChar, :FcConfigSubstitute, :FcDefaultSubstitute, :FcFontMatch, :FcFontSetDestroy,
+  :FcFontSort, :FcPatternAddInteger, :FcPatternAddString, :FcPatternCreate, :FcPatternDestroy,
+  :FcPatternGetCharSet, :FcPatternGetInteger, :FcPatternGetString} = fontconfig
 
 isAvailable = ffiFreeType.isAvailable and ffiFontconfig.isAvailable
 
@@ -68,26 +71,81 @@ charmapIndexers = {
   [Encoding.AppleRoman]: fontEncoding.encoderFor fontEncoding.Encoding.MacRoman
 }
 
--- matched files by what was asked for, and open faces by the file a request matched to, so two
--- requests fontconfig answers with the same file share one open face and one set of metrics
-matchedFiles, resolvedFaces = {}, {}
+-- A cache of matched faces and resolved metrics, both by keyed by the requested traits.
+matchedFaces, resolvedFaceMetrics = {}, {}
 
----A face fontconfig picked out, as the file holding it.
----@class FontFile
+---The face fontconfig selected, addressed by the file holding it and its index within that file.
+---@class MatchedFace
 ---@field path string Path to the file the face lives in.
 ---@field index integer Index of the face within that file, zero for a file holding one face.
----@field family string Family that was asked for, which messages name rather than the matched file.
+---@field family string The family name that was requested, not one read from the matched face.
+---@field weight FontconfigWeight The weight that was requested.
+---@field slant FontconfigSlant The slant that was requested.
+---@field substituted boolean True when the selected face matches none of the requested names.
 
----Resolves a font request to a font file, substituting as fontconfig sees fit.
+-- A family name no font uses, added after the requested one to mark where its aliases end.
+-- fontconfig appends its full default fallback chain to every request, including one it cannot
+-- resolve, so the names before this marker are the requested name's aliases and the rest is the chain.
+FAMILY_ALIASES_END = "#{constants.DEPCTRL_PRIVATE_GLOBAL_VAR_PREFIX}FamilyAliasesEnd"
+
+-- keyed by the family alone, since fontconfig expands a name to the same aliases at every weight
+acceptedNamesByFamily = {}
+
+---Returns the requested family name together with the aliases fontconfig maps it to.
+---
+---fontconfig maps a generic family to whatever the machine has, so DejaVu Sans is a valid match for
+---sans-serif. Comparison lowercases both sides, so names outside ASCII compare case-sensitively.
+---@param family string The requested family name.
+---@return table<string, true> accepted The name and its aliases, lowercased, as a lookup.
+getAcceptedNames = (family) ->
+  cached = acceptedNamesByFamily[family]
+  return cached if cached
+
+  accepted = {[family\lower!]: true}
+  probe = FcPatternCreate!
+  if probe != nil
+    ffi.gc probe, FcPatternDestroy
+    FcPatternAddString probe, Property.Family, family
+    FcPatternAddString probe, Property.Family, FAMILY_ALIASES_END
+    FcConfigSubstitute nil, probe, MatchKind.Pattern
+
+    nameOut = StringOut!
+    index = 0
+    while Result.Match == FcPatternGetString probe, Property.Family, index, nameOut
+      name = ffi.string nameOut[0]
+      break if name == FAMILY_ALIASES_END
+      accepted[name\lower!] = true
+      index += 1
+
+  acceptedNamesByFamily[family] = accepted
+  return accepted
+
+---Checks whether the selected face matches the requested name.
+---
+---fontconfig returns a file for every request, falling back to a default face when nothing matches,
+---so the names the face itself declares are the only way to tell a match from a fallback.
+---@param matched ffi.cdata* The pattern FcFontMatch returned.
+---@param accepted table<string, true> The requested name and its aliases.
+---@return boolean isRequested False when the face declares none of them as a family or full name.
+isRequestedFace = (matched, accepted) ->
+  nameOut = StringOut!
+  for property in *{Property.Family, Property.FullName}
+    index = 0
+    while Result.Match == FcPatternGetString matched, property, index, nameOut
+      return true if accepted[ffi.string(nameOut[0])\lower!]
+      index += 1
+  return false
+
+---Resolves a font request to a face, substituting as fontconfig sees fit.
 ---
 ---Takes either a style, whose family, bold and italic fields make the request, or those three
 ---directly for a caller measuring outside a style.
 ---@param family string Family name to match; an empty one leaves fontconfig its own default.
 ---@param weight? FontconfigWeight Weight to match, Regular by default.
 ---@param slant? FontconfigSlant Slant to match, Roman by default.
----@return FontFile? file Nil when fontconfig could not name a file to use.
+---@return MatchedFace? face The selected face. Nil when fontconfig could not name a file to open.
 ---@return string? err Why nothing usable came back.
----@overload fun(style: AegisubStyle): FontFile?, string?
+---@overload fun(style: AegisubStyle): MatchedFace?, string?
 matchFont = (family, weight = Weight.Regular, slant = Slant.Roman) ->
   if "table" == type family
     style = family
@@ -97,7 +155,7 @@ matchFont = (family, weight = Weight.Regular, slant = Slant.Roman) ->
   family or= ""
 
   requestKey = "#{family}\0#{weight}\0#{slant}"
-  cached = matchedFiles[requestKey]
+  cached = matchedFaces[requestKey]
   return cached if cached
 
   request = FcPatternCreate!
@@ -125,9 +183,57 @@ matchFont = (family, weight = Weight.Regular, slant = Slant.Roman) ->
   if Result.Match == FcPatternGetInteger matched, Property.Index, 0, indexOut
     index = tonumber indexOut[0]
 
-  file = {path: ffi.string(fileOut[0]), :index, :family}
-  matchedFiles[requestKey] = file
-  return file
+  -- an empty request has no name to match, so fontconfig's default is the correct result
+  substituted = family != "" and not isRequestedFace matched, getAcceptedNames family
+
+  face = {path: ffi.string(fileOut[0]), :index, :family, :weight, :slant, :substituted}
+  matchedFaces[requestKey] = face
+  return face
+
+-- candidate lists by request, each anchoring the FcFontSet its character sets live in
+sortedCandidatesByRequest = {}
+
+---Returns every installed face in fontconfig's preference order for one request.
+---
+---Pango substitutes for a character its chosen face lacks by walking this order to the first face
+---whose charset has the character, so a fallback walking the same order picks the same face.
+---@param family string The requested family name.
+---@param weight FontconfigWeight The requested weight.
+---@param slant FontconfigSlant The requested slant.
+---@return {path: string, index: integer, charSet: ffi.cdata*}[] candidates Best first; empty where fontconfig could not sort.
+getSortedCandidates = (family, weight, slant) ->
+  requestKey = "#{family}\0#{weight}\0#{slant}"
+  cached = sortedCandidatesByRequest[requestKey]
+  return cached if cached
+
+  candidates = {}
+  request = FcPatternCreate!
+  if request != nil
+    ffi.gc request, FcPatternDestroy
+    FcPatternAddString request, Property.Family, family
+    FcPatternAddInteger request, Property.Weight, weight
+    FcPatternAddInteger request, Property.Slant, slant
+    FcConfigSubstitute nil, request, MatchKind.Pattern
+    FcDefaultSubstitute request
+
+    -- trimming drops only faces whose whole coverage earlier faces already have, which never
+    -- removes the first face covering any character, so the walk shortens and the picks stay
+    sorted = FcFontSort nil, request, 1, nil, IntegerOut!
+    if sorted != nil
+      ffi.gc sorted, FcFontSetDestroy
+      -- the patterns and their character sets live inside the set, so the list keeps it referenced
+      candidates.fontSet = sorted
+      fileOut, indexOut, charSetOut = StringOut!, IntegerOut!, CharSetOut!
+      for position = 0, sorted.nfont - 1
+        pattern = sorted.fonts[position]
+        continue unless Result.Match == FcPatternGetCharSet pattern, Property.CharSet, 0, charSetOut
+        continue unless Result.Match == FcPatternGetString pattern, Property.File, 0, fileOut
+        index = 0
+        index = tonumber indexOut[0] if Result.Match == FcPatternGetInteger pattern, Property.Index, 0, indexOut
+        candidates[#candidates + 1] = {path: ffi.string(fileOut[0]), :index, charSet: charSetOut[0]}
+
+  sortedCandidatesByRequest[requestKey] = candidates
+  return candidates
 
 ---Copies a horizontal header off the FT_Face into the shape the SFNT parser produces, so a face read
 ---through FreeType and one read through another library are the same record downstream.
@@ -214,18 +320,18 @@ toParsedOs2Table = (os2) ->
 ---@field hasKerning boolean Whether the face has a kern table, the only kerning FreeType reads.
 ---@field toCharIndex fun(codePoint: integer): integer? Takes a code point to the index its charmap is keyed by, nil where that charmap states none.
 
----Opens a matched font file and reads the design metrics off it, once per file and family.
+---Opens a matched face and reads the design metrics off it, once per face and family.
 ---
 ---A face missing either table still resolves, leaving fallback behavior to each contract's derivation.
----@param file FontFile The file to resolve, as `matchFont` matched it.
+---@param matched MatchedFace The face to open, as `matchFont` selected it.
 ---@return FreeTypeFace? resolved Nil when the file could not be opened, or holds only bitmaps and so cannot be set at an arbitrary size.
 ---@return string? err Why the font could not be measured with.
-resolveFace = (file) ->
-  {:path, :index, :family} = file
+resolveFace = (matched) ->
+  {:path, :index, :family} = matched
   -- keyed by the family as well as the file, so a message still names what its own caller asked for
   requestKey = "#{family}\0#{path}\0#{index}"
 
-  cached = resolvedFaces[requestKey]
+  cached = resolvedFaceMetrics[requestKey]
   return cached if cached
 
   faceOut = FaceOut!
@@ -266,13 +372,14 @@ resolveFace = (file) ->
     hasKerning: 0 != bit.band faceFlags, FaceFlag.Kerning
     hasCffOutlines: ffiFreeType.isCffOutlined face
   }
-  resolvedFaces[requestKey] = resolved
+  resolvedFaceMetrics[requestKey] = resolved
   return resolved
 
 ---The two `TextExtentsOptions` relevant to the freetype metric preparation, validated and with defaults filled in.
 ---@class FreeTypeContractOptions
 ---@field dpi number Resolution to measure at, which only the Linux contract's spacing term reads.
 ---@field verticalMetricFallback TextExtentsVerticalMetricFallbackBehavior What to measure a face with when its OS/2 Windows cell is unusable.
+---@field fontFallback boolean Whether the Linux contract substitutes another face for a character the resolved face has no glyph for.
 
 ---A face readied for one measurement, with the vertical metrics and the per-glyph lookups a run needs.
 ---@class PreparedMetrics
@@ -280,6 +387,7 @@ resolveFace = (file) ->
 ---@field descent number Depth below the baseline, in those same units.
 ---@field extlead number Leading beyond the line, in those same units.
 ---@field normalize fun(width: number, height: number, descent: number, extlead: number): number, number, number, number Takes a measured run onto the requested cell height.
+---@field fallbackAdvanceOf? fun(codePoint: integer): number? Advance of a character through a substitute face, nil where no installed face covers it; absent for a contract measuring `.notdef` instead.
 ---@field reportsHeightForEmptyRun boolean Whether an empty string still reports the line height.
 ---@field spacingOf fun(spacing: number): number The device units one character adds for the style's `spacing`.
 ---@field advanceOf fun(glyphIndex: integer): number?, string? Advance of one glyph, or why it failed.
@@ -302,7 +410,8 @@ measuredAtRequestedSize = (width, height, descent, extlead) -> width, height, de
 ---Measured against GDI over a 36-face test corpus at four sizes, all four values are exact on 81.4%
 ---of the 1757 cases where the face has glyphs for the whole text and land within a 64th of a device
 ---pixel on 96.5%, with a mean width error of 0.046%. The height is never off by more than that 64th
----and the external leading is exact; the remaining width misses are GDI grid-fitting each glyph. A face setting fsSelection
+---and the external leading is exact. Every remaining width miss is one device unit on a single glyph,
+---which GDI grid-fits and this derivation scales linearly. A face setting fsSelection
 ---USE_TYPO_METRICS changes nothing here: GDI ignores the bit, and this derivation reads the same
 ---usWin and hhea values GDI reads.
 ---
@@ -368,8 +477,13 @@ prepareAegisubWindowsMetrics = (resolved, fontSize, options) ->
 ---Measured against a running Aegisub 3.4.2 on Ubuntu over a 36-face test corpus at four sizes, the
 ---mean width error is 0.556% on the 1757 cases where the face has glyphs for the whole text. Height
 ---and external leading are exact on every case.
----Where the face lacks a glyph the mean width error is 39.8% over 413 cases, Pango substituting
----another face per character where this backend measures .notdef.
+---Where the face lacks a glyph for a character, the measurement takes it through the first covering
+---face in fontconfig's preference order, which is the order Pango substitutes by: measured against
+---the Pango backend over a 40-face corpus, the Japanese missing-glyph cases land at 0.03% mean width
+---error. The normalization divides a line a substitute set by the spans of the faces that set it and
+---reports the deepest descent among them, and kerning never crosses a face boundary. Setting
+---`fontFallback: false` measures `.notdef` instead. Emoji stay off by 40.3% mean: Pango sets them in
+---a bitmap-only face, which this backend does not resolve.
 ---A face setting fsSelection USE_TYPO_METRICS takes its span from the OS/2 sTypo values instead of
 ---the hhea ones, in Pango and FreeType alike, so this mode follows Aegisub there too — to 0.3% on
 ---the corpus face where that redirect moves every metric by 1.68x.
@@ -402,10 +516,11 @@ prepareAegisubWindowsMetrics = (resolved, fontSize, options) ->
 ---The style's `encoding` is ignored, as the wx branch ignores it.
 ---@param resolved FreeTypeFace The face to measure with.
 ---@param fontSize integer Requested em size, already multiplied by MEASUREMENT_SCALE.
----@param options FreeTypeContractOptions What the backend was configured with, read for the resolution.
+---@param options FreeTypeContractOptions What the backend was configured with, read for the resolution and the fallback.
+---@param matched MatchedFace The request the face answered, whose traits order the fallback's candidates.
 ---@return PreparedMetrics? prepared Values at the realized size, which `normalize` takes to the requested one.
 ---@return string? err Why the face could not be realized at that size.
-prepareAegisubLinuxMetrics = (resolved, fontSize, options) ->
+prepareAegisubLinuxMetrics = (resolved, fontSize, options, matched) ->
   {:face, :family} = resolved
 
   code = FT_Set_Pixel_Sizes face, 0, fontSize
@@ -417,20 +532,59 @@ prepareAegisubLinuxMetrics = (resolved, fontSize, options) ->
   descent = -tonumber(metrics.descender) / UNITS_PER_PIXEL_26_6
   kerningMode = KerningMode.Default
 
+  -- Pango substitutes for a character its chosen face lacks through the first covering face in
+  -- fontconfig's preference order, so the fallback walks the same order. Which faces set the line
+  -- is tracked for the normalization below.
+  substitutesUsed, primaryUsed = nil, false
+  fallbackAdvanceOf = nil
+  if options.fontFallback
+    candidates = getSortedCandidates matched.family, matched.weight, matched.slant
+    realized = {}
+    substitutesUsed = {}
+    fallbackAdvanceOf = (codePoint) ->
+      for candidate in *candidates
+        continue if 0 == FcCharSetHasChar candidate.charSet, codePoint
+        substitute = resolveFace {path: candidate.path, index: candidate.index, family: matched.family}
+        continue unless substitute
+        unless realized[substitute]
+          continue unless 0 == FT_Set_Pixel_Sizes substitute.face, 0, fontSize
+          realized[substitute] = true
+        charIndex = substitute.toCharIndex codePoint
+        continue unless charIndex
+        glyphIndex = FT_Get_Char_Index substitute.face, charIndex
+        continue if glyphIndex == MISSING_GLYPH_INDEX
+        continue unless 0 == FT_Get_Advance substitute.face, glyphIndex, LoadFlag.Default, advanceOut
+        substitutesUsed[substitute.face] = true
+        return tonumber(advanceOut[0]) / UNITS_PER_PIXEL_16_16
+      return nil
+
   -- Wx reports the run's width, height, descent and leading in pixels; Aegisub multiplies all four by
   -- `fontSize` over the reported pixel height, which brings the final height out at `fontSize`.
   --
   -- Since FreeType doesn't do layout, we use Pango's formula with FreeType's pixel values to arrive at
   -- a pixel height that yields the same factor, which then scales FreeType's pixel advances.
   -- The final height is not scaled here, since it has already been fixed to the nominal font size.
+  --
+  -- Pango reads a line's vertical metrics off the runs it laid out, so a line a substitute set
+  -- divides by the spans of the faces that set it and reports the deepest descent among them.
   lineHeight = ascent + descent
   toRequestedSize = lineHeight > 0 and fontSize / lineHeight or 1
-  normalize = (width, height, descent, extlead) ->
-    return width * toRequestedSize, height, descent * toRequestedSize, extlead * toRequestedSize
+  normalize = (width, height, lineDescent, extlead) ->
+    if substitutesUsed and next substitutesUsed
+      substitutesUsed[face] = true if primaryUsed
+      maxAscent, maxDescent = 0, 0
+      for used in pairs substitutesUsed
+        maxAscent = math.max maxAscent, tonumber(used.size.metrics.ascender) / UNITS_PER_PIXEL_26_6
+        maxDescent = math.max maxDescent, -tonumber(used.size.metrics.descender) / UNITS_PER_PIXEL_26_6
+      span = maxAscent + maxDescent
+      factor = span > 0 and fontSize / span or 1
+      return width * factor, height, maxDescent * factor, 0
+    return width * toRequestedSize, height, lineDescent * toRequestedSize, extlead * toRequestedSize
 
   return {
     :descent
     :normalize
+    :fallbackAdvanceOf
     height: fontSize
 
     -- wxGTK reports no external leading at all
@@ -443,6 +597,7 @@ prepareAegisubLinuxMetrics = (resolved, fontSize, options) ->
     spacingOf: (spacing) -> spacing * MEASUREMENT_SCALE * POINTS_PER_INCH / options.dpi
 
     advanceOf: (glyphIndex) ->
+      primaryUsed = true
       code = FT_Get_Advance face, glyphIndex, LoadFlag.Default, advanceOut
       unless code == 0
         return nil, msgs.measure.noAdvance\format glyphIndex, family, ffiFreeType.describeError code
@@ -553,7 +708,9 @@ createBackend = (options) ->
     "options.verticalMetricFallback"
   assert valid, fallbackErr
 
-  contractOptions = {:dpi, :verticalMetricFallback}
+  fontFallback = options.fontFallback != false
+
+  contractOptions = {:dpi, :verticalMetricFallback, :fontFallback}
 
   ---@param style AegisubStyle The style to set the text in.
   ---@param text string The text to measure.
@@ -573,13 +730,13 @@ createBackend = (options) ->
     codePoints, decodeErr = unicode.decodeUtf8 text, unicode.DecodeMode.Strict
     error decodeErr, 2 unless codePoints
 
-    file, matchErr = matchFont style
-    error matchErr, 2 unless file
+    matched, matchErr = matchFont style
+    error matchErr, 2 unless matched
 
-    resolved, faceErr = resolveFace file
+    resolved, faceErr = resolveFace matched
     error faceErr, 2 unless resolved
 
-    prepared, prepareErr = prepare resolved, fontSize, contractOptions
+    prepared, prepareErr = prepare resolved, fontSize, contractOptions, matched
     error prepareErr, 2 unless prepared
 
     spacing = prepared.spacingOf style.spacing or 0
@@ -595,10 +752,20 @@ createBackend = (options) ->
     -- naming another character's glyph
     toCharIndex = resolved.toCharIndex
 
+    -- a contract offering a fallback substitutes another face for a character the resolved face
+    -- lacks; the substitute contributes its advance alone, kerning never crossing a face boundary
+    fallbackAdvanceOf = prepared.fallbackAdvanceOf
+
     width, previousGlyph = 0, nil
     for codePoint in *codePoints
       charIndex = toCharIndex codePoint
       glyphIndex = charIndex and FT_Get_Char_Index(resolved.face, charIndex) or MISSING_GLYPH_INDEX
+      if glyphIndex == MISSING_GLYPH_INDEX and fallbackAdvanceOf
+        substituteAdvance = fallbackAdvanceOf codePoint
+        if substituteAdvance
+          width += substituteAdvance + spacing
+          previousGlyph = nil
+          continue
       width += prepared.kerningOf previousGlyph, glyphIndex if kerns and previousGlyph
       advance, advanceErr = prepared.advanceOf glyphIndex
       error advanceErr, 2 unless advance
@@ -646,4 +813,5 @@ FreeTypeExtents = {
 }
 
 UnitTestSuite = require "l0.DependencyControl.UnitTestSuite"
-return UnitTestSuite\withTestExports FreeTypeExtents, {:prepareAegisubWindowsMetrics}
+return UnitTestSuite\withTestExports FreeTypeExtents,
+  {:matchFont, :prepareAegisubWindowsMetrics, :resolveFace}

@@ -74,6 +74,7 @@ VerticalMetricFallbackBehavior = Enum "TextExtentsVerticalMetricFallbackBehavior
 ---@field kerning? boolean Whether to apply the face's kern table to text set solid; defaults to what the mode implies.
 ---@field dpi? number DPI the `AegisubLinux` contract measures at, 96 by default. Only a style setting `spacing` reads it, and the `AegisubWindows` contract never does.
 ---@field verticalMetricFallback? TextExtentsVerticalMetricFallbackBehavior What to measure a face with when its OS/2 Windows cell is unusable, `Gdi` by default. Only the `AegisubWindows` contract reads it.
+---@field fontFallback? boolean Whether a character the resolved face has no glyph for is measured through the first face fontconfig sorts behind it that has one, as Pango substitutes; true by default. Only the FreeType backend's `AegisubLinux` contract reads it.
 ---@field wxRounding? WxTextExtentRounding How the wx version being reproduced takes a text extent to a whole number, `Round` by default. Only the `AegisubMac` contract reads it.
 
 ---Applies a style's `scale_x` and `scale_y` to a measured run and divides the measurement scale back
