@@ -121,14 +121,14 @@
       "url": "@{baseUrl}#@{namespace}",
       "channels": {
         "main": {
-          "version": "0.8.1",
-          "released": "2026-07-24",
+          "version": "0.8.2",
+          "released": null,
           "default": true,
           "files": [
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "87CDA007933A971BAEFC91A044CF7FC941535D0D"
+              "sha1": "29CCC772940BFB3F7A92FD93EA0306905A05897F"
             },
             {
               "name": "/Constants.moon",
@@ -229,7 +229,7 @@
             {
               "name": "/ModuleLoader.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "F1ACB8570A361F9006A6E6BA74FFF84D1F058F3A"
+              "sha1": "42DE5BE3BED98011ABE0A0420C2C5FB7201C77AA"
             },
             {
               "name": "/ModuleProvider.moon",
@@ -488,7 +488,7 @@
             {
               "name": "/ModuleLoader.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "8FE0E4ED90D3ED719F7DE80877591EF2F30014AA",
+              "sha1": "9615E3A053EEB1A7D57A17FDDF06F5AB422D5533",
               "type": "test"
             },
             {
@@ -779,6 +779,9 @@
         ],
         "0.8.1": [
           "fix: Reading the channel list of a package that declares no channels returns an empty list instead of throwing an error."
+        ],
+        "0.8.2": [
+          "fix: A required module that can't be installed or updated once again reports why. The error path that turns an updater status into a readable reason was itself throwing, so every such failure surfaced as an unrelated \"attempt to call field 'getUpdaterErrorMsg'\" error instead of naming the module and the cause."
         ]
       }
     },

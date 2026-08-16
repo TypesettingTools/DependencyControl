@@ -6,6 +6,7 @@
   ModuleLoader = require "l0.DependencyControl.ModuleLoader"
   ModuleProvider = require "l0.DependencyControl.ModuleProvider"
   SemanticVersion = require "l0.DependencyControl.SemanticVersion"
+  UpdateTask = require "l0.DependencyControl.UpdateTask"
 
   DEPCTRL_DUMMY_MODULE_MARKER = "#{constants.DEPCTRL_PRIVATE_GLOBAL_VAR_PREFIX}Dummy"
 
@@ -211,8 +212,7 @@
     -- dummy ref is cleared.
     loadModules_missingRequiredFails: (ut) ->
       ns = "test.ModuleLoader.missingFail"
-      updaterClass = {getUpdaterErrorMsg: (code, name) -> "fetch failed: #{name}"}
-      updater = {require: ((...) => return nil, -6, "no feed"), __class: updaterClass}
+      updater = {require: ((...) => return nil, UpdateTask.UpdateStatus.NoSuitablePackage, "no feed")}
       recClass = setmetatable {ScriptType: domain.ScriptType, __name: "DependencyControl", :updater},
         {__call: (cls, args) -> {}}
       rec = {feed: nil, moduleName: "host.Module", name: "host", __class: recClass}
@@ -223,13 +223,13 @@
       success, err = ModuleLoader.loadModules rec, {mdl}
       ut\assertFalse success
       ut\assertContains err, ns
+      ut\assertContains err, "no feed" -- the updater's detail reaches the user through the real formatter
       ut\assertNil LOADED_MODULES[ns] -- dummy ref nuked
 
     -- loadModules: a missing *optional* module the updater skips is left missing without an error
     -- reason and doesn't fail the overall load; the circular-dependency dummy ref is still cleared.
     loadModules_missingOptionalSkipped: (ut) ->
       ns = "test.ModuleLoader.missingOptionalSkip"
-      UpdateTask = require "l0.DependencyControl.UpdateTask"
       updater = {require: ((...) => return nil, UpdateTask.UpdateStatus.SkippedOptional)}
       recClass = setmetatable {ScriptType: domain.ScriptType, __name: "DependencyControl", :updater},
         {__call: (cls, args) -> {}}
@@ -245,13 +245,12 @@
       ut\assertNil LOADED_MODULES[ns] -- dummy ref nuked
 
     -- loadModules: a required module that fails because one of ITS OWN requirements couldn't be satisfied
-    -- surfaces the nested reason (which sub-requirement failed, and why) in the error — using the real
-    -- getUpdaterErrorMsg so the RequirementsUnmet template's detail isn't dropped on the way to the UI.
+    -- surfaces the nested reason (which sub-requirement failed, and why) in the error, so the
+    -- RequirementsUnmet template's detail isn't dropped on the way to the UI.
     loadModules_requirementsUnmetSurfacesNestedReason: (ut) ->
       ns = "l0.ASSFoundation"
-      UpdateTask = require "l0.DependencyControl.UpdateTask"
       innerReason = "— SubInspector.Inspector (v0.7.2)\n—— Reason: no build for your platform (Linux-x64)"
-      updater = {require: ((...) => return nil, UpdateTask.UpdateStatus.RequirementsUnmet, innerReason), __class: UpdateTask}
+      updater = {require: ((...) => return nil, UpdateTask.UpdateStatus.RequirementsUnmet, innerReason)}
       recClass = setmetatable {ScriptType: domain.ScriptType, __name: "DependencyControl", :updater},
         {__call: (cls, args) -> {}}
       rec = {feed: nil, moduleName: "host.Module", name: "Vector Gradient", __class: recClass}
@@ -286,8 +285,7 @@
     loadModules_outdatedRequiredFails: (ut) ->
       ns = "test.ModuleLoader.outdatedFail"
       loadedRef = {version: {version: 65793, checkVersion: ((target) => false)}}
-      updaterClass = {getUpdaterErrorMsg: (code, name) -> "too old: #{name}"}
-      updater = {require: ((...) => return nil, -6, "no newer version"), __class: updaterClass}
+      updater = {require: ((...) => return nil, UpdateTask.UpdateStatus.NoSuitablePackage, "no newer version")}
       recClass = setmetatable {ScriptType: domain.ScriptType, __name: "DependencyControl", :updater},
         {__call: (cls, args) -> {}}
       rec = {feed: nil, moduleName: "host.Module", name: "host", __class: recClass}
@@ -297,6 +295,7 @@
       success, err = ModuleLoader.loadModules rec, {mdl}
       ut\assertFalse success
       ut\assertContains err, ns
+      ut\assertContains err, "no newer version" -- the updater's detail reaches the user through the real formatter
 
     -- checkOptionalModules: mock self with requiredModules
 
