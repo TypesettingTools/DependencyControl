@@ -50,12 +50,12 @@ keyMap = {
 -- v0.6.3 keys removed outright on migration: settings dropped in v0.7.0 with no sectioned replacement.
 droppedKeys = {"tryAllFeeds", "dumpFeeds"}
 
--- pre-0.7 published these packages on an `alpha` channel only, pinning every install to it; v0.7.0 makes
--- `stable` their default. rewrite the pin so those installs track `stable`, scoped to DependencyControl's
--- own packages so a channel deliberately chosen for a third-party feed is left alone.
+-- DepCtrl pre-0.7 published these packages on an `alpha` channel only, pinning every install to it; v0.7.0 makes
+-- `stable` their default. `main` is the feed maintenance process's own channel and was accidentally published
+-- as the default as part of a CI mishap. Rewrite both pins so those installs track `stable`.
 channelRename = {
-  packages: utils.makeSet {"l0.DependencyControl", "l0.DependencyControl.Toolbox"}
-  from: "alpha"
+  packages: utils.makeSet {"l0.DependencyControl", "l0.DependencyControl.Toolbox", "l0.dkjson", "l0.MoonCats"}
+  from: utils.makeSet {"alpha", "main"}
   to: "stable"
 }
 
@@ -96,8 +96,8 @@ migrate = (config, currentSchemaId, targetSchemaId) ->
       record.unmanaged = nil
       record.version = SemanticVersion\toString record.version if type(record.version) == "number"
       if channelRename.packages[namespace]
-        record.lastChannel = channelRename.to if record.lastChannel == channelRename.from
-        record.activeChannel = channelRename.to if record.activeChannel == channelRename.from
+        record.lastChannel = channelRename.to if channelRename.from[record.lastChannel]
+        record.activeChannel = channelRename.to if channelRename.from[record.activeChannel]
   return true
 
 return {
