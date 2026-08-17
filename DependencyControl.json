@@ -104,7 +104,7 @@
         },
         "stable": {
           "version": "0.8.1",
-          "released": "2026-07-24",
+          "released": "2026-08-17",
           "default": true,
           "files": [
             {
@@ -1267,14 +1267,14 @@
           ]
         },
         "stable": {
-          "version": "0.8.1",
-          "released": "2026-07-24",
+          "version": "0.8.2",
+          "released": "2026-08-17",
           "default": true,
           "files": [
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "87CDA007933A971BAEFC91A044CF7FC941535D0D"
+              "sha1": "29CCC772940BFB3F7A92FD93EA0306905A05897F"
             },
             {
               "name": "/Constants.moon",
@@ -1375,7 +1375,7 @@
             {
               "name": "/ModuleLoader.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "F1ACB8570A361F9006A6E6BA74FFF84D1F058F3A"
+              "sha1": "059526819899F46484C78AF6C1D6A92F2C354EB2"
             },
             {
               "name": "/ModuleProvider.moon",
@@ -1430,7 +1430,7 @@
             {
               "name": "/UpdateTask.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "D7296244D4B9DAEAD0463CF6FE699AAF5CDF39A8"
+              "sha1": "4C1B8BFBE29120014A182F37F1D9E7AA0E456C07"
             },
             {
               "name": "/Updater.moon",
@@ -1515,7 +1515,7 @@
             {
               "name": "/utils.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "FA8307BC15AD2FEC1535F9B862E1D92C2A3A1AB9"
+              "sha1": "35B197A1947BA389AB1F522F1EE6F351EEC54949"
             },
             {
               "name": ".moon",
@@ -1634,7 +1634,7 @@
             {
               "name": "/ModuleLoader.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "8FE0E4ED90D3ED719F7DE80877591EF2F30014AA",
+              "sha1": "0B1EF3A8E4C79310DD20511F7F6BBEAF8F219CB0",
               "type": "test"
             },
             {
@@ -1700,13 +1700,13 @@
             {
               "name": "/UpdateTask.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "5CA6FC899341677F702788F543373C8F3EDCFAA0",
+              "sha1": "D1C04F53DE0609804FE0E9B63AF5DD1EEA2D1D5B",
               "type": "test"
             },
             {
               "name": "/Updater.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "7945FCE5A2DC11257301DE5A2B2423E56A0AC4CB",
+              "sha1": "46B1E9BD099B831E194F514971BB26667DA470EC",
               "type": "test"
             },
             {
@@ -1784,7 +1784,7 @@
             {
               "name": "/utils.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "F78238492CB05F9F1568C14DE363A83CE1CAB6D8",
+              "sha1": "431E1940BB43BB2FE1C3C38A55F57574D278A3DF",
               "type": "test"
             },
             {
@@ -1925,6 +1925,13 @@
         ],
         "0.8.1": [
           "fix: Reading the channel list of a package that declares no channels returns an empty list instead of throwing an error."
+        ],
+        "0.8.2": [
+          "fix: A required module that can't be installed or updated once again reports why. The error path that turns an updater status into a readable reason was itself throwing, so every such failure surfaced as an unrelated \"attempt to call field 'getUpdaterErrorMsg'\" error instead of naming the module and the cause.",
+          "fix(Utils): `deepCopy()` no longer recurses forever on a table that references itself. Circular references are reproduced as cycles in the copy, and a table reached through several keys is copied once.",
+          "fix(CLI): `generate-types` and `generate-docs` skip files a feed marks deleted instead of reporting each one as an unreadable source",
+          "fix(CLI): a deleted file's entry can no longer shadow the source that replaced it when a test suite resolves its modules from the feed.",
+          "fix(Updater): Updates no longer fail with 'the update task is already running' for modules that require one another (such as Aegisub-Motion's 'Tags' and 'Transform')."
         ]
       }
     },
@@ -1998,7 +2005,7 @@
         },
         "stable": {
           "version": "0.8.0",
-          "released": "2026-07-24",
+          "released": "2026-08-17",
           "default": true,
           "files": [
             {
@@ -2191,7 +2198,7 @@
         },
         "stable": {
           "version": "0.7.0",
-          "released": "2026-07-24",
+          "released": "2026-08-17",
           "default": true,
           "files": [
             {

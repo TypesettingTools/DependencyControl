@@ -833,6 +833,28 @@
       ut\assertNil task.calls.performUpdate -- no install performed
       ut\assertNotNil task.calls.persisted -- but the source choice is still recorded
 
+    -- run(): a dependency cycle re-enters the task whose update covers the requirement, so it reports the
+    -- update in progress and leaves the install to the run already under way
+    run_reentrantInFlightSatisfiesRequirement: (ut) ->
+      task = makeRunTask targetVersion: SemanticVersion\toPacked "1.3.0"
+      task.__installingVersion = "1.3.6"
+      code, detail = UpdateTask.run task
+      ut\assertEquals code, UpdateStatus.UpdateInProgress
+      ut\assertEquals detail, "1.3.6"
+      ut\assertNil task.calls.resolved
+
+    -- run(): the same cycle, but the version being installed sits below the requirement, which finishing
+    -- that update won't change, so it stays an error
+    run_reentrantInFlightBelowRequirementFails: (ut) ->
+      task = makeRunTask targetVersion: SemanticVersion\toPacked "2.0.0"
+      task.__installingVersion = "1.3.6"
+      ut\assertEquals UpdateTask.run(task), UpdateStatus.TaskAlreadyRunning
+
+    -- run(): with no version recorded there is no cycle to break, so a task still flagged running is rejected
+    run_reentrantWithoutClaimStillGuardsRunning: (ut) ->
+      task = makeRunTask running: true
+      ut\assertEquals UpdateTask.run(task), UpdateStatus.TaskAlreadyRunning
+
     -- run(): a terminal resolution (no install required) returns its status without dispatching
     run_terminalResolutionReturnsStatus: (ut) ->
       task = makeRunTask {
@@ -875,6 +897,32 @@
       ut\assertEquals cap.targetVersion, 0x10000
       ut\assertTrue cap.optional
       ut\assertEquals cap.reason, UpdateReason.UserRequested
+
+    -- performUpdate: an error thrown while resolving requirements leaves no version behind and clears the
+    -- running flag, so it can't corrupt a later update run
+    performUpdate_clearsInFlightClaimOnThrow: (ut) ->
+      task = makePerformTask!
+      (ut\stub ModuleLoader, "loadModules")\calls -> error "requirement boom", 0
+      update = {version: "1.3.6", files: {}, requiredModules: {{moduleName: "l0.dep"}}}
+      completed, err = pcall UpdateTask.performUpdate, task, update
+      ut\assertFalse completed
+      ut\assertEquals err, "requirement boom"
+      ut\assertNil task.__installingVersion
+      ut\assertFalse task.running
+
+    -- performUpdate: the version being installed is readable while the requirements resolve, which is what
+    -- a cycle breaks against, and gone once they finish
+    performUpdate_publishesInFlightVersionWhileResolving: (ut) ->
+      task = makePerformTask!
+      seen = {}
+      (ut\stub ModuleLoader, "loadModules")\calls ->
+        seen.claim = task.__installingVersion
+        return false, "unmet"
+      update = {version: "1.3.6", files: {}, requiredModules: {{moduleName: "l0.dep"}}}
+      code = UpdateTask.performUpdate task, update
+      ut\assertEquals code, UpdateStatus.RequirementsUnmet
+      ut\assertEquals seen.claim, "1.3.6"
+      ut\assertNil task.__installingVersion -- and it doesn't outlive the resolution
 
     -- performUpdate: a temp-directory creation failure aborts with -30
     performUpdate_tempDirFailure: (ut) ->
@@ -1077,8 +1125,11 @@
       "resolve_autoNeverPrompts", "resolve_offerAllSourcesPromptsOnMultiple",
       "resolve_blockedFeedSkipped", "resolve_userFeedUsedExclusively",
       "run_dispatchesDirectInstall", "run_dispatchesProviderInstall", "run_upToDateShortCircuits",
+      "run_reentrantInFlightSatisfiesRequirement", "run_reentrantInFlightBelowRequirementFails",
+      "run_reentrantWithoutClaimStillGuardsRunning",
       "run_terminalResolutionReturnsStatus", "run_noInternetGuard",
       "installProvider_constructsRecordAndRequires",
+      "performUpdate_clearsInFlightClaimOnThrow", "performUpdate_publishesInFlightVersionWhileResolving",
       "performUpdate_tempDirFailure", "performUpdate_rejectsPathTraversal", "performUpdate_rejectsBadSha1",
       "performUpdate_reportsFailedDownloads", "performUpdate_reportsMoveFailures",
       "performUpdate_reloadsModuleAndRefreshesRecord", "performUpdate_recoversManagedRecordFromRegistry",
