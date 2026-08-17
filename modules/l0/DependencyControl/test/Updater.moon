@@ -52,6 +52,17 @@
       ut\assertEquals ref, task.ref
       ut\assertEquals code, UpdateStatus.Installed
 
+    -- a cycle's in-progress update has no ref to hand back yet, but its status isn't a failure and names
+    -- the version being installed
+    require_updateInProgressReturnsCode: (ut) ->
+      task = {updated: false, record: {namespace: "l0.dep", name: "Dep"},
+        run: ((wait) => UpdateStatus.UpdateInProgress, "1.3.6")}
+      record = {scriptType: domain.ScriptType.Module, name: "Dep", namespace: "l0.dep", virtual: false}
+      ref, code, detail = Updater.require makeRequireUpdater(task), record, 0
+      ut\assertNil ref
+      ut\assertEquals code, UpdateStatus.UpdateInProgress
+      ut\assertEquals detail, "1.3.6"
+
     -- a skipped optional dependency yields no ref but still carries its status code
     require_skippedOptionalReturnsCode: (ut) ->
       task = {updated: false, record: {namespace: "l0.dep", name: "Dep"}, run: ((wait) => UpdateStatus.SkippedOptional)}
@@ -187,6 +198,19 @@
       ut\assertEquals existing.targetVersion, SemanticVersion\toPacked "2.0.0"
       ut\assertTrue existing.optional
 
+    -- Breaking a dependency cycle depends on the re-entrant lookup reaching the very task doing the update,
+    -- which the namespace key gives us for either record the loader passes — the loaded module's own on the
+    -- outdated path, a fresh virtual one on the missing path. Updating that task in place must not wipe the
+    -- version it is installing.
+    addTask_reentrantResolutionReachesRunningTask: (ut) ->
+      running = {targetVersion: 0, __installingVersion: "1.3.6"}
+      updater = stubSelf Updater, {tasks: {[domain.ScriptType.Module]: {["a-mo.Tags"]: running}}}
+      outdated = {__class: DependencyControl, scriptType: domain.ScriptType.Module, namespace: "a-mo.Tags"}
+      virtual = {__class: DependencyControl, scriptType: domain.ScriptType.Module, namespace: "a-mo.Tags", virtual: true}
+      ut\assertIs (Updater.addTask updater, outdated, "1.3.6"), running
+      ut\assertIs (Updater.addTask updater, virtual, "1.3.6"), running
+      ut\assertEquals running.__installingVersion, "1.3.6"
+
     -- a record with no queued task gets a fresh UpdateTask, which is cached under its scriptType/namespace
     addTask_createsNewTask: (ut) ->
       record = {__class: DependencyControl, scriptType: domain.ScriptType.Module, namespace: "l0.new", validateNamespace: => true}
@@ -259,7 +283,8 @@
 
     _order: {
       "require_upToDateLoadsModule", "require_successReturnsRef", "require_errorPropagates"
-      "require_skippedOptionalReturnsCode", "require_upToDateLoadFailureReturnsCode"
+      "require_skippedOptionalReturnsCode", "require_updateInProgressReturnsCode"
+      "require_upToDateLoadFailureReturnsCode"
       "scheduleUpdate_disabledRejected", "scheduleUpdate_belowAutoUpdateModeRejected"
       "scheduleUpdate_virtualRejected"
       "scheduleUpdate_withinIntervalSkips", "scheduleUpdate_protectedInstallRejected"
@@ -267,7 +292,8 @@
       "acquireLock_returnsTrueWhenAlreadyHeld", "acquireLock_acquiresAndSetsHasLock"
       "acquireLock_failsWhenHeldByOther", "releaseLock_releasesWhenHeld", "releaseLock_noopWhenNotHeld"
       "renewLock_renewsWhenHeld"
-      "addTask_versionParseErrorReturns", "addTask_updatesExistingTask", "addTask_createsNewTask"
+      "addTask_versionParseErrorReturns", "addTask_updatesExistingTask"
+      "addTask_reentrantResolutionReachesRunningTask", "addTask_createsNewTask"
       "addTask_disabledUpdaterRejects", "addTask_modeGatesByReason", "addTask_invalidNamespaceRejects"
       "feedTrust_isSharedSingleton", "isEnabledFor_defaultsToAllContexts", "isEnabledFor_modeGatesByContext"
     }

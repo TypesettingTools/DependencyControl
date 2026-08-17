@@ -139,6 +139,7 @@ SourceFeedKind = Enum "SourceFeedKind", {
 ---| 1 # Installed: the install or update succeeded
 ---| 2 # AlreadyUpdated: another in-flight update already brought the package to the target version
 ---| 3 # SkippedOptional: an optional dependency couldn't be satisfied and was skipped
+---| 4 # UpdateInProgress: this package's update is already under way and will install a satisfying version
 ---| -1 # UpdaterDisabled: the updater is disabled in the config
 ---| -2 # InvalidNamespace: the record's namespace doesn't conform to the rules
 ---| -3 # Unmanaged: the record is virtual or unmanaged, so it isn't updated
@@ -168,6 +169,7 @@ UpdateStatus = Enum "UpdateStatus", {
   Installed: 1
   AlreadyUpdated: 2
   SkippedOptional: 3
+  UpdateInProgress: 4
   UpdaterDisabled: -1
   InvalidNamespace: -2
   Unmanaged: -3
@@ -297,6 +299,7 @@ msgs = {
 
 ---Mutable execution state for one install/update operation.
 ---@class UpdateTask
+---@field private __installingVersion? string The version this task's running update will install. Set only while it resolves its requirements and used to break module dependency cycles.
 class UpdateTask
   ---@private
   @__downloader = Downloader!
@@ -623,6 +626,14 @@ class UpdateTask
     with @record do @logger\log msgs.run.starting, getInstallTerm(@record),
       domain.terms.scriptType.singular[.scriptType], .name
 
+    -- The field is only set while this task's own update resolves its requirements, so re-entering here
+    -- means we must be dealing with a dependency cycle. This short-circuits the requirement check if the
+    -- requested version is satisfied by the version being installed, so the cycle can be broken.
+    if @__installingVersion
+      satisfied = not @targetVersion or SemanticVersion\check @__installingVersion, @targetVersion
+      return UpdateStatus.UpdateInProgress, @__installingVersion if satisfied
+      return @__logUpdateError UpdateStatus.TaskAlreadyRunning
+
     -- don't perform update of a script when another one is already running for the same script
     return @__logUpdateError UpdateStatus.TaskAlreadyRunning if @running
 
@@ -908,8 +919,15 @@ class UpdateTask
     if reqs and #reqs > 0
       @logger\log msgs.performUpdate.updateReqs
       @logger.indent += 1
-      success, err = ModuleLoader.loadModules @record, reqs, {@record.feed}
+      -- Remember the version being installed to break dependency cycles, but prevent it from becoming stale, e.g.,
+      -- in case of an update error, as it could otherwise corrupt subsequent update runs in an unpredictable way.
+      @__installingVersion = update.version
+      loaded, success, err = pcall ModuleLoader.loadModules, @record, reqs, {@record.feed}
+      @__installingVersion = nil
       @logger.indent -= 1
+      unless loaded
+        @running = false
+        error success, 0
       unless success
         @logger.indent += 1
         @logger\log err
