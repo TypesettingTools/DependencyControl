@@ -785,7 +785,8 @@
           "fix(Utils): `deepCopy()` no longer recurses forever on a table that references itself. Circular references are reproduced as cycles in the copy, and a table reached through several keys is copied once.",
           "fix(CLI): `generate-types` and `generate-docs` skip files a feed marks deleted instead of reporting each one as an unreadable source",
           "fix(CLI): a deleted file's entry can no longer shadow the source that replaced it when a test suite resolves its modules from the feed.",
-          "fix(Updater): Updates no longer fail with 'the update task is already running' for modules that require one another (such as Aegisub-Motion's 'Tags' and 'Transform')."
+          "fix(Updater): Updates no longer fail with 'the update task is already running' for modules that require one another (such as Aegisub-Motion's 'Tags' and 'Transform').",
+          "fix(Updater): Users who were accidentally assigned to the dummy 'main' channel as part of a CI mishap, are automatically migrated to the proper 'stable' channel."
         ]
       }
     },

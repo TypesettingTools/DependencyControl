@@ -126,6 +126,27 @@
       ut\assertEquals c.modules["l0.Functional"].lastChannel, "alpha" -- third-party pin preserved
       ut\assertEquals c.macros["l0.DependencyControl.Toolbox"].lastChannel, "beta" -- non-alpha pin preserved
 
+    -- a pin on the feed maintenance channel is rewritten the same way, across all of our own packages
+    migratesOwnedMainPin: (ut) ->
+      c = {
+        modules: {
+          ["l0.DependencyControl"]: {lastChannel: "main", activeChannel: "main"}
+          ["l0.dkjson"]: {lastChannel: "main"}
+          ["l0.MoonCats"]: {lastChannel: "main"}
+          ["l0.Functional"]: {lastChannel: "main"} -- third-party feed: its own channel names are its business
+        }
+        macros: {
+          ["l0.DependencyControl.Toolbox"]: {lastChannel: "main"}
+        }
+      }
+      migrate c, nil, schema.CONFIG_SCHEMA_ID_CURRENT
+      ut\assertEquals c.modules["l0.DependencyControl"].lastChannel, "stable"
+      ut\assertEquals c.modules["l0.DependencyControl"].activeChannel, "stable"
+      ut\assertEquals c.modules["l0.dkjson"].lastChannel, "stable"
+      ut\assertEquals c.modules["l0.MoonCats"].lastChannel, "stable"
+      ut\assertEquals c.macros["l0.DependencyControl.Toolbox"].lastChannel, "stable"
+      ut\assertEquals c.modules["l0.Functional"].lastChannel, "main" -- third-party pin preserved
+
     -- the migration handles exactly the v0.6.3 keys: each is either lifted or dropped, and nothing else is
     handlesExactlyV063Keys: (ut) ->
       handled = {k, true for k in *droppedKeys}
@@ -137,6 +158,7 @@
     _order: {
       "hasAllSections", "hasPolicyLiterals"
       "migratesFlatKeys", "dropsObsoleteKeys", "dropsObsoleteFormatVersion", "skipsWhenSchemaPresent"
-      "migratesLegacyRecordFields", "migratesOwnedAlphaPin", "preservesUnknownKeys", "handlesExactlyV063Keys"
+      "migratesLegacyRecordFields", "migratesOwnedAlphaPin", "migratesOwnedMainPin"
+      "preservesUnknownKeys", "handlesExactlyV063Keys"
     }
   }
