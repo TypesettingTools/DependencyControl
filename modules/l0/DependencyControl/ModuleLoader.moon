@@ -169,7 +169,7 @@ class ModuleLoader
             ref, code, extErr = @@updater\require record, .version, addFeeds
             if ref
               ._ref = ref
-            elseif not .optional
+            elseif code != UpdateTask.UpdateStatus.UpdateInProgress and not .optional
               ._outdated = true
               ._reason = UpdateTask.getUpdaterErrorMsg code, .name or .moduleName, domain.ScriptType.Module, false, extErr
 

@@ -297,6 +297,24 @@
       ut\assertContains err, ns
       ut\assertContains err, "no newer version" -- the updater's detail reaches the user through the real formatter
 
+    -- loadModules: a requirement caught in a dependency cycle doesn't fail the load — the module already
+    -- loaded keeps its place and isn't reported as outdated
+    loadModules_updateInProgressAcceptsLoadedRef: (ut) ->
+      ns = "test.ModuleLoader.inFlight"
+      loadedRef = {version: {version: 65793, checkVersion: ((target) => false)}}
+      updater = {require: ((...) => return nil, UpdateTask.UpdateStatus.UpdateInProgress, "2.0.0")}
+      recClass = setmetatable {ScriptType: domain.ScriptType, __name: "DependencyControl", :updater},
+        {__call: (cls, args) -> {}}
+      rec = {feed: nil, moduleName: "host.Module", name: "host", __class: recClass}
+      mdl = {moduleName: ns, name: ns, version: SemanticVersion\toPacked "2.0.0", optional: false}
+      (ut\stub ModuleLoader, "loadModule")\calls (self, m, usePrivate) -> m._ref = loadedRef unless usePrivate
+      ut\stub(ModuleProvider, "isDepCtrlVersionRecord")\returns true
+      success, err = ModuleLoader.loadModules rec, {mdl}
+      ut\assertTrue success
+      ut\assertEquals err, ""
+      ut\assertEquals mdl._ref, loadedRef
+      ut\assertNil mdl._outdated
+
     -- checkOptionalModules: mock self with requiredModules
 
     checkOptionalModules_noneOptional: (ut) ->
@@ -335,6 +353,7 @@
       "loadModules_missingFetchedViaUpdater", "loadModules_missingRequiredFails",
       "loadModules_missingOptionalSkipped", "loadModules_requirementsUnmetSurfacesNestedReason",
       "loadModules_outdatedForcesUpdate", "loadModules_outdatedRequiredFails",
+      "loadModules_updateInProgressAcceptsLoadedRef",
       "checkOptionalModules_noneOptional", "checkOptionalModules_missingOptional"
     }
   }
