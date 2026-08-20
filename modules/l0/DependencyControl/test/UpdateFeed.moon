@@ -670,6 +670,32 @@
       ut\assertFalse ch.main.default -- as does the copy of the source channel left by an earlier publish
       ut\assertEquals ch.main.version, "0.7.0"
 
+    -- A section's own template keys travel with the merge: macros are stored flat while modules nest, so
+    -- a published feed that lost the macros section's `fileBaseUrls` resolves every macro to a module path.
+    mergeChannels_copiesSectionTemplates: (ut) ->
+      root = fileOps.joinPath basePath, "merge4"
+      fileOps.mkdir root, false, true
+      srcPath = fileOps.joinPath root, "src.json"
+      dstPath = fileOps.joinPath root, "dst.json"
+      fileOps.writeFile srcPath, [[{
+        "dependencyControlFeedFormatVersion": "0.4.0", "name": "N", "baseUrl": "b",
+        "macros": {
+          "fileBaseUrls": {"script": "@{fileBaseUrl}@{namespace}@{fileName}"},
+          "l0.Pkg": {"name": "P", "author": "x", "channels": {"main": {"version": "0.8.0", "released": null, "default": true, "files": [{"name": ".moon", "url": "u", "sha1": "AAA"}]}}}
+        }
+      }]], true
+      fileOps.writeFile dstPath, [[{"dependencyControlFeedFormatVersion": "0.4.0", "macros": {}, "modules": {}}]], true
+      source = UpdateFeed nil, false, srcPath
+      source\loadFile srcPath, UpdateFeed.ExpansionMode.Local
+      dest = UpdateFeed nil, false, dstPath
+      dest\loadFile dstPath, UpdateFeed.ExpansionMode.Local
+      merged, err = dest\mergeChannels source, {from: "main", to: {"stable"}, defaultChannel: "stable", outPath: false}
+      ut\assertNil err
+      ut\assertEquals #merged, 1
+      macros = dest.rawFeedData.macros
+      ut\assertNotNil macros["l0.Pkg"].channels.stable -- the package published as usual
+      ut\assertEquals macros.fileBaseUrls.script, "@{fileBaseUrl}@{namespace}@{fileName}"
+
     -- Publishing to a channel that isn't the default leaves the default channel alone, flag and all,
     -- so releasing to alpha only doesn't strip the feed of the default the caller still names.
     mergeChannels_keepsDefaultOnUnwrittenChannel: (ut) ->
@@ -1135,7 +1161,7 @@
       "updateFeed_addFilesAppendsEntries", "updateFeed_markReleasedStampsUnreleased",
       "updateFeed_markReleasedReportsAmbiguousDefault",
       "mergeChannels_copiesPreservingOthers", "mergeChannels_leavesExactlyOneDefault",
-      "mergeChannels_keepsDefaultOnUnwrittenChannel"
+      "mergeChannels_keepsDefaultOnUnwrittenChannel", "mergeChannels_copiesSectionTemplates"
       "bumpVersions_startsCycleFromReleased", "bumpVersions_refusesAmbiguousDefault",
       "walkFiles_yieldsProxies", "walkFiles_passesThroughLocalFilePath",
       "deployFiles_copiesToDist", "deployFiles_skipExistingNoClobber",
