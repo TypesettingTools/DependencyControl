@@ -42,6 +42,15 @@
       ut\assertEquals feed.config.maxFeedSize, FeedLoader.defaultMaxFeedSize
       ut\assertEquals feed.config.feedFetchTimeout, FeedLoader.defaultFeedFetchTimeout
 
+    -- load reads the fetch policy from the config at call time, so a settings change applies to the next fetch
+    load_readsFetchPolicyAtCallTime: (ut) ->
+      loader = make {blockPrivateHosts: true}
+      loader.config.c.updates.blockPrivateHosts = false
+      loader.config.c.feeds.maxFeedSize = 1234
+      feed = loader\load url, {autoLoad: false}
+      ut\assertFalse feed.config.blockPrivateHosts
+      ut\assertEquals feed.config.maxFeedSize, 1234
+
     -- a configured feed-fetch cap overrides the default
     load_usesConfiguredFeedCaps: (ut) ->
       loader = make {maxFeedSize: 1000, feedFetchTimeout: 5}
@@ -51,6 +60,6 @@
 
     _order: {
       "new_opensFeedCacheUnderNamespace", "load_wiresSharedCacheAndPolicy",
-      "load_appliesFeedCapDefaults", "load_usesConfiguredFeedCaps"
+      "load_appliesFeedCapDefaults", "load_readsFetchPolicyAtCallTime", "load_usesConfiguredFeedCaps"
     }
   }
