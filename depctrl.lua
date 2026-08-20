@@ -96,6 +96,8 @@ local serveCmd = parser:command("serve-updates",
 serveCmd:option("-f --feed",
   "Source feed JSON path, next to its files (a resolvable-channel feed, e.g. alpha)"):default("DependencyControl.json")
 serveCmd:option("--lifetime", "Seconds to serve before the server self-terminates"):argname("<seconds>"):default("3600")
+serveCmd:option("--port",
+  "Port to listen on, so a feed URL stays valid across runs (default: any free port)"):argname("<port>")
 serveCmd:option("--serve-channel",
   "Graft the feed's dev channel onto this channel before serving, so a client tracking it matches")
   :argname("<name>")
@@ -597,7 +599,19 @@ elseif args.command == "serve-updates" then
   end
 
   -- Bind first so the feed's file URLs can carry the real port.
-  local listener = assert(socket.bind("127.0.0.1", 0))
+  local requestedPort = 0
+  if args.port then
+    requestedPort = tonumber(args.port)
+    if not requestedPort or requestedPort % 1 ~= 0 or requestedPort < 1 or requestedPort > 65535 then
+      io.stderr:write(("serve-updates: --port must be a whole number in [1, 65535], got '%s'.\n"):format(tostring(args.port)))
+      os.exit(2)
+    end
+  end
+  local listener, bindErr = socket.bind("127.0.0.1", requestedPort)
+  if not listener then
+    io.stderr:write(("serve-updates: couldn't listen on port %d (%s).\n"):format(requestedPort, tostring(bindErr)))
+    os.exit(1)
+  end
   local _, port = listener:getsockname()
   local base = "http://127.0.0.1:" .. port
 
