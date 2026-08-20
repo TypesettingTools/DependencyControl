@@ -17,7 +17,7 @@ SourceFeedKind = UpdateTask.SourceFeedKind
 depRec = DepCtrl {
   feed: "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/publish/DependencyControl.json",
   {
-    {"l0.DependencyControl", version: "0.7.0"}
+    {"l0.DependencyControl", version: "0.9.0"}
   }
 }
 logger = DepCtrl.logger
