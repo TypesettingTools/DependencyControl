@@ -580,10 +580,10 @@ elseif args.command == "serve-updates" then
 
   -- Optionally graft the dev channel onto a channel a client tracks (e.g. main -> alpha), so an older
   -- Aegisub can be tested against this feed without merging channels by hand first.
-  local feedToServe = refreshedPath
+  local feedToServe = refreshed.changed > 0 and refreshedPath or feedPath
   if args.serve_channel then
     local mergedPath = FileOps.joinPath(dirname(refreshedPath), "merged.json")
-    local merged, mergeErr = UpdateFeed(nil, false, refreshedPath):mergeChannels(UpdateFeed(nil, false, refreshedPath), {
+    local merged, mergeErr = UpdateFeed(nil, false, feedToServe):mergeChannels(UpdateFeed(nil, false, feedToServe), {
       from = args.from_channel,
       to = { args.serve_channel },
       outPath = mergedPath,
