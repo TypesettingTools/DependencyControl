@@ -124,6 +124,7 @@ msgs = {
   __resolveChannel: {
     notFound: "channel '%s' not found."
     noDefault: "no default channel — specify one explicitly."
+    ambiguousDefault: "several channels are marked as the default (%s) — specify one explicitly."
   }
   trace: {
     usingCached: "Using cached feed."
@@ -627,16 +628,19 @@ class UpdateFeed
       return ch.version if ch.default
     fallback
 
-  ---Returns the modules in this feed whose default channel `provides` the given name. Only the
+  ---Returns the modules in this feed whose selected channel `provides` the given name. Only the
   ---`modules` section is searched (automation scripts can't be `require`d). The feed must be loaded.
   ---@param alias string The required module name to find providers for.
-  ---@return ScriptUpdateRecord[] providers Update records (default channel selected) whose `provides` lists the name.
-  getProviders: (alias) =>
+  ---@param depCtrlConfigModulesSection table<string, table> The modules section of DependencyControl's config, keyed by namespace. Required to honor the settings (such as the update channel) of already installed
+  ---providing packages.
+  ---@return ScriptUpdateRecord[] providers Update records (channel selected) whose `provides` lists the name.
+  getProviders: (alias, depCtrlConfigModulesSection) =>
     providers = {}
     return providers unless @data and @data.modules
     for namespace, pkg in pairs @data.modules
       continue unless type(pkg) == "table" and pkg.channels
-      record = ScriptUpdateRecord namespace, pkg, nil, ScriptType.Module, false, @logger
+      installed = depCtrlConfigModulesSection[namespace]
+      record = ScriptUpdateRecord namespace, pkg, installed and {c: installed}, ScriptType.Module, false, @logger
       continue unless (record\setChannel!) and record.provides
       for entry in *record.provides
         name = type(entry) == "table" and entry.name or entry
@@ -647,7 +651,8 @@ class UpdateFeed
 
   ---Resolves which channel of a package to operate on.
   ---With an explicit name, that channel must exist; otherwise the channel flagged `default: true`
-  ---is used.
+  ---is used. Returns an error when multiple channels are flagged default to raise attention to the
+  ---invalid feed state rather than paper over it with a guess.
   ---@private
   ---@param channels? table The package's `channels` map.
   ---@param channelName? string An explicit channel name to select.
@@ -657,9 +662,11 @@ class UpdateFeed
     if channelName
       return channelName if channels[channelName]
       return nil, msgs.__resolveChannel.notFound\format channelName
-    for name, channel in pairs channels
-      return name if channel.default
-    return nil, msgs.__resolveChannel.noDefault
+
+    name, conflicting = ScriptUpdateRecord.getDefaultChannel channels
+    return nil, msgs.__resolveChannel.ambiguousDefault\format table.concat(conflicting, ", ") if conflicting
+    return nil, msgs.__resolveChannel.noDefault unless name
+    return name
 
   ---Writes the raw (unexpanded) feed data back to disk.
   ---@private
@@ -917,13 +924,12 @@ class UpdateFeed
         rawPkg = @rawFeedData[domain.ScriptTypeSection[scriptType]]
         rawPkg = rawPkg and rawPkg[pkg.namespace]
         continue unless rawPkg and rawPkg.channels
-        channelName = @@__resolveChannel rawPkg.channels, opts.channel
-        rawChannel = channelName and rawPkg.channels[channelName]
+        result = resultsByPackage[scriptType .. "\0" .. pkg.namespace]
+        rawChannel = result and result.channel and rawPkg.channels[result.channel]
         continue unless rawChannel
         continue unless rawChannel.released == nil or rawChannel.released == dkjson.null
         rawChannel.released = releaseDate
-        result = resultsByPackage[scriptType .. "\0" .. pkg.namespace]
-        result.changed = true if result
+        result.changed = true
 
     for result in *stats.packages
       stats.changed += 1 if result.changed
@@ -940,10 +946,11 @@ class UpdateFeed
   ---package in the source, its `from` channel's raw data is copied into every `to` channel here,
   ---with each `to` channel's `default` flag set (true only for the given default channel) and its
   ---release date set when one is supplied. Channels not among `to` are left as they are, so they
-  ---keep their previously published versions; a package missing here is added carrying only the
-  ---`to` channels. Top-level feed metadata and each package's shared (non-channel) fields track the
-  ---source. File hashes are copied verbatim — the `from` channel is assumed already in sync with
-  ---its own source — so no files are read.
+  ---keep their previously published versions, except that `default` is cleared from every channel
+  ---but the given default channel, so the result names exactly one. A package missing here is added
+  ---carrying only the `to` channels. Top-level feed metadata, each section's own template keys, and each
+  ---package's shared (non-channel) fields track the source. File hashes are copied verbatim — the `from`
+  ---channel is assumed already in sync with its own source — so no files are read.
   ---@param source UpdateFeed The loaded feed to copy channel data from.
   ---@param opts { from: string, to: string[], defaultChannel?: string, released?: string, outPath?: string|boolean } `outPath` false does a dry run; nil/true writes to this feed's own path.
   ---@return string[]? merged The namespaces whose channels were written, or nil on error.
@@ -957,9 +964,6 @@ class UpdateFeed
     toChannels = opts.to or {}
     return nil, msgs.mergeChannels.noTo unless #toChannels > 0
 
-    -- utils.deepCopy only accepts a table; feed values are a mix of tables and scalars
-    copyValue = (v) -> type(v) == "table" and utils.deepCopy(v) or v
-
     merged = {}
     for section in *domain.ScriptTypeSection.values
       srcSection = source.rawFeedData[section]
@@ -967,25 +971,33 @@ class UpdateFeed
       @rawFeedData[section] or= {}
       dstSection = @rawFeedData[section]
       for ns, srcPkg in pairs srcSection
-        continue unless type(srcPkg) == "table" and srcPkg.channels
+        -- a section's own `fileBaseUrls`/`localFileBasePaths` templates sit beside its packages
+        unless type(srcPkg) == "table" and srcPkg.channels
+          dstSection[ns] = utils.copyValue srcPkg
+          continue
         fromChannel = srcPkg.channels[opts.from]
         continue unless fromChannel
         dstPkg = dstSection[ns]
         unless type(dstPkg) == "table" and dstPkg.channels
-          dstPkg = {k, copyValue v for k, v in pairs srcPkg when k != "channels"}
+          dstPkg = {k, utils.copyValue v for k, v in pairs srcPkg when k != "channels"}
           dstPkg.channels = {}
           dstSection[ns] = dstPkg
         else
-          dstPkg[k] = copyValue v for k, v in pairs srcPkg when k != "channels"
+          dstPkg[k] = utils.copyValue v for k, v in pairs srcPkg when k != "channels"
         for toName in *toChannels
           entry = utils.deepCopy fromChannel
           entry.default = toName == opts.defaultChannel
           entry.released = opts.released if opts.released
           dstPkg.channels[toName] = entry
+        -- Only one channel is allowed to be flagged as default, so we clear it from any other
+        -- channel in the package if a default channel was specified.
+        if opts.defaultChannel
+          for name, entry in pairs dstPkg.channels
+            entry.default = false if name != opts.defaultChannel and type(entry) == "table"
         merged[#merged + 1] = ns
 
     -- top-level feed metadata (name, baseUrl, templates, vars, knownFeeds, …) tracks the source
-    @rawFeedData[k] = copyValue v for k, v in pairs source.rawFeedData when k != "macros" and k != "modules"
+    @rawFeedData[k] = utils.copyValue v for k, v in pairs source.rawFeedData when k != "macros" and k != "modules"
 
     return merged if opts.outPath == false
     wrote, writeErr = @__writeRawFeed (opts.outPath == true or opts.outPath == nil) and @feedPath or opts.outPath
@@ -1035,14 +1047,9 @@ class UpdateFeed
     return nil, err unless loaded
     return nil, msgs.bumpVersions.badLevel unless opts.level
 
-    channel = opts.channel
-    unless channel
-      for section in *domain.ScriptTypeSection.values
-        for _, pkg in pairs @rawFeedData[section] or {}
-          continue unless type(pkg) == "table" and pkg.channels
-          for name, ch in pairs pkg.channels
-            channel = name if ch.default and not channel
-    return nil, msgs.bumpVersions.noChannel unless channel
+    channel, chanErr = opts.channel, nil
+    channel, chanErr = @__getDefaultChannelName! unless channel
+    return nil, chanErr or msgs.bumpVersions.noChannel unless channel
 
     stale = {}
     for file, _, pkg in @walkFiles!
@@ -1173,8 +1180,9 @@ class UpdateFeed
 
     version = opts.version
     unless version
-      channel = opts.channel or @__defaultChannelName!
-      return nil, msgs.formatReleaseNotes.noChannel unless channel
+      channel, chanErr = opts.channel, nil
+      channel, chanErr = @__getDefaultChannelName! unless channel
+      return nil, chanErr or msgs.formatReleaseNotes.noChannel unless channel
       version = @getHighestVersionOnChannel channel
       return nil, msgs.formatReleaseNotes.channelEmpty\format channel unless version
 
@@ -1201,7 +1209,7 @@ class UpdateFeed
   ---@param channel? string Channel to inspect; defaults to the channel marked default: true.
   ---@return string[] versions Distinct version strings, lowest first; empty when the channel is absent or unused.
   getVersionsOnChannel: (channel) =>
-    channel or= @__defaultChannelName!
+    channel or= @__getDefaultChannelName!
     versions, seen = {}, {}
     return versions unless channel
     for section in *{"macros", "modules"}
@@ -1228,7 +1236,7 @@ class UpdateFeed
   ---@param channel? string Channel to inspect; defaults to the channel marked default: true.
   ---@return string? version The version string, or nil when the package or channel is absent.
   getPackageVersionOnChannel: (namespace, channel) =>
-    channel or= @__defaultChannelName!
+    channel or= @__getDefaultChannelName!
     return nil unless channel
     for section in *{"macros", "modules"}
       pkg = @rawFeedData[section] and @rawFeedData[section][namespace]
@@ -1237,16 +1245,19 @@ class UpdateFeed
         return ch.version if ch and ch.version
     nil
 
-  ---Name of the channel marked default: true, taken from the first package that declares one.
-  ---@return string? channel The default channel name, or nil when no package marks a default.
+  ---Returns the name of the channel marked default: true, taken from the first package that declares one cleanly.
+  ---@return string? channel The default channel name, or nil when no package marks exactly one default channel.
+  ---@return string? err Why no default channel could be determined.
   ---@private
-  __defaultChannelName: =>
+  __getDefaultChannelName: =>
+    firstErr = nil
     for section in *{"macros", "modules"}
       for _, pkg in pairs @rawFeedData[section] or {}
         continue unless type(pkg) == "table" and pkg.channels
-        name = @@__resolveChannel pkg.channels
+        name, err = @@__resolveChannel pkg.channels
         return name if name
-    nil
+        firstErr or= err if err != msgs.__resolveChannel.noDefault
+    return nil, firstErr
 
   ---Copies every file listed in the feed to distDir using the Updater's install layout. A file the feed marks
   ---for deletion (`delete: true`) is removed from distDir if present, rather than deployed.

@@ -194,19 +194,23 @@ class ConfigView
   ---@return string? err
   write: (waitLockTime) => @save waitLockTime
 
-  ---Attaches this view to a different config file, without loading it (the caller loads separately).
+  ---Attaches this view to a different config file, moving its hive to that file's handler, so the view
+  ---holds what that handler holds for this hive path.
   ---@param filePath string Full path to the config file.
+  ---@param noLoad? boolean Don't read the file when this call creates its handler (default false). A file already loaded is not read again either way.
   ---@return boolean? success
   ---@return string? err
-  setFile: (filePath) =>
+  setFile: (filePath, noLoad = false) =>
     ConfigHandler or= require "l0.DependencyControl.ConfigHandler"
     oldHandler = @__configHandler
-    handler, msg = ConfigHandler\get filePath, (oldHandler and oldHandler.logger), true -- noLoad: caller loads separately
+    handler, msg = ConfigHandler\get filePath, (oldHandler and oldHandler.logger), noLoad
     return nil, msg unless handler
     oldHandler.views[@] = nil if oldHandler -- detach from the previous handler
     @__configHandler = handler
     handler.views[@] = true -- register so the handler's whole-file refreshes reach this view
     @file = handler.filePath
+    moved, msg = @refresh!
+    return nil, msg unless moved
     return true
 
   ---Detaches this view from its config file, reverting to an in-memory (orphan) state.

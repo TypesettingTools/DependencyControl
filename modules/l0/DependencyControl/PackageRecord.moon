@@ -291,6 +291,8 @@ class PackageRecord
       --  copy script information to the config
       @config\load!
       shouldWriteConfig = @config\import @, @@depConf.scriptFields, false, true
+      -- version isn't a scriptField, so the import above can't see a release that bumped only it
+      shouldWriteConfig or= @config.c.version != tostring @semanticVersion
       return shouldWriteConfig
 
     return false

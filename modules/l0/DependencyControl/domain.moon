@@ -46,6 +46,21 @@ FetchUntrustedFeeds = Enum "FetchUntrustedFeeds", {
   Prompt: "prompt"
 }
 
+-- How sticky a recorded package-source choice is on subsequent resolutions of the same package.
+---@alias SourceChoiceStickiness
+---| "unset" # Unset: no preference recorded yet; resolve normally and prompt only if interactive
+---| "once" # Once: prompt again whenever a choice remains, preselecting the recorded pick
+---| "retain" # Retain: reuse the recorded pick whenever it's still eligible, without prompting
+---| "pinned" # Pinned: always reuse the recorded pick; if it's gone, abort (required) or skip (optional)
+---| "auto" # Auto: never prompt; always resolve via the ranking, refreshing the recorded pick for information
+SourceChoiceStickiness = Enum "SourceChoiceStickiness", {
+  Unset: "unset"
+  Once: "once"
+  Retain: "retain"
+  Pinned: "pinned"
+  Auto: "auto"
+}
+
 ---Shared vocabulary of DependencyControl's problem domain: the kinds of scripts and records it
 ---manages, the human-readable terms for them, namespace rules, and install/test locations.
 ---@class Domain
@@ -54,6 +69,7 @@ Domain = {
   :RecordType
   :ScriptType
   :ScriptTypeSection
+  :SourceChoiceStickiness
 
   terms: {
     scriptType: {

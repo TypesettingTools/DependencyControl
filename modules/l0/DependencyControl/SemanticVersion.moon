@@ -234,6 +234,9 @@ parseComparatorSet = (groupStr) ->
     return nil, errTo unless toVer
     return hyphenComparators fromVer, toVer
 
+  -- npm allows whitespace between an operator and its version, which the tokenizer below would read
+  -- as a bare operator followed by a bare version, leaving a range that matches nothing
+  groupStr = groupStr\gsub "([<>=~^]+)%s+", "%1"
   comparators = {}
   for token in groupStr\gmatch "%S+"
     parts, err = parseComparator token

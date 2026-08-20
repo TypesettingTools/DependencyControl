@@ -96,9 +96,12 @@ local serveCmd = parser:command("serve-updates",
 serveCmd:option("-f --feed",
   "Source feed JSON path, next to its files (a resolvable-channel feed, e.g. alpha)"):default("DependencyControl.json")
 serveCmd:option("--lifetime", "Seconds to serve before the server self-terminates"):argname("<seconds>"):default("3600")
+serveCmd:option("--port",
+  "Port to listen on, so a feed URL stays valid across runs (default: any free port)"):argname("<port>")
 serveCmd:option("--serve-channel",
-  "Graft the feed's dev channel onto this channel before serving, so a client tracking it matches")
-  :argname("<name>")
+  "Graft the feed's dev channel onto this channel before serving, so a client tracking it matches. "
+  .. "When specified multiple times, the first is served as the default channel")
+  :argname("<name>"):count("*")
 serveCmd:option("--from-channel", "Dev channel to graft from when --serve-channel is given"):argname("<name>"):default("main")
 
 local bumpCmd = parser:command("bump-version",
@@ -580,24 +583,39 @@ elseif args.command == "serve-updates" then
 
   -- Optionally graft the dev channel onto a channel a client tracks (e.g. main -> alpha), so an older
   -- Aegisub can be tested against this feed without merging channels by hand first.
-  local feedToServe = refreshedPath
-  if args.serve_channel then
+  local feedToServe = refreshed.changed > 0 and refreshedPath or feedPath
+  local serveChannels = args.serve_channel or {}
+  if #serveChannels > 0 then
     local mergedPath = FileOps.joinPath(dirname(refreshedPath), "merged.json")
-    local merged, mergeErr = UpdateFeed(nil, false, refreshedPath):mergeChannels(UpdateFeed(nil, false, refreshedPath), {
+    local merged, mergeErr = UpdateFeed(nil, false, feedToServe):mergeChannels(UpdateFeed(nil, false, feedToServe), {
       from = args.from_channel,
-      to = { args.serve_channel },
+      to = serveChannels,
+      defaultChannel = serveChannels[1],
       outPath = mergedPath,
     })
     if not merged or #merged == 0 then
       io.stderr:write(("serve-updates: couldn't graft channel '%s' -> '%s' (%s)\n"):format(
-        args.from_channel, args.serve_channel, merged and "no package uses that channel" or tostring(mergeErr)))
+        args.from_channel, table.concat(serveChannels, "', '"),
+        merged and "no package uses that channel" or tostring(mergeErr)))
       os.exit(1)
     end
     feedToServe = mergedPath
   end
 
   -- Bind first so the feed's file URLs can carry the real port.
-  local listener = assert(socket.bind("127.0.0.1", 0))
+  local requestedPort = 0
+  if args.port then
+    requestedPort = tonumber(args.port)
+    if not requestedPort or requestedPort % 1 ~= 0 or requestedPort < 1 or requestedPort > 65535 then
+      io.stderr:write(("serve-updates: --port must be a whole number in [1, 65535], got '%s'.\n"):format(tostring(args.port)))
+      os.exit(2)
+    end
+  end
+  local listener, bindErr = socket.bind("127.0.0.1", requestedPort)
+  if not listener then
+    io.stderr:write(("serve-updates: couldn't listen on port %d (%s).\n"):format(requestedPort, tostring(bindErr)))
+    os.exit(1)
+  end
   local _, port = listener:getsockname()
   local base = "http://127.0.0.1:" .. port
 

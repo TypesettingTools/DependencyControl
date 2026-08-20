@@ -1,19 +1,23 @@
 export script_name = "DependencyControl Toolbox"
 export script_description = "Provides DependencyControl maintenance and configuration tools."
-export script_version = "0.8.1" -- @{l0.DependencyControl.Toolbox:version}
+export script_version = "0.9.0" -- @{l0.DependencyControl.Toolbox:version}
 export script_author = "line0"
 export script_namespace = "l0.DependencyControl.Toolbox"
 
 DepCtrl = require "l0.DependencyControl"
-{:ScriptType, :ScriptTypeSection, :FetchUntrustedFeeds, terms} = DepCtrl.Domain
+{:ScriptType, :ScriptTypeSection, :FetchUntrustedFeeds, :SourceChoiceStickiness, terms} = DepCtrl.Domain
 configSchema = require "l0.DependencyControl.config-schema"
 constants = require "l0.DependencyControl.Constants"
 FileCache = require "l0.DependencyControl.FileCache"
+ScriptUpdateRecord = require "l0.DependencyControl.ScriptUpdateRecord"
 UpdateTask = require "l0.DependencyControl.UpdateTask"
+utils = require "l0.DependencyControl.utils"
+FeedInventory = DepCtrl.FeedInventory
+SourceFeedKind = UpdateTask.SourceFeedKind
 depRec = DepCtrl {
   feed: "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/publish/DependencyControl.json",
   {
-    {"l0.DependencyControl", version: "0.7.0"}
+    {"l0.DependencyControl", version: "0.9.0"}
   }
 }
 logger = DepCtrl.logger
@@ -54,6 +58,36 @@ msgs = {
     saved: "Configuration saved."
     restored: "Settings restored to their defaults."
   }
+  sourceConfig: {
+    noSelection: "Select an automation script or module to configure."
+    header: "Update source for %s"
+    installedFrom: "Installed from: %s [%s]"
+    installedNever: "Installed from: not recorded yet"
+    updatesFrom: "Updates from: %s [%s]"
+    unresolved: "(unresolved)"
+    saved: "Update source saved for %s."
+    diverged: "This takes effect on the next update; the installed copy still comes from %s."
+    needFeed: "Pick one of the known feeds, or choose a different source kind."
+    needUrl: "Enter a custom feed URL, or choose a different source kind."
+    needProvider: "Pick a providing module, or choose a different source kind."
+    scanning: "Checking which feeds offer this package…"
+    consulting: "Consulting %s…"
+    consultFailed: "Couldn't load %s; leaving it out of the lists."
+    discovering: "Discovering feeds — this may take a moment…"
+    discovered: "Discovery finished. The lists now include every feed it found."
+    pickChannel: "Select a channel offered by %s."
+    needChannel: "Select a channel."
+    noProviders: "No known feed or installed module provides '%s'."
+    hints: {
+      kind: "Which source the next update comes from. The field it reads is listed beside each kind."
+      channel: "Channels the selected feed offers. Press 'Refresh Channels' after changing the feed or source kind."
+      providerChannel: "Managed by the providing module. Shown for information."
+      stickiness: "How firmly this choice is kept when the updater resolves a source next time."
+      knownFeed: "Known feeds that offer this package. Used when the source kind is 'other'; press 'Discover' to search all reachable feeds."
+      userFeed: "Saved as this package's feed override; used as the source when the kind is 'user feed'."
+      provider: "Modules that can fill in for this one, from the known feeds and your installed modules. Used when the source kind is 'provider'."
+    }
+  }
 }
 
 -- Shared Functions
@@ -64,6 +98,7 @@ FeedAction = DepCtrl.FeedManager.FeedAction
 -- touching dispatch logic — and shared with the tests through testExports, so a rename needs no test edits.
 buttons = {
   apply: "Apply"
+  refreshChannels: "Refresh Channels"
   save: "Save"
   restoreDefaults: "Restore Defaults"
   close: "Close"
@@ -95,12 +130,15 @@ feedActionByLabel = {label, action for action, label in pairs feedActionLabels}
 ---@param populate fun(add: fun(item: string, record: any)) Enumerates the rows, calling `add` once per (display string, record) pair.
 ---@return string[] list Display strings, sorted case-insensitively.
 ---@return table<string, any> map Each display string mapped to its record.
+-- every list the dialogs show is ordered this way, so a capitalized entry doesn't jump ahead of the rest
+byDisplayString = (a, b) -> a\lower! < b\lower!
+
 buildSortedDlgList = (populate) ->
   list, map = {}, {}
   populate (item, record) ->
     list[#list+1] = item
     map[item] = record
-  table.sort list, (a, b) -> a\lower! < b\lower!
+  table.sort list, byDisplayString
   return list, map
 
 buildInstalledDlgList = (scriptType, config, isUninstall) ->
@@ -113,8 +151,9 @@ buildInstalledDlgList = (scriptType, config, isUninstall) ->
     for namespace, script in pairs config.c[scriptType]
       continue if protectedModules[namespace]
       -- config entries are on-disk data: an orphaned or unmanaged record may lack name/version
+      channel = ScriptUpdateRecord.getRecordedChannel script
       item = "%s v%s%s"\format script.name or namespace, DepCtrl.SemanticVersion\toString(script.version) or "?",
-        script.activeChannel and " [#{script.activeChannel}]" or ""
+        channel and " [#{channel}]" or ""
       add item, script
 
 getConfig = (section) ->
@@ -763,15 +802,334 @@ globalConfig = ->
       logger\log msgs.globalConfig.saved
       break
 
+-- Package Source Configuration macro: edits where a package's *next* update comes from, without running
+-- one. The result is written to `configuredSource`, leaving the `currentSource` record of where the
+-- installed copy came from untouched until an update actually applies the change.
+--
+-- Two things a static Aegisub dialog can't do shape this: it can't grey out the fields a chosen kind
+-- doesn't read, and it can't repopulate a dropdown when another changes. So the macro reopens itself —
+-- Refresh Channels re-renders with the channels of whichever feed is now selected, and a selection that
+-- no longer fits comes back with a placeholder selected and the reason in the dialog's message line.
+sourceKindLabels = {
+  [SourceFeedKind.SelfDeclared]: "the package's own feed"
+  [SourceFeedKind.UserFeed]: "custom feed URL (below)"
+  [SourceFeedKind.Provider]: "providing module (below)"
+  [SourceFeedKind.Other]: "other known feed (below)"
+}
+stickinessLabels = {
+  [SourceChoiceStickiness.Unset]: "unset - resolve normally"
+  [SourceChoiceStickiness.Once]: "once - ask again, preselecting this"
+  [SourceChoiceStickiness.Retain]: "retain - reuse while it stays eligible"
+  [SourceChoiceStickiness.Pinned]: "pinned - always reuse; fail if it's gone"
+  [SourceChoiceStickiness.Auto]: "auto - never ask, always re-rank"
+}
+-- Marks an entry kept only because it is the current selection, and a dropdown with nothing valid to offer.
+staleMark = "⚠ "
+emptyChoice = "— none available —"
+pickChoice = "— select one —"
+
+---Reports whether a package's feed entry declares a `provides` alias for the given namespace.
+---@param pkg table A package's raw feed or config data.
+---@param namespace string The alias to look for.
+---@return boolean provides
+providesAlias = (pkg, namespace) ->
+  for alias in *(pkg.provides or {})
+    name = type(alias) == "table" and alias.name or alias
+    return true if name == namespace
+  false
+
+---Scans the given feeds' cached snapshots for the package. Reads only what the cache already holds, so a
+---feed nobody has fetched is left out; the feeds this package could update from are loaded separately and
+---Discover fills in the rest. Raw feed data is enough here, since channel names and `provides` aliases are
+---literals that need no template expansion.
+---@param namespace string The package being configured.
+---@param scriptType ScriptType The package's script type, selecting the feed section to read.
+---@param cache FileCache The feed cache to read snapshots from.
+---@param feedUrls string[] The feeds to look in.
+---@return table<string, string[]> channelsByFeed Each feed that offers the package, mapped to its sorted channel names.
+---@return table<string, {name: string, feedUrl: string}> providers Each module that provides the package, mapped to its display name and the feed it was found in.
+scanCachedFeeds = (namespace, scriptType, cache, feedUrls) ->
+  section = ScriptTypeSection[scriptType]
+  channelsByFeed, providers = {}, {}
+  for url in *feedUrls
+    data = cache\get url
+    continue unless type(data) == "table"
+
+    pkg = data[section] and data[section][namespace]
+    if type(pkg) == "table" and type(pkg.channels) == "table"
+      channels = ScriptUpdateRecord(namespace, pkg, nil, scriptType, false, logger)\getChannels!
+      table.sort channels, byDisplayString
+      channelsByFeed[url] = channels
+
+    for providerNamespace, providerPkg in pairs data.modules or {}
+      continue if providerNamespace == namespace or providers[providerNamespace]
+      continue unless type(providerPkg) == "table" and providesAlias providerPkg, namespace
+      providers[providerNamespace] = {name: providerPkg.name, feedUrl: url}
+  channelsByFeed, providers
+
+---Folds installed modules that provide this namespace into a provider map, so one stays on offer once
+---installed even after its feed drops out of the cache.
+---@param providers table<string, {name: string, feedUrl: string}> The provider map to add to, mutated in place.
+---@param namespace string The package being configured.
+---@param modulesSection table<string, table> The modules section of DependencyControl's config.
+---@return table<string, {name: string, feedUrl: string}> providers The same map.
+addInstalledProviders = (providers, namespace, modulesSection) ->
+  for providerNamespace, pkg in pairs modulesSection
+    continue if providerNamespace == namespace or providers[providerNamespace]
+    continue unless providesAlias pkg, namespace
+    providers[providerNamespace] = {name: pkg.name, feedUrl: pkg.feed}
+  providers
+
+---A dropdown's items and the maps between its labels and values. The current value is kept even when it
+---isn't among the entries, flagged as stale so a selection is never silently dropped; an empty list still
+---gets one entry, since an Aegisub dropdown can't be empty.
+---@param entries {value: any, label: string}[] The choices to offer.
+---@param currentValue? any The value selected now, kept on offer whether or not the entries hold it.
+---@param staleLabel? string Label for the current value when the entries don't hold it (defaults to the value).
+---@param keepOrder? boolean Leave the entries in the order given instead of sorting them (default false).
+---@return string[] items The labels, with a stale or placeholder entry first where there is one.
+---@return table<string, any> byLabel Each label mapped to its value.
+---@return table<any, string> labelByValue Each value mapped to its label.
+buildChoiceList = (entries, currentValue, staleLabel, keepOrder) ->
+  items, byLabel, labelByValue = {}, {}, {}
+  for entry in *entries
+    items[#items + 1] = entry.label
+    byLabel[entry.label] = entry.value
+    labelByValue[entry.value] = entry.label
+  table.sort items, byDisplayString unless keepOrder
+  if currentValue and not labelByValue[currentValue]
+    label = staleMark .. (staleLabel or currentValue)
+    table.insert items, 1, label
+    byLabel[label] = currentValue
+    labelByValue[currentValue] = label
+  items[1] = emptyChoice if #items == 0
+  items, byLabel, labelByValue
+
+---An ordered label list and its label to value map, so the dialog branches on a stable value (DLG1).
+---@param enumValues any[] The values to offer, in the order they should appear.
+---@param labels table<any, string> Each value's display label.
+---@return string[] items The labels, in the given order.
+---@return table<string, any> byLabel Each label mapped back to its value.
+---@return table<any, string> labelByValue Each value mapped to its label.
+buildLabelChoices = (enumValues, labels) ->
+  buildChoiceList [{value: value, label: labels[value]} for value in *enumValues], nil, nil, true
+
+sourceConfig = ->
+  config = getConfig!
+  moduleList, moduleMap = buildInstalledDlgList "modules", config
+  macroList, macroMap = buildInstalledDlgList "macros", config
+
+  btn, res = aegisub.dialog.display getScriptListDlg macroList, moduleList
+  return unless btn
+  pkg = moduleMap[res.module] or macroMap[res.macro]
+  unless pkg
+    logger\log msgs.sourceConfig.noSelection
+    return
+
+  scriptType = moduleMap[res.module] and ScriptType.Module or ScriptType.Automation
+  sectionConfig = getConfig ScriptTypeSection[scriptType]
+  modulesSection = (getConfig ScriptTypeSection[ScriptType.Module]).c
+  feedLoader = DepCtrl.updater.feedLoader
+  installed = pkg.currentSource
+  installedUrl = installed and UpdateTask.resolveSourceUrl installed, pkg.feed, pkg.userFeed, modulesSection
+  describeUrl = (url) -> url and shortenUrl(url) or msgs.sourceConfig.unresolved
+
+  local channelsByFeed, providers
+  rescanCache = ->
+    feedUrls = [entry.url for entry in *buildFeedInventory!\gather!]
+    channelsByFeed, providers = scanCachedFeeds pkg.namespace, scriptType, feedLoader.cache, feedUrls
+    addInstalledProviders providers, pkg.namespace, modulesSection
+
+  logger\log msgs.sourceConfig.scanning
+  rescanCache!
+
+  -- A feed a selection can name has to be current, not merely cached: an empty channel list would
+  -- otherwise look the same as a feed nobody has crawled. The record is built over the package's own
+  -- config, so the channel it settles on is the one an update would install from. Only the few feeds a
+  -- selection can name are ever fetched here; Discover is what widens the known-feed list.
+  loadUpdateRecord = (url, namespace = pkg.namespace) ->
+    return nil unless url
+    ownPackage = namespace == pkg.namespace
+    -- a provider is a module by definition; the package itself may be either
+    kind = ownPackage and scriptType or ScriptType.Module
+    installedConfig = ownPackage and pkg or modulesSection[namespace]
+    logger\log msgs.sourceConfig.consulting, shortenUrl url
+    loaded, feed = pcall -> feedLoader\load url
+    unless loaded and feed
+      logger\trace msgs.sourceConfig.consultFailed, shortenUrl url
+      return nil
+    record = feed\getScript namespace, kind, installedConfig and {c: installedConfig}, false
+    record or nil
+
+  getChannelsFor = (url) ->
+    return channelsByFeed[url] if url and channelsByFeed[url]
+    record = loadUpdateRecord url
+    return nil unless record
+    channels = record\getChannels!
+    table.sort channels, byDisplayString
+    channelsByFeed[url] = channels
+    channels
+
+  kindItems, kindByLabel = buildLabelChoices SourceFeedKind.values, sourceKindLabels
+  stickyItems, stickyByLabel = buildLabelChoices SourceChoiceStickiness.values, stickinessLabels
+
+  -- the edited record, seeded from the configured source and carried across reopens
+  configured = ScriptUpdateRecord.getRecordedSource(pkg) or {}
+  _, effectiveKind = FeedInventory.getEffectiveSource pkg, modulesSection
+  state = {
+    -- with no source recorded (e.g. a config from before v0.7.0), the kind seeds from whatever
+    -- getEffectiveSource fell back on, so the dialog opens on the updater's actual first pick
+    kind: configured.feedSource or effectiveKind or SourceFeedKind.SelfDeclared
+    channel: configured.channel
+    stickiness: configured.stickiness or SourceChoiceStickiness.Unset
+    knownFeed: configured.feedUrl
+    userFeed: pkg.userFeed
+    provider: configured.provider and configured.provider.namespace
+  }
+
+  -- the feed a selection resolves to, which decides both what an update will fetch and which channels are
+  -- on offer below
+  getSelectedFeedUrl = ->
+    switch state.kind
+      when SourceFeedKind.SelfDeclared then pkg.feed
+      when SourceFeedKind.UserFeed then state.userFeed
+      when SourceFeedKind.Other then state.knownFeed
+      when SourceFeedKind.Provider
+        entry = state.provider and providers[state.provider]
+        entry and entry.feedUrl
+
+  -- A provider's channel is settled by the same resolution an update runs, over the providing module's own
+  -- config, so this package's dialog shows it and never asks for it.
+  getProviderChannel = ->
+    return nil unless state.provider
+    entry = providers[state.provider]
+    record = entry and loadUpdateRecord entry.feedUrl, state.provider
+    if record
+      _, channel = record\setChannel!
+      return channel
+    providerConfig = modulesSection[state.provider]
+    providerConfig and ScriptUpdateRecord.getRecordedChannel providerConfig
+
+  -- the package's own candidate feeds are loaded up front, so the dialog opens with a usable channel list
+  -- whether or not anything has ever crawled them
+  getChannelsFor url for url in *{pkg.feed, pkg.userFeed, configured.feedUrl}
+
+  message = nil
+  while true
+    feedEntries = [{value: url, label: shortenUrl url} for url in pairs channelsByFeed]
+    feedItems, feedByLabel, feedLabelByValue = buildChoiceList feedEntries, state.knownFeed,
+      state.knownFeed and shortenUrl state.knownFeed
+    providerEntries = [{value: ns, label: "#{entry.name or ns} (#{ns})"} for ns, entry in pairs providers]
+    providerItems, providerByLabel, providerLabelByValue = buildChoiceList providerEntries, state.provider,
+      state.provider
+
+    feedUrl = getSelectedFeedUrl!
+    -- A provider manages the channel, so it is shown for information and never asked for.
+    providerManaged = state.kind == SourceFeedKind.Provider
+    local channelItems
+    if providerManaged
+      state.channel = getProviderChannel!
+      channelItems = {state.channel or emptyChoice}
+    else
+      channels = getChannelsFor(feedUrl) or pkg.channels or {}
+      channelItems = buildChoiceList [{value: name, label: name} for name in *channels], state.channel
+      unless state.channel and (utils.makeSet channelItems)[state.channel]
+        table.insert channelItems, 1, pickChoice
+        message or= msgs.sourceConfig.pickChannel\format describeUrl feedUrl
+        state.channel = nil
+
+    configuredUrl = FeedInventory.getEffectiveSource pkg, modulesSection
+    dlg = {
+      {class: "label", x: 0, y: 0, width: 3, height: 1,
+        label: msgs.sourceConfig.header\format pkg.name or pkg.namespace}
+      {class: "label", x: 0, y: 1, width: 3, height: 1, label: installed and
+        msgs.sourceConfig.installedFrom\format(describeUrl(installedUrl), installed.channel or "?") or
+        msgs.sourceConfig.installedNever}
+      {class: "label", x: 0, y: 2, width: 3, height: 1,
+        label: msgs.sourceConfig.updatesFrom\format describeUrl(configuredUrl), configured.channel or "?"}
+
+      {class: "label", x: 0, y: 4, width: 1, height: 1, label: "Source kind: "}
+      {class: "dropdown", name: "kind", x: 1, y: 4, width: 2, height: 1, items: kindItems,
+        value: sourceKindLabels[state.kind], hint: msgs.sourceConfig.hints.kind}
+      {class: "label", x: 0, y: 5, width: 1, height: 1, label: "Channel: "}
+      {class: "dropdown", name: "channel", x: 1, y: 5, width: 2, height: 1, items: channelItems,
+        value: state.channel or channelItems[1],
+        hint: providerManaged and msgs.sourceConfig.hints.providerChannel or msgs.sourceConfig.hints.channel}
+      {class: "label", x: 0, y: 6, width: 1, height: 1, label: "Keep this choice: "}
+      {class: "dropdown", name: "stickiness", x: 1, y: 6, width: 2, height: 1, items: stickyItems,
+        value: stickinessLabels[state.stickiness], hint: msgs.sourceConfig.hints.stickiness}
+
+      {class: "label", x: 0, y: 8, width: 1, height: 1, label: "Known feed: "}
+      {class: "dropdown", name: "knownFeed", x: 1, y: 8, width: 2, height: 1, items: feedItems,
+        value: feedLabelByValue[state.knownFeed] or feedItems[1], hint: msgs.sourceConfig.hints.knownFeed}
+      {class: "label", x: 0, y: 9, width: 1, height: 1, label: "Custom feed URL: "}
+      {class: "edit", name: "userFeed", x: 1, y: 9, width: 2, height: 1,
+        text: state.userFeed and shortenUrl(state.userFeed) or "", hint: msgs.sourceConfig.hints.userFeed}
+      {class: "label", x: 0, y: 10, width: 1, height: 1, label: "Providing module: "}
+      {class: "dropdown", name: "provider", x: 1, y: 10, width: 2, height: 1, items: providerItems,
+        value: providerLabelByValue[state.provider] or providerItems[1],
+        hint: msgs.sourceConfig.hints.provider}
+
+      {class: "label", x: 0, y: 12, width: 3, height: 1, label: message or ""}
+    }
+
+    btn, res = aegisub.dialog.display dlg,
+      {buttons.refreshChannels, buttons.discover, buttons.save, buttons.close},
+      {ok: buttons.save, cancel: buttons.close}
+    return unless btn and btn != buttons.close
+
+    state.kind = kindByLabel[res.kind]
+    state.stickiness = stickyByLabel[res.stickiness]
+    state.channel = res.channel != pickChoice and res.channel != emptyChoice and res.channel or nil
+    state.knownFeed = feedByLabel[res.knownFeed]
+    state.provider = providerByLabel[res.provider]
+    state.userFeed = res.userFeed != "" and expandUrl(res.userFeed) or nil
+
+    if btn == buttons.discover
+      logger\log msgs.sourceConfig.discovering
+      crawlWithPrompt buildFeedInventory!
+      rescanCache!
+      message = msgs.sourceConfig.discovered
+      continue
+
+    -- reopen instead of writing a record whose kind has nothing to read, or a channel nothing offers
+    message = nil
+    switch state.kind
+      when SourceFeedKind.Other
+        message = msgs.sourceConfig.needFeed unless state.knownFeed
+      when SourceFeedKind.UserFeed
+        message = msgs.sourceConfig.needUrl unless state.userFeed
+      when SourceFeedKind.Provider
+        unless state.provider
+          message = #providerItems > 1 and msgs.sourceConfig.needProvider or
+            msgs.sourceConfig.noProviders\format pkg.namespace
+    message or= msgs.sourceConfig.needChannel unless state.channel or state.kind == SourceFeedKind.Provider
+    continue if message or btn == buttons.refreshChannels
+
+    configuredSource = {feedSource: state.kind, channel: state.channel, stickiness: state.stickiness}
+    configuredSource.feedUrl = state.knownFeed if state.kind == SourceFeedKind.Other
+    configuredSource.provider = {namespace: state.provider} if state.kind == SourceFeedKind.Provider
+
+    pkg.userFeed, pkg.configuredSource = state.userFeed, configuredSource
+    sectionConfig\save!
+
+    logger\log msgs.sourceConfig.saved, pkg.name or pkg.namespace
+    if installed and installedUrl != FeedInventory.getEffectiveSource pkg, modulesSection
+      logger\log msgs.sourceConfig.diverged, describeUrl installedUrl
+    return
+
 depRec\registerMacros {
   {"Install Script", "Installs an automation script or module on your system.", install},
   {"Update Script", "Manually check and perform updates to any installed script.", update},
   {"Uninstall Script", "Removes an automation script or module from your system.", uninstall},
   {"Manage Feeds", "See and manage the feeds DependencyControl knows about and their trust status.", manageFeeds},
   {"Macro Configuration", "Lets you change per-automation script settings.", macroConfig},
+  {"Package Source Configuration", "Choose where a package's next update comes from, without running one.", sourceConfig},
   {"Global Configuration", "View and edit DependencyControl's global settings.", globalConfig},
 }, "DependencyControl", {:shortenUrl, :expandUrl, :formatAge, :buildInstalledDlgList, :promptUntrustedFeed,
   :confirmDialog, :manageExtraFeeds, :manageBlockList, :buttons, :feedActionLabels, :configFields,
+  :sourceKindLabels, :stickinessLabels, :buildLabelChoices, :buildChoiceList, :scanCachedFeeds,
+  :addInstalledProviders,
   :scheduleUpdatesAndRegisterTests}
 
 -- The startup sweep is an Aegisub-session concern; headless (CLI/test runner) has no session to

@@ -26,6 +26,7 @@ msgs = {
   }
   mergeHive: {
     badKey: "Can't merge hive because the path key #%d (%s) points to a %s."
+    missingSource: "Can't merge hive because the source tree is shallower than the hive path, holding nothing under path key #%d (%s)."
   }
   new: {
     badPath: "Couldn't validate specified config file path '%s': %s"
@@ -125,6 +126,9 @@ class ConfigHandler
   new: (filePath, @logger = Logger(fileBaseName: "#{constants.DEPCTRL_SHORT_NAME}.#{@@__name}"), schemaOpts = {}) =>
     @views = setmetatable {}, {__mode: 'k'}
     @config = {}
+    -- the config file's contents as of this handler's last load or save, per hive; used to determine what this handler
+    -- touched, so saving doesn't interfere with other writers (as long as they didn't touch the same regions)
+    @__baseline = {}
     -- the loaded file's `$schema`, exposed so views can see which schema their values conform to
     @schemaId = nil
     @__targetSchemaId = schemaOpts.schemaId
@@ -245,6 +249,31 @@ class ConfigHandler
     return hive
 
 
+  ---Writes the fields this handler and its views changed since the last load, and only those, into the
+  ---copy the file holds now, so a field another writer changed in the meantime survives. A field dropped
+  ---here is removed from that copy as well.
+  ---@param heldValues table The hive as this handler holds it now.
+  ---@param valuesAsLoaded table The same hive as the file held it at the last load.
+  ---@param valuesOnFile table The same hive as the file holds it now, mutated in place.
+  ---@return boolean changed Whether anything was written.
+  applyChanges = (heldValues, valuesAsLoaded, valuesOnFile) ->
+    changed = false
+    for key, value in pairs heldValues
+      valueAsLoaded = valuesAsLoaded[key]
+      if type(value) == "table" and type(valueAsLoaded) == "table"
+        valueOnFile = type(valuesOnFile[key]) == "table" and valuesOnFile[key] or {}
+        if applyChanges value, valueAsLoaded, valueOnFile
+          valuesOnFile[key] = valueOnFile
+          changed = true
+      elseif value != valueAsLoaded
+        valuesOnFile[key] = utils.copyValue value
+        changed = true
+    for key in pairs valuesAsLoaded
+      continue unless heldValues[key] == nil and valuesOnFile[key] != nil
+      valuesOnFile[key] = nil
+      changed = true
+    return changed
+
   traverseHive = (path, config, depth = #path) ->
     for i, key in ipairs path
       break if i > depth
@@ -260,6 +289,7 @@ class ConfigHandler
 
 
   mergeHive = (path, source, target, depth = 1) ->
+    return nil, msgs.mergeHive.missingSource\format depth - 1, path[depth - 1] unless source
     -- merging in a root hive overwrites target with source
     if #path == 0
       target[k] = nil for k, _ in pairs target
@@ -396,6 +426,7 @@ class ConfigHandler
       @schemaId = config[JsonSchema.JSON_SCHEMA_ID_KEYWORD]
 
       @config = config
+      @__baseline = utils.deepCopy config
       view\refresh! for view, _ in pairs @views
 
       if migrated
@@ -412,7 +443,10 @@ class ConfigHandler
           return nil, msg
         when false
           mergeHive view.__hivePath, makeHive(view.__hivePath), @config
-        else mergeHive view.__hivePath, makeHive(view.__hivePath, hiveConfig), @config
+          mergeHive view.__hivePath, makeHive(view.__hivePath), @__baseline
+        else
+          mergeHive view.__hivePath, makeHive(view.__hivePath, hiveConfig), @config
+          mergeHive view.__hivePath, makeHive(view.__hivePath, utils.deepCopy hiveConfig), @__baseline
 
       utils.makeSet @__getOverlappingViews(view), viewsToRefresh, false
 
@@ -448,6 +482,7 @@ class ConfigHandler
     -- save the whole config file if desired
     if views == nil
       success, msg = @__writeFile @config, nil, true
+      @__baseline = utils.deepCopy @config if success
       @lock\release!
       return if success
         true
@@ -455,10 +490,28 @@ class ConfigHandler
 
     -- otherwise only merge in the specified views
     for view in *views
-      success, msg = mergeHive view.__hivePath, @config, config
-      unless success
+      path = view.__hivePath
+      -- in order to merge this hive's changes into the config file, the hive's path must be reachable from the handler's tree
+      parent, msg = traverseHive path, @config, #path - 1
+      unless type(parent) == "table"
         @lock\release!
-        return nil, msgs.save.failedMerge\format view.__hivePath, @filePath, msg
+        return nil, msgs.save.failedMerge\format path, @filePath,
+          msg or msgs.mergeHive.missingSource\format #path - 1, tostring path[#path - 1]
+      held = #path == 0 and parent or parent[path[#path]]
+      valueAsLoaded = traverseHive path, @__baseline
+      valueAsLoaded = {} unless type(valueAsLoaded) == "table"
+
+      if type(held) == "table"
+        unless type(traverseHive path, config) == "table"
+          success, msg = mergeHive path, makeHive(path), config
+          unless success
+            @lock\release!
+            return nil, msgs.save.failedMerge\format path, @filePath, msg
+        applyChanges held, valueAsLoaded, traverseHive path, config
+      elseif next(valueAsLoaded) and #path > 0
+        -- the hive was dropped from this tree, so drop it from the file too
+        target = traverseHive path, config, #path - 1
+        target[path[#path]] = nil if type(target) == "table"
 
       success, msg = cleanHive view.__hivePath, config
       if success == nil
@@ -466,6 +519,11 @@ class ConfigHandler
         return nil, msgs.save.failedClean\format view.__hivePath, @filePath, msg
 
     success, msg = @__writeFile config, nil, true
+    if success
+      for view in *views
+        written = traverseHive view.__hivePath, config
+        mergeHive view.__hivePath, makeHive(view.__hivePath, type(written) == "table" and utils.deepCopy(written) or nil),
+          @__baseline
     @lock\release!
     return if success
       true

@@ -1,6 +1,7 @@
 constants = require "l0.DependencyControl.Constants"
 domain = require "l0.DependencyControl.domain"
 Enum = require "l0.DependencyControl.Enum"
+ScriptUpdateRecord = require "l0.DependencyControl.ScriptUpdateRecord"
 
 local UpdateTask
 
@@ -77,14 +78,6 @@ appended = (list, item) ->
 -- Cap on how many dropped feed URLs one truncation event records; its `dropped` count stays exact.
 maxDropSample = 50
 
--- The feed a package's persisted `currentSource` resolves to (nil when absent), via UpdateTask's shared resolver.
-resolveCurrentSource = (pkg, modulesSection) ->
-  src = pkg.currentSource
-  return nil unless type(src) == "table"
-
-  UpdateTask or= require "l0.DependencyControl.UpdateTask"
-  UpdateTask.resolveSourceUrl src, pkg.feed, pkg.userFeed, modulesSection
-
 ---A reachable feed with the sources it was discovered through and its trust status.
 ---@class FeedInventoryEntry
 ---@field url string The feed URL.
@@ -140,13 +133,34 @@ class FeedInventory
   ---@param feedLoader FeedLoader Loads feeds during a crawl and holds the feed cache read for last-fetch times.
   new: (@config, @feedTrust, @feedLoader) =>
 
-  ---The feed a package effectively updates from: its remembered `currentSource` (resolved), falling back to
-  ---its override (`userFeed`) or declared `feed`.
+  ---The feed a package's configured update source resolves to, via UpdateTask's shared resolver.
+  ---Answers where the next update is configured to come from, where `getEffectiveSource` answers which
+  ---feed it will actually use once the fallbacks are applied.
   ---@param pkg table An installed package's config entry.
-  ---@param modulesSection table The modules config section, for resolving a provider `currentSource`.
+  ---@param modulesSection? table<string, table> The modules config section, for resolving a provider source.
+  ---@return string? url The resolved feed URL, or nil when the package records no source or it can't be resolved.
+  @resolveConfiguredSource = (pkg, modulesSection) ->
+    src = ScriptUpdateRecord.getRecordedSource pkg
+    return nil unless type(src) == "table"
+
+    UpdateTask or= require "l0.DependencyControl.UpdateTask"
+    UpdateTask.resolveSourceUrl src, pkg.feed, pkg.userFeed, modulesSection
+
+  ---Returns the feed a package will update from: either a previously configured or used source,
+  --- a user-set override (`userFeed`) or the package's own declared `feed`.
+  ---@param pkg table An installed package's config entry.
+  ---@param modulesSection table The modules config section, for resolving a provider source.
   ---@return string? url The feed the package updates from, or nil when it declares none.
+  ---@return SourceFeedKind? kind What the URL was taken from: the configured source's own kind, or the kind the fallback stands for.
   @getEffectiveSource = (pkg, modulesSection) ->
-    resolveCurrentSource(pkg, modulesSection) or pkg.userFeed or pkg.feed
+    url = @.resolveConfiguredSource pkg, modulesSection
+    if url
+      source = ScriptUpdateRecord.getRecordedSource pkg
+      return url, source.feedSource
+    UpdateTask or= require "l0.DependencyControl.UpdateTask"
+    return pkg.userFeed, UpdateTask.SourceFeedKind.UserFeed if pkg.userFeed
+    return pkg.feed, UpdateTask.SourceFeedKind.SelfDeclared if pkg.feed
+    nil
 
   ---Collects the feeds reachable from config, installed packages, and the official trust lists into a
   ---`url -> raw entry` map (provenance/packages/advertisedBy still as sets). Network-free.
@@ -176,7 +190,7 @@ class FeedInventory
         tagPackage pkg.userFeed, Provenance.PackageOverride, namespace
         for dep in *(pkg.requiredModules or {})
           tagPackage dep.feed, Provenance.DependencyAdvertised, namespace if type(dep) == "table"
-        effective = FeedInventory.getEffectiveSource pkg, modulesSection
+        effective = @@.getEffectiveSource pkg, modulesSection
         inventoryEntriesByUrl[effective].inUse = true if type(effective) == "string" and inventoryEntriesByUrl[effective]
 
     return inventoryEntriesByUrl
@@ -214,7 +228,7 @@ class FeedInventory
     for scriptType in *domain.ScriptType.values
       for namespace, pkg in pairs (c[domain.ScriptTypeSection[scriptType]] or {})
         continue unless type(pkg) == "table"
-        matched[#matched + 1] = namespace if FeedInventory.getEffectiveSource(pkg, modulesSection) == feedUrl
+        matched[#matched + 1] = namespace if @@.getEffectiveSource(pkg, modulesSection) == feedUrl
     table.sort matched
     matched
 

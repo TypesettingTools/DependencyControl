@@ -15,26 +15,27 @@ class FeedLoader
   @defaultMaxFeedSize = 5 * 10^6
   @defaultFeedFetchTimeout = 15
 
-  ---Reads the feed-fetch settings once and opens the shared feed cache under DepCtrl's namespace, wiring its
-  ---L1 layer to `UpdateFeed`'s decoder so a cache hit serves a ready-parsed feed base.
-  ---@param config ConfigView The global config view; reads `paths.cache`, `feeds.cacheMaxAge`/`feeds.maxFeedSize`/`feeds.feedFetchTimeout` and `updates.blockPrivateHosts`.
+  ---Opens the shared feed cache under DepCtrl's namespace, wiring its L1 layer to `UpdateFeed`'s decoder
+  ---so a cache hit serves a ready-parsed feed base.
+  ---@param config ConfigView The global config view; reads `paths.cache` and `feeds.cacheMaxAge` once, the fetch policy on every `load`.
   ---@param logger? Logger Logger for the cache and the feeds it loads.
-  new: (config, @logger = defaultLogger) =>
-    c = config.c
-    @cache = FileCache.get c.paths.cache, constants.DEPCTRL_NAMESPACE, "feeds",
-      {maxAge: c.feeds.cacheMaxAge, logger: @logger, deserialize: UpdateFeed.deserialize}
-    @blockPrivateHosts = c.updates.blockPrivateHosts
-    @maxFeedSize = c.feeds.maxFeedSize or @@defaultMaxFeedSize
-    @feedFetchTimeout = c.feeds.feedFetchTimeout or @@defaultFeedFetchTimeout
+  new: (@config, @logger = defaultLogger) =>
+    with @config.c
+      @cache = FileCache.get .paths.cache, constants.DEPCTRL_NAMESPACE, "feeds",
+        {maxAge: .feeds.cacheMaxAge, logger: @logger, deserialize: UpdateFeed.deserialize}
 
-  ---Builds an `UpdateFeed` for the given URL, injecting the shared cache and the configured fetch policy.
+  ---Builds an `UpdateFeed` for the given URL, injecting the shared cache and the fetch policy the config
+  ---holds at call time, so a saved settings change takes effect immediately.
   ---@param url string The feed URL to load.
   ---@param opts? { autoLoad?: boolean } `autoLoad` fetches immediately (default true). To refresh an entire update pass, expire the cache with `FileCache.expireAll`.
   ---@return UpdateFeed feed
   load: (url, opts = {}) =>
-    autoLoad = opts.autoLoad
-    autoLoad = true if autoLoad == nil
-    feedConfig = {cache: @cache, blockPrivateHosts: @blockPrivateHosts, maxFeedSize: @maxFeedSize, feedFetchTimeout: @feedFetchTimeout}
-    UpdateFeed url, autoLoad, nil, feedConfig, @logger
+    with @config.c
+      return UpdateFeed url, opts.autoLoad == nil and true or opts.autoLoad, nil, {
+        cache: @cache
+        blockPrivateHosts: .updates.blockPrivateHosts
+        maxFeedSize: .feeds.maxFeedSize or @@defaultMaxFeedSize
+        feedFetchTimeout: .feeds.feedFetchTimeout or @@defaultFeedFetchTimeout
+      }, @logger
 
 return FeedLoader

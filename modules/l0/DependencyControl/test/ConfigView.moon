@@ -3,6 +3,7 @@
 ->
   ConfigHandler = require "l0.DependencyControl.ConfigHandler"
   ConfigView = require "l0.DependencyControl.ConfigView"
+  fileOps = require "l0.DependencyControl.file-ops"
 
   {
     _description: "Tests for the ConfigView hive accessor and defaults proxy."
@@ -235,6 +236,39 @@
       ut\assertTrue view.__configHandler.views[view] -- registered with the new handler
       ut\assertNil old.views[view] -- and detached from the old one
 
+    -- setFile moves the view's hive into the new handler's tree. A hive left in the old one sits
+    -- outside what a save on the new handler merges from, so nothing the view holds reaches the file.
+    setFile_movesHiveIntoNewHandler: (ut) ->
+      old = ConfigHandler nil
+      view = ConfigView old, {"modules", "l0.Pkg"}
+      old.views[view] = true
+      view.userConfig.name = "written while orphaned"
+      target = "#{aegisub.decode_path '?temp'}/dc_m12b_setFileHiveMove.json"
+      ut\assertTrue view\setFile target
+      handlerHive = view.__configHandler\getHive view.__hivePath
+      ut\assertIs view.userConfig, handlerHive -- the very table a save merges from
+      view.c.name = "written after binding"
+      ut\assertEquals handlerHive.name, "written after binding" -- so a later write lands in that tree
+
+    -- setFile loads a file no handler has read yet, so the view starts out on what that file
+    -- stores and a later save adds to it
+    setFile_loadsUnreadFile: (ut) ->
+      target = "#{aegisub.decode_path '?temp'}/dc_m12b_setFileLoads.json"
+      fileOps.writeFile target, [[{"modules": {"l0.Pkg": {"stored": "from the file"}}}]], true
+      view = ConfigView ConfigHandler(nil), {"modules", "l0.Pkg"}
+      ut\assertTrue view\setFile target
+      ut\assertEquals view.c.stored, "from the file"
+
+    -- noLoad keeps the read for the caller to make
+    setFile_noLoadLeavesFileUnread: (ut) ->
+      target = "#{aegisub.decode_path '?temp'}/dc_m12b_setFileNoLoad.json"
+      fileOps.writeFile target, [[{"modules": {"l0.Pkg": {"stored": "from the file"}}}]], true
+      view = ConfigView ConfigHandler(nil), {"modules", "l0.Pkg"}
+      ut\assertTrue view\setFile target, true
+      ut\assertNil view.c.stored
+      ut\assertTrue view\load!
+      ut\assertEquals view.c.stored, "from the file" -- and the caller's own load still gets there
+
     _order: {
       "new_orphan", "new_withHandler", "new_stringHivePath", "new_tableHivePath",
       "isOverlappingView_differentHandler", "isOverlappingView_root",
@@ -247,6 +281,7 @@
       "import_simple", "import_updateOnly", "import_skipPrivate",
       "load_noFilePath", "load_delegatesToHandler",
       "save_noFilePath", "save_delegatesToHandler",
-      "delete_purgesAndSaves", "setFile_registersWithNewHandler"
+      "delete_purgesAndSaves", "setFile_registersWithNewHandler", "setFile_movesHiveIntoNewHandler",
+      "setFile_loadsUnreadFile", "setFile_noLoadLeavesFileUnread"
     }
   }

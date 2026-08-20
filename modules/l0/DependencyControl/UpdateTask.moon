@@ -7,8 +7,10 @@ domain = require "l0.DependencyControl.domain"
 environment = require "l0.DependencyControl.environment"
 Enum = require "l0.DependencyControl.Enum"
 ModuleLoader = require "l0.DependencyControl.ModuleLoader"
+ScriptUpdateRecord = require "l0.DependencyControl.ScriptUpdateRecord"
 SemanticVersion = require "l0.DependencyControl.SemanticVersion"
 UnitTestSuite = require "l0.DependencyControl.UnitTestSuite"
+utils = require "l0.DependencyControl.utils"
 
 ---The "installation"/"update" term for a record's task. domain.terms.isInstall is keyed by
 ---true/false, while an installed record leaves `virtual` nil.
@@ -96,20 +98,7 @@ FeedTrustDecision = Enum "FeedTrustDecision", {
   Never: "never"
 }
 
--- How sticky a remembered package-source choice is on subsequent resolutions of the same package.
----@alias SourceChoiceStickiness
----| "unset" # Unset: no preference recorded yet; resolve normally and prompt only if interactive
----| "once" # Once: prompt again whenever a choice remains, preselecting the remembered pick
----| "retain" # Retain: reuse the remembered pick whenever it's still eligible, without prompting
----| "pinned" # Pinned: always reuse the remembered pick; if it's gone, abort (required) or skip (optional)
----| "auto" # Auto: never prompt; always resolve via the ranking, refreshing the remembered pick for information
-SourceChoiceStickiness = Enum "SourceChoiceStickiness", {
-  Unset: "unset"
-  Once: "once"
-  Retain: "retain"
-  Pinned: "pinned"
-  Auto: "auto"
-}
+SourceChoiceStickiness = domain.SourceChoiceStickiness
 
 -- Where a remembered package source came from.
 ---@alias SourceFeedKind
@@ -124,10 +113,12 @@ SourceFeedKind = Enum "SourceFeedKind", {
   Other: "other"
 }
 
----A package's remembered source, persisted per-package as `currentSource`.
+---A package source and how sticky the choice of it is. Persisted per-package twice: `configuredSource`
+---holds the source the next update should use, `currentSource` the one the installed copy came from.
+---The two diverge while a source change hasn't been applied by a completed update yet.
 ---@class SourceChoiceRecord
 ---@field feedSource SourceFeedKind Where the source came from.
----@field feedUrl? string The literal feed URL; only stored (and required) for the `other` feedSource.
+---@field feedUrl? string The literal feed URL. A `configuredSource` stores it only for the `other` kind, and otherwise defers to the kind-specific properties elsewhere in the config. A `currentSource` always stores it, so provenance stays true when those fields change.
 ---@field channel string The update channel the source was resolved on.
 ---@field provider? { namespace: string, version?: string } The provider that satisfied the requirement, when resolved indirectly.
 ---@field stickiness SourceChoiceStickiness How sticky the choice is.
@@ -357,7 +348,6 @@ class UpdateTask
     assert type(targetVersionNumber) == "number", msgs.new.badTargetVersion
 
     @logger = @updater.logger
-    @triedFeeds = {}
     @status = nil
     @targetVersion = targetVersionNumber
 
@@ -399,13 +389,18 @@ class UpdateTask
         @record.name, currentChannel, tostring updateRecord.version
     return updateRecord, nil, version
 
-  ---Resolves the feed URL a persisted source record maps to, given the owning package's feed fields.
+  ---Resolves the feed URL a persisted source record maps to: its own `feedUrl` when it stores one,
+  ---otherwise derived from the owning package's feed fields by source kind.
   ---@param source SourceChoiceRecord The persisted source record.
   ---@param selfFeed? string The package's declared feed (used for a self-declared source).
   ---@param userFeed? string The package's per-package override feed (used for a user-feed source).
   ---@param modulesSection? table<string, table> The modules config section (used to resolve a provider source).
   ---@return string? url The resolved feed URL, or nil if it can't be determined.
   @resolveSourceUrl = (source, selfFeed, userFeed, modulesSection) ->
+    -- Source records used for `configuredSource` omit the feed URL when that is also stored
+    -- elsewhere in the config to maintain a single source of truth. In contrast, `currentSource`
+    -- always stores it to preserve provenance when those fields change.
+    return source.feedUrl if source.feedUrl
     switch source.feedSource
       when SourceFeedKind.SelfDeclared then selfFeed
       when SourceFeedKind.UserFeed then userFeed
@@ -454,32 +449,56 @@ class UpdateTask
     return SourceFeedKind.Other
 
   ---Records which source satisfied this task and how sticky the choice is, in the per-package
-  ---`currentSource` config, so later resolutions can honor it. Writes only when something changed.
+  ---`configuredSource` config, so later resolutions can honor it. The feed's channel lineup is
+  ---refreshed alongside. Writes only when something changed.
   ---@param selectedCandidate CandidatePackageSource The chosen candidate.
   ---@param stickiness? SourceChoiceStickiness The stickiness to record (defaults to the existing one, else `unset`).
   ---@private
   __persistSource: (selectedCandidate, stickiness) =>
     return unless @record.config
-    existing = @record.config.c.currentSource
+    existing = ScriptUpdateRecord.getRecordedSource @record.config.c
     feedSource = @__feedSourceOf selectedCandidate
-    currentSource = {
+    configuredSource = {
       :feedSource
       channel: selectedCandidate.updateRecord.activeChannel or @channel
       stickiness: stickiness or (existing and existing.stickiness) or SourceChoiceStickiness.Unset
     }
-    currentSource.feedUrl = selectedCandidate.feedUrl if feedSource == SourceFeedKind.Other
+    configuredSource.feedUrl = selectedCandidate.feedUrl if feedSource == SourceFeedKind.Other
     unless selectedCandidate.isDirect
-      currentSource.provider = {namespace: selectedCandidate.updateRecord.namespace, version: selectedCandidate.providesVersion}
+      configuredSource.provider = {namespace: selectedCandidate.updateRecord.namespace, version: selectedCandidate.providesVersion}
 
-    unchanged = existing and existing.feedSource == currentSource.feedSource and
-      existing.channel == currentSource.channel and existing.stickiness == currentSource.stickiness and
-      existing.feedUrl == currentSource.feedUrl and
-      (existing.provider and existing.provider.namespace) == (currentSource.provider and currentSource.provider.namespace) and
-      (existing.provider and existing.provider.version) == (currentSource.provider and currentSource.provider.version)
+    -- sorted, so the persisted lineup doesn't ride on table order and rewrite the config every session
+    channelLineup = selectedCandidate.updateRecord\getChannels!
+    table.sort channelLineup
+    lineupUnchanged = utils.itemsEqual channelLineup, @record.config.c.channels or {}
+
+    unchanged = lineupUnchanged and @record.config.c.configuredSource and existing and
+      existing.feedSource == configuredSource.feedSource and
+      existing.channel == configuredSource.channel and existing.stickiness == configuredSource.stickiness and
+      existing.feedUrl == configuredSource.feedUrl and
+      (existing.provider and existing.provider.namespace) == (configuredSource.provider and configuredSource.provider.namespace) and
+      (existing.provider and existing.provider.version) == (configuredSource.provider and configuredSource.provider.version)
     return if unchanged
 
-    @record.config.c.currentSource = currentSource
+    @record.config.c.channels = channelLineup
+    @record.config.c.configuredSource = configuredSource
     @record.config\save!
+
+  ---Persists the provenance of the package just installed or updated to the per-package `currentSource`
+  ---property in the DepCtrl config file. `lastChannel` kept in step as its pre-0.7 single-field form.
+  ---@private
+  __recordInstalledSource: =>
+    return unless @record.config
+    source = ScriptUpdateRecord.getRecordedSource @record.config.c
+    return unless source
+    installed = utils.deepCopy source
+    -- the URL is stamped rather than left to be derived later, so changing a userFeed or a declared
+    -- feed afterwards doesn't rewrite where this copy is recorded as having come from
+    installed.feedUrl or= @__resolveRememberedFeedUrl source
+    with @record.config
+      .c.currentSource = installed
+      .c.lastChannel = installed.channel
+      \save!
 
   ---The version this candidate is ranked by, or nil when it can't satisfy the task. A direct candidate ranks by
   ---its release version, a provider by the highest version its declared alias range covers (any version if none).
@@ -670,6 +689,12 @@ class UpdateTask
     wasVirtual = @record.virtual
     if selectedSource.isDirect
       code, res = @performUpdate selectedSource.updateRecord
+      -- A fresh install resolves on a virtual record, whose config view has no file behind it, so
+      -- everything recorded about the source during the install went nowhere durable. The install
+      -- adopted the real record, whose config can hold it, so record the source and provenance again.
+      if wasVirtual and not @record.virtual
+        @__persistSource selectedSource, stickiness
+        @__recordInstalledSource!
       return @__logUpdateError code, res, wasVirtual
 
     -- for an indirect source, install the chosen provider in place of the required module
@@ -679,6 +704,7 @@ class UpdateTask
       code, detail = @__reportNoSuitablePackage maxVersion
       return code, detail
     @ref, @updated = ref, true
+    @__recordInstalledSource!
     @logger\log msgs.run.providerResolved, @record.namespace, domain.terms.scriptType.singular[domain.ScriptType.Module],
       selectedSource.updateRecord.name or selectedSource.updateRecord.namespace, selectedSource.updateRecord.version
     return UpdateStatus.Installed, selectedSource.updateRecord.version
@@ -749,8 +775,7 @@ class UpdateTask
     userFeedTrusted = userFeed and not isBlocked userFeed
     isTrusted = (url) -> feedTrust\isTrusted(url) or (userFeedTrusted and url == userFeed)
 
-    -- the remembered package source for this package, and how sticky the user's last choice was
-    remembered = @record.config.c.currentSource
+    remembered = ScriptUpdateRecord.getRecordedSource @record.config.c
     stickiness = remembered and remembered.stickiness or SourceChoiceStickiness.Unset
     -- a remembered provider stays pinned to its band so a version bump updates it in place instead of switching providers
     stickyProvider = remembered and remembered.provider and remembered.provider.namespace
@@ -760,13 +785,13 @@ class UpdateTask
         return direct and (feedUrl == declaredFeed and TrustBand.DeclaredDirect or TrustBand.TrustedDirect) or TrustBand.TrustedProvider
       return direct and TrustBand.UntrustedDirect or TrustBand.UntrustedProvider
 
-    maxVer, candidates = 0, {}
-
+    maxVer, candidates, triedFeeds = 0, {}, {}
+    moduleConfigView = @updater.config\getSectionHandler domain.ScriptTypeSection[domain.ScriptType.Module]
     -- Gather candidates from a list of feed URLs, skipping any that are blocked or already tried.
     gather = (feedUrls) ->
       for feedUrl in *(feedUrls or {})
-        continue if not feedUrl or @triedFeeds[feedUrl] or isBlocked feedUrl
-        @triedFeeds[feedUrl] = true
+        continue if not feedUrl or triedFeeds[feedUrl] or isBlocked feedUrl
+        triedFeeds[feedUrl] = true
         @updater\renewLock!
         @logger\trace msgs.run.feedChecking, feedUrl
         feed, errMsg = @__loadFeed feedUrl
@@ -781,7 +806,7 @@ class UpdateTask
         elseif errMsg
           @logger\log errMsg
         if @record.virtual
-          for provider in *feed\getProviders @record.namespace
+          for provider in *feed\getProviders @record.namespace, (moduleConfigView and moduleConfigView.c) or {}
             -- the version range this provider declares for the required alias, if any
             providesVersions = [e.version for e in *(provider.provides or {}) when type(e) == "table" and e.name == @record.namespace]
             -- a trusted candidate from the sticky (remembered/installed) provider stays pinned (declared-direct band)
@@ -1014,6 +1039,8 @@ class UpdateTask
       return finish UpdateStatus.MoveFailed, @logger\format moveErrors, 1
     else fileOps.rmdir tmpDir -- recurses by default: the temp dir still holds the per-type subdirectories
     os.remove file.fullName for file in *update.files when file.delete and not file.unknown
+
+    @__recordInstalledSource!
 
     -- Nuke old module refs and reload
     oldVer, wasVirtual = @record.version, @record.virtual

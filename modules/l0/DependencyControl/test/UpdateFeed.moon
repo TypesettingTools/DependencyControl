@@ -197,10 +197,27 @@
         }, macros: {}},
         logger: DepCtrl.logger, __class: UpdateFeed
       }
-      providers = UpdateFeed.getProviders feed, "json"
+      providers = UpdateFeed.getProviders feed, "json", {}
       ut\assertEquals #providers, 1
       ut\assertEquals providers[1].namespace, "l0.dkjson"
       ut\assertEquals providers[1].version, "2.10.0"
+
+    -- given DependencyControl's modules config, a provider's candidacy is judged on the channel recorded
+    -- for it, so the provides list and version come from the channel an install would actually use
+    getProviders_honorsRecordedChannel: (ut) ->
+      feed = {
+        data: {modules: {
+          "l0.dkjson": {name: "dkjson", channels: {
+            release: {default: true, version: "2.10.0", files: {}}
+            legacy: {version: "2.5.0", files: {}, provides: {"json"}}
+          }}
+        }, macros: {}},
+        logger: DepCtrl.logger, __class: UpdateFeed
+      }
+      ut\assertEquals #(UpdateFeed.getProviders feed, "json", {}), 0 -- the default channel doesn't provide it
+      providers = UpdateFeed.getProviders feed, "json", {"l0.dkjson": {lastChannel: "legacy"}}
+      ut\assertEquals #providers, 1
+      ut\assertEquals providers[1].version, "2.5.0"
 
     getProviders_objectAliasEntries: (ut) ->
       feed = {
@@ -209,7 +226,7 @@
         }, macros: {}},
         logger: DepCtrl.logger, __class: UpdateFeed
       }
-      providers = UpdateFeed.getProviders feed, "yaml"
+      providers = UpdateFeed.getProviders feed, "yaml", {}
       ut\assertEquals #providers, 1
       ut\assertEquals providers[1].namespace, "l0.prov"
 
@@ -220,7 +237,7 @@
         }, macros: {}},
         logger: DepCtrl.logger, __class: UpdateFeed
       }
-      ut\assertEquals #UpdateFeed.getProviders(feed, "xml"), 0
+      ut\assertEquals #UpdateFeed.getProviders(feed, "xml", {}), 0
 
     getProviders_ignoresModulesWithoutProvides: (ut) ->
       feed = {
@@ -229,11 +246,11 @@
         }, macros: {}},
         logger: DepCtrl.logger, __class: UpdateFeed
       }
-      ut\assertEquals #UpdateFeed.getProviders(feed, "json"), 0
+      ut\assertEquals #UpdateFeed.getProviders(feed, "json", {}), 0
 
     getProviders_noModulesSection: (ut) ->
       feed = {data: {macros: {}}, logger: DepCtrl.logger, __class: UpdateFeed}
-      ut\assertEquals #UpdateFeed.getProviders(feed, "json"), 0
+      ut\assertEquals #UpdateFeed.getProviders(feed, "json", {}), 0
 
     -- __normalizeModuleAliases: expands bare strings to ModuleAlias tables and preserves table fields
 
@@ -546,6 +563,36 @@
       ut\assertEquals feed.rawFeedData.modules["l0.Fresh"].channels.release.released, "2099-12-31" -- stamped
       ut\assertEquals feed.rawFeedData.modules["l0.Old"].channels.release.released, "2020-01-01" -- kept
 
+    -- updateFeed markReleased: a package whose default channel can't be resolved carries the reason in
+    -- its result and gets no release stamp on any channel, rather than being passed over in silence
+    updateFeed_markReleasedReportsAmbiguousDefault: (ut) ->
+      root = fileOps.joinPath basePath, "markrelAmbiguous"
+      fileOps.mkdir fileOps.joinPath(root, "modules", "l0"), false, true
+      fileOps.writeFile fileOps.joinPath(root, "modules", "l0", "Pkg.moon"), "-- pkg", true
+      feedPath = fileOps.joinPath root, "feed.json"
+      fileOps.writeFile feedPath, [[{
+        "dependencyControlFeedFormatVersion": "0.4.0",
+        "name": "T",
+        "fileBaseUrl": "https://x.test/",
+        "fileBaseUrls": {"script": "@{fileBaseUrl}@{namespacePath}@{fileName}"},
+        "localFileBasePaths": {"script": "@{localFileBasePath}modules/@{namespacePath}@{fileName}"},
+        "modules": {
+          "l0.Pkg": {"name": "Pkg", "author": "a", "channels": {
+            "main": {"version": "1.0.0", "default": true, "released": null,
+              "files": [{"name": ".moon", "url": "@{fileBaseUrl}", "sha1": "0000000000000000000000000000000000000000"}]},
+            "stable": {"version": "1.0.0", "default": true, "released": null,
+              "files": [{"name": ".moon", "url": "@{fileBaseUrl}", "sha1": "0000000000000000000000000000000000000000"}]}}}
+        }
+      }]], true
+      feed = UpdateFeed nil, false, feedPath
+      (ut\stub feed, "__refreshVersionRecord")\returns false
+      (ut\stub feed, "__refreshFiles")\returns false, {}
+      stats = feed\updateFeed {markReleased: "2099-12-31", outPath: false}
+      ut\assertEquals stats.errored, 1
+      ut\assertContains stats.packages[1].errors[1], "several channels"
+      ut\assertTrue feed.rawFeedData.modules["l0.Pkg"].channels.main.released != "2099-12-31" -- no stamp on either channel
+      ut\assertTrue feed.rawFeedData.modules["l0.Pkg"].channels.stable.released != "2099-12-31"
+
     -- mergeChannels copies the source channel into the destination channel(s), preserves channels not
     -- named, stamps the release date, sets the default flag, tracks top-level metadata, and adds packages
     mergeChannels_copiesPreservingOthers: (ut) ->
@@ -586,6 +633,102 @@
       ut\assertNotNil newCh.release -- new package added, carrying only the to-channel
       ut\assertNil newCh.alpha
 
+    -- Publishing leaves exactly one channel flagged as the default: the flag is cleared from every
+    -- channel but the one named, a copy of the source channel left behind by an earlier publish
+    -- included. Two channels claiming it leaves a client to pick between them by table order.
+    mergeChannels_leavesExactlyOneDefault: (ut) ->
+      root = fileOps.joinPath basePath, "merge2"
+      fileOps.mkdir root, false, true
+      srcPath = fileOps.joinPath root, "src.json"
+      dstPath = fileOps.joinPath root, "dst.json"
+      fileOps.writeFile srcPath, [[{
+        "dependencyControlFeedFormatVersion": "0.4.0", "name": "N", "baseUrl": "b",
+        "modules": {
+          "l0.A": {"name": "A", "author": "x", "channels": {"main": {"version": "0.8.0", "released": null, "default": true, "files": [{"name": ".moon", "url": "u", "sha1": "AAA"}]}}}
+        }
+      }]], true
+      fileOps.writeFile dstPath, [[{
+        "dependencyControlFeedFormatVersion": "0.4.0", "name": "N", "baseUrl": "b",
+        "modules": {
+          "l0.A": {"name": "A", "author": "x", "channels": {
+            "main":    {"version": "0.7.0", "released": "2024-01-01", "default": true, "files": [{"name": ".moon", "url": "u", "sha1": "OLD"}]},
+            "release": {"version": "0.6.0", "released": "2024-01-01", "default": false, "files": [{"name": ".moon", "url": "u", "sha1": "OLD"}]},
+            "alpha":   {"version": "0.6.0", "released": "2024-01-01", "default": true, "files": [{"name": ".moon", "url": "u", "sha1": "OLD"}]}}}
+        }
+      }]], true
+      source = UpdateFeed nil, false, srcPath
+      source\loadFile srcPath, UpdateFeed.ExpansionMode.Local
+      dest = UpdateFeed nil, false, dstPath
+      dest\loadFile dstPath, UpdateFeed.ExpansionMode.Local
+      merged, err = dest\mergeChannels source, {from: "main", to: {"release"}, defaultChannel: "release", outPath: false}
+      ut\assertNil err
+      ut\assertEquals #merged, 1
+      ch = dest.rawFeedData.modules["l0.A"].channels
+      ut\assertTrue ch.release.default
+      ut\assertFalse ch.alpha.default -- a channel this run didn't write stops claiming the default
+      ut\assertEquals ch.alpha.version, "0.6.0" -- but keeps what it was publishing
+      ut\assertFalse ch.main.default -- as does the copy of the source channel left by an earlier publish
+      ut\assertEquals ch.main.version, "0.7.0"
+
+    -- A section's own template keys travel with the merge: macros are stored flat while modules nest, so
+    -- a published feed that lost the macros section's `fileBaseUrls` resolves every macro to a module path.
+    mergeChannels_copiesSectionTemplates: (ut) ->
+      root = fileOps.joinPath basePath, "merge4"
+      fileOps.mkdir root, false, true
+      srcPath = fileOps.joinPath root, "src.json"
+      dstPath = fileOps.joinPath root, "dst.json"
+      fileOps.writeFile srcPath, [[{
+        "dependencyControlFeedFormatVersion": "0.4.0", "name": "N", "baseUrl": "b",
+        "macros": {
+          "fileBaseUrls": {"script": "@{fileBaseUrl}@{namespace}@{fileName}"},
+          "l0.Pkg": {"name": "P", "author": "x", "channels": {"main": {"version": "0.8.0", "released": null, "default": true, "files": [{"name": ".moon", "url": "u", "sha1": "AAA"}]}}}
+        }
+      }]], true
+      fileOps.writeFile dstPath, [[{"dependencyControlFeedFormatVersion": "0.4.0", "macros": {}, "modules": {}}]], true
+      source = UpdateFeed nil, false, srcPath
+      source\loadFile srcPath, UpdateFeed.ExpansionMode.Local
+      dest = UpdateFeed nil, false, dstPath
+      dest\loadFile dstPath, UpdateFeed.ExpansionMode.Local
+      merged, err = dest\mergeChannels source, {from: "main", to: {"stable"}, defaultChannel: "stable", outPath: false}
+      ut\assertNil err
+      ut\assertEquals #merged, 1
+      macros = dest.rawFeedData.macros
+      ut\assertNotNil macros["l0.Pkg"].channels.stable -- the package published as usual
+      ut\assertEquals macros.fileBaseUrls.script, "@{fileBaseUrl}@{namespace}@{fileName}"
+
+    -- Publishing to a channel that isn't the default leaves the default channel alone, flag and all,
+    -- so releasing to alpha only doesn't strip the feed of the default the caller still names.
+    mergeChannels_keepsDefaultOnUnwrittenChannel: (ut) ->
+      root = fileOps.joinPath basePath, "merge3"
+      fileOps.mkdir root, false, true
+      srcPath = fileOps.joinPath root, "src.json"
+      dstPath = fileOps.joinPath root, "dst.json"
+      fileOps.writeFile srcPath, [[{
+        "dependencyControlFeedFormatVersion": "0.4.0", "name": "N", "baseUrl": "b",
+        "modules": {
+          "l0.A": {"name": "A", "author": "x", "channels": {"main": {"version": "0.8.0", "released": null, "default": true, "files": [{"name": ".moon", "url": "u", "sha1": "AAA"}]}}}
+        }
+      }]], true
+      fileOps.writeFile dstPath, [[{
+        "dependencyControlFeedFormatVersion": "0.4.0", "name": "N", "baseUrl": "b",
+        "modules": {
+          "l0.A": {"name": "A", "author": "x", "channels": {
+            "release": {"version": "0.6.0", "released": "2024-01-01", "default": true, "files": [{"name": ".moon", "url": "u", "sha1": "OLD"}]},
+            "alpha":   {"version": "0.5.0", "released": "2023-01-01", "default": false, "files": [{"name": ".moon", "url": "u", "sha1": "OLD"}]}}}
+        }
+      }]], true
+      source = UpdateFeed nil, false, srcPath
+      source\loadFile srcPath, UpdateFeed.ExpansionMode.Local
+      dest = UpdateFeed nil, false, dstPath
+      dest\loadFile dstPath, UpdateFeed.ExpansionMode.Local
+      merged, err = dest\mergeChannels source, {from: "main", to: {"alpha"}, defaultChannel: "release", outPath: false}
+      ut\assertNil err
+      ch = dest.rawFeedData.modules["l0.A"].channels
+      ut\assertTrue ch.release.default -- the named default keeps its flag though this run didn't write it
+      ut\assertEquals ch.release.version, "0.6.0"
+      ut\assertEquals ch.alpha.version, "0.8.0" -- alpha published from the source's main channel
+      ut\assertFalse ch.alpha.default
+
     -- bumpVersions off a released version starts a new cycle: it rewrites the marked source literal,
     -- bumps the channel version, clears the release date, and refreshes the file hash
     bumpVersions_startsCycleFromReleased: (ut) ->
@@ -612,6 +755,26 @@
       ut\assertEquals main.version, "0.8.0" -- feed version bumped
       ut\assertEquals main.released, dkjson.null -- release date cleared (new build pending)
       ut\assertNotNil (fileOps.readFile srcFile)\match '"0%.8%.0"' -- marked source literal rewritten
+
+    -- bumpVersions: a feed flagging several defaults is refused before anything is rewritten — resolved
+    -- by table order, the bump would land on a channel nobody chose
+    bumpVersions_refusesAmbiguousDefault: (ut) ->
+      root = fileOps.joinPath basePath, "bumpAmbiguous"
+      fileOps.mkdir root, false, true
+      feedPath = fileOps.joinPath root, "feed.json"
+      fileOps.writeFile feedPath, [[{
+        "dependencyControlFeedFormatVersion": "0.4.0", "name": "F", "fileBaseUrl": "u/",
+        "fileBaseUrls": {"script": "@{fileBaseUrl}@{fileName}"},
+        "localFileBasePaths": {"script": "@{localFileBasePath}modules/@{namespacePath}@{fileName}"},
+        "modules": {"l0.Pkg": {"name": "Pkg", "author": "x", "channels": {
+          "main": {"version": "0.7.0", "released": "2024-01-01", "default": true, "files": []},
+          "stable": {"version": "0.7.0", "released": "2024-01-01", "default": true, "files": []}}}}
+      }]], true
+      feed = UpdateFeed nil, false, feedPath
+      feed\loadFile feedPath, UpdateFeed.ExpansionMode.Local
+      stats, err = feed\bumpVersions {level: "patch", namespaces: {"l0.Pkg"}, outPath: false}
+      ut\assertNil stats
+      ut\assertContains err, "several channels"
 
     -- walkFiles
 
@@ -983,7 +1146,8 @@
       "getScript_invalidType", "getScript_missing", "getScript_found",
       "getMacro_usesAutomationType", "getModule_usesModuleType",
       "getModuleVersion_defaultChannel", "getModuleVersion_fallback", "getModuleVersion_missing",
-      "getProviders_findsByBareAlias", "getProviders_objectAliasEntries", "getProviders_noMatchReturnsEmpty",
+      "getProviders_findsByBareAlias", "getProviders_honorsRecordedChannel", "getProviders_objectAliasEntries",
+      "getProviders_noMatchReturnsEmpty",
       "getProviders_ignoresModulesWithoutProvides", "getProviders_noModulesSection",
       "normalizeModuleAliases_bareStringsToTables", "normalizeModuleAliases_preservesFields",
       "normalizeModuleAliases_dropsNonSchemaFields", "normalizeModuleAliases_nilAndEmpty",
@@ -995,7 +1159,10 @@
       "expand_legacyScalarBases",
       "findUnlistedFiles_discoversUnlistedFiles", "findUnlistedFiles_skipsUninvertibleTemplates",
       "updateFeed_addFilesAppendsEntries", "updateFeed_markReleasedStampsUnreleased",
-      "mergeChannels_copiesPreservingOthers", "bumpVersions_startsCycleFromReleased",
+      "updateFeed_markReleasedReportsAmbiguousDefault",
+      "mergeChannels_copiesPreservingOthers", "mergeChannels_leavesExactlyOneDefault",
+      "mergeChannels_keepsDefaultOnUnwrittenChannel", "mergeChannels_copiesSectionTemplates"
+      "bumpVersions_startsCycleFromReleased", "bumpVersions_refusesAmbiguousDefault",
       "walkFiles_yieldsProxies", "walkFiles_passesThroughLocalFilePath",
       "deployFiles_copiesToDist", "deployFiles_skipExistingNoClobber",
       "deployFiles_countsMissingSource", "deployFiles_removesDeleted", "deployFiles_deleteMissingIsNoOp",
