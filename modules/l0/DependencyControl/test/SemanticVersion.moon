@@ -154,6 +154,16 @@
       ut\assertTrue SemanticVersion\satisfiesRange("2.3.9", "1.2.3 - 2.3") -- partial upper => <2.4.0
       ut\assertFalse SemanticVersion\satisfiesRange("2.4.0", "1.2.3 - 2.3")
 
+    -- npm allows an operator to stand apart from its version, and a range written that way must not
+    -- quietly reduce to one nothing satisfies
+    satisfiesRange_spacedOperator: (ut) ->
+      ut\assertTrue SemanticVersion\satisfiesRange("0.6.4", "< 0.7.0")
+      ut\assertFalse SemanticVersion\satisfiesRange("0.7.0", "< 0.7.0")
+      ut\assertTrue SemanticVersion\satisfiesRange("0.8.2", ">= 0.7.0 < 0.9.0")
+      ut\assertFalse SemanticVersion\satisfiesRange("0.9.0", ">= 0.7.0 < 0.9.0")
+      ut\assertTrue SemanticVersion\satisfiesRange("1.2.9", "~ 1.2.3")
+      ut\assertTrue SemanticVersion\satisfiesRange("1.2.3", "1.2.3 - 2.3.4") -- a hyphen range still parses
+
     satisfiesRange_errors: (ut) ->
       r1, e1 = SemanticVersion\satisfiesRange "1.2.3", "garbage"
       ut\assertNil r1
@@ -302,7 +312,7 @@
       "check_rangeMode", "check_rangeBadRange",
       "satisfiesRange_tilde", "satisfiesRange_caret", "satisfiesRange_xRangeAndAny",
       "satisfiesRange_exact", "satisfiesRange_comparators", "satisfiesRange_orUnion",
-      "satisfiesRange_hyphen", "satisfiesRange_errors",
+      "satisfiesRange_hyphen", "satisfiesRange_spacedOperator", "satisfiesRange_errors",
       "parseRange_intervals", "parseRange_unsatisfiableIsEmpty", "parseRange_badType",
       "rangesIntersect_overlap", "rangesIntersect_disjoint", "rangesIntersect_unionGroups",
       "rangesIntersect_emptyAndExactBounds", "rangesIntersect_error",
