@@ -200,8 +200,8 @@ jobs:
 
       # Copy the source channel onto the published channel(s), preserving the others, then guard that
       # every tag the published feed references exists before pushing. On the first release the publish
-      # branch doesn't exist yet, so seed the worktree from the released commit and let the final push
-      # create it.
+      # branch doesn't exist yet, so seed the worktree from the released commit with an empty feed and
+      # let the final push create it.
       - name: Publish to the publish branch
         run: |
           set -euo pipefail
@@ -211,6 +211,10 @@ jobs:
           else
             echo "Publish branch '${{ inputs.publish-branch }}' doesn't exist yet — bootstrapping it from the released commit."
             git worktree add --detach _publish HEAD
+            # That tree holds the dev feed, whose channels releases are cut from, so hand the merge an
+            # empty feed to fill instead: a dev channel copied in here would keep the `default: true`
+            # it carries there and go on claiming it alongside every channel published afterwards.
+            jq '{dependencyControlFeedFormatVersion, macros: {}, modules: {}}' DependencyControl.json > _publish/DependencyControl.json
           fi
 
           rsync -a --delete \
