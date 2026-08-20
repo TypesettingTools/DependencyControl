@@ -799,7 +799,8 @@
           "fix(CLI): `merge-feed` now clears the `default` flag from every channel but the one it is told is the default, so publishing can't leave a feed with two default channels. It also copies each section's own file templates, which a feed merged into a fresh file used to lose.",
           "fix(CLI): `serve-updates` no longer fails on a feed that already matches its working copy.",
           "feat(CLI): `serve-updates` now accepts an optional `--port` argument, so a test feed URL stays valid across runs.",
-          "feat(CLI): `--serve-channel` can be given more than once to graft the dev build onto several channels at once, the first of which becomes the served feed's default."
+          "feat(CLI): `--serve-channel` can be given more than once to graft the dev build onto several channels at once, the first of which becomes the served feed's default.",
+          "fix: A package's settings are no longer reverted by a second DependencyControl instance writing the same config file (e.g. during a DependencyControl update, in another automation script context, or from another Aegisub process). Each save now writes only the fields it changed since it last read the file."
         ]
       }
     },

@@ -220,6 +220,11 @@ Utils = {
   ---@return table copy The deep-copied table. Keys are carried over as-is; only values are copied.
   deepCopy: deepCopy
 
+  ---Deep-copies a table, and returns any other value as it is, for copying a mix of tables and scalars.
+  ---@param value any The value to copy.
+  ---@return any copy A deep copy of a table, or the value itself.
+  copyValue: (value) -> type(value) == "table" and deepCopy(value) or value
+
   ---Builds (or extends) a set from an array's values: each value becomes a key mapped to `value`.
   ---@param source any[] Array whose values become the set's keys.
   ---@param target? table Table to populate (default a new table).
