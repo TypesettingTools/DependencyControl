@@ -62,19 +62,19 @@
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "F7B62EAC79C4FBA001B50C12506231C204CC7E80"
+              "sha1": "9F1500392C356076F0DFF32EE9BA690366CE0379"
             },
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "9329D7020A486DE3F5202963522327AB709FF815",
+              "sha1": "DED2B18E6F5C3BC5644FDA1E7DD514C8C579CE83",
               "type": "test"
             }
           ],
           "requiredModules": [
             {
               "moduleName": "l0.DependencyControl",
-              "version": "0.7.0"
+              "version": "0.9.0"
             }
           ]
         }
@@ -109,6 +109,10 @@
         ],
         "0.8.1": [
           "fix: The Install Script macro no longer fails while scanning feeds that set URL templates per section, DependencyControl's own feed among them."
+        ],
+        "0.9.0": [
+          "feat: A new Package Source Configuration macro lets you choose where a package's next update comes from — the source kind, channel, how firmly the choice is kept, and either a known feed, a custom feed URL, or a providing module.",
+          "fix: The Install, Uninstall and Update pickers now show each package's update channel beside its version, which was missing from the lists in most circumstances."
         ]
       }
     }
@@ -121,14 +125,14 @@
       "url": "@{baseUrl}#@{namespace}",
       "channels": {
         "main": {
-          "version": "0.8.2",
-          "released": "2026-08-17",
+          "version": "0.9.0",
+          "released": null,
           "default": true,
           "files": [
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "29CCC772940BFB3F7A92FD93EA0306905A05897F"
+              "sha1": "89BA192E65D3446B8A066F4A5816EBA8560773E0"
             },
             {
               "name": "/Constants.moon",
@@ -138,12 +142,12 @@
             {
               "name": "/ConfigHandler.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "6C8ACA7DD2BBA8AD22AB7E488F918297B820EDF9"
+              "sha1": "B19475DF8C0D1C02491ED36BAB1355AC1016280E"
             },
             {
               "name": "/ConfigView.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "BCCB1B7E7A85245BCDD87CE0CCCC1955CB161827"
+              "sha1": "2530A6192FCCBA3B9BE4D946BEAA359B429F14B4"
             },
             {
               "name": "/hash.moon",
@@ -173,7 +177,7 @@
             {
               "name": "/FeedInventory.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "4EB32746AE7D048F15355350827C9A470CB5C384"
+              "sha1": "4E2075F12A5EB4A726A218F3F76CDEEAC6E0F104"
             },
             {
               "name": "/FeedManager.moon",
@@ -254,12 +258,12 @@
             {
               "name": "/ScriptUpdateRecord.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "9553BD9771DFEF0E35BA04814E2EAFFA0E27C51A"
+              "sha1": "1D1BB6F7CEDCBDC92925E412D3EFD0DF3400353F"
             },
             {
               "name": "/SemanticVersion.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "663BB4263B99C01E69AD897DAD7CF6420E17A666"
+              "sha1": "D13E41C35B1B287752420C73D124EC41D3861BF7"
             },
             {
               "name": "/Stub.moon",
@@ -279,12 +283,12 @@
             {
               "name": "/UpdateFeed.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "521AD8915BF09A02167ACDF73CE4C39E928F504A"
+              "sha1": "48A68B9D7FF0D7525DE19C1F5F358B18B16C4A7B"
             },
             {
               "name": "/UpdateTask.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "4C1B8BFBE29120014A182F37F1D9E7AA0E456C07"
+              "sha1": "F0E0D701FD8325B407A508C5A6EEFA522158ECB3"
             },
             {
               "name": "/Updater.moon",
@@ -344,7 +348,7 @@
             {
               "name": "/config-schema.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "CC74ACBE7A7CD8761AD714564F3805AC96F68067"
+              "sha1": "25A8986ED53685D995338E4FE0A9446D0A284E6B"
             },
             {
               "name": "/Finalizer.moon",
@@ -359,7 +363,7 @@
             {
               "name": "/domain.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "C5D9BC686DFA4A85A28EE6E2E392B1E012A83909"
+              "sha1": "97AB343E57DACCD4CF7C97DA6CDBDC5F03CEC68E"
             },
             {
               "name": "/environment.moon",
@@ -392,7 +396,7 @@
             {
               "name": "/ConfigView.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "A0E00272169CA1FFAADF0A672C468A975D9B9F82",
+              "sha1": "2B269DFD47F980F17C4A72A84BCA9255A2C214BC",
               "type": "test"
             },
             {
@@ -422,7 +426,7 @@
             {
               "name": "/FeedInventory.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "5D820751E60E8609CD65427ED01DD312E869001B",
+              "sha1": "D4ADBFEFE046D722631BE0DB0A39D8DDC72E61C4",
               "type": "test"
             },
             {
@@ -524,13 +528,13 @@
             {
               "name": "/ScriptUpdateRecord.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "287B0C04CC3A4BA92FE30E2258D7EFEA922AFE58",
+              "sha1": "1C7EB37806E609FC57ACE47BA96F0F268F3E205E",
               "type": "test"
             },
             {
               "name": "/SemanticVersion.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "E242FE3C0332C60468E4B3F76DCFDE1D631172F9",
+              "sha1": "F6FBCEC0B847AA71A4CF58967C8D6AAC2D8E26EF",
               "type": "test"
             },
             {
@@ -548,13 +552,13 @@
             {
               "name": "/UpdateFeed.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "4A3CE78253A52C70D6C28394BF724F9D0552DB0E",
+              "sha1": "1D8093D09D610F69979F9B4246B1C38B23317A2C",
               "type": "test"
             },
             {
               "name": "/UpdateTask.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "D1C04F53DE0609804FE0E9B63AF5DD1EEA2D1D5B",
+              "sha1": "E380E80D439F78699805E8A5FD9D9A38D84A82BF",
               "type": "test"
             },
             {
@@ -608,7 +612,7 @@
             {
               "name": "/config-schema.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "C65BC75E4ACF11F2CA174255CB6792C3C4FAD7A7",
+              "sha1": "8EE4EA529ABF8F8AF4C386B4C4713D92ED163089",
               "type": "test"
             },
             {
@@ -785,8 +789,14 @@
           "fix(Utils): `deepCopy()` no longer recurses forever on a table that references itself. Circular references are reproduced as cycles in the copy, and a table reached through several keys is copied once.",
           "fix(CLI): `generate-types` and `generate-docs` skip files a feed marks deleted instead of reporting each one as an unreadable source",
           "fix(CLI): a deleted file's entry can no longer shadow the source that replaced it when a test suite resolves its modules from the feed.",
-          "fix(Updater): Updates no longer fail with 'the update task is already running' for modules that require one another (such as Aegisub-Motion's 'Tags' and 'Transform').",
-          "fix(Updater): Users who were accidentally assigned to the dummy 'main' channel as part of a CI mishap, are automatically migrated to the proper 'stable' channel."
+          "fix(Updater): Updates no longer fail with 'the update task is already running' for modules that require one another (such as Aegisub-Motion's 'Tags' and 'Transform')."
+        ],
+        "0.9.0": [
+          "fix: A feed that flags more than one channel as its default no longer sends an install to a different channel from one session to the next. The pick is stable now and the feed is reported as faulty, and installs that a CI mishap left on the internal 'main' channel move to 'stable'.",
+          "fix(Updater): Asking for a specific update channel now takes effect on a package that already has one recorded, and a module that provides another is judged on the channel recorded for it rather than its feed's default. A recorded channel the feed no longer offers falls back to the default instead of failing the update — unless you pinned the package's source, which is reported as unavailable rather than quietly moved.",
+          "feat(Updater)!: Where a package will update from and where its installed copy came from are now recorded separately, as `configuredSource` and `currentSource`, so a source change you have made is distinguishable from one an update has applied. Both are written as soon as an install finishes — a fresh install used to record neither — and the origin stores the feed URL outright, so changing a feed override afterwards no longer rewrites where the copy came from. Existing configs migrate automatically.",
+          "fix(Updater): A second update attempt in the same session works again. A package remembered the feeds its first attempt had consulted and skipped them next time, so a retry passed over the very feed that offers it and reported that none was available.",
+          "fix(CLI): `merge-feed` now clears the `default` flag from every channel but the one it is told is the default, so publishing can't leave a feed naming two default channels."
         ]
       }
     },
