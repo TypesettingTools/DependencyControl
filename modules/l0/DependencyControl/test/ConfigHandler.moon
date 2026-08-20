@@ -284,6 +284,39 @@
       result = handlerB\save view
       ut\assertTrue result
 
+    -- A save writes what this handler changed since it read the file, not the hive it happens to hold, so
+    -- a second handler over the same file — another Aegisub, or the instance a self-update replaced —
+    -- keeps the keys it wrote in between.
+    save_keepsAnotherHandlersChanges: (ut) ->
+      path = "#{aegisub.decode_path '?temp'}/dc_m12a_baseline.json"
+      fileOps = require FILEOPS_MODULE_NAME
+      fileOps.writeFile path, [[{"modules": {"l0.Pkg": {"version": "1.0.0", "lastChannel": "main"}}}]], true
+
+      first = ConfigHandler path
+      second = ConfigHandler path
+      firstView = first\getView {"modules", "l0.Pkg"}
+      secondView = second\getView {"modules", "l0.Pkg"}
+      ut\assertTrue first\load firstView
+      ut\assertTrue second\load secondView
+
+      -- the second handler migrates the channel and writes it away
+      secondView.c.lastChannel = "stable"
+      secondView.c.configuredSource = {channel: "stable"}
+      ut\assertTrue second\save secondView
+
+      -- the first handler, which never saw either key, records a completed install
+      firstView.c.version = "2.0.0"
+      firstView.c.currentSource = {channel: "main"}
+      ut\assertTrue first\save firstView
+
+      written = ConfigHandler path
+      writtenView = written\getView {"modules", "l0.Pkg"}
+      ut\assertTrue written\load writtenView
+      ut\assertEquals writtenView.c.version, "2.0.0" -- the later save landed
+      ut\assertEquals writtenView.c.currentSource.channel, "main"
+      ut\assertEquals writtenView.c.lastChannel, "stable" -- and did not revert the earlier one
+      ut\assertEquals writtenView.c.configuredSource.channel, "stable"
+
     save_withViewPopulatedHive: (ut) ->
       -- Normal path: cleanHive keeps a hive that has data and save succeeds.
       handler = ConfigHandler nil
@@ -344,7 +377,7 @@
       "load_noFilePath", "load_fileNotFound", "load_success",
       "load_migratesOnSchemaMismatch", "load_skipsMigrationWhenSchemaMatches",
       "save_noFilePath", "save_lockFailed", "save_success",
-      "save_withViewMissingHive", "save_withViewPopulatedHive",
+      "save_withViewMissingHive", "save_withViewPopulatedHive", "save_keepsAnotherHandlersChanges",
       "save_writesPrettyPrintedJson",
       "purgeHive_removesPath"
     }

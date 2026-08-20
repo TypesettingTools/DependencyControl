@@ -964,9 +964,6 @@ class UpdateFeed
     toChannels = opts.to or {}
     return nil, msgs.mergeChannels.noTo unless #toChannels > 0
 
-    -- utils.deepCopy only accepts a table; feed values are a mix of tables and scalars
-    copyValue = (v) -> type(v) == "table" and utils.deepCopy(v) or v
-
     merged = {}
     for section in *domain.ScriptTypeSection.values
       srcSection = source.rawFeedData[section]
@@ -976,17 +973,17 @@ class UpdateFeed
       for ns, srcPkg in pairs srcSection
         -- a section's own `fileBaseUrls`/`localFileBasePaths` templates sit beside its packages
         unless type(srcPkg) == "table" and srcPkg.channels
-          dstSection[ns] = copyValue srcPkg
+          dstSection[ns] = utils.copyValue srcPkg
           continue
         fromChannel = srcPkg.channels[opts.from]
         continue unless fromChannel
         dstPkg = dstSection[ns]
         unless type(dstPkg) == "table" and dstPkg.channels
-          dstPkg = {k, copyValue v for k, v in pairs srcPkg when k != "channels"}
+          dstPkg = {k, utils.copyValue v for k, v in pairs srcPkg when k != "channels"}
           dstPkg.channels = {}
           dstSection[ns] = dstPkg
         else
-          dstPkg[k] = copyValue v for k, v in pairs srcPkg when k != "channels"
+          dstPkg[k] = utils.copyValue v for k, v in pairs srcPkg when k != "channels"
         for toName in *toChannels
           entry = utils.deepCopy fromChannel
           entry.default = toName == opts.defaultChannel
@@ -1000,7 +997,7 @@ class UpdateFeed
         merged[#merged + 1] = ns
 
     -- top-level feed metadata (name, baseUrl, templates, vars, knownFeeds, …) tracks the source
-    @rawFeedData[k] = copyValue v for k, v in pairs source.rawFeedData when k != "macros" and k != "modules"
+    @rawFeedData[k] = utils.copyValue v for k, v in pairs source.rawFeedData when k != "macros" and k != "modules"
 
     return merged if opts.outPath == false
     wrote, writeErr = @__writeRawFeed (opts.outPath == true or opts.outPath == nil) and @feedPath or opts.outPath
