@@ -26,6 +26,7 @@ msgs = {
   }
   mergeHive: {
     badKey: "Can't merge hive because the path key #%d (%s) points to a %s."
+    missingSource: "Can't merge hive because the source tree is shallower than the hive path, holding nothing under path key #%d (%s)."
   }
   new: {
     badPath: "Couldn't validate specified config file path '%s': %s"
@@ -260,6 +261,7 @@ class ConfigHandler
 
 
   mergeHive = (path, source, target, depth = 1) ->
+    return nil, msgs.mergeHive.missingSource\format depth - 1, path[depth - 1] unless source
     -- merging in a root hive overwrites target with source
     if #path == 0
       target[k] = nil for k, _ in pairs target
