@@ -1531,6 +1531,34 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Types
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#configchannelrename" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ConfigChannelRename
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2262,6 +2290,34 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Types
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#configchannelrename" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ConfigChannelRename
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2286,11 +2342,11 @@
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">MoonScript</label><label for="__tabbed_1_2">Lua</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">config_schema</span> <span class="o">=</span> <span class="nb">require</span> <span class="s2">&quot;</span><span class="s">l0.DependencyControl.config-schema</span><span class="s2">&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">config_schema</span> <span class="o">=</span> <span class="nb">require</span> <span class="s2">"</span><span class="s">l0.DependencyControl.config-schema</span><span class="s2">"</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">config_schema</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">require</span><span class="p">(</span><span class="s2">&quot;l0.DependencyControl.config-schema&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">config_schema</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">require</span><span class="p">(</span><span class="s2">"l0.DependencyControl.config-schema"</span><span class="p">)</span>
 </code></pre></div>
 </div>
 </div>
@@ -2319,6 +2375,45 @@
 <td>migration</td>
 <td><code>table</code></td>
 <td></td>
+</tr>
+</tbody>
+</table>
+<h2 id="types">Types<a class="headerlink" href="#types" title="Permanent link">&para;</a></h2>
+<h3 id="configchannelrename">ConfigChannelRename <a name="ConfigChannelRename"></a><a class="headerlink" href="#configchannelrename" title="Permanent link">&para;</a></h3>
+<p>A channel the migration retires, and the schema step over which it does so.</p>
+<table>
+<thead>
+<tr>
+<th>field</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>fromSchemaVersion</td>
+<td><code>string</code></td>
+<td>Range the config's own schema version must satisfy.</td>
+</tr>
+<tr>
+<td>toSchemaVersion</td>
+<td><code>string</code></td>
+<td>Range the schema version being migrated to must satisfy.</td>
+</tr>
+<tr>
+<td>packages</td>
+<td><code>string</code>[]</td>
+<td>The namespaces whose records are rewritten.</td>
+</tr>
+<tr>
+<td>from</td>
+<td><code>string</code>[]</td>
+<td>The channel names to rewrite.</td>
+</tr>
+<tr>
+<td>to</td>
+<td><code>string</code></td>
+<td>The channel name they are rewritten to.</td>
 </tr>
 </tbody>
 </table>

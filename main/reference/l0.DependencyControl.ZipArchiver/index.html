@@ -2420,11 +2420,11 @@
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">MoonScript</label><label for="__tabbed_1_2">Lua</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nc">ZipArchiver</span> <span class="o">=</span> <span class="nb">require</span> <span class="s2">&quot;</span><span class="s">l0.DependencyControl.ZipArchiver</span><span class="s2">&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nc">ZipArchiver</span> <span class="o">=</span> <span class="nb">require</span> <span class="s2">"</span><span class="s">l0.DependencyControl.ZipArchiver</span><span class="s2">"</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">ZipArchiver</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">require</span><span class="p">(</span><span class="s2">&quot;l0.DependencyControl.ZipArchiver&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">ZipArchiver</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">require</span><span class="p">(</span><span class="s2">"l0.DependencyControl.ZipArchiver"</span><span class="p">)</span>
 </code></pre></div>
 </div>
 </div>
@@ -2436,7 +2436,7 @@ entry names so the resulting archives extract correctly on every platform.
 Compression only for now; reading/extraction can be added when needed.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">archiver</span> <span class="o">=</span> <span class="nc">ZipArchiver</span> <span class="n">outputPath</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">archiver</span><span class="o">\</span><span class="n">addDirectory</span> <span class="n">distDir</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">archiver</span><span class="o">\</span><span class="n">addFile</span> <span class="n">readmePath</span><span class="p">,</span> <span class="s2">&quot;</span><span class="s">README.md</span><span class="s2">&quot;</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">archiver</span><span class="o">\</span><span class="n">addFile</span> <span class="n">readmePath</span><span class="p">,</span> <span class="s2">"</span><span class="s">README.md</span><span class="s2">"</span>
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">success</span><span class="p">,</span> <span class="n">err</span> <span class="o">=</span> <span class="n">archiver</span><span class="o">\</span><span class="n">write</span><span class="o">!</span>
 </code></pre></div>
 <h3 id="constructor">Constructor <a name="ZipArchiver.new"></a><a class="headerlink" href="#constructor" title="Permanent link">&para;</a></h3>

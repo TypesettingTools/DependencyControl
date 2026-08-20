@@ -3094,11 +3094,11 @@
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">MoonScript</label><label for="__tabbed_1_2">Lua</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nc">UpdateFeed</span> <span class="o">=</span> <span class="nb">require</span> <span class="s2">&quot;</span><span class="s">l0.DependencyControl.UpdateFeed</span><span class="s2">&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nc">UpdateFeed</span> <span class="o">=</span> <span class="nb">require</span> <span class="s2">"</span><span class="s">l0.DependencyControl.UpdateFeed</span><span class="s2">"</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">UpdateFeed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">require</span><span class="p">(</span><span class="s2">&quot;l0.DependencyControl.UpdateFeed&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">UpdateFeed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">require</span><span class="p">(</span><span class="s2">"l0.DependencyControl.UpdateFeed"</span><span class="p">)</span>
 </code></pre></div>
 </div>
 </div>
@@ -3511,17 +3511,18 @@ another consumer's expansion. The feed must be loaded (@unexpandedData set) firs
 <div class="tabbed-set tabbed-alternate" data-tabs="12:2"><input checked="checked" id="__tabbed_12_1" name="__tabbed_12" type="radio" /><input id="__tabbed_12_2" name="__tabbed_12" type="radio" /><div class="tabbed-labels"><label for="__tabbed_12_1">MoonScript</label><label for="__tabbed_12_2">Lua</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="n">updateFeed</span><span class="o">\</span><span class="n">getProviders</span> <span class="n">alias</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="n">updateFeed</span><span class="o">\</span><span class="n">getProviders</span> <span class="n">alias</span><span class="p">,</span> <span class="n">depCtrlConfigModulesSection</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="nv">updateFeed</span><span class="p">:</span><span class="nf">getProviders</span><span class="p">(</span><span class="nv">alias</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="nv">updateFeed</span><span class="p">:</span><span class="nf">getProviders</span><span class="p">(</span><span class="nv">alias</span><span class="p">,</span><span class="w"> </span><span class="nv">depCtrlConfigModulesSection</span><span class="p">)</span>
 </code></pre></div>
 </div>
 </div>
 </div>
-<p>Returns the modules in this feed whose default channel <code>provides</code> the given name. Only the
-<code>modules</code> section is searched (automation scripts can't be <code>require</code>d). The feed must be loaded.</p>
+<p>Returns the modules in this feed whose selected channel <code>provides</code> the given name. Only the
+<code>modules</code> section is searched (automation scripts can't be <code>require</code>d). The feed must be loaded.
+providing packages.</p>
 <table>
 <thead>
 <tr>
@@ -3536,11 +3537,16 @@ another consumer's expansion. The feed must be loaded (@unexpandedData set) firs
 <td><code>string</code></td>
 <td>The required module name to find providers for.</td>
 </tr>
+<tr>
+<td>depCtrlConfigModulesSection</td>
+<td><code>table&lt;string, table&gt;</code></td>
+<td>The modules section of DependencyControl's config, keyed by namespace. Required to honor the settings (such as the update channel) of already installed</td>
+</tr>
 </tbody>
 </table>
 <p><strong>Returns:</strong></p>
 <ul>
-<li><code>providers</code> <a href="../l0.DependencyControl.ScriptUpdateRecord/#ScriptUpdateRecord">ScriptUpdateRecord</a>[] — Update records (default channel selected) whose <code>provides</code> lists the name.</li>
+<li><code>providers</code> <a href="../l0.DependencyControl.ScriptUpdateRecord/#ScriptUpdateRecord">ScriptUpdateRecord</a>[] — Update records (channel selected) whose <code>provides</code> lists the name.</li>
 </ul>
 <h4 id="validateagainstschema">validateAgainstSchema <a name="UpdateFeed.validateAgainstSchema"></a><a class="headerlink" href="#validateagainstschema" title="Permanent link">&para;</a></h4>
 <div class="tabbed-set tabbed-alternate" data-tabs="13:2"><input checked="checked" id="__tabbed_13_1" name="__tabbed_13" type="radio" /><input id="__tabbed_13_2" name="__tabbed_13" type="radio" /><div class="tabbed-labels"><label for="__tabbed_13_1">MoonScript</label><label for="__tabbed_13_2">Lua</label></div>
@@ -3634,10 +3640,11 @@ the constructor; pre-load with loadFile() if you need to act on the feed before 
 package in the source, its <code>from</code> channel's raw data is copied into every <code>to</code> channel here,
 with each <code>to</code> channel's <code>default</code> flag set (true only for the given default channel) and its
 release date set when one is supplied. Channels not among <code>to</code> are left as they are, so they
-keep their previously published versions; a package missing here is added carrying only the
-<code>to</code> channels. Top-level feed metadata and each package's shared (non-channel) fields track the
-source. File hashes are copied verbatim — the <code>from</code> channel is assumed already in sync with
-its own source — so no files are read.</p>
+keep their previously published versions, except that <code>default</code> is cleared from every channel
+but the given default channel, so the result names exactly one. A package missing here is added
+carrying only the <code>to</code> channels. Top-level feed metadata, each section's own template keys, and each
+package's shared (non-channel) fields track the source. File hashes are copied verbatim — the <code>from</code>
+channel is assumed already in sync with its own source — so no files are read.</p>
 <table>
 <thead>
 <tr>

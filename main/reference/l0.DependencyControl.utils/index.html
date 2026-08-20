@@ -1941,6 +1941,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#copyvalue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        copyValue
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#makeset" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2479,6 +2490,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#copyvalue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        copyValue
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#makeset" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2628,11 +2650,11 @@
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">MoonScript</label><label for="__tabbed_1_2">Lua</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">utils</span> <span class="o">=</span> <span class="nb">require</span> <span class="s2">&quot;</span><span class="s">l0.DependencyControl.utils</span><span class="s2">&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">utils</span> <span class="o">=</span> <span class="nb">require</span> <span class="s2">"</span><span class="s">l0.DependencyControl.utils</span><span class="s2">"</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">utils</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">require</span><span class="p">(</span><span class="s2">&quot;l0.DependencyControl.utils&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">utils</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">require</span><span class="p">(</span><span class="s2">"l0.DependencyControl.utils"</span><span class="p">)</span>
 </code></pre></div>
 </div>
 </div>
@@ -2802,15 +2824,49 @@ By default only numerical indexes are compared.</p>
 <ul>
 <li><code>copy</code> <code>table</code> — The deep-copied table. Keys are carried over as-is; only values are copied.</li>
 </ul>
-<h4 id="makeset">makeSet <a name="Utils.makeSet"></a><a class="headerlink" href="#makeset" title="Permanent link">&para;</a></h4>
+<h4 id="copyvalue">copyValue <a name="Utils.copyValue"></a><a class="headerlink" href="#copyvalue" title="Permanent link">&para;</a></h4>
 <div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">MoonScript</label><label for="__tabbed_6_2">Lua</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nc">Utils</span><span class="o">.</span><span class="n">makeSet</span> <span class="n">source</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">overwrite</span><span class="p">,</span> <span class="n">value</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nc">Utils</span><span class="o">.</span><span class="n">copyValue</span> <span class="n">value</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nv">Utils</span><span class="p">.</span><span class="nf">makeSet</span><span class="p">(</span><span class="nv">source</span><span class="p">,</span><span class="w"> </span><span class="nv">target</span><span class="p">,</span><span class="w"> </span><span class="nv">overwrite</span><span class="p">,</span><span class="w"> </span><span class="nv">value</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nv">Utils</span><span class="p">.</span><span class="nf">copyValue</span><span class="p">(</span><span class="nv">value</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>Deep-copies a table, and returns any other value as it is, for copying a mix of tables and scalars.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>value</td>
+<td><code>any</code></td>
+<td>The value to copy.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>copy</code> <code>any</code> — A deep copy of a table, or the value itself.</li>
+</ul>
+<h4 id="makeset">makeSet <a name="Utils.makeSet"></a><a class="headerlink" href="#makeset" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">MoonScript</label><label for="__tabbed_7_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="nc">Utils</span><span class="o">.</span><span class="n">makeSet</span> <span class="n">source</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">overwrite</span><span class="p">,</span> <span class="n">value</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="nv">Utils</span><span class="p">.</span><span class="nf">makeSet</span><span class="p">(</span><span class="nv">source</span><span class="p">,</span><span class="w"> </span><span class="nv">target</span><span class="p">,</span><span class="w"> </span><span class="nv">overwrite</span><span class="p">,</span><span class="w"> </span><span class="nv">value</span><span class="p">)</span>
 </code></pre></div>
 </div>
 </div>
@@ -2852,14 +2908,14 @@ By default only numerical indexes are compared.</p>
 <li><code>set</code> <code>table</code> — The populated <code>target</code>.</li>
 </ul>
 <h4 id="listincludes">listIncludes <a name="Utils.listIncludes"></a><a class="headerlink" href="#listincludes" title="Permanent link">&para;</a></h4>
-<div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">MoonScript</label><label for="__tabbed_7_2">Lua</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="8:2"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><div class="tabbed-labels"><label for="__tabbed_8_1">MoonScript</label><label for="__tabbed_8_2">Lua</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="nc">Utils</span><span class="o">.</span><span class="n">listIncludes</span> <span class="n">list</span><span class="p">,</span> <span class="n">value</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="nc">Utils</span><span class="o">.</span><span class="n">listIncludes</span> <span class="n">list</span><span class="p">,</span> <span class="n">value</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="nv">Utils</span><span class="p">.</span><span class="nf">listIncludes</span><span class="p">(</span><span class="nv">list</span><span class="p">,</span><span class="w"> </span><span class="nv">value</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="nv">Utils</span><span class="p">.</span><span class="nf">listIncludes</span><span class="p">(</span><span class="nv">list</span><span class="p">,</span><span class="w"> </span><span class="nv">value</span><span class="p">)</span>
 </code></pre></div>
 </div>
 </div>
@@ -2891,14 +2947,14 @@ By default only numerical indexes are compared.</p>
 <li><code>included</code> <code>boolean</code> — Whether <code>value</code> is an element of <code>list</code>.</li>
 </ul>
 <h4 id="adddefaults">addDefaults <a name="Utils.addDefaults"></a><a class="headerlink" href="#adddefaults" title="Permanent link">&para;</a></h4>
-<div class="tabbed-set tabbed-alternate" data-tabs="8:2"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><div class="tabbed-labels"><label for="__tabbed_8_1">MoonScript</label><label for="__tabbed_8_2">Lua</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="9:2"><input checked="checked" id="__tabbed_9_1" name="__tabbed_9" type="radio" /><input id="__tabbed_9_2" name="__tabbed_9" type="radio" /><div class="tabbed-labels"><label for="__tabbed_9_1">MoonScript</label><label for="__tabbed_9_2">Lua</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="nc">Utils</span><span class="o">.</span><span class="n">addDefaults</span> <span class="n">tbl</span><span class="p">,</span> <span class="n">defaults</span><span class="p">,</span> <span class="n">predicate</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="nc">Utils</span><span class="o">.</span><span class="n">addDefaults</span> <span class="n">tbl</span><span class="p">,</span> <span class="n">defaults</span><span class="p">,</span> <span class="n">predicate</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="nv">Utils</span><span class="p">.</span><span class="nf">addDefaults</span><span class="p">(</span><span class="nv">tbl</span><span class="p">,</span><span class="w"> </span><span class="nv">defaults</span><span class="p">,</span><span class="w"> </span><span class="nv">predicate</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="nv">Utils</span><span class="p">.</span><span class="nf">addDefaults</span><span class="p">(</span><span class="nv">tbl</span><span class="p">,</span><span class="w"> </span><span class="nv">defaults</span><span class="p">,</span><span class="w"> </span><span class="nv">predicate</span><span class="p">)</span>
 </code></pre></div>
 </div>
 </div>
@@ -2935,14 +2991,14 @@ By default only numerical indexes are compared.</p>
 <li><code>addedCount</code> <code>number</code> — The number of defaults applied.</li>
 </ul>
 <h4 id="trim">trim <a name="Utils.trim"></a><a class="headerlink" href="#trim" title="Permanent link">&para;</a></h4>
-<div class="tabbed-set tabbed-alternate" data-tabs="9:2"><input checked="checked" id="__tabbed_9_1" name="__tabbed_9" type="radio" /><input id="__tabbed_9_2" name="__tabbed_9" type="radio" /><div class="tabbed-labels"><label for="__tabbed_9_1">MoonScript</label><label for="__tabbed_9_2">Lua</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="10:2"><input checked="checked" id="__tabbed_10_1" name="__tabbed_10" type="radio" /><input id="__tabbed_10_2" name="__tabbed_10" type="radio" /><div class="tabbed-labels"><label for="__tabbed_10_1">MoonScript</label><label for="__tabbed_10_2">Lua</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="nc">Utils</span><span class="o">.</span><span class="n">trim</span> <span class="n">str</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="nc">Utils</span><span class="o">.</span><span class="n">trim</span> <span class="n">str</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="nv">Utils</span><span class="p">.</span><span class="nf">trim</span><span class="p">(</span><span class="nv">str</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="nv">Utils</span><span class="p">.</span><span class="nf">trim</span><span class="p">(</span><span class="nv">str</span><span class="p">)</span>
 </code></pre></div>
 </div>
 </div>
@@ -2969,14 +3025,14 @@ By default only numerical indexes are compared.</p>
 <li><code>trimmed</code> <code>string</code> — The trimmed string.</li>
 </ul>
 <h4 id="escapepattern">escapePattern <a name="Utils.escapePattern"></a><a class="headerlink" href="#escapepattern" title="Permanent link">&para;</a></h4>
-<div class="tabbed-set tabbed-alternate" data-tabs="10:2"><input checked="checked" id="__tabbed_10_1" name="__tabbed_10" type="radio" /><input id="__tabbed_10_2" name="__tabbed_10" type="radio" /><div class="tabbed-labels"><label for="__tabbed_10_1">MoonScript</label><label for="__tabbed_10_2">Lua</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="11:2"><input checked="checked" id="__tabbed_11_1" name="__tabbed_11" type="radio" /><input id="__tabbed_11_2" name="__tabbed_11" type="radio" /><div class="tabbed-labels"><label for="__tabbed_11_1">MoonScript</label><label for="__tabbed_11_2">Lua</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="nc">Utils</span><span class="o">.</span><span class="n">escapePattern</span> <span class="n">str</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="nc">Utils</span><span class="o">.</span><span class="n">escapePattern</span> <span class="n">str</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="nv">Utils</span><span class="p">.</span><span class="nf">escapePattern</span><span class="p">(</span><span class="nv">str</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="nv">Utils</span><span class="p">.</span><span class="nf">escapePattern</span><span class="p">(</span><span class="nv">str</span><span class="p">)</span>
 </code></pre></div>
 </div>
 </div>
@@ -3003,14 +3059,14 @@ By default only numerical indexes are compared.</p>
 <li><code>escaped</code> <code>string</code> — The escaped string.</li>
 </ul>
 <h4 id="flatten">flatten <a name="Utils.flatten"></a><a class="headerlink" href="#flatten" title="Permanent link">&para;</a></h4>
-<div class="tabbed-set tabbed-alternate" data-tabs="11:2"><input checked="checked" id="__tabbed_11_1" name="__tabbed_11" type="radio" /><input id="__tabbed_11_2" name="__tabbed_11" type="radio" /><div class="tabbed-labels"><label for="__tabbed_11_1">MoonScript</label><label for="__tabbed_11_2">Lua</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="12:2"><input checked="checked" id="__tabbed_12_1" name="__tabbed_12" type="radio" /><input id="__tabbed_12_2" name="__tabbed_12" type="radio" /><div class="tabbed-labels"><label for="__tabbed_12_1">MoonScript</label><label for="__tabbed_12_2">Lua</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="nc">Utils</span><span class="o">.</span><span class="n">flatten</span> <span class="n">value</span><span class="p">,</span> <span class="n">depth</span><span class="p">,</span> <span class="n">toArrayTable</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="nc">Utils</span><span class="o">.</span><span class="n">flatten</span> <span class="n">value</span><span class="p">,</span> <span class="n">depth</span><span class="p">,</span> <span class="n">toArrayTable</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="nv">Utils</span><span class="p">.</span><span class="nf">flatten</span><span class="p">(</span><span class="nv">value</span><span class="p">,</span><span class="w"> </span><span class="nv">depth</span><span class="p">,</span><span class="w"> </span><span class="nv">toArrayTable</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="nv">Utils</span><span class="p">.</span><span class="nf">flatten</span><span class="p">(</span><span class="nv">value</span><span class="p">,</span><span class="w"> </span><span class="nv">depth</span><span class="p">,</span><span class="w"> </span><span class="nv">toArrayTable</span><span class="p">)</span>
 </code></pre></div>
 </div>
 </div>
@@ -3048,14 +3104,14 @@ By default only numerical indexes are compared.</p>
 <li><code>flattenedCount</code> <code>number</code> — The number of elements in the flattened array.</li>
 </ul>
 <h4 id="mergesearchpath">mergeSearchPath <a name="Utils.mergeSearchPath"></a><a class="headerlink" href="#mergesearchpath" title="Permanent link">&para;</a></h4>
-<div class="tabbed-set tabbed-alternate" data-tabs="12:2"><input checked="checked" id="__tabbed_12_1" name="__tabbed_12" type="radio" /><input id="__tabbed_12_2" name="__tabbed_12" type="radio" /><div class="tabbed-labels"><label for="__tabbed_12_1">MoonScript</label><label for="__tabbed_12_2">Lua</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="13:2"><input checked="checked" id="__tabbed_13_1" name="__tabbed_13" type="radio" /><input id="__tabbed_13_2" name="__tabbed_13" type="radio" /><div class="tabbed-labels"><label for="__tabbed_13_1">MoonScript</label><label for="__tabbed_13_2">Lua</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="nc">Utils</span><span class="o">.</span><span class="n">mergeSearchPath</span> <span class="n">pathStr</span><span class="p">,</span> <span class="n">add</span><span class="p">,</span> <span class="n">remove</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="nc">Utils</span><span class="o">.</span><span class="n">mergeSearchPath</span> <span class="n">pathStr</span><span class="p">,</span> <span class="n">add</span><span class="p">,</span> <span class="n">remove</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="nv">Utils</span><span class="p">.</span><span class="nf">mergeSearchPath</span><span class="p">(</span><span class="nv">pathStr</span><span class="p">,</span><span class="w"> </span><span class="nv">add</span><span class="p">,</span><span class="w"> </span><span class="nv">remove</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="nv">Utils</span><span class="p">.</span><span class="nf">mergeSearchPath</span><span class="p">(</span><span class="nv">pathStr</span><span class="p">,</span><span class="w"> </span><span class="nv">add</span><span class="p">,</span><span class="w"> </span><span class="nv">remove</span><span class="p">)</span>
 </code></pre></div>
 </div>
 </div>
@@ -3094,14 +3150,14 @@ already present and dropping any listed for removal, with the order of kept entr
 <li><code>added</code> <code>string</code>[] — The entries actually appended, empty when all were already present.</li>
 </ul>
 <h4 id="extendpackagepath">extendPackagePath <a name="Utils.extendPackagePath"></a><a class="headerlink" href="#extendpackagepath" title="Permanent link">&para;</a></h4>
-<div class="tabbed-set tabbed-alternate" data-tabs="13:2"><input checked="checked" id="__tabbed_13_1" name="__tabbed_13" type="radio" /><input id="__tabbed_13_2" name="__tabbed_13" type="radio" /><div class="tabbed-labels"><label for="__tabbed_13_1">MoonScript</label><label for="__tabbed_13_2">Lua</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="14:2"><input checked="checked" id="__tabbed_14_1" name="__tabbed_14" type="radio" /><input id="__tabbed_14_2" name="__tabbed_14" type="radio" /><div class="tabbed-labels"><label for="__tabbed_14_1">MoonScript</label><label for="__tabbed_14_2">Lua</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="nc">Utils</span><span class="o">.</span><span class="n">extendPackagePath</span> <span class="n">field</span><span class="p">,</span> <span class="n">entries</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="nc">Utils</span><span class="o">.</span><span class="n">extendPackagePath</span> <span class="n">field</span><span class="p">,</span> <span class="n">entries</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="nv">Utils</span><span class="p">.</span><span class="nf">extendPackagePath</span><span class="p">(</span><span class="nv">field</span><span class="p">,</span><span class="w"> </span><span class="nv">entries</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="nv">Utils</span><span class="p">.</span><span class="nf">extendPackagePath</span><span class="p">(</span><span class="nv">field</span><span class="p">,</span><span class="w"> </span><span class="nv">entries</span><span class="p">)</span>
 </code></pre></div>
 </div>
 </div>
@@ -3134,14 +3190,14 @@ separated string and appending only those not already present. Does nothing when
 <li><code>added</code> <code>string</code>[] — The entries actually added, empty when all were present or nothing was passed.</li>
 </ul>
 <h4 id="getrandomseed">getRandomSeed <a name="Utils.getRandomSeed"></a><a class="headerlink" href="#getrandomseed" title="Permanent link">&para;</a></h4>
-<div class="tabbed-set tabbed-alternate" data-tabs="14:2"><input checked="checked" id="__tabbed_14_1" name="__tabbed_14" type="radio" /><input id="__tabbed_14_2" name="__tabbed_14" type="radio" /><div class="tabbed-labels"><label for="__tabbed_14_1">MoonScript</label><label for="__tabbed_14_2">Lua</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="15:2"><input checked="checked" id="__tabbed_15_1" name="__tabbed_15" type="radio" /><input id="__tabbed_15_2" name="__tabbed_15" type="radio" /><div class="tabbed-labels"><label for="__tabbed_15_1">MoonScript</label><label for="__tabbed_15_2">Lua</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="nc">Utils</span><span class="o">.</span><span class="n">getRandomSeed</span><span class="o">!</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="nc">Utils</span><span class="o">.</span><span class="n">getRandomSeed</span><span class="o">!</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="nv">Utils</span><span class="p">.</span><span class="nf">getRandomSeed</span><span class="p">()</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="nv">Utils</span><span class="p">.</span><span class="nf">getRandomSeed</span><span class="p">()</span>
 </code></pre></div>
 </div>
 </div>
@@ -3152,14 +3208,14 @@ separated string and appending only those not already present. Does nothing when
 <li><code>seed</code> <code>number</code></li>
 </ul>
 <h4 id="seedrandom">seedRandom <a name="Utils.seedRandom"></a><a class="headerlink" href="#seedrandom" title="Permanent link">&para;</a></h4>
-<div class="tabbed-set tabbed-alternate" data-tabs="15:2"><input checked="checked" id="__tabbed_15_1" name="__tabbed_15" type="radio" /><input id="__tabbed_15_2" name="__tabbed_15" type="radio" /><div class="tabbed-labels"><label for="__tabbed_15_1">MoonScript</label><label for="__tabbed_15_2">Lua</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="16:2"><input checked="checked" id="__tabbed_16_1" name="__tabbed_16" type="radio" /><input id="__tabbed_16_2" name="__tabbed_16" type="radio" /><div class="tabbed-labels"><label for="__tabbed_16_1">MoonScript</label><label for="__tabbed_16_2">Lua</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="nc">Utils</span><span class="o">.</span><span class="n">seedRandom</span><span class="o">!</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="nc">Utils</span><span class="o">.</span><span class="n">seedRandom</span><span class="o">!</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="nv">Utils</span><span class="p">.</span><span class="nf">seedRandom</span><span class="p">()</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="nv">Utils</span><span class="p">.</span><span class="nf">seedRandom</span><span class="p">()</span>
 </code></pre></div>
 </div>
 </div>
@@ -3171,14 +3227,14 @@ script and to this launch. DependencyControl seeds it on load; call this to rese
 <li><code>seed</code> <code>number</code> — The applied seed.</li>
 </ul>
 <h4 id="uuid">uuid <a name="Utils.uuid"></a><a class="headerlink" href="#uuid" title="Permanent link">&para;</a></h4>
-<div class="tabbed-set tabbed-alternate" data-tabs="16:2"><input checked="checked" id="__tabbed_16_1" name="__tabbed_16" type="radio" /><input id="__tabbed_16_2" name="__tabbed_16" type="radio" /><div class="tabbed-labels"><label for="__tabbed_16_1">MoonScript</label><label for="__tabbed_16_2">Lua</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="17:2"><input checked="checked" id="__tabbed_17_1" name="__tabbed_17" type="radio" /><input id="__tabbed_17_2" name="__tabbed_17" type="radio" /><div class="tabbed-labels"><label for="__tabbed_17_1">MoonScript</label><label for="__tabbed_17_2">Lua</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="nc">Utils</span><span class="o">.</span><span class="n">uuid</span><span class="o">!</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="nc">Utils</span><span class="o">.</span><span class="n">uuid</span><span class="o">!</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="nv">Utils</span><span class="p">.</span><span class="nf">uuid</span><span class="p">()</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="nv">Utils</span><span class="p">.</span><span class="nf">uuid</span><span class="p">()</span>
 </code></pre></div>
 </div>
 </div>

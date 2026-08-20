@@ -2398,11 +2398,11 @@
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">MoonScript</label><label for="__tabbed_1_2">Lua</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nc">FeedLoader</span> <span class="o">=</span> <span class="nb">require</span> <span class="s2">&quot;</span><span class="s">l0.DependencyControl.FeedLoader</span><span class="s2">&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nc">FeedLoader</span> <span class="o">=</span> <span class="nb">require</span> <span class="s2">"</span><span class="s">l0.DependencyControl.FeedLoader</span><span class="s2">"</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">FeedLoader</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">require</span><span class="p">(</span><span class="s2">&quot;l0.DependencyControl.FeedLoader&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">FeedLoader</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">require</span><span class="p">(</span><span class="s2">"l0.DependencyControl.FeedLoader"</span><span class="p">)</span>
 </code></pre></div>
 </div>
 </div>
@@ -2424,8 +2424,8 @@ updater keeps the shared one) and injected into every feed consumer; its cache i
 </div>
 </div>
 </div>
-<p>Reads the feed-fetch settings once and opens the shared feed cache under DepCtrl's namespace, wiring its
-L1 layer to <code>UpdateFeed</code>'s decoder so a cache hit serves a ready-parsed feed base.</p>
+<p>Opens the shared feed cache under DepCtrl's namespace, wiring its L1 layer to <code>UpdateFeed</code>'s decoder
+so a cache hit serves a ready-parsed feed base.</p>
 <table>
 <thead>
 <tr>
@@ -2438,7 +2438,7 @@ L1 layer to <code>UpdateFeed</code>'s decoder so a cache hit serves a ready-pars
 <tr>
 <td>config</td>
 <td><a href="../l0.DependencyControl.ConfigView/#ConfigView">ConfigView</a></td>
-<td>The global config view; reads <code>paths.cache</code>, <code>feeds.cacheMaxAge</code>/<code>feeds.maxFeedSize</code>/<code>feeds.feedFetchTimeout</code> and <code>updates.blockPrivateHosts</code>.</td>
+<td>The global config view; reads <code>paths.cache</code> and <code>feeds.cacheMaxAge</code> once, the fetch policy on every <code>load</code>.</td>
 </tr>
 <tr>
 <td>logger?</td>
@@ -2461,7 +2461,8 @@ L1 layer to <code>UpdateFeed</code>'s decoder so a cache hit serves a ready-pars
 </div>
 </div>
 </div>
-<p>Builds an <code>UpdateFeed</code> for the given URL, injecting the shared cache and the configured fetch policy.</p>
+<p>Builds an <code>UpdateFeed</code> for the given URL, injecting the shared cache and the fetch policy the config
+holds at call time, so a saved settings change takes effect immediately.</p>
 <table>
 <thead>
 <tr>

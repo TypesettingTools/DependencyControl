@@ -1605,17 +1605,6 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#sourcechoicestickiness" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        SourceChoiceStickiness
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#sourcefeedkind" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2681,17 +2670,6 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#sourcechoicestickiness" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        SourceChoiceStickiness
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#sourcefeedkind" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2808,11 +2786,11 @@
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">MoonScript</label><label for="__tabbed_1_2">Lua</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nc">UpdateTask</span> <span class="o">=</span> <span class="nb">require</span> <span class="s2">&quot;</span><span class="s">l0.DependencyControl.UpdateTask</span><span class="s2">&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nc">UpdateTask</span> <span class="o">=</span> <span class="nb">require</span> <span class="s2">"</span><span class="s">l0.DependencyControl.UpdateTask</span><span class="s2">"</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">UpdateTask</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">require</span><span class="p">(</span><span class="s2">&quot;l0.DependencyControl.UpdateTask&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">UpdateTask</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">require</span><span class="p">(</span><span class="s2">"l0.DependencyControl.UpdateTask"</span><span class="p">)</span>
 </code></pre></div>
 </div>
 </div>
@@ -3041,7 +3019,8 @@ task updated. Called after waiting on the updater lock, so a task doesn't redo w
 </div>
 </div>
 </div>
-<p>Resolves the feed URL a persisted source record maps to, given the owning package's feed fields.</p>
+<p>Resolves the feed URL a persisted source record maps to: its own <code>feedUrl</code> when it stores one,
+otherwise derived from the owning package's feed fields by source kind.</p>
 <table>
 <thead>
 <tr>
@@ -3095,6 +3074,11 @@ task updated. Called after waiting on the updater lock, so a task doesn't redo w
 <tr>
 <td>defaultPackageChoicePromptThreshold</td>
 <td><a href="#UpdateContextCeiling">UpdateContextCeiling</a></td>
+<td></td>
+</tr>
+<tr>
+<td>SourceChoiceStickiness</td>
+<td><code>any</code></td>
 <td></td>
 </tr>
 </tbody>
@@ -3319,44 +3303,6 @@ task updated. Called after waiting on the updater lock, so a task doesn't redo w
 </tr>
 </tbody>
 </table>
-<p><a name="SourceChoiceStickiness"></a></p>
-<h4 id="sourcechoicestickiness">SourceChoiceStickiness <a name="UpdateTask.SourceChoiceStickiness"></a><a class="headerlink" href="#sourcechoicestickiness" title="Permanent link">&para;</a></h4>
-<table>
-<thead>
-<tr>
-<th>member</th>
-<th>value</th>
-<th>description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Unset</td>
-<td><code>"unset"</code></td>
-<td>no preference recorded yet; resolve normally and prompt only if interactive</td>
-</tr>
-<tr>
-<td>Once</td>
-<td><code>"once"</code></td>
-<td>prompt again whenever a choice remains, preselecting the remembered pick</td>
-</tr>
-<tr>
-<td>Retain</td>
-<td><code>"retain"</code></td>
-<td>reuse the remembered pick whenever it's still eligible, without prompting</td>
-</tr>
-<tr>
-<td>Pinned</td>
-<td><code>"pinned"</code></td>
-<td>always reuse the remembered pick; if it's gone, abort (required) or skip (optional)</td>
-</tr>
-<tr>
-<td>Auto</td>
-<td><code>"auto"</code></td>
-<td>never prompt; always resolve via the ranking, refreshing the remembered pick for information</td>
-</tr>
-</tbody>
-</table>
 <p><a name="SourceFeedKind"></a></p>
 <h4 id="sourcefeedkind">SourceFeedKind <a name="UpdateTask.SourceFeedKind"></a><a class="headerlink" href="#sourcefeedkind" title="Permanent link">&para;</a></h4>
 <table>
@@ -3522,7 +3468,7 @@ and its trust status.</p>
 </tr>
 <tr>
 <td>stickiness?</td>
-<td><a href="#SourceChoiceStickiness">SourceChoiceStickiness</a></td>
+<td><a href="../l0.DependencyControl.domain/#SourceChoiceStickiness">SourceChoiceStickiness</a></td>
 <td>The source-choice stickiness to persist; set when installRequired is true.</td>
 </tr>
 <tr>
@@ -3533,7 +3479,9 @@ and its trust status.</p>
 </tbody>
 </table>
 <h3 id="sourcechoicerecord">SourceChoiceRecord <a name="SourceChoiceRecord"></a><a class="headerlink" href="#sourcechoicerecord" title="Permanent link">&para;</a></h3>
-<p>A package's remembered source, persisted per-package as <code>currentSource</code>.</p>
+<p>A package source and how sticky the choice of it is. Persisted per-package twice: <code>configuredSource</code>
+holds the source the next update should use, <code>currentSource</code> the one the installed copy came from.
+The two diverge while a source change hasn't been applied by a completed update yet.</p>
 <table>
 <thead>
 <tr>
@@ -3551,7 +3499,7 @@ and its trust status.</p>
 <tr>
 <td>feedUrl?</td>
 <td><code>string</code></td>
-<td>The literal feed URL; only stored (and required) for the <code>other</code> feedSource.</td>
+<td>The literal feed URL. A <code>configuredSource</code> stores it only for the <code>other</code> kind, and otherwise defers to the kind-specific properties elsewhere in the config. A <code>currentSource</code> always stores it, so provenance stays true when those fields change.</td>
 </tr>
 <tr>
 <td>channel</td>
@@ -3565,7 +3513,7 @@ and its trust status.</p>
 </tr>
 <tr>
 <td>stickiness</td>
-<td><a href="#SourceChoiceStickiness">SourceChoiceStickiness</a></td>
+<td><a href="../l0.DependencyControl.domain/#SourceChoiceStickiness">SourceChoiceStickiness</a></td>
 <td>How sticky the choice is.</td>
 </tr>
 </tbody>

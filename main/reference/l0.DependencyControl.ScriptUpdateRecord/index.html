@@ -1353,6 +1353,56 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#class-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Class methods
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Class methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#getdefaultchannel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getDefaultChannel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getrecordedsource" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getRecordedSource
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getrecordedchannel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getRecordedChannel
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#fields" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2486,6 +2536,56 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#class-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Class methods
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Class methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#getdefaultchannel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getDefaultChannel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getrecordedsource" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getRecordedSource
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getrecordedchannel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getRecordedChannel
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#fields" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2586,11 +2686,11 @@
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">MoonScript</label><label for="__tabbed_1_2">Lua</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nc">ScriptUpdateRecord</span> <span class="o">=</span> <span class="nb">require</span> <span class="s2">&quot;</span><span class="s">l0.DependencyControl.ScriptUpdateRecord</span><span class="s2">&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nc">ScriptUpdateRecord</span> <span class="o">=</span> <span class="nb">require</span> <span class="s2">"</span><span class="s">l0.DependencyControl.ScriptUpdateRecord</span><span class="s2">"</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">ScriptUpdateRecord</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">require</span><span class="p">(</span><span class="s2">&quot;l0.DependencyControl.ScriptUpdateRecord&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">ScriptUpdateRecord</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">require</span><span class="p">(</span><span class="s2">"l0.DependencyControl.ScriptUpdateRecord"</span><span class="p">)</span>
 </code></pre></div>
 </div>
 </div>
@@ -2636,7 +2736,7 @@ exposed directly on the instance once a channel is selected.</p>
 </tr>
 <tr>
 <td>config?</td>
-<td><code>{c: {activeChannel?: string}}</code></td>
+<td><code>{c: {configuredSource?: table, currentSource?: table, lastChannel?: string}}</code></td>
 <td></td>
 </tr>
 <tr>
@@ -2689,7 +2789,11 @@ exposed directly on the instance once a channel is selected.</p>
 </div>
 </div>
 </div>
-<p>Selects the active update channel and exposes its fields on this instance.</p>
+<p>Selects the active update channel and exposes its fields on this instance.
+An explicitly requested channel wins over the channel recorded in the configured package source,
+which wins over the feed's default.
+This only affects the in-memory state of this ScriptUpdateRecord instance; persistence to the DepCtrl
+config file is left to the caller.</p>
 <table>
 <thead>
 <tr>
@@ -2702,14 +2806,14 @@ exposed directly on the instance once a channel is selected.</p>
 <tr>
 <td>channelName?</td>
 <td><code>string</code></td>
-<td>Channel to activate; defaults to config.c.activeChannel.</td>
+<td>Channel to activate; must be offered by the feed.</td>
 </tr>
 </tbody>
 </table>
 <p><strong>Returns:</strong></p>
 <ul>
-<li><code>success</code> <code>boolean</code></li>
-<li><code>activeChannel</code> <code>string</code></li>
+<li><code>success</code> <code>boolean</code> — False when the selected channel isn't offered by the feed.</li>
+<li><code>activeChannel</code> <code>string</code>? — The selected channel name; nil when the package declares no channels at all.</li>
 </ul>
 <h4 id="checkplatform">checkPlatform <a name="ScriptUpdateRecord.checkPlatform"></a><a class="headerlink" href="#checkplatform" title="Permanent link">&para;</a></h4>
 <div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">MoonScript</label><label for="__tabbed_5_2">Lua</label></div>
@@ -2770,6 +2874,115 @@ version's entries into marker categories (Bug Fixes, New Features, …) with a g
 <ul>
 <li><code>changelog</code> <code>string</code> — Formatted multi-line string, or "" if nothing to show. A version whose entries carry no markers lists them flat, without category headings.</li>
 </ul>
+<h3 id="class-methods">Class methods<a class="headerlink" href="#class-methods" title="Permanent link">&para;</a></h3>
+<h4 id="getdefaultchannel">getDefaultChannel <a name="ScriptUpdateRecord.getDefaultChannel"></a><a class="headerlink" href="#getdefaultchannel" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">MoonScript</label><label for="__tabbed_7_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="nc">ScriptUpdateRecord</span><span class="o">.</span><span class="n">getDefaultChannel</span> <span class="n">channels</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="nv">ScriptUpdateRecord</span><span class="p">.</span><span class="nf">getDefaultChannel</span><span class="p">(</span><span class="nv">channels</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>Picks the channel a package's feed entry flags as its default.
+The feed format allows only one default channel, but in case there are multiple defaults, this
+picks one deterministically and notifies callers of the conflict, so they can warn the user or
+otherwise handle it as they see fit.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>channels?</td>
+<td><code>table&lt;string, FeedChannelData&gt;</code></td>
+<td>A package's <code>channels</code> map.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>name</code> <code>string</code>? — The default channel's name, or nil when none is flagged.</li>
+<li><code>conflicting</code> <code>string</code>[]? — Every flagged name, sorted, when more than one is flagged; nil otherwise.</li>
+</ul>
+<h4 id="getrecordedsource">getRecordedSource <a name="ScriptUpdateRecord.getRecordedSource"></a><a class="headerlink" href="#getrecordedsource" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="8:2"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><div class="tabbed-labels"><label for="__tabbed_8_1">MoonScript</label><label for="__tabbed_8_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="nc">ScriptUpdateRecord</span><span class="o">.</span><span class="n">getRecordedSource</span> <span class="n">packageConfig</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="nv">ScriptUpdateRecord</span><span class="p">.</span><span class="nf">getRecordedSource</span><span class="p">(</span><span class="nv">packageConfig</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>The source a package's config records for its next update: the source configured for it, or the one the
+installed copy came from where no choice has been made. Configs before v0.9.0 hold only the latter.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>packageConfig</td>
+<td><code>table</code></td>
+<td>An installed package's config entry.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>source</code> <code>table</code>? — The recorded source, or nil when the package records none.</li>
+</ul>
+<h4 id="getrecordedchannel">getRecordedChannel <a name="ScriptUpdateRecord.getRecordedChannel"></a><a class="headerlink" href="#getrecordedchannel" title="Permanent link">&para;</a></h4>
+<div class="tabbed-set tabbed-alternate" data-tabs="9:2"><input checked="checked" id="__tabbed_9_1" name="__tabbed_9" type="radio" /><input id="__tabbed_9_2" name="__tabbed_9" type="radio" /><div class="tabbed-labels"><label for="__tabbed_9_1">MoonScript</label><label for="__tabbed_9_2">Lua</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="nc">ScriptUpdateRecord</span><span class="o">.</span><span class="n">getRecordedChannel</span> <span class="n">packageConfig</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="nv">ScriptUpdateRecord</span><span class="p">.</span><span class="nf">getRecordedChannel</span><span class="p">(</span><span class="nv">packageConfig</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>The update channel a package's config records, from its recorded source or, for a config written before
+v0.7.0, the <code>lastChannel</code> key.</p>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>packageConfig</td>
+<td><code>table</code></td>
+<td>An installed package's config entry.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>channel</code> <code>string</code>? — The recorded channel, or nil when the package records none.</li>
+</ul>
 <h3 id="fields">Fields<a class="headerlink" href="#fields" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -2792,8 +3005,8 @@ version's entries into marker categories (Bug Fixes, New Features, …) with a g
 </tr>
 <tr>
 <td>config</td>
-<td><code>{c: {activeChannel?: string, lastChannel?: string, channels?: string[]}}</code></td>
-<td></td>
+<td><code>{c: {configuredSource?: table, currentSource?: table, lastChannel?: string, channels?: string[]}}</code></td>
+<td>Per-package config; read for the configured channel and provenance metadata.</td>
 </tr>
 <tr>
 <td>moduleName</td>

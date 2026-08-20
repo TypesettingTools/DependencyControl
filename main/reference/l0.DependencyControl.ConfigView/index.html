@@ -2630,11 +2630,11 @@
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">MoonScript</label><label for="__tabbed_1_2">Lua</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nc">ConfigView</span> <span class="o">=</span> <span class="nb">require</span> <span class="s2">&quot;</span><span class="s">l0.DependencyControl.ConfigView</span><span class="s2">&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nc">ConfigView</span> <span class="o">=</span> <span class="nb">require</span> <span class="s2">"</span><span class="s">l0.DependencyControl.ConfigView</span><span class="s2">"</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">ConfigView</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">require</span><span class="p">(</span><span class="s2">&quot;l0.DependencyControl.ConfigView&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">ConfigView</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">require</span><span class="p">(</span><span class="s2">"l0.DependencyControl.ConfigView"</span><span class="p">)</span>
 </code></pre></div>
 </div>
 </div>
@@ -2933,16 +2933,17 @@ Multiple views on the same file are coordinated through their shared ConfigHandl
 <div class="tabbed-set tabbed-alternate" data-tabs="10:2"><input checked="checked" id="__tabbed_10_1" name="__tabbed_10" type="radio" /><input id="__tabbed_10_2" name="__tabbed_10" type="radio" /><div class="tabbed-labels"><label for="__tabbed_10_1">MoonScript</label><label for="__tabbed_10_2">Lua</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="n">configView</span><span class="o">\</span><span class="n">setFile</span> <span class="n">filePath</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="n">configView</span><span class="o">\</span><span class="n">setFile</span> <span class="n">filePath</span><span class="p">,</span> <span class="n">noLoad</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="nv">configView</span><span class="p">:</span><span class="nf">setFile</span><span class="p">(</span><span class="nv">filePath</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="nv">configView</span><span class="p">:</span><span class="nf">setFile</span><span class="p">(</span><span class="nv">filePath</span><span class="p">,</span><span class="w"> </span><span class="nv">noLoad</span><span class="p">)</span>
 </code></pre></div>
 </div>
 </div>
 </div>
-<p>Attaches this view to a different config file, without loading it (the caller loads separately).</p>
+<p>Attaches this view to a different config file, moving its hive to that file's handler, so the view
+holds what that handler holds for this hive path.</p>
 <table>
 <thead>
 <tr>
@@ -2956,6 +2957,11 @@ Multiple views on the same file are coordinated through their shared ConfigHandl
 <td>filePath</td>
 <td><code>string</code></td>
 <td>Full path to the config file.</td>
+</tr>
+<tr>
+<td>noLoad?</td>
+<td><code>boolean</code></td>
+<td>Don't read the file when this call creates its handler (default false). A file already loaded is not read again either way.</td>
 </tr>
 </tbody>
 </table>
