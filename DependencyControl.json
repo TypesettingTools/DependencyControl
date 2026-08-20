@@ -56,7 +56,7 @@
       "channels": {
         "main": {
           "version": "0.9.0",
-          "released": null,
+          "released": "2026-08-20",
           "default": true,
           "files": [
             {
@@ -126,7 +126,7 @@
       "channels": {
         "main": {
           "version": "0.9.0",
-          "released": null,
+          "released": "2026-08-20",
           "default": true,
           "files": [
             {
