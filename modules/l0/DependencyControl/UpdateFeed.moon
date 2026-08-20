@@ -948,9 +948,9 @@ class UpdateFeed
   ---release date set when one is supplied. Channels not among `to` are left as they are, so they
   ---keep their previously published versions, except that `default` is cleared from every channel
   ---but the given default channel, so the result names exactly one. A package missing here is added
-  ---carrying only the `to` channels. Top-level feed metadata and each package's shared (non-channel)
-  ---fields track the source. File hashes are copied verbatim — the `from` channel is assumed already
-  ---in sync with its own source — so no files are read.
+  ---carrying only the `to` channels. Top-level feed metadata, each section's own template keys, and each
+  ---package's shared (non-channel) fields track the source. File hashes are copied verbatim — the `from`
+  ---channel is assumed already in sync with its own source — so no files are read.
   ---@param source UpdateFeed The loaded feed to copy channel data from.
   ---@param opts { from: string, to: string[], defaultChannel?: string, released?: string, outPath?: string|boolean } `outPath` false does a dry run; nil/true writes to this feed's own path.
   ---@return string[]? merged The namespaces whose channels were written, or nil on error.
@@ -974,7 +974,10 @@ class UpdateFeed
       @rawFeedData[section] or= {}
       dstSection = @rawFeedData[section]
       for ns, srcPkg in pairs srcSection
-        continue unless type(srcPkg) == "table" and srcPkg.channels
+        -- a section's own `fileBaseUrls`/`localFileBasePaths` templates sit beside its packages
+        unless type(srcPkg) == "table" and srcPkg.channels
+          dstSection[ns] = copyValue srcPkg
+          continue
         fromChannel = srcPkg.channels[opts.from]
         continue unless fromChannel
         dstPkg = dstSection[ns]

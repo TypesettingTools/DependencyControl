@@ -283,7 +283,7 @@
             {
               "name": "/UpdateFeed.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "48A68B9D7FF0D7525DE19C1F5F358B18B16C4A7B"
+              "sha1": "F136EA50649C7A4056453CE08F8498102334294E"
             },
             {
               "name": "/UpdateTask.moon",
@@ -552,7 +552,7 @@
             {
               "name": "/UpdateFeed.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "1D8093D09D610F69979F9B4246B1C38B23317A2C",
+              "sha1": "6E2D5DDD51871129F3E4FCE504AFD8467B38AC61",
               "type": "test"
             },
             {
@@ -796,7 +796,7 @@
           "fix(Updater): Asking for a specific update channel now takes effect on a package that already has one recorded, and a module that provides another is judged on the channel recorded for it rather than its feed's default. A recorded channel the feed no longer offers falls back to the default instead of failing the update — unless you pinned the package's source, which is reported as unavailable rather than quietly moved.",
           "feat(Updater)!: Where a package will update from and where its installed copy came from are now recorded separately, as `configuredSource` and `currentSource`, so a source change you have made is distinguishable from one an update has applied. Both are written as soon as an install finishes — a fresh install used to record neither — and the origin stores the feed URL outright, so changing a feed override afterwards no longer rewrites where the copy came from. Existing configs migrate automatically.",
           "fix(Updater): A second update attempt in the same session works again. A package remembered the feeds its first attempt had consulted and skipped them next time, so a retry passed over the very feed that offers it and reported that none was available.",
-          "fix(CLI): `merge-feed` now clears the `default` flag from every channel but the one it is told is the default, so publishing can't leave a feed naming two default channels."
+          "fix(CLI): `merge-feed` now clears the `default` flag from every channel but the one it is told is the default, so publishing can't leave a feed with two default channels. It also copies each section's own file templates, which a feed merged into a fresh file used to lose."
         ]
       }
     },
