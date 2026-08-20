@@ -111,6 +111,20 @@ class ScriptUpdateRecord
     table.sort names
     return names[1], #names > 1 and names or nil
 
+  ---The source a package's config records for its next update: the source configured for it, or the one the
+  ---installed copy came from where no choice has been made. Configs before v0.9.0 hold only the latter.
+  ---@param packageConfig table An installed package's config entry.
+  ---@return table? source The recorded source, or nil when the package records none.
+  @getRecordedSource = (packageConfig) -> packageConfig.configuredSource or packageConfig.currentSource
+
+  ---The update channel a package's config records, from its recorded source or, for a config written before
+  ---v0.7.0, the `lastChannel` key.
+  ---@param packageConfig table An installed package's config entry.
+  ---@return string? channel The recorded channel, or nil when the package records none.
+  @getRecordedChannel = (packageConfig) ->
+    source = @.getRecordedSource packageConfig
+    source and source.channel or packageConfig.lastChannel
+
   ---Returns all available channel names for this script and the default channel.
   ---@return string[] channels Channel names, empty when the package declares none.
   ---@return string? defaultChannel
@@ -136,8 +150,8 @@ class ScriptUpdateRecord
     _, default = @getChannels!
     -- When no source is configured (<0.9.0), the source used for the last install (≥0.7.0) is used, and,
     -- failing that, the `lastChannel` which has been recorded to the config since the pre-v0.7.0 days.
-    source = @config.c.configuredSource or @config.c.currentSource
-    recorded = source and source.channel or @config.c.lastChannel
+    source = @@.getRecordedSource @config.c
+    recorded = @@.getRecordedChannel @config.c
     selected = channelName or recorded or default
     -- When the currently configured/last used channel is no longer offered by the feed, we fall back
     -- to the feed's default channel, unless the package source has been explicitly pinned, in which case

@@ -7,6 +7,7 @@ domain = require "l0.DependencyControl.domain"
 environment = require "l0.DependencyControl.environment"
 Enum = require "l0.DependencyControl.Enum"
 ModuleLoader = require "l0.DependencyControl.ModuleLoader"
+ScriptUpdateRecord = require "l0.DependencyControl.ScriptUpdateRecord"
 SemanticVersion = require "l0.DependencyControl.SemanticVersion"
 UnitTestSuite = require "l0.DependencyControl.UnitTestSuite"
 utils = require "l0.DependencyControl.utils"
@@ -455,7 +456,7 @@ class UpdateTask
   ---@private
   __persistSource: (selectedCandidate, stickiness) =>
     return unless @record.config
-    existing = @record.config.c.configuredSource or @record.config.c.currentSource
+    existing = ScriptUpdateRecord.getRecordedSource @record.config.c
     feedSource = @__feedSourceOf selectedCandidate
     configuredSource = {
       :feedSource
@@ -488,7 +489,7 @@ class UpdateTask
   ---@private
   __recordInstalledSource: =>
     return unless @record.config
-    source = @record.config.c.configuredSource or @record.config.c.currentSource
+    source = ScriptUpdateRecord.getRecordedSource @record.config.c
     return unless source
     installed = utils.deepCopy source
     -- the URL is stamped rather than left to be derived later, so changing a userFeed or a declared
@@ -774,8 +775,7 @@ class UpdateTask
     userFeedTrusted = userFeed and not isBlocked userFeed
     isTrusted = (url) -> feedTrust\isTrusted(url) or (userFeedTrusted and url == userFeed)
 
-    -- `configuredSource` was split off from `currentSource` in v0.9.0 to separate intent from provenance.
-    remembered = @record.config.c.configuredSource or @record.config.c.currentSource
+    remembered = ScriptUpdateRecord.getRecordedSource @record.config.c
     stickiness = remembered and remembered.stickiness or SourceChoiceStickiness.Unset
     -- a remembered provider stays pinned to its band so a version bump updates it in place instead of switching providers
     stickyProvider = remembered and remembered.provider and remembered.provider.namespace

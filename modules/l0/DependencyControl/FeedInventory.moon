@@ -1,6 +1,7 @@
 constants = require "l0.DependencyControl.Constants"
 domain = require "l0.DependencyControl.domain"
 Enum = require "l0.DependencyControl.Enum"
+ScriptUpdateRecord = require "l0.DependencyControl.ScriptUpdateRecord"
 
 local UpdateTask
 
@@ -139,8 +140,7 @@ class FeedInventory
   ---@param modulesSection? table<string, table> The modules config section, for resolving a provider source.
   ---@return string? url The resolved feed URL, or nil when the package records no source or it can't be resolved.
   @resolveConfiguredSource = (pkg, modulesSection) ->
-    -- backwards-compatibility with pre-0.9.0, which only used `currentSource`
-    src = pkg.configuredSource or pkg.currentSource
+    src = ScriptUpdateRecord.getRecordedSource pkg
     return nil unless type(src) == "table"
 
     UpdateTask or= require "l0.DependencyControl.UpdateTask"
@@ -155,7 +155,7 @@ class FeedInventory
   @getEffectiveSource = (pkg, modulesSection) ->
     url = @.resolveConfiguredSource pkg, modulesSection
     if url
-      source = pkg.configuredSource or pkg.currentSource
+      source = ScriptUpdateRecord.getRecordedSource pkg
       return url, source.feedSource
     UpdateTask or= require "l0.DependencyControl.UpdateTask"
     return pkg.userFeed, UpdateTask.SourceFeedKind.UserFeed if pkg.userFeed
