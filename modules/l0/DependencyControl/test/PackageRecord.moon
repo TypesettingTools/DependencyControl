@@ -444,6 +444,20 @@
       ut\assertEquals fakeSelf\getVersionString(SemanticVersion\toPacked "3.1.0"), "3.1.0"
 
     -- loadConfig imports recordType from the stored config like any other persisted field
+    -- A release that changes nothing but the version still has to reach the config. `version` is not a
+    -- scriptField, so the import reports no change and only an explicit comparison catches it. This is how
+    -- a package updated by an older DependencyControl records its new version on the next load.
+    loadConfig_bumpedVersionAloneWritesConfig: (ut) ->
+      SemanticVersion = require "l0.DependencyControl.SemanticVersion"
+      makeRecord = (recorded, declared) -> stubSelf PackageRecord, {
+        __class: PackageRecord, virtual: false, namespace: "l0.x", scriptType: domain.ScriptType.Module
+        semanticVersion: SemanticVersion declared
+        config: {load: (=> true), import: (=> false), c: {version: recorded}}
+      }
+      ut\assertTrue PackageRecord.__base.loadConfig makeRecord "1.0.0", "2.0.0"
+      ut\assertFalse PackageRecord.__base.loadConfig makeRecord "2.0.0", "2.0.0"
+      ut\assertTrue PackageRecord.__base.loadConfig makeRecord nil, "2.0.0" -- nothing recorded yet
+
     loadConfig_importsRecordType: (ut) ->
       record = stubSelf PackageRecord, {
         __class: PackageRecord, virtual: false, namespace: "l0.x", scriptType: domain.ScriptType.Module
@@ -493,7 +507,7 @@
 
     _order: {
       "getFileCache_namespacedUnderConfigBase", "getVersion_compatMethods",
-      "loadConfig_importsRecordType",
+      "loadConfig_importsRecordType", "loadConfig_bumpedVersionAloneWritesConfig",
       "module_dataOnly", "module_initLayout", "module_alsoUnderUser", "module_userOnly",
       "notInstalled", "portable", "macro_dataOnly",
       "checkVersion_equal", "checkVersion_greater", "checkVersion_older", "checkVersion_recordArg",

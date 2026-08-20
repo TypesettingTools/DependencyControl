@@ -800,7 +800,8 @@
           "fix(CLI): `serve-updates` no longer fails on a feed that already matches its working copy.",
           "feat(CLI): `serve-updates` now accepts an optional `--port` argument, so a test feed URL stays valid across runs.",
           "feat(CLI): `--serve-channel` can be given more than once to graft the dev build onto several channels at once, the first of which becomes the served feed's default.",
-          "fix: A package's settings are no longer reverted by a second DependencyControl instance writing the same config file (e.g. during a DependencyControl update, in another automation script context, or from another Aegisub process). Each save now writes only the fields it changed since it last read the file."
+          "fix: A package's settings are no longer reverted by a second DependencyControl instance writing the same config file (e.g. during a DependencyControl update, in another automation script context, or from another Aegisub process). Each save now writes only the fields it changed since it last read the file.",
+          "fix: A regression introduced in v0.7.0 was fixed that prevented the new version number of updated packages from being written into the DependencyControl config file when nothing else in its DependencyControl record changed."
         ]
       }
     },
