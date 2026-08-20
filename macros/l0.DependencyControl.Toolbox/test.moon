@@ -11,6 +11,8 @@ DepCtrl = require "l0.DependencyControl"
 UnitTestSuite "l0.DependencyControl.Toolbox", (macros, dependencies, testExports, controls) ->
   {:shortenUrl, :expandUrl, :formatAge, :buildInstalledDlgList, :promptUntrustedFeed,
     :confirmDialog, :manageExtraFeeds, :manageBlockList, :buttons, :feedActionLabels,
+    :sourceKindLabels, :stickinessLabels, :buildLabelChoices, :buildChoiceList, :scanCachedFeeds,
+    :addInstalledProviders,
     :scheduleUpdatesAndRegisterTests} = testExports
 
   -- The UninstallFlow seam: its _setup swaps the DepCtrl class's __call for a constructor returning
@@ -190,11 +192,16 @@ UnitTestSuite "l0.DependencyControl.Toolbox", (macros, dependencies, testExports
         list = buildInstalledDlgList "macros", config, false
         ut\assertEquals list, {"apple v1.0.0", "Mango v1.0.0", "Zebra v1.0.0"}
 
-      -- a package with a non-default active channel shows the channel in brackets
-      formatsActiveChannel: (ut) ->
-        config = makeConfig "macros", {"a.x": {name: "X", version: "2.0.0", activeChannel: "beta"}}
+      -- a package with a recorded channel shows the channel in brackets; the package source's channel
+      -- wins over the pre-0.7 lastChannel, which stands in alone on an install upgraded from v0.6.3
+      formatsRecordedChannel: (ut) ->
+        config = makeConfig "macros", {
+          "a.x": {name: "X", version: "2.0.0", lastChannel: "beta", currentSource: {channel: "stable"}}
+          "a.y": {name: "Y", version: "1.0.0", lastChannel: "beta"}
+        }
         list = buildInstalledDlgList "macros", config, false
-        ut\assertEquals list[1], "X v2.0.0 [beta]"
+        ut\assertEquals list[1], "X v2.0.0 [stable]"
+        ut\assertEquals list[2], "Y v1.0.0 [beta]"
 
       -- an entry lacking name/version (e.g. an orphaned unmanaged record) still gets a row
       toleratesMissingVersionAndName: (ut) ->
@@ -202,7 +209,93 @@ UnitTestSuite "l0.DependencyControl.Toolbox", (macros, dependencies, testExports
         list = buildInstalledDlgList "modules", config, false
         ut\assertEquals list[1], "a.orphan v0.0.0"
 
-      _order: {"uninstall_excludesProtected", "install_includesAll", "sortsByNameCaseInsensitively", "formatsActiveChannel", "toleratesMissingVersionAndName"}
+      _order: {"uninstall_excludesProtected", "install_includesAll", "sortsByNameCaseInsensitively", "formatsRecordedChannel", "toleratesMissingVersionAndName"}
+    }
+
+    SourceConfig: {
+      _description: "Package Source Configuration helpers: label/value choice lists, the cached-feed scan, and the installed-provider merge."
+
+      -- buildLabelChoices: pairs each enum value with its label, so the dialog offers labels and dispatch
+      -- branches on the value behind the chosen one
+      buildLabelChoices_pairsLabelsWithValues: (ut) ->
+        items, byLabel = buildLabelChoices domain.SourceChoiceStickiness.values, stickinessLabels
+        ut\assertEquals #items, #domain.SourceChoiceStickiness.values
+        ut\assertEquals byLabel[stickinessLabels[domain.SourceChoiceStickiness.Pinned]],
+          domain.SourceChoiceStickiness.Pinned
+
+      -- every source kind and stickiness value carries a label, so no dropdown entry can come out blank
+      labels_coverEveryEnumValue: (ut) ->
+        ut\assertNotNil sourceKindLabels[kind], "no label for source kind '#{kind}'" for kind in *DepCtrl.UpdateTask.SourceFeedKind.values
+        ut\assertNotNil stickinessLabels[sticky], "no label for stickiness '#{sticky}'" for sticky in *domain.SourceChoiceStickiness.values
+
+      -- buildChoiceList: the current value survives even when nothing on offer matches it, flagged so the
+      -- user can see their selection no longer holds rather than having it silently swapped
+      buildChoiceList_keepsUnofferedCurrentFlagged: (ut) ->
+        entries = {{value: "feed://b", label: "b"}, {value: "feed://a", label: "a"}}
+        items, byLabel = buildChoiceList entries, "feed://gone", "gone"
+        ut\assertEquals #items, 3
+        ut\assertContains items[1], "gone" -- the stale entry leads, so it stays visible
+        ut\assertEquals byLabel[items[1]], "feed://gone"
+        ut\assertEquals items[2], "a" -- the rest stay sorted
+        ut\assertEquals items[3], "b"
+
+      -- a current value that is on offer isn't duplicated as a stale entry
+      buildChoiceList_offeredCurrentNotDuplicated: (ut) ->
+        items = buildChoiceList {{value: "feed://a", label: "a"}}, "feed://a", "a"
+        ut\assertEquals #items, 1
+        ut\assertEquals items[1], "a"
+
+      -- an Aegisub dropdown can't be empty, so an empty list still yields one entry
+      buildChoiceList_emptyGetsPlaceholder: (ut) ->
+        items = buildChoiceList {}, nil
+        ut\assertEquals #items, 1
+        ut\assertString items[1]
+
+      -- scanCachedFeeds: reads only what the cache holds, mapping each feed that offers the package to the
+      -- channels it offers it on, and collecting the modules that provide it
+      scanCachedFeeds_mapsChannelsAndProviders: (ut) ->
+        cached = {
+          "feed://one": {
+            modules: {
+              "l0.Pkg": {channels: {stable: {version: "1.0.0"}, alpha: {version: "1.1.0"}}}
+              "l0.Provider": {name: "Provider", provides: {{name: "l0.Pkg"}}}
+            }
+          }
+          "feed://two": {
+            modules: {"l0.Other": {name: "Other", provides: {"l0.Pkg"}}}
+          }
+          "feed://nopkg": {modules: {"l0.Unrelated": {channels: {stable: {}}}}}
+        }
+        cache = {get: ((url) => cached[url])}
+        feedUrls = {"feed://one", "feed://two", "feed://nopkg", "feed://uncached"}
+        channelsByFeed, providers = scanCachedFeeds "l0.Pkg", domain.ScriptType.Module, cache, feedUrls
+        ut\assertNotNil channelsByFeed["feed://one"]
+        ut\assertEquals table.concat(channelsByFeed["feed://one"], ","), "alpha,stable" -- sorted
+        ut\assertNil channelsByFeed["feed://nopkg"] -- doesn't offer the package
+        ut\assertEquals providers["l0.Provider"].feedUrl, "feed://one"
+        ut\assertEquals providers["l0.Other"].feedUrl, "feed://two" -- the bare-string alias form
+        ut\assertNil providers["l0.Pkg"] -- a package never provides for itself
+
+      -- addInstalledProviders: folds in installed modules that provide the package, without displacing one
+      -- already found in a feed
+      addInstalledProviders_mergesWithoutDisplacing: (ut) ->
+        providers = {"l0.FromFeed": {name: "FromFeed", feedUrl: "feed://one"}}
+        modulesSection = {
+          "l0.FromFeed": {name: "Renamed", feed: "feed://local", provides: {"l0.Pkg"}}
+          "l0.Installed": {name: "Installed", feed: "feed://local", provides: {{name: "l0.Pkg"}}}
+          "l0.Unrelated": {name: "Unrelated", provides: {"yaml"}}
+        }
+        addInstalledProviders providers, "l0.Pkg", modulesSection
+        ut\assertEquals providers["l0.FromFeed"].feedUrl, "feed://one" -- the feed entry wins
+        ut\assertEquals providers["l0.Installed"].feedUrl, "feed://local"
+        ut\assertNil providers["l0.Unrelated"]
+
+      _order: {
+        "buildLabelChoices_pairsLabelsWithValues", "labels_coverEveryEnumValue",
+        "buildChoiceList_keepsUnofferedCurrentFlagged", "buildChoiceList_offeredCurrentNotDuplicated",
+        "buildChoiceList_emptyGetsPlaceholder",
+        "scanCachedFeeds_mapsChannelsAndProviders", "addInstalledProviders_mergesWithoutDisplacing"
+      }
     }
 
     UntrustedPrompt: {

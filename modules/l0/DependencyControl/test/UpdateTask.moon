@@ -10,6 +10,7 @@
   UpdateFeed = require "l0.DependencyControl.UpdateFeed"
   Downloader = require "l0.DependencyControl.Downloader"
   ModuleLoader = require "l0.DependencyControl.ModuleLoader"
+  ScriptUpdateRecord = require "l0.DependencyControl.ScriptUpdateRecord"
   FeedTrust = require "l0.DependencyControl.FeedTrust"
   {:stubSelf, :makeNullLogger, :makeSeededFeedTrust} = stubHelpers
 
@@ -104,7 +105,7 @@
   -- both prompts), selectReturn {pick, stickiness} (nil pick = abort), trustReturn (a FeedTrustDecision).
   makeResolveTask = (opts = {}) ->
     cfg = opts.config or {}
-    calls = {select: 0, trust: 0}
+    calls = {select: 0, trust: 0, loaded: {}}
     updaterConfig = {
       c: {
         feeds: {extraFeeds: cfg.extraFeeds, trustedFeeds: cfg.trustedFeeds, blockedFeeds: cfg.blockedFeeds}
@@ -130,7 +131,6 @@
       reason: opts.reason
       channel: opts.channel
       addFeeds: opts.addFeeds or {}
-      triedFeeds: {}
       _feeds: opts.feeds or {}
       record: {
         feed: opts.declaredFeed
@@ -144,6 +144,7 @@
       updater: {renewLock: ->, :feedTrust, config: updaterConfig}
       logger: makeNullLogger!
       __loadFeed: (url) =>
+        calls.loaded[url] = true
         return nil, "feed not found: #{url}" unless @_feeds[url]
         providers = @_feeds[url].providers or {}
         {__url: url, getProviders: (=> providers)}
@@ -521,9 +522,9 @@
     persistSource_writesDirect: (ut) ->
       saved = {}
       task = makeSourceTask feed: "feed://declared", onSave: -> saved[1] = true
-      selected = {isDirect: true, feedUrl: "feed://declared", updateRecord: {namespace: "l0.x", activeChannel: "main"}}
+      selected = {isDirect: true, feedUrl: "feed://declared", updateRecord: {namespace: "l0.x", activeChannel: "main", getChannels: => {"main"}}}
       UpdateTask.__persistSource task, selected, SourceChoiceStickiness.Retain
-      cs = task.record.config.c.currentSource
+      cs = task.record.config.c.configuredSource
       ut\assertNotNil cs
       ut\assertEquals cs.feedSource, SourceFeedKind.SelfDeclared
       ut\assertEquals cs.stickiness, SourceChoiceStickiness.Retain
@@ -532,25 +533,87 @@
 
     persistSource_recordsProvider: (ut) ->
       task = makeSourceTask feed: "feed://declared"
-      selected = {isDirect: false, feedUrl: "feed://prov", providesVersion: "~1.2", updateRecord: {namespace: "l0.prov", activeChannel: "main"}}
+      selected = {isDirect: false, feedUrl: "feed://prov", providesVersion: "~1.2", updateRecord: {namespace: "l0.prov", activeChannel: "main", getChannels: => {"main"}}}
       UpdateTask.__persistSource task, selected, SourceChoiceStickiness.Pinned
-      cs = task.record.config.c.currentSource
+      cs = task.record.config.c.configuredSource
       ut\assertEquals cs.feedSource, SourceFeedKind.Provider
       ut\assertEquals cs.provider.namespace, "l0.prov"
       ut\assertEquals cs.provider.version, "~1.2"
 
     persistSource_storesFeedUrlForOther: (ut) ->
       task = makeSourceTask feed: "feed://declared"
-      selected = {isDirect: true, feedUrl: "feed://third", updateRecord: {namespace: "l0.x", activeChannel: "main"}}
+      selected = {isDirect: true, feedUrl: "feed://third", updateRecord: {namespace: "l0.x", activeChannel: "main", getChannels: => {"main"}}}
       UpdateTask.__persistSource task, selected, SourceChoiceStickiness.Once
-      ut\assertEquals task.record.config.c.currentSource.feedUrl, "feed://third"
+      ut\assertEquals task.record.config.c.configuredSource.feedUrl, "feed://third"
 
     persistSource_skipsUnchanged: (ut) ->
       saves = {n: 0}
       existing = {feedSource: SourceFeedKind.SelfDeclared, channel: "main", stickiness: SourceChoiceStickiness.Retain}
-      task = makeSourceTask feed: "feed://declared", currentSource: existing, onSave: -> saves.n += 1
-      selected = {isDirect: true, feedUrl: "feed://declared", updateRecord: {namespace: "l0.x", activeChannel: "main"}}
+      task = makeSourceTask feed: "feed://declared", onSave: -> saves.n += 1
+      task.record.config.c.configuredSource, task.record.config.c.channels = existing, {"main"}
+      selected = {isDirect: true, feedUrl: "feed://declared", updateRecord: {namespace: "l0.x", activeChannel: "main", getChannels: => {"main"}}}
       UpdateTask.__persistSource task, selected, SourceChoiceStickiness.Retain
+      ut\assertEquals saves.n, 0
+
+    -- a source recorded by a pre-0.9.0 version is honored as the configured source, and the write moves
+    -- it under its new key without touching what `currentSource` now means
+    persistSource_readsLegacyIntentAndWritesNewKey: (ut) ->
+      saves = {n: 0}
+      legacy = {feedSource: SourceFeedKind.SelfDeclared, channel: "main", stickiness: SourceChoiceStickiness.Pinned}
+      task = makeSourceTask feed: "feed://declared", currentSource: legacy, onSave: -> saves.n += 1
+      selected = {isDirect: true, feedUrl: "feed://declared", updateRecord: {namespace: "l0.x", activeChannel: "main", getChannels: => {"main"}}}
+      UpdateTask.__persistSource task, selected
+      ut\assertEquals task.record.config.c.configuredSource.stickiness, SourceChoiceStickiness.Pinned -- carried over
+      ut\assertEquals task.record.config.c.currentSource, legacy -- untouched by the intent write
+      ut\assertEquals saves.n, 1
+
+    -- the feed's channel lineup is refreshed at resolution (sorted, so the persisted value doesn't ride
+    -- on table order), and an unchanged repeat writes nothing
+    persistSource_refreshesChannelLineup: (ut) ->
+      saves = {n: 0}
+      task = makeSourceTask feed: "feed://declared", onSave: -> saves.n += 1
+      task.record.config.c.channels = {"alpha", "main"}
+      selected = {isDirect: true, feedUrl: "feed://declared", updateRecord: {namespace: "l0.x", activeChannel: "stable", getChannels: => {"stable", "alpha"}}}
+      UpdateTask.__persistSource task, selected, SourceChoiceStickiness.Retain
+      ut\assertEquals table.concat(task.record.config.c.channels, ","), "alpha,stable"
+      ut\assertEquals saves.n, 1
+      -- a second identical resolution finds everything already recorded and leaves the config alone
+      UpdateTask.__persistSource task, selected, SourceChoiceStickiness.Retain
+      ut\assertEquals saves.n, 1
+
+    -- __recordInstalledSource: once the files are in place, the configured source that drove the install
+    -- becomes the installed copy's provenance, with lastChannel kept in step; a later change to the
+    -- configured source must not reach through into the recorded provenance
+    recordInstalledSource_copiesConfiguredToProvenance: (ut) ->
+      saves = {n: 0}
+      task = makeSourceTask feed: "feed://declared", onSave: -> saves.n += 1
+      task.record.config.c.configuredSource = {feedSource: SourceFeedKind.SelfDeclared, channel: "stable", stickiness: SourceChoiceStickiness.Retain}
+      UpdateTask.__recordInstalledSource task
+      cs = task.record.config.c.currentSource
+      ut\assertEquals cs.channel, "stable"
+      ut\assertEquals cs.stickiness, SourceChoiceStickiness.Retain -- the full record, for troubleshooting
+      ut\assertEquals cs.feedUrl, "feed://declared" -- stamped, though a self-declared choice stores none
+      ut\assertEquals task.record.config.c.lastChannel, "stable"
+      ut\assertEquals saves.n, 1
+      task.record.config.c.configuredSource.channel = "alpha"
+      ut\assertEquals cs.channel, "stable" -- a copy, not a shared reference
+
+    -- __recordInstalledSource: the stamped URL is what the record keeps reporting even after the field
+    -- it was derived from changes, which is the whole point of recording provenance separately
+    recordInstalledSource_stampedUrlSurvivesFeedChange: (ut) ->
+      task = makeSourceTask feed: "feed://declared", userFeed: "feed://override"
+      task.record.config.c.configuredSource = {feedSource: SourceFeedKind.UserFeed, channel: "stable", stickiness: SourceChoiceStickiness.Unset}
+      UpdateTask.__recordInstalledSource task
+      ut\assertEquals task.record.config.c.currentSource.feedUrl, "feed://override"
+      task.record.config.c.userFeed = "feed://somewhere-else"
+      installed = task.record.config.c.currentSource
+      ut\assertEquals UpdateTask.resolveSourceUrl(installed, task.record.feed, task.record.config.c.userFeed), "feed://override"
+    -- __recordInstalledSource: with no source recorded at all (nothing resolved yet), nothing is written
+    recordInstalledSource_noopWithoutSource: (ut) ->
+      saves = {n: 0}
+      task = makeSourceTask feed: "feed://declared", onSave: -> saves.n += 1
+      UpdateTask.__recordInstalledSource task
+      ut\assertNil task.record.config.c.currentSource
       ut\assertEquals saves.n, 0
 
     -- UpdateTask.__resolve: walks the lazy trust-ranked feed cascade and the currentSource stickiness tree,
@@ -568,7 +631,7 @@
       d = UpdateTask.__resolve task
       ut\assertTrue d.installRequired
       ut\assertEquals d.selectedSource.feedUrl, "feed://decl"
-      ut\assertNil task.triedFeeds["feed://extra"] -- tier 2 was never reached
+      ut\assertNil task.calls.loaded["feed://extra"] -- tier 2 was never reached
 
     -- cascade: an empty declared feed falls through to a user extra feed (trusted discovery, tier 2).
     -- Guards that extraFeeds is read from the `feeds` config section, not `updates`.
@@ -763,6 +826,35 @@
 
     -- blocked feed: a block-listed feed is skipped entirely (not even fetched, and despite being
     -- trusted); with no other source the required install fails
+    -- checkFeed: a feed that has retired the channel a package is recorded on moves it to the default,
+    -- except where the user pinned their source choice — that one fails so the pin isn't quietly broken
+    checkFeed_pinnedKeepsChannelOthersFollowDefault: (ut) ->
+      data = {name: "Pkg", channels: {stable: {default: true, version: "2.0.0", files: {}}}}
+      check = (stickiness) ->
+        config = {c: {lastChannel: "main", currentSource: {:stickiness}}}
+        task = stubSelf UpdateTask, {
+          logger: makeNullLogger!
+          record: {namespace: "l0.Pkg", name: "Pkg", scriptType: domain.ScriptType.Module, :config}
+        }
+        feed = {getScript: ((ns, st, cfg) => ScriptUpdateRecord ns, data, cfg, st, false, makeNullLogger!)}
+        UpdateTask.checkFeed task, feed
+      record = check SourceChoiceStickiness.Retain
+      ut\assertNotNil record
+      ut\assertEquals record.activeChannel, "stable" -- followed the feed to the channel it still offers
+      ut\assertNil check SourceChoiceStickiness.Pinned -- no candidate, so the pin surfaces as unavailable
+
+    -- A task is cached per package for the whole session, so the feeds one run consulted must not be
+    -- skipped by the next — the declared feed first among them, which would leave nothing to install from.
+    resolve_reconsultsFeedsAfterEarlierRun: (ut) ->
+      task = makeResolveTask {
+        declaredFeed: "feed://decl", officialTrusted: {"feed://decl": true}
+        feeds: {"feed://decl": {direct: directRec version: "2.0.0"}}
+      }
+      UpdateTask.__resolve task
+      d = UpdateTask.__resolve task
+      ut\assertTrue d.installRequired
+      ut\assertEquals d.selectedSource.feedUrl, "feed://decl"
+
     resolve_blockedFeedSkipped: (ut) ->
       task = makeResolveTask {
         declaredFeed: "feed://blocked", officialTrusted: {"feed://blocked": true}
@@ -772,7 +864,7 @@
       d = UpdateTask.__resolve task
       ut\assertFalse d.installRequired
       ut\assertEquals d.statusCode, UpdateStatus.NoSuitablePackage
-      ut\assertNil task.triedFeeds["feed://blocked"] -- skipped before being fetched
+      ut\assertNil task.calls.loaded["feed://blocked"] -- skipped before being fetched
 
     -- userFeed: an exclusive override feed is consulted in place of the declared-feed cascade
     resolve_userFeedUsedExclusively: (ut) ->
@@ -783,7 +875,7 @@
       d = UpdateTask.__resolve task
       ut\assertTrue d.installRequired
       ut\assertEquals d.selectedSource.feedUrl, "feed://user"
-      ut\assertNil task.triedFeeds["feed://decl"] -- the declared feed is never consulted
+      ut\assertNil task.calls.loaded["feed://decl"] -- the declared feed is never consulted
 
     -- run(): a direct-install resolution is persisted, then dispatched to performUpdate
     run_dispatchesDirectInstall: (ut) ->
@@ -799,6 +891,42 @@
       ut\assertNotNil task.calls.persisted
       ut\assertNotNil task.calls.performUpdate
       ut\assertNil task.calls.installProvider
+
+    -- run(): a fresh install records source and provenance again once the real record is adopted —
+    -- the resolution-time writes landed on the virtual record's fileless config view and were lost
+    run_freshInstallRecordsSourceOnAdoptedRecord: (ut) ->
+      task = makeRunTask {
+        resolution: {
+          installRequired: true, stickiness: SourceChoiceStickiness.Once, maxVersion: 0
+          selectedSource: {isDirect: true, updateRecord: {version: "1.0.0"}}
+        }
+      }
+      persists, provenances = 0, 0
+      task.__persistSource = (sel, st) => persists += 1
+      task.__recordInstalledSource = => provenances += 1
+      task.performUpdate = (update) =>
+        @record.virtual = false -- the install adopts the real record
+        UpdateStatus.Installed
+      ut\assertEquals UpdateTask.run(task), UpdateStatus.Installed
+      ut\assertEquals persists, 2 -- at resolution, and again once a config file backs the record
+      ut\assertEquals provenances, 1
+
+    -- run(): an update of an installed package doesn't repeat the writes — they were durable the first time
+    run_installedUpdateSkipsRepersist: (ut) ->
+      task = makeRunTask {
+        virtual: false
+        resolution: {
+          installRequired: true, stickiness: SourceChoiceStickiness.Once, maxVersion: 0
+          selectedSource: {isDirect: true, updateRecord: {version: "1.0.0"}}
+        }
+      }
+      persists, provenances = 0, 0
+      task.__persistSource = (sel, st) => persists += 1
+      task.__recordInstalledSource = => provenances += 1
+      task.performUpdate = (update) => UpdateStatus.Installed
+      ut\assertEquals UpdateTask.run(task), UpdateStatus.Installed
+      ut\assertEquals persists, 1
+      ut\assertEquals provenances, 0 -- performUpdate's own in-place write covers it
 
     -- run(): a provider (indirect) resolution is dispatched to installProvider, not performUpdate
     run_dispatchesProviderInstall: (ut) ->
@@ -1113,7 +1241,10 @@
       "matchRememberedCandidate_ineligibleVersion", "matchRememberedCandidate_noUrlMatch",
       "feedSourceOf_provider", "feedSourceOf_selfDeclared", "feedSourceOf_userFeed", "feedSourceOf_other",
       "persistSource_writesDirect", "persistSource_recordsProvider", "persistSource_storesFeedUrlForOther",
-      "persistSource_skipsUnchanged",
+      "persistSource_skipsUnchanged", "persistSource_readsLegacyIntentAndWritesNewKey",
+      "persistSource_refreshesChannelLineup",
+      "recordInstalledSource_copiesConfiguredToProvenance", "recordInstalledSource_stampedUrlSurvivesFeedChange",
+      "recordInstalledSource_noopWithoutSource",
       "resolve_cascadeShortCircuitsOnDeclaredDirect", "resolve_fallsThroughToExtraFeed",
       "resolve_fallsThroughToTrustedDirect",
       "resolve_untrustedRequiredFailsWithoutPrompt", "resolve_untrustedApprovedProceeds",
@@ -1123,8 +1254,10 @@
       "resolve_retainReuseProceeds", "resolve_retainMissingNonInteractiveDowngrades",
       "resolve_retainMissingInteractivePicks", "resolve_choiceAbortRequiredFails",
       "resolve_autoNeverPrompts", "resolve_offerAllSourcesPromptsOnMultiple",
+      "checkFeed_pinnedKeepsChannelOthersFollowDefault", "resolve_reconsultsFeedsAfterEarlierRun",
       "resolve_blockedFeedSkipped", "resolve_userFeedUsedExclusively",
-      "run_dispatchesDirectInstall", "run_dispatchesProviderInstall", "run_upToDateShortCircuits",
+      "run_dispatchesDirectInstall", "run_freshInstallRecordsSourceOnAdoptedRecord",
+      "run_installedUpdateSkipsRepersist", "run_dispatchesProviderInstall", "run_upToDateShortCircuits",
       "run_reentrantInFlightSatisfiesRequirement", "run_reentrantInFlightBelowRequirementFails",
       "run_reentrantWithoutClaimStillGuardsRunning",
       "run_terminalResolutionReturnsStatus", "run_noInternetGuard",

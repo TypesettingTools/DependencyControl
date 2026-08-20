@@ -1,6 +1,6 @@
 export script_name = "DependencyControl Toolbox"
 export script_description = "Provides DependencyControl maintenance and configuration tools."
-export script_version = "0.8.1" -- @{l0.DependencyControl.Toolbox:version}
+export script_version = "0.9.0" -- @{l0.DependencyControl.Toolbox:version}
 export script_author = "line0"
 export script_namespace = "l0.DependencyControl.Toolbox"
 
@@ -113,8 +113,9 @@ buildInstalledDlgList = (scriptType, config, isUninstall) ->
     for namespace, script in pairs config.c[scriptType]
       continue if protectedModules[namespace]
       -- config entries are on-disk data: an orphaned or unmanaged record may lack name/version
+      channel = script.currentSource and script.currentSource.channel or script.lastChannel
       item = "%s v%s%s"\format script.name or namespace, DepCtrl.SemanticVersion\toString(script.version) or "?",
-        script.activeChannel and " [#{script.activeChannel}]" or ""
+        channel and " [#{channel}]" or ""
       add item, script
 
 getConfig = (section) ->

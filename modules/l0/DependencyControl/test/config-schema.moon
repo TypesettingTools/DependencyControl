@@ -7,6 +7,8 @@
 
   {:migrate, :keyMap, :droppedKeys} = schema.migration
 
+  CONFIG_SCHEMA_ID_V0_7_0 = "https://raw.githubusercontent.com/TypesettingTools/DependencyControl/publish/schemas/config/v0.7.0.json"
+
   -- the config keys shipped in v0.6.3 (the last release), each of which the migration must handle
   v063Keys = {
     "updaterEnabled", "updateInterval", "traceLevel", "extraFeeds", "tryAllFeeds", "dumpFeeds", "configDir"
@@ -113,7 +115,7 @@
     migratesOwnedAlphaPin: (ut) ->
       c = {
         modules: {
-          ["l0.DependencyControl"]: {lastChannel: "alpha", activeChannel: "alpha"}
+          ["l0.DependencyControl"]: {lastChannel: "alpha"}
           ["l0.Functional"]: {lastChannel: "alpha"} -- third-party feed: not ours to move
         }
         macros: {
@@ -122,15 +124,63 @@
       }
       migrate c, nil, schema.CONFIG_SCHEMA_ID_CURRENT
       ut\assertEquals c.modules["l0.DependencyControl"].lastChannel, "stable"
-      ut\assertEquals c.modules["l0.DependencyControl"].activeChannel, "stable"
       ut\assertEquals c.modules["l0.Functional"].lastChannel, "alpha" -- third-party pin preserved
       ut\assertEquals c.macros["l0.DependencyControl.Toolbox"].lastChannel, "beta" -- non-alpha pin preserved
+
+    -- a v0.7.0 config seeds each record's configuredSource from its currentSource, which v0.9.0 splits
+    -- into intent and provenance; the copy is independent and currentSource is left in place
+    migratesV070SourceSplit: (ut) ->
+      source = {feedSource: "self-declared", channel: "stable", stickiness: "pinned"}
+      c = {
+        modules: {
+          ["l0.Dep"]: {currentSource: source}
+          ["l0.Bare"]: {} -- no source recorded: nothing to seed
+        }
+      }
+      migrated = migrate c, CONFIG_SCHEMA_ID_V0_7_0, schema.CONFIG_SCHEMA_ID_CURRENT
+      ut\assertTrue migrated
+      dep = c.modules["l0.Dep"]
+      ut\assertEquals dep.configuredSource.channel, "stable"
+      ut\assertEquals dep.configuredSource.stickiness, "pinned"
+      ut\assertEquals dep.currentSource, source -- left in place
+      dep.currentSource.channel = "main"
+      ut\assertEquals dep.configuredSource.channel, "stable" -- a copy, not a shared reference
+      ut\assertNil c.modules["l0.Bare"].configuredSource
+
+    -- a v0.7.0 install the CI mishap left on the maintenance channel moves to stable, in the recorded
+    -- channel and in the configured source seeded from its provenance; an alpha pin was chosen and stays
+    migratesV070MainPin: (ut) ->
+      c = {
+        modules: {
+          ["l0.DependencyControl"]: {lastChannel: "main", currentSource: {channel: "main", feedSource: "self-declared"}}
+          ["l0.dkjson"]: {lastChannel: "alpha", currentSource: {channel: "alpha"}}
+          ["l0.Functional"]: {lastChannel: "main"} -- third-party feed: its own channel names are its business
+        }
+        macros: {
+          ["l0.DependencyControl.Toolbox"]: {lastChannel: "main"} -- pinned, with nothing installed to record a source
+        }
+      }
+      migrate c, CONFIG_SCHEMA_ID_V0_7_0, schema.CONFIG_SCHEMA_ID_CURRENT
+      dep = c.modules["l0.DependencyControl"]
+      ut\assertEquals dep.lastChannel, "stable"
+      ut\assertEquals dep.configuredSource.channel, "stable"
+      ut\assertEquals dep.currentSource.channel, "main" -- provenance still records where it came from
+      ut\assertEquals c.macros["l0.DependencyControl.Toolbox"].lastChannel, "stable"
+      ut\assertEquals c.modules["l0.dkjson"].lastChannel, "alpha"
+      ut\assertEquals c.modules["l0.dkjson"].configuredSource.channel, "alpha"
+      ut\assertEquals c.modules["l0.Functional"].lastChannel, "main"
+
+    -- a config already on the current schema is left alone
+    skipsCurrentSchema: (ut) ->
+      c = {modules: {["l0.Dep"]: {currentSource: {channel: "stable"}}}}
+      ut\assertFalse migrate c, schema.CONFIG_SCHEMA_ID_CURRENT, schema.CONFIG_SCHEMA_ID_CURRENT
+      ut\assertNil c.modules["l0.Dep"].configuredSource
 
     -- a pin on the feed maintenance channel is rewritten the same way, across all of our own packages
     migratesOwnedMainPin: (ut) ->
       c = {
         modules: {
-          ["l0.DependencyControl"]: {lastChannel: "main", activeChannel: "main"}
+          ["l0.DependencyControl"]: {lastChannel: "main"}
           ["l0.dkjson"]: {lastChannel: "main"}
           ["l0.MoonCats"]: {lastChannel: "main"}
           ["l0.Functional"]: {lastChannel: "main"} -- third-party feed: its own channel names are its business
@@ -141,7 +191,6 @@
       }
       migrate c, nil, schema.CONFIG_SCHEMA_ID_CURRENT
       ut\assertEquals c.modules["l0.DependencyControl"].lastChannel, "stable"
-      ut\assertEquals c.modules["l0.DependencyControl"].activeChannel, "stable"
       ut\assertEquals c.modules["l0.dkjson"].lastChannel, "stable"
       ut\assertEquals c.modules["l0.MoonCats"].lastChannel, "stable"
       ut\assertEquals c.macros["l0.DependencyControl.Toolbox"].lastChannel, "stable"
@@ -159,6 +208,7 @@
       "hasAllSections", "hasPolicyLiterals"
       "migratesFlatKeys", "dropsObsoleteKeys", "dropsObsoleteFormatVersion", "skipsWhenSchemaPresent"
       "migratesLegacyRecordFields", "migratesOwnedAlphaPin", "migratesOwnedMainPin"
+      "migratesV070SourceSplit", "migratesV070MainPin", "skipsCurrentSchema",
       "preservesUnknownKeys", "handlesExactlyV063Keys"
     }
   }

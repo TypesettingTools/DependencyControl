@@ -40,6 +40,12 @@ msgs = {
   errors: {
     noActiveChannel: "No active channel."
   }
+  getChannels: {
+    ambiguousDefault: "The feed marks several channels of '%s' as the default (%s); using '%s'."
+  }
+  setChannel: {
+    channelGone: "The feed no longer offers channel '%s' for '%s'; switching to '%s'."
+  }
   changelog: {
     header: "Changelog for %s v%s (released %s):"
     verTemplate: "v %s:"
@@ -55,7 +61,7 @@ msgs = {
 ---@class ScriptUpdateRecord
 ---@field namespace string Script namespace.
 ---@field data FeedScriptData Shallow copy of the raw script entry from the feed.
----@field config {c: {activeChannel?: string, lastChannel?: string, channels?: string[]}}
+---@field config {c: {configuredSource?: table, currentSource?: table, lastChannel?: string, channels?: string[]}} Per-package config; read for the configured channel and provenance metadata.
 ---@field moduleName string|false Namespace string for modules; false for automation scripts.
 ---@field logger Logger
 ---@field activeChannel? string Name of the currently active update channel.
@@ -70,7 +76,7 @@ class ScriptUpdateRecord
   ---Creates an update record for a single script entry in a feed.
   ---@param namespace string
   ---@param data FeedScriptData
-  ---@param config? {c: {activeChannel?: string}}
+  ---@param config? {c: {configuredSource?: table, currentSource?: table, lastChannel?: string}}
   ---@param scriptType ScriptType
   ---@param autoChannel? boolean Select the default channel on construction (default true).
   ---@param logger? Logger
@@ -91,31 +97,59 @@ class ScriptUpdateRecord
     @setChannel! if autoChannel
 
 
+  ---Picks the channel a package's feed entry flags as its default.
+  ---The feed format allows only one default channel, but in case there are multiple defaults, this
+  ---picks one deterministically and notifies callers of the conflict, so they can warn the user or
+  ---otherwise handle it as they see fit.
+  ---@param channels? table<string, FeedChannelData> A package's `channels` map.
+  ---@return string? name The default channel's name, or nil when none is flagged.
+  ---@return string[]? conflicting Every flagged name, sorted, when more than one is flagged; nil otherwise.
+  @getDefaultChannel = (channels) ->
+    return nil unless type(channels) == "table"
+    names = [name for name, channel in pairs channels when channel.default]
+    return nil if #names == 0
+    table.sort names
+    return names[1], #names > 1 and names or nil
+
   ---Returns all available channel names for this script and the default channel.
   ---@return string[] channels Channel names, empty when the package declares none.
   ---@return string? defaultChannel
   getChannels: =>
-    channels, default = {}
+    channels = {}
     return channels unless type(@data.channels) == "table"
-    for name, channel in pairs @data.channels
-      channels[#channels+1] = name
-      if channel.default and not default
-        default = name
+    channels[#channels+1] = name for name in pairs @data.channels
 
+    default, conflicting = @@.getDefaultChannel @data.channels
+    if conflicting
+      @logger\warn msgs.getChannels.ambiguousDefault, @namespace, table.concat(conflicting, ", "), default
     return channels, default
 
   ---Selects the active update channel and exposes its fields on this instance.
-  ---@param channelName? string Channel to activate; defaults to config.c.activeChannel.
-  ---@return boolean success
-  ---@return string activeChannel
-  setChannel: (channelName = @config.c.activeChannel) =>
-    with @config.c
-      .channels, default = @getChannels!
-      .lastChannel or= channelName or default
-      channelData = @data.channels[.lastChannel]
-      @activeChannel = .lastChannel
-      return false, @activeChannel unless channelData
-      @[k] = v for k, v in pairs channelData
+  ---An explicitly requested channel wins over the channel recorded in the configured package source,
+  ---which wins over the feed's default.
+  ---This only affects the in-memory state of this ScriptUpdateRecord instance; persistence to the DepCtrl
+  ---config file is left to the caller.
+  ---@param channelName? string Channel to activate; must be offered by the feed.
+  ---@return boolean success False when the selected channel isn't offered by the feed.
+  ---@return string? activeChannel The selected channel name; nil when the package declares no channels at all.
+  setChannel: (channelName) =>
+    _, default = @getChannels!
+    -- When no source is configured (<0.9.0), the source used for the last install (≥0.7.0) is used, and,
+    -- failing that, the `lastChannel` which has been recorded to the config since the pre-v0.7.0 days.
+    source = @config.c.configuredSource or @config.c.currentSource
+    recorded = source and source.channel or @config.c.lastChannel
+    selected = channelName or recorded or default
+    -- When the currently configured/last used channel is no longer offered by the feed, we fall back
+    -- to the feed's default channel, unless the package source has been explicitly pinned, in which case
+    -- we leave it to the user to rectify.
+    pinned = source and source.stickiness == domain.SourceChoiceStickiness.Pinned
+    if not pinned and default and not channelName and selected and not @data.channels[selected]
+      @logger\warn msgs.setChannel.channelGone, selected, @namespace, default
+      selected = default
+    @activeChannel = selected
+    channelData = selected and @data.channels[selected]
+    return false, @activeChannel unless channelData
+    @[k] = v for k, v in pairs channelData
 
     @files = @files and [file for file in *@files when not file.platform or file.platform == environment.platform] or {}
     return true, @activeChannel

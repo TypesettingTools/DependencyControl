@@ -150,6 +150,25 @@
 
     -- getPackagesSourcedFrom / getEffectiveSource: a package's remembered currentSource (resolved per kind), else its
     -- override, else its declared feed
+    -- getEffectiveSource's second return names the rung the URL came from, so a caller showing or
+    -- seeding a source kind reads the same fallback order the URL followed instead of restating it
+    getEffectiveSource_reportsKind: (ut) ->
+      recorded = {feed: 'feed://d', userFeed: 'feed://u', currentSource: {feedSource: SourceFeedKind.UserFeed}}
+      url, kind = FeedInventory.getEffectiveSource recorded, {}
+      ut\assertEquals url, 'feed://u'
+      ut\assertEquals kind, SourceFeedKind.UserFeed
+      overridden = {feed: 'feed://d', userFeed: 'feed://u'}
+      url, kind = FeedInventory.getEffectiveSource overridden, {}
+      ut\assertEquals url, 'feed://u'
+      ut\assertEquals kind, SourceFeedKind.UserFeed -- no record: the override is the first pick
+      plain = {feed: 'feed://d'}
+      url, kind = FeedInventory.getEffectiveSource plain, {}
+      ut\assertEquals url, 'feed://d'
+      ut\assertEquals kind, SourceFeedKind.SelfDeclared
+      url, kind = FeedInventory.getEffectiveSource {}, {}
+      ut\assertNil url
+      ut\assertNil kind
+
     getPackagesSourcedFrom_getEffectiveSource: (ut) ->
       inv = makeInventory {
         macros: {
@@ -314,7 +333,7 @@
 
     _order: {
       "gather_tagsEachSource", "gather_mergesProvenance", "gather_surfacesTrustStatus", "gather_blockedByEntry"
-      "gather_marksInUse", "getPackagesSourcedFrom_getEffectiveSource", "gather_empty"
+      "gather_marksInUse", "getEffectiveSource_reportsKind", "getPackagesSourcedFrom_getEffectiveSource", "gather_empty"
       "crawl_discoversTransitively", "crawl_neverDoesNotFetchUntrusted", "crawl_blockedRootNotFetched"
       "crawl_promptFollowsOnlyConfirmedUntrusted"
       "crawl_boundsUntrustedPerRoot", "crawl_boundsUntrustedPerFeed", "crawl_reportsDepthTruncation"
