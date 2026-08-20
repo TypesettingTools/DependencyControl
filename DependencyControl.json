@@ -79,26 +79,26 @@
           ]
         },
         "main": {
-          "version": "0.7.0",
-          "released": "2026-07-24",
+          "version": "0.9.0",
+          "released": "2026-08-20",
           "default": false,
           "files": [
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "ABAB9B3A82C6B47144ED160F484B3617651DDF81"
+              "sha1": "9F1500392C356076F0DFF32EE9BA690366CE0379"
             },
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "59B666472F097BE5D71ADB788A96D7A650830BB5",
+              "sha1": "DED2B18E6F5C3BC5644FDA1E7DD514C8C579CE83",
               "type": "test"
             }
           ],
           "requiredModules": [
             {
               "moduleName": "l0.DependencyControl",
-              "version": "0.7.0"
+              "version": "0.9.0"
             }
           ]
         },
@@ -722,14 +722,14 @@
           ]
         },
         "main": {
-          "version": "0.7.0",
-          "released": "2026-07-24",
+          "version": "0.9.0",
+          "released": "2026-08-20",
           "default": false,
           "files": [
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "FC202CDDF83FC14CE784836E9C8D93CC6BC227DF"
+              "sha1": "89BA192E65D3446B8A066F4A5816EBA8560773E0"
             },
             {
               "name": "/Constants.moon",
@@ -739,12 +739,12 @@
             {
               "name": "/ConfigHandler.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "6C8ACA7DD2BBA8AD22AB7E488F918297B820EDF9"
+              "sha1": "53FDC5CF92427D6F863EC7078B1A4B0F405E0FFF"
             },
             {
               "name": "/ConfigView.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "BCCB1B7E7A85245BCDD87CE0CCCC1955CB161827"
+              "sha1": "2530A6192FCCBA3B9BE4D946BEAA359B429F14B4"
             },
             {
               "name": "/hash.moon",
@@ -774,7 +774,7 @@
             {
               "name": "/FeedInventory.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "4EB32746AE7D048F15355350827C9A470CB5C384"
+              "sha1": "E0A5A3EA5C37C152A723854207DCD289D02FB752"
             },
             {
               "name": "/FeedManager.moon",
@@ -830,7 +830,7 @@
             {
               "name": "/ModuleLoader.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "F1ACB8570A361F9006A6E6BA74FFF84D1F058F3A"
+              "sha1": "059526819899F46484C78AF6C1D6A92F2C354EB2"
             },
             {
               "name": "/ModuleProvider.moon",
@@ -845,7 +845,7 @@
             {
               "name": "/PackageRecord.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "8BF956EEF2223D75B42FEBAE3BE21E2FC2A1CDA7"
+              "sha1": "D03AFB6A094D99AC03EA41D61836386713631579"
             },
             {
               "name": "/ScriptTargetFilter.moon",
@@ -855,12 +855,12 @@
             {
               "name": "/ScriptUpdateRecord.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "56B2C04A436337243E7D294B5C820445A0F733A7"
+              "sha1": "1D1BB6F7CEDCBDC92925E412D3EFD0DF3400353F"
             },
             {
               "name": "/SemanticVersion.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "663BB4263B99C01E69AD897DAD7CF6420E17A666"
+              "sha1": "D13E41C35B1B287752420C73D124EC41D3861BF7"
             },
             {
               "name": "/Stub.moon",
@@ -880,12 +880,12 @@
             {
               "name": "/UpdateFeed.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "3F565A4F1A9B530909BE6F0DB59561857842E689"
+              "sha1": "05F0F2D6631879505FC620BA2A3A779436D71B8C"
             },
             {
               "name": "/UpdateTask.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "D7296244D4B9DAEAD0463CF6FE699AAF5CDF39A8"
+              "sha1": "F0E0D701FD8325B407A508C5A6EEFA522158ECB3"
             },
             {
               "name": "/Updater.moon",
@@ -940,12 +940,12 @@
             {
               "name": "/FeedLoader.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "D0B097BF0C5BFCD60DF0E04B0D42F723A01997CF"
+              "sha1": "787E6D33E4B388C7E514542CF5F23DCFE298B383"
             },
             {
               "name": "/config-schema.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "CC74ACBE7A7CD8761AD714564F3805AC96F68067"
+              "sha1": "25A8986ED53685D995338E4FE0A9446D0A284E6B"
             },
             {
               "name": "/Finalizer.moon",
@@ -960,7 +960,7 @@
             {
               "name": "/domain.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "C5D9BC686DFA4A85A28EE6E2E392B1E012A83909"
+              "sha1": "97AB343E57DACCD4CF7C97DA6CDBDC5F03CEC68E"
             },
             {
               "name": "/environment.moon",
@@ -970,7 +970,7 @@
             {
               "name": "/utils.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "FA8307BC15AD2FEC1535F9B862E1D92C2A3A1AB9"
+              "sha1": "651376FD6D8B4E30AB1BEEC41D5AD2E4A76C1493"
             },
             {
               "name": ".moon",
@@ -987,13 +987,13 @@
             {
               "name": "/ConfigHandler.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "D0F735761CAC12540F7841DCF8A80AB6C20ECCE5",
+              "sha1": "62293A809A3A1B022BCAE835A08B976207EC6737",
               "type": "test"
             },
             {
               "name": "/ConfigView.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "A0E00272169CA1FFAADF0A672C468A975D9B9F82",
+              "sha1": "2B269DFD47F980F17C4A72A84BCA9255A2C214BC",
               "type": "test"
             },
             {
@@ -1023,7 +1023,7 @@
             {
               "name": "/FeedInventory.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "5D820751E60E8609CD65427ED01DD312E869001B",
+              "sha1": "EB9572CE233FB944D275848243BC87982FEF05B1",
               "type": "test"
             },
             {
@@ -1089,7 +1089,7 @@
             {
               "name": "/ModuleLoader.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "8FE0E4ED90D3ED719F7DE80877591EF2F30014AA",
+              "sha1": "0B1EF3A8E4C79310DD20511F7F6BBEAF8F219CB0",
               "type": "test"
             },
             {
@@ -1113,7 +1113,7 @@
             {
               "name": "/PackageRecord.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "9AB3488762804B65BF48CE33C44BA99628DF3F9D",
+              "sha1": "BE89C4202A8159B927438BD5575CB5DE94B1B05F",
               "type": "test"
             },
             {
@@ -1125,13 +1125,13 @@
             {
               "name": "/ScriptUpdateRecord.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "0B66CB43DC28194E93D5CC25426698010FCC436D",
+              "sha1": "1C7EB37806E609FC57ACE47BA96F0F268F3E205E",
               "type": "test"
             },
             {
               "name": "/SemanticVersion.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "E242FE3C0332C60468E4B3F76DCFDE1D631172F9",
+              "sha1": "F6FBCEC0B847AA71A4CF58967C8D6AAC2D8E26EF",
               "type": "test"
             },
             {
@@ -1149,19 +1149,19 @@
             {
               "name": "/UpdateFeed.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "6B566A8CE16D0292FA07303506A2D254C4CCC4DC",
+              "sha1": "6E2D5DDD51871129F3E4FCE504AFD8467B38AC61",
               "type": "test"
             },
             {
               "name": "/UpdateTask.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "5CA6FC899341677F702788F543373C8F3EDCFAA0",
+              "sha1": "672B03D8C56277FE1DDC75A26232B1705B685A3A",
               "type": "test"
             },
             {
               "name": "/Updater.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "7945FCE5A2DC11257301DE5A2B2423E56A0AC4CB",
+              "sha1": "46B1E9BD099B831E194F514971BB26667DA470EC",
               "type": "test"
             },
             {
@@ -1203,13 +1203,13 @@
             {
               "name": "/FeedLoader.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "D24848390EC92F0FCD088ECFDA62C67D12700F8F",
+              "sha1": "8F6FCB52B4C90C89B6FD0137BEAE302325BC2638",
               "type": "test"
             },
             {
               "name": "/config-schema.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "C65BC75E4ACF11F2CA174255CB6792C3C4FAD7A7",
+              "sha1": "8EE4EA529ABF8F8AF4C386B4C4713D92ED163089",
               "type": "test"
             },
             {
@@ -1239,7 +1239,7 @@
             {
               "name": "/utils.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "F78238492CB05F9F1568C14DE363A83CE1CAB6D8",
+              "sha1": "431E1940BB43BB2FE1C3C38A55F57574D278A3DF",
               "type": "test"
             },
             {
@@ -1990,14 +1990,14 @@
           ]
         },
         "main": {
-          "version": "0.7.0",
-          "released": "2026-07-24",
+          "version": "0.8.0",
+          "released": "2026-08-20",
           "default": false,
           "files": [
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "D88659A96EC9C7EC7D19ABB2A8192213136F834B"
+              "sha1": "3FACCD40F487E8205300E576B78F10D5AFFDDEE4"
             },
             {
               "name": "/vendor/dkjson.lua",
@@ -2142,7 +2142,7 @@
         },
         "main": {
           "version": "0.7.0",
-          "released": "2026-07-24",
+          "released": "2026-08-20",
           "default": false,
           "files": [
             {
