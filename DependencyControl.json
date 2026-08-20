@@ -798,7 +798,8 @@
           "fix(Updater): A second update attempt in the same session works again. A package remembered the feeds its first attempt had consulted and skipped them next time, so a retry passed over the very feed that offers it and reported that none was available.",
           "fix(CLI): `merge-feed` now clears the `default` flag from every channel but the one it is told is the default, so publishing can't leave a feed with two default channels. It also copies each section's own file templates, which a feed merged into a fresh file used to lose.",
           "fix(CLI): `serve-updates` no longer fails on a feed that already matches its working copy.",
-          "feat(CLI): `serve-updates` now accepts an optional `--port` argument, so a test feed URL stays valid across runs."
+          "feat(CLI): `serve-updates` now accepts an optional `--port` argument, so a test feed URL stays valid across runs.",
+          "feat(CLI): `--serve-channel` can be given more than once to graft the dev build onto several channels at once, the first of which becomes the served feed's default."
         ]
       }
     },
