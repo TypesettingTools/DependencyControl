@@ -26,6 +26,10 @@ logger.usePrefixWindow = false
 msgs = {
   install: {
     scanning: "Scanning %d available feeds...",
+    scanningTask: "Scanning available feeds..."
+    loadingTask: "Loading feed data..."
+    empty: "All available scripts are already installed."
+    emptyUnfetched: "No scripts are available to install (%d of %d known feeds could not be fetched)."
     createScriptUpdateRecordFailed: "Failed to create an update record for %s '%s' from feed %s: %s"
   }
   uninstall: {
@@ -218,11 +222,16 @@ promptUntrustedFeed = (url, ft) ->
 
 -- Crawls the feed inventory with the untrusted-feed prompter active (so the `prompt` policy asks), scoped
 -- so the prompter never leaks into background fetches. Shared by install discovery and Manage Feeds.
-crawlWithPrompt = (inventory) ->
+-- The pcall keeps a cancellation raised from onProgress from skipping the prompter reset;
+-- returns nil when the crawl was cancelled and re-raises anything else.
+crawlWithPrompt = (inventory, onProgress) ->
   feedTrust = DepCtrl.updater.feedTrust
   feedTrust\setPrompter promptUntrustedFeed
-  entries = inventory\crawl!
+  ok, entries = pcall inventory.crawl, inventory, onProgress
   feedTrust\setPrompter nil
+  if not ok and entries != "cancelled"
+    error entries, 0
+  return nil unless ok
   entries
 
 -- Macros
@@ -261,8 +270,14 @@ install = ->
   -- FeedInventory crawls the known feeds, which are trust-gated and bounded. The shared feed loader then
   -- serves each reachable feed's data from the cache the crawl just populated.
   macros, modules = {}, {}
-  entries = crawlWithPrompt buildFeedInventory!
+  aegisub.progress.task msgs.install.scanningTask
+  entries = crawlWithPrompt buildFeedInventory!, (fetched, known) ->
+    aegisub.progress.set math.floor fetched * 100 / known
+    error "cancelled", 0 if aegisub.progress.is_cancelled!
+  aegisub.progress.set 100
+  return unless entries
 
+  aegisub.progress.task msgs.install.loadingTask
   logger\log msgs.install.scanning, #entries
   for entry in *entries
     continue unless entry.fetched
@@ -272,6 +287,13 @@ install = ->
 
   moduleList, moduleMap = buildDlgList modules
   macroList, macroMap = buildDlgList macros
+
+  if #moduleList == 0 and #macroList == 0
+    unfetched = #[entry for entry in *entries when not entry.fetched]
+    message = unfetched > 0 and msgs.install.emptyUnfetched\format(unfetched, #entries) or msgs.install.empty
+    aegisub.dialog.display {{class: "label", x: 0, y: 0, width: 1, height: 1, label: message}},
+      {buttons.close}, {ok: buttons.close, cancel: buttons.close}
+    return
 
   btn, res = aegisub.dialog.display getScriptListDlg macroList, moduleList
   return unless btn
