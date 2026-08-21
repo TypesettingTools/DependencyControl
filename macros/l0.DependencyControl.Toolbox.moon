@@ -26,6 +26,9 @@ logger.usePrefixWindow = false
 msgs = {
   install: {
     scanning: "Scanning %d available feeds...",
+    scanningTask: "Scanning available feeds..."
+    loadingTask: "Loading feed data..."
+    empty: "All available scripts are already installed; nothing new to install."
     createScriptUpdateRecordFailed: "Failed to create an update record for %s '%s' from feed %s: %s"
   }
   uninstall: {
@@ -261,14 +264,21 @@ install = ->
   -- FeedInventory crawls the known feeds, which are trust-gated and bounded. The shared feed loader then
   -- serves each reachable feed's data from the cache the crawl just populated.
   macros, modules = {}, {}
+  aegisub.progress.task msgs.install.scanningTask
   entries = crawlWithPrompt buildFeedInventory!
 
+  aegisub.progress.task msgs.install.loadingTask
   logger\log msgs.install.scanning, #entries
   for entry in *entries
     continue unless entry.fetched
     feed = DepCtrl.updater.feedLoader\load entry.url
     continue unless feed.data
     addAvailableToInstall macros, modules, feed
+
+  unless next(modules) or next(macros)
+    aegisub.dialog.display {{class: "label", x: 0, y: 0, width: 1, height: 1, label: msgs.install.empty}},
+      {buttons.close}, {ok: buttons.close, cancel: buttons.close}
+    return
 
   moduleList, moduleMap = buildDlgList modules
   macroList, macroMap = buildDlgList macros
