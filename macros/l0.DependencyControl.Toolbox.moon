@@ -222,11 +222,16 @@ promptUntrustedFeed = (url, ft) ->
 
 -- Crawls the feed inventory with the untrusted-feed prompter active (so the `prompt` policy asks), scoped
 -- so the prompter never leaks into background fetches. Shared by install discovery and Manage Feeds.
-crawlWithPrompt = (inventory) ->
+-- The pcall keeps a cancellation raised from onProgress from skipping the prompter reset;
+-- returns nil when the crawl was cancelled and re-raises anything else.
+crawlWithPrompt = (inventory, onProgress) ->
   feedTrust = DepCtrl.updater.feedTrust
   feedTrust\setPrompter promptUntrustedFeed
-  entries = inventory\crawl!
+  ok, entries = pcall inventory.crawl, inventory, onProgress
   feedTrust\setPrompter nil
+  if not ok and entries != "cancelled"
+    error entries, 0
+  return nil unless ok
   entries
 
 -- Macros
@@ -266,7 +271,11 @@ install = ->
   -- serves each reachable feed's data from the cache the crawl just populated.
   macros, modules = {}, {}
   aegisub.progress.task msgs.install.scanningTask
-  entries = crawlWithPrompt buildFeedInventory!
+  entries = crawlWithPrompt buildFeedInventory!, (fetched, known) ->
+    aegisub.progress.set math.floor fetched * 100 / known
+    error "cancelled", 0 if aegisub.progress.is_cancelled!
+  aegisub.progress.set 100
+  return unless entries
 
   aegisub.progress.task msgs.install.loadingTask
   logger\log msgs.install.scanning, #entries
