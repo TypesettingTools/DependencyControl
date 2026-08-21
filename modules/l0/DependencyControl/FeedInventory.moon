@@ -242,11 +242,12 @@ class FeedInventory
 
   ---Fetches feeds and discovers transitively-advertised ones by crawling the `knownFeeds` graph out from the
   ---config-derived feeds; untrusted expansion is bounded, so check `stats.truncated` for incomplete results.
+  ---@param onProgress? fun(fetched: integer, known: integer) Called after each feed is fetched, with the running fetch count and the number of feeds currently known to the crawl (more are discovered as it goes, so `known` may grow).
   ---@return FeedInventoryEntry[] feeds The known feeds, enriched with what the crawl discovered.
   ---@return FeedCrawlStats stats What the crawl explored and where it stopped short.
-  crawl: =>
+  crawl: (onProgress) =>
     inventoryEntriesByUrl = @__collectConfigFeeds!
-    stats = @__crawlKnownFeeds inventoryEntriesByUrl
+    stats = @__crawlKnownFeeds inventoryEntriesByUrl, onProgress
     return @__finalize(inventoryEntriesByUrl), stats
 
   ---Breadth-first crawl of the `knownFeeds` graph, extending inventoryEntriesByUrl in place with the transitively-discovered
@@ -254,8 +255,9 @@ class FeedInventory
   ---malicious subtree can't starve the others.
   ---@private
   ---@param inventoryEntriesByUrl table<string, FeedInventoryEntry> The config-derived feeds to start from; extended in place.
+  ---@param onProgress? fun(fetched: integer, known: integer) Called after each feed is fetched (see `crawl`).
   ---@return FeedCrawlStats stats
-  __crawlKnownFeeds: (inventoryEntriesByUrl) =>
+  __crawlKnownFeeds: (inventoryEntriesByUrl, onProgress) =>
     c = @config.c
     limits = c.feeds.crawlLimits or {}
     defaults = @@defaultCrawlLimits
@@ -300,6 +302,7 @@ class FeedInventory
       continue unless knownFeeds
       stats.fetched += 1
       inventoryEntriesByUrl[feedUrl].fetched = true
+      onProgress stats.fetched, #queue - head + 1 + stats.fetched if onProgress
 
       perFeedUntrusted = 0
       perFeedDrops, perRootDrops = newDrops!, newDrops!
