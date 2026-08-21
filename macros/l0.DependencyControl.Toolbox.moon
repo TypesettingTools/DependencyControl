@@ -28,7 +28,8 @@ msgs = {
     scanning: "Scanning %d available feeds...",
     scanningTask: "Scanning available feeds..."
     loadingTask: "Loading feed data..."
-    empty: "All available scripts are already installed; nothing new to install."
+    empty: "All available scripts are already installed."
+    emptyUnfetched: "No scripts are available to install (%d of %d known feeds could not be fetched)."
     createScriptUpdateRecordFailed: "Failed to create an update record for %s '%s' from feed %s: %s"
   }
   uninstall: {
@@ -275,13 +276,15 @@ install = ->
     continue unless feed.data
     addAvailableToInstall macros, modules, feed
 
-  unless next(modules) or next(macros)
-    aegisub.dialog.display {{class: "label", x: 0, y: 0, width: 1, height: 1, label: msgs.install.empty}},
-      {buttons.close}, {ok: buttons.close, cancel: buttons.close}
-    return
-
   moduleList, moduleMap = buildDlgList modules
   macroList, macroMap = buildDlgList macros
+
+  if #moduleList == 0 and #macroList == 0
+    unfetched = #[entry for entry in *entries when not entry.fetched]
+    message = unfetched > 0 and msgs.install.emptyUnfetched\format(unfetched, #entries) or msgs.install.empty
+    aegisub.dialog.display {{class: "label", x: 0, y: 0, width: 1, height: 1, label: message}},
+      {buttons.close}, {ok: buttons.close, cancel: buttons.close}
+    return
 
   btn, res = aegisub.dialog.display getScriptListDlg macroList, moduleList
   return unless btn
