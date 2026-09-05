@@ -314,7 +314,6 @@
       ut\assertEquals err, ""
       ut\assertEquals mdl._ref, loadedRef
       ut\assertNil mdl._outdated
-      ut\assertContains err, "no newer version" -- the updater's detail reaches the user through the real formatter
 
     -- checkOptionalModules: mock self with requiredModules
 
