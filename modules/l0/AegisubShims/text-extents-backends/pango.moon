@@ -198,7 +198,6 @@ createBackend = (options) ->
 ---@class AegisubTextExtentsPango
 ---@field isAvailable boolean Whether Pango, pangocairo and GObject all loaded, so whether measuring works.
 ---@field measure AegisubTextExtentsBackend Measures at the default resolution; raises when it cannot.
----@field createBackend fun(options?: TextExtentsOptions): AegisubTextExtentsBackend Builds a backend measuring at a chosen resolution.
 return {
   ---@type boolean
   isAvailable: isAvailable

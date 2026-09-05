@@ -158,6 +158,7 @@ if ok and native
   if verified and digest == sha1Lua "abc"
     sha1Impl, sha1Backend = native, backendName
 
+---The hash algorithms `getDigest`/`verify` accept (currently `Sha1`).
 ---@alias HashType
 ---| "sha1" # Sha1: SHA-1, a 40-character lowercase hex digest
 HashType = Enum "HashType", { Sha1: "sha1" }
@@ -191,7 +192,6 @@ canonicalize = (value) ->
     else "#{type value}:#{tostring value}"
 
 ---@class Hash
----@field HashType Enum The hash algorithms `getDigest`/`verify` accept (currently `Sha1`).
 ---@field sha1Backend string Name of the active SHA-1 backend: "CommonCrypto", "OpenSSL (EVP)", "OpenSSL (SHA1)", "CryptoAPI", or "lua".
 Hash = {
   :HashType

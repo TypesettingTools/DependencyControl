@@ -37,6 +37,7 @@ MetricMode = Enum "TextExtentsMetricMode", {
 -- wxDC hands a text extent back as a whole `wxCoord`, and wx changed how it gets there: everything
 -- before 3.2 rounded to the nearest, 3.2 and later rounds up. Aegisub pins the version it builds
 -- against, so which of the two a script sees follows the Aegisub it runs in rather than the machine.
+---How a wx version takes a text extent to a whole number.
 ---@alias WxTextExtentRounding
 ---| 1 # Round: to the nearest whole number, as wxWidgets before 3.2 does; Aegisub up to 3.4.2
 ---| 2 # Ceil: up to the next whole number, as wxWidgets 3.2 and later does; Aegisub 3.5 and later
@@ -152,11 +153,6 @@ selectBackend = (metricMode = MetricMode.AegisubWindows) ->
 ---What the text-extents backends in `text-extents-backends/` share: the contracts they can measure by,
 ---the constants their arithmetic is expressed in, and the selection that picks one.
 ---@class AegisubTextExtents
----@field MetricMode Enum The contracts on offer, as a TextExtentsMetricMode enum.
----@field WxRounding Enum How a wx version takes a text extent to a whole number, as a WxTextExtentRounding enum.
----@field VerticalMetricFallbackBehavior Enum What to measure a face with when its Windows cell is unusable, as a TextExtentsVerticalMetricFallbackBehavior enum.
----@field selectBackend fun(metricMode?: TextExtentsMetricMode): AegisubTextExtentsBackend?, string Picks the best available backend for a contract.
----@field applyStyleScale fun(style: AegisubStyle, width: number, height: number, descent: number, extlead: number): number, number, number, number Applies the style's scales and divides the measurement scale out.
 ---@field MEASUREMENT_SCALE integer What Aegisub multiplies a font size by before measuring.
 ---@field POINTS_PER_INCH integer Points in an inch, which converts a DPI to a point-to-pixel factor.
 ---@field DEFAULT_DPI integer The resolution a desktop reports unless configured otherwise.

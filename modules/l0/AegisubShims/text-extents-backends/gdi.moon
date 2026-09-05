@@ -134,7 +134,6 @@ measure = (style, text) ->
 ---`l0.AegisubShims` installs it as the `aegisub.text_extents` backend wherever gdi32 loads.
 ---@class AegisubTextExtentsGdi
 ---@field isAvailable boolean Whether gdi32 loaded, so whether `measure` can be called.
----@field measure AegisubTextExtentsBackend Measures a run of text; raises when GDI refuses the request.
 return {
   ---@type boolean
   isAvailable: ffiGdi.isAvailable

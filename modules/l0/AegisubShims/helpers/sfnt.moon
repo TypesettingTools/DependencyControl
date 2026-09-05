@@ -10,6 +10,7 @@ readS16 = (bytes, offset) ->
 readU32 = (bytes, offset) ->
   return readU16(bytes, offset) * 0x10000 + readU16 bytes, offset + 2
 
+---The styles the OS/2 table claims for the face, and which of its metrics it asks be preferred.
 ---@alias Os2FsSelection integer A combination of FsSelection members.
 FsSelection = Flags "Os2FsSelection", {
   Italic: 0x001 -- the face is an italic or oblique cut
@@ -24,6 +25,7 @@ FsSelection = Flags "Os2FsSelection", {
   Oblique: 0x200 -- the face is oblique rather than a true italic
 }
 
+---The embedding permissions the OS/2 table states for the face.
 ---@alias Os2FsType integer A combination of FsType members.
 FsType = Flags "Os2FsType", {
   -- the licensing level, of which a face states at most one; none at all means installable embedding
@@ -112,8 +114,6 @@ OS2_LENGTH_VERSION_5 = 100
 ---
 ---Field names follow the OpenType specification, minus the Hungarian type prefixes its names use.
 ---@class AegisubShimsSfnt
----@field FsSelection Flags The OS/2 style and metric-preference bits, as an Os2FsSelection flag set.
----@field FsType Flags The OS/2 embedding-permission bits, as an Os2FsType flag set.
 Sfnt = {
   :FsSelection
   :FsType

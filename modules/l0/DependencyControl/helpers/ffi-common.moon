@@ -40,7 +40,6 @@ Errno = {
 
 ---C API values that are the same on every supported platform, for the platform helpers to extend.
 ---@class FfiCommon
----@field Errno FfiErrno The error codes by their C names, for the range all supported platforms share.
 Common = {
   ---@type FfiErrno
   Errno: Errno

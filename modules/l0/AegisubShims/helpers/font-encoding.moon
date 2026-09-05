@@ -83,7 +83,6 @@ decoders = {
 
 ---What a cmap subtable is keyed by, and the encoding and decoding between a code point and that key.
 ---@class AegisubShimsFontEncoding
----@field Encoding Enum The subtable keys on offer, as a FontEncoding enum.
 FontEncoding = {
   :Encoding
 

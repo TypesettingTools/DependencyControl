@@ -133,6 +133,7 @@ NumberType = Enum "CoreFoundationNumberType", {
 }
 
 -- A descriptor states every trait a face has at once, so these combine rather than one being picked.
+---The traits CoreText reports a face by, as a descriptor states them.
 ---@alias CoreTextFontTrait integer A combination of FontTrait members.
 FontTrait = Flags "CoreTextFontTrait", {
   Italic: 1 -- an italic or oblique cut
@@ -197,9 +198,6 @@ TableTag = Enum "CoreTextTableTag", {
 ---@field CgAffineTransform ffi.ctype* Constructor for the matrix a synthesized slant is applied through.
 ---@field NumberType Enum How CFNumberGetValue reads a number, as a CoreFoundationNumberType enum.
 ---@field StringEncoding Enum The string encodings, as a CoreFoundationStringEncoding enum.
----@field FontTrait Flags Symbolic font traits, as a CoreTextFontTrait flag set.
----@field FontWeight Enum The named normalized weights, as a CoreTextFontWeight enum.
----@field FontWidth Enum The named normalized widths, as a CoreTextFontWidth enum.
 ---@field FontOrientation Enum The advance orientations, as a CoreTextFontOrientation enum.
 ---@field TableTag Enum The font table codes, as a CoreTextTableTag enum.
 return {

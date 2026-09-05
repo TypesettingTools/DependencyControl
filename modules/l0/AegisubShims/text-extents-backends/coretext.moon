@@ -504,7 +504,6 @@ createBackend = (options) ->
 ---@class AegisubTextExtentsCoreText
 ---@field isAvailable boolean Whether the frameworks loaded, so whether `measure` can be called.
 ---@field measure AegisubTextExtentsBackend Measures by the Windows cell; raises when it cannot.
----@field createBackend fun(options?: TextExtentsOptions): AegisubTextExtentsBackend Builds a backend measuring by a chosen contract.
 ---@field MetricMode Enum The metric contracts on offer, as a TextExtentsMetricMode enum.
 ---@field WxRounding Enum How a wx version reaches a whole wxCoord, as a WxTextExtentRounding enum.
 ---@field VerticalMetricFallbackBehavior Enum What to measure a face with when its Windows cell is unusable, as a TextExtentsVerticalMetricFallbackBehavior enum.

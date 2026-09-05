@@ -24,6 +24,7 @@ libcBinding = ffiBinding.bind {
 }
 libc = libcBinding.functions
 
+---Whether this platform is likely POSIX. Gate any use of `open`/`close` on it.
 ---@type boolean
 isAvailable = ffi.os != "Windows" and libcBinding.hasSymbol "open"
 
@@ -32,6 +33,7 @@ isAvailable = ffi.os != "Windows" and libcBinding.hasSymbol "open"
 --
 -- O_RDONLY is zero, so a value asking for it cannot be told from one asking for no access mode at
 -- all, and the group catches only Write and ReadWrite set together.
+---The access modes and creation bits `open(2)` takes.
 ---@alias PosixOpenFlags integer A combination of OpenFlags members.
 OpenFlags = Flags "PosixOpenFlags", {
   {
@@ -66,8 +68,6 @@ Errno = ffiCommon.extendErrno {
 ---every platform and reports `isAvailable` false where the calls don't resolve, so a caller can branch
 ---once rather than guarding each call.
 ---@class FfiPosix
----@field isAvailable boolean Whether this platform is likely POSIX. Gate any use of `open`/`close` on it.
----@field OpenFlags Flags The access modes and creation bits open(2) takes, as a PosixOpenFlags flag set.
 ---@field Errno FfiErrno The error codes by their C names, the shared ones plus this kernel's own.
 return {
   ---@type boolean

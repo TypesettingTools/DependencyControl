@@ -283,7 +283,6 @@ Encoding = Enum "FreeTypeEncoding", {
 ---@field HoriHeaderPointer ffi.ctype* Cast for the hhea table FT_Get_Sfnt_Table returns.
 ---@field Os2Pointer ffi.ctype* Cast for the OS/2 table FT_Get_Sfnt_Table returns.
 ---@field SfntTag Enum The SFNT table selectors, as a FreeTypeSfntTag enum.
----@field Encoding Enum The charmap encodings, as a FreeTypeEncoding enum.
 ---@field LoadFlag Flags Glyph-loading bits, as a FreeTypeLoadFlag flag set.
 ---@field KerningMode Enum The kerning units, as a FreeTypeKerningMode enum.
 ---@field FaceFlag Flags Face capability bits, as a FreeTypeFaceFlag flag set.

@@ -53,6 +53,7 @@ Errno = ffiCommon.extendErrno {
 -- The Win32 error codes the file and directory calls report, from winerror.h. A plain table for the
 -- same reason `Errno` is one: the codes a caller compares against are a subset transcribed as needed,
 -- and winerror.h names several of them more than once.
+---The Win32 error codes a file or directory call reports, for a caller branching on a specific one.
 ---@class FfiWin32Error
 Win32Error = {
   InvalidFunction: 1 -- ERROR_INVALID_FUNCTION
@@ -125,7 +126,6 @@ isAvailable, kernel32 = kernel32Binding.isAvailable, kernel32Binding.functions
 ---@field CP_UTF8 integer Code page identifier for UTF-8, which the *CP() conversion APIs take.
 ---@field WCHAR_SIZE integer Bytes one wchar_t occupies, for sizing and walking a wide buffer.
 ---@field Errno FfiErrno The error codes by their C names, the shared ones plus the Windows runtime's own.
----@field Win32Error FfiWin32Error The Win32 error codes a file or directory call reports, for a caller branching on a specific one.
 local Windows
 Windows = {
   ---@type table<string, ffi.cdata*>

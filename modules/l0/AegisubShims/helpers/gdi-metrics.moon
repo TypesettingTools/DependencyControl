@@ -163,7 +163,6 @@ deriveTextMetrics = (resolved, cell, fontSize) ->
 ---Derives the TEXTMETRIC values GDI reports for a face from the face's own OS/2 and hhea tables, so a
 ---backend can reproduce the AegisubWindows contract on a platform with no GDI to ask.
 ---@class AegisubShimsGdiMetrics
----@field CellSource Enum Which of a face's tables a cell was read from, as a GdiCellSource enum.
 GdiMetrics = {
   :CellSource
   :deriveCell
