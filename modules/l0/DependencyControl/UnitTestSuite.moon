@@ -61,6 +61,7 @@ class UnitTest
       continuous: "Expected table to have continuous numerical keys, but value at index %d of %d was a nil."
       matches: "String value '%s' didn't match expected %s pattern '%s'."
       contains: "String value '%s' didn't contain expected substring '%s' (case-%s comparison)."
+      notContains: "String value '%s' contained substring '%s', which it was expected not to (case-%s comparison)."
       error: "Expected function to throw an error but it successfully returned %d values: %s"
       errorMsgMatches: "Error message '%s' didn't match expected %s pattern '%s'."
     }
@@ -547,6 +548,23 @@ class UnitTest
       str, needle
     else str\lower!, needle\lower!
     @assert haystack\find(target, init, true), @@msgs.assert.contains, str, needle,
+      caseSensitive and "sensitive" or "insensitive"
+
+  ---Fails the assertion if a string contains a specified substring.
+  ---Search is case-sensitive by default.
+  ---@param str string The input string.
+  ---@param needle string The substring that must not be found.
+  ---@param caseSensitive? boolean Disable for locale-dependent case-insensitive comparison (default true).
+  ---@param init? number The first byte to start the search at (default 1).
+  assertNotContains: (str, needle, caseSensitive = true, init = 1) =>
+    @checkArgTypes { str: {str, "string"}, needle: {needle, "string"},
+      caseSensitive: {caseSensitive, "boolean"}, init: {init, "number"}
+      }
+
+    haystack, target = if caseSensitive
+      str, needle
+    else str\lower!, needle\lower!
+    @assert not haystack\find(target, init, true), @@msgs.assert.notContains, str, needle,
       caseSensitive and "sensitive" or "insensitive"
 
   -- function asserts

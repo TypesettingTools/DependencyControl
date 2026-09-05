@@ -61,6 +61,25 @@
       ut\assertFalse ok
       ut\assertTrue probe.assertFailed
 
+    assertNotContains_passesWhenTheSubstringIsAbsent: (ut) ->
+      probe = makeProbe!
+      ok = pcall UnitTest.assertNotContains, probe, "Hello World", "xyz"
+      ut\assertTrue ok
+      ut\assertFalse probe.assertFailed
+
+    assertNotContains_failsWhenTheSubstringIsPresent: (ut) ->
+      probe = makeProbe!
+      ok = pcall UnitTest.assertNotContains, probe, "Hello World", "World"
+      ut\assertFalse ok
+      ut\assertTrue probe.assertFailed
+
+    -- case folding applies to the absence too, so a match in the other case still fails it
+    assertNotContains_caseInsensitiveFindsTheOtherCase: (ut) ->
+      probe = makeProbe!
+      ok = pcall UnitTest.assertNotContains, probe, "Hello World", "WORLD", false
+      ut\assertFalse ok
+      ut\assertTrue probe.assertFailed
+
     assertContains_failureUsesContainsMessage: (ut) ->
       probe = makeProbe!
       pcall UnitTest.assertContains, probe, "abc", "xyz"
