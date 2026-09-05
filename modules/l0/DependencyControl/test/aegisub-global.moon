@@ -4,11 +4,36 @@
 -- Called from test.moon as: (controls\requireTest "aegisub-global")!
 ->
   haveShims, shims = pcall require, "l0.AegisubShims"
+  AssScript = require "l0.AssParser.AssScript"
 
   STYLE_SAMPLE = haveShims and shims.Ass.createStyle {fontname: "Arial", fontsize: 40}
 
+  SOURCE = table.concat {
+    "[Script Info]"
+    "Title: Fixture"
+    ""
+    "[Events]"
+    "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text"
+    "Dialogue: 0,0:00:00.00,0:00:05.00,Default,,0,0,0,,first"
+    "Dialogue: 0,0:00:05.00,0:00:10.00,Default,,0,0,0,,second"
+    ""
+  }, "\n"
+
+  ---Sets a new parse of the fixture as the script and registers a macro, so no test sees another test's
+  ---edits.
+  ---@param name string The macro's name.
+  ---@param processor function The macro's processing function.
+  ---@param validator? function The macro's validation function.
+  ---@return AssScript script The installed script.
+  installWithMacro = (name, processor, validator) ->
+    script = assert AssScript.parse SOURCE
+    shims.setScript script
+    aegisub.register_macro name, "a test macro", processor, validator
+    script
+
   {
-    _description: "The faux aegisub global's own contracts, chiefly its text-extents backend hook."
+    _description: "The faux aegisub global's own contracts: its text-extents backend hook, and
+      setting a script to run registered macros on."
     _condition: -> haveShims, "l0.AegisubShims isn't loaded (#{tostring shims})"
 
     ---@param ut UnitTest
@@ -44,22 +69,25 @@
       for field in *{"bold", "italic", "underline", "strikeout"}
         for value in *{0, 700, "yes"}
           _, err = pcall aegisub.text_extents, shims.Ass.createStyle({[field]: value}), "measure me"
-          ut\assertMatches err, "Invalid or missing field '#{field}'"
-          ut\assertMatches err, "expected boolean"
+          ut\assertMatches err, "'#{field}' %(expected boolean%)"
 
-    -- Aegisub converts the whole style before measuring, so it refuses one missing a field its own
-    -- measurement never reads. A partial style passing here would fail the moment it ran in Aegisub.
+    -- Aegisub checks every field of a style before measuring, so it refuses one missing a field its
+    -- own measurement never reads. A partial style passing here would fail the moment it ran there.
     textExtents_rejectsAStyleAegisubWouldRefuse: (ut) ->
       shims.setTextExtentsBackend -> 7, 7, 7, 7
       _, noClass = pcall aegisub.text_extents, {fontname: "Arial", fontsize: 40}, "measure me"
-      ut\assertMatches noClass, "Not a style entry"
+      ut\assertMatches noClass, "has to state its class"
 
       partial = shims.Ass.createStyle!
       partial.margin_r = nil
       _, missing = pcall aegisub.text_extents, partial, "measure me"
-      ut\assertMatches missing, "Invalid or missing field 'margin_r'"
-      -- the type the field actually wants, which Aegisub's own message gets wrong for a number
-      ut\assertMatches missing, "expected number"
+      ut\assertMatches missing, "'margin_r' %(expected number%)"
+
+      -- every field at fault is named, so a style built by hand is repaired in one pass
+      partial.fontname = nil
+      _, both = pcall aegisub.text_extents, partial, "measure me"
+      ut\assertMatches both, "'fontname' %(expected string%)"
+      ut\assertMatches both, "'margin_r' %(expected number%)"
 
     setTextExtentsBackend_returnsThePreviousOne: (ut) ->
       first = -> 1, 1, 1, 1
@@ -77,4 +105,64 @@
       ut\assertError shims.setTextExtentsBackend, 42
       ut\assertError shims.setTextExtentsBackend, {}
       ut\assertError shims.setTextExtentsBackend, "nope"
+
+    setScript_rejectsWhatIsNotAScript: (ut) ->
+      ut\assertError shims.setScript, 42
+      ut\assertError shims.setScript, {}
+      ut\assertError shims.setScript, nil
+
+    -- The macro's edits change the script that was set, and its undo points can be read after it returns.
+    runMacro_runsTheMacroAgainstTheInstalledScript: (ut) ->
+      script = installWithMacro "Test/Edit", (subtitles, selected, active) ->
+        line = subtitles[selected[1]]
+        line.text = "EDITED"
+        subtitles[selected[1]] = line
+        aegisub.set_undo_point "the edit"
+        return {active}, active
+      ut\assertIs shims.getScript!, script
+
+      selected, active = shims.runMacro "Test/Edit", {3}, 3
+      ut\assertEquals selected, {3}
+      ut\assertEquals active, 3
+      ut\assertEquals script.lines[3].text, "EDITED"
+      ut\assertEquals shims.getUndoPoints!, {"the edit"}
+
+    -- Without a selection the first dialogue line is selected, and a macro returning nothing keeps it.
+    runMacro_selectsTheFirstDialogueLineByDefault: (ut) ->
+      seen = nil
+      installWithMacro "Test/Selection", (subtitles, selected, active) -> seen = {:selected, :active}
+      selected, active = shims.runMacro "Test/Selection"
+      ut\assertEquals seen.selected, {2}
+      ut\assertEquals seen.active, 2
+      ut\assertEquals selected, {2}
+      ut\assertEquals active, 2
+
+    -- As in Aegisub, the validation function gets a read-only object, and returning false keeps the
+    -- macro from running.
+    runMacro_passesTheValidatorAReadOnlyObjectAndStopsOnFalse: (ut) ->
+      ran = false
+      editable = nil
+      processor = -> ran = true
+      validator = (subtitles) ->
+        editable = pcall -> subtitles[1] = nil
+        false
+      installWithMacro "Test/Refused", processor, validator
+      ut\assertError shims.runMacro, "Test/Refused"
+      ut\assertFalse ran
+      ut\assertFalse editable
+
+    runMacro_throwsForAMacroNobodyRegistered: (ut) ->
+      shims.setScript assert AssScript.parse SOURCE
+      ut\assertError shims.runMacro, "Test/Nonexistent"
+
+    -- As in Aegisub, only a macro's processing function may set an undo point.
+    setUndoPoint_throwsOutsideAMacro: (ut) ->
+      ut\assertError aegisub.set_undo_point, "nothing is running"
+
+    setScript_clearsTheUndoPointsOfTheLastScript: (ut) ->
+      installWithMacro "Test/Undo", -> aegisub.set_undo_point "kept until the next script"
+      shims.runMacro "Test/Undo"
+      ut\assertEquals #shims.getUndoPoints!, 1
+      shims.setScript assert AssScript.parse SOURCE
+      ut\assertEquals #shims.getUndoPoints!, 0
   }

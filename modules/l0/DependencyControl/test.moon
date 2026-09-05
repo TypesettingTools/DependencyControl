@@ -79,6 +79,7 @@ return UnitTestSuite constants.DEPCTRL_NAMESPACE, (DepCtrl, ...) ->
     AegisubUnicodePatch: (controls\requireTest "aegisub-unicode-monkeypatch")!
     AegisubUnicodeSearcher: (controls\requireTest "aegisub-unicode-searcher")!
     AegisubGlobal: (controls\requireTest "aegisub-global")!
+    AegisubKaraoke: (controls\requireTest "aegisub-karaoke")!
     AegisubSfnt: (controls\requireTest "aegisub-sfnt")!
     AegisubFontEncoding: (controls\requireTest "aegisub-font-encoding")!
     AegisubGdiMetrics: (controls\requireTest "aegisub-gdi-metrics")!

@@ -10,9 +10,10 @@ return UnitTestSuite "l0.AssParser", (DepCtrl, ...) ->
   -- helper so the same call resolves in both the Aegisub-default and custom (CI) test locations.
   {
     Ass: (controls\requireTest "ass")!
-    AssFile: (controls\requireTest "ass-file")!
+    AssScript: (controls\requireTest "AssScript")!
+    AegisubSubtitles: (controls\requireTest "AegisubSubtitles")!
     OverrideTags: (controls\requireTest "override-tags") controls\requireTest "ass-corpus"
     Karaoke: (controls\requireTest "karaoke")!
-    Diagnostics: (controls\requireTest "diagnostics")!
-    Normalize: (controls\requireTest "normalize")!
+    Diagnostics: (controls\requireTest "diagnostics") controls\requireTest "value-equivalences"
+    Normalizer: (controls\requireTest "normalizer") controls\requireTest "value-equivalences"
   }

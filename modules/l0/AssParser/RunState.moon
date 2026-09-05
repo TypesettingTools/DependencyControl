@@ -1,3 +1,4 @@
+-- cspell:ignore dtoi -- libass's own name for the double-to-int32 conversion its interpolation rounds through
 bit = require "bit"
 {:BorderStyle, :FontWeight, :parseColor, :splitStyleColor} = require "l0.AssParser.ass"
 tagArguments = require "l0.AssParser.arguments"
@@ -5,11 +6,11 @@ tagArguments = require "l0.AssParser.arguments"
   :getFieldConversion, :TransformBehavior} = require "l0.AssParser.dialects"
 utils = require "l0.DependencyControl.utils"
 
--- A transform with a zero or unset end time animates across the whole line duration, which this stands
--- in for when the caller provides none.
+-- A transform with a zero or unset end time animates across the whole line duration. This value is
+-- used for it when the caller provides none.
 DEFAULT_EVENT_DURATION = 10000
 
--- Read once per tag applied, which is often enough that a set beats reaching through the definition.
+-- Read once per tag applied, often enough that a set is faster than looking it up in the definition.
 isInterpolatedTagName = {}
 for name, definition in pairs overrideTags
   isInterpolatedTagName[name] = true if definition.transform == TransformBehavior.Interpolated
@@ -21,18 +22,18 @@ msgs = {
   }
 }
 
--- What both renderers hold to zero as they read a style line, before a single tag is applied, so a
--- style declaring a negative scale or width begins at zero rather than at what it wrote. This is the
--- style parser's doing rather than any tag's, which is why it is neither a reading nor a dialect
--- trait: `\xshad` keeps a negative where `\shad` clamps one, but the style's own Shadow is clamped
--- for both. Aegisub clamps none of it and compares nothing, so nothing here reaches it.
+-- The style fields both renderers clamp to zero as they read a style line, before a single tag is
+-- applied, so a style declaring a negative scale or width begins at zero rather than at what it wrote.
+-- This is the style parser's doing rather than any tag's, which is why it is neither a reading nor a
+-- dialect trait: `\xshad` keeps a negative where `\shad` clamps one, but the style's own Shadow is
+-- clamped for both. Aegisub clamps none of it and compares nothing, so none of this applies to it.
 clampedStyleFields = {
   RunField.ScaleX, RunField.ScaleY, RunField.Spacing
   RunField.BorderX, RunField.BorderY, RunField.ShadowX, RunField.ShadowY
 }
 
----Which run fields each dialect doesn't track; to be omitted from the run state.
----Empty for a dialect comparing no runs.
+---The run fields each dialect doesn't track, which are left out of the run state.
+---Empty for a dialect that compares no runs.
 ---@type table<AssDialectName, table<string, true>>
 ignoredFieldsByDialect = {}
 for dialectName in *DialectName.values
@@ -41,7 +42,7 @@ for dialectName in *DialectName.values
   ignored[RunField.CharSet] = true if comparison and not comparison.comparesCharacterSet
   ignoredFieldsByDialect[dialectName] = ignored
 
----The style values a line begins under, in the fields the renderers compare. Color and alpha are
+---Collects the style values a line begins under, in the fields the renderers compare. Color and alpha are
 ---held apart because a style packs them into one field while `\1c` and `\1a` write one each, and the
 ---four switches are held as the numbers their tags write rather than as booleans.
 ---@param style AegisubStyleLine The style the line is set in.
@@ -91,15 +92,15 @@ seedStateFrom = (style, dialect) ->
 
   -- Assigning to a key already present is defined during a `pairs` walk, and nothing new is added.
   for field, value in pairs values
-    conversion = getFieldConversion dialect, field
+    conversion = getFieldConversion field, dialect
     values[field] = tagArguments.applyDialectSpecificReading value, {:conversion} if conversion
 
   values[field] = nil for field in pairs ignoredFieldsByDialect[dialect]
   return values
 
----A font weight as commonly referred to in `\b` tags.
----`\b1` and `\b700` pick the same face and both come back as 1;
----`\b0` and `\b400` do the same for 0.
+---Converts a font weight to the form `\b` tags commonly use.
+---`\b1` and `\b700` pick the same face and both come back as 1,
+---as do `\b0` and `\b400` for 0.
 ---@param value number A weight or a flag, as the dialect in hand holds it.
 ---@return number value 0 for regular, 1 for bold, or the weight itself where it names neither.
 toCanonicalFontWeight = (value) ->
@@ -186,17 +187,17 @@ blendChannels = (held, target, power) ->
 ---@private __ignored
 ---@private __lineSeeded
 class AssRunState
-  ---What `eventDuration` starts at where a caller states none.
+  ---The event duration used where a caller states none.
   ---@type integer
   @DEFAULT_EVENT_DURATION = DEFAULT_EVENT_DURATION
 
   ---@param style AegisubStyleLine The style the line is set in.
   ---@param dialect string|AssDialect A dialect name, or a dialect table to compare with directly.
-  ---@param stylesByName? table<string, AegisubStyleLine> Every style the script declares, which `\r` reaches by name.
+  ---@param stylesByName? table<string, AegisubStyleLine> Every style the script declares.
   ---@param eventDuration? integer How long the line is on screen, `DEFAULT_EVENT_DURATION` by default.
   new: (@style, dialect, @stylesByName, @eventDuration = DEFAULT_EVENT_DURATION) =>
     -- a name that matches nothing has to fall through to the assert, which an `and`/`or` chain would
-    -- defeat by handing back the name itself
+    -- defeat by returning the name itself
     @dialect = if type(dialect) == "string" then dialects[dialect] else dialect
     assert @dialect, msgs.new.unknownDialect\format tostring(dialect)
 
@@ -216,7 +217,7 @@ class AssRunState
     @seeded = @dialect.restoresTheStyleInForce and inForce or @__lineSeeded
     @values = utils.copy inForce
 
-  ---Calculates the interpolation factor a transform stands at, read against the time this state was given.
+  ---Calculates the interpolation factor for a transform at the time this state was given.
   ---@private
   ---@param token AssToken A `\t` token.
   ---@return number power 0 before the interval opens through 1 once it has closed, and 1 throughout where
@@ -248,8 +249,9 @@ class AssRunState
     definition = overrideTags[token.name]
     return false unless definition
 
-    -- every tag naming a field takes exactly one argument, so the first signature holds its type
-    argument = definition.signatures[1][1]
+    -- Every tag that writes a field takes exactly one argument, so the first signature holds its type.
+    -- `\fsc` declares none at all, reading as the bare tag whatever follows it, and so has no type.
+    argument = definition.signatures[1] and definition.signatures[1][1]
 
     if argument == ArgumentType.StyleName
       before = utils.copy @values
@@ -271,29 +273,35 @@ class AssRunState
 
     return false unless definition.runFields
 
-    isBareTag = #token.params == 0
+    -- A tag that reads nothing comes back with an empty argument list however much text follows it, which
+    -- is what makes `\fsc0` the bare `\fsc` and puts the seeded value back below.
+    isBareTag = not token.arguments or #token.arguments == 0
 
     moved = false
+    reading = getArgumentReading token.name, @dialect.name
+    stated = nil
+    stated = tagArguments.sanitizeArgument argument, token.arguments[1] unless isBareTag
+    isRefusedLiteralWithoutDigits = tagArguments.isRefusedLiteralWithoutDigits token, reading
+
     for field in *definition.runFields
       continue if @__ignored[field]
 
-      reading = getArgumentReading @dialect.name, token.name
       seeded = @seeded[field]
       value = seeded
       unless isBareTag
-        value = tagArguments.sanitizeArgument argument, token.arguments[1]
+        value = stated
         value = seeded if value == nil
 
         -- A hex value without digits (e.g. `\c&&`) is typed as zero, so we need to check the raw params
-        value = seeded if reading.refusesLiteralWithoutDigits and not token.params\match "%x"
+        value = seeded if isRefusedLiteralWithoutDigits
 
         -- the one argument that does anything but replace, scaling the size in force by a tenth of
-        -- what it names, so `\fs+10` doubles it
+        -- its value, so `\fs+10` doubles it
         if token.sizeIsRelative
           value = @values[field] * (1 + token.arguments[1] / 10)
 
       -- A tag the transform interpolates lands part way to its target; one it does not is applied whole
-      -- from the first frame, interval or no interval, so it reaches here unchanged.
+      -- from the first frame, interval or no interval, so it arrives here unchanged.
       if power < 1 and isInterpolatedTagName[token.name] and "number" == type(value) and
           "number" == type @values[field]
         value = colorFields[field] and blendChannels(@values[field], value, power) or
@@ -311,10 +319,10 @@ class AssRunState
 
     return moved
 
-  ---A style field's current value in the canonical representation, where a dialect may hold any of
-  ---several values that refer to the same visual effect. A weight comes back as 0 for regular, whether
+  ---Returns a style field's current value in the canonical representation, where a dialect may hold any
+  ---of several values that refer to the same visual effect. A weight comes back as 0 for regular, whether
   ---the dialect holds 0 or 400, and as 1 for bold, whether it holds 1 or 700. A border style comes back
-  ---as the value naming what is drawn, so the 2 the format leaves meaningless comes back as `Outline`.
+  ---as the value for what is drawn, so the 2 the format leaves meaningless comes back as `Outline`.
   ---
   ---Two dialects' snapshots of one line are comparable through this and not through `values`, which
   ---holds the representation each dialect uses to decide where a run of text ends.

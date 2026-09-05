@@ -1,6 +1,6 @@
 tagArguments = require "l0.AssParser.arguments"
-{:readDrawing} = require "l0.AssParser.drawing"
-{:TokenKind, :Syntax, :TagName, :dialects} = require "l0.AssParser.dialects"
+{:parseDrawing} = require "l0.AssParser.drawing"
+{:DialectName, :TokenKind, :Syntax, :TagName, :dialects} = require "l0.AssParser.dialects"
 
 msgs = {
   new: {
@@ -8,7 +8,7 @@ msgs = {
   }
 }
 
--- What both renderers step over between the backslash and a tag name. Their `skip_spaces` takes a
+-- The characters both renderers skip between the backslash and a tag name. Their `skip_spaces` takes a
 -- space and a tab and nothing else, so a newline still breaks a name rather than padding it.
 TOLERATED_TAG_NAME_PADDING = "^[ \t]"
 
@@ -25,6 +25,12 @@ TOLERATED_TAG_NAME_PADDING = "^[ \t]"
 ---@field argumentsClosed? boolean Whether that parenthesis was closed. Set only alongside `parenthesized`.
 ---@field trailing? string Characters a tag kept after its closing parenthesis, which only Aegisub reads.
 ---@field escaped? boolean Whether a text token's character was written as a backslash escape.
+
+---A tokenized ASS dialogue line and the dialect that read them.
+---@class AssTokenStream
+---@field [integer] AssToken The scanned tokens in the order they were read from the line.
+---@field dialect AssDialectName Whose reading produced these. Set on the stream a scan returns, not on
+---  the nested stream a tag's own arguments are read into.
 
 ---One item of a scan: a brace, a tag, or a run of characters.
 ---@class AssToken
@@ -49,7 +55,7 @@ TOLERATED_TAG_NAME_PADDING = "^[ \t]"
 ---  drawing is emitted from.
 ---@field children? AssToken[] The stream parsed out of a tag's own arguments, as `\t` holds, junk and
 ---  all. Field is read-only: write edits back with `emit` and assign the result to `params`.
----@field form? AssTokenForm What the source spelling held beyond the reading, if anything.
+---@field form? AssTokenForm Any non-canonical/degenerate spelling the source text may have had.
 
 ---Splits a line's text into override blocks, tags and rendered text, reading it as one of Aegisub,
 ---libass or VSFilter would. The three disagree in some cases, so this may affect the results.
@@ -63,10 +69,11 @@ TOLERATED_TAG_NAME_PADDING = "^[ \t]"
 ---@class AssOverrideScanner
 ---@field dialect AssDialect The dialect this scanner reads with. Read-only.
 class AssOverrideScanner
-  ---@param dialect string|AssDialect A dialect name, or a dialect table to read with directly.
-  new: (dialect = "aegisub") =>
+  ---@param dialect string|AssDialect A dialect name, or a dialect table to read with directly. libass
+  ---  by default, as the most complete of the three readings.
+  new: (dialect = DialectName.Libass) =>
     -- a name that matches nothing has to fall through to the assert, which an `and`/`or` chain would
-    -- defeat by handing back the name itself
+    -- defeat by returning the name itself
     @dialect = if type(dialect) == "string" then dialects[dialect] else dialect
     assert @dialect, msgs.new.unknownDialect\format tostring(dialect)
 
@@ -122,12 +129,12 @@ class AssOverrideScanner
 
   ---Scans one override block's content, which is the text between the braces.
   ---@param content string The characters between the braces, excluding both.
-  ---@return AssToken[] tokens Tags in the order written, with anything claiming no tag as junk.
+  ---@return AssToken[] tokens Tags in the order written, with anything that is not a tag as junk.
   ---@private
   __scanBlock: (content) =>
     tokens = {}
     unless content\find Syntax.TagPrefix, 1, true
-      -- Brace content holding no backslash. Aegisub gives it a block type of its own; the other two
+      -- Brace content without a backslash. Aegisub gives it a block type of its own; the other two
       -- skip it while looking for a backslash and render nothing. The characters are emitted either
       -- way, so a scan can always rebuild the line it was given, and the kind is what says whether
       -- anything renders.
@@ -168,17 +175,18 @@ class AssOverrideScanner
 
       params, nextIndex, parenthesized, argumentsClosed, trailing = @__readParams content, after
       token = {kind: TokenKind.Tag, :name, :params}
-      token.arguments, token.signature, token.sizeIsRelative = tagArguments.parse(@dialect.name, name,
-        params, parenthesized)
 
-      -- what the source held that the reading above does not show
-      form = {}
-      form.whitespaceBeforeName = whitespaceBeforeName if #whitespaceBeforeName > 0
+      -- source characters the reading below does not show
+      local form
+      form = {:whitespaceBeforeName} if #whitespaceBeforeName > 0
       if parenthesized
+        form or= {}
         form.parenthesized = true
         form.argumentsClosed = argumentsClosed
         form.trailing = trailing if trailing and #trailing > 0
-      token.form = form if next(form)
+      token.form = form
+
+      tagArguments.reparseToken token, @dialect.name
 
       -- The whole of a transform's arguments is scanned as though it were an override block, timings
       -- included rather than the nested tags alone, so everything around them is kept as junk. Emitting
@@ -194,9 +202,25 @@ class AssOverrideScanner
     flushSkipped #content
     return tokens
 
+  ---Tries to identify a tag the parser has no declaration for. Useful for misspelled or fork-only tags.
+  ---
+  ---Without a signature, this can not tell where the tag name ends for non-parenthesized tags,
+  ---so this returns everything up to the first non-alphanumeric character (e.g. `\fcsx150` gives `fcsx150`).
+  ---@param text string An override run beginning with a backslash, e.g. a junk token.
+  ---@return string? tagText Nil where the run begins with something other than a backslash, or holds no
+  ---  letter or digit after it.
+  detectUnknownTag: (text) =>
+    return nil unless text\sub(1, 1) == Syntax.TagPrefix
+    at = 2
+    if @dialect.skipsWhitespaceAfterBackslash
+      while text\match TOLERATED_TAG_NAME_PADDING, at
+        at += 1
+    return text\match "^%w+", at
+
   ---Splits a line's text into tokens under this scanner's dialect.
   ---@param text string The line's Text field.
-  ---@return AssToken[] tokens A flat list, with a tag's own tags nested under `children`.
+  ---@return AssTokenStream tokens A flat list recording the dialect that read it, with a tag's own tags
+  ---  nested under `children`.
   scan: (text) =>
     tokens, index, drawingLevel = {}, 1, 0
 
@@ -239,10 +263,11 @@ class AssOverrideScanner
       kind = drawingLevel > 0 and TokenKind.Drawing or TokenKind.Text
       characters = text\sub index, stop - 1
       token = {:kind, text: characters}
-      token.commands = readDrawing characters if kind == TokenKind.Drawing
+      token.commands = parseDrawing characters if kind == TokenKind.Drawing
       tokens[#tokens + 1] = token
       index = stop
 
+    tokens.dialect = @dialect.name
     return tokens
 
 return AssOverrideScanner

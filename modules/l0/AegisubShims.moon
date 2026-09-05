@@ -65,6 +65,12 @@ return {
   getClipboardBackend: clipboard.__depCtrl.getBackend
   setTextExtentsBackend: aegisub.__depCtrl.setTextExtentsBackend
   getTextExtentsBackend: aegisub.__depCtrl.getTextExtentsBackend
+  -- Setting a script and running registered macros on it.
+  setScript: aegisub.__depCtrl.setScript
+  getScript: aegisub.__depCtrl.getScript
+  getUndoPoints: aegisub.__depCtrl.getUndoPoints
+  runMacro: aegisub.__depCtrl.runMacro
+  getMacros: aegisub.__depCtrl.getMacros
   selectTextExtentsBackend: textExtents.selectBackend
   TextExtentsMetricMode: textExtents.MetricMode
   -- The measurement backends themselves, for building a configured one to install through the hook.

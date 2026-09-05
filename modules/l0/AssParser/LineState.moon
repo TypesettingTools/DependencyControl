@@ -18,7 +18,8 @@ Ass = require "l0.AssParser.ass"
 ---  tag settles the slot regardless, as does either written bare, so `\an7` is dead after a `\a99` and
 ---  after a bare `\a` alike.
 ---@field origin? {x: number, y: number} The point rotation turns about.
----@field fade? {startAlpha: integer, midAlpha: integer, endAlpha: integer, fadeInStart: integer, fadeInEnd: integer, fadeOutStart: integer, fadeOutEnd: integer}
+---@field fade? {startAlpha: integer, midAlpha: integer, endAlpha: integer, fadeInStart: integer,
+---  fadeInEnd: integer, fadeOutStart: integer, fadeOutEnd: integer}
 ---  A fade in the seven-argument form, which the two-argument `\fad` is widened into.
 ---@field wrapStyle? integer What the last `\q` states, absent where none did and the script's own stands.
 ---@field clip? {inverse: boolean, rectangle?: {x1: integer, y1: integer, x2: integer, y2: integer}, drawing?: string, scale?: integer}

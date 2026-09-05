@@ -1,5 +1,5 @@
 -- Drawings are read and written here as text and never as geometry: a coordinate stays the number it
--- was written as, and no two are ever paired into a point. Naming a drawing's defects and removing
+-- was written as, and no two are ever paired into a point. Finding a drawing's defects and removing
 -- what no renderer reads need nothing more than that, so anything that has to know where the shape
 -- actually goes builds it above this file.
 --
@@ -8,10 +8,10 @@
 -- subtitle renderers of MPC-HC (the original project and clsid's continuation) and MPC-BE.
 --
 -- Every reader of the VSFilter line agrees that:
---   * a character naming no command is passed over wherever it stands
---   * a command reaching for nodes it has not got is ignored rather than rejected, before the first
---     move as much as after it
---   * an open move reaching a point before any move throws the whole drawing away
+--   * a character that is not a command letter is skipped wherever it stands
+--   * a command with fewer nodes before it than it needs is ignored rather than rejected, before the
+--     first move as much as after it
+--   * an open move with a point before any move throws the whole drawing away
 --
 -- They part on two points:
 --   * curve points too few to finish a segment stay in the path for xy-VSFilter and are dropped by the
@@ -27,10 +27,10 @@
 ---One command of a drawing, with the coordinates written after it.
 ---@class AssDrawingCommand
 ---@field name? AssDrawingCommandName The command letter as the drawing wrote it, absent where a
----  drawing opens with coordinates before naming any command.
----@field coordinates number[] The numbers read for it: those written before the first word holding no
----  number, since every renderer stops reading a run there.
----@field junk? string[] Runs of characters naming no command, in the order written, read by no renderer.
+---  drawing opens with coordinates before any command letter.
+---@field coordinates number[] The numbers read for it: those written before the first word that is not
+---  a number, since every renderer stops reading a run there.
+---@field junk? string[] Runs of characters that are no command, in the order written, read by no renderer.
 
 
 -- Longest first, so a number with a decimal point is not cut short
@@ -47,16 +47,16 @@ readNumberPrefix = (text) ->
   return nil
 
 ---Splits a drawing into its commands and their coordinates, scanning character by character as every
----renderer does. A character naming a command opens one wherever it stands, and one naming nothing is
----passed over without consuming what follows it, so `}m 0 0` opens a move at the origin exactly as
+---renderer does. A command letter opens a command wherever it stands, and any other character is
+---skipped without consuming what follows it, so `}m 0 0` opens a move at the origin exactly as
 ---`m 0 0` does. Junk standing *between* a command and its numbers is a different matter: it ends the
----run, and the numbers behind it reach no command at all.
+---run, and the numbers after it belong to no command at all.
 ---
 ---The result is read-only, as a tag's `arguments` are. A drawing is emitted from its `text`, so to
 ---commit an edit, write the commands back with `emitDrawing` and assign the result to that.
 ---@param text string A drawing token's characters.
----@return AssDrawingCommand[] commands In the order written, empty for a drawing holding no word.
-readDrawing = (text) ->
+---@return AssDrawingCommand[] commands In the order written, empty for a drawing without words.
+parseDrawing = (text) ->
   commands, current = {}, nil
   open = (name) ->
     current = {:name, coordinates: {}}
@@ -98,7 +98,7 @@ readDrawing = (text) ->
 ---Converts parsed drawing commands back into their textual representation.
 ---Whitespace the source held between the numbers is not recorded, so this normalizes it to a single space.
 ---To keep an unmodified drawing byte for byte, emit the raw `text` it was read from, instead.
----@param commands AssDrawingCommand[] The commands to write, as `readDrawing` returns them.
+---@param commands AssDrawingCommand[] The commands to write, as `parseDrawing` returns them.
 ---@return string text The drawing, as a token's `text`.
 emitDrawing = (commands) ->
   words = {}
@@ -121,11 +121,11 @@ countLeftoverCoordinates = (count, arity) ->
   return count if count < arity.opens
   (count - arity.opens) % arity.repeats
 
----Whether the drawing ever reaches a starting point, without which no part of it is drawn.
+---Checks whether the drawing ever gets a starting point, without which no part of it is drawn.
 ---@param commands AssDrawingCommand[] A drawing's parsed commands.
 ---@param dialect? AssDialectName Whose reading to apply.
----@return boolean opens False for a drawing the dialect (or, if omitted, any dialect) draws no part of.
-drawingOpensUnder = (commands, dialect) ->
+---@return boolean drawn False for a drawing the dialect (or, if omitted, any dialect) draws no part of.
+isDrawn = (commands, dialect) ->
   moveSeen = false
   for command in *commands
     continue unless command.name
@@ -134,13 +134,13 @@ drawingOpensUnder = (commands, dialect) ->
     return true if command.name == DrawingCommandName.Move
 
     if command.name == DrawingCommandName.OpenMove
-      -- An open move reaching a point before any move is written (e.g. `n 0 0 l 100 0 100 100`) makes
+      -- An open move with a point before any move is written (e.g. `n 0 0 l 100 0 100 100`) makes
       -- every renderer throw the whole drawing away, each in its own place: libass at the `n`, which it
       -- accepts as a root only after an `m` has been seen, and the VSFilter line and MPC once an `m` is
       -- reached with points already added.
       return false unless moveSeen
 
-      -- After a move that reached no point (e.g. `m n 0 0 l 100 0 100 100`), libass lets the next open
+      -- After a move without a point (e.g. `m n 0 0 l 100 0 100 100`), libass lets the next open
       -- move stand in as the root where VSFilter draws nothing at all. With no reference dialect specified,
       -- this indicates whether any of them renders the drawing or the drawing may be removed outright.
       return true if dialect == DialectName.Libass or dialect == nil
@@ -175,15 +175,15 @@ drawingOpensUnder = (commands, dialect) ->
 ---@return boolean reduced False where nothing was removed, so the drawing already reads as it draws
 ---  and needs no rewriting.
 canonicalizeDrawing = (commands, dialect) ->
-  return "", #commands > 0 unless drawingOpensUnder commands, dialect
+  return "", #commands > 0 unless isDrawn commands, dialect
 
   kept, reduced, nodes = {}, false, 0
   -- Where libass opened the drawing at an open move VSFilter would not, its reading is written with an
-  -- ordinary move there and the move that reached no point goes with it. Nothing precedes the first
+  -- ordinary move there and the move without a point goes with it. Nothing precedes the first
   -- contour for the two kinds of move to differ over, so libass draws the same picture and VSFilter
   -- now draws it too.
-  promotesTheRoot = dialect == DialectName.Libass and drawingOpensUnder(commands, DialectName.Libass) and
-    not drawingOpensUnder commands, DialectName.XyVsfilter
+  promotesTheRoot = dialect == DialectName.Libass and isDrawn(commands, DialectName.Libass) and
+    not isDrawn commands, DialectName.XyVsfilter
   rootPending = promotesTheRoot
 
   holdsAnOpenMove = false
@@ -200,7 +200,7 @@ canonicalizeDrawing = (commands, dialect) ->
 
     arity = drawingCommands[name].arity
     if nodes < arity.needsNodes
-      -- a command reaching back for nodes that are not there is read by no renderer
+      -- a command with fewer nodes before it than it needs is read by no renderer
       reduced = true
       continue
 
@@ -257,4 +257,4 @@ canonicalizeDrawing = (commands, dialect) ->
 
 ---A parser, emitter and normalizer for ASS drawing commands.
 ---@class AssDrawing
-return {:readDrawing, :emitDrawing, :canonicalizeDrawing, :drawingOpensUnder, :countLeftoverCoordinates}
+return {:parseDrawing, :emitDrawing, :canonicalizeDrawing, :isDrawn, :countLeftoverCoordinates}

@@ -15,7 +15,7 @@ lineState = require "l0.AssParser.LineState"
 Scanner = require "l0.AssParser.Scanner"
 {:BorderStyle, :FontWeight, :defaultStyle} = require "l0.AssParser.ass"
 {:ArgumentType, :DialectName, :RunField, :TagName, :TokenKind, :dialects, :getArgumentReading, :getFieldConversion, :overrideTags} = require "l0.AssParser.dialects"
-{:emit} = require "l0.AssParser.emit"
+{:emit} = require "l0.AssParser.emitter"
 {:emitArguments} = require "l0.AssParser.arguments"
 
 -- `Enum` fills `values` through `pairs`, whose order is unspecified, so sort for a stable
@@ -64,8 +64,8 @@ firstTag = (tokens) ->
       that emitting each scan reproduces the line it was read from, and checks the tag table declares
       a signature for every name and names only fields a style seeds."
 
-    new_defaultsToAegisub: (ut) ->
-      ut\assertEquals Scanner!.dialect.name, "aegisub"
+    new_defaultsToLibass: (ut) ->
+      ut\assertEquals Scanner!.dialect.name, "libass"
 
     new_acceptsADialectTable: (ut) ->
       dialect = scanners.libass.dialect
@@ -241,9 +241,9 @@ firstTag = (tokens) ->
       for dialectName in *dialectNames
         for name, definition in pairs overrideTags
           continue unless definition.runFields
-          stated = (getArgumentReading dialectName, name).conversion or {}
+          stated = (getArgumentReading name, dialectName).conversion or {}
           for field in *definition.runFields
-            conversion = getFieldConversion(dialectName, field) or {}
+            conversion = getFieldConversion(field, dialectName) or {}
             for key in *{"resolvesWeight", "roundsToWhole"}
               continue if conversion[key] == stated[key]
               offenders[#offenders + 1] = "#{dialectName}:#{name}:#{field}:#{key}"
@@ -361,6 +361,17 @@ firstTag = (tokens) ->
         for text in *{"{\\p1}x", "{\\p2}x", "{\\p0}x", "{\\p}x", "{\\p-1}x"}
           token = firstTag scanners[dialectName]\scan text
           ut\assertFalse state\applyTag token
+
+    -- `\fsc` is the one tag declaring no signature, since it reads nothing and takes whatever follows
+    -- it as part of the bare tag. Every path reaching for the first signature's type therefore has
+    -- nothing to reach for, and `\fsc0` has to put the style's own scale back exactly as `\fsc` does.
+    applyTag_readsATagDeclaringNoSignatureAsTheBareTag: (ut) ->
+      for dialectName in *{DialectName.Libass, DialectName.XyVsfilter}
+        for text in *{"{\\fsc}x", "{\\fsc0}x", "{\\fsc100}x"}
+          state = AssRunState defaultStyle, dialectName
+          state\applyTag firstTag scanners[dialectName]\scan "{\\fscx200}x"
+          ut\assertTrue state\applyTag firstTag scanners[dialectName]\scan text
+          ut\assertEquals state\getValue(RunField.ScaleX), defaultStyle.scale_x
 
     -- The line-level counterpart to the run state. Most of these are read from the line's first
     -- instance and a later one is dead, which was observed in both renderers.
@@ -507,7 +518,7 @@ firstTag = (tokens) ->
       for params in *{"123456.75", "0.1234567", "1234567.5", "0.00001", "359.9999999"
           "100000000000000000000"}
         token = firstTag scanners[DialectName.Libass]\scan "{\\fscx#{params}}x"
-        ut\assertEquals emitArguments(DialectName.Libass, token), params
+        ut\assertEquals emitArguments(token, DialectName.Libass), params
 
     -- A nested tag holds commas of its own, so counting them alone would fill the four-argument
     -- signature and leave the clip torn between an acceleration and the tags. Both renderers apply
@@ -559,6 +570,48 @@ firstTag = (tokens) ->
       for dialectName in *dialectNames
         ut\assertEquals firstTag(scanners[dialectName]\scan "{\\fn Courier New}x").arguments[1], "Courier New"
 
+    -- Aegisub and VSFilter convert a number through the platform's `strtod`, which reads `inf`, `nan`
+    -- and a hex float; libass ships one of its own that stops at anything but a decimal numeral with an
+    -- exponent, and what it stops at short of a digit is a zero. So the dialects part on those three
+    -- and agree on everything else, trailing junk and a leading sign included.
+    parse_readsANumberAsTheDialectsOwnConversionDoes: (ut) ->
+      readBorder = (dialectName, params) ->
+        firstTag(scanners[dialectName]\scan "{\\bord#{params}}x").arguments[1]
+
+      for dialectName in *{DialectName.Aegisub, DialectName.XyVsfilter}
+        ut\assertEquals readBorder(dialectName, "0x10"), 16
+        ut\assertEquals readBorder(dialectName, "inf"), math.huge
+        value = readBorder dialectName, "nan"
+        ut\assertNotEquals value, value
+
+      ut\assertEquals readBorder(DialectName.Libass, "0x10"), 0
+      ut\assertEquals readBorder(DialectName.Libass, "inf"), 0
+      ut\assertEquals readBorder(DialectName.Libass, "nan"), 0
+
+      for dialectName in *dialectNames
+        ut\assertEquals readBorder(dialectName, "1e1"), 10
+        ut\assertEquals readBorder(dialectName, "5x"), 5
+        ut\assertEquals readBorder(dialectName, "+5"), 5
+        ut\assertEquals readBorder(dialectName, "junk"), 0
+
+    -- Both renderers open an argument list at a `(` standing anywhere in a tag's arguments, so what the
+    -- parentheses hold reaches the tag and what was written before them never does. Text behind the `)`
+    -- goes with it. Aegisub reads the whole run as one argument, parentheses included.
+    parse_readsWhatAParenthesisHoldsInATagTakingNone: (ut) ->
+      for dialectName in *{DialectName.Libass, DialectName.XyVsfilter}
+        scanner = scanners[dialectName]
+        ut\assertEquals firstTag(scanner\scan "{\\bord2(9}x").arguments[1], 9
+        ut\assertEquals firstTag(scanner\scan "{\\bord2(9)7}x").arguments[1], 9
+        ut\assertEquals firstTag(scanner\scan "{\\bord2(9,8)}x").arguments[1], 9
+        ut\assertEquals firstTag(scanner\scan "{\\fnCourier New (Arial)}x").arguments[1], "Arial"
+        -- parentheses holding nothing at all leave the argument before them to be read
+        ut\assertEquals firstTag(scanner\scan "{\\bord2()}x").arguments[1], 2
+        ut\assertEquals firstTag(scanner\scan "{\\bord2(}x").arguments[1], 2
+
+      aegisub = scanners[DialectName.Aegisub]
+      ut\assertEquals firstTag(aegisub\scan "{\\bord2(9}x").arguments[1], 2
+      ut\assertEquals firstTag(aegisub\scan "{\\fnCourier New (Arial)}x").arguments[1], "Courier New (Arial)"
+
     -- a tag whose own arguments are commas must keep splitting on every one of them
     parse_aTagWithoutANestedTagStillSplits: (ut) ->
       for dialectName in *dialectNames
@@ -571,13 +624,13 @@ firstTag = (tokens) ->
     emitArguments_writesACanonicalArgumentUnchanged: (ut) ->
       for text in *{"{\\b1}x", "{\\bord-2}x", "{\\fs+10}x", "{\\fnComic Sans MS}x", "{\\pos(10,20)}x"}
         token = firstTag scanners[DialectName.Libass]\scan text
-        ut\assertEquals emitArguments(DialectName.Libass, token), token.params
+        ut\assertEquals emitArguments(token, DialectName.Libass), token.params
 
     -- and text that does not comes back as the canonical way of writing what it meant, since reading
     -- dropped the spelling
     emitArguments_writesAQuirkAsWhatItMeant: (ut) ->
       canonical = (dialect, text) ->
-        emitArguments dialect, firstTag scanners[dialect]\scan text
+        emitArguments firstTag(scanners[dialect]\scan text), dialect
       ut\assertEquals canonical(DialectName.Libass, "{\\u1.5}x"), "1"
       ut\assertEquals canonical(DialectName.Libass, "{\\1cFF0000}x"), "&HFF0000&"
       ut\assertEquals canonical(DialectName.Libass, "{\\alpha80}x"), "&H80&"
@@ -586,11 +639,11 @@ firstTag = (tokens) ->
     emitArguments_writesADurationAsItsDialectReadIt: (ut) ->
       libass = firstTag scanners[DialectName.Libass]\scan "{\\k50.9}x"
       aegisub = firstTag scanners[DialectName.Aegisub]\scan "{\\k50.9}x"
-      ut\assertEquals emitArguments(DialectName.Libass, libass), "50.9"
-      ut\assertEquals emitArguments(DialectName.Aegisub, aegisub), "50"
+      ut\assertEquals emitArguments(libass, DialectName.Libass), "50.9"
+      ut\assertEquals emitArguments(aegisub, DialectName.Aegisub), "50"
 
     emitArguments_writesABareTagAsNoArgumentsAtAll: (ut) ->
-      ut\assertEquals emitArguments(DialectName.Libass, firstTag scanners[DialectName.Libass]\scan "{\\b}x"), ""
+      ut\assertEquals emitArguments(firstTag(scanners[DialectName.Libass]\scan "{\\b}x"), DialectName.Libass), ""
 
     emit_takesATransformEditedThroughItsTags: (ut) ->
       tokens = scanners[DialectName.Libass]\scan "{\\t(0,100,\\bord2)}text"

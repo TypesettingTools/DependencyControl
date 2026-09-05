@@ -11,15 +11,12 @@
 -- a probe to back it is a regression test agreeing with itself.
 ->
   karaoke = require "l0.AssParser.karaoke"
-  {:LineClass, :WrapStyle, :createStyle} = require "l0.AssParser.ass"
+  Scanner = require "l0.AssParser.Scanner"
+  {:WrapStyle, :createStyle} = require "l0.AssParser.ass"
   {:DialectName, :TagName, :getOverrideTag} = require "l0.AssParser.dialects"
 
   readers = {name, karaoke.Reader name for name in *DialectName.values}
-
-  ---Builds the one shape `parseKaraokeData` accepts.
-  ---@param text string The line's Text field.
-  ---@return AegisubDialogueLine
-  dialogueLine = (text) -> {class: LineClass.Dialogue, :text}
+  scanners = {name, Scanner name for name in *DialectName.values}
 
   ---What one dialect reports a line as, which is where an empty leading syllable has been folded away.
   ---`splitSyllables` is the raw split and keeps the span a line opens under before its first karaoke
@@ -27,7 +24,18 @@
   ---@param dialect AssDialectName
   ---@param text string The line's Text field.
   ---@return AegisubKaraokeData
-  syllablesOf = (dialect, text) -> assert readers[dialect]\parseKaraokeData dialogueLine text
+  syllablesOf = (dialect, text) ->
+    readers[dialect]\toAegisubKaraokeData scanners[dialect]\scan text
+
+  ---That same raw split, scanned for the reader since `splitSyllables` takes a token stream.
+  ---@param dialect AssDialectName
+  ---@param text string The line's Text field.
+  ---@param style? AegisubStyleLine The style the line is set in.
+  ---@param stylesByName? table<string, AegisubStyleLine> Every style the script declares.
+  ---@param wrapStyle? AssWrapStyle The script's own.
+  ---@return AssKaraokeSpan[]
+  splitOf = (dialect, text, style, stylesByName, wrapStyle) ->
+    readers[dialect]\splitSyllables scanners[dialect]\scan(text), style, stylesByName, wrapStyle
 
   ---The karaoke tag opening each syllable, joined, which is what a timing assertion reads against.
   ---@param syllables AegisubKaraokeData
@@ -164,8 +172,8 @@
     _description: "The karaoke reader in all three dialects: Aegisub's reported shape, and where each
       of the two renderers ends a syllable."
 
-    new_defaultsToAegisub: (ut) ->
-      ut\assertEquals karaoke.Reader!.dialect, DialectName.Aegisub
+    new_defaultsToLibass: (ut) ->
+      ut\assertEquals karaoke.Reader!.dialect, DialectName.Libass
 
     -- a class is a callable table rather than a function, so the construction is wrapped in one
     new_rejectsAnUnknownDialect: (ut) ->
@@ -180,72 +188,62 @@
       missing = [name for name in *DialectName.values when not pcall karaoke.Reader, name]
       ut\assertEquals table.concat(missing, " "), ""
 
-    parseKaraokeData_rejectsANonDialogueLine: (ut) ->
-      syllables, err = karaoke.parseKaraokeData {class: LineClass.Style}
-      ut\assertNil syllables
-      ut\assertString err
-
-    parseKaraokeData_rejectsANonTable: (ut) ->
-      syllables, err = karaoke.parseKaraokeData "not a line"
-      ut\assertNil syllables
-      ut\assertString err
-
     -- Aegisub has kept an empty syllable at index 0 since 2.1.x, so `#result` counts the real ones
-    parseKaraokeData_keepsTheIndexZeroFiller: (ut) ->
-      syllables = karaoke.parseKaraokeData dialogueLine "{\\k50}ab"
+    toAegisubKaraokeData_keepsTheIndexZeroFiller: (ut) ->
+      syllables = syllablesOf DialectName.Aegisub, "{\\k50}ab"
       ut\assertNotNil syllables[0]
       ut\assertEquals syllables[0].text, ""
       ut\assertEquals syllables[0].duration, 0
       ut\assertEquals #syllables, 1
 
-    parseKaraokeData_reportsOneSyllableWithoutAnyKaraokeTag: (ut) ->
-      syllables = karaoke.parseKaraokeData dialogueLine "plain text"
+    toAegisubKaraokeData_reportsOneSyllableWithoutAnyKaraokeTag: (ut) ->
+      syllables = syllablesOf DialectName.Aegisub, "plain text"
       ut\assertEquals #syllables, 1
       ut\assertEquals syllables[1].text_stripped, "plain text"
       ut\assertEquals syllables[1].duration, 0
 
-    parseKaraokeData_timesRunFromTheLineStart: (ut) ->
-      syllables = karaoke.parseKaraokeData dialogueLine "{\\k50}a{\\k30}b{\\k20}c"
+    toAegisubKaraokeData_timesRunFromTheLineStart: (ut) ->
+      syllables = syllablesOf DialectName.Aegisub, "{\\k50}a{\\k30}b{\\k20}c"
       ut\assertEquals describeTimes(syllables), "0+500 500+300 800+200"
       ut\assertEquals syllables[3].end_time, 1000
 
     -- nothing is normalized against the line's end, so a syllable may run past it
-    parseKaraokeData_doesNotNormalizeAgainstTheLineEnd: (ut) ->
-      syllables = karaoke.parseKaraokeData dialogueLine "{\\k9999}a"
+    toAegisubKaraokeData_doesNotNormalizeAgainstTheLineEnd: (ut) ->
+      syllables = syllablesOf DialectName.Aegisub, "{\\k9999}a"
       ut\assertEquals syllables[1].duration, 99990
 
-    parseKaraokeData_reportsLegacyFillUnderTheNewerName: (ut) ->
-      syllables = karaoke.parseKaraokeData dialogueLine "{\\K50}ab"
+    toAegisubKaraokeData_reportsLegacyFillUnderTheNewerName: (ut) ->
+      syllables = syllablesOf DialectName.Aegisub, "{\\K50}ab"
       ut\assertEquals syllables[1].tag, getOverrideTag TagName.KaraokeFill
 
-    parseKaraokeData_reportsEachKaraokeTagAsItWasWritten: (ut) ->
-      syllables = karaoke.parseKaraokeData dialogueLine "{\\k50}a{\\kf30}b{\\ko20}c"
+    toAegisubKaraokeData_reportsEachKaraokeTagAsItWasWritten: (ut) ->
+      syllables = syllablesOf DialectName.Aegisub, "{\\k50}a{\\kf30}b{\\ko20}c"
       ut\assertEquals describeTags(syllables), "\\k \\kf \\ko"
 
     -- a syllable holding no text and no duration is dropped, but only where one follows it
-    parseKaraokeData_dropsAnEmptySyllableMidLine: (ut) ->
-      syllables = karaoke.parseKaraokeData dialogueLine "{\\k0}{\\k30}ab"
+    toAegisubKaraokeData_dropsAnEmptySyllableMidLine: (ut) ->
+      syllables = syllablesOf DialectName.Aegisub, "{\\k0}{\\k30}ab"
       ut\assertEquals #syllables, 1
       ut\assertEquals syllables[1].text_stripped, "ab"
 
-    parseKaraokeData_keepsAnEmptySyllableAtTheEnd: (ut) ->
-      syllables = karaoke.parseKaraokeData dialogueLine "{\\k30}ab{\\k0}"
+    toAegisubKaraokeData_keepsAnEmptySyllableAtTheEnd: (ut) ->
+      syllables = syllablesOf DialectName.Aegisub, "{\\k30}ab{\\k0}"
       ut\assertEquals #syllables, 2
       ut\assertEquals syllables[2].text_stripped, ""
 
-    parseKaraokeData_keepsAnEmptySyllableThatHoldsADuration: (ut) ->
-      syllables = karaoke.parseKaraokeData dialogueLine "{\\k50}{\\k30}ab"
+    toAegisubKaraokeData_keepsAnEmptySyllableThatHoldsADuration: (ut) ->
+      syllables = syllablesOf DialectName.Aegisub, "{\\k50}{\\k30}ab"
       ut\assertEquals describeTimes(syllables), "0+500 500+300"
 
     -- the overrides of a dropped syllable belong to whatever follows it
-    parseKaraokeData_carriesOverridesOutOfADroppedSyllable: (ut) ->
-      syllables = karaoke.parseKaraokeData dialogueLine "{\\k0\\b1}{\\k30}ab"
+    toAegisubKaraokeData_carriesOverridesOutOfADroppedSyllable: (ut) ->
+      syllables = syllablesOf DialectName.Aegisub, "{\\k0\\b1}{\\k30}ab"
       ut\assertEquals #syllables, 1
       ut\assertEquals syllables[1].text_stripped, "ab"
       ut\assertNotNil syllables[1].text\find "\\b1", 1, true
 
-    parseKaraokeData_splicesOverridesBackIntoTheText: (ut) ->
-      syllables = karaoke.parseKaraokeData dialogueLine "{\\k50}a{\\b1}b"
+    toAegisubKaraokeData_splicesOverridesBackIntoTheText: (ut) ->
+      syllables = syllablesOf DialectName.Aegisub, "{\\k50}a{\\b1}b"
       ut\assertEquals syllables[1].text, "a{\\b1}b"
       ut\assertEquals syllables[1].text_stripped, "ab"
 
@@ -259,7 +257,7 @@
       line = "{\\k200}AA {\\k200}#{shape}#{bigger} ZZ"
 
       for dialectName in *{DialectName.Libass, DialectName.XyVsfilter}
-        spans = karaoke.Reader(dialectName)\splitSyllables line
+        spans = splitOf dialectName, line
         ut\assertEquals #spans, 4
         ut\assertEquals spans[1].text, "AA "
         ut\assertEquals spans[1].startTime, 0
@@ -272,7 +270,7 @@
         ut\assertEquals spans[4].startTime, 4000
 
       -- Aegisub splits on karaoke tags alone, so the tail is sung on the second `\k` at 2s
-      aegisub = karaoke.Reader(DialectName.Aegisub)\splitSyllables line
+      aegisub = splitOf DialectName.Aegisub, line
       ut\assertEquals aegisub[#aegisub].startTime, 2000
 
     -- The drawing splits away from text before it, but keeps a syllable a karaoke tag has only just
@@ -283,7 +281,7 @@
       line = "{\\k200}AA{\\p1}m 0 0 l 40 0 l 40 40 l 0 40{\\p0} ZZ"
 
       for dialectName in *{DialectName.Libass, DialectName.XyVsfilter}
-        spans = karaoke.Reader(dialectName)\splitSyllables line
+        spans = splitOf dialectName, line
         ut\assertEquals #spans, 3
         ut\assertEquals spans[1].text, "AA"
         ut\assertEquals spans[1].duration, 2000
@@ -297,7 +295,7 @@
     -- only the karaoke differs, which is also why no sweep can show the span it is reported in.
     splitSyllables_aDrawingEndsTheSyllable: (ut) ->
       for dialectName in *{DialectName.Libass, DialectName.XyVsfilter}
-        spans = karaoke.Reader(dialectName)\splitSyllables "{\\k50}a{\\p1}m 0 0{\\p0}b"
+        spans = splitOf dialectName, "{\\k50}a{\\p1}m 0 0{\\p0}b"
         ut\assertEquals #spans, 3
         ut\assertEquals spans[1].text, "a"
         ut\assertEquals spans[2].startTime, 500
@@ -310,19 +308,19 @@
     -- `ra` is sung at 1s.
     splitSyllables_aTagOnAFreshSyllableEndsNothing: (ut) ->
       for dialectName in *{DialectName.Libass, DialectName.XyVsfilter}
-        spans = karaoke.Reader(dialectName)\splitSyllables "{\\k100}Ka{\\k100}{\\b1}ra{\\k100}o"
+        spans = splitOf dialectName, "{\\k100}Ka{\\k100}{\\b1}ra{\\k100}o"
         ut\assertEquals #spans, 3
         ut\assertEquals spans[2].text, "ra"
         ut\assertEquals spans[2].startTime, 1000
         -- the tag ends the syllable once text has taken it, which is what leaves `a` at 2s
-        withText = karaoke.Reader(dialectName)\splitSyllables "{\\k100}Ka{\\k100}r{\\b1}a{\\k100}o"
+        withText = splitOf dialectName, "{\\k100}Ka{\\k100}r{\\b1}a{\\k100}o"
         ut\assertEquals withText[3].text, "a"
         ut\assertEquals withText[3].startTime, 2000
 
     -- A drawing under a karaoke tag of its own is reported as a syllable starting when that tag says,
     -- holding the drawing in its text and nothing in the stripped text. Observed in both renderers by
     -- rebuilding the line from this reading, where the shape whitens at 2s and `ke` at 3s.
-    parseKaraokeData_reportsADrawingsOwnSyllable: (ut) ->
+    toAegisubKaraokeData_reportsADrawingsOwnSyllable: (ut) ->
       line = "{\\k100}Ka{\\k100}ra{\\k100}{\\p1}m 0 0 l 30 0 l 30 30 l 0 30{\\p0}{\\k100}ke"
 
       for dialectName in *{DialectName.Libass, DialectName.XyVsfilter}
@@ -337,21 +335,21 @@
     -- One section per override block, so two blocks running together stay apart while the tags of a
     -- single block stay together. Both spell the same line, which the reassembled text holds them to.
     splitSyllables_separatesOverrideBlocksThatRunTogether: (ut) ->
-      apart = readers[DialectName.Libass]\splitSyllables("{\\k50}{\\b1}{\\i1}a")[1]
+      apart = splitOf(DialectName.Libass, "{\\k50}{\\b1}{\\i1}a")[1]
       ut\assertEquals #apart.strippedSections, 2
       ut\assertEquals apart.strippedSections[1].text, "{\\b1}"
       ut\assertEquals apart.strippedSections[2].text, "{\\i1}"
       ut\assertEquals apart.strippedSections[2].textOffset, apart.strippedSections[1].textOffset
       ut\assertEquals apart\withStrippedSections!, "{\\b1}{\\i1}a"
 
-      together = readers[DialectName.Libass]\splitSyllables("{\\k50}{\\b1\\i1}a")[1]
+      together = splitOf(DialectName.Libass, "{\\k50}{\\b1\\i1}a")[1]
       ut\assertEquals #together.strippedSections, 1
       ut\assertEquals together\withStrippedSections!, "{\\b1\\i1}a"
 
     -- A drawing and the override block that switched into it sit at the same offset, so a section's
     -- kind is the only thing telling the two apart.
     splitSyllables_separatesADrawingFromTheBlockBeforeIt: (ut) ->
-      spans = readers[DialectName.Libass]\splitSyllables "{\\k50}{\\p1}m 0 0 l 9 9{\\p0}"
+      spans = splitOf DialectName.Libass, "{\\k50}{\\p1}m 0 0 l 9 9{\\p0}"
       sections = spans[1].strippedSections
 
       ut\assertEquals #sections, 2
@@ -362,43 +360,49 @@
       ut\assertEquals sections[2].textOffset, sections[1].textOffset
       ut\assertEquals spans[1]\hasDrawing!, true
 
-    parseKaraokeData_holdsADrawingOutOfTheStrippedText: (ut) ->
-      syllables = karaoke.parseKaraokeData dialogueLine "{\\k50}{\\p1}m 0 0 l 9 9{\\p0}"
+    toAegisubKaraokeData_holdsADrawingOutOfTheStrippedText: (ut) ->
+      syllables = syllablesOf DialectName.Aegisub, "{\\k50}{\\p1}m 0 0 l 9 9{\\p0}"
       ut\assertEquals syllables[1].text_stripped, ""
 
     -- Aegisub declares the karaoke tags as taking an integer, so it truncates a decimal duration
-    parseKaraokeData_truncatesADecimalDurationForAegisub: (ut) ->
+    toAegisubKaraokeData_truncatesADecimalDurationForAegisub: (ut) ->
       ut\assertEquals syllablesOf(DialectName.Aegisub, "{\\k50.9}ab")[1].duration, 500
       ut\assertEquals syllablesOf(DialectName.Aegisub, "{\\k30.5}ab")[1].duration, 300
 
     -- .5 is the fraction a truncated read and a rounded one disagree on, and both renderers put the
     -- next syllable's start at 305ms rather than 310
-    parseKaraokeData_keepsADecimalDurationForTheRenderers: (ut) ->
+    toAegisubKaraokeData_keepsADecimalDurationForTheRenderers: (ut) ->
       ut\assertEquals syllablesOf(DialectName.Libass, "{\\k50.9}ab")[1].duration, 509
       ut\assertEquals syllablesOf(DialectName.Libass, "{\\k30.5}ab")[1].duration, 305
       ut\assertEquals syllablesOf(DialectName.XyVsfilter, "{\\k30.5}ab")[1].duration, 305
 
     -- only a missing argument takes the dialect's default; one holding no number counts as zero
-    parseKaraokeData_emptyArgumentTakesNothingForAegisub: (ut) ->
+    toAegisubKaraokeData_emptyArgumentTakesNothingForAegisub: (ut) ->
       ut\assertEquals syllablesOf(DialectName.Aegisub, "{\\k}ab")[1].duration, 0
 
-    parseKaraokeData_emptyArgumentTakesASecondForTheRenderers: (ut) ->
-      ut\assertEquals syllablesOf(DialectName.Libass, "{\\k}ab")[1].duration, 1000
+    -- a second whatever duration is in force ahead of it, which both renderers were observed doing with
+    -- 3s, 0.5s and nothing ahead of each of the four tags
+    toAegisubKaraokeData_emptyArgumentTakesASecondForTheRenderers: (ut) ->
+      for dialect in *{DialectName.Libass, DialectName.XyVsfilter}
+        ut\assertEquals syllablesOf(dialect, "{\\k}ab")[1].duration, 1000
+        for tag in *{"k", "K", "kf", "ko"}
+          ut\assertEquals syllablesOf(dialect, "{\\k300}a{\\#{tag}}b")[2].duration, 1000
+          ut\assertEquals syllablesOf(dialect, "{\\k50}a{\\#{tag}}b")[2].duration, 1000
 
-    parseKaraokeData_unreadableArgumentCountsAsZero: (ut) ->
+    toAegisubKaraokeData_unreadableArgumentCountsAsZero: (ut) ->
       ut\assertEquals syllablesOf(DialectName.Libass, "{\\k?}ab")[1].duration, 0
 
     -- `\kt` sets where the next syllable starts without ending the one it sits in
     splitSyllables_absoluteTagSetsTheNextStart: (ut) ->
-      spans = readers[DialectName.Libass]\splitSyllables "{\\kf50}aaa{\\kt100}bbb{\\kf20}ccc"
+      spans = splitOf DialectName.Libass, "{\\kf50}aaa{\\kt100}bbb{\\kf20}ccc"
       ut\assertEquals spans[#spans].startTime, 1000
 
     -- a style the line is set in is what a redundant tag is compared against, so the same line
     -- splits differently under a style already declaring what the tag writes
     splitSyllables_comparesAgainstTheGivenStyle: (ut) ->
       boldStyle = createStyle bold: true
-      ut\assertEquals #readers[DialectName.Libass]\splitSyllables("{\\k50}a{\\b1}b", boldStyle), 1
-      ut\assertEquals #readers[DialectName.Libass]\splitSyllables("{\\k50}a{\\b0}b", boldStyle), 2
+      ut\assertEquals #splitOf(DialectName.Libass, "{\\k50}a{\\b1}b", boldStyle), 1
+      ut\assertEquals #splitOf(DialectName.Libass, "{\\k50}a{\\b0}b", boldStyle), 2
 
     -- Both renderers hold a style's own scale, spacing, outline and shadow to zero as they read the
     -- style line, so a style declaring a negative one begins at zero and a tag writing zero moves
@@ -407,16 +411,15 @@
     splitSyllables_clampsANegativeStyleWidth: (ut) ->
       style = createStyle outline: -5, shadow: -5, spacing: -9
       for dialect in *{DialectName.Libass, DialectName.XyVsfilter}
-        reader = readers[dialect]
-        ut\assertEquals #reader\splitSyllables("{\\k50}a{\\bord0}b", style), 1
-        ut\assertEquals #reader\splitSyllables("{\\k50}a{\\xshad0}b", style), 1
-        ut\assertEquals #reader\splitSyllables("{\\k50}a{\\fsp0}b", style), 1
+        ut\assertEquals #splitOf(dialect, "{\\k50}a{\\bord0}b", style), 1
+        ut\assertEquals #splitOf(dialect, "{\\k50}a{\\xshad0}b", style), 1
+        ut\assertEquals #splitOf(dialect, "{\\k50}a{\\fsp0}b", style), 1
         -- and the clamped zero is what a moving value is measured against
-        ut\assertEquals #reader\splitSyllables("{\\k50}a{\\bord2}b", style), 2
+        ut\assertEquals #splitOf(dialect, "{\\k50}a{\\bord2}b", style), 2
 
     splitSyllables_clampsANegativeStyleScale: (ut) ->
       style = createStyle scale_x: -50
-      ut\assertEquals #readers[DialectName.Libass]\splitSyllables("{\\k50}a{\\fscx0}b", style), 1
+      ut\assertEquals #splitOf(DialectName.Libass, "{\\k50}a{\\fscx0}b", style), 1
 
     -- One dialect folds every border style but the opaque box onto one value as it reads a style line,
     -- so two styles differing only between 1 and 2 are one style to it and two to the other. No tag
@@ -424,8 +427,8 @@
     splitSyllables_foldsTheBorderStyleInOneDialectOnly: (ut) ->
       stylesByName = Outlined: createStyle(name: "Outlined", borderstyle: 2)
       text = "{\\k50}a{\\rOutlined}b"
-      ut\assertEquals #readers[DialectName.Libass]\splitSyllables(text, nil, stylesByName), 2
-      ut\assertEquals #readers[DialectName.XyVsfilter]\splitSyllables(text, nil, stylesByName), 1
+      ut\assertEquals #splitOf(DialectName.Libass, text, nil, stylesByName), 2
+      ut\assertEquals #splitOf(DialectName.XyVsfilter, text, nil, stylesByName), 1
 
     -- Two values the format gives no meaning to are still two values to the dialect comparing the
     -- number, and one to the dialect comparing what it understood. Both draw the same outline, so
@@ -435,26 +438,26 @@
         Two: createStyle(name: "Two", borderstyle: 2)
         Five: createStyle(name: "Five", borderstyle: 5)
       text = "{\\k50}{\\rTwo}a{\\rFive}b"
-      ut\assertEquals #readers[DialectName.Libass]\splitSyllables(text, nil, stylesByName), 2
-      ut\assertEquals #readers[DialectName.XyVsfilter]\splitSyllables(text, nil, stylesByName), 1
+      ut\assertEquals #splitOf(DialectName.Libass, text, nil, stylesByName), 2
+      ut\assertEquals #splitOf(DialectName.XyVsfilter, text, nil, stylesByName), 1
 
     -- the opaque box is the one value both keep apart, so it ends a run in either
     splitSyllables_opaqueBoxEndsARunInBoth: (ut) ->
       stylesByName = Boxed: createStyle(name: "Boxed", borderstyle: 3)
       text = "{\\k50}a{\\rBoxed}b"
       for dialect in *{DialectName.Libass, DialectName.XyVsfilter}
-        ut\assertEquals #readers[dialect]\splitSyllables(text, nil, stylesByName), 2
+        ut\assertEquals #splitOf(dialect, text, nil, stylesByName), 2
 
     splitSyllables_resetReachesANamedStyle: (ut) ->
       stylesByName = Other: createStyle name: "Other", fontsize: 72
       text = "{\\k50}a{\\rOther}b"
-      ut\assertEquals #readers[DialectName.Libass]\splitSyllables(text, nil, stylesByName), 2
+      ut\assertEquals #splitOf(DialectName.Libass, text, nil, stylesByName), 2
       -- with no such style the reset falls back to the line's own, which changes nothing here
-      ut\assertEquals #readers[DialectName.Libass]\splitSyllables(text), 1
+      ut\assertEquals #splitOf(DialectName.Libass, text), 1
   }
 
   tests.splitSyllables_aBreakEndsTheSyllableItFollows = (ut) ->
-    spans = readers[DialectName.Libass]\splitSyllables "{\\k50}aa\\Nbb"
+    spans = splitOf DialectName.Libass, "{\\k50}aa\\Nbb"
     ut\assertEquals spans[1].text, "aa\\N"
     ut\assertEquals spans[2].text, "bb"
 
@@ -465,13 +468,13 @@
     line = "{\\k50}aa\\nbb"
 
     for wrapStyle in *{WrapStyle.SmartTopWider, WrapStyle.NoWordWrap}
-      ut\assertEquals #readers[DialectName.Libass]\splitSyllables(line, nil, nil, wrapStyle),
-        #readers[DialectName.XyVsfilter]\splitSyllables(line, nil, nil, wrapStyle)
+      ut\assertEquals #splitOf(DialectName.Libass, line, nil, nil, wrapStyle),
+        #splitOf(DialectName.XyVsfilter, line, nil, nil, wrapStyle)
 
-    ut\assertEquals #readers[DialectName.Libass]\splitSyllables(line, nil, nil, 9), 1
-    ut\assertEquals #readers[DialectName.XyVsfilter]\splitSyllables(line, nil, nil, 9), 2
+    ut\assertEquals #splitOf(DialectName.Libass, line, nil, nil, 9), 1
+    ut\assertEquals #splitOf(DialectName.XyVsfilter, line, nil, nil, 9), 2
 
-  tests.parseKaraokeData_keepsALineBreakInTheSyllableText = (ut) ->
+  tests.toAegisubKaraokeData_keepsALineBreakInTheSyllableText = (ut) ->
     syllables = syllablesOf DialectName.Aegisub, "{\\k50}a\\Nb"
     ut\assertEquals syllables[1].text, "a\\Nb"
 
@@ -479,10 +482,10 @@
     for dialect in *{DialectName.Libass, DialectName.XyVsfilter}
       expected = case[dialect]
       tests["splitSyllables_#{case.name}_#{dialect}"] = (ut) ->
-        ut\assertEquals #readers[dialect]\splitSyllables(case.text, nil, nil, case.wrapStyle), expected
+        ut\assertEquals #splitOf(dialect, case.text, nil, nil, case.wrapStyle), expected
 
   for case in *aegisubCases
-    tests["parseKaraokeData_#{case.name}_aegisub"] = (ut) ->
+    tests["toAegisubKaraokeData_#{case.name}_aegisub"] = (ut) ->
       ut\assertEquals #syllablesOf(DialectName.Aegisub, case.text), case.count
 
   tests

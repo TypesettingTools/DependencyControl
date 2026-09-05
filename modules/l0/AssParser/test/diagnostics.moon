@@ -1,24 +1,45 @@
+-- cspell:ignore rnds fsvp -- VSFilterMod-only tags, as the module itself notes
+-- cspell:ignore blurnan -- a tag written against its argument, as `clipm` is
 -- cspell:ignore Iczaka -- a signature quoted verbatim from a corpus script
 -- cspell:ignore bordd -- a misspelling written on purpose, to show a tag name matched by prefix
 -- cspell:ignore HFFFFFF -- a color literal written out in a fixture, not a word
 --
 -- Checks the recorded value equivalences against an oracle that derives them, so a row claiming a
 -- rewrite is safe where the model says otherwise fails here rather than misleading a normalizer later.
--- Called from test.moon as: (controls\requireTest "diagnostics")!
+-- Called from test.moon as: (controls\requireTest "diagnostics") controls\requireTest "value-equivalences"
 --
 -- The two sides are independent on purpose. `equivalences` is a hand-written record of what probing
 -- the renderers established; the oracle asks the scanner, the run state and the karaoke reader what
 -- a line reads as. A row and the oracle agreeing means the model reproduces an observation. Where they
 -- disagree, one of the two is wrong and the failure names which row to go and re-probe.
-->
+(equivalences) ->
   diagnostics = require "l0.AssParser.diagnostics"
+  Scanner = require "l0.AssParser.Scanner"
   {:DialectName} = require "l0.AssParser.dialects"
-  {:defaultStyle} = require "l0.AssParser.ass"
+  {:LineField, :defaultStyle, :resolveStyle} = require "l0.AssParser.ass"
   {:isEquivalent, :describeLine, :describeCanonicalAppearance, :describeKaraokeSyllables} = diagnostics
-  {:groupDialectsByKaraokeReading, :equivalences} = diagnostics
+  {:groupDialectsByKaraokeReading} = diagnostics
   {:FindingCode, :Severity, :findLineDefects} = diagnostics
 
   declaredStyles = {Declared: defaultStyle}
+  scanners = {name, Scanner name for name in *DialectName.values}
+  libassScanner = scanners[DialectName.Libass]
+
+  ---A line's canonical appearance under one dialect, scanned for it since the describer takes a stream.
+  ---@param dialect AssDialectName
+  ---@param text string The line's Text field.
+  ---@param style? AegisubStyleLine The style the line is set in.
+  ---@param stylesByName? table<string, AegisubStyleLine> Every style the script declares.
+  ---@return string?
+  appearanceOf = (dialect, text, style, stylesByName) ->
+    describeCanonicalAppearance scanners[dialect]\scan(text), dialect, style, stylesByName
+
+  ---The karaoke syllables one dialect reads a line as, scanned for it the same way.
+  ---@param dialect AssDialectName
+  ---@param text string The line's Text field.
+  ---@return string
+  syllablesOf = (dialect, text) ->
+    describeKaraokeSyllables scanners[dialect]\scan(text), dialect
 
   ---The codes a line's findings report, joined, which is what an assertion reads against.
   ---@param findings AssFinding[]
@@ -49,7 +70,7 @@
       for row in *equivalences
         claimed = claimedBy row
         for dialect in *renderers
-          actual = isEquivalent dialect, row.written, row.rewritten, nil, row.stylesByName, row.wrapStyle
+          actual = isEquivalent row.written, row.rewritten, dialect, nil, row.stylesByName, row.wrapStyle
           continue if actual == not not claimed[dialect]
           offenders[#offenders + 1] = "#{row.name}:#{dialect}:claimed#{claimed[dialect] and 'safe' or 'unsafe'}"
       table.sort offenders
@@ -70,14 +91,14 @@
     -- line be compared across them at all.
     describeCanonicalAppearance_agreesWhereOnlyTheTermsDiffer: (ut) ->
       for text in *{"{\\b1}x", "{\\b0}x", "{\\b700}x", "{\\b500}x"}
-        ut\assertEquals describeCanonicalAppearance(DialectName.Libass, text),
-          describeCanonicalAppearance DialectName.XyVsfilter, text
+        ut\assertEquals appearanceOf(DialectName.Libass, text),
+          appearanceOf DialectName.XyVsfilter, text
 
     -- one rounds a fractional pass away and clamps a negative one; the other draws both
     describeCanonicalAppearance_keepsADifferenceInWhatIsDrawn: (ut) ->
       for text in *{"{\\be0.6}x", "{\\be-3}x"}
-        ut\assertNotEquals describeCanonicalAppearance(DialectName.Libass, text),
-          describeCanonicalAppearance DialectName.XyVsfilter, text
+        ut\assertNotEquals appearanceOf(DialectName.Libass, text),
+          appearanceOf DialectName.XyVsfilter, text
 
     -- the format gives 2 no meaning and both draw it as the outline 1 asks for, so folding it is what
     -- makes the two comparable; 4 is the libass extension that genuinely draws its own way
@@ -88,33 +109,33 @@
         style
 
       for borderstyle in *{1, 2, 3, 5}
-        ut\assertEquals describeCanonicalAppearance(DialectName.Libass, "x", styled borderstyle),
-          describeCanonicalAppearance DialectName.XyVsfilter, "x", styled borderstyle
+        ut\assertEquals appearanceOf(DialectName.Libass, "x", styled borderstyle),
+          appearanceOf DialectName.XyVsfilter, "x", styled borderstyle
 
-      ut\assertNotEquals describeCanonicalAppearance(DialectName.Libass, "x", styled 4),
-        describeCanonicalAppearance DialectName.XyVsfilter, "x", styled 4
+      ut\assertNotEquals appearanceOf(DialectName.Libass, "x", styled 4),
+        appearanceOf DialectName.XyVsfilter, "x", styled 4
 
     -- only one dialect tracks the character set, so holding it would part every pair of dialects on
     -- its presence before a value was read
     describeCanonicalAppearance_leavesOutAFieldOnlyOneDialectCompares: (ut) ->
-      ut\assertEquals describeCanonicalAppearance(DialectName.Libass, "{\\fe1}x"),
-        describeCanonicalAppearance DialectName.XyVsfilter, "{\\fe1}x"
+      ut\assertEquals appearanceOf(DialectName.Libass, "{\\fe1}x"),
+        appearanceOf DialectName.XyVsfilter, "{\\fe1}x"
 
     -- a dialect that compares no runs tracks no appearance to report
     describeCanonicalAppearance_isNilForADialectComparingNoRuns: (ut) ->
-      ut\assertNil describeCanonicalAppearance DialectName.Aegisub, "{\\b1}x"
+      ut\assertNil appearanceOf DialectName.Aegisub, "{\\b1}x"
 
     -- The fold is what makes the picture comparable and is exactly what hides a split: libass ends a
     -- run between the two spellings of bold and VSFilter does not, which the syllables still report.
     describeCanonicalAppearance_foldsASplitThatTheKaraokeReadingKeeps: (ut) ->
-      ut\assertEquals describeCanonicalAppearance(DialectName.Libass, "{\\k50}{\\b1}a{\\b700}b"),
-        describeCanonicalAppearance DialectName.Libass, "{\\k50}{\\b1}a{\\b1}b"
-      ut\assertNotEquals describeKaraokeSyllables(DialectName.Libass, "{\\k50}{\\b1}a{\\b700}b"),
-        describeKaraokeSyllables DialectName.Libass, "{\\k50}{\\b1}a{\\b1}b"
+      ut\assertEquals appearanceOf(DialectName.Libass, "{\\k50}{\\b1}a{\\b700}b"),
+        appearanceOf DialectName.Libass, "{\\k50}{\\b1}a{\\b1}b"
+      ut\assertNotEquals syllablesOf(DialectName.Libass, "{\\k50}{\\b1}a{\\b700}b"),
+        syllablesOf DialectName.Libass, "{\\k50}{\\b1}a{\\b1}b"
 
     describeLine_partsTwoLinesTheDialectTellsApart: (ut) ->
-      ut\assertNotEquals describeLine(DialectName.Libass, "{\\k50}a{\\b1}b"),
-        describeLine DialectName.Libass, "{\\k50}a{\\b0}b"
+      ut\assertNotEquals describeLine(libassScanner\scan "{\\k50}a{\\b1}b"),
+        describeLine libassScanner\scan "{\\k50}a{\\b0}b"
 
     -- A rewrite that moves a transform's interval leaves the same state behind and touches no field a
     -- renderer compares runs on, so a descriptor read at one moment cannot see it. Reading each line
@@ -123,50 +144,50 @@
       nested = "{\\t(0,100,\\fscy150\\t(5000,6000,\\fscx200))}MMMM"
       for dialect in *renderers
         -- de-nesting into two transforms over the same intervals is the rewrite that holds
-        ut\assertTrue isEquivalent dialect, nested, "{\\t(0,100,\\fscy150)\\t(5000,6000,\\fscx200)}MMMM"
+        ut\assertTrue isEquivalent nested, "{\\t(0,100,\\fscy150)\\t(5000,6000,\\fscx200)}MMMM", dialect
 
         -- and each of these is a de-nesting that quietly changed when something animates
-        ut\assertFalse isEquivalent dialect, nested, "{\\t(0,100,\\fscy150)\\t(1000,2000,\\fscx200)}MMMM"
-        ut\assertFalse isEquivalent dialect, nested, "{\\t(0,100,\\fscy150)\\fscx200}MMMM"
-        ut\assertFalse isEquivalent dialect, nested, "{\\t(0,100,\\fscy150\\fscx200)}MMMM"
+        ut\assertFalse isEquivalent nested, "{\\t(0,100,\\fscy150)\\t(1000,2000,\\fscx200)}MMMM", dialect
+        ut\assertFalse isEquivalent nested, "{\\t(0,100,\\fscy150)\\fscx200}MMMM", dialect
+        ut\assertFalse isEquivalent nested, "{\\t(0,100,\\fscy150\\fscx200)}MMMM", dialect
 
     -- A line holding no transform is read at one moment, as it always was, so nothing pays for this
     -- but the lines it is about.
     describeLine_readsALineWithoutATransformAtOneMoment: (ut) ->
-      ut\assertEquals select(2, describeLine(DialectName.Libass, "{\\b1}a{\\i1}b")\gsub "@t%d+", ""), 1
-      ut\assertGreaterThan select(2, describeLine(DialectName.Libass, "{\\t(0,100,\\fscx200)}a")\gsub "@t%d+", ""), 1
+      ut\assertEquals select(2, describeLine(libassScanner\scan "{\\b1}a{\\i1}b")\gsub "@t%d+", ""), 1
+      ut\assertGreaterThan select(2, describeLine(libassScanner\scan "{\\t(0,100,\\fscx200)}a")\gsub "@t%d+", ""), 1
 
     -- Recording the appearance at the line's end alone would call these alike: the same tags in the
     -- same places, leaving the same state, drawing `A` bold in one and italic in the other. What a
     -- rewrite must not do is move an appearance a later tag overwrites, and that is what this catches.
     describeLine_partsTwoLinesDrawingAnEarlierRunDifferently: (ut) ->
-      ut\assertNotEquals describeLine(DialectName.Libass, "{\\b1}A{\\i1}B{\\b0}"),
-        describeLine DialectName.Libass, "{\\i1}A{\\b1}B{\\b0}"
-      ut\assertFalse isEquivalent DialectName.Libass, "{\\b1}A{\\i1}B{\\b0}", "{\\i1}A{\\b1}B{\\b0}"
+      ut\assertNotEquals describeLine(libassScanner\scan "{\\b1}A{\\i1}B{\\b0}"),
+        describeLine libassScanner\scan "{\\i1}A{\\b1}B{\\b0}"
+      ut\assertFalse isEquivalent "{\\b1}A{\\i1}B{\\b0}", "{\\i1}A{\\b1}B{\\b0}", DialectName.Libass
 
       -- and the same where only a value differs, the later tag writing both lines to one size
-      ut\assertFalse isEquivalent DialectName.Libass, "{\\fs60}A{\\fs48}B", "{\\fs80}A{\\fs48}B"
+      ut\assertFalse isEquivalent "{\\fs60}A{\\fs48}B", "{\\fs80}A{\\fs48}B", DialectName.Libass
 
     -- Every run's appearance is recorded, so the whole of a line's text is checked and not only its
     -- syllables: a consumer editing text, which this parser never does, is held to it too.
     describeLine_partsTwoLinesByTheirText: (ut) ->
-      ut\assertFalse isEquivalent DialectName.Libass, "{\\b1}AX{\\i1}B", "{\\b1}AY{\\i1}B"
-      ut\assertFalse isEquivalent DialectName.Libass, "{\\b1}A{\\i1}B", "{\\b1}B{\\i1}A"
+      ut\assertFalse isEquivalent "{\\b1}AX{\\i1}B", "{\\b1}AY{\\i1}B", DialectName.Libass
+      ut\assertFalse isEquivalent "{\\b1}A{\\i1}B", "{\\b1}B{\\i1}A", DialectName.Libass
 
     -- A tag no run follows draws nothing, so the state it leaves cannot part two lines. A drawing is a
     -- run like any other, which is what the second pair turns on: the trailing tag scales it.
     describeLine_ignoresAppearanceNoRunIsDrawnIn: (ut) ->
-      ut\assertTrue isEquivalent DialectName.Libass, "{\\fs40}ab{\\fscx80}", "{\\fs40}ab{\\fscx60}"
-      ut\assertFalse isEquivalent DialectName.Libass, "{\\fs40}ab{\\fscx80}{\\p1}m 0 0 l 9 9{\\p0}",
-        "{\\fs40}ab{\\p1}m 0 0 l 9 9{\\p0}"
+      ut\assertTrue isEquivalent "{\\fs40}ab{\\fscx80}", "{\\fs40}ab{\\fscx60}", DialectName.Libass
+      ut\assertFalse isEquivalent "{\\fs40}ab{\\fscx80}{\\p1}m 0 0 l 9 9{\\p0}",
+        "{\\fs40}ab{\\p1}m 0 0 l 9 9{\\p0}", DialectName.Libass
 
       -- Dropping the tag parts them instead. It moves a field libass compares, opening a syllable that
-      -- holds nothing, and `parseKaraokeData` reports a line's last syllable however empty it is.
-      ut\assertFalse isEquivalent DialectName.Libass, "{\\fs40}ab{\\fscx80}", "{\\fs40}ab"
+      -- holds nothing, and a line's last syllable is reported however empty it is.
+      ut\assertFalse isEquivalent "{\\fs40}ab{\\fscx80}", "{\\fs40}ab", DialectName.Libass
 
     describeLine_matchesForTwoSpellingsOfOneColor: (ut) ->
-      ut\assertEquals describeLine(DialectName.Libass, "{\\k50}a{\\1c&H0000FF&}b"),
-        describeLine DialectName.Libass, "{\\k50}a{\\1c0000FF}b"
+      ut\assertEquals describeLine(libassScanner\scan "{\\k50}a{\\1c&H0000FF&}b"),
+        describeLine libassScanner\scan "{\\k50}a{\\1c0000FF}b"
 
     -- a line every dialect reads alike is the ordinary case, and the one a diagnostic stays quiet on
     groupDialectsByKaraokeReading_yieldsOneGroupForAnAgreedLine: (ut) ->
@@ -193,7 +214,7 @@
     for dialect in *renderers
       safe = (claimedBy row)[dialect]
       tests["isEquivalent_#{row.name}_#{dialect}"] = (ut) ->
-        actual = isEquivalent dialect, row.written, row.rewritten, nil, row.stylesByName, row.wrapStyle
+        actual = isEquivalent row.written, row.rewritten, dialect, nil, row.stylesByName, row.wrapStyle
         ut\assertEquals actual, not not safe
 
   -- Both renderers put the line's own style back for an unknown name, observed by rendering it beside
@@ -209,6 +230,107 @@
     ut\assertEquals #findLineDefects("abc{\\rDeclared}d", nil, declaredStyles), 0
     ut\assertEquals #findLineDefects("abc{\\r}d", nil, declaredStyles), 0
     ut\assertEquals #findLineDefects("abc{\\rMissing}d"), 0
+
+  -- Written on its own a value past the bound is simply taken as the bound, which is what the plain
+  -- clamp finding says. Inside a transform the renderers animate toward the value as written and hold
+  -- only what they draw, so the bound is reached partway and stands for the rest of the window, and the
+  -- line is fixed by moving that window rather than by rewriting the argument alone.
+  tests.findLineDefects_tellsAClampedValueInsideATransformFromOneOutsideOne = (ut) ->
+    outside = findLineDefects "{\\bord-2}x"
+    ut\assertEquals #outside, 1
+    ut\assertEquals outside[1].code, FindingCode.ValueClamped
+
+    inside = findLineDefects "{\\bord2\\t(0,100,\\bord-2)}x"
+    ut\assertEquals #inside, 1
+    ut\assertEquals inside[1].code, FindingCode.TransformAnimatesPastBound
+    ut\assertEquals inside[1].severity, Severity.Warning
+    ut\assertContains inside[1].message, "bord-2"
+
+    -- a target inside the range reaches no bound and is reported by neither
+    ut\assertEquals #findLineDefects("{\\bord2\\t(0,100,\\bord2)}x"), 0
+
+  -- A style field is read as `Default` whatever case it spells, so the line reaches the one declaration
+  -- and nothing is lost. Reported as a note rather than a fault: 3,704 lines across three corpus blocks
+  -- spell it `default`, and every one of them reaches the style the script meant.
+  tests.findLineDefects_notesAStyleFieldSpellingDefaultAnotherWay = (ut) ->
+    styles = {Default: defaultStyle, Karaoke: defaultStyle}
+    for asked in *{"default", "DEFAULT", "dEfAuLt"}
+      found = findLineDefects {text: "x", style: asked}, nil, styles
+      ut\assertEquals #found, 1
+      ut\assertEquals found[1].code, FindingCode.StyleNameFolded
+      ut\assertEquals found[1].severity, Severity.Info
+      ut\assertContains found[1].message, asked
+
+    ut\assertEquals #findLineDefects({text: "x", style: "Default"}, nil, styles), 0
+
+  -- Where the script declares the name twice over, the folding costs the line the declaration it
+  -- spelled, which no style field can reach at all. No corpus script was found declaring both.
+  tests.findLineDefects_warnsWhereTheFoldingCostsTheLineADeclaration = (ut) ->
+    styles = {Default: defaultStyle, default: defaultStyle}
+    found = findLineDefects {text: "x", style: "default"}, nil, styles
+    ut\assertEquals #found, 1
+    ut\assertEquals found[1].code, FindingCode.StyleNameAmbiguous
+    ut\assertEquals found[1].severity, Severity.Warning
+
+    -- a line spelling it exactly reaches what it named, so there is nothing to tell that one
+    ut\assertEquals #findLineDefects({text: "x", style: "Default"}, nil, styles), 0
+
+    -- and where only the other spelling is declared, the line reaches neither it nor a fallback
+    onlyTheOtherSpelling = default: defaultStyle
+    missed = findLineDefects {text: "x", style: "default"}, nil, onlyTheOtherSpelling
+    ut\assertEquals #missed, 1
+    ut\assertEquals missed[1].code, FindingCode.LineInUnknownStyle
+
+  -- A reset was rendered against a script declaring a tall style beside a short `Default`, and again
+  -- against one declaring both spellings of `default`. It reaches a style by an exact match alone: no
+  -- spelling of `Default` but that one reaches it, a leading star reaches nothing, and a lowercase
+  -- declaration is reachable this way though a line's style field can never reach it.
+  tests.findLineDefects_matchesAResetsStyleNameExactly = (ut) ->
+    styles = {Declared: defaultStyle, Default: defaultStyle}
+    reported = (text) -> #findLineDefects(text, nil, styles) > 0
+
+    ut\assertFalse reported "{\\rDefault}x"
+    ut\assertTrue reported "{\\rdefault}x"
+    ut\assertTrue reported "{\\rDEFAULT}x"
+    ut\assertTrue reported "{\\r*Default}x"
+    ut\assertTrue reported "{\\rdeclared}x"
+
+    -- the same name in a line's style field is folded onto the one capitalization and reaches the style
+    -- there, which is the asymmetry between the two lookups
+    ut\assertTrue (select 3, resolveStyle styles, "default")
+
+  -- The style field is not part of the text, so it is only looked at where the caller hands it over.
+  -- Both renderers draw such a line in the style called `Default`, which the probe in
+  -- `observe-style-name-matching.moon` settled along with the rest of the matching.
+  tests.findLineDefects_reportsALineSetInAnUnknownStyle = (ut) ->
+    found = findLineDefects {text: "abc", style: "Missing"}, nil, declaredStyles
+    ut\assertEquals #found, 1
+    ut\assertEquals found[1].code, FindingCode.LineInUnknownStyle
+    ut\assertEquals found[1].severity, Severity.Warning
+    ut\assertContains found[1].message, "Missing"
+    -- the finding is about the Style field, so there is no byte range in the text to report
+    ut\assertEquals found[1].field, LineField.Style
+    ut\assertNil found[1].startIndex
+    ut\assertNil found[1].endIndex
+    ut\assertNil found[1].tag
+
+    ut\assertEquals #findLineDefects({text: "abc", style: "Declared"}, nil, declaredStyles), 0
+    ut\assertEquals #findLineDefects("abc", nil, declaredStyles), 0
+    ut\assertEquals #findLineDefects({text: "abc", style: "Missing"}, nil, nil), 0
+
+  -- Two of the checks read a field beside the text, so a caller with only a string gets neither: the
+  -- style it is set in and whether the Effect field declares it a template are both unknowable from
+  -- text alone, and reporting either on a guess would be worse than leaving it.
+  tests.findLineDefects_readsTheStyleAndEffectOffALine = (ut) ->
+    -- declared a template by its Effect field alone, holding no substitution of its own
+    ordinary = "{\\blur9000}x"
+    ut\assertEquals describeCodes(findLineDefects {text: ordinary, effect: "code syl"}),
+      FindingCode.KaraokeTemplateSyntax
+    ut\assertNotContains describeCodes(findLineDefects ordinary), FindingCode.KaraokeTemplateSyntax
+
+    ut\assertEquals describeCodes(findLineDefects {text: "x", style: "Missing"}, nil, declaredStyles),
+      FindingCode.LineInUnknownStyle
+    ut\assertEquals describeCodes(findLineDefects "x", nil, declaredStyles), ""
 
   tests.findLineDefects_quietOnALineReadAsWritten = (ut) ->
     ut\assertEquals #findLineDefects("{\\k50}a{\\b1}b", nil, declaredStyles), 0
@@ -248,6 +370,51 @@
     finding = findLineDefects("{\\b50}a")[1]
     ut\assertEquals #finding.dialects, 2
 
+  -- A karaoke templater expands a template into the lines that are drawn, so the template's own text is
+  -- read as written by nothing and every other check on it would report the substitutions as defects.
+  -- The Effect field is what declares one; `$name` and `!expression!` say so where no effect is to hand.
+  tests.findLineDefects_reportsAKaraokeTemplateAndChecksNothingElse = (ut) ->
+    template = "{\\pos($center,$middle)\\blur9000}x"
+    findings = findLineDefects {text: template, effect: "template syl"}, {DialectName.Libass, DialectName.XyVsfilter}
+    ut\assertEquals #findings, 1
+    ut\assertEquals findings[1].code, FindingCode.KaraokeTemplateSyntax
+    ut\assertEquals findings[1].severity, Severity.Error
+    ut\assertEquals findings[1].startIndex, 1
+    ut\assertEquals findings[1].endIndex, #template
+
+    -- pure Lua, which holds none of the substitutions and is declared by the effect alone
+    ut\assertEquals describeCodes(findLineDefects {text: "ci = {}", effect: "code once"}, nil, nil),
+      FindingCode.KaraokeTemplateSyntax
+    -- and a substitution declares one where the effect does not
+    ut\assertEquals describeCodes(findLineDefects "{\\bord!math.random(6)!}x"),
+      FindingCode.KaraokeTemplateSyntax
+
+    -- An expression that indexes a table is a substitution as much as one that calls a function, and
+    -- a templater's own effects are written that way often enough that the corpus holds hundreds of
+    -- thousands of them. Read as ASS instead, each is a line of broken drawing commands.
+    for template in *{"{\\p1}!star[math.random(3)]!", "{\\p1}!c2[color]!", "{\\p1}!colors[2]!"}
+      ut\assertEquals describeCodes(findLineDefects template), FindingCode.KaraokeTemplateSyntax
+
+    -- A `!` on its own is not a substitution, so an ordinary line keeps being read as one. The blur
+    -- here is what says the other checks ran rather than being skipped.
+    ut\assertEquals describeCodes(findLineDefects "Look out behind you!"), ""
+    ut\assertEquals describeCodes(findLineDefects "He said [something]! Then left!"), ""
+    ut\assertEquals describeCodes(findLineDefects {text: "{\\blur9000}x", effect: "karaoke"}),
+      "#{FindingCode.BlurExhaustsRenderer} #{FindingCode.ValueClamped} #{FindingCode.ValueClamped}"
+
+  -- Above a radius of 7680 xy-VSFilter aborts rather than drawing the line, so the finding names that
+  -- dialect alone and stands beside the clamp libass applies at 100 rather than in place of it. A NaN
+  -- draws as no ink there, so it is not reported here.
+  tests.findLineDefects_reportsABlurThatExhaustsTheRenderer = (ut) ->
+    finding = findLineDefects("{\\blur9000}a")[1]
+    ut\assertEquals finding.code, FindingCode.BlurExhaustsRenderer
+    ut\assertEquals #finding.dialects, 1
+    ut\assertEquals finding.dialects[1], DialectName.XyVsfilter
+
+    ut\assertEquals describeCodes(findLineDefects "{\\blur7680}a"), FindingCode.ValueClamped
+    ut\assertEquals describeCodes(findLineDefects "{\\blurnan}a"),
+      "#{FindingCode.ValueNotAsWritten} #{FindingCode.ValueNotAsWritten}"
+
   -- `\fe` ends a run of text for VSFilter and not for libass, which moves a karaoke syllable boundary.
   -- The trait declaring that is what the finding is derived from.
   tests.findLineDefects_reportsACharacterSetOnlyOneDialectCompares = (ut) ->
@@ -280,7 +447,7 @@
     text = "{\\an2\\t(0,500,)}a"
     ut\assertContains describeCodes(findLineDefects text), FindingCode.TransformEmptyHoldsCollisions
     for effect in *{"Banner;0;0;0", "Scroll up;0;720;0;0"}
-      ut\assertContains describeCodes(findLineDefects text, nil, nil, effect), FindingCode.TransformEmpty
+      ut\assertContains describeCodes(findLineDefects {:text, :effect}, nil, nil), FindingCode.TransformEmpty
 
   -- Removing every empty transform is what would let the line collide, so a line holding only those
   -- reports each of them as holding it still rather than each as removable because the others remain.
@@ -418,6 +585,63 @@
     ut\assertEquals describeCodes(findLineDefects "{\\pos(1)}a"), FindingCode.UnmatchedSignature
     ut\assertEquals describeCodes(findLineDefects "{\\pos(1,2,3)}a"), FindingCode.UnmatchedSignature
 
+  -- Deleting the last control point of a vector clip leaves the tag behind with an empty argument list,
+  -- which both renderers were observed drawing exactly as they draw the line without it. That is a
+  -- reading rather than the absence of one, so it is not the signature error the shape would otherwise
+  -- fall to.
+  tests.findLineDefects_reportsAClipClosingOverNothingAsItsOwnDefect = (ut) ->
+    for text in *{"{\\clip()}a", "{\\iclip()}a", "{\\pos(1,2)\\clip()\\fs40}a"}
+      finding = findLineDefects(text)[1]
+      ut\assertEquals finding.code, FindingCode.ClipEmpty
+      ut\assertEquals finding.severity, Severity.Warning
+
+    -- a clip naming a region is read as written, and one written with no list at all matches no
+    -- signature as any other tag would
+    ut\assertEquals #findLineDefects("{\\clip(m 0 0 l 10 0 10 10)}a"), 0
+    ut\assertEquals #findLineDefects("{\\clip(0,0,10,10)}a"), 0
+    ut\assertEquals describeCodes(findLineDefects "{\\clip}a"), FindingCode.UnmatchedSignature
+
+  -- A name one slip from a real tag draws nothing, exactly as any unknown name does, so what the finding
+  -- adds is what was meant. The slips are the ones the corpus shows authors making.
+  tests.findLineDefects_namesTheTagAMisspellingReachesFor = (ut) ->
+    -- cspell:ignore fcsx facx fcsy -- authors' spellings, quoted from the corpus
+    for text in *{"{\\fcsx150}a", "{\\facx165}a", "{\\FCSX150}a"}
+      finding = findLineDefects(text)[1]
+      ut\assertEquals finding.code, FindingCode.MisspelledTag
+      ut\assertEquals finding.severity, Severity.Warning
+      ut\assertContains finding.message, "\\fscx"
+
+    ut\assertContains findLineDefects("{\\fcsy90}a")[1].message, "\\fscy"
+
+    -- a name no slip in the table reaches stays an unknown, and a tag spelled right reports nothing
+    ut\assertEquals describeCodes(findLineDefects "{\\wobble5}a"), FindingCode.UnrecognizedTag
+    ut\assertEquals #findLineDefects("{\\fscx150}a"), 0
+
+  -- The renderers step over whitespace between the backslash and the name, so `\ fscx150` is the tag
+  -- and `\ fcsx150` is the same slip as `\fcsx150`. The name is read back through the scanner for that
+  -- reason: a check matching the run against a pattern of its own reports these as plain junk.
+  tests.findLineDefects_readsAMisspelledNamePastTheWhitespaceTheScanSkips = (ut) ->
+    -- cspell:ignore fcsx -- an author's spelling, quoted from the corpus
+    for text in *{"{\\ fcsx150}a", "{\\  fcsx150}a", "{\\\tfcsx150}a"}
+      ut\assertEquals describeCodes(findLineDefects text), FindingCode.MisspelledTag
+
+    -- a fork's tag reaches its own finding past the same whitespace
+    ut\assertEquals describeCodes(findLineDefects "{\\ jitter1,2,3}a"), FindingCode.VsfilterModTag
+
+    -- and the tag spelled right is a tag, whitespace and all
+    ut\assertEquals describeCodes(findLineDefects "{\\ fscx150}a"), FindingCode.WhitespaceInTag
+
+  -- The reader skips a literal's prefix case-sensitively, so `&h20&` keeps the `h` where a hex digit
+  -- belongs and the value is lost entirely. That is the malformation the finding is for, and reading
+  -- the shape through the same module the reader lives in is what keeps the two agreeing about it.
+  tests.findLineDefects_readsALowercasePrefixAsTheMalformationItIs = (ut) ->
+    for text in *{"{\\1a&h20&}a", "{\\1c&hFF00FF&}a", "{\\1a&H20}a", "{\\1a&20}a"}
+      ut\assertEquals describeCodes(findLineDefects text), FindingCode.ColorLiteralMalformed
+
+    -- the literal spelled as the format spells one reports nothing
+    ut\assertEquals #findLineDefects("{\\1a&H20&}a"), 0
+    ut\assertEquals #findLineDefects("{\\1c&HFF00FF&}a"), 0
+
   -- A spline starts one and needs a single node before it, where a spline extension continues one and
   -- needs three. Reading them alike would report a valid spline as a defect and strip it away.
   tests.findLineDefects_tellsASplineFromItsExtension = (ut) ->
@@ -458,6 +682,24 @@
 
     -- a backslash naming no tag gets a finding of its own, being a typo rather than stray characters
     ut\assertEquals describeCodes(findLineDefects "{\\}a"), FindingCode.StrayBackslash
+
+  -- Scripts carry translator and typesetting notes in a comment block, which the renderers draw nothing
+  -- of, and a note long enough to want a line break holds a `\N`. That escape names no tag, so the block
+  -- holds none and is the comment block it looks like rather than a run of junk and a misspelling.
+  tests.findLineDefects_readsACommentBlockHoldingALineBreakAsOne = (ut) ->
+    for text in *{"a{left window: Coma\\Nright window: what?}", "a{That isn't like the \\None I know}",
+        "{\\b1}No service{\\N Unable to access network}"}
+      found = findLineDefects text
+      ut\assertEquals #found, 1
+      ut\assertEquals found[1].code, FindingCode.CommentBlock
+      ut\assertEquals found[1].severity, Severity.Info
+
+    -- the whole comment is quoted, not just the words ahead of the break
+    ut\assertContains findLineDefects("a{one\\Ntwo}")[1].message, "two"
+
+    -- a block the scan read a tag in holds junk beside that tag, however much prose stands there
+    ut\assertEquals describeCodes(findLineDefects "a{a remark\\Nmore remark\\b1}"),
+      "#{FindingCode.JunkInBlock} #{FindingCode.UnrecognizedTag}"
 
   -- The eight malformations put to both renderers as ink probes, each reported as what it is. A
   -- drawing that reads at face value stays quiet, however many coordinates one command repeats over.

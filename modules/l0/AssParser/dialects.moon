@@ -1,13 +1,14 @@
 -- cspell:ignore clipm -- a tag written against its argument, quoted verbatim below
 Enum = require "l0.DependencyControl.Enum"
+Ass = require "l0.AssParser.ass"
 
----@alias AssTokenKind string
 ---The token types produced by the parser when reading a line of ASS dialogue text.
+---@alias AssTokenKind string
 ---| "block-start" # BlockStart: the opening brace of an override block
 ---| "block-end" # BlockEnd: the closing brace of an override block
 ---| "tag" # Tag: one recognized override tag, with the raw text after its name
 ---| "junk" # Junk: block content that began with a backslash and matched no known name
----| "comment" # Comment: block content holding no backslash at all
+---| "comment" # Comment: block content with no backslash at all
 ---| "text" # Text: plain rendered text
 ---| "drawing" # Drawing: text consumed while drawing mode is on
 TokenKind = Enum "AssTokenKind", {
@@ -20,8 +21,13 @@ TokenKind = Enum "AssTokenKind", {
   Drawing: "drawing"
 }
 
+-- The largest blur radius xy-VSFilter was observed to draw, past which it aborts instead. It bounds
+-- that dialect's reading of `\blur` below, and `AssDiagnostics` reports a line written above it.
+BLUR_LARGEST_RENDERED = 7680
+
+---The different implementation-specific interpretations of the loosely defined ASS format this library
+---supports.
 ---@alias AssDialectName string
----The different implementation-specific interpretations of the loosely defined ASS format this library supports.
 ---| "aegisub" # Aegisub: what `aegisub.parse_karaoke_data` and the rest of the shims reproduce
 ---| "libass" # Libass: what renders for most viewers, and what Aegisub previews through
 ---| "vsfilter" # XyVsfilter: what xy-VSFilter renders, and the closest thing the format has to a reference.
@@ -46,8 +52,8 @@ Syntax = {
   PositiveRelativeSizeSign: "+"
 }
 
----@alias AssTagName string
 ---The names of the ASS override tags (without the leading backslash) supported among the dialects.
+---@alias AssTagName string
 ---| "1c" # PrimaryColor: the fill color
 ---| "2c" # SecondaryColor: the color a karaoke syllable holds until its sweep reaches it
 ---| "3c" # OutlineColor: the border color
@@ -174,8 +180,8 @@ TagName = Enum "AssTagName", {
   FadeComplex: "fade"
 }
 
----@alias AssArgumentType string
 ---The distinct data types used across all ASS override tags.
+---@alias AssArgumentType string
 ---| "text" # Text: a font name, which an argument of `0` puts back as a bare tag does
 ---| "color" # Color: a color, written `&HBBGGRR&` or as bare hex digits
 ---| "alpha" # Alpha: a transparency, written `&HAA&` or as bare hex digits
@@ -187,8 +193,8 @@ TagName = Enum "AssTagName", {
 ---| "flag" # Flag: 0 or 1, where any other value puts the style's back
 ---| "weight" # Weight: 0, 1 or 100 upwards, where any other value puts the style's back
 ---| "style-name" # StyleName: a style to take every field from, the line's own where it names none
----| "drawing" # Drawing: a shape written in drawing commands, as `\clip` takes
----| "tags" # Tags: a run of override tags, which only `\t` takes and which a scan parses recursively
+---| "drawing" # Drawing: a shape written in drawing commands
+---| "tags" # Tags: a run of override tags, kept as written
 ArgumentType = Enum "AssArgumentType", {
   Text: "text"
   Color: "color"
@@ -274,8 +280,8 @@ RunField = Enum "AssRunField", {
   Alpha4: "alpha-4"
 }
 
+---How a transform treats a tag written inside it.
 ---@alias AssTransformBehavior string
----What a transform does with a tag written inside it.
 ---| "interpolated" # Interpolated: stands part way to its target while the interval is open
 ---| "applied-whole" # AppliedWhole: applies in full from the first frame, whether or not the interval has opened
 TransformBehavior = Enum "AssTransformBehavior", {
@@ -286,7 +292,7 @@ TransformBehavior = Enum "AssTransformBehavior", {
 ---Tag-specific settings like argument signatures, the line state attributes it modifies, and any special reading rules.
 ---@class AssTagDefinition
 ---@field runFields? AssRunField[] The fields this tag writes, all to the one value it takes, so every
----  tag naming one takes a single argument. `\bord` writes both border axes and `\alpha` all four
+---  tag that writes one takes a single argument. `\bord` writes both border axes and `\alpha` all four
 ---  alphas. Absent where the tag writes none, where it rewrites all of them as `\r` does, and where
 ---  the tags it holds name them as `\t` does.
 ---@field signatures AssArgumentType[][] The argument lists this tag accepts, one per accepted length,
@@ -307,7 +313,7 @@ TransformBehavior = Enum "AssTransformBehavior", {
 ---  bare form means one value in every context. Absent where the bare form refers to something instead
 ---  — the style's own value, the line's style, the script's wrap style (none of which can be represented as a tag).
 ---@field firstWinsSlot? AssTagName The slot this tag competes for, where a line's *first* instance is
----  the one read and any later tag naming the same slot is dead. Absent where the tag takes the last
+---  the one read and any later tag writing to the same slot is dead. Absent where the tag takes the last
 ---  value written, as most do. Tags sharing a slot compete for it: `\pos` and `\move` both name `\pos`,
 ---  `\fad` and `\fade` name `\fad`, and `\a` and `\an` name `\an`.
 ---@field disablesCollisionDetection? true Whether writing this tag anywhere on a line stops the line
@@ -640,7 +646,7 @@ overrideTags = {
     bareTagDefault: "0"
     transform: TransformBehavior.AppliedWhole
   }
-  -- `\pbo` reaches the renderer rather than the style.
+  -- `\pbo` goes to the renderer rather than the style.
   [TagName.DrawingBaselineOffset]: {
     acceptsBareTag: true
     signatures: {{ArgumentType.Integer}}
@@ -649,8 +655,8 @@ overrideTags = {
   }
 
   -- Which signature was written decides what a transform does with either of these, so the tag alone
-  -- cannot answer it: four numbers are interpolated edge by edge, where a path is handed to a parser
-  -- the interpolation factor never reaches and so applies whole and from the first frame. Both were
+  -- cannot answer it: four numbers are interpolated edge by edge, where a path goes to a parser the
+  -- interpolation factor never touches and so applies whole and from the first frame. Both were
   -- observed in both renderers. A rewrite has to read the form before it may move one.
   [TagName.Clip]: {
     requiresParentheses: true
@@ -697,7 +703,7 @@ overrideTags = {
     acceptsBareTag: true
     transform: TransformBehavior.AppliedWhole
   }
-  -- `\q` reaches the renderer rather than the style. It reaches a run only by moving where the line
+  -- `\q` goes to the renderer rather than the style. It affects a run only by moving where the line
   -- breaks, since a break ends one and `\n` breaks under wrap style 2 alone.
   [TagName.WrapStyle]: {
     signatures: {{ArgumentType.Integer}}
@@ -725,7 +731,7 @@ overrideTags = {
 ---@field roundsToWhole? boolean Whether the value becomes a whole number, rounding at the half.
 ---@field resolvesWeight? boolean Whether 0 and 1 become GDI's normal and bold weights rather than staying as written.
 
----What a dialect does with a tag's argument: the type it reads it as, the conversion applied to the
+---A dialect's treatment of a tag's argument: the type it reads it as, the conversion applied to the
 ---result, and the bounds it is held to. Every field is optional, and an absent one leaves the tag's own
 ---declaration in force.
 ---@class AssArgumentReading
@@ -739,7 +745,10 @@ overrideTags = {
 ---  falls to zero restores as surely as a zero written outright.
 ---@field minimum? number The least value accepted, which anything smaller is written back as.
 ---@field maximum? number The greatest, likewise.
----@field refusesLiteralWithoutDigits? boolean Whether a literal holding no digit at all puts the style's
+---@field readsNonFiniteAsZero? boolean Whether an infinity or a NaN draws as a zero does, which makes
+---  `0` how it is written. Asked before the bounds, which would otherwise return an infinity as the
+---  bound it was held to. Only VSFilter reads a non-finite argument at all, libass having no grammar for one.
+---@field refusesLiteralWithoutDigits? boolean Whether a literal with no digit at all puts the style's
 ---  own value back rather than reading as zero. Only applies to color and alpha tags, where a
 ---  prefix can stand with nothing behind it (e.g. `\c&&`).
 
@@ -774,15 +783,29 @@ buildTagNames = (unknown) ->
 ---@field skipsWhitespaceAfterBackslash boolean Whether a space or a tab between the backslash and the
 ---  name is ignored.
 ---@field honorsBraceEscapes boolean Whether `\{` and `\}` render a literal brace instead of ordinary text.
----@field hasCommentBlockType boolean Whether brace content holding no backslash is a block type of its own.
+---@field hasCommentBlockType boolean Whether brace content with no backslash is a block type of its own.
 ---  Where it is not, that content is emitted as junk, so a scan stays lossless in every dialect.
 ---@field argumentsEndAtFirstParen boolean Whether a parenthesized argument list stops at the first `)`.
+---@field splitsParenthesesInEveryTag boolean Whether a `(` standing anywhere in a tag's arguments opens
+---  an argument list, so that `\bord2(9` draws a border of 9 and the tag never reads the 2.
+---@field honorsColorPrefixInParentheses boolean Whether a color or alpha literal written inside
+---  parentheses has its `&H` prefix skipped, as one written outside them has in every dialect. VSFilter
+---  reads the digits where they stand there, so `\alpha(&HFF&)` holds no digit and draws opaque where
+---  `\alpha(ff)` draws transparent. libass skips the prefix either way, and Aegisub takes the
+---  parentheses off and keeps what they held, giving the same value as the unparenthesized form.
+---@field readsHexAndNonFiniteNumbers boolean Whether a number may be written as `inf`, `nan` or a hex
+---  float. Aegisub and VSFilter convert through the platform's `strtod`, which reads all three, while
+---  libass ships one of its own that stops at anything but a decimal numeral with an exponent. What it
+---  stops at short of a digit converts to zero, so `\blur1e2` blurs by 100 in every dialect while
+---  `\bord0x10` is an outline of 16 in two of them and of 0 in libass.
 ---@field trimsLeadingWhitespaceInArguments boolean Whether whitespace leading an argument is dropped
 ---  along with the whitespace trailing one, which every dialect drops. Only Aegisub does, so
 ---  `{\r Bold}` finds the style there and puts the line's own back in both renderers. A font name has
----  its leading whitespace skipped everywhere regardless, which is the `\fn` handler's own doing.
+---  its leading whitespace skipped in every dialect regardless.
 ---@field runComparison? AssRunComparison How this dialect decides where a run of text ends. Absent for
----  a dialect that compares no runs, which is what makes every trait describing that comparison moot.
+---  a dialect that compares no runs.
+---@field fallbackStyle? AegisubStyleLine The style used in situations where neither the style referenced
+--   in a line nor the "Default" style are declared in the script. Absent for a dialect that draws nothing.
 ---@field restoresTheStyleInForce? boolean Whether a tag written bare, or one whose argument is refused,
 ---  puts back the style an earlier `\rStyle` put in force. Where false it puts back the line's own style
 ---  instead, so `{\rBold\b}` draws bold where this is true and regular where it is false.
@@ -790,7 +813,7 @@ buildTagNames = (unknown) ->
 ---@field softLineBreaksActiveAboveDeclaredWrapStylesRange? boolean Whether a wrap style number greater
 ---  than the highest supported one makes `\n` break the line. Both renderers break under the no-wrap style and
 ---  neither breaks below zero, so this is the whole of where they part on a soft break, and no
----  conforming script reaches it. Absent for dialects that don't do run comparisons.
+---  conforming script gets there. Absent for dialects that don't do run comparisons.
 
 ---Which style fields a dialect compares to decide where a run of text ends. A run is a maximal span of
 ---like-styled characters, and a renderer shapes, measures and draws one as a single unit. A tag writing
@@ -801,15 +824,28 @@ buildTagNames = (unknown) ->
 ---  so a style declaring 1 and one declaring 2 compare equal. No tag writes the field, but `\r`
 ---  switches to a style that may declare a different one.
 
+-- The style values both renderers agree on for situations where neither the style referenced in a line
+-- nor the "Default" style are declared in the script.
+-- Each states the weight and the secondary color its own way below.
+sharedFallbackStyle = Ass.createStyle {
+  fontsize: 18
+  color4: Ass.emitColor 0x80000000
+  shadow: 3
+  margin_l: 20
+  margin_r: 20
+  margin_t: 20
+  margin_b: 20
+}
+
 ---The dialects a scan can be driven with, keyed by name.
 ---@type table<string, AssDialect>
 dialects = {
   -- Aegisub's own tag table spells a name with its backslash where the renderers' tables do not. Names
   -- are held bare for every dialect here and `getOverrideTag` puts the backslash back where Aegisub's
-  -- API expects one, so the spelling never reaches a dialect trait.
+  -- API expects one, so no dialect trait is about the backslash.
   --
-  -- Aegisub edits a script rather than drawing one, so it never asks where a run of text ends and
-  -- declares no `runComparison`.
+  -- Aegisub's implementation is centered on script editing rather than rendering, so it never asks
+  --where a run of text ends and features no run comparison.
   aegisub: {
     name: DialectName.Aegisub
     -- reads `\fsc` as `\fs` with a size of 'c', and `\kt` as `\k` with a duration of 't100'. Both
@@ -820,23 +856,32 @@ dialects = {
     honorsBraceEscapes: false
     hasCommentBlockType: true
     argumentsEndAtFirstParen: false
+    splitsParenthesesInEveryTag: false
+    honorsColorPrefixInParentheses: true
+    readsHexAndNonFiniteNumbers: true
     trimsLeadingWhitespaceInArguments: true
   }
 
   libass: {
     name: DialectName.Libass
+    fallbackStyle: Ass.createStyle {color2: Ass.emitColor 0x00FFFF00}, sharedFallbackStyle
     unknownTagNames: {}
     argumentReadings: {
       [TagName.BlurEdges]: {conversion: {roundsToWhole: true}, minimum: 0, maximum: 127}
+      -- libass holds a blur to its own `BLUR_MAX_RADIUS` of 100, so every larger value draws alike here.
+      [TagName.Blur]: {maximum: 100}
       [TagName.Karaoke]: {type: ArgumentType.Number}
       [TagName.KaraokeFill]: {type: ArgumentType.Number}
       [TagName.KaraokeFillLegacy]: {type: ArgumentType.Number}
       [TagName.KaraokeOutline]: {type: ArgumentType.Number}
     }
+    honorsColorPrefixInParentheses: true
+    readsHexAndNonFiniteNumbers: false
     skipsWhitespaceAfterBackslash: true
     honorsBraceEscapes: true
     hasCommentBlockType: false
     argumentsEndAtFirstParen: true
+    splitsParenthesesInEveryTag: true
     trimsLeadingWhitespaceInArguments: false
     restoresTheStyleInForce: true
     -- asks whether the wrap style is the no-wrap one, so nothing else breaks `\n`
@@ -848,12 +893,30 @@ dialects = {
 
   vsfilter: {
     name: DialectName.XyVsfilter
+    fallbackStyle: Ass.createStyle {bold: true, color2: Ass.emitColor 0x0000FFFF}, sharedFallbackStyle
     unknownTagNames: {}
     -- `\c&&` puts the style's color back here and draws black under libass, both at block level and
     -- inside a transform's interval, drawn against a style holding neither. Every color and alpha tag
     -- reads a digit-less literal that way, which is why all ten say so.
     argumentReadings: {
       [TagName.Bold]: {conversion: {resolvesWeight: true}}
+      -- Nothing bounds a blur here, and the overlay built for one grows by three times the radius on
+      -- each side across two buffers, so the memory it asks for grows with the square. Past what the
+      -- machine can allocate the renderer aborts instead of reporting it, which is why this stands at
+      -- the largest radius observed to draw: 7680 drew and 7700 aborted, on frames from 640x360 to
+      -- 1920x1080 alike. Where the real edge falls is the machine's business, so a smaller bound would
+      -- shrink blurs that draw perfectly well and a larger one would leave a line that never draws.
+      [TagName.Blur]: {maximum: BLUR_LARGEST_RENDERED}
+      -- Only this dialect's conversion reads `inf` and `nan` at all, so only here does one get as far as
+      -- the rasterizer, and each of these five was drawn beside a zero and matched it. The tags left out
+      -- were drawn too and part from a zero: a NaN on one border axis takes the whole outline away, an
+      -- infinite scale, rotation, shear or size inks nothing, and an infinite spacing spreads the line
+      -- across the frame. None of those has a finite form to be written as, so they stay as written.
+      [TagName.Border]: {readsNonFiniteAsZero: true}
+      [TagName.Shadow]: {readsNonFiniteAsZero: true}
+      [TagName.ShadowX]: {readsNonFiniteAsZero: true}
+      [TagName.ShadowY]: {readsNonFiniteAsZero: true}
+      [TagName.BlurEdges]: {readsNonFiniteAsZero: true}
       [TagName.Karaoke]: {type: ArgumentType.Number}
       [TagName.KaraokeFill]: {type: ArgumentType.Number}
       [TagName.KaraokeFillLegacy]: {type: ArgumentType.Number}
@@ -873,6 +936,9 @@ dialects = {
     honorsBraceEscapes: false
     hasCommentBlockType: false
     argumentsEndAtFirstParen: true
+    splitsParenthesesInEveryTag: true
+    honorsColorPrefixInParentheses: false
+    readsHexAndNonFiniteNumbers: true
     trimsLeadingWhitespaceInArguments: false
     restoresTheStyleInForce: false
     -- asks instead whether the wrap style is one of the three that wrap, so every other value breaks
@@ -903,13 +969,14 @@ for dialectName in *DialectName.values
     readings[name] = merged
   readingByDialect[dialectName] = readings
 
----What a dialect does with one tag's argument, taking the tag's own reading where it states no override.
+---Returns what a dialect does with one tag's argument, falling back to the tag's own reading where the
+---dialect states no override.
+---@param tagName AssTagName The tag whose argument is being read.
 ---@param dialect AssDialectName Whose reading to apply.
----@param name AssTagName The tag whose argument is being read.
 ---@return AssArgumentReading reading Empty where neither states anything, never nil for a declared name.
-getArgumentReading = (dialect, name) ->
+getArgumentReading = (tagName, dialect) ->
   readings = readingByDialect[dialect]
-  readings and readings[name] or {}
+  readings and readings[tagName] or {}
 
 -- Per dialect, the conversion each compared field takes, for the fields where there is one at all.
 -- All tags writing the same run field have to agree on the conversion, or they might be evaluated as
@@ -924,12 +991,12 @@ for dialectName in *DialectName.values
     conversions[field] = conversion for field in *definition.runFields
   conversionByDialect[dialectName] = conversions
 
----The conversion one dialect applies to a compared field, which a style's own value takes before it
+---Returns the conversion one dialect applies to a compared field, which a style's own value takes before it
 ---can be compared against what a tag writes.
----@param dialect AssDialectName Whose conversion to apply.
 ---@param field AssRunField The compared field.
+---@param dialect AssDialectName Whose conversion to apply.
 ---@return AssValueConversion? conversion Nil where the field is held as the number was read.
-getFieldConversion = (dialect, field) ->
+getFieldConversion = (field, dialect) ->
   conversions = conversionByDialect[dialect]
   conversions and conversions[field]
 
@@ -953,7 +1020,7 @@ DrawingCommandName = Enum "AssDrawingCommandName", {
   SplineClose: "c"
 }
 
----What a drawing command needs before it draws anything.
+---The coordinates and nodes a drawing command needs before it draws anything.
 ---@class AssDrawingCommandArity
 ---@field opens integer Coordinates the command needs before it draws at all.
 ---@field repeats integer Coordinates each further segment takes, the command holding until the next
@@ -985,14 +1052,14 @@ drawingCommands = {
 ---Builds the override tag for a bare name, adding the backslash that introduces it.
 ---@param name AssTagName A bare name, as `TagName` holds and a scan reports.
 ---@return string tag The name with its leading backslash.
-getOverrideTag = (name) -> Syntax.TagPrefix .. name
+getOverrideTag = (tagName) -> Syntax.TagPrefix .. tagName
 
----Whether a tag opens a karaoke syllable, which every dialect decides the same way: by the name
+---Checks whether a tag opens a karaoke syllable, which every dialect decides the same way: by the name
 ---starting with `k` in either case. That covers `\K`, `\kf`, `\ko`, `\kt`, and a `\kt` that fell
 ---back to `\k` in a dialect not declaring it.
 ---@param name AssTagName A bare name, as a scan reports.
 ---@return boolean
-isKaraokeTagName = (name) -> name\lower!\sub(1, 1) == TagName.Karaoke
+isKaraokeTagName = (tagName) -> tagName\lower!\sub(1, 1) == TagName.Karaoke
 
 ---The vocabulary an override-tag scan is written against, and the three dialects it can be driven
 ---with. Aegisub, libass and VSFilter disagree about enough of ASS override syntax that which one is
@@ -1000,6 +1067,7 @@ isKaraokeTagName = (name) -> name\lower!\sub(1, 1) == TagName.Karaoke
 ---@class AssOverrideDialects
 return {
   :TokenKind, :Syntax, :TagName, :DialectName, :ArgumentType, :RunField, :DrawingCommandName
+  :BLUR_LARGEST_RENDERED
   :TransformBehavior, :drawingCommands
   :getOverrideTag, :isKaraokeTagName, :getArgumentReading, :getFieldConversion, :overrideTags, :dialects
 }

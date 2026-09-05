@@ -1,5 +1,5 @@
--- A source form the scanner learns to record is one this has to learn to write back. The corpus
--- asserts the round trip in both directions, so a form recorded but never emitted fails there.
+-- Every source form the scanner learns to record has to be written back here. The corpus asserts the
+-- round trip in both directions, so a form that is recorded but never emitted fails there.
 
 {:TokenKind, :Syntax} = require "l0.AssParser.dialects"
 
@@ -23,7 +23,7 @@ emitTag = (token) ->
 ---Writes a token stream back out as line text. Emitting a scan reproduces the text it was read from
 ---byte for byte, in every dialect, so rewriting one token leaves every other byte of the line alone.
 ---@param tokens AssToken[] A stream as `AssOverrideScanner\scan` returns, edited or not.
----@return string text The line text the stream stands for.
+---@return string text The line's text.
 emit = (tokens) ->
   parts = {}
   for token in *tokens
@@ -40,5 +40,5 @@ emit = (tokens) ->
 
 ---Writes a token stream back out as the text it was scanned from. Emitting is the scanner's inverse,
 ---so a stream that was not edited reproduces its source byte for byte.
----@class AssOverrideEmit
+---@class AssOverrideEmitter
 return {:emit, :emitTag}

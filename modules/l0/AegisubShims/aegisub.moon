@@ -8,20 +8,55 @@
 --   DEPCTRL_TEMP_DIR  — base for ?temp            (default: %TEMP% / /tmp)
 
 ffi = require "ffi"
+AegisubSubtitles = require "l0.AssParser.AegisubSubtitles"
 ass = require "l0.AssParser.ass"
+karaoke = require "l0.AssParser.karaoke"
+Scanner = require "l0.AssParser.Scanner"
+{:DialectName} = require "l0.AssParser.dialects"
 utils = require "l0.DependencyControl.utils"
 
 msgs = {
+  parse_karaoke_data: {
+    noExtradata: "A dialogue line has to include an `extra`data table, since Aegisub before 3.5.0 crashes on one without it."
+  }
   text_extents: {
     noBackend: "aegisub.text_extents needs font metrics, which nothing here can measure until a backend is installed through AegisubShims.setTextExtentsBackend."
   }
+  set_undo_point: {
+    outsideMacro: "Attempt to set an undo point in a context where it makes no sense to do so."
+  }
+  setScript: {
+    notAScript: "Expected an AssScript, got a %s."
+  }
+  runMacro: {
+    noScript: "No script has been set; set one through AegisubShims.setScript first."
+    unknown: "No macro named '%s' is registered."
+    refused: "The macro's validation function refused to run it on this file."
+  }
 }
+
+karaokeReader = karaoke.Reader DialectName.Aegisub
+karaokeScanner = Scanner DialectName.Aegisub
 
 ---Measures a run of text set in a style, returning what `aegisub.text_extents` returns.
 ---@alias AegisubTextExtentsBackend fun(style: AegisubStyleLine, text: string): number, number, number, number
 
 -- declared ahead of the table below, whose text_extents closes over it
 local textExtentsBackend
+
+-- Every macro passed to `register_macro`, in registration order.
+registeredMacros = {}
+-- Set only while a macro's processing function runs, so `set_undo_point` throws at any other time, as
+-- it does in Aegisub.
+local undoPointSetter
+
+---Returns the selection Aegisub passes to a macro when nothing is selected: the first dialogue line.
+---@param object AegisubSubtitles The subtitles object the macro receives.
+---@return integer[] selectedLines The index of the first dialogue line, empty if there is none.
+defaultSelection = (object) ->
+  for index = 1, #object
+    return {index} if object[index].class == ass.LineClass.Dialogue
+  {}
 
 isWindows = ffi.os == "Windows"
 pathSep = isWindows and "\\" or "/"
@@ -137,10 +172,28 @@ aegisub = {
   project_properties: -> nil
   file_name: -> nil
 
-  -- No-ops.
-  register_macro: -> nil
+  ---Registers a macro for `runMacro` to run by name. Aegisub adds the macro to its Automation menu.
+  ---@param name string The macro's menu path.
+  ---@param description string The macro's description, shown in the menu.
+  ---@param processor fun(subtitles: AegisubSubtitles, selectedLines: integer[], activeLine: integer): integer[]?, integer?
+  ---  The function that runs the macro.
+  ---@param validator? fun(subtitles: AegisubSubtitles, selectedLines: integer[], activeLine: integer): boolean
+  ---  Decides whether the macro can run on the current selection.
+  ---@param isActive? fun(subtitles: AegisubSubtitles, selectedLines: integer[], activeLine: integer): boolean
+  ---  Decides whether the menu shows the macro as checked. `runMacro` never calls it.
+  register_macro: (name, description, processor, validator, isActive) ->
+    registeredMacros[#registeredMacros + 1] = {:name, :description, :processor, :validator, :isActive}
+    nil
+
   register_filter: -> nil
-  set_undo_point: -> nil
+
+  ---Records an undo point. Throws unless called from a macro's processing function, as in Aegisub.
+  ---@param description string The undo entry's label.
+  set_undo_point: (description) ->
+    error msgs.set_undo_point.outsideMacro, 2 unless undoPointSetter
+    undoPointSetter description
+    nil
+
   set_status_text: -> nil
 
   ---Measures a run of text set in a style.
@@ -152,9 +205,22 @@ aegisub = {
   ---@return number extlead
   text_extents: (style, text) ->
     error msgs.text_extents.noBackend, 2 unless textExtentsBackend
-    valid, styleErr = ass.validateStyle style
+    valid, styleErr = ass.validateLine style, ass.LineClass.Style
     error styleErr, 2 unless valid
     return textExtentsBackend style, text
+
+  ---Splits a dialogue line into the karaoke syllables it is sung in.
+  ---
+  ---Syllable timings are milliseconds from the line's own start and may run past its end time. A line
+  ---holding no karaoke tag still yields one syllable, and index zero holds an empty filler.
+  ---@param line AegisubDialogueLine The line to read. Throws, as Aegisub does, where the table is not a
+  ---  complete dialogue line, and where it states no extradata, which Aegisub reads without requiring.
+  ---@return AegisubKaraokeData syllables Keyed from zero, the filler first.
+  parse_karaoke_data: (line) ->
+    valid, lineErr = ass.validateLine line, ass.LineClass.Dialogue, ass.FieldTyping.Coerced
+    error lineErr, 2 unless valid
+    error msgs.parse_karaoke_data.noExtradata, 2 if line.extra == nil
+    karaokeReader\toAegisubKaraokeData karaokeScanner\scan tostring line.text
 
   gettext: (s) -> s
 
@@ -183,6 +249,10 @@ aegisub = {
   }
 }
 
+local loadedScript
+-- the undo points set while running macros on the loaded script, oldest first
+undoPoints = {}
+
 -- Shim-only configuration hooks, namespaced so they can't collide with the real
 -- Aegisub API surface. Surfaced through l0.AegisubShims for callers to use.
 aegisub.__depCtrl = {
@@ -202,6 +272,56 @@ aegisub.__depCtrl = {
   ---Returns the source of font metrics currently in place.
   ---@return AegisubTextExtentsBackend? backend Nil while none is installed, which leaves text_extents raising.
   getTextExtentsBackend: -> textExtentsBackend
+
+  ---Sets the script macros run on, like opening a file in Aegisub. Macros edit the script directly, so
+  ---save their changes with the script's `writeFile`. Clears the undo points of the previous script.
+  ---@param script AssScript The script to run macros on, from `AssScript.fromFile` or `AssScript.parse`.
+  setScript: (script) ->
+    error msgs.setScript.notAScript\format(type script), 2 unless "table" == type(script) and script.lines
+    loadedScript = script
+    undoPoints = {}
+
+  ---Returns the script macros run on.
+  ---@return AssScript? script Nil if no script has been set.
+  getScript: -> loadedScript
+
+  ---Returns the undo points macros have set on the current script.
+  ---@return string[] descriptions The undo points' labels, oldest first.
+  getUndoPoints: -> [description for description in *undoPoints]
+
+  ---Returns every macro registered so far.
+  ---@return {name: string, description: string}[] macros The macros in registration order.
+  getMacros: -> [{name: macro.name, description: macro.description} for macro in *registeredMacros]
+
+  ---Runs a registered macro on the current script, like choosing it from Aegisub's Automation menu. A
+  ---validation function, if the macro has one, is called first with a read-only subtitles object, and a
+  ---false result throws. Also throws if no script has been set.
+  ---@param name string The macro's registered name.
+  ---@param selectedLines? integer[] The indices of the selected lines, the first dialogue line by default.
+  ---@param activeLine? integer The index of the active line, the first selected line by default.
+  ---@return integer[] selectedLines The selection the macro returned, or the one passed in if it returned none.
+  ---@return integer activeLine The active line the macro returned, or the one passed in if it returned none.
+  runMacro: (name, selectedLines, activeLine) ->
+    error msgs.runMacro.noScript, 2 unless loadedScript
+    macro = nil
+    macro = held for held in *registeredMacros when held.name == name
+    error msgs.runMacro.unknown\format(tostring name), 2 unless macro
+
+    object = loadedScript.subtitles
+    selectedLines or= defaultSelection object
+    activeLine or= selectedLines[1] or 1
+
+    if macro.validator
+      readOnly = AegisubSubtitles loadedScript, readOnly: true
+      allowed = macro.validator readOnly, selectedLines, activeLine
+      error msgs.runMacro.refused, 2 unless allowed
+
+    undoPointSetter = (description) -> undoPoints[#undoPoints + 1] = description
+    ok, newSelection, newActive = pcall macro.processor, object, selectedLines, activeLine
+    undoPointSetter = nil
+    error newSelection, 0 unless ok
+
+    return newSelection or selectedLines, newActive or activeLine
 }
 
 return aegisub

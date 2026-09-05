@@ -1,16 +1,12 @@
 Enum = require "l0.DependencyControl.Enum"
-Scanner = require "l0.AssParser.Scanner"
 {:TokenKind, :Syntax, :TagName, :DialectName, :dialects, :getOverrideTag, :isKaraokeTagName} = require "l0.AssParser.dialects"
 AssRunState = require "l0.AssParser.RunState"
-{:emitTag} = require "l0.AssParser.emit"
-{:LineClass, :WrapStyle, :defaultStyle, :defaultWrapStyle} = require "l0.AssParser.ass"
+{:emitTag} = require "l0.AssParser.emitter"
+{:WrapStyle, :defaultStyle, :DEFAULT_WRAP_STYLE} = require "l0.AssParser.ass"
 
 msgs = {
   new: {
     unknownModel: "No karaoke model for dialect '%s'."
-  }
-  parseKaraokeData: {
-    notADialogueLine: "Subtitle line must be a dialogue line."
   }
 }
 
@@ -20,11 +16,11 @@ CENTISECONDS_TO_MILLISECONDS_SCALE = 10
 -- The tag a line starts under, before any karaoke tag has been seen.
 DEFAULT_KARAOKE_TAG = getOverrideTag TagName.Karaoke
 
----Whether `\n` breaks a line, which turns on the wrap style in force and on the dialect reading it.
----@param dialect AssDialectName Whose reading to apply.
+---Checks whether `\n` breaks a line, which depends on the wrap style in force and on the dialect.
 ---@param wrapStyle AssWrapStyle The style in force where the escape stands.
+---@param dialect AssDialectName Whose reading to apply.
 ---@return boolean breaks true if the escape breaks a line, false if it renders as a space.
-softLineBreaksActiveUnder = (dialect, wrapStyle) ->
+softLineBreaksActiveUnder = (wrapStyle, dialect) ->
   return true if wrapStyle == WrapStyle.NoWordWrap
   return false unless dialects[dialect].softLineBreaksActiveAboveDeclaredWrapStylesRange
   return wrapStyle > WrapStyle.SmartBottomWider
@@ -34,8 +30,8 @@ softLineBreaksActiveUnder = (dialect, wrapStyle) ->
 HARD_BREAK_ESCAPE_CHARACTER = "N"
 SOFT_BREAK_ESCAPE_CHARACTER = "n"
 
----Where the next line break sits in a run of text, searching from one byte.
----@param text string
+---Finds the next line break in a run of text.
+---@param text string The text to search.
 ---@param searchFrom integer The byte to search from.
 ---@param breaksSoftly boolean Whether `\n` breaks as well as `\N`.
 ---@return integer? at The byte the backslash sits on, nil where no break follows.
@@ -72,11 +68,11 @@ for name, model in pairs modelByDialect
   model.segmentsByStyleRun = dialects[name].runComparison != nil
 
 ---Reads a karaoke tag's duration off the typed argument the scan attached. Only a missing argument
----takes the dialect's default, so one that is present but holds no number counts as zero in every
+---takes the dialect's default, so an argument that is present but not a number counts as zero in every
 ---dialect.
 ---@param token AssToken The karaoke tag.
 ---@param model AssKaraokeModel The dialect's reading of karaoke.
----@return integer milliseconds The duration, zero where the argument holds no number.
+---@return integer milliseconds The duration, zero where the argument is not a number.
 readDuration = (token, model) ->
   return model.emptyDuration if #token.params == 0
   math.floor (token.arguments[1] or 0) * CENTISECONDS_TO_MILLISECONDS_SCALE
@@ -134,14 +130,14 @@ class AssKaraokeSpan
     last = @strippedSections[#@strippedSections]
     last.closed = true if last
 
-  ---Whether the last section is an override block still taking tags.
-  ---@return boolean
+  ---Checks whether the last section is an override block still taking tags.
+  ---@return boolean isOpen True if the last section is an override block that has not been closed.
   hasOpenOverrideBlock: =>
     last = @strippedSections[#@strippedSections]
     last != nil and last.kind == SectionKind.OverrideBlock and not last.closed
 
-  ---Whether a drawing sits among the sections, so an empty `text` is not an empty span.
-  ---@return boolean
+  ---Checks whether a drawing sits among the sections, so that an empty `text` is not an empty span.
+  ---@return boolean hasDrawing True if one of the sections is a drawing.
   hasDrawing: =>
     return true for section in *@strippedSections when section.kind == SectionKind.Drawing
     return false
@@ -184,7 +180,7 @@ foldDroppedSpans = (spans, shouldDropPredicate) ->
 
   folded
 
----One syllable of `parseKaraokeData`'s result.
+---One syllable of `toAegisubKaraokeData`'s result.
 ---@class AegisubKaraokeSyllable
 ---@field duration integer Length in milliseconds.
 ---@field start_time integer Milliseconds from the line's own start, not from zero.
@@ -247,7 +243,7 @@ class AssKaraokeSplit
     @span.duration = duration
     @currentName, @absoluteStart = name, nil
 
-  ---Applies a karaoke tag. Most end the syllable and open one where it finished, with 2 exceptions
+  ---Applies a karaoke tag. Most end the syllable and open one where it finished, with two exceptions
   ---that leave it open instead:
   ---  1. `\kt`, which only says where the next syllable starts
   ---  2. a tag without a duration under the karaoke type already in force
@@ -279,55 +275,55 @@ class AssKaraokeSplit
     @spans[#@spans + 1] = @span
     return @spans unless @model.segmentsByStyleRun
 
-    -- Consecutive karaoke tags leave a syllable holding nothing at all, which only moves the clock. A
+    -- Consecutive karaoke tags leave an empty syllable, which only moves the clock. A
     -- drawing renders in a run of its own, so a span holding one is never folded into its neighbors.
     foldDroppedSpans @spans, (span, index, count) ->
       #span.text == 0 and not span\hasDrawing! and index < count
 
----Parse karaoke data in ASS dialogue lines and splits them into syllables.
+---Parses karaoke data in ASS dialogue lines and splits them into syllables.
 ---
----The reporting shape is always Aegisub's, whichever dialect is used (the index-zero filler, the
----dropping of a zero-duration syllable holding no text and the `\K` to `\kf` rename are its
----normalization). What the dialect changes is where the syllables fall and how the
----clock moves.
+---The reporting shape is always Aegisub's, whichever dialect is used: the index-zero filler, the
+---dropping of an empty zero-duration syllable and the `\K` to `\kf` rename are its normalizations.
+---The dialect decides where the syllables fall and how the clock moves.
 ---@class AssKaraokeReader
 ---@field dialect AssDialectName Which dialect this reader applies. Read-only.
 ---@field model AssKaraokeModel How that dialect reads karaoke. Read-only.
 class AssKaraokeReader
-  ---@param dialect? AssDialectName Whose karaoke reading to apply, Aegisub's by default.
+  ---@param dialect? AssDialectName Whose karaoke reading to apply, libass's by default.
   ---@param model? AssKaraokeModel That dialect's reading of karaoke, its declared one by default.
-  new: (@dialect = DialectName.Aegisub, model) =>
+  new: (@dialect = DialectName.Libass, model) =>
     declared, err = DialectName\validate @dialect, "dialect"
     assert declared, err
 
     @model = model or modelByDialect[@dialect]
     assert @model, msgs.new.unknownModel\format tostring @dialect
-    @scanner = Scanner @dialect
 
-  ---Splits a line's text at the points its dialect ends a syllable.
-  ---@param text string A line's Text field.
+  ---Splits a line at the points its dialect ends a syllable.
+  ---@param tokens AssToken[] The line, scanned under this reader's own dialect. A stream holds the
+  ---  argument values its own dialect read, so one scanned under another dialect splits the line as
+  ---  that dialect would. Read, never written.
   ---@param style? AegisubStyleLine The style the line is set in, the format's defaults where absent.
   ---  Only read where the dialect ends a syllable at an appearance change, since deciding whether one
   ---  moved needs what the style set to compare against.
-  ---@param stylesByName? table<string, AegisubStyleLine> Every style the script declares, which `\r` reaches by name.
+  ---@param stylesByName? table<string, AegisubStyleLine> Every style the script declares.
   ---@param wrapStyle? AssWrapStyle The script's own, which decides whether `\n` breaks a line where
   ---  no `\q` has overridden it. Inert for a dialect that compares no runs, since a break ends nothing
   ---  there. Automatic wrapping is out of reach either way, so a line long enough to wrap splits
   ---  further in a renderer than this reports.
   ---@return AssKaraokeSpan[] spans Always at least one, since a line with no karaoke tag is one span.
-  splitSyllables: (text, style, stylesByName, wrapStyle = defaultWrapStyle) =>
+  splitSyllables: (tokens, style, stylesByName, wrapStyle = DEFAULT_WRAP_STYLE) =>
     styleState = @model.segmentsByStyleRun and AssRunState(style or defaultStyle, @dialect, stylesByName)
     split = AssKaraokeSplit @model
     breaksRuns = @model.segmentsByStyleRun
     inForce = wrapStyle
 
-    for token in *@scanner\scan text or ""
+    for token in *tokens
       switch token.kind
         when TokenKind.Text
           unless breaksRuns
             split\appendText token.text
           else
-            index, breaksSoftly = 1, softLineBreaksActiveUnder(@dialect, inForce)
+            index, breaksSoftly = 1, softLineBreaksActiveUnder(inForce, @dialect)
             while true
               at = findLineBreak token.text, index, breaksSoftly
               break unless at
@@ -339,7 +335,7 @@ class AssKaraokeReader
 
         when TokenKind.Drawing
           -- Both renderers isolate a drawing in a run of its own, whatever scale it was written at, so
-          -- text on either side of one is sung apart from it. A syllable holding no text yet is taken
+          -- text on either side of one is sung apart from it. A syllable without text yet is taken
           -- rather than ended, as under a tag moving the appearance.
           split\endSyllable split.currentName, 0 if styleState and #split.span.text > 0
           split\appendDrawing token.text
@@ -372,24 +368,21 @@ class AssKaraokeReader
 
     split\finish!
 
-  ---Splits a dialogue line into karaoke syllables, reproducing `aegisub.parse_karaoke_data`.
+  ---Returns the line's syllables in the shape Aegisub reports them: keyed from zero with an empty filler first,
+  ---an empty syllable dropped mid-line but kept at the end, and `\K` renamed to `\kf`.
   ---
   ---Syllable timings are milliseconds from the line's own start, but may run past the line's end time.
   ---A line without a karaoke tag still yields one syllable.
-  ---@param line AegisubDialogueLine A dialogue line. Only `class` and `text` are read.
+  ---@param tokens AssToken[] The line, scanned under this reader's own dialect.
   ---@param style? AegisubStyleLine The style the line is set in, the format's defaults where absent.
-  ---@param stylesByName? table<string, AegisubStyleLine> Every style the script declares, which `\r` reaches by name.
+  ---@param stylesByName? table<string, AegisubStyleLine> Every style the script declares.
   ---@param wrapStyle? AssWrapStyle The script's own, which decides whether `\n` breaks a line.
-  ---@return AegisubKaraokeData? syllables
-  ---@return string? err When the argument is not a dialogue line.
-  parseKaraokeData: (line, style, stylesByName, wrapStyle) =>
-    unless type(line) == "table" and line.class == LineClass.Dialogue
-      return nil, msgs.parseKaraokeData.notADialogueLine
-
+  ---@return AegisubKaraokeData syllables Keyed from zero, with the empty filler first.
+  toAegisubKaraokeData: (tokens, style, stylesByName, wrapStyle) =>
     -- Aegisub tests a syllable for zero duration and no text only when a further karaoke tag arrives,
     -- so the same empty syllable is dropped mid-line but kept at the end. As a consequence, every line
     -- is guaranteed to report at least one syllable.
-    spans = foldDroppedSpans @splitSyllables(line.text, style, stylesByName, wrapStyle),
+    spans = foldDroppedSpans @splitSyllables(tokens, style, stylesByName, wrapStyle),
       (span, index, count) -> span.duration == 0 and #span.text == 0 and index < count
 
     -- Aegisub has kept a filler syllable at index 0 since 2.1.x for backwards compatibility
@@ -411,18 +404,10 @@ class AssKaraokeReader
 
     return result
 
-defaultReader = AssKaraokeReader!
-
----@class AegisubKaraokeShim
----@field Reader AssKaraokeReader Reads karaoke in one dialect, Aegisub's where its constructor is given none.
----@field parseKaraokeData fun(line: AegisubDialogueLine): AegisubKaraokeData?, string? Aegisub's reading, which is what the shim installs.
----@field splitSyllables fun(text: string): AssKaraokeSpan[] Aegisub's syllable split.
--- Both are installed on the `aegisub` table, which takes plain functions, so neither can be the
--- reader's method as it stands. Neither takes a style either, since Aegisub opens a syllable per
--- karaoke tag and compares no appearance, so only a reader built for another dialect reads one.
+---Splits ASS dialogue lines into the karaoke syllables a dialect sings them in, and reports them in the
+---shape Aegisub's `parse_karaoke_data` returns.
+---@class AssKaraoke
 return {
   Reader: AssKaraokeReader
   :SectionKind
-  parseKaraokeData: (line) -> defaultReader\parseKaraokeData line
-  splitSyllables: (text) -> defaultReader\splitSyllables text
 }
