@@ -5,6 +5,7 @@ utils = require "l0.DependencyControl.utils"
 msgs = {
   malformed: "The text is not valid UTF-8: the sequence at byte %d is malformed."
   notEncodable: "Entry %d is not an encodable code point: %s."
+  notACodeUnit: "Entry %d is not a UTF-16 code unit: %s."
 }
 
 -- UTF-8 spreads a code point over one to four bytes: a lead byte whose high bits mark the width,
@@ -28,6 +29,8 @@ SHORTEST_THREE_BYTE_CODE_POINT = 0x800
 FIRST_ASTRAL_CODE_POINT = 0x10000
 -- The top of the Unicode codespace and the highest code point representable in UTF-16.
 LAST_CODE_POINT = 0x10FFFF
+-- The widest value a single UTF-16 code unit holds, which is what a packed pair of bytes stands for.
+LAST_CODE_UNIT = 0xFFFF
 
 -- Any code point using more bytes than necessary is overlong and rejected by a strict decode.
 shortestCodePointByWidth = {0, SHORTEST_TWO_BYTE_CODE_POINT, SHORTEST_THREE_BYTE_CODE_POINT,
@@ -69,6 +72,24 @@ DecodeMode = Enum "UnicodeDecodeMode", {
   Strict: 1
   Replace: 2
   AegisubCompatibility: 3
+}
+
+-- The byte-order marks, each the encoding of U+FEFF in the encoding it stands for.
+BOM_UTF8 = "\239\187\191"
+BOM_UTF16_LE = "\255\254"
+BOM_UTF16_BE = "\254\255"
+
+---A character encoding a unicode string can be stored in.
+---@alias UnicodeEncoding string
+---| "UTF-8" # Utf8: no byte-order mark, and read as UTF-8
+---| "UTF-8-BOM" # Utf8Bom: an EF BB BF mark, stripped on the way in and written back on the way out
+---| "UTF-16LE" # Utf16Le: an FF FE mark, transcoded to and from UTF-8
+---| "UTF-16BE" # Utf16Be: an FE FF mark, transcoded to and from UTF-8
+Encoding = Enum "UnicodeEncoding", {
+  Utf8: "UTF-8"
+  Utf8Bom: "UTF-8-BOM"
+  Utf16Le: "UTF-16LE"
+  Utf16Be: "UTF-16BE"
 }
 
 ---Reports the byte width of the sequence a lead byte opens, taking the width from the lead byte alone,
@@ -212,11 +233,11 @@ isEncodable = (codePoint) ->
 ---has to be sanitized and the work has to finish whatever it holds, and `AegisubCompatibility` where
 ---the point is to answer as Aegisub's own unicode module does.
 ---@class Unicode
----@field DecodeMode Enum The modes, as a UnicodeDecodeMode enum.
 ---@field REPLACEMENT_CODE_POINT integer U+FFFD, standing in for text that could not be represented.
 local Unicode
 Unicode = {
   DecodeMode: DecodeMode
+  Encoding: Encoding
   REPLACEMENT_CODE_POINT: REPLACEMENT_CODE_POINT
 
   ---Returns the number of bytes the character starting at a byte offset occupies.
@@ -399,6 +420,81 @@ Unicode = {
         units[#units + 1] = bor FIRST_TRAIL_SURROGATE, band adjusted, SURROGATE_PAYLOAD_MASK
 
     return units, unitOffsets
+
+  ---Unpacks a UTF-16 byte string into the code units `decodeUtf16` reads. No byte-order mark is looked
+  ---for, so strip one first and let it decide the byte order rather than leaving it to be unpacked as a
+  ---unit of its own.
+  ---@param bytes string The bytes to unpack, two per unit.
+  ---@param littleEndian? boolean Whether each unit's low byte comes first (default true).
+  ---@return integer[] units One per pair of bytes; a trailing odd byte is dropped, since half a unit
+  ---  stands for no code point.
+  unpackUtf16Units: (bytes, littleEndian = true) ->
+    utils.assertArgType bytes, 1, "string"
+
+    units = {}
+    for index = 1, #bytes - 1, 2
+      first, second = bytes\byte index, index + 1
+      units[#units + 1] = littleEndian and bor(lshift(second, 8), first) or bor lshift(first, 8), second
+    return units
+
+  ---Packs UTF-16 code units into the bytes a file holds them as, which is the inverse of
+  ---`unpackUtf16Units`. No byte-order mark is written.
+  ---@param units integer[] The code units to pack, each in [0, 0xFFFF], as `encodeUtf16` returns them.
+  ---@param littleEndian? boolean Whether to write each unit's low byte first (default true).
+  ---@return string bytes Two per unit.
+  packUtf16Units: (units, littleEndian = true) ->
+    utils.assertArgType units, 1, "table"
+
+    bytes = {}
+    for index, unit in ipairs units
+      assert "number" == type(unit) and unit >= 0 and unit <= LAST_CODE_UNIT,
+        msgs.notACodeUnit\format index, tostring unit
+      high, low = rshift(unit, 8), band unit, 0xFF
+      bytes[index] = littleEndian and string.char(low, high) or string.char high, low
+    return table.concat bytes
+
+  ---Reports which encoding a byte string's byte-order mark indicates.
+  ---@param bytes string The bytes to look at.
+  ---@return UnicodeEncoding encoding `Utf8` where no mark stands, which is how unmarked bytes are read.
+  ---@return integer markLength Bytes the mark occupies, zero where none stands.
+  detectEncoding: (bytes) ->
+    utils.assertArgType bytes, 1, "string"
+    return Encoding.Utf8Bom, #BOM_UTF8 if bytes\sub(1, #BOM_UTF8) == BOM_UTF8
+    return Encoding.Utf16Le, #BOM_UTF16_LE if bytes\sub(1, #BOM_UTF16_LE) == BOM_UTF16_LE
+    return Encoding.Utf16Be, #BOM_UTF16_BE if bytes\sub(1, #BOM_UTF16_BE) == BOM_UTF16_BE
+    return Encoding.Utf8, 0
+
+  ---Reads a byte string as UTF-8, transcoding a UTF-16 one and stripping any byte-order mark. Bytes
+  ---with no mark are handed back as they arrived, so text in a legacy 8-bit encoding keeps its bytes
+  ---rather than being guessed at. Replace mode throughout, so any byte string reads.
+  ---@param bytes string The bytes to read.
+  ---@return string text The text, as UTF-8 wherever the encoding was known.
+  ---@return UnicodeEncoding encoding Which encoding the bytes were read as.
+  decodeToUtf8: (bytes) ->
+    encoding, markLength = Unicode.detectEncoding bytes
+    body = bytes\sub markLength + 1
+    return body, encoding unless encoding == Encoding.Utf16Le or encoding == Encoding.Utf16Be
+
+    units = Unicode.unpackUtf16Units body, encoding == Encoding.Utf16Le
+    codePoints = Unicode.decodeUtf16 units, DecodeMode.Replace
+    return Unicode.encodeUtf8(codePoints, DecodeMode.Replace), encoding
+
+  ---Writes UTF-8 text as the bytes an encoding holds it in, byte-order mark included. The inverse of
+  ---`decodeToUtf8`, so text read by one and written back by the other reproduces the bytes it came from.
+  ---@param text string The text to write, as UTF-8.
+  ---@param encoding? UnicodeEncoding Which encoding to write (default Utf8, which writes no mark).
+  ---@return string bytes The text as that encoding holds it.
+  encodeFromUtf8: (text, encoding = Encoding.Utf8) ->
+    utils.assertArgType text, 1, "string"
+    assert Encoding\validate encoding, "encoding"
+    return text if encoding == Encoding.Utf8
+    return BOM_UTF8 .. text if encoding == Encoding.Utf8Bom
+
+    littleEndian = encoding == Encoding.Utf16Le
+    codePoints = Unicode.decodeUtf8 text, DecodeMode.Replace
+    units = Unicode.encodeUtf16 codePoints, DecodeMode.Replace
+    mark = littleEndian and BOM_UTF16_LE or BOM_UTF16_BE
+    return mark .. Unicode.packUtf16Units units, littleEndian
 }
 
 return Unicode

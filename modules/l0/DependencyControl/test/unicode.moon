@@ -287,6 +287,28 @@
       codePoints = unicode.decodeUtf16 {0xD83D, 0x41}, AegisubCompatibility
       ut\assertItemsEqual codePoints, {unicode.REPLACEMENT_CODE_POINT, 0x41}
 
+    -- The byte order is the caller's to state, since the mark that would have said it is stripped
+    -- before the bytes reach here.
+    packUtf16Units_roundTripsThroughUnpack: (ut) ->
+      units = unicode.encodeUtf16 {0x41, 0x1F3AC, 0xFC}
+      for littleEndian in *{true, false}
+        bytes = unicode.packUtf16Units units, littleEndian
+        ut\assertEquals #bytes, #units * 2
+        ut\assertItemsEqual unicode.unpackUtf16Units(bytes, littleEndian), units
+
+    packUtf16Units_writesTheLowByteFirstOnlyWhenAskedTo: (ut) ->
+      ut\assertEquals unicode.packUtf16Units({0x0041}, true), "\65\0"
+      ut\assertEquals unicode.packUtf16Units({0x0041}, false), "\0\65"
+
+    packUtf16Units_rejectsAValueThatIsNoCodeUnit: (ut) ->
+      ut\assertError -> unicode.packUtf16Units {0x10000}
+      ut\assertError -> unicode.packUtf16Units {-1}
+
+    -- Half a unit stands for no code point, so a file cut short mid-unit loses the stray byte rather
+    -- than pairing it with whatever follows.
+    unpackUtf16Units_dropsATrailingOddByte: (ut) ->
+      ut\assertItemsEqual unicode.unpackUtf16Units("\65\0\66", true), {0x41}
+
     decodeMode_rejectsAValueOutsideTheEnum: (ut) ->
       ut\assertErrorMsgMatches (-> unicode.decodeUtf8 "a", 99), {}, "Invalid value"
 
