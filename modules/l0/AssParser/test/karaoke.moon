@@ -153,6 +153,10 @@
     {name: "blurEdgesRounding", text: "{\\k50}{\\be1}a{\\be0.6}b", libass: 1, vsfilter: 2}
     {name: "blurEdgesRoundingDown", text: "{\\k50}{\\be1}a{\\be1.4}b", libass: 1, vsfilter: 2}
     {name: "negativeBlurEdges", text: "{\\k50}a{\\be-3}b", libass: 1, vsfilter: 2}
+    -- libass holds the pass count at 127, so a larger one is the value already in force there. No ink
+    -- probe can settle this: past about 96 passes every count draws the same picture in both.
+    {name: "blurEdgesAboveTheLibassCeiling", text: "{\\k50}{\\be127}a{\\be128}b", libass: 1, vsfilter: 2}
+    {name: "blurEdgesBelowTheLibassCeiling", text: "{\\k50}{\\be126}a{\\be127}b", libass: 2, vsfilter: 2}
   }
 
   -- What Aegisub splits the same shapes into, which never consults the appearance: a syllable runs

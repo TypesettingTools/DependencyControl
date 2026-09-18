@@ -13,7 +13,7 @@
 (equivalences) ->
   normalizer = require "l0.AssParser.normalizer"
   {:isEquivalent} = require "l0.AssParser.diagnostics"
-  {:DialectName} = require "l0.AssParser.dialects"
+  {:BLUR_LARGEST_RENDERED, :DialectName} = require "l0.AssParser.dialects"
   {:emit} = require "l0.AssParser.emitter"
   Scanner = require "l0.AssParser.Scanner"
   Ass = require "l0.AssParser.ass"
@@ -100,6 +100,21 @@
         ut\assertEquals rewritten, want
         ut\assertEquals #changes, 1
         ut\assertEquals changes[1].converged[1], converged
+
+    -- A target that clamps the reference's value lands on its bound however the value is written, so
+    -- the rewrite is kept and that target is reported as converged. Only VSFilter reads `inf` at all,
+    -- and it draws the largest blur it renders where libass holds one at 100. The exemption goes no
+    -- further: the target still has to cut the line into the same syllables.
+    normalizeLine_keepsARewriteWhoseValueATargetClamps: (ut) ->
+      rewritten, _, changes = normalizeLineAndEmit "{\\blurinf}X",
+        {targets: renderers, style: defaultStyle, referenceDialect: DialectName.XyVsfilter}
+      ut\assertEquals rewritten, "{\\blur#{BLUR_LARGEST_RENDERED}}X"
+      ut\assertEquals #changes, 1
+      ut\assertEquals table.concat(changes[1].converged, ","), DialectName.Libass
+
+      -- with no reference there is nothing for either target to follow, so the line stands
+      ut\assertEquals normalizeLineAndEmit("{\\blurinf}X", {targets: renderers, style: defaultStyle}),
+        "{\\blurinf}X"
 
     -- Where the targets agree what a bare tag restores, which is every line without a `\r` to another
     -- style, the bare form is the spelling and naming a reference changes nothing.
@@ -476,6 +491,45 @@
       -- progress squared that is a quarter of the distance, so half of the window.
       ut\assertEquals normalizeLineAndEmit("{\\bord4\\t(0,1000,2,\\bord-12)}b", approximate),
         "{\\bord4\\t(0,500,2,\\bord0)}b"
+
+    -- A transform without an interval animates across the whole event, observed in both renderers at
+    -- fractions of a four-second event and of a ten-second one, so the crossing is a share of the line's
+    -- own duration and the window written for it moves with that duration.
+    normalizeLine_shortensATransformStatingNoInterval: (ut) ->
+      approximate = {targets: renderers, allowApproximateNormalizations: true}
+      lineOf = (text, endTime) ->
+        {class: "dialogue", :text, start_time: 0, end_time: endTime, style: "Default", effect: ""}
+
+      -- from the style's own border of 2 toward -2, so the floor is reached halfway through the event
+      ut\assertEquals normalizeLineAndEmit(lineOf("{\\t(\\bord-2)}b", 2000), approximate),
+        "{\\t(0,1000,\\bord0)}b"
+      ut\assertEquals normalizeLineAndEmit(lineOf("{\\t(\\bord-2)}b", 5000), approximate),
+        "{\\t(0,2500,\\bord0)}b"
+
+      -- an acceleration written without an interval keeps its own text ahead of the written window
+      ut\assertEquals normalizeLineAndEmit(lineOf("{\\bord4\\t(2,\\bord-12)}b", 1000), approximate),
+        "{\\bord4\\t(0,500,2,\\bord0)}b"
+
+    -- The window comes from the line's own timings, which a caller that hands over bare text does not
+    -- give, so there is no interval to write and the transform stands.
+    normalizeLine_keepsAnIntervalLessTransformWithoutTheLinesTimings: (ut) ->
+      approximate = {targets: renderers, allowApproximateNormalizations: true}
+      ut\assertEquals normalizeLineAndEmit("{\\t(\\bord-2)}b", approximate), "{\\t(\\bord-2)}b"
+
+    -- Writing the window out pins what the line derived from its own timings: shortened afterwards, the
+    -- line keeps the written window where the interval-less form would have shrunk with it. A caller
+    -- that wants the relative form kept says so.
+    normalizeLine_keepsARelativeTransformWherePinningIsRefused: (ut) ->
+      line = {class: "dialogue", text: "{\\t(\\bord-2)}b", start_time: 0, end_time: 2000,
+        style: "Default", effect: ""}
+      held = {targets: renderers, allowApproximateNormalizations: true,
+        allowRelativeValuePinning: false}
+      ut\assertEquals normalizeLineAndEmit(line, held), "{\\t(\\bord-2)}b"
+
+      -- a window the line stated itself is not the option's business
+      stated = {text: "{\\bord4\\t(0,1000,\\bord-12)}b", class: "dialogue", start_time: 0,
+        end_time: 2000, style: "Default", effect: ""}
+      ut\assertEquals normalizeLineAndEmit(stated, held), "{\\bord4\\t(0,250,\\bord0)}b"
 
     -- The rewrite draws a line the renderers read alike only up to the last bit of the arithmetic, which
     -- a measurement taken off the frame can tell, so nothing here happens unless it is asked for.

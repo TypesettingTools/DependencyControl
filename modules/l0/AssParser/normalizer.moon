@@ -83,6 +83,9 @@ ChangeKind = Enum "AssNormalizeChangeKind", {
 ---@field largestAcceptedError? number How far a rounded crossing may move the animated value, in the
 ---  units the tag itself writes, so 1 is one percent of scale or one pixel of border. Any error is
 ---  accepted where absent. Ignored without `allowRoundedTransformCrossings`.
+---@field allowRelativeValuePinning? boolean Whether a rewrite may write out a value the renderers derive
+---  from the line's properties (e.g. timings for a transform without start or end times) or script properties
+---  like style values. On by default.
 ---@field tokens? AssTokenStream The line already scanned, to save scanning it again. It is rewritten in
 ---  place, the line's Text field is not read, and the result is in the dialect it was scanned under.
 ---  Throws where a reference dialect is also given and differs from that dialect.
@@ -182,8 +185,10 @@ getLargestCrossingError = (startValue, trueCrossing, roundedCrossing, openedAt, 
     ((shorter / trueWindow) ^ acceleration - (shorter / roundedWindow) ^ acceleration)
 
 ---Returns a transform's timing prefix with its closing time replaced, so `0,500,1.15,` becomes
----`0,3000,1.15,`. The prefix is the text before the tags the transform animates, which the scan keeps
----as a single junk token.
+---`0,3000,1.15,`. A transform without an interval gets the whole window written out instead, ahead of
+---the acceleration where it states one, so `2,` becomes `0,3000,2,` and an empty prefix `0,3000,`. The
+---prefix is the text before the tags the transform animates, which the scan keeps as a single junk
+---token.
 ---
 ---Every timing other than the closing time keeps its written form, `0.00` included.
 ---@param transform AssToken The transform, with both its parsed arguments and their text.
@@ -191,15 +196,18 @@ getLargestCrossingError = (startValue, trueCrossing, roundedCrossing, openedAt, 
 ---@return string? rewritten The rewritten prefix, or nil where the transform's text and its parsed
 ---  arguments disagree on the argument count.
 withTransformClosingTime = (transform, closedAt) ->
-  arguments = transform.arguments
-  return nil unless arguments and #arguments >= 3
-
+  arguments = transform.arguments or {}
   parts = tagArguments.splitArguments transform.params or "", #arguments
   return nil unless #parts == #arguments
 
   -- every argument but the last, which holds the animated tags and is emitted from `children`
   timings = [parts[index] for index = 1, #arguments - 1]
-  timings[2] = tagArguments.emitNumber closedAt
+  if #arguments >= 3
+    timings[2] = tagArguments.emitNumber closedAt
+  else
+    table.insert timings, 1, tagArguments.emitNumber closedAt
+    table.insert timings, 1, "0"
+
   return table.concat(timings, Syntax.ArgumentSeparator) .. Syntax.ArgumentSeparator
 
 ---Collects every tag in a stream with the transforms holding it, in walk order, so that an index
@@ -519,6 +527,7 @@ splitNestedTransform = (siblings, stolenCloserRun) ->
 ---@field allowApproximateNormalizations? boolean Copied from the options.
 ---@field allowRoundedTransformCrossings? boolean Copied from the options.
 ---@field largestAcceptedError? number Copied from the options.
+---@field allowRelativeValuePinning boolean Copied from the options, true where the options left it out.
 ---@field styleByDialect table<AssDialectName, AegisubStyleLine> The style resolved for each dialect so
 ---  far, filled by `styleFor`.
 ---@field describedOriginal table<AssDialectName, string> The description of `text` under each dialect
@@ -880,6 +889,19 @@ recordAccepted = (context, candidate, converged) ->
     converged: #converged > 0 and converged or nil
   }
 
+---Checks whether a target dialect clamps the value the reference dialects reads.
+---True only where the canonical argument is a number beyond the target's `minimum` or `maximum`, so that
+---the target reads the bound in its place and cannot land on the reference's reading no matter how the value is written.
+---For example, libass holds a blur at 100 and a box blur at 127 passes where VSFilter draws the number as written.
+---@param candidate AssNormalizeCandidate The rewrite, whose canonical argument is the reference's value.
+---@param dialect AssDialectName The target.
+---@return boolean clamped
+isReferenceValueClampedByTarget = (candidate, dialect) ->
+  value = tonumber candidate.canonical
+  return false unless value
+  reading = getArgumentReading candidate.token.name, dialect
+  (reading.maximum and value > reading.maximum or reading.minimum and value < reading.minimum) and true or false
+
 ---Applies a single candidate and keeps it where every target accepts it. This is where a reference
 ---dialect can bring the targets that read the line differently onto its reading. Only called for a
 ---candidate whose batch was refused.
@@ -904,15 +926,19 @@ settleOne = (context, candidate) ->
     for dialect in *targets
       continue if acceptedBy[dialect]
 
+      -- Exempt from the first and the third check below, since neither can hold for a clamped value.
+      -- The syllables still have to match, which keeps the exemption to the one field it clamps.
+      clampedByTarget = isReferenceValueClampedByTarget candidate, dialect
+
       -- A target follows the reference on three counts: the rewritten argument reads at face value
       -- under it, it cuts the line into the same karaoke syllables, and it leaves the same run state.
-      continue unless nil == canonicalArgumentFor token, dialect
+      continue unless clampedByTarget or nil == canonicalArgumentFor token, dialect
       targetTokens = scannerByDialect[dialect]\scan rewrittenText
       continue unless referenceReading == diagnostics.describeKaraokeSyllables targetTokens, dialect, styleFor(context, dialect), stylesByName, wrapStyle
 
       -- a dialect without run comparison has no appearance to compare
       appearance = diagnostics.describeCanonicalAppearance targetTokens, dialect, styleFor(context, dialect), stylesByName
-      continue unless referenceAppearance == nil or appearance == nil or referenceAppearance == appearance
+      continue unless clampedByTarget or referenceAppearance == nil or appearance == nil or referenceAppearance == appearance
 
       acceptedBy[dialect] = true
       accepting[#accepting + 1] = dialect
@@ -1047,27 +1073,34 @@ repairSyntax = (context) ->
 ---
 ---Runs only with approximate normalizations allowed, since a crossing rounded to a whole millisecond
 ---moves the picture by a bounded amount.
+---A transform without an interval animates across the event, so closing one writes out an interval the line
+---derived from its own timings (when provided and the `allowRelativeValuePinning` flag is set).
 ---@param context AssNormalizeContext
 clampTransforms = (context) ->
   return unless context.allowApproximateNormalizations
   -- `copyOf` is not unpacked here, since it stays nil until this pass takes the snapshot
   {:tokens, :targets, :changes, :divergences, :allowRoundedTransformCrossings,
-    :largestAcceptedError} = context
+    :largestAcceptedError, :allowRelativeValuePinning, :durationMs} = context
   for transform in *tokens
     continue unless transform.kind == TokenKind.Tag and transform.name == TagName.Transform
     children = transform.children or {}
-    -- A timing prefix and a single animated tag. With several tags, each would cross its bound at a
-    -- different moment.
-    continue unless #children == 2 and children[1].kind == TokenKind.Junk and children[2].kind == TokenKind.Tag
-    animated = children[2]
+    -- A single animated tag with an optional timing prefix. With several tags, each would cross its bound at a different moment.
+    animated = children[#children]
+    continue unless animated and animated.kind == TokenKind.Tag
+    continue unless #children == 1 or (#children == 2 and children[1].kind == TokenKind.Junk)
     definition = overrideTags[animated.name]
     continue unless definition and definition.runFields
     field = definition.runFields[1]
 
     arguments = transform.arguments or {}
-    continue unless #arguments >= 3 and "number" == type(arguments[1]) and "number" == type arguments[2]
-    openedAt, closedAt = arguments[1], arguments[2]
-    acceleration = #arguments >= 4 and "number" == type(arguments[3]) and arguments[3] or 1
+    local openedAt, closedAt, acceleration
+    if #arguments >= 3 and "number" == type(arguments[1]) and "number" == type arguments[2]
+      openedAt, closedAt = arguments[1], arguments[2]
+      acceleration = #arguments >= 4 and "number" == type(arguments[3]) and arguments[3] or 1
+    elseif #arguments <= 2 and allowRelativeValuePinning and durationMs
+      openedAt, closedAt = 0, durationMs
+      acceleration = #arguments == 2 and "number" == type(arguments[1]) and arguments[1] or 1
+    continue unless closedAt
 
     -- A transform has a single closing time, so every target has to cross the bound at the same rounded
     -- millisecond. The exact crossing is kept to measure the rounding error.
@@ -1091,7 +1124,8 @@ clampTransforms = (context) ->
         break
     continue unless closingTime and closingTime > openedAt and closingTime < closedAt
 
-    writtenPrefix, writtenParams = children[1].text, animated.params
+    prefix = children[1] != animated and children[1] or nil
+    writtenPrefix, writtenParams = prefix and prefix.text, animated.params
 
     -- Transform times are whole milliseconds, so a fractional crossing is rounded, which slightly changes
     -- the interpolated values before it.
@@ -1104,7 +1138,11 @@ clampTransforms = (context) ->
     continue unless rewrittenPrefix
 
     snapshotOriginal context
-    children[1].text = rewrittenPrefix
+    if prefix
+      prefix.text = rewrittenPrefix
+    else
+      prefix = {kind: TokenKind.Junk, text: rewrittenPrefix}
+      table.insert children, 1, prefix
     animated.params = emitSingleArgument bound, targets[1], animated.name
     regenerateTransformArguments {transform}, targets[1]
 
@@ -1125,7 +1163,11 @@ clampTransforms = (context) ->
       }
     else
       -- An exact crossing draws every moment identically, so this catches defects other than rounding.
-      children[1].text, animated.params = writtenPrefix, writtenParams
+      if writtenPrefix
+        prefix.text = writtenPrefix
+      else
+        table.remove children, 1
+      animated.params = writtenParams
       regenerateTransformArguments {transform}, targets[1]
       if #accepting > 0
         divergences[#divergences + 1] = {tag: getWrittenTag(context, transform), rewritten: "", :accepting}
@@ -1326,6 +1368,7 @@ liftAppliedWholeTags = (context) ->
 normalizeLine = (line, options = {}) ->
   {:style, :stylesByName, :wrapStyle, :referenceDialect, :allowApproximateNormalizations,
     :allowRoundedTransformCrossings, :largestAcceptedError, :verifyDescriptionTrees} = options
+  allowRelativeValuePinning = options.allowRelativeValuePinning != false
 
   text, styleName, effect, durationMs = line, nil, nil, nil
   unless "string" == type line
@@ -1376,6 +1419,7 @@ normalizeLine = (line, options = {}) ->
     :text, :tokens, :targets, :referenceDialect, :style, :styleName, :stylesByName
     :wrapStyle, :durationMs, :scannerByDialect, :verifyDescriptionTrees
     :allowApproximateNormalizations, :allowRoundedTransformCrossings, :largestAcceptedError
+    :allowRelativeValuePinning
     changes: {}
     divergences: {}
     styleByDialect: {}
