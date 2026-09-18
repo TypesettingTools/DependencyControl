@@ -1,3 +1,5 @@
+-- the function LPeg's `re` exports and Aegisub's namesake doesn't, which is what tells the two apart
+-- cspell:ignore updatelocale
 json = require "json"
 Logger = require "l0.DependencyControl.Logger"
 constants = require "l0.DependencyControl.Constants"
@@ -31,11 +33,39 @@ shadowPatternKeyword = (luaSchemaLib) ->
     (schema, _, dataPtr) -> schema\_mk_output true, nil, "pattern", dataPtr, schema.validation
   patternKeywordShadowed = true
 
+---Finds the `re` module LPeg publishes, which gets shadowed by the RegExp `re` shipped with Aegisub
+---Each candidate on he search path is loaded until one states LPeg's own interface.
+---@return table? lpegRe LPeg's `re` module, or nil where the search path holds none.
+findLpegRe = ->
+  loaded = package.loaded.re
+  return loaded if "table" == type(loaded) and "function" == type loaded.updatelocale
+
+  -- loading the module publishes the global `re` under Lua 5.1
+  ownedGlobal = _G.re
+  local found
+  for template in package.path\gmatch "[^;]+"
+    chunk = loadfile (template\gsub "%?", "re")
+    continue unless chunk
+    ok, candidate = pcall chunk, "re"
+    continue unless ok and "table" == type(candidate) and "function" == type candidate.updatelocale
+    found = candidate
+    break
+
+  _G.re = ownedGlobal
+  return found
+
 ---Loads and memoizes the lua-schema library, installing the `pattern`-keyword shadow on first successful load.
 ---@return table|false luaSchemaLib The lua-schema library, or false when it isn't installed.
 loadLuaSchemaLib = ->
   return luaSchema unless luaSchema == nil
+
+  -- Temporarily swap LPeg's `re` module into the `re` require id so that it can load its compile method into a local.
+  ownedModule = package.loaded.re
+  lpegRe = findLpegRe!
+  package.loaded.re = lpegRe if lpegRe
   ok, lib = pcall require, "schema"
+  package.loaded.re = ownedModule
+
   luaSchema = ok and lib or false
   shadowPatternKeyword luaSchema if luaSchema
   return luaSchema
@@ -211,4 +241,5 @@ class JsonSchema
     errors = collectValidationErrors result
     return false, #errors > 0 and table.concat(errors, "; ") or msgs.validate.errors.genericInvalid
 
-return JsonSchema
+UnitTestSuite = require "l0.DependencyControl.UnitTestSuite"
+return UnitTestSuite\withTestExports JsonSchema, {:findLpegRe}
