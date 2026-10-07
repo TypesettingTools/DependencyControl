@@ -294,7 +294,9 @@
       newRef = {updated: true}
       loadedRef = {version: "##__LOG_VERSION__##"}
       local constructedArgs, requiredRecord
-      updater = {require: ((record) => requiredRecord = record; newRef)}
+      updater = {require: (record) =>
+        requiredRecord = record
+        newRef}
       recClass = setmetatable {ScriptType: domain.ScriptType, __name: "DependencyControl", :updater},
         {__call: (cls, args) ->
           constructedArgs = args
