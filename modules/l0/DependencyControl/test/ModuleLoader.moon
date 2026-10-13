@@ -36,6 +36,12 @@
       ut\assertContains result, "Required: v2.0.0"
       ut\assertContains result, "1.1.1"
 
+    formatVersionErrorTemplate_outdated_unparseableRef: (ut) ->
+      ref = {version: "##__LOG_VERSION__##"}
+      result = ModuleLoader.formatVersionErrorTemplate nil, "MyModule", "1.0.0", nil, "too old", ref
+      ut\assertContains result, "Installed: v##__LOG_VERSION__##"
+      ut\assertContains result, "Required: v1.0.0"
+
     formatVersionErrorTemplate_outdated_tableRef: (ut) ->
       ref = {version: {version: 65793}} -- 1*65536 + 1*256 + 1 = "1.1.1" in base-256 encoding
       result = ModuleLoader.formatVersionErrorTemplate nil, "MyModule", "2.0.0", nil, "too old", ref
@@ -281,6 +287,31 @@
       ut\assertEquals err, ""
       ut\assertEquals mdl._ref, newRef
 
+    -- loadModules: an unmanaged module whose version string doesn't parse gets an unmanaged record at
+    -- 0.0.0, which fails the requirement and sends the module to the updater.
+    loadModules_unparseableUnmanagedVersionForcesUpdate: (ut) ->
+      ns = "test.ModuleLoader.unparseableVersion"
+      newRef = {updated: true}
+      loadedRef = {version: "##__LOG_VERSION__##"}
+      local constructedArgs, requiredRecord
+      updater = {require: (record) =>
+        requiredRecord = record
+        newRef}
+      recClass = setmetatable {ScriptType: domain.ScriptType, __name: "DependencyControl", :updater},
+        {__call: (cls, args) ->
+          constructedArgs = args
+          {checkVersion: ((target) => SemanticVersion\toPacked(args.version) >= SemanticVersion\toPacked target)}}
+      rec = {feed: nil, moduleName: "host.Module", name: "host", __class: recClass}
+      mdl = {moduleName: ns, name: ns, version: SemanticVersion\toPacked "1.0.0"}
+      (ut\stub ModuleLoader, "loadModule")\calls (self, m, usePrivate) -> m._ref = loadedRef unless usePrivate
+      success, err = ModuleLoader.loadModules rec, {mdl}
+      ut\assertTrue success
+      ut\assertEquals err, ""
+      ut\assertEquals constructedArgs.version, 0
+      ut\assertEquals constructedArgs.recordType, domain.RecordType.Unmanaged
+      ut\assertNotNil requiredRecord
+      ut\assertEquals mdl._ref, newRef
+
     -- loadModules: an outdated *required* module the updater can't update fails with an "outdated" error
     loadModules_outdatedRequiredFails: (ut) ->
       ns = "test.ModuleLoader.outdatedFail"
@@ -344,7 +375,8 @@
     _order: {
       "formatVersionErrorTemplate_missing_bare", "formatVersionErrorTemplate_missing_withVersion",
       "formatVersionErrorTemplate_missing_withUrl",
-      "formatVersionErrorTemplate_outdated_scalarRef", "formatVersionErrorTemplate_outdated_tableRef",
+      "formatVersionErrorTemplate_outdated_scalarRef", "formatVersionErrorTemplate_outdated_unparseableRef",
+      "formatVersionErrorTemplate_outdated_tableRef",
       "createDummyRef_nonModule", "createDummyRef_newRef", "createDummyRef_existingRef",
       "removeDummyRef_nonModule", "removeDummyRef_dummy", "removeDummyRef_nonDummy",
       "loadModule_cached", "loadModule_success", "loadModule_missing", "loadModule_error",
@@ -352,7 +384,8 @@
       "loadModules_skipsModule", "loadModules_allLoaded",
       "loadModules_missingFetchedViaUpdater", "loadModules_missingRequiredFails",
       "loadModules_missingOptionalSkipped", "loadModules_requirementsUnmetSurfacesNestedReason",
-      "loadModules_outdatedForcesUpdate", "loadModules_outdatedRequiredFails",
+      "loadModules_outdatedForcesUpdate", "loadModules_unparseableUnmanagedVersionForcesUpdate",
+      "loadModules_outdatedRequiredFails",
       "loadModules_updateInProgressAcceptsLoadedRef",
       "checkOptionalModules_noneOptional", "checkOptionalModules_missingOptional"
     }

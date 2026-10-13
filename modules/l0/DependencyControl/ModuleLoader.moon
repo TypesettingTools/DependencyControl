@@ -45,7 +45,8 @@ class ModuleLoader
     url = url and ": #{url}" or ""
     if ref
       -- unmanaged records have refs whose .version is a string instead of a DepCtrl record
-      version = SemanticVersion\toString type(ref.version) == "table" and ref.version.version or ref.version
+      rawVersion = type(ref.version) == "table" and ref.version.version or ref.version
+      version = SemanticVersion\toString(rawVersion) or tostring rawVersion
       return msgs.formatVersionErrorTemplate.outdated\format name, version, reqVersion, url, reason
     else
       reqVersion = reqVersion and " (v#{reqVersion})" or ""
@@ -162,7 +163,9 @@ class ModuleLoader
             continue
 
           if not ModuleProvider.isDepCtrlVersionRecord record
-            record = @@ moduleName: .moduleName, version: record, recordType: domain.RecordType.Unmanaged
+            -- a version that doesn't parse can't satisfy the requirement, so it counts as 0.0.0 and the module gets updated
+            version = SemanticVersion\toPacked(record) or 0
+            record = @@ moduleName: .moduleName, :version, recordType: domain.RecordType.Unmanaged
 
           -- force an update for outdated modules
           if not record\checkVersion .version
