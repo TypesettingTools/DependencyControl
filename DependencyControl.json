@@ -126,7 +126,7 @@
       "channels": {
         "main": {
           "version": "0.9.1",
-          "released": null,
+          "released": "2026-10-13",
           "default": true,
           "files": [
             {
