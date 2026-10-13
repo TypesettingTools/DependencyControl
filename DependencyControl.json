@@ -126,7 +126,7 @@
       "channels": {
         "main": {
           "version": "0.9.0",
-          "released": "2026-08-20",
+          "released": null,
           "default": true,
           "files": [
             {
@@ -233,7 +233,7 @@
             {
               "name": "/ModuleLoader.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "059526819899F46484C78AF6C1D6A92F2C354EB2"
+              "sha1": "3AF6BFC7A2945A35164BC85717B85C1508351F2B"
             },
             {
               "name": "/ModuleProvider.moon",
@@ -492,7 +492,7 @@
             {
               "name": "/ModuleLoader.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "0B1EF3A8E4C79310DD20511F7F6BBEAF8F219CB0",
+              "sha1": "E46257CACB2804BA13CF198E1456A44EE37A0735",
               "type": "test"
             },
             {
