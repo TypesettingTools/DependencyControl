@@ -125,14 +125,14 @@
       "url": "@{baseUrl}#@{namespace}",
       "channels": {
         "main": {
-          "version": "0.9.0",
-          "released": "2026-08-20",
+          "version": "0.9.1",
+          "released": null,
           "default": true,
           "files": [
             {
               "name": ".moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "89BA192E65D3446B8A066F4A5816EBA8560773E0"
+              "sha1": "AEF3718D5FD15B52AC663819C65EA59F0676B428"
             },
             {
               "name": "/Constants.moon",
@@ -233,7 +233,7 @@
             {
               "name": "/ModuleLoader.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "059526819899F46484C78AF6C1D6A92F2C354EB2"
+              "sha1": "3AF6BFC7A2945A35164BC85717B85C1508351F2B"
             },
             {
               "name": "/ModuleProvider.moon",
@@ -492,7 +492,7 @@
             {
               "name": "/ModuleLoader.moon",
               "url": "@{fileBaseUrl}",
-              "sha1": "0B1EF3A8E4C79310DD20511F7F6BBEAF8F219CB0",
+              "sha1": "E46257CACB2804BA13CF198E1456A44EE37A0735",
               "type": "test"
             },
             {
@@ -802,7 +802,9 @@
           "feat(CLI): `--serve-channel` can be given more than once to graft the dev build onto several channels at once, the first of which becomes the served feed's default.",
           "fix: A package's settings are no longer reverted by a second DependencyControl instance writing the same config file (e.g. during a DependencyControl update, in another automation script context, or from another Aegisub process). Each save now writes only the fields it changed since it last read the file.",
           "fix: A regression introduced in v0.7.0 was fixed that prevented the new version number of updated packages from being written into the DependencyControl config file when nothing else in its DependencyControl record changed.",
-          "fix: Changes to settings that affect feed fetching (private host blocking, feed size and timeout limits) now take effect immediately instead of requiring an automation scripts reload.",
+          "fix: Changes to settings that affect feed fetching (private host blocking, feed size and timeout limits) now take effect immediately instead of requiring an automation scripts reload."
+        ],
+        "0.9.1": [
           "fix: A required module that isn't managed by DependencyControl and declares a version that can't be parsed no longer fails to load with a 'Bad DependencyControl record' error. It is now treated as outdated and updated from its feed."
         ]
       }
